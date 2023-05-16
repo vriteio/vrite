@@ -111,7 +111,7 @@ const webhooksRouter = router({
       permissions: { session: ["manageWebhooks"], token: ["webhooks:write"] }
     })
     .input(webhook.omit({ id: true }))
-    .output(zodId())
+    .output(z.object({ id: zodId() }))
     .mutation(async ({ ctx, input }) => {
       const webhooksCollection = getWebhooksCollection(ctx.db);
       const { metadata, ...create } = input;
@@ -133,7 +133,7 @@ const webhooksRouter = router({
         data: { ...input, id: `${webhook._id}` }
       });
 
-      return `${webhook._id}`;
+      return { id: `${webhook._id}` };
     }),
   changes: authenticatedProcedure.input(z.void()).subscription(({ ctx }) => {
     return createEventSubscription<WebhookEvent>(ctx, `webhooks:${ctx.auth.workspaceId}`);

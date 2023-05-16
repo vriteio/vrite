@@ -83,7 +83,7 @@ const tagsRouter = router({
       permissions: { session: ["editMetadata"], token: ["tags:write"] }
     })
     .input(tag.omit({ id: true }))
-    .output(zodId())
+    .output(z.object({ id: zodId() }))
     .mutation(async ({ ctx, input }) => {
       const tagsCollection = getTagsCollection(ctx.db);
       const tag = {
@@ -102,7 +102,7 @@ const tagsRouter = router({
         }
       });
 
-      return `${tag._id}`;
+      return { id: `${tag._id}` };
     }),
   list: authenticatedProcedure
     .meta({

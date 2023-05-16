@@ -58,7 +58,7 @@ const TagsDropdown: Component<TagsDropdownProps> = (props) => {
     }
   };
   const createTag = async (): Promise<void> => {
-    let { id } = currentTag;
+    const { id } = currentTag;
 
     if (id) {
       client.tags.update.mutate({ ...currentTag, id });
@@ -72,7 +72,8 @@ const TagsDropdown: Component<TagsDropdownProps> = (props) => {
         })
       );
     } else {
-      id = await client.tags.create.mutate(currentTag);
+      const { id } = await client.tags.create.mutate(currentTag);
+
       props.setTags([...props.tags, { ...currentTag, id }]);
     }
 

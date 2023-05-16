@@ -72,7 +72,7 @@ const contentGroupsRouter = router({
       permissions: { session: ["manageDashboard"], token: ["contentGroups:write"] }
     })
     .input(contentGroup.omit({ id: true }))
-    .output(zodId())
+    .output(z.object({ id: zodId() }))
     .mutation(async ({ ctx, input }) => {
       const workspacesCollection = getWorkspacesCollection(ctx.db);
       const workspace = await workspacesCollection.findOne({ _id: ctx.auth.workspaceId });
@@ -103,7 +103,7 @@ const contentGroupsRouter = router({
       });
       runWebhooks(ctx, "contentGroupAdded", { id: `${contentGroup._id}`, ...input });
 
-      return `${contentGroup._id}`;
+      return { id: `${contentGroup._id}` };
     }),
   delete: authenticatedProcedure
     .meta({

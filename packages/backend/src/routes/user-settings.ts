@@ -10,6 +10,7 @@ import {
   appearanceSettings,
   getUserSettingsCollection
 } from "#database";
+import { zodId } from "#lib";
 
 type UserSettingsEvent = { action: "update"; data: Partial<AppearanceSettings> };
 
@@ -60,7 +61,7 @@ const userSettingsRouter = router({
 
   getWorkspaceId: authenticatedProcedure
     .input(z.void())
-    .output(z.string())
+    .output(zodId())
     .query(async ({ ctx }) => {
       const workspacesCollection = getWorkspacesCollection(ctx.db);
       const workspaceMembershipsCollection = getWorkspaceMembershipsCollection(ctx.db);

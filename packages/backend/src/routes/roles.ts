@@ -149,7 +149,7 @@ const rolesRouter = router({
       permissions: { session: ["manageWorkspace"], token: ["roles:write"] }
     })
     .input(role.omit({ id: true }))
-    .output(zodId())
+    .output(z.object({ id: zodId() }))
     .mutation(async ({ ctx, input }) => {
       const rolesCollection = getRolesCollection(ctx.db);
       const role = {
@@ -169,7 +169,7 @@ const rolesRouter = router({
         }
       });
 
-      return `${role._id}`;
+      return { id: `${role._id}` };
     }),
   delete: authenticatedProcedure
     .meta({

@@ -518,7 +518,7 @@ const Column: Component<ColumnProps> = (props) => {
             text="soft"
             label="New content piece"
             onClick={async () => {
-              const id = await client.contentPieces.create.mutate({
+              const { id } = await client.contentPieces.create.mutate({
                 contentGroupId: props.contentGroup.id,
                 referenceId: contentPieces()[0]?.id,
                 tags: [],

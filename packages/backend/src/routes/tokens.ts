@@ -96,7 +96,7 @@ const tokensRouter = router({
       permissions: { session: ["manageTokens"] }
     })
     .input(token.omit({ id: true }))
-    .output(z.object({ value: z.string(), id: z.string() }))
+    .output(z.object({ value: z.string(), id: zodId() }))
     .mutation(async ({ ctx, input }) => {
       const tokensCollection = getTokensCollection(ctx.db);
       const username = nanoid();

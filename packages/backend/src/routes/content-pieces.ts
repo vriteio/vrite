@@ -225,7 +225,7 @@ const contentPiecesRouter = router({
         referenceId: zodId().optional()
       })
     )
-    .output(zodId())
+    .output(z.object({ id: zodId() }))
     .mutation(async ({ ctx, input }) => {
       const { referenceId, contentGroupId, customData, ...create } = input;
       const contentPiecesCollection = getContentPiecesCollection(ctx.db);
@@ -300,7 +300,7 @@ const contentPiecesRouter = router({
         }
       });
 
-      return `${contentPiece._id}`;
+      return { id: `${contentPiece._id}` };
     }),
   update: authenticatedProcedure
     .meta({
