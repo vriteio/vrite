@@ -241,12 +241,6 @@ const ContentPieceView: Component = () => {
               class="m-0"
               onClick={async () => {
                 setDropdownMenuOpened(false);
-                setStorage((storage) => ({
-                  ...storage,
-                  sidePanelWidth: storage.sidePanelWidth || 375,
-                  sidePanelView: "contentPiece",
-                  contentPieceId: contentPiece()?.id
-                }));
                 navigate("/editor");
               }}
             />

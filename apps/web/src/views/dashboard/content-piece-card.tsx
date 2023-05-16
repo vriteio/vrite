@@ -117,6 +117,12 @@ const ContentPieceCard: Component<ContentPieceProps> = (props) => {
             onClick={(event) => {
               event.preventDefault();
               event.stopPropagation();
+              setStorage((storage) => ({
+                ...storage,
+                sidePanelWidth: storage.sidePanelWidth || 375,
+                sidePanelView: "contentPiece",
+                contentPieceId: props.contentPiece.id
+              }));
               navigate("/editor");
             }}
           />
