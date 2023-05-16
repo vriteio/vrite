@@ -41,7 +41,7 @@
 }
 html {
   font-family: "NunitoVariable", sans-serif;
-  @apply h-full text-gray-700 bg-gray-100 from-secondary to-primary;
+  @apply h-full text-gray-700 bg-gray-100 from-secondary to-primary overflow-hidden;
 }
 html.dark {
   @apply text-white bg-gray-800;
