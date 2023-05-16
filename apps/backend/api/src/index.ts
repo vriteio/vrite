@@ -9,7 +9,7 @@ import { createServer, appRouter } from "@vrite/backend";
   await server.get("/swagger.json", (req, res) => {
     res.send(
       generateOpenApiDocument(appRouter, {
-        baseUrl: "https://98f8-178-43-118-8.ngrok-free.app",
+        baseUrl: "https://api.vrite.io",
         title: "Vrite API",
         version: "2023.5.16"
       })
