@@ -347,7 +347,7 @@ const contentPiecesRouter = router({
 
       const contentPieceUpdates: Partial<UnderscoreID<FullContentPiece<ObjectId>>> = {
         ...update,
-        slug: titleToSlug(update.title || "")
+        slug: titleToSlug(update.title || contentPiece.title || "")
       };
 
       if (updatedTags) contentPieceUpdates.tags = updatedTags.map((tag) => new ObjectId(tag));
