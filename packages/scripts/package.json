@@ -1,0 +1,13 @@
+{
+  "name": "@vrite/scripts",
+  "version": "2023.4.3",
+  "private": true,
+  "dependencies": {
+    "chalk": "^5.2.0",
+    "commander": "^10.0.0",
+    "esbuild": "^0.17.15",
+    "glob": "^9.3.4",
+    "image-type": "^5.2.0"
+  },
+  "bin": "cli/development.mjs"
+}

@@ -1,0 +1,158 @@
+.ProseMirror > * + * {
+  margin-top: 0;
+}
+.ProseMirror p.is-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  opacity: 0.25;
+  pointer-events: none;
+  height: 0;
+}
+
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hidden {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.ProseMirror-gapcursor {
+  width: 100%;
+}
+.ProseMirror-gapcursor::after {
+  width: 100% !important;
+  top: -19px !important;
+  @apply !border-primary my-2;
+}
+.ProseMirror-dropcursor {
+  @apply text-primary;
+}
+
+@media (prefers-color-scheme: dark) {
+  html {
+    @apply text-white bg-gray-900;
+  }
+}
+@media (prefers-color-scheme: light) {
+  html {
+    @apply text-gray-900 bg-gray-100;
+  }
+}
+html {
+  font-family: "NunitoVariable", sans-serif;
+  @apply h-full text-gray-700 bg-gray-100 from-secondary to-primary;
+}
+html.dark {
+  @apply text-white bg-gray-800;
+}
+[data-accent-color="energy"] {
+  --color-primary: theme("colors.orange.500");
+  --color-secondary: theme("colors.red.500");
+}
+[data-accent-color="neon"] {
+  --color-primary: theme("colors.lime.400");
+  --color-secondary: theme("colors.cyan.400");
+}
+[data-accent-color="sublime"] {
+  --color-primary: theme("colors.rose.400");
+  --color-secondary: theme("colors.indigo.500");
+}
+[data-accent-color="sunrise"] {
+  --color-primary: theme("colors.rose.400");
+  --color-secondary: theme("colors.orange.300");
+}
+[data-accent-color="flow"] {
+  --color-primary: theme("colors.blue.400");
+  --color-secondary: theme("colors.cyan.400");
+}
+body {
+  @apply flex min-h-full;
+}
+#root {
+  @apply flex flex-col flex-1 w-full;
+}
+.clamp-1 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  overflow-wrap: break-word;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+  -webkit-box-orient: vertical;
+}
+.clamp-2 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  overflow-wrap: break-word;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.clamp-3 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  overflow-wrap: break-word;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+.break-anywhere {
+  overflow-wrap: anywhere;
+}
+.cm-editor {
+  @apply h-full;
+}
+
+.monaco-editor,
+.monaco-editor > *:first-child {
+  @apply rounded-2xl;
+}
+.ProseMirror .monaco-editor,
+.ProseMirror .monaco-editor > *:first-child {
+  @apply rounded-b-none;
+}
+.monaco-editor .editor-widget {
+  @apply overflow-hidden rounded-lg;
+}
+.monaco-editor .monaco-hover {
+  @apply rounded-lg;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  color: rgba(0, 0, 0, 0);
+  opacity: 1;
+  display: block;
+  background: url(data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22%23000%22%20d%3D%22M12%2012H17V17H12V12M19%203H18V1H16V3H8V1H6V3H5C3.9%203%203%203.9%203%205V19C3%2020.1%203.9%2021%205%2021H19C20.1%2021%2021%2020.1%2021%2019V5C21%203.9%2020.1%203%2019%203M19%205V7H5V5H19M5%2019V9H19V19H5Z%22%20%2F%3E%3C%2Fsvg%3E)
+    no-repeat;
+  width: 18px;
+  height: 18px;
+  border-width: thin;
+}
+
+input[type="time"]::-webkit-calendar-picker-indicator {
+  color: rgba(0, 0, 0, 0);
+  opacity: 1;
+  display: block;
+  background: url(data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22%23000%22%20d%3D%22M12%2C20A8%2C8%200%200%2C0%2020%2C12A8%2C8%200%200%2C0%2012%2C4A8%2C8%200%200%2C0%204%2C12A8%2C8%200%200%2C0%2012%2C20M12%2C2A10%2C10%200%200%2C1%2022%2C12A10%2C10%200%200%2C1%2012%2C22C6.47%2C22%202%2C17.5%202%2C12A10%2C10%200%200%2C1%2012%2C2M12.5%2C7V12.25L17%2C14.92L16.25%2C16.15L11%2C13V7H12.5Z%22%20%2F%3E%3C%2Fsvg%3E)
+    no-repeat;
+  width: 16px;
+  height: 16px;
+  border-width: thin;
+}
+.dark input[type="date"]::-webkit-calendar-picker-indicator {
+  background: url(data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22%23fff%22%20d%3D%22M12%2012H17V17H12V12M19%203H18V1H16V3H8V1H6V3H5C3.9%203%203%203.9%203%205V19C3%2020.1%203.9%2021%205%2021H19C20.1%2021%2021%2020.1%2021%2019V5C21%203.9%2020.1%203%2019%203M19%205V7H5V5H19M5%2019V9H19V19H5Z%22%20%2F%3E%3C%2Fsvg%3E)
+    no-repeat;
+}
+.dark input[type="time"]::-webkit-calendar-picker-indicator {
+  background: url(data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22%23fff%22%20d%3D%22M12%2C20A8%2C8%200%200%2C0%2020%2C12A8%2C8%200%200%2C0%2012%2C4A8%2C8%200%200%2C0%204%2C12A8%2C8%200%200%2C0%2012%2C20M12%2C2A10%2C10%200%200%2C1%2022%2C12A10%2C10%200%200%2C1%2012%2C22C6.47%2C22%202%2C17.5%202%2C12A10%2C10%200%200%2C1%2012%2C2M12.5%2C7V12.25L17%2C14.92L16.25%2C16.15L11%2C13V7H12.5Z%22%20%2F%3E%3C%2Fsvg%3E)
+    no-repeat;
+}
+button:focus-visible {
+  outline: none !important;
+}
+button:focus {
+  outline: none !important;
+}

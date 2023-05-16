@@ -1,0 +1,74 @@
+{
+  "parser": "@typescript-eslint/parser",
+  "plugins": ["solid", "@typescript-eslint"],
+  "ignorePatterns": ["!**/*", "**/*.js", "**/*.mjs", "**/*.cjs", "**/*.d.ts"],
+  "extends": [
+    "xtrict/configs/errors",
+    "xtrict/configs/es6",
+    "xtrict/configs/modules",
+    "xtrict/configs/style",
+    "xtrict/configs/variables"
+  ],
+  "overrides": [
+    {
+      "files": ["*.ts", "*.tsx", "*.js", "*.jsx"],
+      "rules": {
+        "import/order": [
+          "error",
+          {
+            "groups": [
+              "index",
+              "sibling",
+              "parent",
+              "internal",
+              "external",
+              "builtin",
+              "object",
+              "type"
+            ]
+          }
+        ],
+        "no-undefined": "off",
+        "max-lines-per-function": "off",
+        "max-statements": "off",
+        "max-lines": "off",
+        "no-duplicate-imports": "off",
+        "no-underscore-dangle": "off",
+        "@typescript-eslint/no-duplicate-imports": ["error"],
+        "max-len": "off",
+        "semi": "off",
+        "sort-keys": "off",
+        "sort-imports": "off",
+        "newline-per-chained-call": "off",
+        "func-call-spacing": "off",
+        "linebreak-style": "off",
+        "no-empty-function": ["error", { "allow": ["arrowFunctions"] }],
+        "no-tabs": "off",
+        "no-dupe-class-members": "off",
+        "no-unused-vars": "off",
+        "no-undef": "off",
+        "no-mixed-operators": "off",
+        "no-magic-numbers": "off",
+        "unicorn/no-null": "off",
+        "unicorn/filename-case": "off",
+        "import/no-default-export": "off",
+        "object-property-newline": "off",
+        "multiline-comment-style": ["error", "bare-block"],
+        "sonarjs/cognitive-complexity": "off",
+        "sonarjs/no-duplicate-string": ["warn", 4],
+        "@typescript-eslint/explicit-function-return-type": [
+          "error",
+          {
+            "allowExpressions": true,
+            "allowTypedFunctionExpressions": true,
+            "allowHigherOrderFunctions": true
+          }
+        ],
+        "@typescript-eslint/no-empty-function": ["error", { "allow": ["arrowFunctions"] }],
+        "@typescript-eslint/explicit-member-accessibility": "error",
+        "@typescript-eslint/interface-name-prefix": "off",
+        "@typescript-eslint/member-ordering": "error"
+      }
+    }
+  ]
+}

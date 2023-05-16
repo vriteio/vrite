@@ -1,0 +1,19 @@
+{
+  "name": "@vrite/collaboration",
+  "private": true,
+  "source": "src/index.ts",
+  "main": "index.ts",
+  "scripts": {
+    "dev": "scripts dev-node src/index.ts",
+    "build": "scripts build-node src/index.ts '../../../dist/collaboration'"
+  },
+  "dependencies": {
+    "@hocuspocus/extension-database": "^1.0.1",
+    "@hocuspocus/server": "^1.0.2",
+    "@vrite/backend": "workspace:*",
+    "mongodb": "^4.13.0"
+  },
+  "devDependencies": {
+    "@vrite/scripts": "workspace:*"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "@vrite/app",
+  "private": true,
+  "source": "src/index.ts",
+  "main": "index.ts",
+  "scripts": {
+    "dev": "scripts dev-node src/index.ts",
+    "build": "scripts build-node src/index.ts '../../../dist/app' && cp -rf ../../web/dist/ ../../../dist/app/public"
+  },
+  "dependencies": {
+    "@fastify/static": "^6.9.0",
+    "@fastify/websocket": "^6.0.1",
+    "@vrite/backend": "workspace:*",
+    "axios": "^1.3.4"
+  },
+  "devDependencies": {
+    "@vrite/scripts": "workspace:*"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "@vrite/api",
+  "private": true,
+  "source": "src/index.ts",
+  "main": "index.ts",
+  "scripts": {
+    "dev": "scripts dev-node src/index.ts",
+    "build": "scripts build-node src/index.ts '../../../dist/api'"
+  },
+  "dependencies": {
+    "@fastify/cors": "^8.2.0",
+    "@fastify/rate-limit": "^7.6.0",
+    "@trpc/server": "^10.9.1",
+    "@vrite/backend": "workspace:*",
+    "fastify": "^4.12.0",
+    "trpc-openapi": "^1.1.2"
+  },
+  "devDependencies": {
+    "@vrite/scripts": "workspace:*"
+  }
+}

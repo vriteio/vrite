@@ -1,0 +1,19 @@
+{
+  "cSpell.words": [
+    "codepen",
+    "codesandbox",
+    "Collab",
+    "hget",
+    "Hocuspocus",
+    "hset",
+    "Lexo",
+    "outdir",
+    "sadd",
+    "smembers",
+    "srem",
+    "totp",
+    "unsign",
+    "Unsubscribable"
+  ],
+  "unocss.root": ["apps/web"]
+}
