@@ -146,6 +146,7 @@ const useOpenedContentPiece = (): OpenedContentPiece => {
 };
 const ContentPieceView: Component = () => {
   const { client } = useClientContext();
+  const { setStorage } = useUIContext();
   const { confirmDelete } = useConfirmationContext();
   const { contentPiece, setContentPiece } = useOpenedContentPiece();
   const location = useLocation();
@@ -240,6 +241,12 @@ const ContentPieceView: Component = () => {
               class="m-0"
               onClick={async () => {
                 setDropdownMenuOpened(false);
+                setStorage((storage) => ({
+                  ...storage,
+                  sidePanelWidth: storage.sidePanelWidth || 375,
+                  sidePanelView: "contentPiece",
+                  contentPieceId: contentPiece()?.id
+                }));
                 navigate("/editor");
               }}
             />
