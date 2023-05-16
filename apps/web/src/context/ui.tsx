@@ -40,7 +40,7 @@ const UIContextProvider: ParentComponent = (props) => {
   try {
     const storedData = localStorage.getItem("ui");
 
-    if (storedData) {
+    if (storedData && storedData !== "{}") {
       setStorage(JSON.parse(storedData));
     } else {
       setStorage({

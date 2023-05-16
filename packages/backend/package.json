@@ -37,7 +37,7 @@
     "@trpc/client": "^10.9.1",
     "@trpc/server": "^10.9.1",
     "@types/mime-types": "^2.1.1",
-    "@vrite/sdk": "0.0.5-beta",
+    "@vrite/sdk": "2023.5.16-beta",
     "axios": "^1.3.4",
     "fastify": "^4.12.0",
     "html-to-text": "^9.0.5",

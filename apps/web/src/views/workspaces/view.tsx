@@ -171,7 +171,7 @@ const WorkspacesView: Component = () => {
                 onScrollEnd={loadMore}
               />
               <div
-                class="flex flex-col gap-2 w-full overflow-y-auto h-full scrollbar-sm pr-2"
+                class="flex flex-col gap-2 w-full overflow-y-auto h-full scrollbar-sm pr-2 min-h-8"
                 ref={setScrollableContainerRef}
               >
                 <Show

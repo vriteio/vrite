@@ -4,10 +4,11 @@ import {
   mdiCodeJson,
   mdiDownloadCircleOutline,
   mdiExportVariant,
-  mdiLanguageHtml5
+  mdiLanguageHtml5,
+  mdiLanguageMarkdown
 } from "@mdi/js";
 import { Component, createSignal } from "solid-js";
-import { htmlTransformer } from "@vrite/sdk/transformers";
+import { htmlTransformer, gfmTransformer } from "@vrite/sdk/transformers";
 import { Card, Dropdown, Heading, IconButton, Overlay, Tooltip } from "#components/primitives";
 import { MiniCodeEditor } from "#components/fragments";
 import { App, useAuthenticatedContext, useClientContext, useNotificationsContext } from "#context";
@@ -26,8 +27,8 @@ const ExportMenu: Component<ExportMenuProps> = (props) => {
   const [exportMenuOpened, setExportMenuOpened] = createSignal(false);
   const [exportDropdownOpened, setExportDropdownOpened] = createSignal(false);
   const [code, setCode] = createSignal("");
-  const [exportType, setExportType] = createSignal<"html" | "json">("html");
-  const loadContent = async (type: "html" | "json"): Promise<string | undefined> => {
+  const [exportType, setExportType] = createSignal<"html" | "json" | "md">("html");
+  const loadContent = async (type: "html" | "json" | "md"): Promise<string | undefined> => {
     try {
       const contentPiece = await client.contentPieces.get.query({
         content: true,
@@ -50,13 +51,19 @@ const ExportMenu: Component<ExportMenuProps> = (props) => {
         );
       }
 
+      if (type === "md") {
+        if (!contentPiece.content) return;
+
+        return formatCode(gfmTransformer(contentPiece.content as any), "markdown", prettierConfig);
+      }
+
       return formatCode(JSON.stringify(contentPiece.content), "json", prettierConfig);
     } catch (e) {
       notify({ type: "error", text: "Couldn't export the content" });
       setLoading(false);
     }
   };
-  const exportContent = async (type: "html" | "json"): Promise<void> => {
+  const exportContent = async (type: "html" | "json" | "md"): Promise<void> => {
     setExportDropdownOpened(false);
     setLoading(true);
 
@@ -113,6 +120,15 @@ const ExportMenu: Component<ExportMenuProps> = (props) => {
             class="justify-start"
             onClick={() => exportContent("json")}
           />
+          <IconButton
+            path={mdiLanguageMarkdown}
+            text="soft"
+            variant="text"
+            label="GFM"
+            disabled={loading()}
+            class="justify-start"
+            onClick={() => exportContent("md")}
+          />
         </Dropdown>
       </div>
       <Overlay
@@ -125,7 +141,8 @@ const ExportMenu: Component<ExportMenuProps> = (props) => {
           <div class="flex items-center justify-center">
             <Heading class="flex-1">
               {exportType() === "html" && "HTML "}
-              {exportType() === "json" && "JSON "}Export
+              {exportType() === "json" && "JSON "}
+              {exportType() === "md" && "Markdown "}Export
             </Heading>
             <IconButton
               path={mdiClose}
@@ -155,7 +172,12 @@ const ExportMenu: Component<ExportMenuProps> = (props) => {
                 variant="text"
                 label="Download"
                 onClick={() => {
-                  const mimeType = exportType() === "html" ? "text/html" : "application/json";
+                  let mimeType = exportType() === "html" ? "text/html" : "application/json";
+
+                  if (exportType() === "md") {
+                    mimeType = "text/markdown";
+                  }
+
                   const a = document.createElement("a");
                   const file = new Blob([code()], {
                     type: mimeType
