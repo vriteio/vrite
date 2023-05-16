@@ -183,9 +183,15 @@ const ConfigureTokenSubSection: Component<ConfigureTokenSubSectionProps> = (prop
                         }
 
                         return [
-                          ...grantedPermissions,
+                          ...grantedPermissions.filter((grantedPermission) => {
+                            return !permissions.includes(grantedPermission);
+                          }),
                           ...permissions.filter((permission) => {
-                            return permission.endsWith(value);
+                            if (value === "read") {
+                              return permission.endsWith("read");
+                            }
+
+                            return permission.endsWith("write") || permission.endsWith("read");
                           })
                         ];
                       });
