@@ -12,6 +12,8 @@ import type * as App from "@vrite/backend";
 import { navigateAndReload } from "#lib/utils";
 
 const refreshTokenLink = (): TRPCLink<App.Router> => {
+  let refreshingPromise: Promise<any> | null = null;
+
   return () => {
     return ({ op, next }) => {
       return observable((observer) => {
@@ -21,11 +23,12 @@ const refreshTokenLink = (): TRPCLink<App.Router> => {
 
         const attempt = async (): Promise<void> => {
           if (attempts > 0) {
-            try {
-              await fetch("/session/refresh", { method: "POST" });
-            } catch (e) {
-              console.error("Error while refreshing session", error);
+            if (!refreshingPromise) {
+              refreshingPromise = fetch("/session/refresh", { method: "POST" });
             }
+
+            await refreshingPromise;
+            refreshingPromise = null;
           }
 
           attempts += 1;
