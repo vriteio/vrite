@@ -85,6 +85,7 @@ const Input: Component<InputProps> = (props) => {
     props.setValue?.(suggestions()[selectedIndex()]);
     setSuggestions([]);
     setFocused(false);
+    triggerRef()?.blur();
   };
   const onKeyUp = (event: KeyboardEvent): boolean => {
     if (event.key === "ArrowUp") {
