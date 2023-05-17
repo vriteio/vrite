@@ -8,7 +8,6 @@ import {
 } from "@trpc/client";
 import { createContext, ParentComponent, useContext } from "solid-js";
 import { Unsubscribable, observable } from "@trpc/server/observable";
-import { useLocation } from "@solidjs/router";
 import type * as App from "@vrite/backend";
 import { navigateAndReload } from "#lib/utils";
 
@@ -22,7 +21,11 @@ const refreshTokenLink = (): TRPCLink<App.Router> => {
 
         const attempt = async (): Promise<void> => {
           if (attempts > 0) {
-            await fetch("/session/refresh", { method: "POST" });
+            try {
+              await fetch("/session/refresh", { method: "POST" });
+            } catch (e) {
+              console.error("Error while refreshing session", error);
+            }
           }
 
           attempts += 1;

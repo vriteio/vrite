@@ -38,7 +38,7 @@ const createServer = async (): Promise<FastifyInstance> => {
     .register(cookiePlugin, { secret: server.config.SECRET })
     .register(jwtPlugin, {
       secret: server.config.SECRET,
-      cookie: { cookieName: "token", signed: true }
+      cookie: { cookieName: "accessToken", signed: true }
     })
     .register(sessionPlugin)
     .register(oAuth2Plugin);

@@ -9,7 +9,6 @@ const sessionPlugin = publicPlugin(async (fastify) => {
 
     try {
       await caller.auth.refreshToken();
-      res.setCookie("foo", "bar").send();
     } catch (error) {
       if (error instanceof CustomError) {
         const httpStatusCode = getHTTPStatusCodeFromError(error);
