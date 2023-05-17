@@ -9,7 +9,9 @@ const appService = publicPlugin(async (fastify) => {
     root: path.join(__dirname, "public"),
     prefix: "/"
   });
-  await fastify.register(websocketPlugin);
+  await fastify.register(websocketPlugin, {
+    options: { maxPayload: 1048576 }
+  });
   await fastify.register(trpcPlugin);
   fastify.setNotFoundHandler(async (_request, reply) => {
     return reply.sendFile("index.html");

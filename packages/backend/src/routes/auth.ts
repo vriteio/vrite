@@ -186,22 +186,17 @@ const authRouter = router({
     .mutation(async ({ ctx }) => {
       let sessionId = await getSessionId(ctx, "accessToken");
 
-      console.log("sessionId from access token", sessionId);
-
       if (sessionId) {
         return;
       }
 
       sessionId = await getSessionId(ctx, "refreshToken");
-      console.log("sessionId from refresh token", sessionId);
 
       if (!sessionId) {
         throw errors.unauthorized("invalidRefreshToken");
       }
 
-      console.log("refreshing session");
       await refreshSession(ctx, sessionId);
-      console.log("refreshed session");
     }),
   initTwoFactor: authenticatedProcedure
     .input(z.void())

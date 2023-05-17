@@ -54,6 +54,10 @@ const getSessionId = async (
 
     if (ctx.req.socket) {
       ctx.req.socket.sessionId = sessionId;
+      // Fixes https://github.com/fastify/fastify-websocket/issues/74
+      ctx.req.socket.on("data", () => {
+        ctx.req.socket.resume();
+      });
     }
 
     return sessionId;
