@@ -22,13 +22,10 @@ const refreshTokenLink = (): TRPCLink<App.Router> => {
         let isDone = false;
 
         const attempt = async (): Promise<void> => {
-          if (attempts > 0) {
-            if (!refreshingPromise) {
-              refreshingPromise = fetch("/session/refresh", { method: "POST" });
-            }
-
-            await refreshingPromise;
-            refreshingPromise = null;
+          if (attempts > 0 && !refreshingPromise) {
+            refreshingPromise = fetch("/session/refresh", { method: "POST" }).then(() => {
+              refreshingPromise = null;
+            });
           }
 
           attempts += 1;
