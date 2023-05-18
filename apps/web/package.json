@@ -19,6 +19,7 @@
     "prettier": "^2.8.3",
     "sass": "^1.58.0",
     "sortablejs": "^1.15.0",
+    "terser": "^5.17.4",
     "vite-plugin-solid": "^2.5.0",
     "vite-tsconfig-paths": "^3.6.0"
   },
