@@ -28,9 +28,9 @@ const refreshTokenLink = (): TRPCLink<App.Router> => {
             });
           }
 
-          await refreshingPromise;
-          attempts += 1;
           next$?.unsubscribe();
+          attempts += 1;
+          await refreshingPromise;
           next$ = next(op).subscribe({
             error(error) {
               if (
