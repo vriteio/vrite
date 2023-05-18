@@ -28,6 +28,7 @@ const refreshTokenLink = (): TRPCLink<App.Router> => {
             });
           }
 
+          await refreshingPromise;
           attempts += 1;
           next$?.unsubscribe();
           next$ = next(op).subscribe({
@@ -42,7 +43,8 @@ const refreshTokenLink = (): TRPCLink<App.Router> => {
                   error.data?.code === "UNAUTHORIZED" &&
                   window.location.pathname !== "/auth" &&
                   !op.path.startsWith("auth") &&
-                  !op.path.startsWith("verification")
+                  !op.path.startsWith("verification") &&
+                  !refreshingPromise
                 ) {
                   navigateAndReload("/auth");
 
