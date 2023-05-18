@@ -81,7 +81,7 @@ const oAuth2Plugin = publicPlugin(async (fastify) => {
         user = {
           _id: new ObjectId(),
           email: primaryEmail,
-          username: userData.data.name,
+          username: userData.data.name.toLowerCase().replace(/-/g, "_").slice(0, 20),
           salt: await generateSalt(),
           external: {
             github: { id: userData.data.id, accessToken: github.access_token }
