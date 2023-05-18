@@ -243,7 +243,7 @@ const WorkspacesView: Component = () => {
           text="soft"
           size="small"
           onClick={async () => {
-            await fetch("/session/logout", { method: "POST" });
+            await fetch("/session/logout");
             setStorage({});
             navigateAndReload("/auth");
           }}

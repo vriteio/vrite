@@ -85,7 +85,7 @@ const ProfileMenu: Component<{ close(): void }> = (props) => {
             class="m-0"
             variant="text"
             onClick={async () => {
-              await fetch("/session/logout", { method: "POST" });
+              await fetch("/session/logout");
               setStorage({});
               navigateAndReload("/auth");
             }}
