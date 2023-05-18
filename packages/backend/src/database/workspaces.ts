@@ -9,7 +9,7 @@ const contentGroup = z.object({
 });
 const workspace = z.object({
   id: zodId(),
-  name: z.string().min(1).max(20),
+  name: z.string().min(1).max(50),
   description: z.string().optional(),
   logo: z.string().optional(),
   contentGroups: z.array(contentGroup.extend({ id: z.string() }))
