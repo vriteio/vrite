@@ -6,12 +6,12 @@ import {
   splitLink,
   TRPCLink
 } from "@trpc/client";
-import { createContext, ParentComponent, useContext } from "solid-js";
+import { createContext, onCleanup, ParentComponent, useContext } from "solid-js";
 import { Unsubscribable, observable } from "@trpc/server/observable";
 import type * as App from "@vrite/backend";
 import { navigateAndReload } from "#lib/utils";
 
-const refreshTokenLink = (): TRPCLink<App.Router> => {
+const refreshTokenLink = (closeConnection: () => void): TRPCLink<App.Router> => {
   let refreshingPromise: Promise<any> | null = null;
 
   return () => {
@@ -25,16 +25,21 @@ const refreshTokenLink = (): TRPCLink<App.Router> => {
           if (attempts > 0 && !refreshingPromise) {
             refreshingPromise = fetch("/session/refresh", { method: "POST" }).then(() => {
               refreshingPromise = null;
+              closeConnection();
             });
           }
 
           next$?.unsubscribe();
           attempts += 1;
-          await refreshingPromise;
+
+          if (refreshingPromise) {
+            await refreshingPromise;
+          }
+
           next$ = next(op).subscribe({
             error(error) {
               if (
-                attempts > 2 ||
+                attempts > 3 ||
                 ["auth.isSignedIn", "verification"].some((value) => {
                   return op.path.startsWith(value);
                 })
@@ -93,7 +98,9 @@ const ClientContextProvider: ParentComponent = (props) => {
   });
   const client = createTRPCProxyClient<App.Router>({
     links: [
-      refreshTokenLink(),
+      refreshTokenLink(() => {
+        wsClient.getConnection().dispatchEvent(new CloseEvent("close"));
+      }),
       splitLink({
         condition(op) {
           return !op.path.startsWith("auth") && !op.path.startsWith("verification");
@@ -104,6 +111,13 @@ const ClientContextProvider: ParentComponent = (props) => {
         })
       })
     ]
+  });
+  const keepAliveHandle = setInterval(() => {
+    wsClient.getConnection().send("[]");
+  }, 45 * 1000);
+
+  onCleanup(() => {
+    clearInterval(keepAliveHandle);
   });
 
   return (
