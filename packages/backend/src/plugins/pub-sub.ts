@@ -43,23 +43,24 @@ const pubSubPlugin = publicPlugin(async (fastify) => {
       await fastify.redis.publish(channel, JSON.stringify(message));
     },
     async subscribe(channel, callback) {
-      await fastify.redis.sub.subscribe(channel);
-
       if (!listeners.has(channel)) {
+        await fastify.redis.sub.subscribe(channel);
         listeners.set(channel, new Set());
       }
 
       listeners.get(channel)!.add(callback);
     },
     async unsubscribe(channel, callback) {
-      await fastify.redis.sub.unsubscribe(channel);
-
       if (listeners.has(channel)) {
         listeners.get(channel)!.delete(callback);
 
         if (listeners.get(channel)!.size === 0) {
           listeners.delete(channel);
         }
+      }
+
+      if (listeners.size === 0) {
+        await fastify.redis.sub.unsubscribe(channel);
       }
     }
   } as PubSubPlugin);

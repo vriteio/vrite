@@ -95,17 +95,6 @@
   cursor: ew-resize;
   cursor: col-resize;
 }
-.slash-menu {
-  &::-webkit-scrollbar {
-    @apply bg-transparent;
-  }
-  &::-webkit-scrollbar-thumb {
-    @apply bg-gray-100 dark:bg-gray-800 border-2 border-solid border-gray-200 dark:border-gray-900;
-  }
-  &::-webkit-scrollbar-corner {
-    @apply bg-transparent;
-  }
-}
 .prose-editor {
   font-kerning: none;
   h1::before,

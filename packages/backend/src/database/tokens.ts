@@ -23,7 +23,7 @@ const tokenPermission = z.enum([
 ]);
 const token = z.object({
   id: zodId(),
-  name: z.string().min(1).max(20),
+  name: z.string().min(1).max(50),
   description: z.string(),
   permissions: z.array(tokenPermission)
 });

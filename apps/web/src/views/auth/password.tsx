@@ -103,11 +103,11 @@ const PasswordForm: AuthFormComponent = (props) => {
       <Show when={isRegisterForm()}>
         <p class="p-2 text-sm prose text-gray-500 dark:text-gray-400">
           By registering you agree to our{" "}
-          <a href="/privacy" target="_blank">
+          <a href="https://vrite.io/privacy" target="_blank">
             privacy policy
           </a>{" "}
           and{" "}
-          <a href="/tos" target="_blank">
+          <a href="https://vrite.io/tos" target="_blank">
             terms of use
           </a>
           .

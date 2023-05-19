@@ -16,7 +16,7 @@ const webhookMetadata = z.object({
 const webhook = z.object({
   id: zodId(),
   url: z.string(),
-  name: z.string().min(1).max(20),
+  name: z.string().min(1).max(50),
   description: z.string().optional(),
   metadata: webhookMetadata.optional(),
   event: webhookEvent

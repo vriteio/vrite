@@ -104,7 +104,7 @@ const SlashMenu: Component<SlashMenuProps> = (props) => {
         "w-56 m-0 max-h-72 overflow-hidden transition duration-200 transform origin-top-left p-1"
       )}
     >
-      <div class={clsx(`w-full h-full overflow-auto slash-menu max-h-64`)}>
+      <div class={clsx(`w-full h-full overflow-auto max-h-64 scrollbar-sm`)}>
         <For
           each={props.state.items}
           fallback={

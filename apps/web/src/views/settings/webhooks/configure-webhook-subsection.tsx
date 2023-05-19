@@ -116,7 +116,7 @@ const ConfigureWebhookSubsection: Component<ConfigureWebhookSubsectionProps> = (
           placeholder="Webhook name"
           type="text"
           value={webhookData.name || ""}
-          inputProps={{ maxLength: 20 }}
+          inputProps={{ maxLength: 50 }}
           setValue={(value) => setWebhookData("name", value)}
         >
           Name of the Webhook

@@ -74,7 +74,7 @@ const WorkspaceCreateSection: Component<WorkspaceCreateSectionProps> = (props) =
             <InputField
               type="text"
               color="contrast"
-              inputProps={{ maxLength: 20 }}
+              inputProps={{ maxLength: 50 }}
               label="Workspace Name"
               placeholder="Name"
               value={workspaceData.name}

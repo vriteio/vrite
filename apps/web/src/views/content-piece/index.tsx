@@ -8,7 +8,7 @@ import CustomParseFormat from "dayjs/plugin/customParseFormat";
 import { useLocation, useNavigate } from "@solidjs/router";
 import { createStore } from "solid-js/store";
 import { Image } from "#lib/editor";
-import { Card, IconButton, Dropdown } from "#components/primitives";
+import { Card, IconButton, Dropdown, Loader } from "#components/primitives";
 import {
   useConfirmationContext,
   App,
@@ -148,7 +148,7 @@ const ContentPieceView: Component = () => {
   const { client } = useClientContext();
   const { setStorage } = useUIContext();
   const { confirmDelete } = useConfirmationContext();
-  const { contentPiece, setContentPiece } = useOpenedContentPiece();
+  const { contentPiece, setContentPiece, loading } = useOpenedContentPiece();
   const location = useLocation();
   const navigate = useNavigate();
   const [dropdownMenuOpened, setDropdownMenuOpened] = createSignal(false);
@@ -212,7 +212,14 @@ const ContentPieceView: Component = () => {
   );
 
   return (
-    <Show when={contentPiece()}>
+    <Show
+      when={!loading() && contentPiece()}
+      fallback={
+        <div class="flex h-full w-full justify-center items-center">
+          <Loader />
+        </div>
+      }
+    >
       <Card
         class="flex flex-col m-0 relative p-0 border-0 h-full w-full overflow-visible"
         color="contrast"
@@ -274,6 +281,7 @@ const ContentPieceView: Component = () => {
                       if (!id) return;
 
                       await client.contentPieces.delete.mutate({ id });
+                      setStorage((storage) => ({ ...storage, contentPieceId: undefined }));
                     }
                   });
                 }}

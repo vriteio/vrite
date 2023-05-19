@@ -108,7 +108,7 @@ const ConfigureTokenSubSection: Component<ConfigureTokenSubSectionProps> = (prop
             placeholder="Name"
             type="text"
             value={tokenData.name}
-            inputProps={{ maxLength: 20 }}
+            inputProps={{ maxLength: 50 }}
             setValue={(value) => setTokenData("name", value)}
           />
           <InputField

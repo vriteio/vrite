@@ -46,6 +46,9 @@ const Editor: Component<EditorProps> = (props) => {
     url: `ws${window.location.protocol.includes("https") ? "s" : ""}://${
       import.meta.env.VITE_COLLAB_HOST || "collab.vrite.io"
     }`,
+    async onSynced() {
+      props.onLoad?.();
+    },
     async onAuthenticationFailed() {
       if (props.reloaded) {
         navigate("/");
@@ -91,9 +94,6 @@ const Editor: Component<EditorProps> = (props) => {
     editorProps: { attributes: { class: `outline-none` } }
   });
 
-  onMount(() => {
-    props.onLoad?.();
-  });
   onCleanup(() => {
     editor().destroy();
     provider.destroy();
