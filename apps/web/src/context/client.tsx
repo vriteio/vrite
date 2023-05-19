@@ -113,7 +113,9 @@ const ClientContextProvider: ParentComponent = (props) => {
     ]
   });
   const keepAliveHandle = setInterval(() => {
-    wsClient.getConnection().send("[]");
+    if (wsClient.getConnection().readyState === WebSocket.OPEN) {
+      wsClient.getConnection().send("[]");
+    }
   }, 45 * 1000);
 
   onCleanup(() => {
