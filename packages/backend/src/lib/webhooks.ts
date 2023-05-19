@@ -26,6 +26,14 @@ const runWebhooks = async (
     .toArray();
 
   for await (const webhook of webhooks) {
+    if (
+      "contentGroupId" in payload &&
+      (!webhook.metadata?.contentGroupId ||
+        !webhook.metadata?.contentGroupId.equals(payload.contentGroupId))
+    ) {
+      continue;
+    }
+
     try {
       await axios.post(webhook.url, webhookPayload.parse(payload));
     } catch (error) {
