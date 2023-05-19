@@ -95,7 +95,7 @@ const EditorView: Component = () => {
         </div>
       </Show>
       <Show when={contentPiece.loading || (contentPiece() && syncing())}>
-        <div class="flex items-center justify-center w-full h-full bg-gray-100 absolute top-0 left-0">
+        <div class="flex items-center justify-center w-full h-full bg-gray-100 dark:bg-gray-800 absolute top-0 left-0">
           <Loader />
         </div>
       </Show>

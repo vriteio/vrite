@@ -47,11 +47,15 @@ const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
   };
   const format = async (): Promise<void> => {
     try {
-      const formattedCode = await formatCode(
+      const formattingCode = formatCode(
         codeEditor()?.getValue() || "",
         attrs().lang || "",
         JSON.parse(workspaceSettings()?.prettierConfig || "{}")
       );
+
+      notify({ text: "Formatting code", type: "loading", promise: formattingCode });
+
+      const formattedCode = await formattingCode;
 
       props.setUpdatingRef(true);
 

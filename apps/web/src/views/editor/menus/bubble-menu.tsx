@@ -114,7 +114,7 @@ const BubbleMenu: Component<BubbleMenuProps> = (props) => {
               fallback={<span class="px-1.5 py-0.5 text-base">No available options</span>}
             >
               {(menu) => (
-                <Tooltip text={menu.label} side="top" wrapperClass="snap-start">
+                <Tooltip text={menu.label} side="bottom" wrapperClass="snap-start">
                   <IconButton
                     path={menu.icon}
                     text={activeMarks().includes(menu.mark) ? "primary" : "soft"}
