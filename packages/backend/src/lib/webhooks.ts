@@ -30,7 +30,7 @@ const runWebhooks = async (
       await axios.post(webhook.url, webhookPayload.parse(payload));
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error(error);
+      console.error("Failed to run webhook");
     }
   }
 };

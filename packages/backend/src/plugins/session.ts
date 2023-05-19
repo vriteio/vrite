@@ -9,14 +9,15 @@ const sessionPlugin = publicPlugin(async (fastify) => {
 
     try {
       await caller.auth.refreshToken();
-    } catch (error) {
-      if (error instanceof CustomError) {
-        const httpStatusCode = getHTTPStatusCodeFromError(error);
+    } catch (e) {
+      const error = e as CustomError;
+      const httpStatusCode = getHTTPStatusCodeFromError(error);
 
-        res.status(httpStatusCode).send({ error: { message: error.message, cause: error.cause } });
+      res
+        .status(httpStatusCode)
+        .send({ error: { message: error.message, cause: error.causeData } });
 
-        return;
-      }
+      return;
     }
   });
   fastify.get("/session/logout", async (req, res) => {
@@ -24,14 +25,15 @@ const sessionPlugin = publicPlugin(async (fastify) => {
 
     try {
       await caller.auth.logout();
-    } catch (error) {
-      if (error instanceof CustomError) {
-        const httpStatusCode = getHTTPStatusCodeFromError(error);
+    } catch (e) {
+      const error = e as CustomError;
+      const httpStatusCode = getHTTPStatusCodeFromError(error);
 
-        res.status(httpStatusCode).send({ error: { message: error.message, cause: error.cause } });
+      res
+        .status(httpStatusCode)
+        .send({ error: { message: error.message, cause: error.causeData } });
 
-        return;
-      }
+      return;
     }
   });
   /**

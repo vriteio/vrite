@@ -1,7 +1,6 @@
 import { processAuth } from "./auth";
 import { Context } from "./context";
 import { ObjectId } from "mongodb";
-import { nanoid } from "nanoid";
 import { Meta, middleware } from "#lib/trpc";
 import * as errors from "#lib/errors";
 
