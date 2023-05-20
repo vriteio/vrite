@@ -40,7 +40,7 @@ const refreshTokenLink = (closeConnection: () => void): TRPCLink<App.Router> => 
             error(error) {
               if (
                 attempts > 3 ||
-                ["auth.isSignedIn", "verification"].some((value) => {
+                ["auth.isSignedIn", "userSettings.getWorkspaceId", "verification"].some((value) => {
                   return op.path.startsWith(value);
                 })
               ) {
