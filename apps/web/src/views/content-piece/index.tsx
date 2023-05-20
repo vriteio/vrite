@@ -183,6 +183,17 @@ const ContentPieceView: Component = () => {
   };
 
   createEffect(
+    on([loading, contentPiece], ([loading, contentPiece]) => {
+      if (!loading && !contentPiece) {
+        setStorage((storage) => ({
+          ...storage,
+          sidePanelView: undefined,
+          contentPieceId: undefined
+        }));
+      }
+    })
+  );
+  createEffect(
     on(
       () => contentPiece()?.title,
       (title) => {
