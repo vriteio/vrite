@@ -1,7 +1,7 @@
 import { Icon } from "./icon";
 import { Loader } from "./loader";
 import clsx from "clsx";
-import { Component, ComponentProps, JSX, mergeProps, Show, splitProps } from "solid-js";
+import { Component, ComponentProps, JSX, mergeProps, Show, splitProps, createMemo } from "solid-js";
 import { Dynamic } from "solid-js/web";
 
 const buttonColors = {
@@ -71,6 +71,7 @@ interface ButtonProps extends JSX.ButtonHTMLAttributes<HTMLButtonElement> {
   class?: string;
   badge?: boolean;
   hover?: boolean;
+  link?: string;
   variant?: ButtonVariant;
   size?: ButtonSize;
   color?: ButtonColor;
@@ -103,10 +104,16 @@ const Button: Component<ButtonProps> = (providedProps) => {
     "badge",
     "children"
   ]);
+  const component = createMemo(() => {
+    if (props.link) return "a";
+    if (props.badge) return "div";
+
+    return "button";
+  });
 
   return (
     <Dynamic
-      component={props.badge ? "div" : "button"}
+      component={component()}
       class={clsx(
         `:base: transition relative duration-150 focus:outline-none`,
         !props.badge && ":base: cursor-pointer",
@@ -129,6 +136,7 @@ const Button: Component<ButtonProps> = (providedProps) => {
         props.class
       )}
       disabled={props.disabled || props.loading}
+      href={props.link}
       {...passedProps}
     >
       <div class={clsx("contents", props.loading && "invisible")}>{props.children}</div>

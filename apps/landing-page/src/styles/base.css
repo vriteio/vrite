@@ -1,0 +1,123 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  font-family: "Nunito", sans-serif;
+}
+html {
+  @apply text-gray-700 dark:text-white from-orange-500 to-red-500;
+}
+h1,
+h2 {
+  font-family: "Nunito", sans-serif;
+  @apply !font-extrabold;
+}
+::-webkit-scrollbar {
+  @apply md:w-3 bg-white dark:bg-gray-900;
+}
+::-webkit-scrollbar-thumb {
+  @apply rounded-lg bg-gradient-to-tr from-red-500 to-orange-500;
+}
+.gradient-image-mask {
+  mask-image: linear-gradient(to bottom, black, transparent);
+  -webkit-mask-image: linear-gradient(to bottom, black, transparent);
+}
+
+.hero-image {
+  transform: perspective(100rem) rotate3d(1, 1, 0, 30deg) scale(1.1);
+}
+.hero-image-variant {
+  transition: clip-path;
+  transition-duration: 0.5s;
+  transition-timing-function: ease-in-out;
+}
+@screen md {
+  .hero-image {
+    transform: perspective(100rem) rotate3d(1, -1, 0, 30deg);
+  }
+  .hero-image-1 {
+    transform: perspective(100rem) rotate3d(1, -1, 0, 30deg) translate3d(0, 4rem, 4rem);
+    mask-image: linear-gradient(to bottom, black, transparent);
+    -webkit-mask-image: linear-gradient(to bottom, black 66%, transparent);
+  }
+  .hero-image-2 {
+    transform: perspective(100rem) rotate3d(1, -1, 0, 30deg);
+    mask-image: linear-gradient(to bottom, black, transparent);
+    -webkit-mask-image: linear-gradient(to bottom, black 66%, transparent);
+  }
+  .hero-image-3 {
+    transform: perspective(100rem) rotate3d(1, -1, 0, 30deg) translate3d(0, -4rem, -4rem);
+    mask-image: linear-gradient(to bottom, black, transparent);
+    -webkit-mask-image: linear-gradient(to bottom, black 66%, transparent);
+  }
+}
+
+@screen md {
+  .hover\:hero-image:hover {
+    transform: perspective(100rem) rotate3d(1, 1, 0, 25deg);
+  }
+}
+
+.icon-scroll,
+.icon-scroll:before {
+  position: absolute;
+  left: 50%;
+  bottom: 3rem;
+}
+.icon-scroll {
+  width: 2rem;
+  height: 3.5rem;
+  @apply border-2 border-gray-200 dark:border-gray-700 rounded-3xl hidden md:block;
+}
+.icon-scroll:before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  @apply bg-gray-200 dark:bg-gray-700;
+  margin-left: -4px;
+  top: 8px;
+  border-radius: 4px;
+  animation-duration: 1.5s;
+  animation-iteration-count: infinite;
+  animation-name: scroll;
+}
+@keyframes float {
+  0% {
+    box-shadow: 0 5px 15px 0px rgba(0, 0, 0, 0.6);
+    transform: perspective(100rem) rotate3d(1, -1, 0, 30deg) translateY(0px);
+  }
+  50% {
+    box-shadow: 0 25px 15px 0px rgba(0, 0, 0, 0.2);
+    transform: perspective(100rem) rotate3d(1, -1, 0, 30deg) translateY(-20px);
+  }
+  100% {
+    box-shadow: 0 5px 15px 0px rgba(0, 0, 0, 0.6);
+    transform: perspective(100rem) rotate3d(1, -1, 0, 30deg) translateY(0px);
+  }
+}
+@keyframes scroll {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(3rem);
+  }
+}
+.astro-code {
+  @apply !rounded-2xl !bg-gray-900 !border-gray-700 !border-2;
+}
+.prose :where(code):not(:where(pre *, .not-prose, .not-prose *)) {
+  @apply bg-gray-200 fill-current dark:bg-gray-900 rounded-md px-1 font-mono font-medium py-0.5;
+}
+.prose :where(code):not(:where(pre *, .not-prose, .not-prose *))::after {
+  content: "";
+}
+.prose :where(code):not(:where(pre *, .not-prose, .not-prose *))::before {
+  content: "";
+}
+.prose :where(img, video):not(:where(.not-prose, .not-prose *)) {
+  @apply rounded-2xl;
+}
