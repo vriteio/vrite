@@ -1,4 +1,6 @@
 import { Overlay } from "./overlay";
+import { Card } from "./card";
+import { createRef } from "../ref";
 import clsx from "clsx";
 import {
   Component,
@@ -13,8 +15,6 @@ import {
 } from "solid-js";
 import { computePosition, flip, hide, Placement, size } from "@floating-ui/dom";
 import { Dynamic } from "solid-js/web";
-import { createRef } from "#lib/utils";
-import { Card } from "#components/primitives";
 
 interface DropdownProps extends JSX.SelectHTMLAttributes<HTMLSelectElement> {
   class?: string;

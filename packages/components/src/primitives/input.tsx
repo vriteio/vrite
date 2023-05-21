@@ -1,3 +1,6 @@
+import { Button } from "./button";
+import { Card } from "./card";
+import { createRef, Ref } from "../ref";
 import clsx from "clsx";
 import {
   Component,
@@ -11,8 +14,6 @@ import {
 } from "solid-js";
 import { Dynamic } from "solid-js/web";
 import { computePosition, flip, hide, size } from "@floating-ui/dom";
-import { createRef, Ref } from "#lib/utils";
-import { Button, Card } from "#components/primitives";
 
 const inputColors = {
   base: `:base: border-gray-300 bg-gray-200 dark:bg-gray-900 dark:border-gray-700`,

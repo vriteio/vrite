@@ -1,7 +1,8 @@
+import { Icon } from "./icon";
+import { Loader } from "./loader";
 import clsx from "clsx";
 import { Component, ComponentProps, JSX, mergeProps, Show, splitProps } from "solid-js";
 import { Dynamic } from "solid-js/web";
-import { Icon, Loader } from "#components/primitives";
 
 const buttonColors = {
   base: `:base: bg-gray-200 fill-current dark:bg-gray-900`,

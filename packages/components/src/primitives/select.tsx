@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { Component, For, JSX, Show, splitProps } from "solid-js";
+import { For, JSX, Show, splitProps } from "solid-js";
 
 interface SelectOption<V extends string = string> {
   label: string;

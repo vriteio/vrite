@@ -1,6 +1,6 @@
+import { Ref } from "../ref";
 import clsx from "clsx";
 import { Component, JSX, mergeProps, splitProps } from "solid-js";
-import { Ref } from "#lib/utils";
 
 const cardColors = {
   base: `:base: border-gray-200 bg-gray-50 dark:bg-gray-900 dark:border-gray-700`,

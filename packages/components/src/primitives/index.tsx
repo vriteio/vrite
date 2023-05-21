@@ -9,5 +9,4 @@ export * from "./input";
 export * from "./loader";
 export * from "./overlay";
 export * from "./select";
-export * from "./sortable";
 export * from "./tooltip";
