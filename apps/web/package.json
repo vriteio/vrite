@@ -79,7 +79,7 @@
     "@types/prettier": "^2.7.2",
     "@unocss/reset": "^0.50.6",
     "@vrite/backend": "workspace:*",
-    "@vrite/sdk": "2023.5.17-beta",
+    "@vrite/sdk": "2023.5.21-beta",
     "@vrite/tiptap-solid": "2023.3.24-2",
     "clsx": "^1.2.1",
     "curl-string": "^3.0.0",
