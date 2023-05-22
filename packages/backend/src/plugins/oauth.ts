@@ -61,7 +61,7 @@ const oAuth2Plugin = publicPlugin(async (fastify) => {
 
       const existingUser = Boolean(user);
 
-      if (user) {
+      if (user && user.external?.github?.accessToken !== github.access_token) {
         await users.updateOne(
           { _id: user._id },
           {
@@ -90,9 +90,9 @@ const oAuth2Plugin = publicPlugin(async (fastify) => {
         await users.insertOne(user);
       }
 
-      const workspaceId = await createWorkspace(user, fastify.mongo.db!);
-
       if (!existingUser) {
+        const workspaceId = await createWorkspace(user, fastify.mongo.db!);
+
         await userSettingsCollection.insertOne({
           _id: new ObjectId(),
           userId: user._id,
