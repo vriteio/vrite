@@ -40,7 +40,7 @@ const oAuth2Plugin = publicPlugin(async (fastify) => {
       const client = axios.create({
         baseURL: "https://api.github.com",
         headers: {
-          Authorization: `Bearer  ${github.access_token}`
+          Authorization: `Bearer  ${github.token.access_token}`
         }
       });
       const userData = await client.get<{
@@ -61,21 +61,21 @@ const oAuth2Plugin = publicPlugin(async (fastify) => {
 
       const existingUser = Boolean(user);
 
-      if (user && user.external?.github?.accessToken !== github.access_token) {
+      if (user && user.external?.github?.accessToken !== github.token.access_token) {
         await users.updateOne(
           { _id: user._id },
           {
             $set: {
               "external.github": {
                 id: userData.data.id,
-                accessToken: github.access_token
+                accessToken: github.token.access_token
               }
             }
           }
         );
         user.external = {
           ...user.external,
-          github: { id: userData.data.id, accessToken: github.access_token }
+          github: { id: userData.data.id, accessToken: github.token.access_token }
         };
       } else {
         user = {
@@ -84,7 +84,7 @@ const oAuth2Plugin = publicPlugin(async (fastify) => {
           username: userData.data.name.toLowerCase().replace(/-/g, "_").slice(0, 20),
           salt: await generateSalt(),
           external: {
-            github: { id: userData.data.id, accessToken: github.access_token }
+            github: { id: userData.data.id, accessToken: github.token.access_token }
           }
         };
         await users.insertOne(user);
