@@ -66,16 +66,19 @@ importers:
     dependencies:
       '@hocuspocus/extension-database':
         specifier: ^1.0.1
-        version: 1.1.3
+        version: 1.1.3(y-protocols@1.0.5)
       '@hocuspocus/server':
         specifier: ^1.0.2
-        version: 1.1.3
+        version: 1.1.3(y-protocols@1.0.5)
       '@vrite/backend':
         specifier: workspace:*
         version: link:../../../packages/backend
       mongodb:
         specifier: ^5.5.0
         version: 5.5.0
+      y-protocols:
+        specifier: ^1.0.5
+        version: 1.0.5
     devDependencies:
       '@vrite/scripts':
         specifier: workspace:*
@@ -401,10 +404,10 @@ importers:
         version: 8.1.0
       '@hocuspocus/extension-database':
         specifier: ^1.0.1
-        version: 1.1.3(yjs@13.5.51)
+        version: 1.1.3(y-protocols@1.0.5)(yjs@13.5.51)
       '@hocuspocus/server':
         specifier: ^1.0.2
-        version: 1.1.3(yjs@13.5.51)
+        version: 1.1.3(y-protocols@1.0.5)(yjs@13.5.51)
       '@hocuspocus/transformer':
         specifier: ^1.0.2
         version: 1.1.3(y-prosemirror@1.2.0)(yjs@13.5.51)
@@ -458,7 +461,10 @@ importers:
         version: 3.0.4
       y-prosemirror:
         specifier: ^1.2.0
-        version: 1.2.0(yjs@13.5.51)
+        version: 1.2.0(y-protocols@1.0.5)(yjs@13.5.51)
+      y-protocols:
+        specifier: ^1.0.5
+        version: 1.0.5
       yjs:
         specifier: ^13.5.45
         version: 13.5.51
@@ -2372,24 +2378,24 @@ packages:
       lib0: 0.2.73
     dev: false
 
-  /@hocuspocus/extension-database@1.1.3:
+  /@hocuspocus/extension-database@1.1.3(y-protocols@1.0.5):
     resolution: {integrity: sha512-waADJohC9plKwPhHNoE4Iv5GL8+St7KZoz4NiJggzLxlr4Zo5aQc2di/ZabOQh26OTWt7fjzR0UNl5T8lCYACw==}
     peerDependencies:
       yjs: ^13.5.29
     dependencies:
-      '@hocuspocus/server': 1.1.3
+      '@hocuspocus/server': 1.1.3(y-protocols@1.0.5)
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
       - y-protocols
     dev: false
 
-  /@hocuspocus/extension-database@1.1.3(yjs@13.5.51):
+  /@hocuspocus/extension-database@1.1.3(y-protocols@1.0.5)(yjs@13.5.51):
     resolution: {integrity: sha512-waADJohC9plKwPhHNoE4Iv5GL8+St7KZoz4NiJggzLxlr4Zo5aQc2di/ZabOQh26OTWt7fjzR0UNl5T8lCYACw==}
     peerDependencies:
       yjs: ^13.5.29
     dependencies:
-      '@hocuspocus/server': 1.1.3(yjs@13.5.51)
+      '@hocuspocus/server': 1.1.3(y-protocols@1.0.5)(yjs@13.5.51)
       yjs: 13.5.51
     transitivePeerDependencies:
       - bufferutil
@@ -2409,7 +2415,7 @@ packages:
       yjs: 13.5.51
     dev: false
 
-  /@hocuspocus/server@1.1.3:
+  /@hocuspocus/server@1.1.3(y-protocols@1.0.5):
     resolution: {integrity: sha512-ShHZJsX8I6p4HBYePJZ8OEQS6ZDx0S7GhRBmCQA5nN1xDUYR7w9jl4EprPiYbp0OHLVjGQLbZGMNRUJoTRo5Tg==}
     peerDependencies:
       y-protocols: ^1.0.5
@@ -2424,12 +2430,13 @@ packages:
       lib0: 0.2.73
       uuid: 9.0.0
       ws: 8.13.0
+      y-protocols: 1.0.5
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
     dev: false
 
-  /@hocuspocus/server@1.1.3(yjs@13.5.51):
+  /@hocuspocus/server@1.1.3(y-protocols@1.0.5)(yjs@13.5.51):
     resolution: {integrity: sha512-ShHZJsX8I6p4HBYePJZ8OEQS6ZDx0S7GhRBmCQA5nN1xDUYR7w9jl4EprPiYbp0OHLVjGQLbZGMNRUJoTRo5Tg==}
     peerDependencies:
       y-protocols: ^1.0.5
@@ -2444,6 +2451,7 @@ packages:
       lib0: 0.2.73
       uuid: 9.0.0
       ws: 8.13.0
+      y-protocols: 1.0.5
       yjs: 13.5.51
     transitivePeerDependencies:
       - bufferutil
@@ -2459,7 +2467,7 @@ packages:
     dependencies:
       '@tiptap/core': 2.0.0-beta.220
       '@tiptap/starter-kit': 2.0.1
-      y-prosemirror: 1.2.0(yjs@13.5.51)
+      y-prosemirror: 1.2.0(y-protocols@1.0.5)(yjs@13.5.51)
       yjs: 13.5.51
     dev: false
 
@@ -9903,6 +9911,21 @@ packages:
     engines: {node: '>=0.4'}
     dev: false
 
+  /y-prosemirror@1.2.0(y-protocols@1.0.5)(yjs@13.5.51):
+    resolution: {integrity: sha512-t3uxuX4HIkb1GNt8jV+dplRbNH2OmQD/BNeCCbjLD3Mq0o6JEXxHedv58ZIPFDE6ma24jljlL+u8pGvN6B37XQ==}
+    peerDependencies:
+      prosemirror-model: ^1.7.1
+      prosemirror-state: ^1.2.3
+      prosemirror-view: ^1.9.10
+      y-protocols: ^1.0.1
+      yjs: ^13.5.38
+    dependencies:
+      lib0: 0.2.73
+      typescript: 4.9.5
+      y-protocols: 1.0.5
+      yjs: 13.5.51
+    dev: false
+
   /y-prosemirror@1.2.0(yjs@13.5.51):
     resolution: {integrity: sha512-t3uxuX4HIkb1GNt8jV+dplRbNH2OmQD/BNeCCbjLD3Mq0o6JEXxHedv58ZIPFDE6ma24jljlL+u8pGvN6B37XQ==}
     peerDependencies:
@@ -9915,6 +9938,12 @@ packages:
       lib0: 0.2.73
       typescript: 4.9.5
       yjs: 13.5.51
+    dev: false
+
+  /y-protocols@1.0.5:
+    resolution: {integrity: sha512-Wil92b7cGk712lRHDqS4T90IczF6RkcvCwAD0A2OPg+adKmOe+nOiT/N2hvpQIWS3zfjmtL4CPaH5sIW1Hkm/A==}
+    dependencies:
+      lib0: 0.2.73
     dev: false
 
   /yallist@3.1.1:

@@ -11,7 +11,8 @@
     "@hocuspocus/extension-database": "^1.0.1",
     "@hocuspocus/server": "^1.0.2",
     "@vrite/backend": "workspace:*",
-    "mongodb": "^5.5.0"
+    "mongodb": "^5.5.0",
+    "y-protocols": "^1.0.5"
   },
   "devDependencies": {
     "@vrite/scripts": "workspace:*"
