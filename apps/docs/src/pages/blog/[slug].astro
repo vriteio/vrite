@@ -1,0 +1,66 @@
+---
+import { Header,BaseHead,Footer,EmailModal,FrameHeadline } from "#components/fragments";
+import {IconButton,Card} from "#components/primitives";
+import { mdiCalendar } from "@mdi/js";
+import { format } from "date-fns";
+import { Content, ContentPiece, getStaticPaths } from "virtual:vrite";
+import { convert } from "html-to-text";
+
+type Props = ContentPiece;
+
+const { title, description, date, coverUrl } = Astro.props;
+
+export const prerender = true;
+export { getStaticPaths };
+---
+
+<html lang="en" class="dark">
+  <head>
+    <BaseHead
+      title={title}
+      description={convert(description || "", { wordwrap: false })}
+      image={coverUrl}
+    />
+  </head>
+
+  <body class="overflow-x-hidden overscroll-none">
+    <main
+      class="flex flex-col items-center justify-center gap-8 p-4 pb-0 bg-gray-100 dark:bg-gray-800"
+    >
+      <div class="w-full flex justify-center items-start max-w-screen-lg">
+        <Header client:idle />
+      </div>
+      <img
+        src={coverUrl}
+        class="max-w-screen-lg w-full mt-8 md:mt-16 rounded-2xl"
+      />
+      <div
+        class="prose dark:prose-invert text-gray-600 dark:text-gray-100 text-lg max-w-screen-lg w-full md:p-16 md:pt-0"
+      >
+        <div class="w-full justify-start items-center flex">
+          <IconButton
+            path={mdiCalendar}
+            class="px-1.5"
+            text="soft"
+            badge
+            label={format(date ? new Date(date) : new Date(), "dd MMM yyyy")}
+          />
+        </div>
+        <header class="not-prose font-extrabold text-3xl md:text-5xl">
+          {title}
+        </header>
+        <Content contentPieceId={Astro.props.id} />
+      </div>
+      <EmailModal client:load />
+      <a href="/" class="w-full max-w-screen-xl">
+        <Card
+          class="w-full p-8 m-0 cursor-pointer flex justify-center items-center md:h-[24rem]"
+          color="primary"
+        >
+          <FrameHeadline class="h-full" gradient={true} client:visible />
+        </Card></a
+      >
+      <Footer client:idle />
+    </main>
+  </body>
+</html>

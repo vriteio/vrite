@@ -107,6 +107,8 @@ const oAuth2Plugin = publicPlugin(async (fastify) => {
 
       return res.redirect("/");
     } catch (error) {
+      console.log(error);
+
       return res.redirect("/auth");
     }
   });

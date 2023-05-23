@@ -1,0 +1,49 @@
+---
+import { Header, BaseHead } from "#components/fragments";
+import { SideBar } from "#components/fragments/side-bar";
+import { Button } from "#components/primitives";
+import { getEntry } from "astro:content";
+
+const image = "https://vrite.io/meta-image.png";
+const title = "Vrite － headless CMS for technical content";
+const description =
+  "Dedicated headless Content Management System (CMS) for technical content, like programming blogs, documentation, and more.";
+
+const entry = await getEntry("api-docs", "dev-integration");
+const { Content, headings } = await entry.render();
+---
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <BaseHead description={description} title={title} image={image} />
+  </head>
+  <body class="overflow-x-hidden overscroll-none">
+    <main
+      class="flex flex-col items-center justify-center gap-8 h-full bg-gray-100 dark:bg-gray-800"
+    >
+      <div class="min-h-screen w-full flex justify-center items-start h-full">
+        <SideBar />
+        <div class="flex-1 flex justify-center items-center flex-col relative">
+          <Header client:idle />
+          <div class="flex-1 flex relative overflow-y-auto h-[calc(100vh-3.25rem)] w-full">
+            <div class="flex-1 prose max-w-screen-md text-lg px-16 pb-16 h-fit">
+              <Content />
+            </div>
+            <div class="w-56 flex-col justify-start top-0 sticky hidden xl:flex">
+              {
+                headings.map((heading) => {
+                  return (
+                    <Button variant="text" text="soft" class="text-start" link={`#${heading.slug}`}>
+                      {heading.text}
+                    </Button>
+                  );
+                })
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>

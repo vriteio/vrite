@@ -1,5 +1,5 @@
 {
-  "name": "@vrite/landing-page",
+  "name": "@vrite/docs",
   "type": "module",
   "version": "1.0.0",
   "private": true,
@@ -11,6 +11,7 @@
     "astro": "astro"
   },
   "dependencies": {
+    "@astrojs/mdx": "^0.19.3",
     "@astrojs/node": "^5.0.0",
     "@astrojs/sitemap": "^1.0.0",
     "@astrojs/solid-js": "^2.0.0",
