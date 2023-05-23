@@ -1,17 +1,9 @@
 import { defineConfig } from "astro/config";
 import solidJs from "@astrojs/solid-js";
-import node from "@astrojs/node";
 import sitemap from "@astrojs/sitemap";
 import unocss from "unocss/astro";
-import { vritePlugin } from "@vrite/sdk/astro";
-import { loadEnv } from "vite";
 import robotsTxt from "astro-robots-txt";
-
-const { VRITE_ACCESS_TOKEN, VRITE_CONTENT_GROUP_ID } = loadEnv(
-  import.meta.env.MODE,
-  process.cwd(),
-  ""
-);
+import node from "@astrojs/node";
 
 export default defineConfig({
   integrations: [
@@ -21,23 +13,18 @@ export default defineConfig({
     robotsTxt({
       policy: [
         {
-          userAgent: "*",
-          disallow: ["/frame/"],
-        },
-      ],
-    }),
-    vritePlugin({
-      accessToken: VRITE_ACCESS_TOKEN,
-      contentGroupId: VRITE_CONTENT_GROUP_ID,
-    }),
+          userAgent: "*"
+        }
+      ]
+    })
   ],
   output: "server",
   adapter: node({
-    mode: "standalone",
+    mode: "standalone"
   }),
-  site: "https://vrite.io",
+  site: "https://docs.vrite.io",
   server: {
     port: 3000,
-    host: true,
-  },
+    host: true
+  }
 });

@@ -188,57 +188,55 @@ declare module 'astro:content' {
 	>;
 
 	type ContentEntryMap = {
-		"api-docs": {
+		"usage-guide": {
+"0-getting-started.md": {
+	id: "0-getting-started.md";
+  slug: "getting-started";
+  body: string;
+  collection: "usage-guide";
+  data: InferEntrySchema<"usage-guide">
+} & { render(): Render[".md"] };
+"1-managing-content-in-kanban-dashboard.md": {
+	id: "1-managing-content-in-kanban-dashboard.md";
+  slug: "kanban-dashboard";
+  body: string;
+  collection: "usage-guide";
+  data: InferEntrySchema<"usage-guide">
+} & { render(): Render[".md"] };
+"2-managing-metadata.md": {
+	id: "2-managing-metadata.md";
+  slug: "metadata";
+  body: string;
+  collection: "usage-guide";
+  data: InferEntrySchema<"usage-guide">
+} & { render(): Render[".md"] };
+"3-writing-in-vrite-editor.md": {
+	id: "3-writing-in-vrite-editor.md";
+  slug: "content-editor";
+  body: string;
+  collection: "usage-guide";
+  data: InferEntrySchema<"usage-guide">
+} & { render(): Render[".md"] };
+"4-configuring-vrite.md": {
+	id: "4-configuring-vrite.md";
+  slug: "settings";
+  body: string;
+  collection: "usage-guide";
+  data: InferEntrySchema<"usage-guide">
+} & { render(): Render[".md"] };
+"5-publishing-content.md": {
+	id: "5-publishing-content.md";
+  slug: "publishing";
+  body: string;
+  collection: "usage-guide";
+  data: InferEntrySchema<"usage-guide">
+} & { render(): Render[".md"] };
 "dev-integration.md": {
 	id: "dev-integration.md";
   slug: "dev-integration";
   body: string;
-  collection: "api-docs";
-  data: any
-} & { render(): Render[".md"] };
-};
-"usage-guide": {
-"configuring-vrite.md": {
-	id: "configuring-vrite.md";
-  slug: "configuring-vrite";
-  body: string;
   collection: "usage-guide";
-  data: any
-} & { render(): Render[".md"] };
-"getting-started.md": {
-	id: "getting-started.md";
-  slug: "getting-started";
-  body: string;
-  collection: "usage-guide";
-  data: any
-} & { render(): Render[".md"] };
-"managing-content-in-kanban-dashboard.md": {
-	id: "managing-content-in-kanban-dashboard.md";
-  slug: "managing-content-in-kanban-dashboard";
-  body: string;
-  collection: "usage-guide";
-  data: any
-} & { render(): Render[".md"] };
-"managing-metadata.md": {
-	id: "managing-metadata.md";
-  slug: "managing-metadata";
-  body: string;
-  collection: "usage-guide";
-  data: any
-} & { render(): Render[".md"] };
-"publishing-content.md": {
-	id: "publishing-content.md";
-  slug: "publishing-content";
-  body: string;
-  collection: "usage-guide";
-  data: any
-} & { render(): Render[".md"] };
-"writing-in-vrite-editor.md": {
-	id: "writing-in-vrite-editor.md";
-  slug: "writing-in-vrite-editor";
-  body: string;
-  collection: "usage-guide";
-  data: any
+  data: InferEntrySchema<"usage-guide">
 } & { render(): Render[".md"] };
 };
 

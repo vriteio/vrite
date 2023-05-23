@@ -1,12 +1,5 @@
 ---
 import { Analytics } from "#components/fragments";
-import "@fontsource/nunito";
-import "@fontsource/nunito/500.css";
-import "@fontsource/nunito/600.css";
-import "@fontsource/nunito/700.css";
-import "@fontsource/nunito/800.css";
-import "@fontsource/nunito/900.css";
-import "#styles/base.css";
 
 export interface Props {
   title: string;
@@ -24,6 +17,20 @@ const { title, description, image = "/meta-image.jpg" } = Astro.props;
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <meta name="generator" content={Astro.generator} />
 <link rel="canonical" href={canonicalURL} />
+<link
+  rel="preload"
+  as="font"
+  crossorigin="anonymous"
+  href="/nunito-latin-variable-wghtOnly-normal.woff2"
+  type="font/woff2"
+/>
+<link
+  rel="preload"
+  as="font"
+  crossorigin="anonymous"
+  href="/nunito-latin-ext-variable-wghtOnly-normal.woff2"
+  type="font/woff2"
+/>
 <title>{title}</title>
 <meta name="title" content={title} />
 <meta name="description" content={description} />

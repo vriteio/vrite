@@ -1,0 +1,29 @@
+---
+import { OnThisPage } from "#components/fragments";
+import { DefaultLayout } from "#components/layouts";
+import { getEntry } from "astro:content";
+
+const { slug } = Astro.params;
+
+if (slug === undefined) {
+  throw new Error("Slug is required");
+}
+
+const entry = await getEntry("usage-guide", slug);
+
+if (entry === undefined) {
+  return Astro.redirect("/");
+}
+
+const { Content, headings } = await entry.render();
+---
+
+<DefaultLayout>
+  <div
+    class="flex-1 prose max-w-screen-lg w-full text-lg px-4 lg:px-16 pb-16 h-fit xl:w-[calc(100%-14rem)]"
+  >
+    <h1>{entry.data.title}</h1>
+    <Content />
+  </div>
+  <OnThisPage headings={headings} client:load />
+</DefaultLayout>

@@ -11,23 +11,13 @@
     "astro": "astro"
   },
   "dependencies": {
-    "@astrojs/mdx": "^0.19.3",
-    "@astrojs/node": "^5.0.0",
     "@astrojs/sitemap": "^1.0.0",
     "@astrojs/solid-js": "^2.0.0",
-    "@astrojs/tailwind": "^3.0.0",
-    "@fontsource/nunito": "^4.5.11",
     "@mdi/js": "^7.0.96",
-    "@sendgrid/client": "^7.7.0",
-    "@types/html-to-text": "^9.0.0",
     "@unocss/reset": "^0.48.5",
     "@vrite/components": "workspace:*",
-    "@vrite/sdk": "2023.5.17-beta",
     "astro": "^2.5.1",
     "clsx": "^1.2.1",
-    "date-fns": "^2.29.3",
-    "html-to-text": "^9.0.5",
-    "keen-slider": "^6.8.5",
     "plausible-tracker": "^0.3.8",
     "shiki": "^0.14.1",
     "solid-js": "^1.4.3",
@@ -36,6 +26,7 @@
     "vite": "^4.2.1"
   },
   "devDependencies": {
+    "@astrojs/node": "^5.0.0",
     "astro-robots-txt": "^0.4.1"
   }
 }

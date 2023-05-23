@@ -14,7 +14,6 @@
     "@astrojs/node": "^5.0.0",
     "@astrojs/sitemap": "^1.0.0",
     "@astrojs/solid-js": "^2.0.0",
-    "@astrojs/tailwind": "^3.0.0",
     "@fontsource/nunito": "^4.5.11",
     "@mdi/js": "^7.0.96",
     "@sendgrid/client": "^7.7.0",
