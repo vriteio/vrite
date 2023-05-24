@@ -1,0 +1,11 @@
+{
+  "name": "@vrite/components",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "dependencies": {
+    "@floating-ui/dom": "^0.5.4",
+    "clsx": "^1.2.1",
+    "solid-js": "^1.7.0"
+  }
+}

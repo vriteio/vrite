@@ -15,5 +15,6 @@
     "unsign",
     "Unsubscribable"
   ],
-  "unocss.root": ["apps/web"]
+  "unocss.root": ["apps/web"],
+  "typescript.tsdk": "node_modules/typescript/lib"
 }

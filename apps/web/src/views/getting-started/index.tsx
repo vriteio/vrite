@@ -8,7 +8,7 @@ const sectionMenuItems = [
   {
     label: "Usage guide",
     icon: mdiBookOpenBlankVariant,
-    link: "https://github.com/vriteio/vrite/tree/main/docs"
+    link: "https://docs.vrite.io"
   },
   {
     label: "API Docs",

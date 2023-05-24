@@ -1,0 +1,31 @@
+---
+import { DefaultLayout } from "#components/layouts";
+import { getEntry, getCollection } from "astro:content";
+
+let { slug } = Astro.params;
+
+if (slug === undefined) {
+  return Astro.redirect("/getting-started");
+}
+
+const collection = await getCollection("docs");
+const entry = await getEntry("docs", slug);
+
+if (entry === undefined) {
+  return Astro.redirect("/");
+}
+
+const { Content, headings } = await entry.render();
+const entryIndex = collection.findIndex((e) => e.slug === slug);
+const nextEntry = collection[entryIndex + 1];
+const previousEntry = collection[entryIndex - 1];
+---
+
+<DefaultLayout
+  headings={headings}
+  title={entry.data.title}
+  nextEntry={nextEntry}
+  previousEntry={previousEntry}
+>
+  <Content />
+</DefaultLayout>
