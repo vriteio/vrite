@@ -1,18 +1,43 @@
 ---
-import { Header, BaseHead, SideBar, SVGDefs } from "#components/fragments";
-import { getCollection } from "astro:content";
+import { Header, BaseHead, SideBar, SVGDefs, OnThisPage, Navigation } from "#components/fragments";
+import { CollectionEntry, getCollection } from "astro:content";
+import type { MarkdownHeading } from "astro";
 import "#styles";
 
-const image = "https://vrite.io/meta-image.png";
+const image = "https://docs.vrite.io/meta-image.png";
 const title = "Vrite － headless CMS for technical content";
 const description =
   "Dedicated headless Content Management System (CMS) for technical content, like programming blogs, documentation, and more.";
 
-const usageGuide = await getCollection("usage-guide");
-const menu = usageGuide.map((item) => ({
+const docs = await getCollection("docs");
+const menu = docs.map((item) => ({
   title: item.data.title,
-  link: `/usage-guide/${item.slug}`
+  link: `/${item.slug}`
 }));
+
+type Props = {
+  headings: MarkdownHeading[];
+  title: string;
+  nextEntry?: CollectionEntry<"docs">;
+  previousEntry?: CollectionEntry<"docs">;
+};
+
+let nextEntry: { label: string; link: string } | undefined = undefined;
+let previousEntry: { label: string; link: string } | undefined = undefined;
+
+if (Astro.props.nextEntry) {
+  nextEntry = {
+    label: Astro.props.nextEntry.data.title,
+    link: `/${Astro.props.nextEntry.slug}`
+  };
+}
+
+if (Astro.props.previousEntry) {
+  previousEntry = {
+    label: Astro.props.previousEntry.data.title,
+    link: `/${Astro.props.previousEntry.slug}`
+  };
+}
 ---
 
 <!DOCTYPE html>
@@ -27,14 +52,22 @@ const menu = usageGuide.map((item) => ({
     >
       <div class="min-h-screen w-full flex justify-center items-start h-full">
         <SideBar menu={menu} currentPath={Astro.url.pathname} client:idle />
-        <div
-          class="flex-1 flex justify-center items-center flex-col relative overflow-hidden max-h-screen"
-        >
+        <div class="flex-1 flex justify-center items-center flex-col overflow-hidden max-h-screen">
           <Header />
-          <div
-            class="flex-1 flex relative overflow-y-auto overflow-x-hidden md:max-h-[calc(100vh-3.125rem)] h-screen w-full"
-          >
-            <slot />
+          <div class="flex overflow-hidden w-full relative">
+            <div
+              class="flex-1 flex overflow-y-auto overflow-x-hidden md:max-h-[calc(100vh-3.125rem)] h-screen"
+              id="container"
+            >
+              <div
+                class="flex-1 prose max-w-screen-lg w-full text-lg px-4 lg:px-16 pb-16 h-fit xl:w-[calc(100%-15rem)]"
+              >
+                <h1>{Astro.props.title}</h1>
+                <slot />
+                <Navigation previousEntry={previousEntry} nextEntry={nextEntry} />
+              </div>
+              <OnThisPage headings={Astro.props.headings} client:load />
+            </div>
           </div>
         </div>
       </div>

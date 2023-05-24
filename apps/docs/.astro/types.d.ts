@@ -188,55 +188,55 @@ declare module 'astro:content' {
 	>;
 
 	type ContentEntryMap = {
-		"usage-guide": {
+		"docs": {
 "0-getting-started.md": {
 	id: "0-getting-started.md";
   slug: "getting-started";
   body: string;
-  collection: "usage-guide";
-  data: InferEntrySchema<"usage-guide">
+  collection: "docs";
+  data: InferEntrySchema<"docs">
 } & { render(): Render[".md"] };
 "1-managing-content-in-kanban-dashboard.md": {
 	id: "1-managing-content-in-kanban-dashboard.md";
   slug: "kanban-dashboard";
   body: string;
-  collection: "usage-guide";
-  data: InferEntrySchema<"usage-guide">
+  collection: "docs";
+  data: InferEntrySchema<"docs">
 } & { render(): Render[".md"] };
 "2-managing-metadata.md": {
 	id: "2-managing-metadata.md";
   slug: "metadata";
   body: string;
-  collection: "usage-guide";
-  data: InferEntrySchema<"usage-guide">
+  collection: "docs";
+  data: InferEntrySchema<"docs">
 } & { render(): Render[".md"] };
 "3-writing-in-vrite-editor.md": {
 	id: "3-writing-in-vrite-editor.md";
   slug: "content-editor";
   body: string;
-  collection: "usage-guide";
-  data: InferEntrySchema<"usage-guide">
+  collection: "docs";
+  data: InferEntrySchema<"docs">
 } & { render(): Render[".md"] };
 "4-configuring-vrite.md": {
 	id: "4-configuring-vrite.md";
   slug: "settings";
   body: string;
-  collection: "usage-guide";
-  data: InferEntrySchema<"usage-guide">
+  collection: "docs";
+  data: InferEntrySchema<"docs">
 } & { render(): Render[".md"] };
 "5-publishing-content.md": {
 	id: "5-publishing-content.md";
   slug: "publishing";
   body: string;
-  collection: "usage-guide";
-  data: InferEntrySchema<"usage-guide">
+  collection: "docs";
+  data: InferEntrySchema<"docs">
 } & { render(): Render[".md"] };
 "dev-integration.md": {
 	id: "dev-integration.md";
   slug: "dev-integration";
   body: string;
-  collection: "usage-guide";
-  data: InferEntrySchema<"usage-guide">
+  collection: "docs";
+  data: InferEntrySchema<"docs">
 } & { render(): Render[".md"] };
 };
 

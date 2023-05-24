@@ -3,7 +3,7 @@ import type { Component } from "solid-js";
 
 const plausibleConfig = {
   trackLocalhost: false,
-  domain: "vrite.io"
+  domain: "docs.vrite.io"
 };
 const trackSignUp = (): void => {
   const { trackEvent } = Plausible(plausibleConfig);

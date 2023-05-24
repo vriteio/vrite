@@ -1,5 +1,6 @@
 ---
 title: Better blogging on Dev.to with Vrite - headless CMS for technical content
+category: Usage Guide
 slug: dev-integration
 ---
 

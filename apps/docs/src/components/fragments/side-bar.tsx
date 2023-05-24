@@ -1,8 +1,17 @@
-import { mdiLinkVariant, mdiMenu, mdiClose, mdiGithub, mdiLogin, mdiLightbulb } from "@mdi/js";
+import {
+  mdiLinkVariant,
+  mdiMenu,
+  mdiClose,
+  mdiGithub,
+  mdiLogin,
+  mdiLightbulb,
+  mdiTwitter
+} from "@mdi/js";
 import clsx from "clsx";
-import type { Component } from "solid-js";
+import { Component, For } from "solid-js";
 import { menuOpened, setMenuOpened } from "#lib/state";
 import { Card, Button, IconButton } from "#components/primitives";
+import { discordIcon } from "#icons";
 import { logoIcon } from "#icons/logo";
 
 interface SideBarProps {
@@ -40,6 +49,7 @@ const SideBar: Component<SideBarProps> = (props) => {
             label="Usage guide"
             path={mdiLightbulb}
             badge
+            hover={false}
           />
           <div class="flex flex-1 w-full pl-4 mt-2">
             <div class="w-0.5 bg-gray-200 dark:bg-gray-700 mr-2 rounded-full"></div>
@@ -90,6 +100,22 @@ const SideBar: Component<SideBarProps> = (props) => {
           text="soft"
         ></IconButton>
         <IconButton
+          link="https://github.com/vriteio/vrite"
+          class="w-full font-bold m-0 justify-start md:hidden"
+          variant="text"
+          path={discordIcon}
+          label="Join Discord"
+          text="soft"
+        ></IconButton>
+        <IconButton
+          link="https://github.com/vriteio/vrite"
+          class="w-full font-bold m-0 justify-start md:hidden"
+          variant="text"
+          path={mdiTwitter}
+          label="Follow on Twitter"
+          text="soft"
+        ></IconButton>
+        <IconButton
           color="primary"
           link="https://app.vrite.io"
           path={mdiLogin}
@@ -101,6 +127,7 @@ const SideBar: Component<SideBarProps> = (props) => {
       <IconButton
         path={menuOpened() ? mdiClose : mdiMenu}
         size="large"
+        color={menuOpened() ? "contrast" : "base"}
         text="soft"
         class="fixed bottom-4 right-4 z-50 md:hidden"
         onClick={() => {

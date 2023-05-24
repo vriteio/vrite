@@ -1,6 +1,7 @@
 import { Component, For, onMount, onCleanup, createSignal, createMemo } from "solid-js";
+import { mdiListBox } from "@mdi/js";
 import type { MarkdownHeading } from "astro";
-import { Button } from "#components/primitives";
+import { Button, IconButton } from "#components/primitives";
 
 interface OnThisPageProps {
   headings: MarkdownHeading[];
@@ -28,11 +29,27 @@ const OnThisPage: Component<OnThisPageProps> = (props) => {
         }
       }
     };
+    const container = document.getElementById("container");
     const observerOptions: IntersectionObserverInit = {
+      root: container,
       rootMargin: "-100px 0% -66%",
-      threshold: 1
+      threshold: 0
     };
     const headingsObserver = new IntersectionObserver(setCurrent, observerOptions);
+    const handleScroll = (): void => {
+      if (!container) return;
+
+      const threshold = 50;
+      const isEnd =
+        container.scrollTop + container.clientHeight + threshold >= container.scrollHeight;
+      const isStart = container.scrollTop <= threshold;
+
+      if (isEnd) {
+        setActiveHeading(headings()[headings().length - 1].slug);
+      } else if (isStart) {
+        setActiveHeading(headings()[0].slug);
+      }
+    };
 
     document
       .querySelectorAll(
@@ -41,16 +58,24 @@ const OnThisPage: Component<OnThisPageProps> = (props) => {
           .join(", ")
       )
       .forEach((h) => headingsObserver.observe(h));
+    container?.addEventListener("scroll", handleScroll);
     onCleanup(() => {
       headingsObserver.disconnect();
+      container?.removeEventListener("scroll", handleScroll);
     });
   });
 
   return (
-    <div class="w-56 flex-col justify-start top-16 sticky hidden xl:flex gap-2">
-      <Button text="soft" class="font-bold text-start m-0" variant="text" badge>
-        On this page
-      </Button>
+    <div class="w-56 flex-col justify-start top-0 pt-16 sticky hidden xl:flex gap-2">
+      <IconButton
+        text="soft"
+        class="font-bold justify-start m-0"
+        variant="text"
+        badge
+        hover={false}
+        path={mdiListBox}
+        label="On this page"
+      />
       <For each={headings()}>
         {(heading) => {
           return (

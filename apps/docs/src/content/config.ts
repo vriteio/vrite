@@ -1,13 +1,14 @@
 import { z, defineCollection } from "astro:content";
 
-const usageGuideCollection = defineCollection({
+const docsCollection = defineCollection({
   type: "content",
   schema: z.object({
-    title: z.string()
+    title: z.string(),
+    category: z.string()
   })
 });
 const collections = {
-  "usage-guide": usageGuideCollection
+  docs: docsCollection
 };
 
 export { collections };

@@ -1,5 +1,6 @@
 ---
 title: Writing in the Vrite Editor
+category: Usage Guide
 slug: content-editor
 ---
 

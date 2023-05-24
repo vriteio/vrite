@@ -77,6 +77,7 @@ interface ButtonProps extends JSX.ButtonHTMLAttributes<HTMLButtonElement> {
   color?: ButtonColor;
   text?: ButtonTextColor;
   loading?: boolean;
+  target?: string;
 }
 interface IconButtonProps extends ButtonProps {
   path?: string;

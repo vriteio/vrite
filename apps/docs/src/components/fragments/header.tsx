@@ -1,8 +1,8 @@
-import { mdiGithub } from "@mdi/js";
+import { mdiGithub, mdiTwitter } from "@mdi/js";
 import type { Component } from "solid-js";
 import { Button, IconButton } from "#components/primitives";
-import { logoIcon } from "#icons/logo";
 import { setMenuOpened, menuOpened } from "#lib/state";
+import { discordIcon } from "#icons";
 
 const Header: Component = () => {
   return (
@@ -15,6 +15,8 @@ const Header: Component = () => {
           path={mdiGithub}
           label="Star on GitHub"
         ></IconButton>
+        <IconButton path={discordIcon} variant="text" />
+        <IconButton path={mdiTwitter} variant="text" />
         <Button color="primary" link="https://app.vrite.io">
           Sign in
         </Button>
