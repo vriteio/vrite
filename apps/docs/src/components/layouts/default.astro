@@ -10,10 +10,14 @@ const description =
   "Dedicated headless Content Management System (CMS) for technical content, like programming blogs, documentation, and more.";
 
 const docs = await getCollection("docs");
-const menu = docs.map((item) => ({
-  title: item.data.title,
-  link: `/${item.slug}`
-}));
+const menu = docs
+  .filter((entry) => {
+    return entry.data.category === "Usage Guide";
+  })
+  .map((entry) => ({
+    title: entry.data.title,
+    link: `/${entry.slug}`
+  }));
 
 type Props = {
   headings: MarkdownHeading[];

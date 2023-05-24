@@ -4,71 +4,64 @@ category: Usage Guide
 slug: content-editor
 ---
 
-The content editor is the core part of Vrite. This is where you can create your next technical piece.
+The content editor is the core part of Vrite — this is where you can create your next technical masterpiece. And, thanks to all the features, formatting options and content blocks Vrite supports - it should be a breeze!
 
-Vrite editor supports a variety of features, formatting options and content blocks.
+## Editing Menus
 
-# Features
+Editing menus are one of the most important parts of the Vrite editing experience. Implementing modern design and UX found in other state-of-the-art WYSIWYG editors, Vrite provides you with a set of easily-accessible menus that are right there when you need them!
 
-To quickly edit the content piece's metadata, expand the metadata view using button on the left side of the title. All the metadata settings from the dashboard are the same here.
+### Bubble Menu
 
-![](https://assets.vrite.io/6409e82d7dfc74cef7a72e0d/40Pymj3ZrIEFLsKJTZ5tk.png)
+![Bubble menu in Vrite editor](https://assets.vrite.io/6409e82d7dfc74cef7a72e0d/Op7dQICGLf8LK1fb-00mF.png)
 
-Use the menu on the top of the editor to:
+Select some text for the bubble menu to appear. It's meant for inline formatting and inserting links.
 
-1. View the **content piece's stats** like number of characters, words or Lines of Code (LoCs) written;
-2. **"Export" the content** to different format for easy copy-pasting or saving into a file. Supported options right now are:
+### Block Menu
 
-- **JSON** (versatile, good for processing and adapting the content format to your needs)
-- **HTML** (basic HTML format)
-- **Dev.to **(Markdown formatted for the [DEV](https://dev.to/) platform, great for copy-pasting)
-- **Hashnode **(Markdown formatted for the [Hashnode](https://hashnode.com/) platform, great for copy-pasting)
+![Block menu in Vrite editor](https://assets.vrite.io/6409e82d7dfc74cef7a72e0d/TfxcygyBCv25jW0r0UsD8.png)
 
-## Menus
+Used for inserting block content, like lists, headings, images or code blocks. Can be triggered at the beginning of any new paragraph by typing `/` or click a button on the left of the paragraph. You can **filter the list** by typing queries right after the `/`, and move between items with **arrow keys**.
 
-![](https://assets.vrite.io/6409e82d7dfc74cef7a72e0d/Op7dQICGLf8LK1fb-00mF.png)
+### Link Menu
 
-**Bubble menu** — select some text for the bubble menu to appear. It's meant for inline formatting and inserting links.
+![Link menu in Vrite](https://assets.vrite.io/6409e82d7dfc74cef7a72e0d/HKLbwDEH97l6qjyhhQaEh.png)
 
-![](https://assets.vrite.io/6409e82d7dfc74cef7a72e0d/TfxcygyBCv25jW0r0UsD8.png)
+Move the cursor into a linked text fragment to display a preview of the linked content.
 
-**Block menu** — used for inserting block content, like lists, headings, images or code blocks. Can be triggered at the beginning of any new paragraph by typing `/` or click a button on the left of the paragraph. You can **filter the list** by typing queries right after the `/`, and move between items with **arrow keys**.
+## Inline formatting options
 
-![](https://assets.vrite.io/6409e82d7dfc74cef7a72e0d/HKLbwDEH97l6qjyhhQaEh.png)
+The following inline formatting options are supported in the Vrite editor (on the side — where applicable — their respective Markdown and keyboard shortcuts):
 
-**Link menu** — move the cursor into a linked text fragment to display a preview of the linked content.
+- **Bold** — `**markdown**` — `CTRL B`/`CMD B`;
+- **Italic** — `*markdown*` — `CTRL I`/`CMD I`;
+- **Strikethrough** — `~~markdown~~` — `CTRL SHIFT X`/`CMD SHIFT X`;
+- **Inline code** — `markdown` — `CTRL E`/`CMD E`;
+- **Highlight** — `==markdown==` — `CTRL SHIFT H`/`CMD SHIFT H`;
+- **Superscript** — `CTRL ,`/`CMD ,`;
+- **Subscript** — `CTRL .`/`CMD .`;
+- **Link** — `[markdown](link)` — you can also `CTRL V`/`CMD V` the URL to link the selected text fragment;
 
-# Inline formatting options
-
-Currently supported inline formatting options:
-
-- Bold
-- Italic
-- Strikethrough
-- Inline code
-- Highlight
-- Superscript
-- Subscript
-- Link
-
-# Content blocks
+## Content blocks
 
 Content blocks are large pieces of content, insertable from the block menu or with the use of Markdown shortcuts, that can't be inlined.
 
-Basic content blocks include:
+### Basic Content Blocks
 
-- Headings (up to 6 levels of nesting)
-- Blockquotes
-- Horizontal rule
-- Lists - ordered, unordered, task-based (can be nested)
+- **Headings** (up to 6 levels of nesting) — from `# markdown` to `###### markdown`;
+- **Blockquotes** — `> markdown`;
+- **Horizontal rule** — `--- `;
+- **Nestable Lists**:
+  - **Ordered** — `1. markdown`;
+  - **Unordered** — `- markdown`;
+  - **Task-based** — `[x]` for checked or `[ ]` for unchecked item;
 
-More special content blocks include are the following:
+### Special Content Blocks
 
-![](https://assets.vrite.io/6409e82d7dfc74cef7a72e0d/4t_retydgKtPA8YhCULYd.png)
+![Vrite image block](https://assets.vrite.io/6409e82d7dfc74cef7a72e0d/4t_retydgKtPA8YhCULYd.png)
 
 **Image** — lets you insert an image, either by uploading it directly to Vrite or referencing it through a URL. You can also set an alt text and drag and drop the block to change its position. For larger images, you can resize the preview to take up less space.
 
-![](https://assets.vrite.io/6409e82d7dfc74cef7a72e0d/0OxiNuaXHPy0sGNuJSsKq.png)
+![Vrite embed block](https://assets.vrite.io/6409e82d7dfc74cef7a72e0d/0OxiNuaXHPy0sGNuJSsKq.png)
 
 **Embed** — lets you embed content from supported platforms. You can provide any link or ID and Vrite will generate proper preview. You can also drag and drop the block to change its position. Supported embeds are:
 
@@ -76,6 +69,26 @@ More special content blocks include are the following:
 - **CodeSandbox**
 - **YouTube**
 
-![](https://assets.vrite.io/6409e82d7dfc74cef7a72e0d/NLQ2piOpD-6jOZEtv67gT.png)
+![Vrite code block](https://assets.vrite.io/6409e82d7dfc74cef7a72e0d/NLQ2piOpD-6jOZEtv67gT.png)
 
-**Code block** — a full-featured VS-Code-like Monaco editor for editing your code snippets. It supports syntax highlighting for vast majority of popular languages and full autocomplete for some, like JavaScript, CSS and HTML. You can select the code language using the input with autocomplete menu and, whenever possible, format the code using Prettier config provided in the settings.
+**Code block** — a full-featured VS-Code-like [Monaco editor](https://microsoft.github.io/monaco-editor/) for editing your code snippets. It supports syntax highlighting for vast majority of popular languages and full autocomplete for some, like JavaScript/TypeScript, CSS and HTML. You can select the code language using the input with autocomplete menu and, whenever possible, format the code using the built-in [Prettier integration](https://prettier.io/).
+
+## Editor Toolbar
+
+![Vrite editor toolbar](https://assets.vrite.io/6409e82d7dfc74cef7a72e0d/Nm-ODaVo67yulTH5BhpQx.png)
+
+In addition to all the features available from the main editing view, Vrite editor also provides a toolbar with a few more options:
+
+- _Content Stats_ — opens a dropdown with detailed statistics about your content, like number of words or Lines of Code (LOCs) written;
+- _Export_ — allows you to “Export” the content to the underlying JSON format, HTML or GitHub-Flavored Markdown (GFM) for easy download or copy-paste;
+- _Zen mode_ — allows you to focus solely on your content, hiding all the distractions and centering the content editor; You can easily go back by clicking the button in the top-right corner or using `ESC` key;
+
+The _Export_ functions opens a modal presenting the output and options to _Download_ or _Copy_ it easily:
+
+![Vrite editor export modal](https://assets.vrite.io/6409e82d7dfc74cef7a72e0d/Ti3gDzFHWvSRgu0X4UgS7.png)
+
+## Real-Time Collaboration
+
+Vrite editor supports real-time collaboration, displaying not only the team members currently viewing/editing the piece, but also their current selection. In case of uncertainty, you can hover right over the cursor or the badge in the toolbar to view the username.
+
+![Real-time collaboration in Vrite editor](https://assets.vrite.io/6409e82d7dfc74cef7a72e0d/RaOXP4MkcZZpEWJHQ3cAd.png)

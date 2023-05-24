@@ -74,7 +74,7 @@ const OnThisPage: Component<OnThisPageProps> = (props) => {
         badge
         hover={false}
         path={mdiListBox}
-        label="On this page"
+        label="On This Page"
       />
       <For each={headings()}>
         {(heading) => {

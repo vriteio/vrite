@@ -46,7 +46,7 @@ const SideBar: Component<SideBarProps> = (props) => {
             variant="text"
             class="justify-start w-full font-bold m-0"
             text="soft"
-            label="Usage guide"
+            label="Usage Guide"
             path={mdiLightbulb}
             badge
             hover={false}
