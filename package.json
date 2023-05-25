@@ -11,14 +11,7 @@
     "build": "turbo run build",
     "start": "dotenv -- turbo run start",
     "dev": "dotenv -- turbo run dev",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "build:api": "pnpm run build --filter @vrite/api --force",
-    "build:app": "pnpm run build --filter @vrite/app --force",
-    "build:collab": "pnpm run build --filter @vrite/collaboration --force",
-    "build:docs": "pnpm run build --filter @vrite/docs --force && cp -rf ./apps/docs/dist ./dist/docs",
-    "start:api": "node dist/api/index.js",
-    "start:app": "node dist/app/index.js",
-    "start:collab": "node dist/collaboration/index.js"
+    "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
   "devDependencies": {
     "prettier": "^2.8.8",
