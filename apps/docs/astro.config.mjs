@@ -1,6 +1,5 @@
 import { defineConfig } from "astro/config";
 import solidJs from "@astrojs/solid-js";
-import sitemap from "@astrojs/sitemap";
 import unocss from "unocss/astro";
 import robotsTxt from "astro-robots-txt";
 import node from "@astrojs/node";
@@ -9,7 +8,6 @@ export default defineConfig({
   integrations: [
     unocss(),
     solidJs(),
-    sitemap(),
     robotsTxt({
       policy: [
         {
