@@ -9,7 +9,9 @@
   ],
   "scripts": {
     "build": "turbo run build",
+    "build:app":"pnpm run build --filter @vrite/app",
     "start": "dotenv -- turbo run start",
+    "start:app": "node dist/app/index.js",
     "dev": "dotenv -- turbo run dev",
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
