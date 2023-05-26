@@ -6,7 +6,8 @@ import {
   mdiGithub,
   mdiHexagonSlice6,
   mdiAccountCircle,
-  mdiHelpCircle
+  mdiHelpCircle,
+  mdiPuzzle
 } from "@mdi/js";
 import { Component, For, Show, createSignal } from "solid-js";
 import { Link, useLocation, useNavigate } from "@solidjs/router";
@@ -145,6 +146,14 @@ const SidebarMenu: Component = () => {
       active: () => storage().sidePanelView === "settings",
       onClick: async () => {
         setSidePanelView("settings");
+      }
+    },
+    {
+      icon: mdiPuzzle,
+      label: "Extensions",
+      active: () => storage().sidePanelView === "extensions",
+      onClick: async () => {
+        setSidePanelView("extensions");
       }
     },
     {

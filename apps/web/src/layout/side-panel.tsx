@@ -7,6 +7,7 @@ import { createRef } from "#lib/utils";
 import { ContentPieceView } from "#views/content-piece";
 import { SettingsView } from "#views/settings/view";
 import { GettingStartedView } from "#views/getting-started";
+import { ExtensionsView } from "#views/extensions";
 
 const sidePanelViews: Record<string, Component<Record<string, any>>> = {
   contentPiece: () => {
@@ -14,6 +15,9 @@ const sidePanelViews: Record<string, Component<Record<string, any>>> = {
   },
   settings: () => {
     return <SettingsView />;
+  },
+  extensions: () => {
+    return <ExtensionsView />;
   },
   default: () => {
     return <GettingStartedView />;

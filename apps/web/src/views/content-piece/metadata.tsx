@@ -1,6 +1,7 @@
 import { DetailsSection } from "./details-section";
 import { CustomDataSection } from "./custom-data-section";
-import { mdiInformationOutline, mdiCodeJson, mdiConnection, mdiMenu } from "@mdi/js";
+import { ExtensionsSection } from "./extensions-section";
+import { mdiInformationOutline, mdiCodeJson, mdiMenu, mdiPuzzleOutline } from "@mdi/js";
 import { Component, createSignal, For, Switch, Match } from "solid-js";
 import { App } from "#context";
 import { Dropdown, IconButton, Heading } from "#components/primitives";
@@ -15,7 +16,8 @@ const ContentPieceMetadata: Component<ContentPieceMetadataProps> = (props) => {
   const [menuOpened, setMenuOpened] = createSignal(false);
   const sections = [
     { label: "Details", id: "details", icon: mdiInformationOutline },
-    { label: "Custom data", id: "custom-data", icon: mdiCodeJson }
+    { label: "Custom data", id: "custom-data", icon: mdiCodeJson },
+    { label: "Extensions", id: "extensions", icon: mdiPuzzleOutline }
   ];
   const [activeSection, setActiveSection] = createSignal(sections[0]);
 
@@ -84,6 +86,9 @@ const ContentPieceMetadata: Component<ContentPieceMetadataProps> = (props) => {
               props.setContentPiece({ customData });
             }}
           />
+        </Match>
+        <Match when={activeSection().id === "extensions"}>
+          <ExtensionsSection contentPiece={props.contentPiece} />
         </Match>
       </Switch>
     </>
