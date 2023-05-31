@@ -35,7 +35,13 @@ const runWebhooks = async (
     }
 
     try {
-      await axios.post(webhook.url, webhookPayload.parse(payload));
+      await axios.post(webhook.url, webhookPayload.parse(payload), {
+        ...(webhook.extensionId && {
+          headers: {
+            "X-Vrite-Extension-ID": `${webhook.extensionId}`
+          }
+        })
+      });
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error("Failed to run webhook");

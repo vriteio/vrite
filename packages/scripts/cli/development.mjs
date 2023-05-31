@@ -100,7 +100,7 @@ program
       const specFile = await fs.readFile(path.join(location, specPath), "utf-8");
       const spec = JSON.parse(specFile);
       const functionsDir = path.join(location, path.dirname(specPath), "functions");
-      const outPath = path.join(options.output, `${spec.id}.json`);
+      const outPath = path.join(options.output, `${spec.name}.json`);
       const functionsPaths = await glob(["*.[tj]s", "**/index.[tj]s"], {
         cwd: functionsDir
       });

@@ -2,7 +2,7 @@ import { z } from "zod";
 import { ObjectId } from "mongodb";
 import { nanoid } from "nanoid";
 import { procedure, router } from "#lib/trpc";
-import { isAuthenticated } from "#lib/middleware";
+import { AuthenticatedContext, isAuthenticated } from "#lib/middleware";
 import { generateSalt, hashValue } from "#lib/hash";
 import { UnderscoreID, zodId } from "#lib/mongo";
 import { Token, FullToken, getTokensCollection, token } from "#database/tokens";
@@ -19,6 +19,30 @@ type TokenEvent =
 
 const publishEvent = createEventPublisher<TokenEvent>((workspaceId) => `tokens:${workspaceId}`);
 const authenticatedProcedure = procedure.use(isAuthenticated);
+const createToken = async (
+  input: Omit<Token, "id">,
+  ctx: AuthenticatedContext,
+  extensionId?: ObjectId
+): Promise<{ token: UnderscoreID<Token<ObjectId>>; value: string }> => {
+  const tokensCollection = getTokensCollection(ctx.db);
+  const username = nanoid();
+  const password = nanoid();
+  const salt = await generateSalt();
+  const token: UnderscoreID<FullToken<ObjectId>> = {
+    ...input,
+    _id: new ObjectId(),
+    workspaceId: ctx.auth.workspaceId,
+    userId: ctx.auth.userId,
+    salt,
+    password: await hashValue(password, salt),
+    username,
+    extensionId
+  };
+
+  await tokensCollection.insertOne(token);
+
+  return { token, value: `${username}:${password}` };
+};
 const tokensRouter = router({
   get: authenticatedProcedure
     .input(z.object({ id: z.string() }))
@@ -68,7 +92,7 @@ const tokensRouter = router({
         })
         .default({})
     )
-    .output(z.array(token))
+    .output(z.array(token.extend({ extension: z.boolean().optional() })))
     .query(async ({ ctx, input }) => {
       const tokensCollection = getTokensCollection(ctx.db);
       const cursor = tokensCollection
@@ -88,7 +112,8 @@ const tokensRouter = router({
         id: `${token._id}`,
         name: token.name || "",
         description: token.description || "",
-        permissions: token.permissions
+        permissions: token.permissions,
+        ...(token.extensionId && { extension: true })
       }));
     }),
   create: authenticatedProcedure
@@ -98,21 +123,8 @@ const tokensRouter = router({
     .input(token.omit({ id: true }))
     .output(z.object({ value: z.string(), id: zodId() }))
     .mutation(async ({ ctx, input }) => {
-      const tokensCollection = getTokensCollection(ctx.db);
-      const username = nanoid();
-      const password = nanoid();
-      const salt = await generateSalt();
-      const token: UnderscoreID<FullToken<ObjectId>> = {
-        ...input,
-        _id: new ObjectId(),
-        workspaceId: ctx.auth.workspaceId,
-        userId: ctx.auth.userId,
-        salt,
-        password: await hashValue(password, salt),
-        username
-      };
+      const { token, value } = await createToken(input, ctx);
 
-      await tokensCollection.insertOne(token);
       publishEvent(ctx, `${ctx.auth.workspaceId}`, {
         action: "create",
         data: {
@@ -124,7 +136,7 @@ const tokensRouter = router({
       });
 
       return {
-        value: `${username}:${password}`,
+        value,
         id: `${token._id}`
       };
     }),
@@ -198,4 +210,4 @@ const tokensRouter = router({
     })
 });
 
-export { tokensRouter };
+export { tokensRouter, createToken };

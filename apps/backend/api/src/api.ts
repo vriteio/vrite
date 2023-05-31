@@ -28,7 +28,7 @@ const fastifyTRPCOpenApiPlugin = <TRouter extends AnyRouter>(
   const openApiHttpHandler = createOpenApiNodeHttpHandler(opts);
 
   fastify.route({
-    method: ["GET", "DELETE", "PUT"],
+    method: ["GET", "DELETE", "PUT", "POST"],
     url: `${prefix}/*`,
     async handler(request, reply) {
       const prefixRemovedFromUrl = request.url.replace(fastify.prefix, "").replace(prefix, "");
@@ -61,9 +61,9 @@ const apiService = publicPlugin(async (fastify) => {
   });
   await fastify.register(corsPlugin, {
     credentials: true,
-    methods: ["GET", "DELETE", "PUT"],
+    methods: ["GET", "DELETE", "PUT", "POST"],
     origin(origin, callback) {
-      if (!origin) {
+      if (!origin || origin === "null") {
         callback(null, true);
 
         return;

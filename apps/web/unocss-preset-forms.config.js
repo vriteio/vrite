@@ -118,7 +118,9 @@ const presetForms = () => {
                 "background-repeat": `no-repeat`,
                 "background-size": `1.5em 1.5em`,
                 "padding-right": spacing[10],
-                "print-color-adjust": `exact`
+                "print-color-adjust": `exact`,
+                "-webkit-transition": "none",
+                "transition": "none"
               }
             },
             {

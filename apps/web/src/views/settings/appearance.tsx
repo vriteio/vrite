@@ -1,4 +1,4 @@
-import { SettingsCard } from "./settings-card";
+import { TitledCard } from "#components/fragments";
 import {
   mdiWeatherNight,
   mdiWeatherSunny,
@@ -8,8 +8,7 @@ import {
 } from "@mdi/js";
 import clsx from "clsx";
 import { Component, For } from "solid-js";
-import { createStore } from "solid-js/store";
-import { App, useAppearanceContext, useAuthenticatedContext, useClientContext } from "#context";
+import { App, useAuthenticatedContext, useClientContext } from "#context";
 import { IconButton, Button } from "#components/primitives";
 
 interface ThemePickerProps {
@@ -51,23 +50,23 @@ const AppearanceSection: Component = () => {
 
   return (
     <div class="flex justify-center flex-col items-start w-full gap-5">
-      <SettingsCard icon={mdiThemeLightDark} label="UI theme">
+      <TitledCard icon={mdiThemeLightDark} label="UI theme">
         <ThemePicker
           theme={userSettings()?.uiTheme || "auto"}
           setTheme={async (theme) => {
             await client.userSettings.update.mutate({ uiTheme: theme });
           }}
         />
-      </SettingsCard>
-      <SettingsCard label="Code editor theme" icon={mdiCodeTags}>
+      </TitledCard>
+      <TitledCard label="Code editor theme" icon={mdiCodeTags}>
         <ThemePicker
           theme={userSettings()?.codeEditorTheme || "dark"}
           setTheme={async (theme) => {
             await client.userSettings.update.mutate({ codeEditorTheme: theme });
           }}
         />
-      </SettingsCard>
-      <SettingsCard label="Accent color" icon={mdiPaletteSwatch}>
+      </TitledCard>
+      <TitledCard label="Accent color" icon={mdiPaletteSwatch}>
         <div class="grid grid-cols-3 @lg:grid-cols-5 gap-4 w-full group/container">
           <For each={accentColors}>
             {(accentColor) => {
@@ -105,7 +104,7 @@ const AppearanceSection: Component = () => {
             }}
           </For>
         </div>
-      </SettingsCard>
+      </TitledCard>
     </div>
   );
 };

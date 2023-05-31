@@ -34,6 +34,7 @@ interface Webhook<ID extends string | ObjectId = string>
 }
 interface FullWebhook<ID extends string | ObjectId = string> extends Webhook<ID> {
   workspaceId: ID;
+  extensionId?: ID;
 }
 
 const getWebhooksCollection = (db: Db): Collection<UnderscoreID<FullWebhook<ObjectId>>> => {

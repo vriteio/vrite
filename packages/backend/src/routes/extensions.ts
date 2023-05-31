@@ -1,3 +1,4 @@
+import { createToken } from "./tokens";
 import { z } from "zod";
 import { ObjectId } from "mongodb";
 import { isAuthenticated } from "#lib/middleware";
@@ -7,7 +8,9 @@ import {
   extension,
   contextObject,
   getExtensionsCollection,
-  ContextObject
+  ContextObject,
+  tokenPermission,
+  getTokensCollection
 } from "#database";
 import { createEventPublisher, createEventSubscription } from "#lib/pub-sub";
 import * as errors from "#lib/errors";
@@ -22,18 +25,40 @@ const publishEvent = createEventPublisher<ExtensionEvent>((workspaceId) => {
   return `extensions:${workspaceId}`;
 });
 const authenticatedProcedure = procedure.use(isAuthenticated);
+const basePath = "/extension";
 const extensionsRouter = router({
   get: authenticatedProcedure
-    .input(z.object({ extensionId: z.string() }))
+    .input(z.object({ name: z.string() }))
     .output(extension)
     .query(async ({ ctx, input }) => {
       const extensionsCollection = getExtensionsCollection(ctx.db);
       const extension = await extensionsCollection.findOne({
-        extensionId: input.extensionId,
+        name: input.name,
         workspaceId: ctx.auth.workspaceId
       });
 
       if (!extension) throw errors.notFound("extension");
+
+      return {
+        ...extension,
+        id: `${extension._id}`
+      };
+    }),
+  getExtension: procedure
+    .meta({ openapi: { method: "GET", path: `${basePath}` } })
+    .input(z.void())
+    .output(extension.partial())
+    .query(async ({ ctx }) => {
+      const extensionsCollection = getExtensionsCollection(ctx.db);
+      const extensionId = ctx.req.headers["x-vrite-extension-id"] as string | undefined;
+
+      if (!extensionId) return {};
+
+      const extension = await extensionsCollection.findOne({
+        _id: new ObjectId(extensionId)
+      });
+
+      if (!extension) return {};
 
       return {
         ...extension,
@@ -73,13 +98,21 @@ const extensionsRouter = router({
     .meta({
       permissions: { session: ["manageExtensions"] }
     })
-    .input(z.object({ extensionId: z.string(), configuration: contextObject }))
+    .input(
+      z.object({
+        extension: z.object({
+          name: z.string(),
+          permissions: z.array(tokenPermission),
+          displayName: z.string()
+        })
+      })
+    )
     .output(zodId())
     .mutation(async ({ ctx, input }) => {
       const extensionsCollection = getExtensionsCollection(ctx.db);
       const existingExtension = await extensionsCollection.findOne({
         workspaceId: ctx.auth.workspaceId,
-        extensionId: input.extensionId
+        name: input.extension.name
       });
 
       if (existingExtension) {
@@ -87,18 +120,29 @@ const extensionsRouter = router({
       }
 
       const _id = new ObjectId();
+      const { value } = await createToken(
+        {
+          description: "",
+          name: input.extension.displayName,
+          permissions: input.extension.permissions
+        },
+        ctx,
+        _id
+      );
 
       await extensionsCollection.insertOne({
         _id,
-        configuration: input.configuration,
-        extensionId: input.extensionId,
-        workspaceId: ctx.auth.workspaceId
+        configuration: {},
+        name: input.extension.name,
+        workspaceId: ctx.auth.workspaceId,
+        token: value
       });
       publishEvent(ctx, `${ctx.auth.workspaceId}`, {
         action: "create",
         data: {
-          configuration: input.configuration,
-          extensionId: input.extensionId,
+          configuration: {},
+          name: input.extension.name,
+          token: value,
           id: `${_id}`
         }
       });
@@ -147,6 +191,7 @@ const extensionsRouter = router({
     .output(z.void())
     .mutation(async ({ ctx, input }) => {
       const extensionsCollection = getExtensionsCollection(ctx.db);
+      const tokensCollection = getTokensCollection(ctx.db);
       const { deletedCount } = await extensionsCollection.deleteOne({
         _id: new ObjectId(input.id)
       });
@@ -155,6 +200,9 @@ const extensionsRouter = router({
         throw errors.notFound("extension");
       }
 
+      await tokensCollection.deleteOne({
+        extensionId: new ObjectId(input.id)
+      });
       publishEvent(ctx, `${ctx.auth.workspaceId}`, {
         action: "delete",
         data: { id: input.id }

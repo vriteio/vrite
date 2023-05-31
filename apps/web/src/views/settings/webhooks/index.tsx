@@ -1,26 +1,24 @@
 import { ConfigureWebhookSubsection } from "./configure-webhook-subsection";
 import { webhookEvents } from "./events";
 import { SettingsSectionComponent } from "../view";
-import { SettingsCard } from "../settings-card";
+import { TitledCard } from "#components/fragments";
 import {
   Accessor,
   Component,
   For,
-  Match,
   Show,
-  Switch,
   createEffect,
   createSignal,
   on,
   onCleanup
 } from "solid-js";
-import { mdiFormatListBulleted, mdiPlusCircle, mdiTrashCan, mdiTune } from "@mdi/js";
+import { mdiFormatListBulleted, mdiPlusCircle, mdiPuzzle, mdiTrashCan, mdiTune } from "@mdi/js";
 import { createStore } from "solid-js/store";
 import { App, hasPermission, useClientContext, useNotificationsContext } from "#context";
 import { Button, Card, Heading, IconButton, Loader, Tooltip } from "#components/primitives";
 
 interface WebhookDetailsProps {
-  webhook: App.Webhook;
+  webhook: App.Webhook & { extension?: boolean };
   onEdit?(): void;
   onDelete?(): void;
 }
@@ -73,13 +71,13 @@ const useWebhooks = (): {
   loading: Accessor<boolean>;
   moreToLoad: Accessor<boolean>;
   loadMore(): void;
-  webhooks(): App.Webhook[];
+  webhooks(): Array<App.Webhook & { extension?: boolean }>;
 } => {
   const { client } = useClientContext();
   const [loading, setLoading] = createSignal(false);
   const [moreToLoad, setMoreToLoad] = createSignal(true);
   const [state, setState] = createStore<{
-    webhooks: Array<App.Webhook>;
+    webhooks: Array<App.Webhook & { extension?: boolean }>;
   }>({
     webhooks: []
   });
@@ -147,33 +145,42 @@ const WebhookDetails: Component<WebhookDetailsProps> = (props) => {
         </Button>
         <div class="flex-1" />
         <div class="flex gap-2">
-          <Show when={hasPermission("manageWebhooks")}>
-            <Tooltip text="Edit" class="mt-1">
-              <IconButton
-                disabled={loading()}
-                path={mdiTune}
-                class="m-0"
-                text="soft"
-                onClick={() => {
-                  props.onEdit?.();
-                }}
-              />
-            </Tooltip>
-            <Tooltip text="Delete" class="mt-1">
-              <IconButton
-                path={mdiTrashCan}
-                loading={loading()}
-                class="m-0"
-                text="soft"
-                onClick={async () => {
-                  setLoading(true);
-                  await client.webhooks.delete.mutate({ id: props.webhook.id });
-                  setLoading(false);
-                  props.onDelete?.();
-                  notify({ text: "Webhook deleted", type: "success" });
-                }}
-              />
-            </Tooltip>
+          <Show
+            when={!props.webhook.extension}
+            fallback={
+              <Tooltip text="Extension" class="mt-1">
+                <IconButton path={mdiPuzzle} text="soft" class="m-0" badge />
+              </Tooltip>
+            }
+          >
+            <Show when={hasPermission("manageWebhooks")}>
+              <Tooltip text="Edit" class="mt-1">
+                <IconButton
+                  disabled={loading()}
+                  path={mdiTune}
+                  class="m-0"
+                  text="soft"
+                  onClick={() => {
+                    props.onEdit?.();
+                  }}
+                />
+              </Tooltip>
+              <Tooltip text="Delete" class="mt-1">
+                <IconButton
+                  path={mdiTrashCan}
+                  loading={loading()}
+                  class="m-0"
+                  text="soft"
+                  onClick={async () => {
+                    setLoading(true);
+                    await client.webhooks.delete.mutate({ id: props.webhook.id });
+                    setLoading(false);
+                    props.onDelete?.();
+                    notify({ text: "Webhook deleted", type: "success" });
+                  }}
+                />
+              </Tooltip>
+            </Show>
           </Show>
         </div>
       </div>
@@ -237,7 +244,7 @@ const WebhooksSection: SettingsSectionComponent = (props) => {
         />
       }
     >
-      <SettingsCard icon={mdiFormatListBulleted} label="List">
+      <TitledCard icon={mdiFormatListBulleted} label="List">
         <Show when={webhooks().length || !loading()} fallback={<Loader />}>
           <For
             each={webhooks()}
@@ -273,7 +280,7 @@ const WebhooksSection: SettingsSectionComponent = (props) => {
             </Button>
           </Show>
         </Show>
-      </SettingsCard>
+      </TitledCard>
     </Show>
   );
 };

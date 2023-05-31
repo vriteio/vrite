@@ -1,9 +1,8 @@
 import { ConfigureTokenAction } from "./configure-action";
-import { SettingsCard } from "../settings-card";
 import { mdiInformation, mdiKeyChain } from "@mdi/js";
 import { Component, For, Show, createEffect, createResource } from "solid-js";
 import { createStore } from "solid-js/store";
-import { InputField } from "#components/fragments";
+import { InputField, TitledCard } from "#components/fragments";
 import { Select, Heading, Loader } from "#components/primitives";
 import { useClientContext, App } from "#context";
 
@@ -100,7 +99,7 @@ const ConfigureTokenSubSection: Component<ConfigureTokenSubSectionProps> = (prop
 
   return (
     <>
-      <SettingsCard icon={mdiInformation} label="Details">
+      <TitledCard icon={mdiInformation} label="Details">
         <Show when={!editedTokenData.loading || !props.editedTokenId} fallback={<Loader />}>
           <InputField
             label="API token name"
@@ -124,8 +123,8 @@ const ConfigureTokenSubSection: Component<ConfigureTokenSubSectionProps> = (prop
             Additional details about the API token
           </InputField>
         </Show>
-      </SettingsCard>
-      <SettingsCard icon={mdiKeyChain} label="Permissions">
+      </TitledCard>
+      <TitledCard icon={mdiKeyChain} label="Permissions">
         <Show when={!editedTokenData.loading || !props.editedTokenId} fallback={<Loader />}>
           <For each={permissionsMenu}>
             {({ description, label, permissions }) => {
@@ -166,7 +165,7 @@ const ConfigureTokenSubSection: Component<ConfigureTokenSubSectionProps> = (prop
                 <div class="flex flex-col justify-center items-start @xl:flex-row gap-1 w-full">
                   <div class="flex flex-col gap-1 w-full @xl:max-w-sm">
                     <Heading level={3}>{label}</Heading>
-                    <p class="prose">{description}</p>
+                    <p class="prose text-gray-500 dark:text-gray-400">{description}</p>
                   </div>
                   <div class="flex-1" />
                   <Select
@@ -203,7 +202,7 @@ const ConfigureTokenSubSection: Component<ConfigureTokenSubSectionProps> = (prop
             }}
           </For>
         </Show>
-      </SettingsCard>
+      </TitledCard>
     </>
   );
 };

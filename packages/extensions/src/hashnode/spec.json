@@ -1,0 +1,6 @@
+{
+  "name": "hashnode",
+  "displayName": "Hashnode",
+  "description": "Automatically publish and update articles from the specified content group to Hashnode",
+  "permissions": ["contentGroups:read", "contentPieces:read", "webhooks:read", "webhooks:write"]
+}

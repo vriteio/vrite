@@ -1,7 +1,7 @@
 import { useViewContext } from "./view-context";
 import { Component, ComponentProps, createEffect, For, JSX, on, Show } from "solid-js";
 import { marked } from "marked";
-import { createStore, unwrap } from "solid-js/store";
+import { createStore } from "solid-js/store";
 import { ExtensionSpec, ExtensionView } from "@vrite/extensions";
 import { Dynamic } from "solid-js/web";
 import { useExtensionsContext } from "#context";
@@ -17,38 +17,76 @@ type RenderedComponentProps<O = Record<string, any>> = {
 } & O;
 
 const components = {
-  Field: (props: RenderedComponentProps<ComponentProps<typeof InputField>>) => <InputField />,
+  Field: (props: RenderedComponentProps<ComponentProps<typeof InputField>>) => {
+    return (
+      <InputField
+        type={props.type}
+        value={props.value}
+        setValue={props.setValue}
+        label={props.label}
+        color={"color" in props ? props.color : "base"}
+        optional={"optional" in props ? props.optional : false}
+        disabled={"disabled" in props ? props.disabled : false}
+        {...("options" in props ? { options: props.options } : {})}
+      >
+        {props.slots.default}
+      </InputField>
+    );
+  },
   Fragment: (props: RenderedComponentProps) => {
     return <>{props.slots.default}</>;
   },
   Text: (props: { value: string }) => <>{props.value}</>,
-  Button,
+  Button: (props: RenderedComponentProps<ComponentProps<typeof Button>>) => {
+    return (
+      <Button
+        variant={props.variant}
+        color={props.color}
+        onClick={props.onClick}
+        class={props.class}
+        disabled={"disabled" in props ? props.disabled : false}
+      >
+        {props.slots.default}
+      </Button>
+    );
+  },
   Loader,
-  Show: (props: { value: boolean; whenTrue: JSX.Element; whenFalse: JSX.Element }) => {
+  Show: (props: RenderedComponentProps<{ value: boolean }>) => {
     return (
       <Show when={props.value} fallback={props.slots.false}>
         {props.slots.true}
       </Show>
     );
+  },
+  View: (props: RenderedComponentProps<{ class?: string }>) => {
+    return <div class={props.class}>{props.slots.default}</div>;
   }
+};
+const renderer = new marked.Renderer();
+const linkRenderer = renderer.link;
+renderer.link = (href, title, text) => {
+  const html = linkRenderer.call(renderer, href, title, text);
+  return html.replace(/^<a /, '<a target="_blank" rel="nofollow" ');
 };
 const ComponentRenderer: Component<ComponentRendererProps> = (props) => {
   const { callFunction } = useExtensionsContext();
-  const { context, setContext } = useViewContext();
+  const { context, setContext, extension } = useViewContext();
 
   if (typeof props.view === "string") {
-    return <span innerHTML={marked.parseInline(props.view)} />;
+    return <span innerHTML={marked.parseInline(props.view, { renderer })} />;
   }
 
   const shortcutProps: Record<string, string | boolean | number> = {};
   const componentName =
     (props.view.component.match(/^(.+?)(?:\[|\.|$)/)?.[1] as keyof typeof components) || "";
-  const shortcutClasses = [...props.view.component.matchAll(/\.(.+?)(?:\.|\[|$)/g)].map((value) => {
+  const shortcutClasses = [...props.view.component.matchAll(/\.(.+?)(?=\.|\[|$)/g)].map((value) => {
     return value[1];
   });
 
   [...props.view.component.matchAll(/\[(.+?)=(.+?)\]/g)].forEach(([match, attribute, value]) => {
-    shortcutProps[attribute] = value;
+    if (!attribute.startsWith("bind:") && !attribute.startsWith("on:")) {
+      shortcutProps[attribute] = value;
+    }
   });
   shortcutProps.class = [...shortcutClasses, shortcutProps.class || ""].join(" ").trim();
 
@@ -87,7 +125,14 @@ const ComponentRenderer: Component<ComponentRendererProps> = (props) => {
 
       setComponentProps(`on${eventKey[0].toUpperCase()}${eventKey.slice(1)}`, () => {
         return () => {
-          callFunction(props.spec, `${value}`, { context, setContext });
+          if (extension.id && extension.token) {
+            callFunction(props.spec, `${value}`, {
+              context,
+              setContext,
+              extensionId: extension.id,
+              token: extension.token
+            });
+          }
         };
       });
     } else {

@@ -1,18 +1,18 @@
 {
-  "id": "dev",
-  "name": "Dev.to",
+  "name": "dev",
+  "displayName": "Dev.to",
   "description": "Automatically publish and update articles from the specified content group to Dev.to",
-  "permissions": ["api:read", "webhooks"],
+  "permissions": ["contentGroups:read", "contentPieces:read", "webhooks:read", "webhooks:write"],
   "lifecycle": {
     "on:install": "install",
     "on:uninstall": "uninstall",
-    "on:reconfigure": "configure",
+    "on:configure": "configure",
     "on:initConfigurationView": "initConfigurationView",
     "on:initContentPieceView": "initContentPieceView"
   },
   "configurationView": [
     {
-      "component": "Field[type=text]",
+      "component": "Field[type=text][color=contrast]",
       "props": {
         "label": "API key",
         "placeholder": "API key",
@@ -21,7 +21,7 @@
       "slot:": "Your Dev.to API key. You can generate one in the [settings page](https://dev.to/settings/extensions), under **DEV Community API Keys** section"
     },
     {
-      "component": "Field[type=select]",
+      "component": "Field[type=select][color=contrast]",
       "props": {
         "label": "Content group",
         "bind:options": "temp.lockedContentGroups",
@@ -30,7 +30,7 @@
       "slot:": "Select a content group to enable the extension for. The group will be used to detect new, updated and removed posts"
     },
     {
-      "component": "Field[type=text]",
+      "component": "Field[type=text][color=contrast]",
       "props": {
         "label": "Organization ID",
         "optional": true,
@@ -39,7 +39,7 @@
       "slot:": "ID of the Dev.to organization you are in and want to publish your posts to. You can find the organization ID in the URL of the your [Dev.to Dashboard](https://dev.to/dashboard), when **filtering posts by organization**"
     },
     {
-      "component": "Field[type=checkbox]",
+      "component": "Field[type=checkbox][color=contrast]",
       "props": {
         "label": "Auto publish",
         "bind:value": "config.autoPublish"
@@ -47,7 +47,7 @@
       "slot:": "Publish posts automatically"
     },
     {
-      "component": "Field[type=checkbox]",
+      "component": "Field[type=checkbox][color=contrast]",
       "props": {
         "label": "Require canonical link",
         "bind:value": "config.requireCanonicalLink"
@@ -55,40 +55,43 @@
       "slot:": "Don't auto-publish when no canonical link is set"
     }
   ],
-  "contentPieceView": [
-    {
-      "component": "Field[type=text]",
-      "props": {
-        "label": "Series name",
-        "options": { "optional": true, "placeholder": "Series name" },
-        "bind:value": "data.seriesName"
+  "contentPieceView": {
+    "component": "View.flex.flex-col.gap-2",
+    "slot:": [
+      {
+        "component": "Field[type=text][color=contrast]",
+        "props": {
+          "label": "Series name",
+          "options": { "optional": true, "placeholder": "Series name" },
+          "bind:value": "data.seriesName"
+        },
+        "slot:": "The exact name of the series to which this post should be added"
       },
-      "slot:": "The exact name of the series to which this post should be added"
-    },
-    {
-      "component": "Field[type=checkbox]",
-      "props": {
-        "label": "Draft",
-        "bind:value": "data.draft",
-        "bind:disabled": "contentPiece.locked"
+      {
+        "component": "Field[type=checkbox][color=contrast]",
+        "props": {
+          "label": "Draft",
+          "bind:value": "data.draft",
+          "bind:disabled": "contentPiece.locked"
+        },
+        "slot:": "whether the Dev.to article should be in draft (private)"
       },
-      "slot:": "whether the Dev.to article should be in draft (private)"
-    },
-    {
-      "component": "Button[color=primary].w-full.justify-center.items-center",
-      "props": {
-        "bind:disabled": "temp.buttonDisabled",
-        "on:click": "publish"
-      },
-      "slot:": {
-        "component": "Show",
-        "props": { "bind:value": "temp.$loading" },
-        "slot:true": { "component": "Loader" },
-        "slot:false": {
-          "component": "Text",
-          "props": { "bind:value": "temp.buttonLabel" }
+      {
+        "component": "Button[color=primary].w-full.flex.justify-center.items-center.m-0",
+        "props": {
+          "bind:disabled": "temp.buttonDisabled",
+          "on:click": "publish"
+        },
+        "slot:": {
+          "component": "Show",
+          "props": { "bind:value": "temp.$loading" },
+          "slot:true": { "component": "Loader" },
+          "slot:false": {
+            "component": "Text",
+            "props": { "bind:value": "temp.buttonLabel" }
+          }
         }
       }
-    }
-  ]
+    ]
+  }
 }

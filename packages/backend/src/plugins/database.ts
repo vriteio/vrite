@@ -21,6 +21,7 @@ const databasePlugin = publicPlugin(async (fastify) => {
   const webhooksCollection = getWebhooksCollection(db);
   const workspaceMembershipsCollection = getWorkspaceSettingsCollection(db);
   const workspaceSettingsCollection = getWorkspaceSettingsCollection(db);
+  const extensionsCollection = getWorkspaceSettingsCollection(db);
 
   await Promise.all([
     contentPiecesCollection.createIndex({ workspaceId: 1 }),
@@ -30,6 +31,7 @@ const databasePlugin = publicPlugin(async (fastify) => {
     rolesCollection.createIndex({ workspaceId: 1 }),
     tagsCollection.createIndex({ workspaceId: 1 }),
     tokensCollection.createIndex({ workspaceId: 1 }),
+    tokensCollection.createIndex({ extensionId: 1 }, { sparse: true }),
     usersCollection.createIndex(
       { emailVerificationCodeExpiresAt: 1 },
       { expireAfterSeconds: 0, sparse: true }
@@ -37,6 +39,7 @@ const databasePlugin = publicPlugin(async (fastify) => {
     userSettingsCollection.createIndex({ userId: 1 }, { unique: true }),
     webhooksCollection.createIndex({ workspaceId: 1 }),
     webhooksCollection.createIndex({ workspaceId: 1, event: 1 }),
+    webhooksCollection.createIndex({ extensionId: 1 }, { sparse: true }),
     workspaceMembershipsCollection.createIndex({ workspaceId: 1 }),
     workspaceMembershipsCollection.createIndex({ userId: 1 }),
     workspaceMembershipsCollection.createIndex({ roleId: 1 }),
@@ -45,7 +48,9 @@ const databasePlugin = publicPlugin(async (fastify) => {
       { expireAfterSeconds: 0, sparse: true }
     ),
     workspaceSettingsCollection.createIndex({ workspaceId: 1 }),
-    usersCollection.createIndex({ email: 1 }, { unique: true })
+    usersCollection.createIndex({ email: 1 }, { unique: true }),
+    extensionsCollection.createIndex({ workspaceId: 1 }),
+    extensionsCollection.createIndex({ name: 1 })
   ]);
 });
 

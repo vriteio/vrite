@@ -1,12 +1,11 @@
 import { marks, blocks, embeds } from "./options";
-import { SettingsCard } from "../settings-card";
 import { SettingsSectionComponent } from "../view";
 import { mdiApplicationBrackets, mdiCodeTagsCheck, mdiFormatText, mdiImage } from "@mdi/js";
 import { Accessor, For, Show, createSignal, onCleanup } from "solid-js";
 import { SetStoreFunction, createStore } from "solid-js/store";
 import { debounce } from "@solid-primitives/scheduled";
 import { Heading, IconButton, Loader } from "#components/primitives";
-import { MiniCodeEditor } from "#components/fragments";
+import { MiniCodeEditor, TitledCard } from "#components/fragments";
 import { App, hasPermission, useClientContext, useNotificationsContext } from "#context";
 
 const useWorkspaceSettings = (): {
@@ -68,9 +67,9 @@ const EditorSection: SettingsSectionComponent = () => {
 
   return (
     <>
-      <SettingsCard label="Inline formatting" icon={mdiFormatText}>
+      <TitledCard label="Inline formatting" icon={mdiFormatText}>
         <Show when={!loading()} fallback={<Loader />}>
-          <p class="prose">
+          <p class="prose text-gray-500 dark:text-gray-400">
             Select the inline formatting options that should be enabled in the editor for all users
             of the workspace
           </p>
@@ -108,10 +107,10 @@ const EditorSection: SettingsSectionComponent = () => {
             </For>
           </div>
         </Show>
-      </SettingsCard>
-      <SettingsCard label="Block content" icon={mdiImage}>
+      </TitledCard>
+      <TitledCard label="Block content" icon={mdiImage}>
         <Show when={!loading()} fallback={<Loader />}>
-          <p class="prose">
+          <p class="prose text-gray-500 dark:text-gray-400">
             Select content blocks that should be enabled in the editor for all users of the
             workspace
           </p>
@@ -170,10 +169,10 @@ const EditorSection: SettingsSectionComponent = () => {
             </For>
           </div>
         </Show>
-      </SettingsCard>
-      <SettingsCard label="Embeds" icon={mdiApplicationBrackets}>
+      </TitledCard>
+      <TitledCard label="Embeds" icon={mdiApplicationBrackets}>
         <Show when={!loading()} fallback={<Loader />}>
-          <p class="prose">
+          <p class="prose text-gray-500 dark:text-gray-400">
             Select which embeds to enabled in the editor for all users of the workspace
           </p>
           <div class="grid grid-cols-2 @md:grid-cols-3 gap-2 w-full">
@@ -208,10 +207,10 @@ const EditorSection: SettingsSectionComponent = () => {
             </For>
           </div>
         </Show>
-      </SettingsCard>
-      <SettingsCard label="Prettier config" icon={mdiCodeTagsCheck}>
+      </TitledCard>
+      <TitledCard label="Prettier config" icon={mdiCodeTagsCheck}>
         <Show when={!loading()} fallback={<Loader />}>
-          <p class="prose">
+          <p class="prose text-gray-500 dark:text-gray-400">
             Customize your Prettier config for consistent code formatting for all users of the
             workspace
           </p>
@@ -238,7 +237,7 @@ const EditorSection: SettingsSectionComponent = () => {
             }}
           />
         </Show>
-      </SettingsCard>
+      </TitledCard>
     </>
   );
 };

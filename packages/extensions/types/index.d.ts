@@ -1,6 +1,6 @@
 declare module "@vrite/extensions" {
   import type { Client } from "@vrite/sdk";
-  import type { ContentPieceWithTags } from "@vrite/backend";
+  import type { ExtendedContentPieceWithTags, TokenPermission } from "@vrite/backend";
 
   // eslint-disable-next-line no-use-before-define
   type ContextValue = string | number | boolean | ContextObject | ContextArray;
@@ -16,14 +16,13 @@ declare module "@vrite/extensions" {
     props?: Record<string, string | boolean | number>;
   }
   interface ExtensionSpec {
-    id: string;
     name: string;
+    displayName: string;
     description: string;
-    permissions: string[];
+    permissions: TokenPermission[];
     icon?: string;
     darkIcon?: string;
     lifecycle?: {
-      "on:install"?: string;
       "on:uninstall"?: string;
       "on:configure"?: string;
       "on:initContentPieceView"?: string;
@@ -35,30 +34,37 @@ declare module "@vrite/extensions" {
   }
 
   interface ExtensionBaseContext {
-    spec: Pick<ExtensionSpec, "id" | "name" | "description">;
-    temp: ContextObject;
+    spec: Pick<ExtensionSpec, "name" | "displayName" | "description">;
     config: ContextObject;
     client: Omit<Client, "reconfigure">;
+    token: string;
+    extensionId: string;
+    notify(message: { text: string; type: "success" | "error" }): void;
+  }
+  interface ExtensionBaseViewContext extends ExtensionBaseContext {
+    temp: ContextObject;
     setTemp(key: string, value: ContextValue): void;
     setTemp(config: ContextObject): void;
   }
-  interface ExtensionInstallationContext extends ExtensionBaseContext {
-    addWebhook(): Promise<void>;
-    removeWebhook(): Promise<void>;
-  }
-  interface ExtensionConfigurationViewContext extends ExtensionBaseContext {
+  interface ExtensionConfigurationViewContext extends ExtensionBaseViewContext {
     setConfig(key: string, value: ContextValue): void;
     setConfig(config: ContextObject): void;
   }
-  interface ExtensionContentPieceViewContext extends ExtensionBaseContext {
-    contentPiece: ContentPieceWithTags;
+  interface ExtensionContentPieceViewContext extends ExtensionBaseViewContext {
+    contentPiece: ExtendedContentPieceWithTags<"slug" | "locked" | "coverWidth">;
     data: ContextObject;
     setData(key: string, value: ContextValue): void;
+    setData(data: ContextObject): void;
   }
 
   type ExtensionGeneralContext =
     | ExtensionBaseContext
-    | ExtensionInstallationContext
+    | ExtensionBaseViewContext
+    | ExtensionConfigurationViewContext
+    | ExtensionContentPieceViewContext;
+
+  type ExtensionGeneralViewContext =
+    | ExtensionBaseViewContext
     | ExtensionConfigurationViewContext
     | ExtensionContentPieceViewContext;
 
@@ -67,10 +73,11 @@ declare module "@vrite/extensions" {
     ContextObject,
     ContextArray,
     ExtensionBaseContext,
-    ExtensionInstallationContext,
+    ExtensionBaseViewContext,
     ExtensionConfigurationViewContext,
     ExtensionContentPieceViewContext,
     ExtensionGeneralContext,
+    ExtensionGeneralViewContext,
     ExtensionSpec,
     ExtensionView
   };

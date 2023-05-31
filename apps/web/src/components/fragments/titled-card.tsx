@@ -1,7 +1,7 @@
 import { Component, JSX } from "solid-js";
 import { Card, Heading, IconButton } from "#components/primitives";
 
-interface SettingsCardProps {
+interface TitledCardProps {
   icon: string;
   label: string;
   children?: JSX.Element;
@@ -9,7 +9,7 @@ interface SettingsCardProps {
   gradient?: boolean;
 }
 
-const SettingsCard: Component<SettingsCardProps> = (props) => {
+const TitledCard: Component<TitledCardProps> = (props) => {
   return (
     <Card
       class="w-full flex flex-col m-0 p-0 gap-2 items-start"
@@ -36,4 +36,4 @@ const SettingsCard: Component<SettingsCardProps> = (props) => {
   );
 };
 
-export { SettingsCard };
+export { TitledCard };

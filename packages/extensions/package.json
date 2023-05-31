@@ -13,7 +13,7 @@
     }
   },
   "scripts": {
-    "dev": "scripts build-extensions"
+    "build": "scripts build-extensions"
   },
   "devDependencies": {
     "@types/node": "18.7.1",
@@ -51,8 +51,8 @@
     "@trpc/client": "^10.9.1",
     "@trpc/server": "^10.9.1",
     "@types/mime-types": "^2.1.1",
-    "@vrite/backend": "workspace:^",
-    "@vrite/sdk": "2023.5.26-beta",
+    "@vrite/backend": "workspace:*",
+    "@vrite/sdk": "workspace:*",
     "axios": "^1.3.4",
     "fastify": "^4.12.0",
     "lexorank": "^1.0.5",

@@ -7,9 +7,11 @@ import { App } from "#context";
 import { Dropdown, IconButton, Heading } from "#components/primitives";
 
 interface ContentPieceMetadataProps {
-  contentPiece: App.ContentPieceWithTags;
+  contentPiece: App.ExtendedContentPieceWithTags<"slug" | "locked" | "coverWidth">;
   editable?: boolean;
-  setContentPiece(value: Partial<App.ContentPieceWithTags>): void;
+  setContentPiece(
+    value: Partial<App.ExtendedContentPieceWithTags<"slug" | "locked" | "coverWidth">>
+  ): void;
 }
 
 const ContentPieceMetadata: Component<ContentPieceMetadataProps> = (props) => {
@@ -88,7 +90,14 @@ const ContentPieceMetadata: Component<ContentPieceMetadataProps> = (props) => {
           />
         </Match>
         <Match when={activeSection().id === "extensions"}>
-          <ExtensionsSection contentPiece={props.contentPiece} />
+          <ExtensionsSection
+            contentPiece={props.contentPiece}
+            setCustomData={(customData) => {
+              props.setContentPiece({
+                customData
+              });
+            }}
+          />
         </Match>
       </Switch>
     </>

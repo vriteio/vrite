@@ -1,11 +1,12 @@
 import { ConfigureTokenSubSection, FreshToken } from "./configure-subsection";
 import { SettingsSectionComponent } from "../view";
-import { SettingsCard } from "../settings-card";
+import { TitledCard } from "#components/fragments";
 import {
   mdiClipboardOutline,
   mdiKey,
   mdiKeyPlus,
   mdiKeyStar,
+  mdiPuzzle,
   mdiShieldKey,
   mdiTrashCan,
   mdiTune
@@ -28,10 +29,10 @@ const useTokens = (): {
   loading: Accessor<boolean>;
   moreToLoad: Accessor<boolean>;
   loadMore(): void;
-  tokens(): App.Token[];
+  tokens(): Array<App.Token & { extension?: boolean }>;
 } => {
   const [state, setState] = createStore<{
-    tokens: Array<App.Token>;
+    tokens: Array<App.Token & { extension?: boolean }>;
   }>({
     tokens: []
   });
@@ -90,6 +91,7 @@ const TokenDetails: Component<{
     id: string;
     name: string;
     description: string;
+    extension?: boolean;
   };
   onEdit?(): void;
   onDelete?(): void;
@@ -104,38 +106,47 @@ const TokenDetails: Component<{
         <Heading level={3} class="flex-1 flex justify-start items-center min-h-8">
           {props.token.name || "[No name]"}
         </Heading>
-        <Show when={hasPermission("manageTokens")}>
-          <Tooltip text="Edit" class="mt-1">
-            <IconButton
-              path={mdiTune}
-              text="soft"
-              disabled={loading()}
-              class="m-0"
-              onClick={() => {
-                props.onEdit?.();
-              }}
-            />
-          </Tooltip>
-          <Tooltip text="Delete" class="mt-1">
-            <IconButton
-              path={mdiTrashCan}
-              text="soft"
-              class="m-0"
-              loading={loading()}
-              onClick={async () => {
-                setLoading(true);
-                await client.tokens.delete.mutate({
-                  id: props.token.id
-                });
-                setLoading(false);
-                props.onDelete?.();
-                notify({
-                  text: "API Token deleted",
-                  type: "success"
-                });
-              }}
-            />
-          </Tooltip>
+        <Show
+          when={!props.token.extension}
+          fallback={
+            <Tooltip text="Extension" class="mt-1">
+              <IconButton path={mdiPuzzle} text="soft" class="m-0" badge />
+            </Tooltip>
+          }
+        >
+          <Show when={hasPermission("manageTokens")}>
+            <Tooltip text="Edit" class="mt-1">
+              <IconButton
+                path={mdiTune}
+                text="soft"
+                disabled={loading()}
+                class="m-0"
+                onClick={() => {
+                  props.onEdit?.();
+                }}
+              />
+            </Tooltip>
+            <Tooltip text="Delete" class="mt-1">
+              <IconButton
+                path={mdiTrashCan}
+                text="soft"
+                class="m-0"
+                loading={loading()}
+                onClick={async () => {
+                  setLoading(true);
+                  await client.tokens.delete.mutate({
+                    id: props.token.id
+                  });
+                  setLoading(false);
+                  props.onDelete?.();
+                  notify({
+                    text: "API Token deleted",
+                    type: "success"
+                  });
+                }}
+              />
+            </Tooltip>
+          </Show>
         </Show>
       </div>
       <Show when={props.token.description}>
@@ -197,7 +208,7 @@ const APISection: SettingsSectionComponent = (props) => {
       }
     >
       <Show when={createdToken()}>
-        <SettingsCard icon={mdiKeyStar} label={createdToken()?.name || "[No name]"} gradient>
+        <TitledCard icon={mdiKeyStar} label={createdToken()?.name || "[No name]"} gradient>
           <p class="w-full">Save your API token now. You won’t be able to see it again!</p>
           <div class="flex items-center justify-center gap-2 w-full">
             <Input
@@ -222,9 +233,9 @@ const APISection: SettingsSectionComponent = (props) => {
               />
             </Tooltip>
           </div>
-        </SettingsCard>
+        </TitledCard>
       </Show>
-      <SettingsCard icon={mdiShieldKey} label="Access tokens">
+      <TitledCard icon={mdiShieldKey} label="Access tokens">
         <Show when={tokens().length || !loading()} fallback={<Loader />}>
           <For each={tokens()} fallback={<p class="px-2 w-full text-start">No tokens found</p>}>
             {(token) => {
@@ -264,7 +275,7 @@ const APISection: SettingsSectionComponent = (props) => {
             </Button>
           </Show>
         </Show>
-      </SettingsCard>
+      </TitledCard>
     </Show>
   );
 };

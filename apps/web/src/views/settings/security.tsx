@@ -1,8 +1,7 @@
-import { SettingsCard } from "./settings-card";
 import { SettingsSectionComponent } from "./view";
 import { mdiCheck, mdiEmail, mdiEye, mdiEyeOff, mdiLock } from "@mdi/js";
 import { Show, createMemo, createResource, createSignal, onCleanup } from "solid-js";
-import { InputField } from "#components/fragments";
+import { InputField, TitledCard } from "#components/fragments";
 import { Button, IconButton, Loader, Tooltip } from "#components/primitives";
 import { validatePassword } from "#lib/utils";
 import { App, useClientContext, useNotificationsContext } from "#context";
@@ -52,11 +51,11 @@ const SecuritySection: SettingsSectionComponent = () => {
   return (
     <>
       <Show when={profile()?.passwordChangeInVerification}>
-        <SettingsCard gradient icon={mdiEmail} label="Verify password change">
+        <TitledCard gradient icon={mdiEmail} label="Verify password change">
           <p class="prose w-full">Verify password change by following the link in your inbox.</p>
-        </SettingsCard>
+        </TitledCard>
       </Show>
-      <SettingsCard
+      <TitledCard
         icon={mdiLock}
         label="Change password"
         action={
@@ -82,7 +81,7 @@ const SecuritySection: SettingsSectionComponent = () => {
         }
       >
         <Show when={!profile.loading} fallback={<Loader />}>
-          <div class="prose w-full">
+          <div class="prose w-full text-gray-500 dark:text-gray-400">
             You'll receive an email to verify and confirm the password change.
           </div>
           <InputField
@@ -134,7 +133,7 @@ const SecuritySection: SettingsSectionComponent = () => {
             Min. 8 characters, including a number, and a lowercase letter.
           </InputField>
         </Show>
-      </SettingsCard>
+      </TitledCard>
     </>
   );
 };

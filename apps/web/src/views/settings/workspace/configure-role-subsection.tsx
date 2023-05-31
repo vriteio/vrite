@@ -1,9 +1,8 @@
-import { SettingsCard } from "../settings-card";
 import { mdiInformation, mdiKeyChain } from "@mdi/js";
 import { Show, For, createResource, Component, createSignal, createEffect } from "solid-js";
 import { createStore } from "solid-js/store";
 import clsx from "clsx";
-import { InputField } from "#components/fragments";
+import { InputField, TitledCard } from "#components/fragments";
 import { Loader, Select, Heading, Button } from "#components/primitives";
 import { useClientContext, App, useNotificationsContext } from "#context";
 
@@ -112,7 +111,7 @@ const ConfigureRoleSubsection: Component<ConfigureRoleSubsectionProps> = (props)
 
   return (
     <>
-      <SettingsCard icon={mdiInformation} label="Details">
+      <TitledCard icon={mdiInformation} label="Details">
         <Show when={!editedRoleData.loading || !props.editedRoleId} fallback={<Loader />}>
           <InputField
             label="Role name"
@@ -136,8 +135,8 @@ const ConfigureRoleSubsection: Component<ConfigureRoleSubsectionProps> = (props)
             Additional details about the role
           </InputField>
         </Show>
-      </SettingsCard>
-      <SettingsCard icon={mdiKeyChain} label="Permissions">
+      </TitledCard>
+      <TitledCard icon={mdiKeyChain} label="Permissions">
         <Show when={!editedRoleData.loading || !props.editedRoleId} fallback={<Loader />}>
           <For each={permissionsMenu}>
             {({ description, label, permission }) => {
@@ -162,7 +161,7 @@ const ConfigureRoleSubsection: Component<ConfigureRoleSubsectionProps> = (props)
             }}
           </For>
         </Show>
-      </SettingsCard>
+      </TitledCard>
     </>
   );
 };

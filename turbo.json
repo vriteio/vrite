@@ -17,6 +17,9 @@
     },
     "start": {
       "outputs": []
+    },
+    "publish": {
+      "outputs": []
     }
   }
 }

@@ -117,7 +117,7 @@ const contentPiecesRouter = router({
         });
 
         if (contents && contents.content) {
-          content = bufferToJSON(contents.content.buffer);
+          content = bufferToJSON(Buffer.from(contents.content.buffer));
         } else {
           content = { type: "doc", content: [] };
         }

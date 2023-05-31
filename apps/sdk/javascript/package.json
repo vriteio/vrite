@@ -1,0 +1,75 @@
+{
+  "name": "@vrite/sdk",
+  "version": "2023.5.30-beta.2",
+  "private": false,
+  "description": "JavaScript SDK and API client for Vrite - headless CMS for technical content",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "unbuild",
+    "publish": "pnpm publish --access public --no-git-checks"
+  },
+  "bugs": {
+    "url": "https://github.com/fireflysemantics/validator/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vriteio/vrite.git",
+    "directory": "apps/sdk/javascript"
+  },
+  "keywords": [
+    "vrite",
+    "headless cms",
+    "cms",
+    "typescript",
+    "javascript",
+    "sdk",
+    "client",
+    "astro"
+  ],
+  "typesVersions": {
+    "*": {
+      "api": [
+        "./dist/api.d.ts"
+      ],
+      "transformers": [
+        "./dist/transformers.d.ts"
+      ],
+      "astro": [
+        "./dist/astro/index.d.ts"
+      ],
+      "types": [
+        "./dist/types/index.d.ts"
+      ]
+    }
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/api.mjs",
+      "require": "./dist/api.cjs"
+    },
+    "./api": {
+      "import": "./dist/api.mjs",
+      "require": "./dist/api.cjs"
+    },
+    "./transformers": {
+      "import": "./dist/transformers.mjs",
+      "require": "./dist/transformers.cjs"
+    },
+    "./astro": "./dist/astro/index.mjs",
+    "./astro/*": "./dist/astro/*"
+  },
+  "main": "./dist/api.cjs",
+  "types": "./dist/api.d.ts",
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "astro": "^2.1.0",
+    "isomorphic-unfetch": "^3.1.0",
+    "vite": "^4.1.4"
+  },
+  "devDependencies": {
+    "unbuild": "^1.1.2"
+  }
+}

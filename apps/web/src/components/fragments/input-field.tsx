@@ -43,7 +43,7 @@ const TextField: Component<InputFieldProps<"text">> = (props) => {
         {props.optional && <span class="text-sm opacity-50"> (optional)</span>}
       </Heading>
       <Show when={props.children}>
-        <p class="prose">{props.children}</p>
+        <p class="prose text-gray-500 dark:text-gray-400">{props.children}</p>
       </Show>
       <Input
         {...(props.inputProps || {})}
@@ -68,7 +68,7 @@ const SelectField: Component<InputFieldProps<"select">> = (props) => {
         {props.optional && <span class="text-sm opacity-50"> (optional)</span>}
       </Heading>
       <Show when={props.children}>
-        <p class="prose">{props.children}</p>
+        <p class="prose text-gray-500 dark:text-gray-400">{props.children}</p>
       </Show>
       <Select
         placeholder={props.placeholder}
@@ -90,8 +90,10 @@ const CheckboxField: Component<InputFieldProps<"checkbox">> = (props) => {
       <p class="prose">
         <b>{props.label}</b>
         <Show when={props.children}>
-          {" - "}
-          {props.children}
+          <span class="text-gray-500 dark:text-gray-400">
+            {" - "}
+            {props.children}
+          </span>
         </Show>
       </p>
     </div>

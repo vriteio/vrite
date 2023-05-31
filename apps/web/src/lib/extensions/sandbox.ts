@@ -14,8 +14,12 @@ interface ExtensionsSandbox {
     spec: ExtensionSpec,
     func: string,
     ctx: {
-      context: Omit<ExtensionGeneralContext, "client">;
-      setContext: SetStoreFunction<Omit<ExtensionGeneralContext, "client">>;
+      extensionId: string;
+      token: string;
+      context: Omit<ExtensionGeneralContext, "client" | "token" | "extensionId" | "notify">;
+      setContext?: SetStoreFunction<
+        Omit<ExtensionGeneralContext, "client" | "token" | "extensionId" | "notify">
+      >;
     }
   ): Promise<unknown>;
 }
@@ -25,7 +29,9 @@ declare const Websandbox: import("@jetbrains/websandbox").default;
 const loadSandbox = (): ExtensionsSandbox => {
   const { notify } = useNotificationsContext();
   const [resolveRef, setResolveRef] = createRef(() => {});
-  const [setContextRef, setSetContextRef] = createRef(() => {});
+  const [setContextRef, setSetContextRef] = createRef<
+    SetStoreFunction<Omit<ExtensionGeneralContext, "client" | "token" | "extensionId" | "notify">>
+  >(() => {});
   const sandbox = Sandbox.create(
     {
       hasLoaded() {
@@ -33,10 +39,10 @@ const loadSandbox = (): ExtensionsSandbox => {
 
         resolve?.();
       },
-      notify(data) {
-        notify(data);
-      },
-      forceUpdate(data) {
+      notify,
+      forceUpdate(
+        data: Omit<ExtensionGeneralContext, "client" | "token" | "extensionId" | "notify">
+      ) {
         setContextRef()(data);
       }
     },
@@ -51,7 +57,9 @@ const loadSandbox = (): ExtensionsSandbox => {
     // eslint-disable-next-line func-names
     sandbox.run(async function sandbox() {
       const { createClient } = await import("@vrite/sdk");
-      const client = createClient({ token: "" });
+      const client = createClient({
+        token: ""
+      });
       const context: Record<string, ContextObject> = {};
       const createSetterMethod = (contextKey: string) => {
         return (keyOrPartial: string | ContextObject, value?: ContextValue) => {
@@ -66,7 +74,7 @@ const loadSandbox = (): ExtensionsSandbox => {
           } else {
             Object.assign(context[contextKey], keyOrPartial);
 
-            const dynamic = Object.entries(keyOrPartial).some(([key]) => key.startsWith("$"));
+            const dynamic = Object.keys(keyOrPartial).some((key) => key.startsWith("$"));
 
             if (dynamic) {
               Websandbox.connection?.remote.forceUpdate(JSON.parse(JSON.stringify(context)));
@@ -82,12 +90,13 @@ const loadSandbox = (): ExtensionsSandbox => {
       const buildContext = ({ methods, ...inputContext }: ContextObject): void => {
         Object.assign(context, {
           ...inputContext,
-          ...Object.fromEntries(
-            (methods as Array<keyof typeof contextMethods>).map((method) => [
-              method,
-              contextMethods[method]
-            ])
-          )
+          ...(methods &&
+            Object.fromEntries(
+              (methods as Array<keyof typeof contextMethods>).map((method) => [
+                method,
+                contextMethods[method]
+              ])
+            ))
         });
       };
 
@@ -117,9 +126,12 @@ const loadSandbox = (): ExtensionsSandbox => {
           await module.default({
             ...context,
             client,
+            token: meta.token,
+            extensionId: meta.extensionId,
             notify: Websandbox.connection?.remote.notify,
-            forceUpdate: () =>
-              Websandbox.connection?.remote.forceUpdate(JSON.parse(JSON.stringify(context)))
+            forceUpdate: () => {
+              return Websandbox.connection?.remote.forceUpdate(JSON.parse(JSON.stringify(context)));
+            }
           });
 
           return JSON.parse(JSON.stringify(context));
@@ -139,22 +151,33 @@ const loadSandbox = (): ExtensionsSandbox => {
   };
 
   return {
-    callFunction: async (spec, funcName, { context, setContext }) => {
-      setSetContextRef(setContext);
+    callFunction: async (spec, funcName, { context, setContext, token, extensionId }) => {
+      setSetContextRef(setContext || (() => {}));
 
       const func = spec.functions[funcName];
       const updatedContext = await sandbox.connection?.remote.callFunction(
         func,
         JSON.parse(JSON.stringify(unwrap(context))),
         {
-          token: "",
-          extensionId: spec.id
+          extensionId,
+          token
         }
       );
 
-      setContext(updatedContext);
+      Object.keys(updatedContext).forEach((key) => {
+        const value = updatedContext[key];
+        const setter = context[
+          `set${key[0].toUpperCase()}${key.slice(1)}` as keyof typeof context
+        ] as unknown;
 
-      if (!isOfficialExtension(spec.id)) {
+        if (key === "spec") return;
+
+        if (setter && typeof setter === "function") {
+          setter(value);
+        }
+      });
+
+      if (!isOfficialExtension(spec.name)) {
         await reload();
       }
     }

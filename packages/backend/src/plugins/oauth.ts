@@ -107,7 +107,8 @@ const oAuth2Plugin = publicPlugin(async (fastify) => {
 
       return res.redirect("/");
     } catch (error) {
-      console.log(error);
+      // eslint-disable-next-line no-console
+      console.error(error);
 
       return res.redirect("/auth");
     }

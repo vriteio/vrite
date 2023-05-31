@@ -1,4 +1,5 @@
 import { OgObject } from "open-graph-scraper/dist/lib/types";
+import { z } from "zod";
 
 const stringToRegex = (str: string): RegExp => {
   return new RegExp(`^${str.replace(/[|\\{}()[\]^$+*?.]/g, "\\$&")}`, "i");
@@ -23,4 +24,4 @@ const extractPreviewDataFromOpenGraph = (input: OgObject): string => {
   return "";
 };
 
-export { stringToRegex, extractPreviewDataFromOpenGraph };
+export { stringToRegex, extractPreviewDataFromOpenGraph, z };
