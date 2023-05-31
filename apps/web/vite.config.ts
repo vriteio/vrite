@@ -17,7 +17,14 @@ export default defineConfig(async () => {
         "/proxy": { target: "http://localhost:3333", ws: true }
       }
     },
-    build: { minify: "terser", target: "esnext" },
+    build: {
+      minify: "terser",
+      target: "esnext",
+      terserOptions: {
+        mangle: { keep_fnames: true },
+        compress: { keep_fnames: true }
+      }
+    },
     plugins: [tsconfigPaths(), unocss(), solidPlugin()]
   };
 });
