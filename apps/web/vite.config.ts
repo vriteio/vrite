@@ -2,6 +2,7 @@ import { defineConfig, loadEnv } from "vite";
 import solidPlugin from "vite-plugin-solid";
 import tsconfigPaths from "vite-tsconfig-paths";
 import unocss from "unocss/vite";
+import { resolve } from "path";
 
 export default defineConfig(async () => {
   return {
@@ -19,11 +20,7 @@ export default defineConfig(async () => {
     },
     build: {
       minify: "terser",
-      target: "esnext",
-      terserOptions: {
-        mangle: { keep_fnames: true },
-        compress: { keep_fnames: true }
-      }
+      target: "esnext"
     },
     plugins: [tsconfigPaths(), unocss(), solidPlugin()]
   };

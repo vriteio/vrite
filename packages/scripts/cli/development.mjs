@@ -56,6 +56,24 @@ program
     build.watch();
   });
 program
+  .command("dev-script")
+  .description("Start the development server for a web script")
+  .argument("<entry>", "Entry point for the script")
+  .argument("[output]", "Output path for the build", "dist/index.js")
+  .action(async (entry, output) => {
+    /** @type {ChildProcess|undefined} */
+    let proc;
+
+    const build = await context({
+      entryPoints: [entry],
+      bundle: true,
+      outfile: `${output}`,
+      platform: "browser"
+    });
+
+    build.watch();
+  });
+program
   .command("build-node")
   .description("Build Node.js backend project")
   .argument("<entry>", "Entry point for the project")
@@ -86,7 +104,26 @@ program
     await build.rebuild();
     process.exit(0);
   });
+program
+  .command("build-script")
+  .description("Build a a web script")
+  .argument("<entry>", "Entry point for the script")
+  .argument("[output]", "Output path for the build", "dist/index.js")
+  .action(async (entry, output) => {
+    /** @type {ChildProcess|undefined} */
+    let proc;
 
+    const build = await context({
+      entryPoints: [entry],
+      bundle: true,
+      outfile: `${output}`,
+      platform: "browser",
+      minify: true
+    });
+
+    await build.rebuild();
+    process.exit(0);
+  });
 program
   .command("build-extension")
   .alias("build-extensions")

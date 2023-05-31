@@ -407,6 +407,9 @@ importers:
       '@vrite/extensions':
         specifier: workspace:*
         version: link:../../packages/extensions
+      '@vrite/scripts':
+        specifier: workspace:^
+        version: link:../../packages/scripts
       '@vrite/sdk':
         specifier: workspace:*
         version: link:../../packages/sdk/javascript

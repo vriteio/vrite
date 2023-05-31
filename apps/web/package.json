@@ -2,8 +2,8 @@
   "name": "@vrite/web",
   "private": true,
   "scripts": {
-    "dev": "vite --host",
-    "build": "vite build"
+    "dev": "scripts dev-script ./scripts/sandbox.ts ./public/sandbox.js & vite --host",
+    "build": "vite build && scripts build-script ./scripts/sandbox.ts ./dist/sandbox.js"
   },
   "devDependencies": {
     "@types/node": "18.7.1",
@@ -81,6 +81,7 @@
     "@vrite/backend": "workspace:*",
     "@vrite/components": "workspace:*",
     "@vrite/extensions": "workspace:*",
+    "@vrite/scripts": "workspace:^",
     "@vrite/sdk": "workspace:*",
     "@vrite/tiptap-solid": "2023.3.24-2",
     "clsx": "^1.2.1",
