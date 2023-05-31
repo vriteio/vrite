@@ -138,8 +138,7 @@ const devRouter = router({
 
       const client = createClient({
         token,
-        extensionId,
-        baseURL: "http://localhost:4444"
+        extensionId
       });
       const extension = await client.extension.get();
       const contentPiece = await client.contentPieces.get({
@@ -165,8 +164,7 @@ const devRouter = router({
 
       const client = createClient({
         token: "",
-        extensionId,
-        baseURL: "http://localhost:4444"
+        extensionId
       });
       const extension = await client.extension.get();
 

@@ -59,7 +59,7 @@ const loadSandbox = (): ExtensionsSandbox => {
       const { createClient } = await import("@vrite/sdk");
       const client = createClient({
         token: "",
-        baseURL: "http://localhost:4444"
+        extensionId: ""
       });
       const context: Record<string, ContextObject> = {};
       const createSetterMethod = (contextKey: string) => {
@@ -112,9 +112,7 @@ const loadSandbox = (): ExtensionsSandbox => {
         ) => {
           client.reconfigure({
             token: meta.token,
-            headers: {
-              "x-vrite-extension-id": meta.extensionId
-            }
+            extensionId: meta.extensionId
           });
           buildContext(inputContext);
 

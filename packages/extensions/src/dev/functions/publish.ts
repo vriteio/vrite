@@ -9,7 +9,7 @@ const publish = async (context: ExtensionContentPieceViewContext): Promise<void>
   try {
     context.setTemp("$loading", true);
 
-    const response = await fetch("http://localhost:7777/dev", {
+    const response = await fetch("https://extensions.vrite.io/dev", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${context.token}`,
