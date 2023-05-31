@@ -1,7 +1,7 @@
 import { useExtensionsContext } from "#context";
 import { TitledCard } from "#components/fragments";
+import { Loader } from "#components/primitives";
 import { mdiPuzzle, mdiDownload } from "@mdi/js";
-import { ExtensionSpec, ContextObject } from "@vrite/extensions";
 import { Component, createResource, Show, For } from "solid-js";
 import { ExtensionCard } from "./extension-card";
 import { ExtensionDetails } from "#context/extensions";
@@ -42,9 +42,11 @@ const ExtensionsMenuView: Component<{
         <Show
           when={availableExtensions().length > 0}
           fallback={
-            <span class="px-2 w-full text-start text-gray-500 dark:text-gray-400">
-              No other extensions available
-            </span>
+            <Show when={!availableExtensions.loading} fallback={<Loader />}>
+              <span class="px-2 w-full text-start text-gray-500 dark:text-gray-400">
+                No other extensions available
+              </span>
+            </Show>
           }
         >
           <div class="grid w-full grid-cols-1 gap-2 @xl:grid-cols-2">

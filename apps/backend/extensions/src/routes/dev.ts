@@ -70,8 +70,6 @@ const publishToDEV = async (
     article.published = !extension.config.draft;
   }
 
-  console.log(article.published, contentPieceData?.draft, extension.config.draft);
-
   if (contentPieceData?.devId) {
     try {
       const response = await fetch(`https://dev.to/api/articles/${contentPieceData.devId}`, {
@@ -178,7 +176,7 @@ const devRouter = router({
         description: "text"
       });
 
-      if (!extension.config.requireCanonicalLink || contentPiece.canonicalLink) {
+      if (!extension.config?.requireCanonicalLink || contentPiece.canonicalLink) {
         await publishToDEV(contentPiece, extension);
       }
     })

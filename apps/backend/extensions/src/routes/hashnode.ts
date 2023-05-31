@@ -232,9 +232,7 @@ const hashnodeRouter = router({
         description: "text"
       });
 
-      console.log("contentPiece", contentPiece);
-
-      if (!extension.config.requireCanonicalLink || contentPiece.canonicalLink) {
+      if (!extension.config?.requireCanonicalLink || contentPiece.canonicalLink) {
         await publishToHashnode(contentPiece, extension);
       }
     })

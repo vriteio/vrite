@@ -377,7 +377,7 @@ const contentPiecesRouter = router({
         { $set: contentPieceUpdates }
       );
 
-      if (updatedContentGroupId && contentPiece.contentGroupId.equals(updatedContentGroupId)) {
+      if (!updatedContentGroupId || contentPiece.contentGroupId.equals(updatedContentGroupId)) {
         runWebhooks(ctx, "contentPieceUpdated", webhookPayload(newContentPiece));
       } else {
         runWebhooks(ctx, "contentPieceRemoved", webhookPayload(contentPiece));

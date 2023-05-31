@@ -6,7 +6,6 @@ const initConfigurationView = async (context: ExtensionConfigurationViewContext)
     "lockedContentGroups",
     contentGroups
       .filter((contentGroup) => {
-        console.log(contentGroup);
         return contentGroup.locked;
       })
       .map((contentGroup) => {
