@@ -7,6 +7,8 @@ const initContentPieceView = async (context: ExtensionContentPieceViewContext): 
       !context.config.apiKey || !context.config.contentGroupId || context.contentPiece.locked,
     $loading: false
   });
+
+  context.setData("draft", context.config.draft || false);
 };
 
 export default initContentPieceView;

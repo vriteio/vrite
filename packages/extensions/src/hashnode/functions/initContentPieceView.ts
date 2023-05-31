@@ -7,7 +7,6 @@ const configure = async (context: ExtensionContentPieceViewContext): Promise<voi
       !context.config.accessToken || !context.config.contentGroupId || context.contentPiece.locked,
     $loading: false
   });
-  context.setData("draft", context.config.draft || false);
 };
 
 export default configure;

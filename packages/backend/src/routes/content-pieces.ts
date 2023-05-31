@@ -325,6 +325,7 @@ const contentPiecesRouter = router({
         date: updatedDate,
         ...update
       } = input;
+      const extensionId = ctx.req.headers["x-vrite-extension-id"] as string | undefined;
       const contentPiecesCollection = getContentPiecesCollection(ctx.db);
       const contentsCollection = getContentsCollection(ctx.db);
       const workspacesCollection = getWorkspacesCollection(ctx.db);
@@ -341,7 +342,11 @@ const contentPiecesRouter = router({
 
       if (!contentGroup) throw errors.notFound("contentGroup");
 
-      if (contentGroup.locked && (Object.keys(input).length > 1 || !input.contentGroupId)) {
+      if (
+        contentGroup.locked &&
+        (Object.keys(input).length > 1 || !input.contentGroupId) &&
+        !extensionId
+      ) {
         throw errors.locked("contentGroup");
       }
 
