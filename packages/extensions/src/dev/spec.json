@@ -2,7 +2,13 @@
   "name": "dev",
   "displayName": "Dev.to",
   "description": "Automatically publish and update articles on Dev.to",
-  "permissions": ["contentGroups:read", "contentPieces:read", "webhooks:read", "webhooks:write"],
+  "permissions": [
+    "contentGroups:read",
+    "contentPieces:read",
+    "contentPieces:write",
+    "webhooks:read",
+    "webhooks:write"
+  ],
   "lifecycle": {
     "on:install": "install",
     "on:uninstall": "uninstall",

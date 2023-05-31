@@ -15,7 +15,7 @@ const initConfigurationView = async (context: ExtensionConfigurationViewContext)
         };
       })
   );
-  if (!context.config.contentGroupId && context.temp.lockedContentGroups.length > 0) {
+  if (!context.config.contentGroupId && (context.temp.lockedContentGroups as any[]).length > 0) {
     context.setConfig("contentGroupId", contentGroups[0].id);
   }
   if (typeof context.config.autoPublish !== "boolean") {

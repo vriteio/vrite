@@ -177,7 +177,20 @@ const devRouter = router({
       });
 
       if (!extension.config?.requireCanonicalLink || contentPiece.canonicalLink) {
-        await publishToDEV(contentPiece, extension);
+        const { devId } = await publishToDEV(contentPiece, extension);
+        await client.contentPieces.update({
+          id: input.id,
+          customData: {
+            ...contentPiece.customData,
+            __extensions__: {
+              ...(contentPiece.customData?.__extensions__ || {}),
+              [extension.name || ""]: {
+                ...contentPiece.customData?.__extensions__?.[extension.name || ""],
+                devId
+              }
+            }
+          }
+        });
       }
     })
 });

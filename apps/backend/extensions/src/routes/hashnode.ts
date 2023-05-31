@@ -233,7 +233,21 @@ const hashnodeRouter = router({
       });
 
       if (!extension.config?.requireCanonicalLink || contentPiece.canonicalLink) {
-        await publishToHashnode(contentPiece, extension);
+        const { hashnodeId } = await publishToHashnode(contentPiece, extension);
+
+        await client.contentPieces.update({
+          id: input.id,
+          customData: {
+            ...contentPiece.customData,
+            __extensions__: {
+              ...(contentPiece.customData?.__extensions__ || {}),
+              [extension.name || ""]: {
+                ...contentPiece.customData?.__extensions__?.[extension.name || ""],
+                hashnodeId
+              }
+            }
+          }
+        });
       }
     })
 });
