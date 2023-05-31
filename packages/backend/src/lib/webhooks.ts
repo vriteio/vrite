@@ -17,7 +17,6 @@ const runWebhooks = async (
   event: WebhookEvent,
   payload: z.infer<typeof webhookPayload>
 ): Promise<void> => {
-  console.log("runWebhooks", event);
   const webhooksCollection = getWebhooksCollection(ctx.db);
   const webhooks = await webhooksCollection
     .find({
