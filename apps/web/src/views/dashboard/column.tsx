@@ -42,7 +42,8 @@ import {
 import { createRef } from "#lib/utils";
 
 interface ColumnProps {
-  contentGroup: App.ContentGroup & { id: string };
+  contentGroup: App.ContentGroup;
+  index: number;
 }
 interface AddColumnProps {
   class?: string;
@@ -90,7 +91,7 @@ const useContentPieces = (
                 return contentPiece.id !== data.id;
               });
             });
-            notify({ text: "Article deleted", type: "success" });
+            notify({ text: "Content piece deleted", type: "success" });
             break;
           case "create":
             setState("contentPieces", (contentPieces) => [data, ...contentPieces]);
@@ -126,7 +127,7 @@ const useContentPieces = (
                     });
 
                     if (nextReferenceIndex >= 0) {
-                      newContentPieces.splice(nextReferenceIndex - 1, 0, data.contentPiece);
+                      newContentPieces.splice(nextReferenceIndex + 1, 0, data.contentPiece);
                     } else if (!data.previousReferenceId && !data.nextReferenceId) {
                       newContentPieces.push(data.contentPiece);
                     }
@@ -152,7 +153,7 @@ const useContentPieces = (
                   });
 
                   if (nextReferenceIndex >= 0) {
-                    newContentPieces.splice(nextReferenceIndex - 1, 0, data.contentPiece);
+                    newContentPieces.splice(nextReferenceIndex + 1, 0, data.contentPiece);
                   } else if (!data.previousReferenceId && !data.nextReferenceId) {
                     newContentPieces.push(data.contentPiece);
                   }
@@ -276,7 +277,7 @@ const Column: Component<ColumnProps> = (props) => {
             header: "Delete group",
             content: (
               <p>
-                Do you really want to delete this content group? This will also delete all articles
+                Do you really want to delete this content group? This will also delete all pieces
                 related to this group.
               </p>
             ),
@@ -304,8 +305,9 @@ const Column: Component<ColumnProps> = (props) => {
 
   return (
     <Card
-      class="flex flex-col items-start justify-start h-[100vh-4rem] p-4 snap-start relative m-0 mb-1 pr-1 overflow-hidden content-group"
-      data-content-piece-id={props.contentGroup.id}
+      class="flex flex-col items-start justify-start h-[100vh-4rem] p-4 snap-start relative m-0 mb-1 pr-1 overflow-hidden content-group select-none"
+      data-content-group-id={props.contentGroup.id}
+      data-index={props.index}
     >
       <div class="flex items-center justify-center mb-2 w-72">
         <Show when={props.contentGroup.locked}>
@@ -405,16 +407,16 @@ const Column: Component<ColumnProps> = (props) => {
                 onAdd(event) {
                   if (typeof event.oldIndex === "number" && typeof event.newIndex === "number") {
                     const id = event.item.dataset.contentPieceId || "";
-                    const baseReferenceArticle = contentPieces()[event.newIndex];
-                    const secondReferenceArticle = contentPieces()[event.newIndex - 1];
-                    const nextReferenceArticle = secondReferenceArticle;
-                    const previousReferenceArticle = baseReferenceArticle;
+                    const baseReferenceContentPiece = contentPieces()[event.newIndex];
+                    const secondReferenceContentPiece = contentPieces()[event.newIndex - 1];
+                    const nextReferenceContentPiece = secondReferenceContentPiece;
+                    const previousReferenceContentPiece = baseReferenceContentPiece;
 
                     client.contentPieces.move.mutate({
                       id,
                       contentGroupId: props.contentGroup.id,
-                      nextReferenceId: nextReferenceArticle?.id,
-                      previousReferenceId: previousReferenceArticle?.id
+                      nextReferenceId: nextReferenceContentPiece?.id,
+                      previousReferenceId: previousReferenceContentPiece?.id
                     });
                   }
 
@@ -422,7 +424,7 @@ const Column: Component<ColumnProps> = (props) => {
                   const newItems = children.map((value) => {
                     return (
                       contentPieces().find(
-                        (article) => article.id === value.dataset.contentPieceId
+                        (contentPiece) => contentPiece.id === value.dataset.contentPieceId
                       ) || activeDraggable()
                     );
                   });
@@ -445,7 +447,7 @@ const Column: Component<ColumnProps> = (props) => {
                   const newItems = children
                     .map((v) => {
                       return contentPieces().find(
-                        (article) => article.id === v.dataset.contentPieceId
+                        (contentPiece) => contentPiece.id === v.dataset.contentPieceId
                       );
                     })
                     .filter((item) => item) as App.FullContentPieceWithTags[];
@@ -457,24 +459,24 @@ const Column: Component<ColumnProps> = (props) => {
                 onUpdate(event) {
                   if (typeof event.oldIndex === "number" && typeof event.newIndex === "number") {
                     const contentPiece = contentPieces()[event.oldIndex];
-                    const baseReferenceArticle = contentPieces()[event.newIndex];
-                    const secondReferenceArticle =
+                    const baseReferenceContentPiece = contentPieces()[event.newIndex];
+                    const secondReferenceContentPiece =
                       contentPieces()[
                         event.oldIndex < event.newIndex ? event.newIndex + 1 : event.newIndex - 1
                       ];
 
-                    let nextReferenceArticle = secondReferenceArticle;
-                    let previousReferenceArticle = baseReferenceArticle;
+                    let nextReferenceContentPiece = secondReferenceContentPiece;
+                    let previousReferenceContentPiece = baseReferenceContentPiece;
 
                     if (event.oldIndex < event.newIndex) {
-                      nextReferenceArticle = baseReferenceArticle;
-                      previousReferenceArticle = secondReferenceArticle;
+                      nextReferenceContentPiece = baseReferenceContentPiece;
+                      previousReferenceContentPiece = secondReferenceContentPiece;
                     }
 
                     client.contentPieces.move.mutate({
                       id: contentPiece?.id,
-                      nextReferenceId: nextReferenceArticle?.id,
-                      previousReferenceId: previousReferenceArticle?.id
+                      nextReferenceId: nextReferenceContentPiece?.id,
+                      previousReferenceId: previousReferenceContentPiece?.id
                     });
                     setActiveDraggable(null);
                   }
@@ -484,7 +486,8 @@ const Column: Component<ColumnProps> = (props) => {
                   const newItems = children
                     .map((v) => {
                       return contentPieces().find(
-                        (article) => article.id.toString() === (v.dataset.contentPieceId || "")
+                        (contentPiece) =>
+                          contentPiece.id.toString() === (v.dataset.contentPieceId || "")
                       );
                     })
                     .filter((item) => item) as App.FullContentPieceWithTags[];

@@ -44,7 +44,7 @@ const ContentPieceCard: Component<ContentPieceProps> = (props) => {
 
   return (
     <Card
-      class="flex flex-col p-3 m-0 mb-4 max-w-[20rem] contentPiece-card"
+      class="flex flex-col p-3 m-0 mb-4 max-w-[20rem] contentPiece-card select-none"
       color="contrast"
       onClick={() => {
         setStorage((storage) => ({
@@ -54,7 +54,7 @@ const ContentPieceCard: Component<ContentPieceProps> = (props) => {
           contentPieceId: props.contentPiece.id
         }));
       }}
-      data-content-Piece-id={props.contentPiece.id}
+      data-content-piece-id={props.contentPiece.id}
       data-index={props.index}
     >
       <Heading level={4} class="font-bold clamp-2">

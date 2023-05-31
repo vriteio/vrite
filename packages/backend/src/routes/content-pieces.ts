@@ -454,8 +454,6 @@ const contentPiecesRouter = router({
         _id: new ObjectId(input.id)
       });
 
-      if (!contentPiece) throw errors.notFound("contentPiece");
-
       const workspace = await workspacesCollection.findOne({ _id: ctx.auth.workspaceId });
       const contentGroup = workspace?.contentGroups.find((contentGroup) => {
         return contentGroup._id.equals(input.contentGroupId || contentPiece?.contentGroupId);

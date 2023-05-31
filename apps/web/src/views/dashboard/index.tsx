@@ -72,12 +72,13 @@ const useContentGroups = (): {
   });
 
   return {
-    contentGroups: () => state.contentGroups
+    contentGroups: () => state.contentGroups,
+    setContentGroups: (contentGroups) => setState("contentGroups", contentGroups)
   };
 };
 const DashboardView: Component = () => {
   const { workspace, profile } = useAuthenticatedContext();
-  const { contentGroups } = useContentGroups();
+  const { contentGroups, setContentGroups } = useContentGroups();
   const { storage, setStorage, setReferences } = useUIContext();
   const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
   const { client } = useClientContext();
@@ -157,6 +158,21 @@ const DashboardView: Component = () => {
               },
               onEnd() {
                 setSnapEnabled(true);
+                const children = [...(scrollableContainerRef()?.children || [])] as HTMLElement[];
+                const newItems = children
+                  .map((v) => {
+                    return contentGroups().find(
+                      (contentGroup) =>
+                        contentGroup.id.toString() === (v.dataset.contentGroupId || "")
+                    );
+                  })
+                  .filter((item) => item) as App.ContentGroup[];
+
+                children.sort(
+                  (a, b) => parseInt(a.dataset.index || "") - parseInt(b.dataset.index || "")
+                );
+                scrollableContainerRef()?.replaceChildren(...children);
+                setContentGroups(newItems);
               }
             }}
             ref={setScrollableContainerRef}
@@ -167,9 +183,9 @@ const DashboardView: Component = () => {
               )
             }}
           >
-            {(contentGroup) => {
+            {(contentGroup, index) => {
               if (contentGroup) {
-                return <Column contentGroup={contentGroup} />;
+                return <Column contentGroup={contentGroup} index={index()} />;
               }
 
               return (
