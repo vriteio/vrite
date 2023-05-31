@@ -4,13 +4,10 @@ import { mdiPuzzle, mdiDownload } from "@mdi/js";
 import { ExtensionSpec, ContextObject } from "@vrite/extensions";
 import { Component, createResource, Show, For } from "solid-js";
 import { ExtensionCard } from "./extension-card";
+import { ExtensionDetails } from "#context/extensions";
 
 const ExtensionsMenuView: Component<{
-  setOpenedExtension(extension: {
-    spec: ExtensionSpec;
-    configuration?: ContextObject;
-    id?: string;
-  }): void;
+  setOpenedExtension(extension: ExtensionDetails): void;
 }> = (props) => {
   const { getAvailableExtensions, installedExtensions } = useExtensionsContext();
   const [availableExtensions] = createResource(getAvailableExtensions, { initialValue: [] });

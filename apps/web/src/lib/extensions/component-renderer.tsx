@@ -36,7 +36,9 @@ const components = {
   Fragment: (props: RenderedComponentProps) => {
     return <>{props.slots.default}</>;
   },
-  Text: (props: { value: string }) => <>{props.value}</>,
+  Text: (props: { value: string; class?: string }) => {
+    return <span class={props.class}>{props.value}</span>;
+  },
   Button: (props: RenderedComponentProps<ComponentProps<typeof Button>>) => {
     return (
       <Button
@@ -66,6 +68,11 @@ const renderer = new marked.Renderer();
 const linkRenderer = renderer.link;
 renderer.link = (href, title, text) => {
   const html = linkRenderer.call(renderer, href, title, text);
+
+  if (href === text && title == null) {
+    return href;
+  }
+
   return html.replace(/^<a /, '<a target="_blank" rel="nofollow" ');
 };
 const ComponentRenderer: Component<ComponentRendererProps> = (props) => {

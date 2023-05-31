@@ -27,7 +27,7 @@
         "bind:options": "temp.lockedContentGroups",
         "bind:value": "config.contentGroupId"
       },
-      "slot:": "Select a content group to enable the extension for. The group will be used to detect new, updated and removed posts"
+      "slot:": "Select a content group to enable the extension for. New or updated posts will be auto-published when added to the group. Only **locked** content groups are allowed."
     },
     {
       "component": "Field[type=text][color=contrast]",
@@ -49,6 +49,14 @@
     {
       "component": "Field[type=checkbox][color=contrast]",
       "props": {
+        "label": "Draft",
+        "bind:value": "config.draft"
+      },
+      "slot:": "whether the Dev.to article should be in draft (private) by default"
+    },
+    {
+      "component": "Field[type=checkbox][color=contrast]",
+      "props": {
         "label": "Require canonical link",
         "bind:value": "config.requireCanonicalLink"
       },
@@ -63,7 +71,8 @@
         "props": {
           "label": "Series name",
           "options": { "optional": true, "placeholder": "Series name" },
-          "bind:value": "data.seriesName"
+          "bind:value": "data.devSeries",
+          "bind:disabled": "temp.disabled"
         },
         "slot:": "The exact name of the series to which this post should be added"
       },
@@ -72,14 +81,14 @@
         "props": {
           "label": "Draft",
           "bind:value": "data.draft",
-          "bind:disabled": "contentPiece.locked"
+          "bind:disabled": "temp.disabled"
         },
         "slot:": "whether the Dev.to article should be in draft (private)"
       },
       {
         "component": "Button[color=primary].w-full.flex.justify-center.items-center.m-0",
         "props": {
-          "bind:disabled": "temp.buttonDisabled",
+          "bind:disabled": "temp.disabled",
           "on:click": "publish"
         },
         "slot:": {

@@ -19,7 +19,7 @@ import { zodId } from "#lib";
 type ExtensionEvent =
   | { action: "delete"; data: { id: string } }
   | { action: "create"; data: Extension & { id: string } }
-  | { action: "update"; data: { id: string; configuration: ContextObject } };
+  | { action: "update"; data: { id: string; config: ContextObject } };
 
 const publishEvent = createEventPublisher<ExtensionEvent>((workspaceId) => {
   return `extensions:${workspaceId}`;
@@ -107,7 +107,12 @@ const extensionsRouter = router({
         })
       })
     )
-    .output(zodId())
+    .output(
+      z.object({
+        id: zodId(),
+        token: z.string()
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const extensionsCollection = getExtensionsCollection(ctx.db);
       const existingExtension = await extensionsCollection.findOne({
@@ -132,7 +137,7 @@ const extensionsRouter = router({
 
       await extensionsCollection.insertOne({
         _id,
-        configuration: {},
+        config: {},
         name: input.extension.name,
         workspaceId: ctx.auth.workspaceId,
         token: value
@@ -140,14 +145,14 @@ const extensionsRouter = router({
       publishEvent(ctx, `${ctx.auth.workspaceId}`, {
         action: "create",
         data: {
-          configuration: {},
+          config: {},
           name: input.extension.name,
           token: value,
           id: `${_id}`
         }
       });
 
-      return `${_id}`;
+      return { id: `${_id}`, token: value };
     }),
   configure: authenticatedProcedure
     .meta({
@@ -156,7 +161,7 @@ const extensionsRouter = router({
     .input(
       z.object({
         id: zodId(),
-        configuration: contextObject
+        config: contextObject
       })
     )
     .output(z.void())
@@ -166,7 +171,7 @@ const extensionsRouter = router({
         { _id: new ObjectId(input.id) },
         {
           $set: {
-            configuration: input.configuration
+            config: input.config
           }
         }
       );
@@ -179,7 +184,7 @@ const extensionsRouter = router({
         action: "update",
         data: {
           id: input.id,
-          configuration: input.configuration
+          config: input.config
         }
       });
     }),

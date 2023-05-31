@@ -9,7 +9,7 @@ const publish = async (context: ExtensionContentPieceViewContext): Promise<void>
   try {
     context.setTemp("$loading", true);
 
-    const response = await fetch("http://extensions.vrite.io/dev-publish", {
+    const response = await fetch("http://localhost:7777/dev", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${context.token}`,
@@ -32,7 +32,10 @@ const publish = async (context: ExtensionContentPieceViewContext): Promise<void>
       context.setData("devId", data.devId);
     }
 
-    context.setTemp("$loading", false);
+    context.setTemp({
+      $loading: false,
+      buttonLabel: "Update"
+    });
   } catch (error) {
     context.notify({ text: "Couldn't publish to Dev.to", type: "error" });
     context.setTemp("$loading", false);

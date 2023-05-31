@@ -9,6 +9,7 @@ import { createRef } from "#lib/utils";
 import { ExtensionIcon } from "./extension-icon";
 import { ExtensionsMenuView } from "./extensions-menu-view";
 import { ExtensionConfigurationView } from "./extension-configuration-view";
+import { ExtensionDetails } from "#context/extensions";
 
 interface SubSection {
   label: string;
@@ -17,11 +18,7 @@ interface SubSection {
 }
 
 const ExtensionsView: Component = () => {
-  const [openedExtension, setOpenedExtension] = createSignal<{
-    spec: ExtensionSpec;
-    configuration?: ContextObject;
-    id?: string;
-  } | null>(null);
+  const [openedExtension, setOpenedExtension] = createSignal<ExtensionDetails | null>(null);
   const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
   const [subSection, setSubSection] = createSignal<SubSection | null>(null);
   const [actionComponent, setActionComponent] = createSignal<Component<{}> | null>(null);

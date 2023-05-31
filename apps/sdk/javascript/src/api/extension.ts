@@ -11,7 +11,7 @@ interface Extension {
   id: string;
   name: string;
   externalUrl?: string;
-  configuration: ContextObject;
+  config: ContextObject;
   token: string;
 }
 interface ExtensionEndpoints {

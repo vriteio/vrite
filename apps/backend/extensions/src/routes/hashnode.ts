@@ -4,8 +4,16 @@ import { JSONContent, createClient, ContentPieceWithTags, Extension } from "@vri
 import { createContentTransformer, gfmTransformer } from "@vrite/sdk/transformers";
 
 const processContent = (content: JSONContent): string => {
-  const devTransformer = createContentTransformer({
+  const hashnodeTransformer = createContentTransformer({
     applyInlineFormatting(type, attrs, content) {
+      if (type === "strike") {
+        return `<s>${content}</s>`;
+      }
+
+      if (type === "highlight") {
+        return `<mark>${content}</mark>`;
+      }
+
       return gfmTransformer({
         type,
         attrs,
@@ -21,7 +29,7 @@ const processContent = (content: JSONContent): string => {
     transformNode(type, attrs, content) {
       switch (type) {
         case "embed":
-          return `\n{% embed ${attrs?.src || ""} %}\n`;
+          return `\n%[${attrs?.src || ""}]\n`;
         case "taskList":
           return "";
         default:
@@ -40,86 +48,132 @@ const processContent = (content: JSONContent): string => {
     }
   });
 
-  return devTransformer(content);
+  return hashnodeTransformer(content);
 };
-const basePath = "/dev";
-const publishToDEV = async (
+const basePath = "/hashnode";
+const publishToHashnode = async (
   contentPiece: ContentPieceWithTags<Record<string, any>, true>,
   extension: Partial<Extension>
 ) => {
   const contentType = "application/json";
   const contentPieceData = contentPiece.customData?.__extensions__?.[extension.name || ""] || {};
-  const article = {
-    title: contentPiece.title,
-    body_markdown: processContent(contentPiece.content),
-    description: contentPiece.description || undefined,
-    tags: contentPiece.tags
-      .map((tag) => tag.label?.toLowerCase().replace(/\s/g, ""))
-      .filter(Boolean),
-    canonical_url: contentPiece.canonicalLink || undefined,
-    published: true,
-    series: contentPieceData?.devSeries || undefined,
-    main_image: contentPiece.coverUrl || undefined
-  };
 
   if (!extension.config) throw errors.notFound("extension");
 
-  if (typeof contentPieceData?.draft === "boolean") {
-    article.published = !contentPieceData.draft;
-  } else if (typeof extension.config.draft === "boolean") {
-    article.published = !extension.config.draft;
-  }
+  const articleInput = {
+    title: contentPiece.title,
+    slug: contentPiece.slug,
+    contentMarkdown: processContent(contentPiece.content),
+    tags: contentPiece.tags.map((tag) => ({ slug: tag, name: tag, _id: "" })),
+    isPartOfPublication: {
+      publicationId: extension.config!.publicationId
+    },
+    ...(contentPiece.coverUrl && { coverImageURL: contentPiece.coverUrl }),
+    ...(contentPiece.canonicalLink && {
+      isRepublished: {
+        originalArticleURL: contentPiece.canonicalLink
+      }
+    })
+  };
 
-  console.log(article.published, contentPieceData?.draft, extension.config.draft);
-
-  if (contentPieceData?.devId) {
+  if (contentPieceData?.hashnodeId) {
     try {
-      const response = await fetch(`https://dev.to/api/articles/${contentPieceData.devId}`, {
-        method: "PUT",
+      const response = await fetch("https://api.hashnode.com/", {
+        method: "POST",
         headers: {
-          "api-key": `${extension.config.apiKey}`,
+          "Authorization": `${extension.config.accessToken}`,
           "Accept": contentType,
           "content-type": contentType,
           "User-Agent": "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; .NET CLR 1.1.4322)"
         },
         body: JSON.stringify({
-          article
+          query: `mutation ($postId:String!, $input: UpdateStoryInput!) {
+            updateStory(postId:$postId, input: $input) {
+              success
+              post {
+                _id
+              }
+            }
+          }`,
+          variables: {
+            postId: contentPieceData.hashnodeId,
+            input: articleInput
+          }
         })
       });
-      const data: { error?: string; id?: string } = await response.json();
-      if (data.error) {
+      const json: {
+        errors?: Array<{
+          message: string;
+          extensions: Record<string, string>;
+          locations: Array<{ line: number; column: number }>;
+        }>;
+        data?: {
+          updateStory: {
+            success: boolean;
+            post: { _id: string };
+          };
+        };
+      } = await response.json();
+
+      if (json.errors) {
+        console.error(json.errors);
         throw errors.serverError();
       }
 
-      return { devId: `${data.id || ""}` };
+      return { hashnodeId: `${json.data?.updateStory.post._id || ""}` };
     } catch (error) {
+      console.error(error);
       throw errors.serverError();
     }
   } else {
     try {
-      const response = await fetch(`https://dev.to/api/articles`, {
+      const response = await fetch("https://api.hashnode.com/", {
         method: "POST",
-        body: JSON.stringify({ article }),
         headers: {
-          "api-key": `${extension.config.apiKey}`,
+          "Authorization": `${extension.config.accessToken}`,
           "Accept": contentType,
           "content-type": contentType,
           "User-Agent": "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; .NET CLR 1.1.4322)"
-        }
+        },
+        body: JSON.stringify({
+          query: `mutation ($input: CreateStoryInput!) {
+            createStory(input: $input) {
+              success
+              post {
+                _id
+              }
+            }
+          }`,
+          variables: { input: articleInput }
+        })
       });
-      const data: { error?: string; id?: string } = await response.json();
+      const json: {
+        errors?: Array<{
+          message: string;
+          extensions: Record<string, string>;
+          locations: Array<{ line: number; column: number }>;
+        }>;
+        data?: {
+          createStory: {
+            success: boolean;
+            post: { _id: string };
+          };
+        };
+      } = await response.json();
 
-      if (data.error) {
+      if (json.errors) {
+        console.error(json.errors);
         throw errors.serverError();
       }
 
-      return { devId: `${data.id || ""}` };
+      return { hashnodeId: `${json.data?.createStory.post._id || ""}` };
     } catch (error) {
+      console.error(error);
       throw errors.serverError();
     }
   }
 };
-const devRouter = router({
+const hashnodeRouter = router({
   publish: procedure
     .meta({
       openapi: { method: "POST", path: `${basePath}` }
@@ -129,7 +183,7 @@ const devRouter = router({
         contentPieceId: zodId()
       })
     )
-    .output(z.object({ devId: z.string() }))
+    .output(z.object({ hashnodeId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const token = ctx.req.headers.authorization?.replace("Bearer ", "");
       const extensionId = ctx.req.headers["x-vrite-extension-id"] as string | undefined;
@@ -147,8 +201,7 @@ const devRouter = router({
         content: true,
         description: "text"
       });
-
-      return await publishToDEV(contentPiece, extension);
+      return await publishToHashnode(contentPiece, extension);
     }),
   webhook: procedure
     .meta({ openapi: { method: "POST", path: `${basePath}/webhook` } })
@@ -168,6 +221,7 @@ const devRouter = router({
         extensionId,
         baseURL: "http://localhost:4444"
       });
+
       const extension = await client.extension.get();
 
       if (!extension.token) throw errors.unauthorized();
@@ -180,10 +234,12 @@ const devRouter = router({
         description: "text"
       });
 
+      console.log("contentPiece", contentPiece);
+
       if (!extension.config.requireCanonicalLink || contentPiece.canonicalLink) {
-        await publishToDEV(contentPiece, extension);
+        await publishToHashnode(contentPiece, extension);
       }
     })
 });
 
-export { devRouter };
+export { hashnodeRouter };

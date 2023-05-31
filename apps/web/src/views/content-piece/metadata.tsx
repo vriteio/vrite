@@ -2,7 +2,7 @@ import { DetailsSection } from "./details-section";
 import { CustomDataSection } from "./custom-data-section";
 import { ExtensionsSection } from "./extensions-section";
 import { mdiInformationOutline, mdiCodeJson, mdiMenu, mdiPuzzleOutline } from "@mdi/js";
-import { Component, createSignal, For, Switch, Match } from "solid-js";
+import { Component, createSignal, For, Switch, Match, createEffect } from "solid-js";
 import { App } from "#context";
 import { Dropdown, IconButton, Heading } from "#components/primitives";
 
@@ -22,6 +22,12 @@ const ContentPieceMetadata: Component<ContentPieceMetadataProps> = (props) => {
     { label: "Extensions", id: "extensions", icon: mdiPuzzleOutline }
   ];
   const [activeSection, setActiveSection] = createSignal(sections[0]);
+
+  createEffect(() => {
+    if (props.contentPiece.locked) {
+      setActiveSection(sections[0]);
+    }
+  });
 
   return (
     <>

@@ -6,7 +6,7 @@ import { loadSandbox } from "#lib/extensions/sandbox";
 
 interface ExtensionDetails {
   spec: ExtensionSpec;
-  configuration?: ContextObject;
+  config?: ContextObject;
   token?: string;
   id?: string;
 }
@@ -71,7 +71,7 @@ const ExtensionsContextProvider: ParentComponent = (props) => {
             result.push({
               spec,
               id: extension.id,
-              configuration: extension.configuration,
+              config: extension.config,
               token: extension.token
             });
           }
@@ -83,7 +83,7 @@ const ExtensionsContextProvider: ParentComponent = (props) => {
           result.push({
             spec,
             id: extension.id,
-            configuration: extension.configuration,
+            config: extension.config,
             token: extension.token
           });
         }
@@ -101,10 +101,7 @@ const ExtensionsContextProvider: ParentComponent = (props) => {
         const spec = await officialExtensions[data.name as keyof typeof officialExtensions]();
 
         setInstalledExtensions((extensions) => {
-          return [
-            ...extensions,
-            { configuration: data.configuration, id: data.id, token: data.token, spec }
-          ];
+          return [...extensions, { config: data.config, id: data.id, token: data.token, spec }];
         });
       } else if (action === "update") {
         setInstalledExtensions((extensions) => {

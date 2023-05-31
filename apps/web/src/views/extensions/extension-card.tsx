@@ -1,18 +1,13 @@
 import { ExtensionDetails, useClientContext } from "#context";
 import { mdiTune, mdiDownloadOutline } from "@mdi/js";
 import { Card, Heading, IconButton } from "#components/primitives";
-import { ExtensionSpec, ContextObject } from "@vrite/extensions";
 import { Component } from "solid-js";
 import { ExtensionIcon } from "./extension-icon";
 
 interface ExtensionCardProps {
   extension: ExtensionDetails;
   installed?: boolean;
-  setOpenedExtension(extension: {
-    spec: ExtensionSpec;
-    configuration?: ContextObject;
-    id?: string;
-  }): void;
+  setOpenedExtension(extension: ExtensionDetails): void;
 }
 
 const ExtensionCard: Component<ExtensionCardProps> = (props) => {
@@ -35,7 +30,7 @@ const ExtensionCard: Component<ExtensionCardProps> = (props) => {
             if (props.extension.id) {
               props.setOpenedExtension(props.extension);
             } else {
-              const id = await client.extensions.install.mutate({
+              const { id, token } = await client.extensions.install.mutate({
                 extension: {
                   name: props.extension.spec.name,
                   displayName: props.extension.spec.displayName,
@@ -43,7 +38,7 @@ const ExtensionCard: Component<ExtensionCardProps> = (props) => {
                 }
               });
 
-              props.setOpenedExtension({ ...props.extension, configuration: {}, id });
+              props.setOpenedExtension({ ...props.extension, config: {}, id, token });
             }
           }}
           class="m-0 my-1"

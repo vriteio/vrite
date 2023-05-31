@@ -29,7 +29,7 @@ const ExtensionConfigurationView: Component<ExtensionModalProps> = (props) => {
   const { callFunction } = useExtensionsContext();
   const [loading, setLoading] = createSignal(false);
   const [extensionInstallation, setExtensionInstallation] = createStore<{
-    configuration: Record<string, any>;
+    config: Record<string, any>;
     extension: Pick<ExtensionSpec, "name" | "displayName" | "permissions">;
   }>({
     extension: {
@@ -37,7 +37,7 @@ const ExtensionConfigurationView: Component<ExtensionModalProps> = (props) => {
       displayName: props.extension.spec.displayName,
       permissions: props.extension.spec.permissions || []
     },
-    configuration: props.extension.configuration || {}
+    config: props.extension.config || {}
   });
 
   createEffect(() => {
@@ -47,7 +47,7 @@ const ExtensionConfigurationView: Component<ExtensionModalProps> = (props) => {
         displayName: props.extension.spec.displayName,
         permissions: props.extension.spec.permissions || []
       },
-      configuration: props.extension.configuration || {}
+      config: props.extension.config || {}
     });
   });
   props.setActionComponent(() => {
@@ -71,7 +71,7 @@ const ExtensionConfigurationView: Component<ExtensionModalProps> = (props) => {
                         extensionId: props.extension.id || "",
                         token: props.extension.token || "",
                         context: {
-                          config: extensionInstallation.configuration,
+                          config: extensionInstallation.config,
                           spec: props.extension.spec
                         }
                       });
@@ -96,7 +96,7 @@ const ExtensionConfigurationView: Component<ExtensionModalProps> = (props) => {
                 setLoading(true);
                 await client.extensions.configure.mutate({
                   id: props.extension.id,
-                  configuration: extensionInstallation.configuration
+                  config: extensionInstallation.config
                 });
                 const onConfigureCallback = props.extension.spec.lifecycle?.["on:configure"];
 
@@ -105,7 +105,7 @@ const ExtensionConfigurationView: Component<ExtensionModalProps> = (props) => {
                     extensionId: props.extension.id || "",
                     token: props.extension.token || "",
                     context: {
-                      config: extensionInstallation.configuration,
+                      config: extensionInstallation.config,
                       spec: props.extension.spec
                     }
                   });
@@ -132,12 +132,12 @@ const ExtensionConfigurationView: Component<ExtensionModalProps> = (props) => {
         <TitledCard label="Configuration" icon={mdiTune}>
           <ViewContextProvider<ExtensionConfigurationViewContext>
             extension={props.extension}
-            config={extensionInstallation.configuration}
+            config={extensionInstallation.config}
             setConfig={(keyOrObject: string | ContextObject, value?: ContextValue) => {
               if (typeof keyOrObject === "string" && typeof value !== "undefined") {
-                setExtensionInstallation("configuration", keyOrObject, value);
+                setExtensionInstallation("config", keyOrObject, value);
               } else if (typeof keyOrObject === "object") {
-                setExtensionInstallation("configuration", keyOrObject);
+                setExtensionInstallation("config", keyOrObject);
               }
             }}
           >

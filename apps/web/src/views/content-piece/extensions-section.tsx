@@ -6,7 +6,7 @@ import {
   ExtensionSpec
 } from "@vrite/extensions";
 import { Loader, Tooltip, Card } from "#components/primitives";
-import { App, ExtensionDetails, useClientContext, useExtensionsContext } from "#context";
+import { App, ExtensionDetails, useExtensionsContext } from "#context";
 import { ViewContextProvider, ViewRenderer } from "#lib/extensions";
 import clsx from "clsx";
 
@@ -66,7 +66,7 @@ const ExtensionsSection: Component<ExtensionsSectionProps> = (props) => {
         when={true}
       >
         <div class="flex gap-1">
-          <div class="flex flex-col">
+          <div class="flex flex-col gap-1">
             <For each={extensionsWithContentPieceView()}>
               {(extension) => {
                 return (
@@ -78,7 +78,7 @@ const ExtensionsSection: Component<ExtensionsSectionProps> = (props) => {
                           "border-2",
                           activeExtension()?.id === extension.id
                             ? "border-primary"
-                            : "border-transparent"
+                            : "border-gray-200 dark:border-gray-700"
                         )}
                       />
                     </button>
@@ -87,11 +87,17 @@ const ExtensionsSection: Component<ExtensionsSectionProps> = (props) => {
               }}
             </For>
           </div>
-          <Card class="flex flex-col flex-1 p-3 m-0" color="base">
-            <Show when={activeExtension()}>
+          <Card class="flex flex-col justify-center flex-1 p-3 m-0" color="base">
+            <Show
+              when={activeExtension()}
+              keyed
+              fallback={
+                <p class="prose text-gray-500 dark:text-gray-400">No extensions available</p>
+              }
+            >
               <ViewContextProvider<ExtensionContentPieceViewContext>
                 extension={activeExtension()!}
-                config={activeExtension()!.configuration || {}}
+                config={activeExtension()!.config || {}}
                 contentPiece={props.contentPiece}
                 data={
                   props.contentPiece.customData?.__extensions__?.[
@@ -106,6 +112,8 @@ const ExtensionsSection: Component<ExtensionsSectionProps> = (props) => {
                   } else if (typeof keyOrObject === "object") {
                     extensionDataUpdate = keyOrObject;
                   }
+
+                  if (props.contentPiece.locked) return;
 
                   props.setCustomData({
                     ...(props.contentPiece.customData || {}),

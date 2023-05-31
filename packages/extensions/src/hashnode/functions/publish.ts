@@ -9,7 +9,7 @@ const publish = async (context: ExtensionContentPieceViewContext): Promise<void>
   try {
     context.setTemp("$loading", true);
 
-    const response = await fetch("http://extensions.vrite.io/dev-publish", {
+    const response = await fetch("http://localhost:7777/hashnode", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${context.token}`,
@@ -22,19 +22,26 @@ const publish = async (context: ExtensionContentPieceViewContext): Promise<void>
     });
     const data = await response.json();
 
-    if (context.data.devId) {
-      context.notify({ text: "Updated on Dev.to", type: "success" });
+    if (context.data.hashnodeId) {
+      context.notify({ text: "Updated on Hashnode", type: "success" });
     } else {
-      context.notify({ text: "Published to Dev.to", type: "success" });
+      context.notify({ text: "Published to Hashnode", type: "success" });
     }
 
-    if (!context.contentPiece.locked && data.devId && data.devId !== context.data.devId) {
-      context.setData("devId", data.devId);
+    if (
+      !context.contentPiece.locked &&
+      data.hashnodeId &&
+      data.hashnodeId !== context.data.hashnodeId
+    ) {
+      context.setData("hashnodeId", data.hashnodeId);
     }
 
-    context.setTemp("$loading", false);
+    context.setTemp({
+      $loading: false,
+      buttonLabel: "Update"
+    });
   } catch (error) {
-    context.notify({ text: "Couldn't publish to Dev.to", type: "error" });
+    context.notify({ text: "Couldn't publish to Hashnode", type: "error" });
     context.setTemp("$loading", false);
   }
 };

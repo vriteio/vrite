@@ -86,7 +86,7 @@ const SelectField: Component<InputFieldProps<"select">> = (props) => {
 const CheckboxField: Component<InputFieldProps<"checkbox">> = (props) => {
   return (
     <div class="flex gap-1">
-      <Checkbox checked={props.value} setChecked={props.setValue} />
+      <Checkbox checked={props.value} setChecked={props.setValue} disabled={props.disabled} />
       <p class="prose">
         <b>{props.label}</b>
         <Show when={props.children}>

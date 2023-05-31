@@ -1,11 +1,12 @@
 import { ExtensionContentPieceViewContext } from "@vrite/extensions";
 
-const configure = async (context: ExtensionContentPieceViewContext): Promise<void> => {
+const initContentPieceView = async (context: ExtensionContentPieceViewContext): Promise<void> => {
   context.setTemp({
     buttonLabel: context.data.devId ? "Update" : "Publish",
-    $loading: false,
-    buttonDisabled: !context.config.apiKey || !context.config.contentGroupId
+    disabled:
+      !context.config.apiKey || !context.config.contentGroupId || context.contentPiece.locked,
+    $loading: false
   });
 };
 
-export default configure;
+export default initContentPieceView;

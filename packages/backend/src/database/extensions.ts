@@ -22,7 +22,7 @@ const extension = z.object({
   id: zodId(),
   name: z.string(),
   externalUrl: z.string().optional(),
-  configuration: contextObject,
+  config: contextObject,
   token: z.string()
 });
 
