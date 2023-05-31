@@ -1,4 +1,4 @@
-import { SettingsCard } from "../settings-card";
+import { TitledCard } from "#components/fragments";
 import { mdiInformation, mdiTagText, mdiTrashCan, mdiTune } from "@mdi/js";
 import { Show, For, Component, createSignal } from "solid-js";
 import { Button, Card, Heading, IconButton, Tooltip } from "#components/primitives";
@@ -117,7 +117,7 @@ const RoleDetails: Component<{
 };
 const RolesCard: Component<RolesCardProps> = (props) => {
   return (
-    <SettingsCard
+    <TitledCard
       icon={mdiTagText}
       label="Roles"
       action={
@@ -160,7 +160,7 @@ const RolesCard: Component<RolesCardProps> = (props) => {
           </Button>
         </Show>
       </Show>
-    </SettingsCard>
+    </TitledCard>
   );
 };
 

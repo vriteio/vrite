@@ -1,16 +1,7 @@
-import { SettingsCard } from "../settings-card";
-import { mdiInformation, mdiKeyChain, mdiWalletMembership } from "@mdi/js";
-import {
-  Show,
-  For,
-  createResource,
-  Component,
-  createSignal,
-  createEffect,
-  createMemo
-} from "solid-js";
+import { mdiInformation } from "@mdi/js";
+import { Show, Component, createSignal, createEffect, createMemo } from "solid-js";
 import { createStore } from "solid-js/store";
-import { InputField } from "#components/fragments";
+import { InputField, TitledCard } from "#components/fragments";
 import { Loader, Select, Heading, Button } from "#components/primitives";
 import { useClientContext, App, useNotificationsContext } from "#context";
 import { validateEmail } from "#lib/utils";
@@ -72,7 +63,7 @@ const InviteMemberSubsection: Component<InviteMemberSubsectionProps> = (props) =
 
   return (
     <>
-      <SettingsCard icon={mdiInformation} label="Details">
+      <TitledCard icon={mdiInformation} label="Details">
         <Show when={!props.rolesLoading} fallback={<Loader />}>
           <InputField
             label="Name"
@@ -116,7 +107,7 @@ const InviteMemberSubsection: Component<InviteMemberSubsectionProps> = (props) =
             />
           </div>
         </Show>
-      </SettingsCard>
+      </TitledCard>
     </>
   );
 };

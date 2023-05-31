@@ -1,11 +1,10 @@
 import { SettingsImageUpload } from "../image-upload";
-import { SettingsCard } from "../settings-card";
 import { mdiInformation } from "@mdi/js";
 import { Component, Show, createEffect, createSignal } from "solid-js";
 import { createStore } from "solid-js/store";
 import { Button, Loader } from "#components/primitives";
 import { App, hasPermission, useClientContext, useNotificationsContext } from "#context";
-import { InputField } from "#components/fragments";
+import { InputField, TitledCard } from "#components/fragments";
 
 interface InformationCardProps {
   workspace: Omit<App.Workspace, "contentGroups"> | null;
@@ -39,7 +38,7 @@ const InformationCard: Component<InformationCardProps> = (props) => {
   });
 
   return (
-    <SettingsCard
+    <TitledCard
       icon={mdiInformation}
       label="Details"
       action={
@@ -115,7 +114,7 @@ const InformationCard: Component<InformationCardProps> = (props) => {
           Additional details about the workspace
         </InputField>
       </Show>
-    </SettingsCard>
+    </TitledCard>
   );
 };
 

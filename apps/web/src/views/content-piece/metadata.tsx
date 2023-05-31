@@ -1,23 +1,33 @@
 import { DetailsSection } from "./details-section";
 import { CustomDataSection } from "./custom-data-section";
-import { mdiInformationOutline, mdiCodeJson, mdiConnection, mdiMenu } from "@mdi/js";
-import { Component, createSignal, For, Switch, Match } from "solid-js";
+import { ExtensionsSection } from "./extensions-section";
+import { mdiInformationOutline, mdiCodeJson, mdiMenu, mdiPuzzleOutline } from "@mdi/js";
+import { Component, createSignal, For, Switch, Match, createEffect } from "solid-js";
 import { App } from "#context";
 import { Dropdown, IconButton, Heading } from "#components/primitives";
 
 interface ContentPieceMetadataProps {
-  contentPiece: App.ContentPieceWithTags;
+  contentPiece: App.ExtendedContentPieceWithTags<"slug" | "locked" | "coverWidth">;
   editable?: boolean;
-  setContentPiece(value: Partial<App.ContentPieceWithTags>): void;
+  setContentPiece(
+    value: Partial<App.ExtendedContentPieceWithTags<"slug" | "locked" | "coverWidth">>
+  ): void;
 }
 
 const ContentPieceMetadata: Component<ContentPieceMetadataProps> = (props) => {
   const [menuOpened, setMenuOpened] = createSignal(false);
   const sections = [
     { label: "Details", id: "details", icon: mdiInformationOutline },
-    { label: "Custom data", id: "custom-data", icon: mdiCodeJson }
+    { label: "Custom data", id: "custom-data", icon: mdiCodeJson },
+    { label: "Extensions", id: "extensions", icon: mdiPuzzleOutline }
   ];
   const [activeSection, setActiveSection] = createSignal(sections[0]);
+
+  createEffect(() => {
+    if (props.contentPiece.locked) {
+      setActiveSection(sections[0]);
+    }
+  });
 
   return (
     <>
@@ -82,6 +92,16 @@ const ContentPieceMetadata: Component<ContentPieceMetadataProps> = (props) => {
             customData={props.contentPiece.customData}
             setCustomData={(customData) => {
               props.setContentPiece({ customData });
+            }}
+          />
+        </Match>
+        <Match when={activeSection().id === "extensions"}>
+          <ExtensionsSection
+            contentPiece={props.contentPiece}
+            setCustomData={(customData) => {
+              props.setContentPiece({
+                customData
+              });
             }}
           />
         </Match>

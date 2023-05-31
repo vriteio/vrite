@@ -1,10 +1,9 @@
-import { SettingsCard } from "./settings-card";
 import { SettingsSectionComponent } from "./view";
 import { SettingsImageUpload } from "./image-upload";
 import { mdiAlert, mdiArrowRightThin, mdiCardAccountDetails, mdiInformation } from "@mdi/js";
 import { Show, createEffect, createMemo, createResource, createSignal, onCleanup } from "solid-js";
 import { createStore } from "solid-js/store";
-import { InputField } from "#components/fragments";
+import { InputField, TitledCard } from "#components/fragments";
 import { Button, Loader, Heading, IconButton } from "#components/primitives";
 import { App, useClientContext, useNotificationsContext } from "#context";
 import { validateEmail, validateUsername } from "#lib/utils";
@@ -101,12 +100,12 @@ const ProfileSection: SettingsSectionComponent = (props) => {
       <Show
         when={profileData.newEmailChangeInVerification || profileData.oldEmailChangeInVerification}
       >
-        <SettingsCard icon={mdiAlert} label="Email changed" gradient>
+        <TitledCard icon={mdiAlert} label="Email changed" gradient>
           Email change verification is in progress. Please check your the inbox of your old and new
           email address for verification.
-        </SettingsCard>
+        </TitledCard>
       </Show>
-      <SettingsCard icon={mdiInformation} label="About you">
+      <TitledCard icon={mdiInformation} label="About you">
         <Show when={!existingProfileData.loading || !initialLoad()} fallback={<Loader />}>
           <div class="flex w-full gap-4 justify-center items-center">
             <SettingsImageUpload
@@ -141,8 +140,8 @@ const ProfileSection: SettingsSectionComponent = (props) => {
             Some interesting details about you
           </InputField>
         </Show>
-      </SettingsCard>
-      <SettingsCard icon={mdiCardAccountDetails} label="Credentials">
+      </TitledCard>
+      <TitledCard icon={mdiCardAccountDetails} label="Credentials">
         <Show when={!existingProfileData.loading || !initialLoad()} fallback={<Loader />}>
           <InputField
             label={
@@ -191,7 +190,9 @@ const ProfileSection: SettingsSectionComponent = (props) => {
           </InputField>
           <div class="flex flex-col gap-1 w-full justify-center items-start">
             <Heading level={3}>Password</Heading>
-            <p class="prose">You can change your password in the Security settings</p>
+            <p class="prose text-gray-500 dark:text-gray-400">
+              You can change your password in the Security settings
+            </p>
             <IconButton
               color="contrast"
               text="soft"
@@ -202,7 +203,7 @@ const ProfileSection: SettingsSectionComponent = (props) => {
             />
           </div>
         </Show>
-      </SettingsCard>
+      </TitledCard>
     </>
   );
 };

@@ -1,0 +1,20 @@
+---
+import { Code } from "astro/components";
+import { JSONContent } from "../api";
+import { htmlTransformer } from "../transformers";
+
+interface Props extends JSONContent {}
+
+const { type, attrs, content } = Astro.props;
+const contentText = content ? content?.[0]?.text || "" : "";
+---
+
+{
+  type === "doc" ? (
+    content?.map((node) => <Astro.self {...node} />)
+  ) : type === "codeBlock" ? (
+    attrs?.lang && <Code code={contentText} lang={`${attrs.lang}`.toLowerCase() as any} />
+  ) : (
+    <Fragment set:html={htmlTransformer(...(Astro.props ? [Astro.props] : []))} />
+  )
+}

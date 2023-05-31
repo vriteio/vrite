@@ -1,9 +1,8 @@
 import { webhookEvents } from "./events";
-import { SettingsCard } from "../settings-card";
 import { mdiCheck, mdiTune } from "@mdi/js";
 import { Component, Show, createEffect, createMemo, createResource, createSignal } from "solid-js";
 import { createStore } from "solid-js/store";
-import { InputField } from "#components/fragments";
+import { InputField, TitledCard } from "#components/fragments";
 import { IconButton, Button, Loader, Tooltip } from "#components/primitives";
 import { App, useClientContext, useNotificationsContext } from "#context";
 import { validateURL } from "#lib/utils";
@@ -108,7 +107,7 @@ const ConfigureWebhookSubsection: Component<ConfigureWebhookSubsectionProps> = (
   });
 
   return (
-    <SettingsCard icon={mdiTune} label="Configure">
+    <TitledCard icon={mdiTune} label="Configure">
       <Show when={!editedWebhookData.loading || !props.editedWebhookId} fallback={<Loader />}>
         <InputField
           label="Name"
@@ -172,7 +171,7 @@ const ConfigureWebhookSubsection: Component<ConfigureWebhookSubsectionProps> = (
           </InputField>
         </Show>
       </Show>
-    </SettingsCard>
+    </TitledCard>
   );
 };
 

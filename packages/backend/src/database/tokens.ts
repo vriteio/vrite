@@ -30,7 +30,8 @@ const token = z.object({
 
 type TokenPermission = z.infer<typeof tokenPermission>;
 
-interface Token<ID extends string | ObjectId = string> extends Omit<z.infer<typeof token>, "id"> {
+interface Token<ID extends string | ObjectId = string>
+  extends Omit<z.infer<typeof token>, "id" | "extensionId"> {
   id: ID;
 }
 interface FullToken<ID extends string | ObjectId = string> extends Token<ID> {
@@ -39,6 +40,7 @@ interface FullToken<ID extends string | ObjectId = string> extends Token<ID> {
   salt: string;
   username: string;
   password: string;
+  extensionId?: ID;
 }
 
 const getTokensCollection = (db: Db): Collection<UnderscoreID<FullToken<ObjectId>>> => {

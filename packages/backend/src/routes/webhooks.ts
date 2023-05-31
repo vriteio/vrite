@@ -36,16 +36,19 @@ const webhooksRouter = router({
       z.object({
         perPage: z.number().default(20),
         page: z.number().default(1),
-        lastId: zodId().optional()
+        lastId: zodId().optional(),
+        extensionOnly: z.boolean().optional()
       })
     )
-    .output(z.array(webhook))
+    .output(z.array(webhook.extend({ extension: z.boolean().optional() })))
     .query(async ({ ctx, input }) => {
+      const extensionId = ctx.req.headers["x-vrite-extension-id"] as string | undefined;
       const webhooksCollection = getWebhooksCollection(ctx.db);
       const cursor = webhooksCollection
         .find({
           workspaceId: ctx.auth.workspaceId,
-          ...(input.lastId ? { _id: { $lt: new ObjectId(input.lastId) } } : {})
+          ...(input.lastId ? { _id: { $lt: new ObjectId(input.lastId) } } : {}),
+          ...(input.extensionOnly && extensionId ? { extensionId: new ObjectId(extensionId) } : {})
         })
         .sort("_id", -1);
 
@@ -55,11 +58,15 @@ const webhooksRouter = router({
 
       const webhooks = await cursor.limit(input.perPage).toArray();
 
-      return webhooks.map(({ _id, workspaceId, metadata, ...webhook }) => {
-        const result: Webhook & { id: string } = {
+      return webhooks.map(({ _id, workspaceId, metadata, extensionId, ...webhook }) => {
+        const result: Webhook & { id: string; extension?: boolean } = {
           ...webhook,
           id: `${_id}`
         };
+
+        if (extensionId) {
+          result.extension = true;
+        }
 
         if (metadata) {
           result.metadata = {
@@ -77,7 +84,7 @@ const webhooksRouter = router({
       permissions: { token: ["webhooks:read"] }
     })
     .input(z.object({ id: z.string() }))
-    .output(webhook)
+    .output(webhook.extend({ extension: z.boolean().optional() }))
     .query(async ({ ctx, input }) => {
       const webhooksCollection = getWebhooksCollection(ctx.db);
       const webhook = await webhooksCollection.findOne({
@@ -88,12 +95,16 @@ const webhooksRouter = router({
       if (!webhook) throw errors.notFound("webhook");
 
       let metadata: Webhook["metadata"] | null = null;
+      let extension: boolean | undefined = undefined;
 
       if (webhook.metadata) {
         metadata = {
           ...webhook.metadata,
           contentGroupId: `${webhook.metadata.contentGroupId}`
         };
+      }
+      if (webhook.extensionId) {
+        extension = true;
       }
 
       return {
@@ -102,7 +113,8 @@ const webhooksRouter = router({
         url: webhook.url,
         name: webhook.name,
         event: webhook.event,
-        ...(metadata ? { metadata } : {})
+        ...(metadata ? { metadata } : {}),
+        ...(extension ? { extension } : {})
       };
     }),
   create: authenticatedProcedure
@@ -113,12 +125,14 @@ const webhooksRouter = router({
     .input(webhook.omit({ id: true }))
     .output(z.object({ id: zodId() }))
     .mutation(async ({ ctx, input }) => {
+      const extensionId = ctx.req.headers["x-vrite-extension-id"] as string | undefined;
       const webhooksCollection = getWebhooksCollection(ctx.db);
       const { metadata, ...create } = input;
       const webhook: UnderscoreID<FullWebhook<ObjectId>> = {
         ...create,
         _id: new ObjectId(),
-        workspaceId: ctx.auth.workspaceId
+        workspaceId: ctx.auth.workspaceId,
+        ...(extensionId && { extensionId: new ObjectId(extensionId) })
       };
 
       if (metadata) {
@@ -146,6 +160,7 @@ const webhooksRouter = router({
     .input(webhook.partial().required({ id: true }))
     .output(z.void())
     .mutation(async ({ ctx, input }) => {
+      const extensionId = ctx.req.headers["x-vrite-extension-id"] as string | undefined;
       const webhooksCollection = getWebhooksCollection(ctx.db);
       const { metadata, ...update } = input;
 
@@ -159,11 +174,14 @@ const webhooksRouter = router({
       }
 
       const { matchedCount } = await webhooksCollection.updateOne(
-        { _id: new ObjectId(input.id) },
+        {
+          _id: new ObjectId(input.id),
+          ...(extensionId && { extensionId: new ObjectId(extensionId) })
+        },
         {
           $set: {
             ...update,
-            ...(metadata ? { metadata: modifiedMetadata || undefined } : {})
+            ...(metadata && { metadata: modifiedMetadata || undefined })
           }
         }
       );

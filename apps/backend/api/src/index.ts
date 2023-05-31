@@ -11,7 +11,7 @@ import { createServer, appRouter } from "@vrite/backend";
       generateOpenApiDocument(appRouter, {
         baseUrl: "https://api.vrite.io",
         title: "Vrite API",
-        version: "2023.5.21"
+        version: "2023.5.31"
       })
     );
   });

@@ -1,0 +1,22 @@
+{
+  "name": "@vrite/extensions-backend",
+  "private": true,
+  "source": "src/index.ts",
+  "main": "index.ts",
+  "scripts": {
+    "dev": "scripts dev-node src/index.ts",
+    "build": "scripts build-node src/index.ts",
+    "start": "node ./dist/index.js"
+  },
+  "dependencies": {
+    "@fastify/cors": "^8.2.1",
+    "@trpc/server": "^10.9.1",
+    "@vrite/backend": "workspace:*",
+    "@vrite/sdk": "workspace:*",
+    "fastify": "^4.17.0",
+    "trpc-openapi": "^1.1.2"
+  },
+  "devDependencies": {
+    "@vrite/scripts": "workspace:*"
+  }
+}

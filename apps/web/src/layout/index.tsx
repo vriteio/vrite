@@ -4,7 +4,12 @@ import { SidebarMenu } from "./sidebar-menu";
 import { ParentComponent, Show, createEffect } from "solid-js";
 import { useLocation } from "@solidjs/router";
 import { mdiFullscreenExit } from "@mdi/js";
-import { AppearanceManager, AuthenticatedContextProvider, useUIContext } from "#context";
+import {
+  AppearanceManager,
+  AuthenticatedContextProvider,
+  ExtensionsContextProvider,
+  useUIContext
+} from "#context";
 import { IconButton, Tooltip } from "#components/primitives";
 
 const Layout: ParentComponent = (props) => {
@@ -20,40 +25,42 @@ const Layout: ParentComponent = (props) => {
   return (
     <AuthenticatedContextProvider>
       <AppearanceManager>
-        <Show
-          when={!storage().zenMode}
-          fallback={
-            <Tooltip
-              wrapperClass="fixed top-0 right-0 z-50 mt-4 mr-4"
-              class="-ml-1"
-              text="Exit Zen mode"
-              side="left"
-            >
-              <IconButton
-                path={mdiFullscreenExit}
-                class="m-0"
-                onClick={() => {
-                  setStorage((storage) => ({ ...storage, zenMode: false }));
-                }}
-              />
-            </Tooltip>
-          }
-        >
-          <SidebarMenu />
-        </Show>
-        <div class="flex flex-col flex-1 h-full overflow-hidden" id="main-scrollable-container">
-          <div class="flex flex-1 h-full">
-            <Show when={!storage().zenMode}>
-              <SidePanel />
-            </Show>
-            <div class="flex-1 relative flex flex-col w-full">
+        <ExtensionsContextProvider>
+          <Show
+            when={!storage().zenMode}
+            fallback={
+              <Tooltip
+                wrapperClass="fixed top-0 right-0 z-50 mt-4 mr-4"
+                class="-ml-1"
+                text="Exit Zen mode"
+                side="left"
+              >
+                <IconButton
+                  path={mdiFullscreenExit}
+                  class="m-0"
+                  onClick={() => {
+                    setStorage((storage) => ({ ...storage, zenMode: false }));
+                  }}
+                />
+              </Tooltip>
+            }
+          >
+            <SidebarMenu />
+          </Show>
+          <div class="flex flex-col flex-1 h-full overflow-hidden" id="main-scrollable-container">
+            <div class="flex flex-1 h-full">
               <Show when={!storage().zenMode}>
-                <Toolbar />
+                <SidePanel />
               </Show>
-              <div class="absolute h-[calc(100%-3rem)] w-full top-12">{props.children}</div>
+              <div class="flex-1 relative flex flex-col w-full">
+                <Show when={!storage().zenMode}>
+                  <Toolbar />
+                </Show>
+                <div class="absolute h-[calc(100%-3rem)] w-full top-12">{props.children}</div>
+              </div>
             </div>
           </div>
-        </div>
+        </ExtensionsContextProvider>
       </AppearanceManager>
     </AuthenticatedContextProvider>
   );

@@ -1,4 +1,4 @@
-import { SettingsCard } from "../settings-card";
+import { TitledCard } from "#components/fragments";
 import {
   mdiAccountCircle,
   mdiAccountMultiple,
@@ -227,7 +227,7 @@ const MemberDetails: Component<MemberDetailsProps> = (props) => {
 };
 const MembersCard: Component<MembersCardProps> = (props) => {
   return (
-    <SettingsCard
+    <TitledCard
       icon={mdiAccountMultiple}
       label="Members"
       action={
@@ -264,7 +264,7 @@ const MembersCard: Component<MembersCardProps> = (props) => {
           </Button>
         </Show>
       </Show>
-    </SettingsCard>
+    </TitledCard>
   );
 };
 

@@ -9,7 +9,7 @@
     "resolveJsonModule": true,
     "jsx": "preserve",
     "jsxImportSource": "solid-js",
-    "types": ["vite/client", "mdx"],
+    "types": ["vite/client", "mdx", "@vrite/extensions"],
     "baseUrl": ".",
     "paths": {
       "#*": ["./src/*", "../../packages/backend/src/*"]

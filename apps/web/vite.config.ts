@@ -8,7 +8,10 @@ export default defineConfig(async () => {
     logLevel: "info",
     server: {
       proxy: {
-        "/api": { target: "http://localhost:3333", ws: true },
+        "/api": {
+          target: "http://localhost:3333",
+          ws: true
+        },
         "/session": { target: "http://localhost:3333", ws: true },
         "/login": { target: "http://localhost:3333", ws: true },
         "/proxy": { target: "http://localhost:3333", ws: true }

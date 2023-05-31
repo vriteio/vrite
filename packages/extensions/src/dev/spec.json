@@ -1,0 +1,106 @@
+{
+  "name": "dev",
+  "displayName": "Dev.to",
+  "description": "Automatically publish and update articles on Dev.to",
+  "permissions": ["contentGroups:read", "contentPieces:read", "webhooks:read", "webhooks:write"],
+  "lifecycle": {
+    "on:install": "install",
+    "on:uninstall": "uninstall",
+    "on:configure": "configure",
+    "on:initConfigurationView": "initConfigurationView",
+    "on:initContentPieceView": "initContentPieceView"
+  },
+  "configurationView": [
+    {
+      "component": "Field[type=text][color=contrast]",
+      "props": {
+        "label": "API key",
+        "placeholder": "API key",
+        "bind:value": "config.apiKey"
+      },
+      "slot:": "Your Dev.to API key. You can generate one in the [settings page](https://dev.to/settings/extensions), under **DEV Community API Keys** section"
+    },
+    {
+      "component": "Field[type=select][color=contrast]",
+      "props": {
+        "label": "Content group",
+        "bind:options": "temp.lockedContentGroups",
+        "bind:value": "config.contentGroupId"
+      },
+      "slot:": "Select a content group to enable the extension for. New or updated posts will be auto-published when added to the group. Only **locked** content groups are allowed."
+    },
+    {
+      "component": "Field[type=text][color=contrast]",
+      "props": {
+        "label": "Organization ID",
+        "optional": true,
+        "bind:value": "config.organizationId"
+      },
+      "slot:": "ID of the Dev.to organization you are in and want to publish your posts to. You can find the organization ID in the URL of the your [Dev.to Dashboard](https://dev.to/dashboard), when **filtering posts by organization**"
+    },
+    {
+      "component": "Field[type=checkbox][color=contrast]",
+      "props": {
+        "label": "Auto publish",
+        "bind:value": "config.autoPublish"
+      },
+      "slot:": "Publish posts automatically"
+    },
+    {
+      "component": "Field[type=checkbox][color=contrast]",
+      "props": {
+        "label": "Draft",
+        "bind:value": "config.draft"
+      },
+      "slot:": "whether the Dev.to article should be in draft (private) by default"
+    },
+    {
+      "component": "Field[type=checkbox][color=contrast]",
+      "props": {
+        "label": "Require canonical link",
+        "bind:value": "config.requireCanonicalLink"
+      },
+      "slot:": "Don't auto-publish when no canonical link is set"
+    }
+  ],
+  "contentPieceView": {
+    "component": "View.flex.flex-col.gap-2",
+    "slot:": [
+      {
+        "component": "Field[type=text][color=contrast]",
+        "props": {
+          "label": "Series name",
+          "options": { "optional": true, "placeholder": "Series name" },
+          "bind:value": "data.devSeries",
+          "bind:disabled": "temp.disabled"
+        },
+        "slot:": "The exact name of the series to which this post should be added"
+      },
+      {
+        "component": "Field[type=checkbox][color=contrast]",
+        "props": {
+          "label": "Draft",
+          "bind:value": "data.draft",
+          "bind:disabled": "temp.disabled"
+        },
+        "slot:": "whether the Dev.to article should be in draft (private)"
+      },
+      {
+        "component": "Button[color=primary].w-full.flex.justify-center.items-center.m-0",
+        "props": {
+          "bind:disabled": "temp.disabled",
+          "on:click": "publish"
+        },
+        "slot:": {
+          "component": "Show",
+          "props": { "bind:value": "temp.$loading" },
+          "slot:true": { "component": "Loader" },
+          "slot:false": {
+            "component": "Text",
+            "props": { "bind:value": "temp.buttonLabel" }
+          }
+        }
+      }
+    ]
+  }
+}
