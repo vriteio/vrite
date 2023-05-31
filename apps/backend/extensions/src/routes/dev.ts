@@ -112,7 +112,7 @@ const publishToDEV = async (
     }
   }
 };
-const devPublishRouter = router({
+const devRouter = router({
   publish: procedure
     .meta({
       openapi: { method: "POST", path: `${basePath}` }
@@ -177,4 +177,4 @@ const devPublishRouter = router({
     })
 });
 
-export { devPublishRouter };
+export { devRouter };

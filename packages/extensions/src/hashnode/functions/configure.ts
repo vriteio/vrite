@@ -7,7 +7,7 @@ const configure = async (context: ExtensionBaseContext) => {
     if (context.config.autoPublish) {
       await context.client.webhooks.update({
         id: webhooks[0].id,
-        url: "https://integrations.vrite.io/dev-publish/webhook",
+        url: "https://extensions.vrite.io/dev-publish/webhook",
         metadata: {
           contentGroupId: `${context.config.contentGroupId}`
         }
@@ -24,7 +24,7 @@ const configure = async (context: ExtensionBaseContext) => {
       metadata: {
         contentGroupId: `${context.config.contentGroupId}`
       },
-      url: "https://integrations.vrite.io/dev-publish/webhook"
+      url: "https://extensions.vrite.io/dev-publish/webhook"
     });
   }
 };

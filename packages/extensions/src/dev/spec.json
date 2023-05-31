@@ -1,7 +1,7 @@
 {
   "name": "dev",
   "displayName": "Dev.to",
-  "description": "Automatically publish and update articles from the specified content group to Dev.to",
+  "description": "Automatically publish and update articles on Dev.to",
   "permissions": ["contentGroups:read", "contentPieces:read", "webhooks:read", "webhooks:write"],
   "lifecycle": {
     "on:install": "install",

@@ -1,11 +1,12 @@
 {
-  "name": "@vrite/app",
+  "name": "@vrite/core",
   "private": true,
   "source": "src/index.ts",
   "main": "index.ts",
   "scripts": {
     "dev": "scripts dev-node src/index.ts",
-    "build": "scripts build-node src/index.ts '../../../dist/app' && cp -rf ../../web/dist/ ../../../dist/app/public"
+    "build": "scripts build-node src/index.ts && cp -rf ../../web/dist/ ./dist/app/public",
+    "start": "node ./dist/index.js"
   },
   "dependencies": {
     "@fastify/static": "^6.10.1",

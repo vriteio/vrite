@@ -20,7 +20,6 @@
     "@types/html-to-text": "^9.0.0",
     "@unocss/reset": "^0.48.5",
     "@vrite/components": "workspace:*",
-    "@vrite/extensions": "workspace:*",
     "@vrite/sdk": "workspace:*",
     "@vrite/web": "workspace:*",
     "astro": "^2.5.1",

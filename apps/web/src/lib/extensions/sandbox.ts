@@ -58,7 +58,8 @@ const loadSandbox = (): ExtensionsSandbox => {
     sandbox.run(async function sandbox() {
       const { createClient } = await import("@vrite/sdk");
       const client = createClient({
-        token: ""
+        token: "",
+        baseURL: "http://localhost:4444"
       });
       const context: Record<string, ContextObject> = {};
       const createSetterMethod = (contextKey: string) => {

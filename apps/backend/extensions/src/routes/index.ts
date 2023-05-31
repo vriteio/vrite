@@ -1,8 +1,8 @@
-import { devPublishRouter } from "./dev-publish";
+import { devRouter } from "./dev";
 import { router } from "@vrite/backend";
 
 const extensionsRouter = router({
-  devPublish: devPublishRouter
+  dev: devRouter
 });
 
 type Router = typeof extensionsRouter;
