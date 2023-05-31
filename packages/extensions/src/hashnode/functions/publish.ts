@@ -22,6 +22,10 @@ const publish = async (context: ExtensionContentPieceViewContext): Promise<void>
     });
     const data = await response.json();
 
+    if (!response.ok || !data.devId) {
+      throw new Error("Couldn't publish to Hashnode");
+    }
+
     if (context.data.hashnodeId) {
       context.notify({ text: "Updated on Hashnode", type: "success" });
     } else {
