@@ -100,7 +100,7 @@ importers:
         version: link:../../../packages/backend
       '@vrite/sdk':
         specifier: workspace:*
-        version: link:../../sdk/javascript
+        version: link:../../../packages/sdk/javascript
       fastify:
         specifier: ^4.17.0
         version: 4.17.0
@@ -192,7 +192,7 @@ importers:
         version: link:../../packages/components
       '@vrite/sdk':
         specifier: workspace:*
-        version: link:../sdk/javascript
+        version: link:../../packages/sdk/javascript
       '@vrite/web':
         specifier: workspace:*
         version: link:../web
@@ -233,22 +233,6 @@ importers:
       astro-robots-txt:
         specifier: ^0.4.1
         version: 0.4.1
-
-  apps/sdk/javascript:
-    dependencies:
-      astro:
-        specifier: ^2.1.0
-        version: 2.5.1
-      isomorphic-unfetch:
-        specifier: ^3.1.0
-        version: 3.1.0
-      vite:
-        specifier: ^4.1.4
-        version: 4.3.1(@types/node@18.7.1)(sass@1.60.0)(terser@5.17.4)
-    devDependencies:
-      unbuild:
-        specifier: ^1.1.2
-        version: 1.1.2
 
   apps/web:
     dependencies:
@@ -425,7 +409,7 @@ importers:
         version: link:../../packages/extensions
       '@vrite/sdk':
         specifier: workspace:*
-        version: link:../sdk/javascript
+        version: link:../../packages/sdk/javascript
       '@vrite/tiptap-solid':
         specifier: 2023.3.24-2
         version: 2023.3.24-2(@tiptap/core@2.0.0-beta.220)(@tiptap/pm@2.0.0-beta.220)(solid-js@1.7.3)
@@ -763,7 +747,7 @@ importers:
         version: link:../backend
       '@vrite/sdk':
         specifier: workspace:*
-        version: link:../../apps/sdk/javascript
+        version: link:../sdk/javascript
       axios:
         specifier: ^1.3.4
         version: 1.3.4
@@ -858,6 +842,22 @@ importers:
       image-type:
         specifier: ^5.2.0
         version: 5.2.0
+
+  packages/sdk/javascript:
+    dependencies:
+      astro:
+        specifier: ^2.1.0
+        version: 2.5.1
+      isomorphic-unfetch:
+        specifier: ^3.1.0
+        version: 3.1.0
+      vite:
+        specifier: ^4.1.4
+        version: 4.3.1(@types/node@18.7.1)(sass@1.60.0)(terser@5.17.4)
+    devDependencies:
+      unbuild:
+        specifier: ^1.1.2
+        version: 1.1.2
 
 packages:
 
