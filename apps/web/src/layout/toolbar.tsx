@@ -26,7 +26,8 @@ const profileOutlineColors = {
   cyan: "ring-cyan-500",
   green: "ring-green-500",
   teal: "ring-teal-500",
-  lime: "ring-lime-500"
+  lime: "ring-lime-500",
+  emerald: "ring-emerald-500"
 };
 const profileIconColors = {
   red: "text-red-500",
@@ -38,7 +39,8 @@ const profileIconColors = {
   cyan: "text-cyan-500",
   green: "text-green-500",
   teal: "text-teal-500",
-  lime: "text-lime-500"
+  lime: "text-lime-500",
+  emerald: "text-emerald-500"
 };
 const UserList: Component<{ provider?: HocuspocusProvider }> = (props) => {
   const { profile } = useAuthenticatedContext();

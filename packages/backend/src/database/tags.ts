@@ -14,7 +14,9 @@ const tagColor = z.enum([
   "cyan",
   "green",
   "teal",
-  "lime"
+  "lime",
+  "fuchsia",
+  "emerald"
 ]);
 const tag = z.object({
   id: zodId(),

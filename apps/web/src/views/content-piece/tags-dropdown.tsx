@@ -18,11 +18,12 @@ import {
   Show,
   Switch,
   Match,
-  For
+  For,
+  createMemo
 } from "solid-js";
 import { createStore } from "solid-js/store";
 import { App, useClientContext } from "#context";
-import { Heading, IconButton, Input, Tooltip, Icon } from "#components/primitives";
+import { Heading, IconButton, Input, Tooltip, Icon, Button } from "#components/primitives";
 import { ScrollShadow } from "#components/fragments";
 import { tagColorClasses } from "#lib/utils";
 
@@ -35,12 +36,14 @@ interface TagsDropdownProps {
 
 const TagsDropdown: Component<TagsDropdownProps> = (props) => {
   const { client } = useClientContext();
-  const [tagQuery, setTagQuery] = createSignal("");
   const [view, setView] = createSignal<"select" | "create">("select");
   const [scrollableListRef, setScrollableListRef] = createSignal<HTMLElement | null>(null);
   const [currentTag, setCurrentTag] = createStore<Omit<App.Tag, "id"> & { id?: string }>({
     color: "gray",
     label: ""
+  });
+  const tagQuery = createMemo(() => {
+    return currentTag.label.toLowerCase().replace(/\s/g, "_");
   });
   const [tags] = createResource(
     createDebouncedMemoOn(tagQuery, (value) => value.toLowerCase().replace(/\s/g, "_"), 250),
@@ -92,7 +95,7 @@ const TagsDropdown: Component<TagsDropdownProps> = (props) => {
 
   return (
     <div class="h-full flex flex-col gap-2">
-      <div class="leading-4 flex justify-center items-center h-8">
+      <div class="leading-4 flex justify-center items-center h-8 px-2 pt-2">
         <Heading level={3} class="leading-none">
           <Show
             when={view() === "select"}
@@ -132,7 +135,7 @@ const TagsDropdown: Component<TagsDropdownProps> = (props) => {
       </div>
       <Switch>
         <Match when={view() === "select"}>
-          <div class="flex items-center justify-center gap-2">
+          <div class="flex items-center justify-center gap-2 px-2">
             <Input
               placeholder="Search tags"
               wrapperClass="flex-1 w-[calc(100%-5rem)]"
@@ -141,33 +144,45 @@ const TagsDropdown: Component<TagsDropdownProps> = (props) => {
               color="contrast"
               value={currentTag.label}
               setValue={(text) => {
-                setTagQuery(text.toLowerCase().replace(/\s/g, "_"));
+                setCurrentTag("label", text);
               }}
             />
-            <Tooltip text="Create tag" side="left" class="-ml-1">
-              <IconButton
-                path={mdiPlus}
-                color="primary"
-                class="m-0"
-                onClick={() => {
-                  setView("create");
-                }}
-              />
-            </Tooltip>
+            <Show when={(tags()?.length || 0) > 0}>
+              <Tooltip text="Create tag" side="left" class="-ml-1">
+                <IconButton
+                  path={mdiPlus}
+                  color="primary"
+                  class="m-0"
+                  onClick={() => {
+                    setView("create");
+                  }}
+                />
+              </Tooltip>
+            </Show>
           </div>
-          <div class="relative overflow-hidden">
-            <div class="overflow-auto max-h-36 scrollbar-sm" ref={setScrollableListRef}>
+          <div class="relative overflow-hidden pl-2 pr-1 pb-2">
+            <div class="overflow-auto max-h-68 scrollbar-sm pr-1" ref={setScrollableListRef}>
               <ScrollShadow scrollableContainerRef={scrollableListRef} />
-              <div class="flex flex-wrap justify-start items-center gap-2">
+              <div class="flex flex-col justify-start items-center gap-2">
                 <For
                   each={tags()}
                   fallback={
-                    <span class="w-full text-center leading-none overflow-hidden">No tags</span>
+                    <span class="w-full text-center leading-none overflow-hidden">
+                      <Button
+                        color="primary"
+                        class="w-full m-0"
+                        onClick={() => {
+                          setView("create");
+                        }}
+                      >
+                        Create tag
+                      </Button>
+                    </span>
                   }
                 >
                   {(tag) => {
                     return (
-                      <div class="flex justify-center items-center">
+                      <div class="flex justify-center items-center w-full">
                         <button
                           class={clsx(
                             tagColorClasses[tag.color],
@@ -178,7 +193,7 @@ const TagsDropdown: Component<TagsDropdownProps> = (props) => {
                             switchTag(tag);
                           }}
                         >
-                          {tag.label}
+                          <span class="flex-1 text-start">{tag.label}</span>
                           <Show when={props.tags.find(({ id }) => id === tag.id)}>
                             <Icon
                               path={mdiClose}
@@ -210,7 +225,7 @@ const TagsDropdown: Component<TagsDropdownProps> = (props) => {
           </div>
         </Match>
         <Match when={view() === "create"}>
-          <div class="flex items-center justify-center gap-2">
+          <div class="flex items-center justify-center gap-2 px-2">
             <Input
               placeholder="Tag label"
               wrapperClass="flex-1 w-[calc(100%-5rem)]"
@@ -234,7 +249,7 @@ const TagsDropdown: Component<TagsDropdownProps> = (props) => {
               />
             </Tooltip>
           </div>
-          <div class="grid grid-cols-6 gap-2">
+          <div class="grid grid-cols-7 gap-2 px-2 pb-2">
             <For each={Object.entries(tagColorClasses)}>
               {([color, tagColorClass]) => {
                 return (

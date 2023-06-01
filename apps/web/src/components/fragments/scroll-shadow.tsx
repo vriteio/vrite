@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { Component, createSignal, onMount } from "solid-js";
+import { Component, createSignal, onCleanup, onMount } from "solid-js";
 import { debounce } from "@solid-primitives/scheduled";
 import { Ref } from "#lib/utils";
 
@@ -35,6 +35,9 @@ const createScrollShadowController = (): ScrollShadowController => {
 const ScrollShadow: Component<ScrollShadowProps> = (props) => {
   const controller = props.controller || createScrollShadowController();
   const [scrollState, setScrollState] = createSignal<"start" | "mid" | "end" | "none">("none");
+  const resizeObserver = new ResizeObserver(() => {
+    controller.processScrollState();
+  });
   const onScrollEnd = debounce(() => props.onScrollEnd?.(), 250);
   const processScrollState = (element: HTMLElement): void => {
     onScrollEnd.clear();
@@ -65,6 +68,13 @@ const ScrollShadow: Component<ScrollShadowProps> = (props) => {
       setScrollState("mid");
     }
   };
+  const debouncedScrollStateUpdate = debounce(() => {
+    controller.processScrollState();
+  }, 250);
+  const handleWindowResize = () => {
+    debouncedScrollStateUpdate.clear();
+    debouncedScrollStateUpdate();
+  };
 
   controller.onProcessScrollState(() => {
     const scrollableContainer = props.scrollableContainerRef();
@@ -80,8 +90,15 @@ const ScrollShadow: Component<ScrollShadowProps> = (props) => {
       scrollableContainer.addEventListener("scroll", () => {
         controller.processScrollState();
       });
+      resizeObserver.observe(scrollableContainer);
       controller.processScrollState();
     }
+  });
+  window.addEventListener("resize", handleWindowResize);
+
+  onCleanup(() => {
+    window.removeEventListener("resize", handleWindowResize);
+    resizeObserver.disconnect();
   });
 
   return (

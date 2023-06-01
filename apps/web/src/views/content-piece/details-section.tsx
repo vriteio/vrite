@@ -179,7 +179,7 @@ const DetailsSection: Component<DetailsSectionProps> = (props) => {
             setOpened={setNewTagOpened}
             placement="bottom-start"
             fixed
-            cardProps={{ class: "p-2 !max-h-64 !max-w-80" }}
+            cardProps={{ class: "p-0 !max-h-96 !max-w-72 w-72" }}
             activatorButton={() => (
               <Tooltip text="Add tag" side="right">
                 <IconButton path={mdiTagPlusOutline} variant="text" />

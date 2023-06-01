@@ -8,7 +8,8 @@ const selectionColors = [
   "cyan",
   "green",
   "teal",
-  "lime"
+  "lime",
+  "emerald"
 ] as const;
 const selectionClasses: Record<
   (typeof selectionColors)[number],
@@ -67,6 +68,11 @@ const selectionClasses: Record<
     cursor: "ring-lime-500",
     outline: "border-lime-500",
     label: "bg-lime-500 dark:bg-lime-500"
+  },
+  emerald: {
+    cursor: "ring-emerald-500",
+    outline: "border-emerald-500",
+    label: "bg-emerald-500 dark:bg-emerald-500"
   }
 };
 const getSelectionColor = (): (typeof selectionColors)[number] => {

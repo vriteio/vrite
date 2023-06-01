@@ -12,7 +12,9 @@ type TagColor =
   | "cyan"
   | "green"
   | "teal"
-  | "lime";
+  | "lime"
+  | "fuchsia"
+  | "emerald";
 interface Tag {
   /**
    * Label describing the tag
