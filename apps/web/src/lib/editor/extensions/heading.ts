@@ -1,4 +1,5 @@
 import { mergeAttributes, Node, textblockTypeInputRule } from "@tiptap/core";
+import { nodePasteRule } from "./node-paste-rule";
 
 type Level = 1 | 2 | 3 | 4 | 5 | 6;
 interface HeadingOptions {
@@ -98,6 +99,23 @@ const Heading = Node.create<HeadingOptions>({
         type: this.type,
         getAttributes: {
           level
+        }
+      });
+    });
+  },
+
+  addPasteRules() {
+    return this.options.enabledLevels.map((level) => {
+      return nodePasteRule({
+        find: new RegExp(`^#{${level}}\\s(.*)`, "g"),
+        type: this.type,
+        getAttributes() {
+          return {
+            level
+          };
+        },
+        getContent(match) {
+          return match[1];
         }
       });
     });

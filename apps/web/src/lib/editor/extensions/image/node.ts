@@ -3,8 +3,8 @@ import { SolidNodeViewRenderer } from "@vrite/tiptap-solid";
 import { Node, mergeAttributes } from "@tiptap/core";
 import { Plugin } from "@tiptap/pm/state";
 import { createSignal } from "solid-js";
-import { useClientContext } from "#context";
 import { nodeInputRule } from "#lib/editor";
+import { nodePasteRule } from "../node-paste-rule";
 
 interface ImageAttributes {
   src?: string;
@@ -27,7 +27,6 @@ declare module "@tiptap/core" {
   }
 }
 
-const inputRegex = /(!\[(.+|:?)]\((\S+)(?:(?:\s+)["'](\S+)["'])?\))/;
 const Image = Node.create<ImageOptions>({
   name: "image",
   addOptions() {
@@ -106,7 +105,7 @@ const Image = Node.create<ImageOptions>({
   addInputRules() {
     return [
       nodeInputRule({
-        find: inputRegex,
+        find: /^(!\[(.+|:?)]\((\S+)(?:(?:\s+)["'](\S+)["'])?\))/,
         type: this.type,
         getAttributes: (match) => {
           const [, , alt, src] = match;
@@ -116,10 +115,20 @@ const Image = Node.create<ImageOptions>({
       })
     ];
   },
+  addPasteRules() {
+    return [
+      nodePasteRule({
+        find: /^(!\[(.+|:?)]\((\S+)(?:(?:\s+)["'](\S+)["'])?\))/gm,
+        type: this.type,
+        getAttributes: (match) => {
+          const [, , alt, src] = match;
 
+          return { src, alt };
+        }
+      })
+    ];
+  },
   addProseMirrorPlugins() {
-    const { client } = useClientContext();
-
     return [
       new Plugin({
         props: {

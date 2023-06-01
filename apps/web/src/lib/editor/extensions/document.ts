@@ -1,4 +1,4 @@
-import { markInputRule } from "@tiptap/core";
+import { markInputRule, markPasteRule } from "@tiptap/core";
 import Document from "@tiptap/extension-document";
 import { useNotificationsContext } from "#context";
 
@@ -19,6 +19,22 @@ const CustomDocument = Document.extend({
     return [
       markInputRule({
         find: /\[(.+?)]\(.+?\)/,
+        type: this.type.schema.marks.link,
+        getAttributes({ input = "" }: RegExpMatchArray) {
+          const [wrappedUrl] = input.match(/\(.+?\)/) || [];
+          const url = wrappedUrl ? wrappedUrl.slice(1, -1) : 0;
+
+          return {
+            href: url || ""
+          };
+        }
+      })
+    ];
+  },
+  addPasteRules() {
+    return [
+      markPasteRule({
+        find: /\[(.+?)]\(.+?\)/g,
         type: this.type.schema.marks.link,
         getAttributes({ input = "" }: RegExpMatchArray) {
           const [wrappedUrl] = input.match(/\(.+?\)/) || [];
