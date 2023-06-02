@@ -72,7 +72,7 @@
       {
         "component": "Button[color=primary].w-full.flex.justify-center.items-center.m-0",
         "props": {
-          "bind:disabled": "temp.buttonDisabled",
+          "bind:disabled": "temp.disabled",
           "on:click": "publish"
         },
         "slot:": {

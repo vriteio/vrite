@@ -22,7 +22,7 @@ const publish = async (context: ExtensionContentPieceViewContext): Promise<void>
     });
     const data = await response.json();
 
-    if (!response.ok || !data.devId) {
+    if (!response.ok || !data.hashnodeId) {
       throw new Error("Couldn't publish to Hashnode");
     }
 

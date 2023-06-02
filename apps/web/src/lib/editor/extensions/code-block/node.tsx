@@ -325,7 +325,6 @@ const CodeBlock = Node.create<CodeBlockOptions>({
           const isPaste = transaction.getMeta("uiEvent") === "paste" && !isPastedFromProseMirror;
           const isDrop = transaction.getMeta("uiEvent") === "drop" && !isDroppedFromProseMirror;
 
-          console.log(isDrop, isPaste);
           if (!isPaste && !isDrop) {
             return;
           }
