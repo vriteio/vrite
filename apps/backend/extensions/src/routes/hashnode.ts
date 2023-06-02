@@ -64,7 +64,11 @@ const publishToHashnode = async (
     title: contentPiece.title,
     slug: contentPiece.slug,
     contentMarkdown: processContent(contentPiece.content),
-    tags: contentPiece.tags.map((tag) => ({ slug: tag, name: tag, _id: "" })),
+    tags: contentPiece.tags.map((tag) => ({
+      slug: (tag.label || "").toLowerCase(),
+      name: (tag.label || "").toLowerCase(),
+      _id: ""
+    })),
     isPartOfPublication: {
       publicationId: extension.config!.publicationId
     },
