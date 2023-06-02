@@ -1,8 +1,8 @@
 <p align="center">
     <a href="https://vrite.io">
         <picture>
-            <source media="(prefers-color-scheme: dark)" srcset=".github/assets/logo-dark.svg">
-            <img src=".github/assets/logo-light.svg" width="196" alt="Logo"/>
+            <source media="(prefers-color-scheme: dark)" srcset=".github/assets/dark/logo.svg">
+            <img src=".github/assets/light/logo.svg" width="196" alt="Logo"/>
         </picture>
     </a>
     <h1 align="center">Open-source, headless CMS for technical content</h1>
