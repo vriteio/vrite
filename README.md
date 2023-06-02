@@ -5,7 +5,7 @@
             <img src=".github/assets/logo-light.svg" width="196" alt="Logo"/>
         </picture>
     </a>
-    <h1 align="center">Open-source, headless CMS for technical content | Public Beta</h1>
+    <h1 align="center">Open-source, headless CMS for technical content</h1>
 </p>
 <h4 align="center">
   <a href="https://docs.vrite.io">Usage Guide</a> |
@@ -28,9 +28,9 @@
 
 Vrite is an open-source headless CMS intended for technical content like programming blogs or documentation. It aims to provide the best user and developer experience for creating, managing and delivering technical content, with features like:
 
-- Built-in Kanban dashboard for managing content production and delivery;
-- Modern WYSIWYG editing experience with support for Markdown, integrated code editor, code formatting and real-time collaboration;
-- Versitile API and Extension System for customizing your experience and delivering content to any frontend;
+- **Built-in Kanban dashboard** for managing content production and delivery;
+- Modern **WYSIWYG** editing experience with support for **Markdown**, integrated **code editor**, code formatting and real-time collaboration;
+- Versitile **API** and **Extension System** for customizing your experience and delivering content to any frontend;
 
 Learn more about all features of Vrite and how to use them from the [official Usage Guide](https://docs.vrite.io).
 
