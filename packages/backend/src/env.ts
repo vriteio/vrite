@@ -1,7 +1,7 @@
 import { z } from "zod";
 import zodToJsonSchema from "zod-to-json-schema";
 
-const envConfig = z.object({
+const envSchema = z.object({
   MONGO_URL: z.string(),
   REDIS_URL: z.string(),
   DATABASE: z.string(),
@@ -29,10 +29,8 @@ const envConfig = z.object({
 
 declare module "fastify" {
   interface FastifyInstance {
-    config: z.infer<typeof envConfig>;
+    config: z.infer<typeof envSchema> & Record<string, string>;
   }
 }
-
-const envSchema = zodToJsonSchema(envConfig);
 
 export { envSchema };

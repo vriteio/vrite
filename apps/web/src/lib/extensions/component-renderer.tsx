@@ -27,6 +27,7 @@ const components = {
         color={"color" in props ? props.color : "base"}
         optional={"optional" in props ? props.optional : false}
         disabled={"disabled" in props ? props.disabled : false}
+        textarea={"textarea" in props ? props.textarea : false}
         {...("options" in props ? { options: props.options } : {})}
       >
         {props.slots.default}

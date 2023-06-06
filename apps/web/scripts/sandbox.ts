@@ -70,16 +70,28 @@ declare const Websandbox: import("@jetbrains/websandbox").default;
       const module = await import(/* @vite-ignore */ `${url}`);
 
       URL.revokeObjectURL(url);
-      await module.default({
-        ...context,
-        client,
-        token: meta.token,
-        extensionId: meta.extensionId,
-        notify: Websandbox.connection?.remote.notify,
-        forceUpdate: () => {
-          return Websandbox.connection?.remote.forceUpdate(JSON.parse(JSON.stringify(context)));
-        }
-      });
+      await module.default(
+        new Proxy(
+          {
+            ...context,
+            client,
+            token: meta.token,
+            extensionId: meta.extensionId,
+            notify: Websandbox.connection?.remote.notify
+          },
+          {
+            get(target, prop: string) {
+              if (prop in target && typeof target[prop as keyof typeof target] !== "undefined") {
+                return target[prop as keyof typeof target];
+              }
+
+              return (...args: any[]) => {
+                return Websandbox.connection?.remote.remoteFunction(prop, ...args);
+              };
+            }
+          }
+        )
+      );
 
       return JSON.parse(JSON.stringify(context));
     }

@@ -28,8 +28,9 @@ interface ExtensionsContextData {
 }
 
 const officialExtensions = {
-  dev: () => import("@vrite/extensions/dev.json"),
-  hashnode: () => import("@vrite/extensions/hashnode.json")
+  "dev": () => import("@vrite/extensions/dev.json"),
+  "hashnode": () => import("@vrite/extensions/hashnode.json"),
+  "gpt-3.5": () => import("@vrite/extensions/gpt-3.5.json")
 };
 const isOfficialExtension = (id: string): boolean => {
   return id in officialExtensions;
@@ -137,5 +138,5 @@ const ExtensionsContextProvider: ParentComponent = (props) => {
 };
 const useExtensionsContext = (): ExtensionsContextData => useContext(ExtensionsContext)!;
 
-export { ExtensionsContextProvider, useExtensionsContext, isOfficialExtension };
+export { ExtensionsContextProvider, ExtensionsContext, useExtensionsContext, isOfficialExtension };
 export type { ExtensionDetails };

@@ -1,0 +1,41 @@
+{
+  "name": "gpt-3.5",
+  "displayName": "GPT-3.5",
+  "description": "Integrates OpenAI's GPT-3.5 into the editor",
+  "permissions": [],
+  "blockActions": [
+    {
+      "id": "generate",
+      "label": "Generate with GPT",
+      "blocks": ["paragraph"],
+      "view": {
+        "component": "View.max-w-sm.flex.flex-col.gap-3",
+        "slot:": [
+          {
+            "component": "Field[type=text][color=contrast]",
+            "props": {
+              "textarea": true,
+              "label": "Prompt",
+              "bind:value": "temp.prompt"
+            }
+          },
+          {
+            "component": "Field[type=checkbox]",
+            "props": {
+              "label": "Include context",
+              "bind:value": "temp.includeContext"
+            },
+            "slot:": "Quote paragraph in the beginning of the prompt for additional context"
+          },
+          {
+            "component": "Button[color=primary].m-0",
+            "slot:": "Generate",
+            "props": {
+              "on:click": "generate"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

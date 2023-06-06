@@ -104,6 +104,9 @@ importers:
       fastify:
         specifier: ^4.17.0
         version: 4.17.0
+      openai:
+        specifier: ^3.2.1
+        version: 3.2.1
       trpc-openapi:
         specifier: ^1.1.2
         version: 1.1.2(@trpc/server@10.18.0)(zod@3.21.4)
@@ -9907,6 +9910,15 @@ packages:
       define-lazy-prop: 3.0.0
       is-inside-container: 1.0.0
       is-wsl: 2.2.0
+
+  /openai@3.2.1:
+    resolution: {integrity: sha512-762C9BNlJPbjjlWZi4WYK9iM2tAVAv0uUp1UmI34vb0CN5T2mjB/qM6RYBmNKMh/dN9fC+bxqPwWJZUTWW052A==}
+    dependencies:
+      axios: 0.26.1
+      form-data: 4.0.0
+    transitivePeerDependencies:
+      - debug
+    dev: false
 
   /openapi-types@12.1.0:
     resolution: {integrity: sha512-XpeCy01X6L5EpP+6Hc3jWN7rMZJ+/k1lwki/kTmWzbVhdPie3jd5O2ZtedEx8Yp58icJ0osVldLMrTB/zslQXA==}

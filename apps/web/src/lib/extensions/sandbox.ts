@@ -27,9 +27,12 @@ interface ExtensionsSandbox {
 const loadSandbox = (): ExtensionsSandbox => {
   const { notify } = useNotificationsContext();
   const [resolveRef, setResolveRef] = createRef(() => {});
-  const [setContextRef, setSetContextRef] = createRef<
-    SetStoreFunction<Omit<ExtensionGeneralContext, "client" | "token" | "extensionId" | "notify">>
-  >(() => {});
+  const [contextRef, setContextRef] = createRef<{
+    value: Omit<ExtensionGeneralContext, "client" | "token" | "extensionId" | "notify">;
+    setter?: SetStoreFunction<
+      Omit<ExtensionGeneralContext, "client" | "token" | "extensionId" | "notify">
+    >;
+  } | null>(null);
   const sandbox = Sandbox.create(
     {
       hasLoaded() {
@@ -38,10 +41,23 @@ const loadSandbox = (): ExtensionsSandbox => {
         resolve?.();
       },
       notify,
+      remoteFunction(
+        functionName: keyof Omit<
+          ExtensionGeneralContext,
+          "client" | "token" | "extensionId" | "notify"
+        >,
+        ...args: any[]
+      ) {
+        const func = contextRef()?.value[functionName] as unknown;
+
+        if (typeof func === "function") {
+          func?.(...args);
+        }
+      },
       forceUpdate(
         data: Omit<ExtensionGeneralContext, "client" | "token" | "extensionId" | "notify">
       ) {
-        setContextRef()(data);
+        contextRef()?.setter?.(data);
       }
     },
     { frameContainer: "#sandbox" }
@@ -67,7 +83,10 @@ const loadSandbox = (): ExtensionsSandbox => {
 
   return {
     callFunction: async (spec, funcName, { context, setContext, token, extensionId }) => {
-      setSetContextRef(setContext || (() => {}));
+      setContextRef({
+        value: context,
+        setter: setContext
+      });
 
       const func = spec.functions[funcName];
       const updatedContext = await sandbox.connection?.remote.callFunction(

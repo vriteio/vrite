@@ -1,8 +1,11 @@
 import { extensionsService } from "./extensions";
-import { createServer } from "@vrite/backend";
+import { createServer, z } from "@vrite/backend";
 
 (async () => {
-  const server = await createServer();
+  const server = await createServer({
+    OPENAI_API_KEY: z.string(),
+    OPENAI_ORGANIZATION: z.string()
+  });
 
   await server.register(extensionsService);
 
