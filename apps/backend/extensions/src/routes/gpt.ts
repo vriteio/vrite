@@ -19,8 +19,7 @@ const gptRouter = router({
       const openai = new OpenAIApi(configuration);
       const response = await openai.createChatCompletion({
         model: "gpt-3.5-turbo",
-        max_tokens: 256,
-        temperature: 0.9,
+        max_tokens: 128,
         messages: [{ role: "user", content: input.prompt }]
       });
 

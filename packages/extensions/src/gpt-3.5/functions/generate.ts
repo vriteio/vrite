@@ -4,7 +4,7 @@ import { gfmTransformer } from "@vrite/sdk/transformers";
 const generate = async (context: ExtensionBlockActionViewContext): Promise<void> => {
   const includeContext = context.temp.includeContext as boolean;
   const prompt = context.temp.prompt as string;
-  const response = await fetch("http://localhost:7777/gpt", {
+  const response = await fetch("https://extensions.vrite.io/gpt", {
     method: "POST",
     headers: {
       "Authorization": `Bearer ${context.token}`,
@@ -16,9 +16,9 @@ const generate = async (context: ExtensionBlockActionViewContext): Promise<void>
     })
   });
 
-  console.log(await response.json());
+  const result = await response.json();
 
-  context.replaceContent("<p>Hello world!</p>");
+  context.replaceContent(`<p>${result.message}</p>`);
 };
 
 export default generate;
