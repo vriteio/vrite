@@ -143,7 +143,7 @@ const Button: Component<ButtonProps> = (providedProps) => {
       <div class={clsx("contents", props.loading && "invisible")}>{props.children}</div>
       <Show when={props.loading}>
         <div class="flex justify-center items-center absolute w-full h-full p-1.5 top-0 left-0">
-          <Loader class="h-full w-full" />
+          <Loader class="h-full" />
         </div>
       </Show>
     </Dynamic>

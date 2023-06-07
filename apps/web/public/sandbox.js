@@ -190,16 +190,27 @@
           `${url}`
         );
         URL.revokeObjectURL(url);
-        await module.default({
-          ...context,
-          client,
-          token: meta.token,
-          extensionId: meta.extensionId,
-          notify: Websandbox.connection?.remote.notify,
-          forceUpdate: () => {
-            return Websandbox.connection?.remote.forceUpdate(JSON.parse(JSON.stringify(context)));
-          }
-        });
+        await module.default(
+          new Proxy(
+            {
+              ...context,
+              client,
+              token: meta.token,
+              extensionId: meta.extensionId,
+              notify: Websandbox.connection?.remote.notify
+            },
+            {
+              get(target, prop) {
+                if (prop in target && typeof target[prop] !== "undefined") {
+                  return target[prop];
+                }
+                return (...args) => {
+                  return Websandbox.connection?.remote.remoteFunction(prop, ...args);
+                };
+              }
+            }
+          )
+        );
         return JSON.parse(JSON.stringify(context));
       }
     });

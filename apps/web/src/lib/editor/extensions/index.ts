@@ -9,3 +9,4 @@ export * from "./document";
 export * from "./placeholder";
 export * from "./trailing-node";
 export * from "./heading";
+export * from "./block-action-menu";

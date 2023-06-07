@@ -1,0 +1,64 @@
+{
+  "name": "gpt-3.5",
+  "displayName": "GPT-3.5",
+  "description": "Integrates OpenAI's GPT-3.5 into the editor",
+  "permissions": [],
+  "blockActions": [
+    {
+      "id": "generate",
+      "label": "Generate with GPT",
+      "blocks": ["paragraph"],
+      "view": {
+        "component": "View.max-w-sm.flex.flex-col.gap-3",
+        "slot:": [
+          {
+            "component": "Field[type=text][color=contrast]",
+            "props": {
+              "textarea": true,
+              "label": "Prompt",
+              "bind:value": "temp.prompt"
+            }
+          },
+          {
+            "component": "Field[type=checkbox]",
+            "props": {
+              "label": "Include context",
+              "bind:value": "temp.includeContext"
+            },
+            "slot:": "Quote paragraph in the beginning of the prompt for additional context"
+          },
+          {
+            "component": "View.flex.w-full.gap-1",
+            "slot:": [
+              {
+                "component": "Button[color=primary].m-0.flex-1",
+                "slot:": "Generate",
+                "props": {
+                  "bind:loading": "temp.$loading",
+                  "on:click": "generate"
+                }
+              },
+              {
+                "component": "Show",
+                "props": {
+                  "bind:value": "temp.$loading"
+                },
+                "slot:true": {
+                  "component": "Tooltip[text=Stop][fixed=true].mt-1",
+                  "slot:": {
+                    "component": "IconButton[text=soft].m-0",
+                    "slot:": "Stop",
+                    "props": {
+                      "path": "M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z",
+                      "on:click": "stop"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

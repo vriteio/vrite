@@ -126,7 +126,9 @@ const ExtensionConfigurationView: Component<ExtensionModalProps> = (props) => {
   return (
     <>
       <TitledCard label="Description" icon={mdiInformationOutline}>
-        <p class="prose text-gray-500 dark:text-gray-400">{props.extension.spec.description}</p>
+        <p class="prose text-gray-500 dark:text-gray-400 w-full">
+          {props.extension.spec.description}
+        </p>
       </TitledCard>
       <Show when={props.extension.spec.configurationView}>
         <TitledCard label="Configuration" icon={mdiTune}>

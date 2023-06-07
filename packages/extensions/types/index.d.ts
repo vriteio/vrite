@@ -1,5 +1,5 @@
 declare module "@vrite/extensions" {
-  import type { Client } from "@vrite/sdk";
+  import type { Client, JSONContent } from "@vrite/sdk";
   import type { ExtendedContentPieceWithTags, TokenPermission } from "@vrite/backend";
 
   // eslint-disable-next-line no-use-before-define
@@ -14,6 +14,13 @@ declare module "@vrite/extensions" {
     [key: `slot:${string}`]: string | ExtensionView | ExtensionView[];
     component: string;
     props?: Record<string, string | boolean | number>;
+  }
+  interface ExtensionBlockActionSpec {
+    "id": string;
+    "label": string;
+    "blocks": string[];
+    "view": ExtensionView | ExtensionView[];
+    "on:init"?: string;
   }
   interface ExtensionSpec {
     name: string;
@@ -30,6 +37,7 @@ declare module "@vrite/extensions" {
     };
     configurationView?: ExtensionView | ExtensionView[];
     contentPieceView?: ExtensionView | ExtensionView[];
+    blockActions?: ExtensionBlockActionSpec[];
     functions: Record<string, string>;
   }
 
@@ -56,6 +64,11 @@ declare module "@vrite/extensions" {
     setData(key: string, value: ContextValue): void;
     setData(data: ContextObject): void;
   }
+  interface ExtensionBlockActionViewContext extends ExtensionBaseViewContext {
+    replaceContent(contentHTML: string): void;
+    refreshContent(): void;
+    content: JSONContent;
+  }
 
   type ExtensionGeneralContext =
     | ExtensionBaseContext
@@ -66,7 +79,8 @@ declare module "@vrite/extensions" {
   type ExtensionGeneralViewContext =
     | ExtensionBaseViewContext
     | ExtensionConfigurationViewContext
-    | ExtensionContentPieceViewContext;
+    | ExtensionContentPieceViewContext
+    | ExtensionBlockActionViewContext;
 
   export {
     ContextValue,
@@ -76,9 +90,11 @@ declare module "@vrite/extensions" {
     ExtensionBaseViewContext,
     ExtensionConfigurationViewContext,
     ExtensionContentPieceViewContext,
+    ExtensionBlockActionViewContext,
     ExtensionGeneralContext,
     ExtensionGeneralViewContext,
     ExtensionSpec,
+    ExtensionBlockActionSpec,
     ExtensionView
   };
 }

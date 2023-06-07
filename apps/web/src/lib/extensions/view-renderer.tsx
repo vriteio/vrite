@@ -7,20 +7,40 @@ import { useExtensionsContext } from "#context";
 
 interface ViewRendererProps {
   spec: ExtensionSpec;
-  view: "configurationView" | "contentPieceView";
+  view: "configurationView" | "contentPieceView" | `blockActionView:${string}`;
 }
 
 const ViewRenderer: Component<ViewRendererProps> = (props) => {
   const { callFunction } = useExtensionsContext();
-  const { context, setContext, extension } = useViewContext();
-  const initEventName = `on:init${props.view[0].toUpperCase()}${props.view.slice(1)}` as
-    | "on:initConfigurationView"
-    | "on:initContentPieceView";
-  const initView = props.spec.lifecycle?.[initEventName];
   const [initiated, setInitiated] = createSignal(false);
+  const { context, setContext, extension } = useViewContext();
+  let initFunction = "";
+  let views: ExtensionView | ExtensionView[] = [];
 
-  if (initView && extension.id && extension.token) {
-    callFunction(props.spec, initView, {
+  if (props.view === "configurationView") {
+    views = props.spec.configurationView || [];
+    initFunction = props.spec.lifecycle?.["on:initConfigurationView"] || "";
+  } else if (props.view === "contentPieceView") {
+    views = props.spec.contentPieceView || [];
+    initFunction = props.spec.lifecycle?.["on:initContentPieceView"] || "";
+  } else {
+    const blockActionId = props.view.split(":")[1];
+    const blockAction = props.spec.blockActions?.find((blockAction) => {
+      return blockAction.id === blockActionId;
+    });
+
+    if (blockAction) {
+      views = blockAction.view || [];
+      initFunction = blockAction["on:init"] || "";
+    }
+  }
+
+  if (!Array.isArray(views)) {
+    views = [views];
+  }
+
+  if (initFunction && extension.id && extension.token) {
+    callFunction(props.spec, initFunction, {
       context,
       setContext,
       extensionId: extension.id,
@@ -30,12 +50,6 @@ const ViewRenderer: Component<ViewRendererProps> = (props) => {
     });
   } else {
     setInitiated(true);
-  }
-
-  let views: ExtensionView | ExtensionView[] = props.spec[props.view]!;
-
-  if (!Array.isArray(views)) {
-    views = [views];
   }
 
   return (

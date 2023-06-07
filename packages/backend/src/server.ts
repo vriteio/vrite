@@ -11,8 +11,10 @@ import mongoPlugin from "@fastify/mongodb";
 import redisPlugin from "@fastify/redis";
 import jwtPlugin from "@fastify/jwt";
 import cookiePlugin from "@fastify/cookie";
+import zodToJsonSchema from "zod-to-json-schema";
+import { ZodRawShape } from "zod";
 
-const createServer = async (): Promise<FastifyInstance> => {
+const createServer = async (envSchemaExtension?: ZodRawShape): Promise<FastifyInstance> => {
   const server = createFastify({
     maxParamLength: 5000,
     logger: false
@@ -21,7 +23,7 @@ const createServer = async (): Promise<FastifyInstance> => {
   // Env
   await server.register(envPlugin, {
     dotenv: true,
-    schema: envSchema
+    schema: zodToJsonSchema(envSchema.extend(envSchemaExtension || {}))
   });
   // Data
   await server

@@ -73,16 +73,12 @@
         "component": "Button[color=primary].w-full.flex.justify-center.items-center.m-0",
         "props": {
           "bind:disabled": "temp.disabled",
+          "bind:loading": "temp.$loading",
           "on:click": "publish"
         },
         "slot:": {
-          "component": "Show",
-          "props": { "bind:value": "temp.$loading" },
-          "slot:true": { "component": "Loader" },
-          "slot:false": {
-            "component": "Text",
-            "props": { "bind:value": "temp.buttonLabel" }
-          }
+          "component": "Text",
+          "props": { "bind:value": "temp.buttonLabel" }
         }
       }
     ]

@@ -104,6 +104,9 @@ importers:
       fastify:
         specifier: ^4.17.0
         version: 4.17.0
+      openai:
+        specifier: ^3.2.1
+        version: 3.2.1
       trpc-openapi:
         specifier: ^1.1.2
         version: 1.1.2(@trpc/server@10.18.0)(zod@3.21.4)
@@ -733,6 +736,9 @@ importers:
       '@hocuspocus/transformer':
         specifier: ^1.0.2
         version: 1.1.3(@tiptap/pm@2.0.3)(y-prosemirror@1.2.0)(yjs@13.5.51)
+      '@microsoft/fetch-event-source':
+        specifier: ^2.0.1
+        version: 2.0.1
       '@sendgrid/mail':
         specifier: ^7.7.0
         version: 7.7.0
@@ -742,6 +748,9 @@ importers:
       '@trpc/server':
         specifier: ^10.9.1
         version: 10.18.0
+      '@types/marked':
+        specifier: ^4.0.8
+        version: 4.0.8
       '@types/mime-types':
         specifier: ^2.1.1
         version: 2.1.1
@@ -760,6 +769,9 @@ importers:
       lexorank:
         specifier: ^1.0.5
         version: 1.0.5
+      marked:
+        specifier: ^4.3.0
+        version: 4.3.0
       mime-types:
         specifier: ^2.1.35
         version: 2.1.35
@@ -4009,6 +4021,10 @@ packages:
 
   /@mdi/js@7.2.96:
     resolution: {integrity: sha512-paR9M9ZT7rKbh2boksNUynuSZMHhqRYnEZOm/KrZTjQ4/FzyhjLHuvw/8XYzP+E7fS4+/Ms/82EN1pl/OFsiIA==}
+    dev: false
+
+  /@microsoft/fetch-event-source@2.0.1:
+    resolution: {integrity: sha512-W6CLUJ2eBMw3Rec70qrsEW0jOm/3twwJv21mrmj2yORiaVmVYGS4sSS5yUwvQc1ZlDLYGPnClVWmUUMagKNsfA==}
     dev: false
 
   /@motionone/animation@10.15.1:
@@ -9907,6 +9923,15 @@ packages:
       define-lazy-prop: 3.0.0
       is-inside-container: 1.0.0
       is-wsl: 2.2.0
+
+  /openai@3.2.1:
+    resolution: {integrity: sha512-762C9BNlJPbjjlWZi4WYK9iM2tAVAv0uUp1UmI34vb0CN5T2mjB/qM6RYBmNKMh/dN9fC+bxqPwWJZUTWW052A==}
+    dependencies:
+      axios: 0.26.1
+      form-data: 4.0.0
+    transitivePeerDependencies:
+      - debug
+    dev: false
 
   /openapi-types@12.1.0:
     resolution: {integrity: sha512-XpeCy01X6L5EpP+6Hc3jWN7rMZJ+/k1lwki/kTmWzbVhdPie3jd5O2ZtedEx8Yp58icJ0osVldLMrTB/zslQXA==}

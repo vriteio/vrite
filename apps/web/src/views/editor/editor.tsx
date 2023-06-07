@@ -23,6 +23,7 @@ import {
   TrailingNode,
   LinkPreviewWrapper,
   SlashMenuPlugin,
+  BlockActionMenuPlugin,
   CollabCursor,
   Collab,
   createClipboardSerializer,
@@ -85,6 +86,7 @@ const Editor: Component<EditorProps> = (props) => {
       SlashMenuPlugin.configure({
         menuItems: workspaceSettings() ? createBlockMenuOptions(workspaceSettings()!) : []
       }),
+      BlockActionMenuPlugin,
       Collab.configure({
         document: ydoc
       }),

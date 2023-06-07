@@ -39,8 +39,15 @@ const StatsMenu: Component<StatsMenuProps> = (props) => {
       if (node.type.name === "codeBlock") {
         locs += node.textContent.split("\n").length;
       }
+
+      return false;
     });
-    setStats({ words, paragraphs, textCharacters, locs });
+    setStats({
+      words,
+      paragraphs,
+      textCharacters,
+      locs
+    });
   };
 
   props.editor?.on("update", updateStats);
