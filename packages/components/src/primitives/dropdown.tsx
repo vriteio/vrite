@@ -18,7 +18,8 @@ import { Dynamic } from "solid-js/web";
 
 interface DropdownProps extends JSX.SelectHTMLAttributes<HTMLSelectElement> {
   class?: string;
-  cardProps?: ComponentProps<typeof Card>;
+  cardProps?: Partial<ComponentProps<typeof Card>>;
+  overlayProps?: Partial<ComponentProps<typeof Overlay>>;
   placement?: Placement;
   fixed?: boolean;
   children: JSX.Element;
@@ -26,7 +27,7 @@ interface DropdownProps extends JSX.SelectHTMLAttributes<HTMLSelectElement> {
   autoFocus?: boolean;
   overlay?: boolean;
   attachActivatorHandler?: boolean;
-  activatorButton: Component<{ opened: boolean }>;
+  activatorButton: Component<{ opened: boolean; computeDropdownPosition(): void }>;
   setOpened?(opened: boolean): void;
 }
 
@@ -76,6 +77,11 @@ const Dropdown: Component<DropdownProps> = (props) => {
   });
   createEffect(
     on(opened, (opened) => {
+      if (opened) {
+        document.documentElement.classList.add("dropdown-opened");
+      } else {
+        document.documentElement.classList.remove("dropdown-opened");
+      }
       if (opened && props.autoFocus !== false) {
         computeDropdownPosition();
         boxRef()?.focus();
@@ -92,7 +98,7 @@ const Dropdown: Component<DropdownProps> = (props) => {
         }
       };
 
-      if (!overlay && opened) {
+      if (overlay === false && opened) {
         document.body.addEventListener("click", handleClick);
       }
 
@@ -112,7 +118,10 @@ const Dropdown: Component<DropdownProps> = (props) => {
           shadeClass="bg-transparent"
           class={clsx(!opened() && "pointer-events-none h-0 w-0")}
           opened={opened()}
-          onOverlayClick={() => setOpened(false)}
+          onOverlayClick={() => {
+            setOpened(false);
+          }}
+          {...props.overlayProps}
         />
       </Show>
       <div
@@ -124,7 +133,11 @@ const Dropdown: Component<DropdownProps> = (props) => {
         }}
         class="flex"
       >
-        <Dynamic component={props.activatorButton} opened={opened()} />
+        <Dynamic
+          component={props.activatorButton}
+          computeDropdownPosition={computeDropdownPosition}
+          opened={opened()}
+        />
       </div>
       <Card
         {...props.cardProps}

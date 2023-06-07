@@ -32,6 +32,7 @@ const gfmTransformer = createContentTransformer({
       case "blockquote":
         return `\n${content
           .split("\n")
+          .filter((line) => line)
           .map((line) => {
             return `> ${line}`;
           })
@@ -42,28 +43,43 @@ const gfmTransformer = createContentTransformer({
         return `\n\`\`\`${attrs?.lang || ""}\n${content}\n\`\`\`\n`;
       case "bulletList":
         return `\n${content
-          .trim()
-          .split("\n")
+          .split("\n\n")
           .filter((listItem) => listItem)
           .map((listItem) => {
             if (listItemRegex.test(listItem.trim())) {
-              return `  ${listItem}`;
+              const list = `${listItem
+                .split("\n")
+                .filter((line) => line)
+                .map((line) => `   ${line}`)
+                .join("\n")}`;
+
+              return list;
             }
 
             return `- ${listItem.trim()}`;
           })
           .join("\n")}\n`;
       case "orderedList":
+        let start = Number(attrs.start ?? 1);
         return `\n${content
-          .trim()
-          .split("\n")
+          .split("\n\n")
           .filter((listItem) => listItem)
-          .map((listItem, index) => {
+          .map((listItem) => {
             if (listItemRegex.test(listItem.trim())) {
-              return `  ${listItem}`;
+              const list = `${listItem
+                .split("\n")
+                .filter((line) => line)
+                .map((line) => `   ${line}`)
+                .join("\n")}`;
+
+              return list;
             }
 
-            return `${Number(attrs.start ?? 1) + index}. ${listItem.trim()}`;
+            const result = `${start}. ${listItem.trim()}`;
+
+            start += 1;
+
+            return result;
           })
           .join("\n")}\n`;
       case "taskList":
@@ -71,7 +87,7 @@ const gfmTransformer = createContentTransformer({
           .split("\n")
           .filter((listItem) => listItem)
           .map((listItem) => `- [${attrs?.checked ? "x" : " "}] ${listItem}`)
-          .join("\n\n")}\n`;
+          .join("\n")}\n`;
       case "horizontalRule":
         return `\n---\n`;
       default:

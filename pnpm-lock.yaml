@@ -736,6 +736,9 @@ importers:
       '@hocuspocus/transformer':
         specifier: ^1.0.2
         version: 1.1.3(@tiptap/pm@2.0.3)(y-prosemirror@1.2.0)(yjs@13.5.51)
+      '@microsoft/fetch-event-source':
+        specifier: ^2.0.1
+        version: 2.0.1
       '@sendgrid/mail':
         specifier: ^7.7.0
         version: 7.7.0
@@ -745,6 +748,9 @@ importers:
       '@trpc/server':
         specifier: ^10.9.1
         version: 10.18.0
+      '@types/marked':
+        specifier: ^4.0.8
+        version: 4.0.8
       '@types/mime-types':
         specifier: ^2.1.1
         version: 2.1.1
@@ -763,6 +769,9 @@ importers:
       lexorank:
         specifier: ^1.0.5
         version: 1.0.5
+      marked:
+        specifier: ^4.3.0
+        version: 4.3.0
       mime-types:
         specifier: ^2.1.35
         version: 2.1.35
@@ -4012,6 +4021,10 @@ packages:
 
   /@mdi/js@7.2.96:
     resolution: {integrity: sha512-paR9M9ZT7rKbh2boksNUynuSZMHhqRYnEZOm/KrZTjQ4/FzyhjLHuvw/8XYzP+E7fS4+/Ms/82EN1pl/OFsiIA==}
+    dev: false
+
+  /@microsoft/fetch-event-source@2.0.1:
+    resolution: {integrity: sha512-W6CLUJ2eBMw3Rec70qrsEW0jOm/3twwJv21mrmj2yORiaVmVYGS4sSS5yUwvQc1ZlDLYGPnClVWmUUMagKNsfA==}
     dev: false
 
   /@motionone/animation@10.15.1:

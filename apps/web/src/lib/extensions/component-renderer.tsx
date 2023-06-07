@@ -5,7 +5,7 @@ import { createStore } from "solid-js/store";
 import { ExtensionSpec, ExtensionView } from "@vrite/extensions";
 import { Dynamic } from "solid-js/web";
 import { useExtensionsContext } from "#context";
-import { Button, Loader } from "#components/primitives";
+import { Button, IconButton, Loader, Tooltip } from "#components/primitives";
 import { InputField } from "#components/fragments";
 
 interface ComponentRendererProps {
@@ -47,10 +47,34 @@ const components = {
         color={props.color}
         onClick={props.onClick}
         class={props.class}
+        text={props.text}
         disabled={"disabled" in props ? props.disabled : false}
+        loading={"loading" in props ? props.loading : false}
       >
         {props.slots.default}
       </Button>
+    );
+  },
+  Tooltip: (props: RenderedComponentProps<ComponentProps<typeof Tooltip>>) => {
+    return (
+      <Tooltip text={props.text} side={props.side} fixed={props.fixed} class={props.class}>
+        {props.slots.default}
+      </Tooltip>
+    );
+  },
+  IconButton: (props: RenderedComponentProps<ComponentProps<typeof IconButton>>) => {
+    return (
+      <IconButton
+        variant={props.variant}
+        color={props.color}
+        onClick={props.onClick}
+        class={props.class}
+        path={props.path}
+        label={props.label}
+        text={props.text}
+        disabled={"disabled" in props ? props.disabled : false}
+        loading={"loading" in props ? props.loading : false}
+      />
     );
   },
   Loader,

@@ -45,7 +45,6 @@ const run = (config: { editor: Editor; state: EditorState; from: number; to: num
     state
   });
 
-  const handlers: (void | null)[] = [];
   const codeBlockStart = /^```(.+)$/g;
   const codeBlockEnd = /^```$/g;
 
@@ -129,14 +128,29 @@ const CodeBlock = Node.create<CodeBlockOptions>({
   addAttributes() {
     return {
       lang: {
-        default: null
+        default: null,
+        parseHTML: (element) => {
+          const classNames = [...(element.firstElementChild?.classList || [])];
+          const languages = classNames
+            .filter((className) => className.startsWith("language-"))
+            .map((className) => className.replace("language-", ""));
+          const language = languages[0];
+
+          if (!language) {
+            return null;
+          }
+
+          return language.toLowerCase();
+        },
+        rendered: false
       }
     };
   },
   parseHTML() {
     return [
       {
-        tag: "pre"
+        tag: "pre",
+        preserveWhitespace: "full"
       }
     ];
   },
@@ -241,8 +255,18 @@ const CodeBlock = Node.create<CodeBlockOptions>({
       }
     );
   },
-  renderHTML({ HTMLAttributes }) {
-    return ["pre", mergeAttributes(this.options.HTMLAttributes, HTMLAttributes), ["code", {}, 0]];
+  renderHTML({ node, HTMLAttributes }) {
+    return [
+      "pre",
+      mergeAttributes(this.options.HTMLAttributes, HTMLAttributes),
+      [
+        "code",
+        {
+          class: node.attrs.lang ? `language-${node.attrs.lang}` : null
+        },
+        0
+      ]
+    ];
   },
   addCommands() {
     return {

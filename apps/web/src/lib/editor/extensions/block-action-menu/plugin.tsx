@@ -2,7 +2,7 @@ import { Extension, Range } from "@tiptap/core";
 import { BlockActionMenu } from "./component";
 import { SolidEditor, SolidRenderer } from "@vrite/tiptap-solid";
 import { TextSelection } from "@tiptap/pm/state";
-import { Fragment, ResolvedPos, Node as PMNode } from "@tiptap/pm/model";
+import { ResolvedPos, Node as PMNode } from "@tiptap/pm/model";
 
 const box = document.createElement("div");
 
@@ -48,12 +48,18 @@ const BlockActionMenuPlugin = Extension.create({
     });
 
     box.style.position = "absolute";
+    box.style.top = "-100vh";
+    box.style.left = "-100vw";
     box.appendChild(component.element);
     document.getElementById("pm-container")?.appendChild(box);
   },
   onBlur() {
-    if (document.activeElement?.contains(box)) return;
+    const dropdownOpened = document.documentElement.classList.contains("dropdown-opened");
+    if (document.activeElement?.contains(box) || dropdownOpened) return;
     box.style.display = "none";
+  },
+  onFocus() {
+    box.style.display = "block";
   },
   onSelectionUpdate() {
     const { selection } = this.editor.state;
@@ -89,9 +95,9 @@ const BlockActionMenuPlugin = Extension.create({
     let rangeFrom = selection.$from.pos;
     let rangeTo = selection.$to.pos;
 
-    box.style.display = "block";
     box.style.top = `${relativePos.top}px`;
     box.style.left = `${relativePos.left + parentPos.width}px`;
+    box.style.display = "block";
 
     if (isTextSelection) {
       try {

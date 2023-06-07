@@ -19,8 +19,7 @@ declare module "@vrite/extensions" {
     "id": string;
     "label": string;
     "blocks": string[];
-    "view"?: ExtensionView | ExtensionView[];
-    "on:action"?: string;
+    "view": ExtensionView | ExtensionView[];
     "on:init"?: string;
   }
   interface ExtensionSpec {
@@ -67,6 +66,7 @@ declare module "@vrite/extensions" {
   }
   interface ExtensionBlockActionViewContext extends ExtensionBaseViewContext {
     replaceContent(contentHTML: string): void;
+    refreshContent(): void;
     content: JSONContent;
   }
 

@@ -1,13 +1,8 @@
 import Sandbox from "@jetbrains/websandbox";
 import { SetStoreFunction, unwrap } from "solid-js/store";
-import {
-  ContextObject,
-  ContextValue,
-  ExtensionGeneralContext,
-  ExtensionSpec
-} from "@vrite/extensions";
+import { ExtensionGeneralContext, ExtensionSpec } from "@vrite/extensions";
 import { createRef } from "#lib/utils";
-import { isOfficialExtension, useNotificationsContext } from "#context";
+import { useNotificationsContext } from "#context";
 
 interface ExtensionsSandbox {
   callFunction(
@@ -110,10 +105,6 @@ const loadSandbox = (): ExtensionsSandbox => {
           setter(value);
         }
       });
-
-      if (!isOfficialExtension(spec.name)) {
-        await reload();
-      }
     }
   };
 };
