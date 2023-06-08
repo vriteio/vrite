@@ -11,6 +11,7 @@ import { Dynamic } from "solid-js/web";
 import {
   mdiAccount,
   mdiChevronLeft,
+  mdiDatabase,
   mdiHexagonSlice6,
   mdiPalette,
   mdiPencil,
@@ -22,6 +23,7 @@ import { Component, createMemo, createSignal, Setter, Show } from "solid-js";
 import { createRef } from "#lib/utils";
 import { ScrollShadow } from "#components/fragments";
 import { Heading, IconButton } from "#components/primitives";
+import { MetadataSection } from "./metadata";
 
 interface SubSection {
   label: string;
@@ -61,7 +63,8 @@ const SettingsView: Component = () => {
       icon: mdiPencil,
       resize: true,
       section: "editor"
-    }
+    },
+    { label: "Metadata", resize: true, icon: mdiDatabase, section: "metadata" }
   ];
   const sections: Record<string, SettingsSectionComponent> = {
     menu() {
@@ -78,7 +81,8 @@ const SettingsView: Component = () => {
     api: APISection,
     profile: ProfileSection,
     editor: EditorSection,
-    security: SecuritySection
+    security: SecuritySection,
+    metadata: MetadataSection
   };
   const currentSection = createMemo(() => {
     const sectionMenuItem = sectionMenuItems.find((menuItem) => {

@@ -1,4 +1,4 @@
-import { ContentPiece, ContentPieceWithTags } from "../api/content-pieces";
+import { ContentPieceWithAdditionalData } from "../api/content-pieces";
 import { client } from "virtual:vrite";
 import type { Client } from "../api";
 
@@ -9,8 +9,8 @@ const getContentPieces = async (
     startPage?: number;
     tagId?: string;
   }
-): Promise<Array<Omit<ContentPieceWithTags, "content">>> => {
-  const contentPieces: Array<Omit<ContentPieceWithTags, "content">> = [];
+): Promise<Array<Omit<ContentPieceWithAdditionalData, "content">>> => {
+  const contentPieces: Array<Omit<ContentPieceWithAdditionalData, "content">> = [];
 
   let page = config?.startPage || 1;
 
@@ -39,7 +39,7 @@ const getStaticPaths = async (
 ): Promise<
   Array<{
     params: { slug: string };
-    props: Omit<ContentPieceWithTags, "content">;
+    props: Omit<ContentPieceWithAdditionalData, "content">;
   }>
 > => {
   const contentPieces = await getContentPieces(contentGroupId, {

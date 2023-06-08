@@ -1,6 +1,6 @@
 declare module "@vrite/extensions" {
   import type { Client, JSONContent } from "@vrite/sdk";
-  import type { ExtendedContentPieceWithTags, TokenPermission } from "@vrite/backend";
+  import type { ExtendedContentPieceWithAdditionalData, TokenPermission } from "@vrite/backend";
 
   // eslint-disable-next-line no-use-before-define
   type ContextValue = string | number | boolean | ContextObject | ContextArray;
@@ -59,7 +59,7 @@ declare module "@vrite/extensions" {
     setConfig(config: ContextObject): void;
   }
   interface ExtensionContentPieceViewContext extends ExtensionBaseViewContext {
-    contentPiece: ExtendedContentPieceWithTags<"slug" | "locked" | "coverWidth">;
+    contentPiece: ExtendedContentPieceWithAdditionalData<"slug" | "locked" | "coverWidth">;
     data: ContextObject;
     setData(key: string, value: ContextValue): void;
     setData(data: ContextObject): void;

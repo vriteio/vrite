@@ -44,6 +44,7 @@ const workspaceSettingsRouter = router({
       return {
         id: `${workspaceSettings._id}`,
         prettierConfig: workspaceSettings.prettierConfig,
+        metadata: workspaceSettings.metadata,
         marks: workspaceSettings.marks,
         blocks: workspaceSettings.blocks,
         embeds: workspaceSettings.embeds

@@ -3,7 +3,7 @@ import { ObjectId } from "mongodb";
 import { nanoid } from "nanoid";
 import { hashValue } from "#lib/hash";
 import { isAuthenticated } from "#lib/middleware";
-import { UnderscoreID, zodId } from "#lib/mongo";
+import { UnderscoreID } from "#lib/mongo";
 import { procedure, router } from "#lib/trpc";
 import {
   FullUser,
@@ -15,6 +15,7 @@ import {
 } from "#database/users";
 import * as errors from "#lib/errors";
 import { createEventPublisher, createEventSubscription } from "#lib/pub-sub";
+import { stringToRegex } from "#lib/utils";
 
 type UserEvent = {
   action: "update";

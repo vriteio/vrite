@@ -33,7 +33,7 @@ import {
 
 interface EditorProps {
   reloaded?: boolean;
-  editedContentPiece: App.ExtendedContentPieceWithTags<"locked">;
+  editedContentPiece: App.ExtendedContentPieceWithAdditionalData<"locked">;
   onLoad?(): void;
   reload?(): void;
 }

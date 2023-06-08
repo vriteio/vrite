@@ -25,7 +25,9 @@ type SettingFieldOptions = {
     color?: "base" | "contrast";
     disabled?: boolean;
   };
-  checkbox: {};
+  checkbox: {
+    disabled?: boolean;
+  };
 };
 type InputFieldProps<T extends InputFieldType> = {
   type: T;

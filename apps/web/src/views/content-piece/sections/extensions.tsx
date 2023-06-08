@@ -11,7 +11,7 @@ import { ViewContextProvider, ViewRenderer } from "#lib/extensions";
 import clsx from "clsx";
 
 interface ExtensionsSectionProps {
-  contentPiece: App.ExtendedContentPieceWithTags<"slug" | "locked" | "coverWidth">;
+  contentPiece: App.ExtendedContentPieceWithAdditionalData<"locked" | "coverWidth">;
   setCustomData(customData: Record<string, any>): void;
 }
 interface ExtensionIconProps {

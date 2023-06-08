@@ -45,6 +45,12 @@ interface WorkspaceSettings {
    * List of embeds enabled in the workspace
    */
   embeds: Embed[];
+  /**
+   * Metadata settings
+   */
+  metadata?: Partial<{
+    canonicalLinkPattern: string;
+  }>;
 }
 interface WorkspaceSettingsEndpoints {
   get(): Promise<WorkspaceSettings>;

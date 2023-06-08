@@ -1,16 +1,14 @@
-import { DetailsSection } from "./details-section";
-import { CustomDataSection } from "./custom-data-section";
-import { ExtensionsSection } from "./extensions-section";
+import { DetailsSection, CustomDataSection, ExtensionsSection } from "./sections";
 import { mdiInformationOutline, mdiCodeJson, mdiMenu, mdiPuzzleOutline } from "@mdi/js";
 import { Component, createSignal, For, Switch, Match, createEffect } from "solid-js";
 import { App } from "#context";
 import { Dropdown, IconButton, Heading } from "#components/primitives";
 
 interface ContentPieceMetadataProps {
-  contentPiece: App.ExtendedContentPieceWithTags<"slug" | "locked" | "coverWidth">;
+  contentPiece: App.ExtendedContentPieceWithAdditionalData<"locked" | "coverWidth">;
   editable?: boolean;
   setContentPiece(
-    value: Partial<App.ExtendedContentPieceWithTags<"slug" | "locked" | "coverWidth">>
+    value: Partial<App.ExtendedContentPieceWithAdditionalData<"locked" | "coverWidth">>
   ): void;
 }
 
@@ -71,10 +69,15 @@ const ContentPieceMetadata: Component<ContentPieceMetadataProps> = (props) => {
       <Switch>
         <Match when={activeSection().id === "details"}>
           <DetailsSection
+            slug={props.contentPiece.slug}
             canonicalLink={props.contentPiece.canonicalLink}
             date={props.contentPiece.date}
             tags={props.contentPiece.tags}
+            members={props.contentPiece.members}
             editable={props.editable}
+            setSlug={(slug) => {
+              props.setContentPiece({ slug });
+            }}
             setCanonicalLink={(canonicalLink) => {
               props.setContentPiece({ canonicalLink });
             }}
@@ -83,6 +86,9 @@ const ContentPieceMetadata: Component<ContentPieceMetadataProps> = (props) => {
             }}
             setTags={(tags) => {
               props.setContentPiece({ tags });
+            }}
+            setMembers={(members) => {
+              props.setContentPiece({ members });
             }}
           />
         </Match>

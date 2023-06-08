@@ -21,7 +21,7 @@ interface StorageData {
   zenMode: boolean;
 }
 interface ReferencesData {
-  editedContentPiece?: App.ExtendedContentPieceWithTags<"locked">;
+  editedContentPiece?: App.ExtendedContentPieceWithAdditionalData<"locked">;
   provider?: HocuspocusProvider;
   editor?: SolidEditor;
 }

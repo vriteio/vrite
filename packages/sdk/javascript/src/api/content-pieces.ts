@@ -1,3 +1,4 @@
+import { Profile } from "./profile";
 import { PaginationParams, SendRequest } from "./request";
 import { Tag } from "./tags";
 
@@ -55,7 +56,11 @@ type ContentPiece<
    */
   tags: string[];
   /**
-   * Slug generated from the title
+   * IDs of assigned members
+   */
+  members: string[];
+  /**
+   * Content piece slug
    */
   slug: string;
   /**
@@ -71,11 +76,12 @@ type ContentPiece<
    */
   content: IncludeContent extends true ? JSONContent : undefined;
 };
-type ContentPieceWithTags<
+type ContentPieceWithAdditionalData<
   CustomData extends Record<string, any> = Record<string, any>,
   IncludeContent extends true | false = false
-> = Omit<ContentPiece<CustomData, IncludeContent>, "tags"> & {
+> = Omit<ContentPiece<CustomData, IncludeContent>, "tags" | "members"> & {
   tags: Tag[];
+  members: Array<{ id: string; profile: Omit<Profile, "bio"> }>;
 };
 interface ContentPiecesEndpoints {
   get<
@@ -86,7 +92,7 @@ interface ContentPiecesEndpoints {
       content?: IncludeContent;
       description?: "html" | "text";
     }
-  ): Promise<ContentPieceWithTags<CustomData, IncludeContent>>;
+  ): Promise<ContentPieceWithAdditionalData<CustomData, IncludeContent>>;
   create<CustomData extends Record<string, any> = Record<string, any>>(
     input: Pick<
       ContentPiece<CustomData>,
@@ -94,12 +100,13 @@ interface ContentPiecesEndpoints {
       | "title"
       | "description"
       | "tags"
+      | "members"
       | "coverUrl"
       | "coverAlt"
       | "contentGroupId"
       | "customData"
       | "canonicalLink"
-    > & { referenceId?: string }
+    > & { referenceId?: string; slug?: string }
   ): Promise<Pick<ContentPiece<CustomData>, "id">>;
   update<CustomData extends Record<string, any> = Record<string, any>>(
     input: Partial<
@@ -109,6 +116,8 @@ interface ContentPiecesEndpoints {
         | "title"
         | "description"
         | "tags"
+        | "members"
+        | "slug"
         | "coverUrl"
         | "coverAlt"
         | "contentGroupId"
@@ -126,7 +135,7 @@ interface ContentPiecesEndpoints {
       tagId?: string;
       slug?: string;
     }
-  ): Promise<Array<Omit<ContentPieceWithTags<CustomData>, "content">>>;
+  ): Promise<Array<Omit<ContentPieceWithAdditionalData<CustomData>, "content">>>;
 }
 
 const basePath = "/content-pieces";
@@ -140,9 +149,13 @@ const createContentPiecesEndpoints = (sendRequest: SendRequest): ContentPiecesEn
       description?: "html" | "text";
     }
   ) => {
-    return sendRequest<ContentPieceWithTags<CustomData, IncludeContent>>("GET", `${basePath}`, {
-      params: input
-    });
+    return sendRequest<ContentPieceWithAdditionalData<CustomData, IncludeContent>>(
+      "GET",
+      `${basePath}`,
+      {
+        params: input
+      }
+    );
   },
   create: <CustomData extends Record<string, any> = Record<string, any>>(
     input: Pick<
@@ -151,12 +164,14 @@ const createContentPiecesEndpoints = (sendRequest: SendRequest): ContentPiecesEn
       | "title"
       | "description"
       | "tags"
+      | "members"
+      | "slug"
       | "coverUrl"
       | "coverAlt"
       | "contentGroupId"
       | "customData"
       | "canonicalLink"
-    > & { referenceId?: string }
+    > & { referenceId?: string; slug?: string }
   ) => {
     return sendRequest<Pick<ContentPiece<CustomData>, "id">>("POST", `${basePath}`, {
       body: input
@@ -179,7 +194,7 @@ const createContentPiecesEndpoints = (sendRequest: SendRequest): ContentPiecesEn
       slug?: string;
     }
   ) => {
-    return sendRequest<Array<Omit<ContentPieceWithTags<CustomData>, "content">>>(
+    return sendRequest<Array<Omit<ContentPieceWithAdditionalData<CustomData>, "content">>>(
       "GET",
       `${basePath}/list`,
       { params: input }
@@ -190,7 +205,7 @@ const createContentPiecesEndpoints = (sendRequest: SendRequest): ContentPiecesEn
 export { createContentPiecesEndpoints };
 export type {
   ContentPiece,
-  ContentPieceWithTags,
+  ContentPieceWithAdditionalData,
   JSONContent,
   JSONContentAttrs,
   ContentPiecesEndpoints
