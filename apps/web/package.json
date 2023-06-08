@@ -98,6 +98,7 @@
     "tippy.js": "^6.3.7",
     "typescript": "^4.9.5",
     "unocss": "^0.50.6",
+    "url-slug": "^3.0.4",
     "vite": "^4.2.1",
     "y-prosemirror": "^1.2.0",
     "yjs": "^13.5.45"

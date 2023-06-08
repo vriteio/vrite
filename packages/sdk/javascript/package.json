@@ -1,6 +1,6 @@
 {
   "name": "@vrite/sdk",
-  "version": "2023.5.31-beta",
+  "version": "2023.6.8-beta",
   "private": false,
   "description": "JavaScript SDK and API client for Vrite - headless CMS for technical content",
   "license": "MIT",

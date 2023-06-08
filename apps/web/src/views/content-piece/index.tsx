@@ -21,26 +21,29 @@ import { MiniEditor } from "#components/fragments";
 
 interface OpenedContentPiece {
   setContentPiece<
-    K extends keyof App.ExtendedContentPieceWithTags<"slug" | "locked" | "coverWidth">
+    K extends keyof App.ExtendedContentPieceWithAdditionalData<"locked" | "coverWidth">
   >(
-    keyOrObject: K | Partial<App.ExtendedContentPieceWithTags<"slug" | "locked" | "coverWidth">>,
-    value?: App.ExtendedContentPieceWithTags<"slug" | "locked" | "coverWidth">[K]
+    keyOrObject: K | Partial<App.ExtendedContentPieceWithAdditionalData<"locked" | "coverWidth">>,
+    value?: App.ExtendedContentPieceWithAdditionalData<"locked" | "coverWidth">[K]
   ): void;
   loading(): boolean;
-  contentPiece(): App.ExtendedContentPieceWithTags<"slug" | "locked" | "coverWidth"> | null;
+  contentPiece(): App.ExtendedContentPieceWithAdditionalData<"locked" | "coverWidth"> | null;
 }
 
 dayjs.extend(CustomParseFormat);
 
 const useOpenedContentPiece = (): OpenedContentPiece => {
   const { deletedTags } = useAuthenticatedContext();
+  const { profile } = useAuthenticatedContext();
   const { storage, setStorage } = useUIContext();
   const { client } = useClientContext();
   const [loading, setLoading] = createSignal(true);
   const [state, setState] = createStore<{
-    contentPiece: App.ExtendedContentPieceWithTags<"slug" | "locked" | "coverWidth"> | null;
+    contentPiece: App.ExtendedContentPieceWithAdditionalData<"locked" | "coverWidth"> | null;
   }>({ contentPiece: null });
   const fetchContentPiece = async (): Promise<void> => {
+    setLoading(true);
+
     const { contentPieceId } = storage();
 
     if (contentPieceId) {
@@ -83,13 +86,17 @@ const useOpenedContentPiece = (): OpenedContentPiece => {
             contentGroupId
           },
           {
-            onData({ data, action }) {
+            onData({ data, action, userId = "" }) {
               if (action === "update") {
-                const update = {
-                  ...data
-                };
+                const { tags, members, ...updateData } = data;
+                const update: Partial<
+                  App.ExtendedContentPieceWithAdditionalData<"locked" | "coverWidth">
+                > = { ...updateData };
 
-                if (data.tags) {
+                if (data.members && userId !== profile()?.id) {
+                  update.members = data.members.filter((member) => member.id !== profile()?.id);
+                }
+                if (data.tags && userId !== profile()?.id) {
                   update.tags = data.tags.filter((tag) => !deletedTags().includes(tag.id));
                 }
 
@@ -159,7 +166,7 @@ const ContentPieceView: Component = () => {
     return !contentPiece()?.locked && hasPermission("editMetadata");
   });
   const handleChange = async (
-    value: Partial<App.ExtendedContentPieceWithTags<"coverWidth">>
+    value: Partial<App.ExtendedContentPieceWithAdditionalData<"coverWidth">>
   ): Promise<void> => {
     const id = contentPiece()?.id;
 
@@ -167,13 +174,16 @@ const ContentPieceView: Component = () => {
 
     setContentPiece(value);
 
-    const { tags, ...update } = value;
+    const { tags, members, ...update } = value;
     const contentPieceUpdate: Partial<App.ExtendedContentPiece<"coverWidth">> = {
       ...update
     };
 
     if (tags) {
       contentPieceUpdate.tags = tags?.map(({ id }) => id);
+    }
+    if (members) {
+      contentPieceUpdate.members = members?.map(({ id }) => id);
     }
 
     client.contentPieces.update.mutate({

@@ -5,6 +5,7 @@ import type { PubSubMessage, PubSubPlugin } from "fastify";
 declare module "fastify" {
   interface PubSubMessage {
     action: string;
+    userId?: string;
     data: any;
   }
   interface PubSubPlugin {

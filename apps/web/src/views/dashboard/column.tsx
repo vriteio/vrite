@@ -52,9 +52,9 @@ interface AddColumnProps {
 const useContentPieces = (
   contentGroupId: string
 ): {
-  contentPieces(): Array<App.ExtendedContentPieceWithTags<"slug" | "locked" | "order">>;
+  contentPieces(): Array<App.ExtendedContentPieceWithAdditionalData<"slug" | "locked" | "order">>;
   setContentPieces(
-    contentPieces: Array<App.ExtendedContentPieceWithTags<"slug" | "locked" | "order">>
+    contentPieces: Array<App.ExtendedContentPieceWithAdditionalData<"slug" | "locked" | "order">>
   ): void;
   loading(): boolean;
   loadMore(): void;
@@ -64,7 +64,7 @@ const useContentPieces = (
   const [loading, setLoading] = createSignal(false);
   const [moreToLoad, setMoreToLoad] = createSignal(true);
   const [state, setState] = createStore<{
-    contentPieces: Array<App.ExtendedContentPieceWithTags<"slug" | "locked" | "order">>;
+    contentPieces: Array<App.ExtendedContentPieceWithAdditionalData<"slug" | "locked" | "order">>;
   }>({
     contentPieces: []
   });
@@ -439,7 +439,7 @@ const Column: Component<ColumnProps> = (props) => {
                       ...item,
                       locked: props.contentGroup.locked,
                       contentGroupId: props.contentGroup.id
-                    })) as App.FullContentPieceWithTags[]
+                    })) as App.FullContentPieceWithAdditionalData[]
                   );
                 },
                 onRemove(event) {
@@ -450,7 +450,7 @@ const Column: Component<ColumnProps> = (props) => {
                         (contentPiece) => contentPiece.id === v.dataset.contentPieceId
                       );
                     })
-                    .filter((item) => item) as App.FullContentPieceWithTags[];
+                    .filter((item) => item) as App.FullContentPieceWithAdditionalData[];
 
                   children.splice(event.oldIndex || 0, 0, event.item);
                   event.from.replaceChildren(...children);
@@ -490,7 +490,7 @@ const Column: Component<ColumnProps> = (props) => {
                           contentPiece.id.toString() === (v.dataset.contentPieceId || "")
                       );
                     })
-                    .filter((item) => item) as App.FullContentPieceWithTags[];
+                    .filter((item) => item) as App.FullContentPieceWithAdditionalData[];
 
                   children.sort(
                     (a, b) => parseInt(a.dataset.index || "") - parseInt(b.dataset.index || "")

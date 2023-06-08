@@ -26,6 +26,11 @@ const prettierConfig = z
     singleAttributePerLine: z.boolean()
   })
   .partial();
+const metadataSettings = z
+  .object({
+    canonicalLinkPattern: z.string()
+  })
+  .partial();
 const marks = [
   "bold",
   "italic",
@@ -55,6 +60,7 @@ const embeds = ["codepen", "codesandbox", "youtube"] as const;
 const workspaceSettings = z.object({
   id: zodId(),
   prettierConfig: z.string(),
+  metadata: metadataSettings.optional(),
   marks: z.array(z.enum(marks)),
   blocks: z.array(z.enum(blocks)),
   embeds: z.array(z.enum(embeds))
@@ -68,6 +74,7 @@ interface FullWorkspaceSettings<ID extends string | ObjectId = string>
   extends WorkspaceSettings<ID> {
   workspaceId: ID;
 }
+interface MetadataSettings extends z.infer<typeof metadataSettings> {}
 
 const getWorkspaceSettingsCollection = (
   db: Db
@@ -75,5 +82,13 @@ const getWorkspaceSettingsCollection = (
   return db.collection("workspace-settings");
 };
 
-export { prettierConfig, marks, blocks, embeds, workspaceSettings, getWorkspaceSettingsCollection };
-export type { WorkspaceSettings, FullWorkspaceSettings };
+export {
+  prettierConfig,
+  marks,
+  blocks,
+  embeds,
+  workspaceSettings,
+  metadataSettings,
+  getWorkspaceSettingsCollection
+};
+export type { MetadataSettings, WorkspaceSettings, FullWorkspaceSettings };

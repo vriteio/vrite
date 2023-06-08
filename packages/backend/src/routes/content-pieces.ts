@@ -1,8 +1,8 @@
 import { Db, ObjectId } from "mongodb";
 import { z } from "zod";
 import { LexoRank } from "lexorank";
-import { convert as titleToSlug } from "url-slug";
-import { convert } from "html-to-text";
+import { convert as convertToSlug } from "url-slug";
+import { convert as convertToText } from "html-to-text";
 import { stringToRegex } from "#lib/utils";
 import { UnderscoreID, zodId } from "#lib/mongo";
 import { bufferToJSON, DocJSON } from "#lib/processing";
@@ -11,25 +11,37 @@ import { procedure, router } from "#lib/trpc";
 import {
   contentPiece,
   ContentPiece,
+  ContentPieceMember,
+  contentPieceMember,
   FullContentPiece,
-  FullContentPieceWithTags,
+  FullContentPieceWithAdditionalData,
   getContentPiecesCollection
 } from "#database/content-pieces";
-import { FullTag, Tag, tag } from "#database/tags";
+import { Tag, getTagsCollection, tag } from "#database/tags";
 import { getWorkspacesCollection } from "#database/workspaces";
 import * as errors from "#lib/errors";
 import { getContentsCollection } from "#database/contents";
 import { runWebhooks } from "#lib/webhooks";
 import { createEventPublisher, createEventSubscription } from "#lib/pub-sub";
+import {
+  getUsersCollection,
+  getWorkspaceMembershipsCollection,
+  getWorkspaceSettingsCollection
+} from "#database";
 
 type ContentPieceEvent =
-  | { action: "delete"; data: { id: string } }
-  | { action: "create"; data: FullContentPieceWithTags }
-  | { action: "update"; data: Partial<FullContentPieceWithTags> & { id: string } }
+  | { action: "delete"; userId: string; data: { id: string } }
+  | { action: "create"; userId: string; data: FullContentPieceWithAdditionalData }
+  | {
+      action: "update";
+      userId: string;
+      data: Partial<FullContentPieceWithAdditionalData> & { id: string };
+    }
   | {
       action: "move";
+      userId: string;
       data: {
-        contentPiece: FullContentPieceWithTags;
+        contentPiece: FullContentPieceWithAdditionalData;
         nextReferenceId?: string;
         previousReferenceId?: string;
       };
@@ -40,11 +52,12 @@ const publishEvent = createEventPublisher<ContentPieceEvent>((contentGroupId) =>
 });
 const webhookPayload = (
   contentPiece: UnderscoreID<FullContentPiece<ObjectId>>
-): ContentPiece & { id: string; slug: string; locked?: boolean } => {
+): ContentPiece & { id: string; locked?: boolean } => {
   return {
     ...contentPiece,
     id: `${contentPiece._id}`,
     tags: contentPiece.tags.map((tag) => `${tag}`),
+    members: contentPiece.members?.map((member) => `${member}`),
     contentGroupId: `${contentPiece.contentGroupId}`,
     date: contentPiece.date?.toISOString()
   };
@@ -53,7 +66,7 @@ const fetchContentPieceTags = async (
   db: Db,
   contentPiece: UnderscoreID<ContentPiece<ObjectId>>
 ): Promise<Tag[]> => {
-  const tagsCollection = db.collection<UnderscoreID<FullTag<ObjectId>>>("tags");
+  const tagsCollection = getTagsCollection(db);
   const tags = await tagsCollection.find({ _id: { $in: contentPiece.tags } }).toArray();
 
   return contentPiece.tags
@@ -65,6 +78,52 @@ const fetchContentPieceTags = async (
       return { ...tag, id: `${_id}` };
     })
     .filter((value) => value) as Tag[];
+};
+const fetchContentPieceMembers = async (
+  db: Db,
+  contentPiece: UnderscoreID<ContentPiece<ObjectId>>
+): Promise<Array<ContentPieceMember>> => {
+  const memberIds = contentPiece.members || [];
+  const workspaceMembershipsCollection = getWorkspaceMembershipsCollection(db);
+  const usersCollection = getUsersCollection(db);
+  const memberships = await workspaceMembershipsCollection
+    .find({ _id: { $in: memberIds } })
+    .toArray();
+  const users = await usersCollection
+    .find({
+      _id: {
+        $in: memberships
+          .map((membership) => membership.userId)
+          .filter((value) => value) as ObjectId[]
+      }
+    })
+    .toArray();
+
+  return memberIds
+    .map((membershipId) => {
+      const membership = memberships.find(
+        (membership) => `${membership._id}` === `${membershipId}`
+      );
+      const user = users.find((user) => {
+        if (!membership?.userId) return false;
+
+        return user._id.equals(membership?.userId);
+      });
+
+      if (!membership || !user) return null;
+
+      return {
+        id: `${membership._id}`,
+        profile: {
+          id: `${user._id}`,
+          email: user.email,
+          avatar: user.avatar,
+          username: user.username,
+          fullName: user.fullName
+        }
+      };
+    })
+    .filter((value) => value) as Array<ContentPieceMember>;
 };
 const basePath = "/content-pieces";
 const authenticatedProcedure = procedure.use(isAuthenticated);
@@ -84,6 +143,7 @@ const contentPiecesRouter = router({
     .output(
       contentPiece.omit({ tags: true }).extend({
         tags: z.array(tag),
+        members: z.array(contentPieceMember),
         slug: z.string(),
         locked: z.boolean(),
         coverWidth: z.string().optional(),
@@ -91,8 +151,12 @@ const contentPiecesRouter = router({
       })
     )
     .query(async ({ ctx, input }) => {
+      const workspaceSettingsCollection = getWorkspaceSettingsCollection(ctx.db);
       const contentPiecesCollection = getContentPiecesCollection(ctx.db);
       const workspacesCollection = getWorkspacesCollection(ctx.db);
+      const workspaceSettings = await workspaceSettingsCollection.findOne({
+        workspaceId: ctx.auth.workspaceId
+      });
       const workspace = await workspacesCollection.findOne({ _id: ctx.auth.workspaceId });
       const contentPiece = await contentPiecesCollection.findOne({
         _id: new ObjectId(input.id)
@@ -124,16 +188,24 @@ const contentPiecesRouter = router({
       }
 
       const tags = await fetchContentPieceTags(ctx.db, contentPiece);
+      const members = await fetchContentPieceMembers(ctx.db, contentPiece);
       const getDescription = (): string => {
         if (input.description === "html") {
           return contentPiece.description || "";
         }
 
-        return convert(contentPiece.description || "", { wordwrap: false });
+        return convertToText(contentPiece.description || "", { wordwrap: false });
       };
 
       return {
         ...contentPiece,
+        ...(workspaceSettings?.metadata?.canonicalLinkPattern &&
+          typeof contentPiece.canonicalLink !== "string" && {
+            canonicalLink: workspaceSettings.metadata.canonicalLinkPattern.replace(
+              /{{slug}}/g,
+              contentPiece.slug
+            )
+          }),
         id: `${contentPiece._id}`,
         description: getDescription(),
         contentGroupId: `${contentPiece.contentGroupId}`,
@@ -141,6 +213,7 @@ const contentPiecesRouter = router({
         workspaceId: `${contentPiece.workspaceId}`,
         date: contentPiece.date?.toISOString(),
         tags,
+        members,
         ...(content ? { content } : {})
       };
     }),
@@ -163,15 +236,20 @@ const contentPiecesRouter = router({
       z.array(
         contentPiece.omit({ tags: true }).extend({
           slug: z.string(),
-          tags: z.array(tag.extend({ id: zodId() })),
+          tags: z.array(tag),
+          members: z.array(contentPieceMember),
           locked: z.boolean(),
           order: z.string()
         })
       )
     )
     .query(async ({ ctx, input }) => {
+      const workspaceSettingsCollection = getWorkspaceSettingsCollection(ctx.db);
       const contentPiecesCollection = getContentPiecesCollection(ctx.db);
       const workspacesCollection = getWorkspacesCollection(ctx.db);
+      const workspaceSettings = await workspaceSettingsCollection.findOne({
+        workspaceId: ctx.auth.workspaceId
+      });
       const workspace = await workspacesCollection.findOne({
         _id: ctx.auth.workspaceId
       });
@@ -183,7 +261,7 @@ const contentPiecesRouter = router({
         throw errors.incomplete("contentPiece");
       }
 
-      const cursor = await contentPiecesCollection
+      const cursor = contentPiecesCollection
         .find({
           workspaceId: ctx.auth.workspaceId,
           ...(input.contentGroupId ? { contentGroupId: new ObjectId(input.contentGroupId) } : {}),
@@ -200,18 +278,27 @@ const contentPiecesRouter = router({
       const contentPieces = await cursor.limit(input.perPage).toArray();
 
       return Promise.all(
-        contentPieces.map((contentPiece) => {
-          return fetchContentPieceTags(ctx.db, contentPiece).then((tags) => {
-            return {
-              ...contentPiece,
-              id: `${contentPiece._id}`,
-              contentGroupId: `${contentPiece.contentGroupId}`,
-              workspaceId: `${contentPiece.workspaceId}`,
-              locked: contentGroup?.locked || false,
-              date: contentPiece.date?.toISOString(),
-              tags
-            };
-          });
+        contentPieces.map(async (contentPiece) => {
+          const tags = await fetchContentPieceTags(ctx.db, contentPiece);
+          const members = await fetchContentPieceMembers(ctx.db, contentPiece);
+
+          return {
+            ...contentPiece,
+            ...(workspaceSettings?.metadata?.canonicalLinkPattern &&
+              typeof contentPiece.canonicalLink !== "string" && {
+                canonicalLink: workspaceSettings.metadata.canonicalLinkPattern.replace(
+                  /{{slug}}/g,
+                  contentPiece.slug
+                )
+              }),
+            id: `${contentPiece._id}`,
+            contentGroupId: `${contentPiece.contentGroupId}`,
+            workspaceId: `${contentPiece.workspaceId}`,
+            locked: contentGroup?.locked || false,
+            date: contentPiece.date?.toISOString(),
+            tags,
+            members
+          };
         })
       );
     }),
@@ -221,16 +308,22 @@ const contentPiecesRouter = router({
       permissions: { session: ["manageDashboard"], token: ["contentPieces:write"] }
     })
     .input(
-      contentPiece.omit({ id: true }).extend({
-        referenceId: zodId().optional()
+      contentPiece.omit({ id: true, slug: true }).extend({
+        referenceId: zodId().optional(),
+        slug: z.string().optional()
       })
     )
     .output(z.object({ id: zodId() }))
     .mutation(async ({ ctx, input }) => {
       const { referenceId, contentGroupId, customData, ...create } = input;
+
+      const workspaceSettingsCollection = getWorkspaceSettingsCollection(ctx.db);
       const contentPiecesCollection = getContentPiecesCollection(ctx.db);
       const contentsCollection = getContentsCollection(ctx.db);
       const workspacesCollection = getWorkspacesCollection(ctx.db);
+      const workspaceSettings = await workspaceSettingsCollection.findOne({
+        workspaceId: ctx.auth.workspaceId
+      });
       const workspace = await workspacesCollection.findOne({ _id: ctx.auth.workspaceId });
       const contentGroup = workspace?.contentGroups.find((contentGroup) => {
         return contentGroup._id.equals(contentGroupId);
@@ -241,9 +334,10 @@ const contentPiecesRouter = router({
         workspaceId: ctx.auth.workspaceId,
         contentGroupId: new ObjectId(contentGroupId),
         date: create.date ? new Date(create.date) : undefined,
-        tags: [],
+        tags: create.tags?.map((tag) => new ObjectId(tag)) || [],
+        members: create.members?.map((member) => new ObjectId(member)) || [],
         order: LexoRank.min().toString(),
-        slug: titleToSlug(create.title)
+        slug: create.slug || convertToSlug(create.title)
       };
 
       if (!workspace) throw errors.notFound("workspace");
@@ -287,16 +381,26 @@ const contentPiecesRouter = router({
       runWebhooks(ctx, "contentGroupAdded", webhookPayload(contentPiece));
 
       const tags = await fetchContentPieceTags(ctx.db, contentPiece);
+      const members = await fetchContentPieceMembers(ctx.db, contentPiece);
 
       publishEvent(ctx, `${contentPiece.contentGroupId}`, {
         action: "create",
+        userId: `${ctx.auth.userId}`,
         data: {
           ...contentPiece,
+          ...(workspaceSettings?.metadata?.canonicalLinkPattern &&
+            typeof contentPiece.canonicalLink !== "string" && {
+              canonicalLink: workspaceSettings.metadata.canonicalLinkPattern.replace(
+                /{{slug}}/g,
+                contentPiece.slug
+              )
+            }),
           id: `${contentPiece._id}`,
           workspaceId: `${contentPiece.workspaceId}`,
           date: contentPiece.date?.toISOString(),
           contentGroupId: `${contentPiece.contentGroupId}`,
-          tags
+          tags,
+          members
         }
       });
 
@@ -322,6 +426,7 @@ const contentPiecesRouter = router({
         contentGroupId: updatedContentGroupId,
         customData: updatedCustomData,
         tags: updatedTags,
+        members: updatedMembers,
         date: updatedDate,
         ...update
       } = input;
@@ -329,6 +434,10 @@ const contentPiecesRouter = router({
       const contentPiecesCollection = getContentPiecesCollection(ctx.db);
       const contentsCollection = getContentsCollection(ctx.db);
       const workspacesCollection = getWorkspacesCollection(ctx.db);
+      const workspaceSettingsCollection = getWorkspaceSettingsCollection(ctx.db);
+      const workspaceSettings = await workspaceSettingsCollection.findOne({
+        workspaceId: ctx.auth.workspaceId
+      });
       const workspace = await workspacesCollection.findOne({ _id: ctx.auth.workspaceId });
       const contentPiece = await contentPiecesCollection.findOne({
         _id: new ObjectId(id)
@@ -351,11 +460,19 @@ const contentPiecesRouter = router({
       }
 
       const contentPieceUpdates: Partial<UnderscoreID<FullContentPiece<ObjectId>>> = {
-        ...update,
-        slug: titleToSlug(update.title || contentPiece.title || "")
+        ...update
       };
 
+      if (typeof update.slug !== "undefined") {
+        contentPieceUpdates.slug = convertToSlug(update.slug || update.title || contentPiece.title);
+      } else if (convertToSlug(contentPiece.title) === contentPiece.slug) {
+        contentPieceUpdates.slug = convertToSlug(update.title || contentPiece.title);
+      }
+
       if (updatedTags) contentPieceUpdates.tags = updatedTags.map((tag) => new ObjectId(tag));
+      if (updatedMembers) {
+        contentPieceUpdates.members = updatedMembers.map((member) => new ObjectId(member));
+      }
       if (updatedDate) contentPieceUpdates.date = new Date(updatedDate);
       if (updatedDate === null) contentPieceUpdates.date = null;
 
@@ -394,16 +511,26 @@ const contentPiecesRouter = router({
       }
 
       const tags = await fetchContentPieceTags(ctx.db, newContentPiece);
+      const members = await fetchContentPieceMembers(ctx.db, newContentPiece);
 
       publishEvent(ctx, `${newContentPiece.contentGroupId}`, {
         action: "update",
+        userId: `${ctx.auth.userId}`,
         data: {
           ...newContentPiece,
+          ...(workspaceSettings?.metadata?.canonicalLinkPattern &&
+            typeof newContentPiece.canonicalLink !== "string" && {
+              canonicalLink: workspaceSettings.metadata.canonicalLinkPattern.replace(
+                /{{slug}}/g,
+                newContentPiece.slug
+              )
+            }),
           id: `${newContentPiece._id}`,
           contentGroupId: `${newContentPiece.contentGroupId}`,
           workspaceId: `${newContentPiece.workspaceId}`,
           date: newContentPiece.date?.toISOString() || null,
-          tags
+          tags,
+          members
         }
       });
     }),
@@ -427,6 +554,7 @@ const contentPiecesRouter = router({
       await contentsCollection.deleteOne({ _id: contentPiece._id });
       publishEvent(ctx, `${contentPiece.contentGroupId}`, {
         action: "delete",
+        userId: `${ctx.auth.userId}`,
         data: { id: input.id }
       });
       runWebhooks(ctx, "contentPieceRemoved", webhookPayload(contentPiece));
@@ -450,16 +578,25 @@ const contentPiecesRouter = router({
       const contentPiecesCollection = getContentPiecesCollection(ctx.db);
       const contentsCollection = getContentsCollection(ctx.db);
       const workspacesCollection = getWorkspacesCollection(ctx.db);
+      const workspaceSettingsCollection = getWorkspaceSettingsCollection(ctx.db);
+      const workspaceSettings = await workspaceSettingsCollection.findOne({
+        workspaceId: ctx.auth.workspaceId
+      });
       const contentPiece = await contentPiecesCollection.findOne({
         _id: new ObjectId(input.id)
       });
 
       const workspace = await workspacesCollection.findOne({ _id: ctx.auth.workspaceId });
       const contentGroup = workspace?.contentGroups.find((contentGroup) => {
-        return contentGroup._id.equals(input.contentGroupId || contentPiece?.contentGroupId);
+        const contentGroupId = input.contentGroupId || contentPiece?.contentGroupId;
+
+        if (!contentGroupId) return false;
+
+        return contentGroup._id.equals(contentGroupId);
       });
 
       if (!contentGroup) throw errors.notFound("contentGroup");
+      if (!contentPiece) throw errors.notFound("contentPiece");
 
       let nextReferenceContentPiece: UnderscoreID<FullContentPiece<ObjectId>> | null = null;
       let previousReferenceContentPiece: UnderscoreID<FullContentPiece<ObjectId>> | null = null;
@@ -504,6 +641,7 @@ const contentPiecesRouter = router({
       );
 
       const tags = await fetchContentPieceTags(ctx.db, contentPiece);
+      const members = await fetchContentPieceMembers(ctx.db, contentPiece);
 
       publishEvent(
         ctx,
@@ -513,15 +651,24 @@ const contentPiecesRouter = router({
         ],
         {
           action: "move",
+          userId: `${ctx.auth.userId}`,
           data: {
             contentPiece: {
               ...contentPiece,
+              ...(workspaceSettings?.metadata?.canonicalLinkPattern &&
+                typeof contentPiece.canonicalLink !== "string" && {
+                  canonicalLink: workspaceSettings.metadata.canonicalLinkPattern.replace(
+                    /{{slug}}/g,
+                    contentPiece.slug
+                  )
+                }),
               id: `${contentPiece._id}`,
               contentGroupId: `${update.contentGroupId || contentPiece.contentGroupId}`,
               locked: contentGroup?.locked || false,
               workspaceId: `${contentPiece.workspaceId}`,
               date: contentPiece.date?.toISOString(),
-              tags
+              tags,
+              members
             },
             nextReferenceId: input.nextReferenceId,
             previousReferenceId: input.previousReferenceId

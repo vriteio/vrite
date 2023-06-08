@@ -2,14 +2,14 @@
 import { client, getContentGroupId } from "virtual:vrite";
 import type { Client } from "../api";
 import Node from "./node.astro";
-import { ContentPieceWithTags } from "../api/content-pieces";
+import { ContentPieceWithAdditionalData } from "../api/content-pieces";
 
 interface Props {
   contentPieceId?: string;
   slug?: string;
 }
 
-let contentPiece: ContentPieceWithTags<Record<string, any>, true> | null = null;
+let contentPiece: ContentPieceWithAdditionalData<Record<string, any>, true> | null = null;
 let contentPieceId = Astro.props.contentPieceId;
 
 if (!contentPieceId && Astro.props.slug) {

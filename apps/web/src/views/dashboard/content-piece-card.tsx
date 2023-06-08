@@ -1,15 +1,15 @@
 import { Component, createMemo, For, Show } from "solid-js";
-import { mdiCalendar, mdiCalendarRemove, mdiEye, mdiPencil } from "@mdi/js";
+import { mdiAccountCircle, mdiCalendar, mdiCalendarRemove, mdiEye, mdiPencil } from "@mdi/js";
 import dayjs from "dayjs";
 import DOMPurify from "dompurify";
 import clsx from "clsx";
 import { useNavigate } from "@solidjs/router";
 import { App, hasPermission, useAuthenticatedContext, useUIContext } from "#context";
-import { Button, Card, Heading, IconButton, Tooltip } from "#components/primitives";
+import { Button, Card, Heading, Icon, IconButton, Tooltip } from "#components/primitives";
 import { tagColorClasses } from "#lib/utils";
 
 interface ContentPieceProps {
-  contentPiece: App.ExtendedContentPieceWithTags<"slug" | "locked">;
+  contentPiece: App.ExtendedContentPieceWithAdditionalData<"locked">;
   index: number;
 }
 
@@ -108,6 +108,25 @@ const ContentPieceCard: Component<ContentPieceProps> = (props) => {
           />
         </Show>
         <div class="flex-1" />
+        <div class="mx-1 gap-1 flex">
+          <For each={props.contentPiece.members.slice(0, 3)}>
+            {(member) => {
+              return (
+                <Tooltip
+                  text={member.profile.username}
+                  class="mt-1"
+                  wrapperClass="-ml-2 hover:z-10"
+                >
+                  <div class="relative h-7 w-7 rounded-full">
+                    <Show when={member.profile?.avatar} fallback={<Icon path={mdiAccountCircle} />}>
+                      <img src={member.profile?.avatar} />
+                    </Show>
+                  </div>
+                </Tooltip>
+              );
+            }}
+          </For>
+        </div>
         <Tooltip text="Open in editor" side="left">
           <IconButton
             path={props.contentPiece.locked || !hasPermission("editMetadata") ? mdiEye : mdiPencil}

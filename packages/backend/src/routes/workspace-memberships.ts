@@ -1,10 +1,11 @@
 import { procedure, router } from "../lib/trpc";
 import { AuthenticatedContext, isAuthenticated, isAuthenticatedUser } from "../lib/middleware";
-import { generateSalt, hashValue, zodId } from "../lib";
+import { UnderscoreID, generateSalt, hashValue, stringToRegex, zodId } from "../lib";
 import { ObjectId } from "mongodb";
 import { z } from "zod";
 import { nanoid } from "nanoid";
 import {
+  FullWorkspaceMembership,
   WorkspaceMembership,
   getWorkspaceMembershipsCollection,
   workspaceMembership
@@ -13,7 +14,14 @@ import * as errors from "#lib/errors";
 import { getWorkspacesCollection, workspace } from "#database/workspaces";
 import { createEventPublisher, createEventSubscription } from "#lib/pub-sub";
 import { runWebhooks } from "#lib/webhooks";
-import { Role, getRolesCollection, getUsersCollection } from "#database";
+import {
+  Role,
+  contentPieceMember,
+  getRolesCollection,
+  getUsersCollection,
+  profile,
+  role
+} from "#database";
 import { updateSessionUser } from "#lib/session";
 
 type WorkspaceMembershipEvent =
@@ -66,7 +74,7 @@ const removeMemberFromWorkspace = async (ctx: AuthenticatedContext, id?: string)
       })
       .toArray();
 
-    if (remainingAdmins.length === 1 && remainingAdmins[0]._id.equals(id)) {
+    if (remainingAdmins.length === 1 && remainingAdmins[0]._id.equals(workspaceMembership._id)) {
       throw errors.badRequest("notAllowed");
     }
   }
@@ -390,6 +398,53 @@ const workspaceMembershipsRouter = router({
     .output(z.void())
     .mutation(async ({ ctx, input }) => {
       return removeMemberFromWorkspace(ctx);
+    }),
+
+  searchMembers: authenticatedProcedure
+    .input(
+      z.object({
+        query: z.string().optional()
+      })
+    )
+    .output(z.array(contentPieceMember))
+    .query(async ({ ctx, input }) => {
+      const workspaceMembershipCollection = getWorkspaceMembershipsCollection(ctx.db);
+      const usersCollection = getUsersCollection(ctx.db);
+      const allMemberships = await workspaceMembershipCollection
+        .find({
+          workspaceId: ctx.auth.workspaceId
+        })
+        .toArray();
+      const users = await usersCollection
+        .find({
+          _id: {
+            $in: allMemberships.map(({ userId }) => userId).filter(Boolean) as ObjectId[]
+          },
+          ...(input.query ? { username: stringToRegex(input.query.toLowerCase()) } : {})
+        })
+        .limit(10)
+        .sort("_id", -1)
+        .toArray();
+      const memberships = users
+        .map((user) => {
+          return allMemberships.find(({ userId }) => userId?.equals(user._id));
+        })
+        .filter(Boolean) as Array<UnderscoreID<FullWorkspaceMembership<ObjectId>>>;
+
+      return memberships.map((membership) => {
+        const user = users.find(({ _id }) => _id.equals(membership.userId!))!;
+
+        return {
+          id: `${membership._id}`,
+          profile: {
+            id: `${user._id}`,
+            username: user.username,
+            fullName: user.fullName,
+            email: user.email,
+            avatar: user.avatar
+          }
+        };
+      });
     })
 });
 
