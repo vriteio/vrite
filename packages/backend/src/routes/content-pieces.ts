@@ -57,7 +57,7 @@ const webhookPayload = (
     ...contentPiece,
     id: `${contentPiece._id}`,
     tags: contentPiece.tags.map((tag) => `${tag}`),
-    members: contentPiece.members?.map((member) => `${member}`),
+    members: contentPiece.members?.map((member) => `${member}`) || [],
     contentGroupId: `${contentPiece.contentGroupId}`,
     date: contentPiece.date?.toISOString()
   };
