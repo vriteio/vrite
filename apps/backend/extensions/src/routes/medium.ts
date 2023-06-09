@@ -125,7 +125,8 @@ const publishToMedium = async (
       body: JSON.stringify(article)
     });
     const json: { data?: { id: string } } = await response.json();
-    if (json.data?.id) throw errors.serverError();
+
+    if (!json.data?.id) throw errors.serverError();
 
     return { mediumId: `${json.data?.id || ""}` };
   } catch (error) {
