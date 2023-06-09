@@ -2,10 +2,12 @@ import { router } from "@vrite/backend";
 import { devRouter } from "./dev";
 import { hashnodeRouter } from "./hashnode";
 import { gptRouter } from "./gpt";
+import { mediumRouter } from "./medium";
 
 const extensionsRouter = router({
   dev: devRouter,
   hashnode: hashnodeRouter,
+  medium: mediumRouter,
   gpt: gptRouter
 });
 

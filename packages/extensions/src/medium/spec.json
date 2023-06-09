@@ -1,0 +1,104 @@
+{
+  "name": "medium",
+  "displayName": "Medium",
+  "description": "Automatically publish articles to Medium",
+  "permissions": [
+    "contentGroups:read",
+    "contentPieces:read",
+    "contentPieces:write",
+    "webhooks:read",
+    "webhooks:write"
+  ],
+  "lifecycle": {
+    "on:install": "install",
+    "on:uninstall": "uninstall",
+    "on:configure": "configure",
+    "on:initConfigurationView": "initConfigurationView",
+    "on:initContentPieceView": "initContentPieceView"
+  },
+  "configurationView": [
+    {
+      "component": "Field[type=text][color=contrast]",
+      "props": {
+        "label": "Integration token",
+        "placeholder": "Integration token",
+        "bind:value": "config.token"
+      },
+      "slot:": "Your Medium Integration token. You can generate one in the [**Security and apps** section](https://medium.com/me/settings/security) of your account settings page"
+    },
+    {
+      "component": "Field[type=select][color=contrast]",
+      "props": {
+        "label": "Content group",
+        "bind:options": "temp.lockedContentGroups",
+        "bind:value": "config.contentGroupId"
+      },
+      "slot:": "Select a content group to enable the extension for. New posts will be auto-published when added to the group. Only **locked** content groups are allowed."
+    },
+    {
+      "component": "Field[type=checkbox][color=contrast]",
+      "props": {
+        "label": "Auto publish",
+        "bind:value": "config.autoPublish"
+      },
+      "slot:": "Publish posts automatically"
+    },
+    {
+      "component": "Field[type=checkbox][color=contrast]",
+      "props": {
+        "label": "Draft",
+        "bind:value": "config.draft"
+      },
+      "slot:": "whether the article should have the draft status by default"
+    },
+    {
+      "component": "Field[type=checkbox][color=contrast]",
+      "props": {
+        "label": "Require canonical link",
+        "bind:value": "config.requireCanonicalLink"
+      },
+      "slot:": "Don't auto-publish when no canonical link is set"
+    }
+  ],
+  "contentPieceView": {
+    "component": "View.flex.flex-col.gap-2",
+    "slot:": [
+      {
+        "component": "Field[type=checkbox][color=contrast]",
+        "props": {
+          "label": "Draft",
+          "bind:value": "data.draft",
+          "bind:disabled": "temp.disabled"
+        },
+        "slot:": "whether the article should have the draft status by default"
+      },
+      {
+        "component": "Show",
+        "props": {
+          "bind:value": "config.autoPublish"
+        },
+        "slot:true": {
+          "component": "Field[type=checkbox][color=contrast]",
+          "props": {
+            "label": "Auto-publish",
+            "bind:value": "data.autoPublish",
+            "bind:disabled": "temp.disabled"
+          },
+          "slot:": "whether the article should be auto-published"
+        }
+      },
+      {
+        "component": "Button[color=primary].w-full.flex.justify-center.items-center.m-0",
+        "props": {
+          "bind:disabled": "temp.disabled",
+          "bind:loading": "temp.$loading",
+          "on:click": "publish"
+        },
+        "slot:": {
+          "component": "Text",
+          "props": { "bind:value": "temp.buttonLabel" }
+        }
+      }
+    ]
+  }
+}

@@ -4,7 +4,7 @@ const publish = async (context: ExtensionContentPieceViewContext): Promise<void>
   try {
     context.setTemp("$loading", true);
 
-    const response = await fetch("https://extensions.vrite.io/hashnode", {
+    const response = await fetch("https://extensions.vrite.io/medium", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${context.token}`,
@@ -16,31 +16,25 @@ const publish = async (context: ExtensionContentPieceViewContext): Promise<void>
       })
     });
     const data = await response.json();
-
-    if (!response.ok || !data.hashnodeId) {
-      throw new Error("Couldn't publish to Hashnode");
+    if (!response.ok || !data.mediumId) {
+      throw new Error("Couldn't publish to Medium");
     }
-
-    if (context.data.hashnodeId) {
-      context.notify({ text: "Updated on Hashnode", type: "success" });
+    if (context.data.mediumId) {
+      context.notify({ text: "Republished to Medium", type: "success" });
     } else {
-      context.notify({ text: "Published to Hashnode", type: "success" });
+      context.notify({ text: "Published to Medium", type: "success" });
     }
 
-    if (
-      !context.contentPiece.locked &&
-      data.hashnodeId &&
-      data.hashnodeId !== context.data.hashnodeId
-    ) {
-      context.setData("hashnodeId", data.hashnodeId);
+    if (!context.contentPiece.locked && data.mediumId && data.mediumId !== context.data.mediumId) {
+      context.setData("mediumId", data.mediumId);
     }
 
     context.setTemp({
       $loading: false,
-      buttonLabel: "Update"
+      buttonLabel: "Republish"
     });
   } catch (error) {
-    context.notify({ text: "Couldn't publish to Hashnode", type: "error" });
+    context.notify({ text: "Couldn't publish to Medium", type: "error" });
     context.setTemp("$loading", false);
   }
 };

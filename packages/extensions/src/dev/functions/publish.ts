@@ -1,10 +1,5 @@
 import { ExtensionContentPieceViewContext } from "@vrite/extensions";
 
-const wait = (ms: number): Promise<void> => {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-};
 const publish = async (context: ExtensionContentPieceViewContext): Promise<void> => {
   try {
     context.setTemp("$loading", true);

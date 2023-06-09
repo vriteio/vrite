@@ -284,6 +284,14 @@ const Column: Component<ColumnProps> = (props) => {
             async onConfirm() {
               try {
                 await client.contentGroups.delete.mutate({ id: props.contentGroup.id });
+                setStorage((storage) => ({
+                  ...storage,
+                  ...(contentPieces().find((contentPiece) => {
+                    return contentPiece.contentGroupId === props.contentGroup.id;
+                  }) && { contentPieceId: undefined })
+                }));
+
+                // DELETE
                 notify({ text: "Content group deleted", type: "success" });
               } catch (error) {
                 notify({ text: "Couldn't delete the content group", type: "success" });
