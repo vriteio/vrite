@@ -1,22 +1,26 @@
-import { CodeBlock, Embed, Heading, Image, Level } from "./extensions";
+import { CodeBlock, Embed, Image } from "./extensions";
 import { SlashMenuItem } from "./extensions/slash-menu/component";
 import { Editor, Node as NodeExtension, Mark as MarkExtension } from "@tiptap/core";
 import { DOMOutputSpec, DOMSerializer, Mark, Node } from "@tiptap/pm/model";
-import { Link } from "@tiptap/extension-link";
-import { Blockquote } from "@tiptap/extension-blockquote";
-import { Bold } from "@tiptap/extension-bold";
-import { BulletList } from "@tiptap/extension-bullet-list";
-import { Code } from "@tiptap/extension-code";
-import { Highlight } from "@tiptap/extension-highlight";
-import { HorizontalRule } from "@tiptap/extension-horizontal-rule";
-import { Italic } from "@tiptap/extension-italic";
-import { ListItem } from "@tiptap/extension-list-item";
-import { OrderedList } from "@tiptap/extension-ordered-list";
-import { Strike } from "@tiptap/extension-strike";
-import { Subscript } from "@tiptap/extension-subscript";
-import { Superscript } from "@tiptap/extension-superscript";
-import { TaskItem } from "@tiptap/extension-task-item";
-import { TaskList } from "@tiptap/extension-task-list";
+import {
+  Heading,
+  Link,
+  Bold,
+  Code,
+  Italic,
+  HorizontalRule,
+  Blockquote,
+  Highlight,
+  Superscript,
+  Subscript,
+  Strike,
+  BulletList,
+  OrderedList,
+  TaskList,
+  Level,
+  CustomTaskItem,
+  CustomListItem
+} from "@vrite/editor";
 import { HocuspocusProvider } from "@hocuspocus/provider";
 import {
   mdiFormatHeader1,
@@ -116,12 +120,6 @@ const createExtensions = (
       .sort((a, b) => a - b) as Level[];
   };
   const getItemNodes = (): NodeExtension[] => {
-    const CustomTaskItem = TaskItem.extend({
-      content: "paragraph"
-    });
-    const CustomListItem = ListItem.extend({
-      content: "paragraph (paragraph|list)*"
-    });
     const itemNodes: NodeExtension[] = [];
 
     if (settings.blocks.includes("bulletList") || settings.blocks.includes("orderedList")) {

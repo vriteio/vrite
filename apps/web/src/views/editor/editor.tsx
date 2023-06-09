@@ -5,9 +5,8 @@ import {
   SolidEditorContent,
   useEditor
 } from "@vrite/tiptap-solid";
-import { Component, createEffect, createSignal, on, onCleanup, onMount } from "solid-js";
-import { Paragraph } from "@tiptap/extension-paragraph";
-import { Text } from "@tiptap/extension-text";
+import { Component, createEffect, createSignal, on, onCleanup } from "solid-js";
+import { Paragraph, Text } from "@vrite/editor";
 import { isTextSelection } from "@tiptap/core";
 import { Gapcursor } from "@tiptap/extension-gapcursor";
 import { Dropcursor } from "@tiptap/extension-dropcursor";

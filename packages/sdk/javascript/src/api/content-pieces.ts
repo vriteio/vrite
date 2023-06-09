@@ -106,7 +106,7 @@ interface ContentPiecesEndpoints {
       | "contentGroupId"
       | "customData"
       | "canonicalLink"
-    > & { referenceId?: string; slug?: string }
+    > & { referenceId?: string; slug?: string; content?: string }
   ): Promise<Pick<ContentPiece<CustomData>, "id">>;
   update<CustomData extends Record<string, any> = Record<string, any>>(
     input: Partial<
@@ -124,7 +124,7 @@ interface ContentPiecesEndpoints {
         | "customData"
         | "canonicalLink"
         | "coverWidth"
-      >
+      > & { content?: string }
     > &
       Pick<ContentPiece<CustomData>, "id">
   ): Promise<void>;

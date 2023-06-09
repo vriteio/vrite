@@ -1,9 +1,8 @@
 import { markInputRule, markPasteRule } from "@tiptap/core";
-import Document from "@tiptap/extension-document";
+import { CustomDocument as BaseCustomDocument } from "@vrite/editor";
 import { useNotificationsContext } from "#context";
 
-const CustomDocument = Document.extend({
-  content: "block+",
+const CustomDocument = BaseCustomDocument.extend({
   addKeyboardShortcuts() {
     const { notify } = useNotificationsContext() || {};
 

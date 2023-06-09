@@ -1,28 +1,20 @@
 import { CodeBlockView } from "./view";
-import { NodeViewWrapper, SolidNodeViewRenderer, useSolidNodeView } from "@vrite/tiptap-solid";
 import {
-  Node,
-  mergeAttributes,
-  isNodeSelection,
-  createChainableState,
-  CommandManager,
-  Editor
-} from "@tiptap/core";
+  CodeBlock as BaseCodeBlock,
+  CodeBlockOptions as BaseCodeBlockOptions,
+  CodeBlockAttributes
+} from "@vrite/editor";
+import { NodeViewWrapper, SolidNodeViewRenderer, useSolidNodeView } from "@vrite/tiptap-solid";
+import { isNodeSelection, createChainableState, CommandManager, Editor } from "@tiptap/core";
 import { keymap } from "@tiptap/pm/keymap";
 import { TextSelection, Plugin, EditorState } from "@tiptap/pm/state";
 import { createNanoEvents } from "nanoevents";
 import { onCleanup, onMount } from "solid-js";
-import { HocuspocusProvider } from "@hocuspocus/provider";
-import { nodeInputRule } from "#lib/editor";
 import { createRef } from "#lib/utils";
 import { monaco } from "#lib/code-editor";
+import { HocuspocusProvider } from "@hocuspocus/provider";
 
-interface CodeBlockAttributes {
-  lang?: string;
-}
-interface CodeBlockOptions {
-  inline: boolean;
-  HTMLAttributes: CodeBlockAttributes;
+interface CodeBlockOptions extends BaseCodeBlockOptions {
   provider: HocuspocusProvider | null;
 }
 
@@ -104,55 +96,13 @@ const run = (config: { editor: Editor; state: EditorState; from: number; to: num
 
   return true;
 };
-
-const CodeBlock = Node.create<CodeBlockOptions>({
-  name: "codeBlock",
-
-  content: "text*",
-
-  marks: "",
-
-  group: "block",
-
-  code: true,
-
-  atom: true,
-
+const CodeBlock = BaseCodeBlock.extend<CodeBlockOptions>({
   addOptions() {
     return {
       provider: null,
       inline: false,
       HTMLAttributes: {}
     };
-  },
-  addAttributes() {
-    return {
-      lang: {
-        default: null,
-        parseHTML: (element) => {
-          const classNames = [...(element.firstElementChild?.classList || [])];
-          const languages = classNames
-            .filter((className) => className.startsWith("language-"))
-            .map((className) => className.replace("language-", ""));
-          const language = languages[0];
-
-          if (!language) {
-            return null;
-          }
-
-          return language.toLowerCase();
-        },
-        rendered: false
-      }
-    };
-  },
-  parseHTML() {
-    return [
-      {
-        tag: "pre",
-        preserveWhitespace: "full"
-      }
-    ];
   },
   addNodeView() {
     const [codeEditorRef, setCodeEditorRef] = createRef<monaco.editor.IStandaloneCodeEditor | null>(
@@ -255,41 +205,6 @@ const CodeBlock = Node.create<CodeBlockOptions>({
       }
     );
   },
-  renderHTML({ node, HTMLAttributes }) {
-    return [
-      "pre",
-      mergeAttributes(this.options.HTMLAttributes, HTMLAttributes),
-      [
-        "code",
-        {
-          class: node.attrs.lang ? `language-${node.attrs.lang}` : null
-        },
-        0
-      ]
-    ];
-  },
-  addCommands() {
-    return {
-      insertCodeBlock: (attrs) => {
-        return ({ commands }) => {
-          return commands.insertContent({
-            type: this.name,
-            attrs
-          });
-        };
-      },
-      updateCodeBlock: (attrs) => {
-        return ({ commands }) => {
-          return commands.updateAttributes(this.name, attrs);
-        };
-      },
-      removeCodeBlock: () => {
-        return ({ commands }) => {
-          return commands.deleteNode(this.name);
-        };
-      }
-    };
-  },
   addProseMirrorPlugins() {
     const { editor } = this;
     let dragSourceElement: Element | null = null;
@@ -382,19 +297,6 @@ const CodeBlock = Node.create<CodeBlockOptions>({
           }
 
           return tr;
-        }
-      })
-    ];
-  },
-  addInputRules() {
-    return [
-      nodeInputRule({
-        find: /(^```(.*?)\s$)/,
-        type: this.type,
-        getAttributes: (match) => {
-          const [, , lang] = match;
-
-          return { lang };
         }
       })
     ];

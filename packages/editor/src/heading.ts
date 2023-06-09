@@ -27,8 +27,9 @@ const Heading = Node.create<HeadingOptions>({
       HTMLAttributes: {}
     };
   },
+  content: "text*",
 
-  content: "inline*",
+  marks: "",
 
   group: "block",
 

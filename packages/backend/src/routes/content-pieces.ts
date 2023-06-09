@@ -1,11 +1,11 @@
-import { Db, ObjectId } from "mongodb";
+import { Binary, Db, ObjectId } from "mongodb";
 import { z } from "zod";
 import { LexoRank } from "lexorank";
 import { convert as convertToSlug } from "url-slug";
 import { convert as convertToText } from "html-to-text";
 import { stringToRegex } from "#lib/utils";
 import { UnderscoreID, zodId } from "#lib/mongo";
-import { bufferToJSON, DocJSON } from "#lib/processing";
+import { bufferToJSON, DocJSON, htmlToJSON, jsonToBuffer } from "#lib/processing";
 import { isAuthenticated } from "#lib/middleware";
 import { procedure, router } from "#lib/trpc";
 import {
@@ -309,13 +309,14 @@ const contentPiecesRouter = router({
     })
     .input(
       contentPiece.omit({ id: true, slug: true }).extend({
+        content: z.string().optional(),
         referenceId: zodId().optional(),
         slug: z.string().optional()
       })
     )
     .output(z.object({ id: zodId() }))
     .mutation(async ({ ctx, input }) => {
-      const { referenceId, contentGroupId, customData, ...create } = input;
+      const { referenceId, contentGroupId, customData, content, ...create } = input;
 
       const workspaceSettingsCollection = getWorkspaceSettingsCollection(ctx.db);
       const contentPiecesCollection = getContentPiecesCollection(ctx.db);
@@ -376,7 +377,8 @@ const contentPiecesRouter = router({
         _id: new ObjectId(),
         contentGroupId: contentPiece.contentGroupId,
         workspaceId: contentPiece.workspaceId,
-        contentPieceId: contentPiece._id
+        contentPieceId: contentPiece._id,
+        ...(content && { content: new Binary(jsonToBuffer(htmlToJSON(content))) })
       });
       runWebhooks(ctx, "contentGroupAdded", webhookPayload(contentPiece));
 
@@ -414,7 +416,8 @@ const contentPiecesRouter = router({
     .input(
       contentPiece
         .extend({
-          coverWidth: z.string()
+          coverWidth: z.string(),
+          content: z.string()
         })
         .partial()
         .required({ id: true })
@@ -423,6 +426,7 @@ const contentPiecesRouter = router({
     .mutation(async ({ ctx, input }) => {
       const {
         id,
+        content: updatedContent,
         contentGroupId: updatedContentGroupId,
         customData: updatedCustomData,
         tags: updatedTags,
@@ -498,6 +502,19 @@ const contentPiecesRouter = router({
         { _id: new ObjectId(id) },
         { $set: contentPieceUpdates }
       );
+
+      if (updatedContent) {
+        await contentsCollection.updateOne(
+          {
+            contentPieceId: contentPiece._id
+          },
+          {
+            $set: {
+              content: new Binary(jsonToBuffer(htmlToJSON(updatedContent)))
+            }
+          }
+        );
+      }
 
       if (!updatedContentGroupId || contentPiece.contentGroupId.equals(updatedContentGroupId)) {
         runWebhooks(ctx, "contentPieceUpdated", webhookPayload(newContentPiece));

@@ -67,7 +67,8 @@ const MetadataSection: SettingsSectionComponent = () => {
             }}
           >
             Set the pattern to use for auto-generating <b>canonical links</b>. Use{" "}
-            <code class="!p-0">{`{{slug}}`}</code> to insert the content piece's slug.
+            <code class="!px-1 !dark:bg-gray-800">{`{{slug}}`}</code> to insert the content piece's
+            slug.
           </InputField>
         </Show>
       </TitledCard>
