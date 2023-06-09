@@ -102,7 +102,7 @@ renderer.link = (href, title, text) => {
 };
 const ComponentRenderer: Component<ComponentRendererProps> = (props) => {
   const { callFunction } = useExtensionsContext();
-  const { context, setContext, extension } = useViewContext();
+  const { context, extension } = useViewContext();
 
   if (typeof props.view === "string") {
     return <span innerHTML={marked.parseInline(props.view, { renderer })} />;
@@ -134,18 +134,18 @@ const ComponentRenderer: Component<ComponentRendererProps> = (props) => {
 
       createEffect(
         on(
-          () => context[group][propertyKey],
+          () => context()[group][propertyKey],
           (value) => {
             setComponentProps(bindKey, value);
           }
         )
       );
-      setComponentProps(bindKey, context[group][propertyKey]);
+      setComponentProps(bindKey, context()[group][propertyKey]);
       setComponentProps(`set${bindKey[0].toUpperCase()}${bindKey.slice(1)}`, () => {
         return (value: any) => {
           const setterName = `set${group[0].toUpperCase()}${group.slice(1)}` as "setTemp";
 
-          context[setterName](propertyKey, value);
+          context()[setterName](propertyKey, value);
         };
       });
 
@@ -160,7 +160,6 @@ const ComponentRenderer: Component<ComponentRendererProps> = (props) => {
           if (extension.id && extension.token) {
             callFunction(props.spec, `${value}`, {
               context,
-              setContext,
               extensionId: extension.id,
               token: extension.token
             });

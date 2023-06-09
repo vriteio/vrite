@@ -1,6 +1,11 @@
 /* eslint-disable camelcase */
 import { procedure, router, zodId, z, errors } from "@vrite/backend";
-import { JSONContent, createClient, ContentPieceWithTags, Extension } from "@vrite/sdk/api";
+import {
+  JSONContent,
+  createClient,
+  ContentPieceWithAdditionalData,
+  Extension
+} from "@vrite/sdk/api";
 import { createContentTransformer, gfmTransformer } from "@vrite/sdk/transformers";
 
 const processContent = (content: JSONContent): string => {
@@ -52,7 +57,7 @@ const processContent = (content: JSONContent): string => {
 };
 const basePath = "/hashnode";
 const publishToHashnode = async (
-  contentPiece: ContentPieceWithTags<Record<string, any>, true>,
+  contentPiece: ContentPieceWithAdditionalData<Record<string, any>, true>,
   extension: Partial<Extension>
 ) => {
   const contentType = "application/json";
@@ -235,24 +240,27 @@ const hashnodeRouter = router({
         content: true,
         description: "text"
       });
+      const contentPieceData =
+        contentPiece.customData?.__extensions__?.[extension.name || ""] || {};
 
-      if (!extension.config?.requireCanonicalLink || contentPiece.canonicalLink) {
-        const { hashnodeId } = await publishToHashnode(contentPiece, extension);
+      if (contentPieceData.autoPublish === false) return;
+      if (extension.config?.requireCanonicalLink && !contentPiece.canonicalLink) return;
 
-        await client.contentPieces.update({
-          id: input.id,
-          customData: {
-            ...contentPiece.customData,
-            __extensions__: {
-              ...(contentPiece.customData?.__extensions__ || {}),
-              [extension.name || ""]: {
-                ...contentPiece.customData?.__extensions__?.[extension.name || ""],
-                hashnodeId
-              }
+      const { hashnodeId } = await publishToHashnode(contentPiece, extension);
+
+      await client.contentPieces.update({
+        id: input.id,
+        customData: {
+          ...contentPiece.customData,
+          __extensions__: {
+            ...(contentPiece.customData?.__extensions__ || {}),
+            [extension.name || ""]: {
+              ...contentPiece.customData?.__extensions__?.[extension.name || ""],
+              hashnodeId
             }
           }
-        });
-      }
+        }
+      });
     })
 });
 

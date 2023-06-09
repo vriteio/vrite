@@ -9,6 +9,7 @@ import { Loader, Tooltip, Card } from "#components/primitives";
 import { App, ExtensionDetails, useExtensionsContext } from "#context";
 import { ViewContextProvider, ViewRenderer } from "#lib/extensions";
 import clsx from "clsx";
+import { createStore } from "solid-js/store";
 
 interface ExtensionsSectionProps {
   contentPiece: App.ExtendedContentPieceWithAdditionalData<"locked" | "coverWidth">;
@@ -47,6 +48,9 @@ const ExtensionsSection: Component<ExtensionsSectionProps> = (props) => {
   const [activeExtension, setActiveExtension] = createSignal<ExtensionDetails | null>(
     extensionsWithContentPieceView()[0] || null
   );
+  const [data, setData] = createStore<ContextObject>(
+    props.contentPiece.customData?.__extensions__?.[activeExtension()!.spec.name || ""] || {}
+  );
 
   return (
     <Show
@@ -71,7 +75,16 @@ const ExtensionsSection: Component<ExtensionsSectionProps> = (props) => {
               {(extension) => {
                 return (
                   <Tooltip text={extension.spec.displayName} side="right" class="ml-1">
-                    <button onClick={() => setActiveExtension(extension)}>
+                    <button
+                      onClick={() => {
+                        setData(
+                          props.contentPiece.customData?.__extensions__?.[
+                            extension.spec.name || ""
+                          ] || {}
+                        );
+                        setActiveExtension(extension);
+                      }}
+                    >
                       <ExtensionIcon
                         spec={extension.spec}
                         class={clsx(
@@ -99,18 +112,16 @@ const ExtensionsSection: Component<ExtensionsSectionProps> = (props) => {
                 extension={activeExtension()!}
                 config={activeExtension()!.config || {}}
                 contentPiece={props.contentPiece}
-                data={
-                  props.contentPiece.customData?.__extensions__?.[
-                    activeExtension()!.spec.name || ""
-                  ] || {}
-                }
+                data={data}
                 setData={(keyOrObject: string | ContextObject, value?: ContextValue) => {
                   let extensionDataUpdate: ContextObject = {};
 
                   if (typeof keyOrObject === "string" && typeof value !== "undefined") {
                     extensionDataUpdate[keyOrObject] = value;
+                    setData(keyOrObject, value);
                   } else if (typeof keyOrObject === "object") {
                     extensionDataUpdate = keyOrObject;
+                    setData(keyOrObject);
                   }
 
                   if (props.contentPiece.locked) return;

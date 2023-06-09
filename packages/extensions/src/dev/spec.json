@@ -92,6 +92,21 @@
         "slot:": "whether the Dev.to article should be in draft (private)"
       },
       {
+        "component": "Show",
+        "props": {
+          "bind:value": "config.autoPublish"
+        },
+        "slot:true": {
+          "component": "Field[type=checkbox][color=contrast]",
+          "props": {
+            "label": "Auto-publish",
+            "bind:value": "data.autoPublish",
+            "bind:disabled": "temp.disabled"
+          },
+          "slot:": "whether the article should be auto-published"
+        }
+      },
+      {
         "component": "Button[color=primary].w-full.flex.justify-center.items-center.m-0",
         "props": {
           "bind:disabled": "temp.disabled",

@@ -34,7 +34,7 @@ declare module "virtual:vrite" {
     Array<{
       params: { slug: string };
       // @ts-ignore
-      props: Omit<import("@vrite/sdk/api").ContentPieceWithTags, "content">;
+      props: Omit<import("@vrite/sdk/api").ContentPieceWithAdditionalData, "content">;
     }>
   >;
   export function getContentPieces(
@@ -44,6 +44,6 @@ declare module "virtual:vrite" {
       tagId?: string;
     }
     // @ts-ignore
-  ): Promise<Array<Omit<import("@vrite/sdk/api").ContentPieceWithTags, "content">>>;
+  ): Promise<Array<Omit<import("@vrite/sdk/api").ContentPieceWithAdditionalData, "content">>>;
   export function getContentGroupId(): string;
 }

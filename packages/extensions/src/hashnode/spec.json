@@ -64,9 +64,18 @@
     "component": "View.flex.flex-col.gap-2",
     "slot:": [
       {
-        "component": "Text.font-semibold.text-lg",
+        "component": "Show",
         "props": {
-          "value": "Hashnode"
+          "bind:value": "config.autoPublish"
+        },
+        "slot:true": {
+          "component": "Field[type=checkbox][color=contrast]",
+          "props": {
+            "label": "Auto-publish",
+            "bind:value": "data.autoPublish",
+            "bind:disabled": "temp.disabled"
+          },
+          "slot:": "whether the article should be auto-published"
         }
       },
       {

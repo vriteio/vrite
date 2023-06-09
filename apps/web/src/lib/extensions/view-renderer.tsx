@@ -42,7 +42,6 @@ const ViewRenderer: Component<ViewRendererProps> = (props) => {
   if (initFunction && extension.id && extension.token) {
     callFunction(props.spec, initFunction, {
       context,
-      setContext,
       extensionId: extension.id,
       token: extension.token
     }).then(() => {

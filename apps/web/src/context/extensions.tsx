@@ -1,6 +1,5 @@
 import { Accessor, createContext, createResource, ParentComponent, useContext } from "solid-js";
 import { ContextObject, ExtensionGeneralContext, ExtensionSpec } from "@vrite/extensions";
-import { SetStoreFunction } from "solid-js/store";
 import { useClientContext } from "#context";
 import { loadSandbox } from "#lib/extensions/sandbox";
 
@@ -19,8 +18,7 @@ interface ExtensionsContextData {
     ctx: {
       extensionId: string;
       token: string;
-      context: Omit<ExtensionGeneralContext, "client" | "token" | "extensionId" | "notify">;
-      setContext?: SetStoreFunction<
+      context: Accessor<
         Omit<ExtensionGeneralContext, "client" | "token" | "extensionId" | "notify">
       >;
     }

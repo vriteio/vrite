@@ -42,7 +42,7 @@ interface ContentPiece<ID extends string | ObjectId = string>
   tags: ID[];
   members: ID[];
 }
-interface ContentPieceWithTags<ID extends string | ObjectId = string>
+interface ContentPieceWithAdditionalData<ID extends string | ObjectId = string>
   extends Omit<ContentPiece<ID>, "tags" | "members"> {
   tags: Array<Tag<ID>>;
   members: Array<ContentPieceMember<ID>>;
@@ -67,7 +67,8 @@ type ExtendedContentPiece<
 type ExtendedContentPieceWithAdditionalData<
   K extends keyof Omit<FullContentPiece, keyof ContentPiece> | undefined = undefined,
   ID extends string | ObjectId = string
-> = ContentPieceWithTags<ID> & Pick<FullContentPieceWithAdditionalData<ID>, Exclude<K, undefined>>;
+> = ContentPieceWithAdditionalData<ID> &
+  Pick<FullContentPieceWithAdditionalData<ID>, Exclude<K, undefined>>;
 
 const getContentPiecesCollection = (
   db: Db
@@ -79,7 +80,7 @@ export { contentPiece, contentPieceMember, getContentPiecesCollection };
 export type {
   ContentPiece,
   ContentPieceMember,
-  ContentPieceWithTags,
+  ContentPieceWithAdditionalData,
   FullContentPiece,
   FullContentPieceWithAdditionalData,
   ExtendedContentPiece,

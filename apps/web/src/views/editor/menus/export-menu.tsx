@@ -16,7 +16,7 @@ import { formatCode } from "#lib/code-editor";
 import { escapeHTML } from "#lib/utils";
 
 interface ExportMenuProps {
-  editedContentPiece: App.ContentPieceWithTags;
+  editedContentPiece: App.ContentPieceWithAdditionalData;
 }
 
 const ExportMenu: Component<ExportMenuProps> = (props) => {

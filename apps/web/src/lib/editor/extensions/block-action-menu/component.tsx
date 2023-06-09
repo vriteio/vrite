@@ -63,20 +63,6 @@ const ExtensionIcon: Component<ExtensionIconProps> = (props) => {
   );
 };
 const BlockViewRenderer: Component<BlockViewRendererProps> = (props) => {
-  const { setContext } = useViewContext();
-
-  createEffect(
-    on(
-      () => props.content,
-      (content) => {
-        (
-          setContext as SetStoreFunction<
-            Omit<ExtensionBlockActionViewContext, "client" | "token" | "extensionId" | "notify">
-          >
-        )("content", content);
-      }
-    )
-  );
   return (
     <ViewRenderer spec={props.extension.spec} view={`blockActionView:${props.blockActionId}`} />
   );

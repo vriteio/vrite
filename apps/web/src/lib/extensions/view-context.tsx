@@ -1,6 +1,16 @@
 import { ContextObject, ContextValue, ExtensionGeneralViewContext } from "@vrite/extensions";
-import { createContext, JSX, splitProps, useContext } from "solid-js";
-import { createStore, SetStoreFunction } from "solid-js/store";
+import {
+  Accessor,
+  createContext,
+  createEffect,
+  createSignal,
+  JSX,
+  on,
+  Setter,
+  splitProps,
+  useContext
+} from "solid-js";
+import { createStore } from "solid-js/store";
 import { ExtensionDetails } from "#context";
 
 type ViewContextProviderProps<O> = {
@@ -9,9 +19,11 @@ type ViewContextProviderProps<O> = {
   extension: ExtensionDetails;
 } & O;
 interface ViewContextData {
-  context: Omit<ExtensionGeneralViewContext, "client" | "token" | "extensionId" | "notify">;
+  context: Accessor<
+    Omit<ExtensionGeneralViewContext, "client" | "token" | "extensionId" | "notify">
+  >;
   extension: ExtensionDetails;
-  setContext: SetStoreFunction<
+  setContext: Setter<
     Omit<ExtensionGeneralViewContext, "client" | "token" | "extensionId" | "notify">
   >;
 }
@@ -23,19 +35,20 @@ const ViewContextProvider = <C extends ExtensionGeneralViewContext>(
   >
 ): JSX.Element => {
   const [, passedProps] = splitProps(props, ["children", "extension", "config"]);
-  const [context, setContext] = createStore<
+  const [temp, setTemp] = createStore({} as ContextObject);
+  const [context, setContext] = createSignal<
     Omit<ExtensionGeneralViewContext, "client" | "token" | "extensionId" | "notify"> & {
       methods: string[];
     }
   >({
     config: props.config,
-    temp: {} as ContextObject,
+    temp,
     spec: props.extension.spec,
     setTemp: (keyOrObject: string | ContextObject, value?: ContextValue) => {
       if (typeof keyOrObject === "string" && typeof value !== "undefined") {
-        setContext("temp", keyOrObject, value);
+        setTemp(keyOrObject, value);
       } else if (typeof keyOrObject === "object") {
-        setContext("temp", keyOrObject);
+        setTemp(keyOrObject);
       }
     },
     methods: [
@@ -46,6 +59,20 @@ const ViewContextProvider = <C extends ExtensionGeneralViewContext>(
     ],
     ...passedProps
   });
+
+  createContext(
+    on(
+      () => props,
+      () => {
+        setContext((context) => ({
+          ...context,
+          config: props.config,
+          spec: props.extension.spec,
+          ...passedProps
+        }));
+      }
+    )
+  );
 
   return (
     <ViewContext.Provider value={{ extension: props.extension, context, setContext }}>

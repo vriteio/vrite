@@ -1,8 +1,9 @@
 import Sandbox from "@jetbrains/websandbox";
-import { SetStoreFunction, unwrap } from "solid-js/store";
+import { SetStoreFunction } from "solid-js/store";
 import { ExtensionGeneralContext, ExtensionSpec } from "@vrite/extensions";
 import { createRef } from "#lib/utils";
 import { useNotificationsContext } from "#context";
+import { Accessor } from "solid-js";
 
 interface ExtensionsSandbox {
   callFunction(
@@ -11,8 +12,7 @@ interface ExtensionsSandbox {
     ctx: {
       extensionId: string;
       token: string;
-      context: Omit<ExtensionGeneralContext, "client" | "token" | "extensionId" | "notify">;
-      setContext?: SetStoreFunction<
+      context: Accessor<
         Omit<ExtensionGeneralContext, "client" | "token" | "extensionId" | "notify">
       >;
     }
@@ -24,9 +24,9 @@ const loadSandbox = (): ExtensionsSandbox => {
   const [resolveRef, setResolveRef] = createRef(() => {});
   const [contextRef, setContextRef] = createRef<{
     value: Omit<ExtensionGeneralContext, "client" | "token" | "extensionId" | "notify">;
-    setter?: SetStoreFunction<
-      Omit<ExtensionGeneralContext, "client" | "token" | "extensionId" | "notify">
-    >;
+    setter?: (
+      data: Omit<ExtensionGeneralContext, "client" | "token" | "extensionId" | "notify">
+    ) => void;
   } | null>(null);
   const sandbox = Sandbox.create(
     {
@@ -77,34 +77,45 @@ const loadSandbox = (): ExtensionsSandbox => {
   };
 
   return {
-    callFunction: async (spec, funcName, { context, setContext, token, extensionId }) => {
+    callFunction: async (spec, funcName, { context, token, extensionId }) => {
       setContextRef({
-        value: context,
-        setter: setContext
+        value: context(),
+        setter: (data) => {
+          Object.keys(data).forEach((key) => {
+            const value =
+              data[
+                key as keyof Omit<
+                  ExtensionGeneralContext,
+                  "client" | "token" | "extensionId" | "notify"
+                >
+              ];
+            const setter = context()[
+              `set${key[0].toUpperCase()}${key.slice(1)}` as keyof Omit<
+                ExtensionGeneralContext,
+                "client" | "token" | "extensionId" | "notify"
+              >
+            ] as unknown;
+
+            if (key === "spec") return;
+
+            if (setter && typeof setter === "function") {
+              setter(value);
+            }
+          });
+        }
       });
 
       const func = spec.functions[funcName];
       const updatedContext = await sandbox.connection?.remote.callFunction(
         func,
-        JSON.parse(JSON.stringify(unwrap(context))),
+        JSON.parse(JSON.stringify(context())),
         {
           extensionId,
           token
         }
       );
 
-      Object.keys(updatedContext).forEach((key) => {
-        const value = updatedContext[key];
-        const setter = context[
-          `set${key[0].toUpperCase()}${key.slice(1)}` as keyof typeof context
-        ] as unknown;
-
-        if (key === "spec") return;
-
-        if (setter && typeof setter === "function") {
-          setter(value);
-        }
-      });
+      contextRef()?.setter?.(updatedContext);
     }
   };
 };
