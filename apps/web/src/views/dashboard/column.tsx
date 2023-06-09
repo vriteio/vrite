@@ -52,9 +52,9 @@ interface AddColumnProps {
 const useContentPieces = (
   contentGroupId: string
 ): {
-  contentPieces(): Array<App.ExtendedContentPieceWithAdditionalData<"slug" | "locked" | "order">>;
+  contentPieces(): Array<App.ExtendedContentPieceWithAdditionalData<"locked" | "order">>;
   setContentPieces(
-    contentPieces: Array<App.ExtendedContentPieceWithAdditionalData<"slug" | "locked" | "order">>
+    contentPieces: Array<App.ExtendedContentPieceWithAdditionalData<"locked" | "order">>
   ): void;
   loading(): boolean;
   loadMore(): void;
@@ -64,7 +64,7 @@ const useContentPieces = (
   const [loading, setLoading] = createSignal(false);
   const [moreToLoad, setMoreToLoad] = createSignal(true);
   const [state, setState] = createStore<{
-    contentPieces: Array<App.ExtendedContentPieceWithAdditionalData<"slug" | "locked" | "order">>;
+    contentPieces: Array<App.ExtendedContentPieceWithAdditionalData<"locked" | "order">>;
   }>({
     contentPieces: []
   });
@@ -525,6 +525,7 @@ const Column: Component<ColumnProps> = (props) => {
                 contentGroupId: props.contentGroup.id,
                 referenceId: contentPieces()[0]?.id,
                 tags: [],
+                members: [],
                 title: ""
               });
 
