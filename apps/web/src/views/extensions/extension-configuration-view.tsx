@@ -70,10 +70,10 @@ const ExtensionConfigurationView: Component<ExtensionModalProps> = (props) => {
                       await callFunction(props.extension.spec, onUninstallCallback, {
                         extensionId: props.extension.id || "",
                         token: props.extension.token || "",
-                        context: {
+                        context: () => ({
                           config: extensionInstallation.config,
                           spec: props.extension.spec
-                        }
+                        })
                       });
                     }
                     await client.extensions.uninstall.mutate({
@@ -104,10 +104,10 @@ const ExtensionConfigurationView: Component<ExtensionModalProps> = (props) => {
                   await callFunction(props.extension.spec, onConfigureCallback, {
                     extensionId: props.extension.id || "",
                     token: props.extension.token || "",
-                    context: {
+                    context: () => ({
                       config: extensionInstallation.config,
                       spec: props.extension.spec
-                    }
+                    })
                   });
                 }
                 setLoading(false);

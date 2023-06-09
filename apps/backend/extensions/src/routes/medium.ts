@@ -69,16 +69,16 @@ const getAuthorId = async (token: string): Promise<string> => {
       headers: {
         "Authorization": `Bearer ${token}`,
         "Accept": contentType,
-        "content-type": contentType,
-        "User-Agent": "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; .NET CLR 1.1.4322)"
+        "content-type": contentType
       }
     });
-    const json: { data?: { id: string } } = await response.json();
 
+    const json: { data?: { id: string } } = await response.json();
     if (!json.data?.id) throw errors.serverError();
 
     return json.data?.id || "";
   } catch (error) {
+    console.error(error);
     throw errors.serverError();
   }
 };
@@ -120,8 +120,7 @@ const publishToMedium = async (
       headers: {
         "Authorization": `Bearer ${extension.config.token}`,
         "Accept": contentType,
-        "content-type": contentType,
-        "User-Agent": "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; .NET CLR 1.1.4322)"
+        "content-type": contentType
       },
       body: JSON.stringify(article)
     });
@@ -130,6 +129,7 @@ const publishToMedium = async (
 
     return { mediumId: `${json.data?.id || ""}` };
   } catch (error) {
+    console.error(error);
     throw errors.serverError();
   }
 };
