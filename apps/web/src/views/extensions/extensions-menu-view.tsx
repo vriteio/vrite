@@ -18,9 +18,11 @@ const ExtensionsMenuView: Component<{
         <Show
           when={installedExtensions().length > 0}
           fallback={
-            <span class="px-2 w-full text-start text-gray-500 dark:text-gray-400">
-              No extensions installed
-            </span>
+            <Show when={!installedExtensions.loading} fallback={<Loader />}>
+              <span class="px-2 w-full text-start text-gray-500 dark:text-gray-400">
+                No extensions installed
+              </span>
+            </Show>
           }
         >
           <div class="grid w-full grid-cols-1 gap-2 @xl:grid-cols-2">

@@ -1,4 +1,11 @@
-import { Accessor, createContext, createResource, ParentComponent, useContext } from "solid-js";
+import {
+  Accessor,
+  createContext,
+  createResource,
+  InitializedResource,
+  ParentComponent,
+  useContext
+} from "solid-js";
 import { ContextObject, ExtensionGeneralContext, ExtensionSpec } from "@vrite/extensions";
 import { useClientContext } from "#context";
 import { loadSandbox } from "#lib/extensions/sandbox";
@@ -10,7 +17,7 @@ interface ExtensionDetails {
   id?: string;
 }
 interface ExtensionsContextData {
-  installedExtensions: Accessor<ExtensionDetails[]>;
+  installedExtensions: InitializedResource<ExtensionDetails[]>;
   getAvailableExtensions: () => Promise<ExtensionDetails[]>;
   callFunction: (
     spec: ExtensionSpec,
