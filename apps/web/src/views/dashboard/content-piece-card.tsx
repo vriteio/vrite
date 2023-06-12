@@ -44,7 +44,7 @@ const ContentPieceCard: Component<ContentPieceProps> = (props) => {
 
   return (
     <Card
-      class="flex flex-col p-3 m-0 mb-4 max-w-[20rem] contentPiece-card select-none"
+      class="flex flex-col p-3 m-0 max-w-[20rem] contentPiece-card select-none"
       color="contrast"
       onClick={() => {
         setStorage((storage) => ({

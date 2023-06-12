@@ -396,7 +396,7 @@ const Column: Component<ColumnProps> = (props) => {
           >
             <Sortable
               wrapper="div"
-              wrapperProps={{ class: "min-h-[calc(100%-1rem)]" }}
+              wrapperProps={{ class: "min-h-[calc(100%-1rem)] flex gap-4 flex-col" }}
               each={contentPieces()}
               ref={setSortableRef}
               options={{

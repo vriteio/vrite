@@ -143,7 +143,7 @@ const DashboardView: Component = () => {
               },
               onUpdate(event) {
                 if (typeof event.oldIndex === "number" && typeof event.newIndex === "number") {
-                  const id = event.item.dataset.contentPieceId;
+                  const id = event.item.dataset.contentGroupId;
 
                   if (id) {
                     client.contentGroups.move.mutate({
