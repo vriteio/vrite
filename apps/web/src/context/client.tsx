@@ -116,7 +116,7 @@ const ClientContextProvider: ParentComponent = (props) => {
     if (wsClient.getConnection().readyState === WebSocket.OPEN) {
       wsClient.getConnection().send("[]");
     }
-  }, 45 * 1000);
+  }, 15 * 1000);
 
   onCleanup(() => {
     clearInterval(keepAliveHandle);

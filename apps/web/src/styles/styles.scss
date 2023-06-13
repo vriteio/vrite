@@ -159,21 +159,21 @@
     top: calc(1.375em * 1.25 * 0.5 + 0.25em);
     content: "H3";
   }
-  :where(h4):not(:where(.not-prose, .not-prose *))::before {
+  :where(h4):not(:where(.not-prose, .not-prose *)) {
     line-height: 2.1rem;
     &::before {
       top: calc(2.1rem * 0.5);
       content: "H4";
     }
   }
-  :where(h5):not(:where(.not-prose, .not-prose *))::before {
+  :where(h5):not(:where(.not-prose, .not-prose *)) {
     line-height: 2.1rem;
     &::before {
       top: calc(2.1rem * 0.5);
       content: "H5";
     }
   }
-  :where(h6):not(:where(.not-prose, .not-prose *))::before {
+  :where(h6):not(:where(.not-prose, .not-prose *)) {
     font-size: 0.875em;
     line-height: 2.1rem;
     &::before {
@@ -230,7 +230,7 @@
   --un-prose-invert-hr: #9ca3af;
 
   :where(blockquote):not(:where(.not-prose, .not-prose *)) {
-    @apply border-l-3 border-solid border-gray-300 dark:border-gray-700;
+    @apply border-l-3 pl-5.5 border-solid border-gray-200 dark:border-gray-700 not-italic text-gray-500 dark:text-gray-400;
   }
   :where(pre, code):not(:where(.not-prose, .not-prose *)) {
     &::before,

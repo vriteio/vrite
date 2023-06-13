@@ -32,6 +32,8 @@ const CodeBlock = Node.create<CodeBlockOptions>({
 
   atom: true,
 
+  isolating: true,
+
   addOptions() {
     return {
       inline: false,
