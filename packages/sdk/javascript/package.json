@@ -10,7 +10,7 @@
     "publish": "pnpm publish --access public --no-git-checks"
   },
   "bugs": {
-    "url": "https://github.com/fireflysemantics/validator/issues"
+    "url": "https://github.com/vriteio/vrite/issues"
   },
   "repository": {
     "type": "git",
