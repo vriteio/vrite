@@ -126,7 +126,10 @@ const BlockActionMenu: Component<BlockActionMenuProps> = (props) => {
   });
 
   return (
-    <div class="flex flex-col ml-2 gap-1" ref={setContainerRef}>
+    <div
+      class={clsx("flex-col ml-2 gap-1", props.state.editor.isEditable ? "flex" : "hidden")}
+      ref={setContainerRef}
+    >
       <For each={blockActions()}>
         {({ blockAction, extension }) => {
           const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(
