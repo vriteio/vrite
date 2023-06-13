@@ -1,11 +1,11 @@
 import { Component, createEffect, createSignal, on, onCleanup, onMount, Show } from "solid-js";
 import { nanoid } from "nanoid";
 import clsx from "clsx";
-import { debounce } from "@solid-primitives/scheduled";
 import { createRef } from "#lib/utils";
 import { monaco } from "#lib/code-editor";
 import { useAppearanceContext } from "#context";
-import { Button } from "#components/primitives";
+import { IconButton } from "#components/primitives";
+import { mdiCheckCircleOutline } from "@mdi/js";
 
 interface MiniCodeEditorProps {
   wrapperClass?: string;
@@ -20,18 +20,15 @@ interface MiniCodeEditorProps {
   readOnly?: boolean;
   setHeight?: boolean;
   onSave?(code: string): void;
-  onChange?(code: string): void;
 }
 
 const MiniCodeEditor: Component<MiniCodeEditorProps> = (props) => {
   const { codeEditorTheme } = useAppearanceContext();
   const [editorContainerRef, setEditorContainerRef] = createRef<HTMLElement | null>(null);
+  const [currentCode, setCurrentCode] = createSignal(props.code || "");
   const [codeEditor, setCodeEditor] = createSignal<monaco.editor.IStandaloneCodeEditor | null>(
     null
   );
-  const handleChange = debounce((code: string) => {
-    props.onChange?.(code);
-  }, 300);
 
   onMount(() => {
     const editorContainer = editorContainerRef();
@@ -94,6 +91,9 @@ const MiniCodeEditor: Component<MiniCodeEditorProps> = (props) => {
       codeEditor.onDidAttemptReadOnlyEdit(() => {
         messageContribution?.dispose();
       });
+      codeEditor.onDidChangeModelContent(() => {
+        setCurrentCode(codeEditor.getValue());
+      });
       createEffect(
         on(
           () => props.code,
@@ -143,16 +143,19 @@ const MiniCodeEditor: Component<MiniCodeEditorProps> = (props) => {
           props.class
         )}
       ></div>
-      <Show when={props.onSave}>
-        <Button
+      <Show when={props.onSave && props.code !== currentCode()}>
+        <IconButton
+          path={mdiCheckCircleOutline}
+          label="Save"
           class="absolute right-2 bottom-2"
           color="primary"
+          text="base"
+          variant="text"
           onClick={() => {
-            props.onSave?.(codeEditor()?.getValue() || "");
+            props.onSave?.(currentCode() || "");
+            setCurrentCode(currentCode());
           }}
-        >
-          Save
-        </Button>
+        ></IconButton>
       </Show>
     </div>
   );
