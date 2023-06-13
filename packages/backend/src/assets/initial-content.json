@@ -1,0 +1,176 @@
+{
+  "type": "doc",
+  "content": [
+    {
+      "type": "paragraph",
+      "content": [
+        { "type": "text", "text": "Hello World and welcome to " },
+        {
+          "type": "text",
+          "text": "Vrite",
+          "marks": [{ "type": "bold", "attrs": {} }]
+        },
+        {
+          "type": "text",
+          "text": "! Happy to see you here. Feel free to explore at your own pace or check out the resources linked below:"
+        }
+      ]
+    },
+    {
+      "type": "bulletList",
+      "content": [
+        {
+          "type": "listItem",
+          "content": [
+            {
+              "type": "paragraph",
+              "content": [
+                { "type": "text", "text": "📕 " },
+                {
+                  "type": "text",
+                  "text": "Vrite documentation",
+                  "marks": [
+                    {
+                      "type": "link",
+                      "attrs": {
+                        "href": "https://docs.vrite.io",
+                        "target": "_blank",
+                        "class": null
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "listItem",
+          "content": [
+            {
+              "type": "paragraph",
+              "content": [
+                { "type": "text", "text": "ℹ️ " },
+                {
+                  "type": "text",
+                  "text": "Learn more about Vrite",
+                  "marks": [
+                    {
+                      "type": "link",
+                      "attrs": {
+                        "href": "https://vrite.io",
+                        "target": "_blank",
+                        "class": null
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "listItem",
+          "content": [
+            {
+              "type": "paragraph",
+              "content": [
+                { "type": "text", "text": "🌟 " },
+                {
+                  "type": "text",
+                  "text": "Star Vrite on GitHub",
+                  "marks": [
+                    {
+                      "type": "link",
+                      "attrs": {
+                        "href": "https://github.com/vriteio/vrite",
+                        "target": "_blank",
+                        "class": null
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "listItem",
+          "content": [
+            {
+              "type": "paragraph",
+              "content": [
+                { "type": "text", "text": "🐞 " },
+                {
+                  "type": "text",
+                  "text": "Report bugs",
+                  "marks": [
+                    {
+                      "type": "link",
+                      "attrs": {
+                        "href": " https://github.com/vriteio/vrite/issues",
+                        "target": "_blank",
+                        "class": null
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "listItem",
+          "content": [
+            {
+              "type": "paragraph",
+              "content": [
+                { "type": "text", "text": "🐦 " },
+                {
+                  "type": "text",
+                  "text": "Follow on Twitter",
+                  "marks": [
+                    {
+                      "type": "link",
+                      "attrs": {
+                        "href": "https://twitter.com/vriteio",
+                        "target": "_blank",
+                        "class": null
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "listItem",
+          "content": [
+            {
+              "type": "paragraph",
+              "content": [
+                { "type": "text", "text": "💬 " },
+                {
+                  "type": "text",
+                  "text": "Join Vrite Discord",
+                  "marks": [
+                    {
+                      "type": "link",
+                      "attrs": {
+                        "href": "https://discord.gg/yYqDWyKnqE",
+                        "target": "_blank",
+                        "class": null
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    { "type": "paragraph" }
+  ]
+}

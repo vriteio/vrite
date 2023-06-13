@@ -102,7 +102,7 @@ const verificationRouter = router({
         }
       );
 
-      const workspaceId = await createWorkspace(user, ctx.db);
+      const workspaceId = await createWorkspace(user, ctx.db, { defaultContent: true });
 
       await userSettingsCollection.insertOne({
         _id: new ObjectId(),

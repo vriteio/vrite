@@ -1,5 +1,5 @@
 import { UnderscoreID } from "./mongo";
-import { ObjectId, Db } from "mongodb";
+import { ObjectId, Db, Binary } from "mongodb";
 import {
   blocks,
   embeds,
@@ -7,34 +7,47 @@ import {
   marks
 } from "#database/workspace-settings";
 import { getWorkspacesCollection } from "#database/workspaces";
-import { getUserSettingsCollection } from "#database/user-settings";
 import { getWorkspaceMembershipsCollection } from "#database/workspace-memberships";
 import { getRolesCollection } from "#database/roles";
 import { FullUser } from "#database/users";
 import { getContentPiecesCollection, getContentsCollection } from "#database";
+import { LexoRank } from "lexorank";
+import { jsonToBuffer, DocJSON } from "./processing";
+import initialContent from "#assets/initial-content.json";
 
 const createWorkspace = async (
   user: UnderscoreID<FullUser<ObjectId>>,
   db: Db,
   config?: {
-    name: string;
+    name?: string;
     logo?: string;
     description?: string;
+    defaultContent?: boolean;
   }
 ): Promise<ObjectId> => {
   const workspacesCollection = getWorkspacesCollection(db);
   const workspaceSettingsCollection = getWorkspaceSettingsCollection(db);
   const workspaceMembershipsCollection = getWorkspaceMembershipsCollection(db);
+  const contentPiecesCollection = getContentPiecesCollection(db);
+  const contentsCollection = getContentsCollection(db);
   const rolesCollection = getRolesCollection(db);
   const adminRoleId = new ObjectId();
   const workspaceId = new ObjectId();
+  const ideasContentGroupId = new ObjectId();
 
   await workspacesCollection.insertOne({
     name: config?.name || `${user.username}'s workspace`,
-    contentGroups: [],
     _id: workspaceId,
+    contentGroups: [],
     ...(config?.logo && { logo: config.logo }),
-    ...(config?.description && { description: config.description })
+    ...(config?.description && { description: config.description }),
+    ...(config?.defaultContent && {
+      contentGroups: [
+        { _id: ideasContentGroupId, name: "Ideas" },
+        { _id: new ObjectId(), name: "Drafts" },
+        { _id: new ObjectId(), name: "Published", locked: true }
+      ]
+    })
   });
   await workspaceSettingsCollection.insertOne({
     _id: new ObjectId(),
@@ -73,6 +86,25 @@ const createWorkspace = async (
     userId: user._id,
     roleId: adminRoleId
   });
+  if (config?.defaultContent) {
+    await contentPiecesCollection.insertOne({
+      _id: new ObjectId(),
+      workspaceId,
+      contentGroupId: ideasContentGroupId,
+      title: "Hello World!",
+      slug: "hello-world",
+      members: [],
+      tags: [],
+      order: LexoRank.min().toString()
+    });
+    await contentsCollection.insertOne({
+      _id: new ObjectId(),
+      workspaceId,
+      contentPieceId: ideasContentGroupId,
+      contentGroupId: ideasContentGroupId,
+      content: new Binary(jsonToBuffer(initialContent as DocJSON))
+    });
+  }
 
   return workspaceId;
 };
