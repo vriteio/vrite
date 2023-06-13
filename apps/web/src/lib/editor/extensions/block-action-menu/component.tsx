@@ -13,18 +13,7 @@ import {
 } from "@vrite/extensions";
 import { SolidEditor } from "@vrite/tiptap-solid";
 import clsx from "clsx";
-import {
-  Component,
-  For,
-  Match,
-  Show,
-  Switch,
-  createEffect,
-  createMemo,
-  createSignal,
-  on
-} from "solid-js";
-import { SetStoreFunction } from "solid-js/store";
+import { Component, For, Show, createEffect, createMemo, createSignal, on } from "solid-js";
 
 interface BlockActionMenuProps {
   state: {
@@ -60,11 +49,6 @@ const ExtensionIcon: Component<ExtensionIconProps> = (props) => {
         />
       </Show>
     </>
-  );
-};
-const BlockViewRenderer: Component<BlockViewRendererProps> = (props) => {
-  return (
-    <ViewRenderer spec={props.extension.spec} view={`blockActionView:${props.blockActionId}`} />
   );
 };
 const BlockActionMenu: Component<BlockActionMenuProps> = (props) => {
@@ -219,11 +203,7 @@ const BlockActionMenu: Component<BlockActionMenuProps> = (props) => {
                     unlock();
                   }}
                 >
-                  <BlockViewRenderer
-                    blockActionId={blockAction.id}
-                    extension={extension}
-                    content={node()?.toJSON()}
-                  />
+                  <ViewRenderer spec={extension.spec} view={`blockActionView:${blockAction.id}`} />
                 </ViewContextProvider>
               </div>
             </Dropdown>

@@ -22,14 +22,7 @@ const gptRouter = router({
         {
           model: "gpt-3.5-turbo",
           stream: true,
-          messages: [
-            {
-              role: "system",
-              content:
-                "You are a technical content generator in GitHub Flavored Markdown-based editor. For code snippets, include their language in the Markdown output."
-            },
-            { role: "user", content: input.prompt }
-          ]
+          messages: [{ role: "user", content: input.prompt }]
         },
         { responseType: "stream" }
       );

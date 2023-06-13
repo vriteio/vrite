@@ -60,19 +60,14 @@ const ViewContextProvider = <C extends ExtensionGeneralViewContext>(
     ...passedProps
   });
 
-  createContext(
-    on(
-      () => props,
-      () => {
-        setContext((context) => ({
-          ...context,
-          config: props.config,
-          spec: props.extension.spec,
-          ...passedProps
-        }));
-      }
-    )
-  );
+  createEffect(() => {
+    setContext((context) => ({
+      ...context,
+      config: props.config,
+      spec: props.extension.spec,
+      ...passedProps
+    }));
+  });
 
   return (
     <ViewContext.Provider value={{ extension: props.extension, context, setContext }}>
