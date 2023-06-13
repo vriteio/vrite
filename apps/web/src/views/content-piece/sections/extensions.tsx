@@ -9,7 +9,7 @@ import { Loader, Tooltip, Card } from "#components/primitives";
 import { App, ExtensionDetails, useExtensionsContext } from "#context";
 import { ViewContextProvider, ViewRenderer } from "#lib/extensions";
 import clsx from "clsx";
-import { createStore } from "solid-js/store";
+import { createStore, reconcile } from "solid-js/store";
 
 interface ExtensionsSectionProps {
   contentPiece: App.ExtendedContentPieceWithAdditionalData<"locked" | "coverWidth">;
@@ -78,9 +78,11 @@ const ExtensionsSection: Component<ExtensionsSectionProps> = (props) => {
                     <button
                       onClick={() => {
                         setData(
-                          props.contentPiece.customData?.__extensions__?.[
-                            extension.spec.name || ""
-                          ] || {}
+                          reconcile(
+                            props.contentPiece.customData?.__extensions__?.[
+                              extension.spec.name || ""
+                            ] || {}
+                          )
                         );
                         setActiveExtension(extension);
                       }}
