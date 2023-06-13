@@ -4,11 +4,40 @@ import {
   JSONContent,
   createClient,
   ContentPieceWithAdditionalData,
-  Extension
+  Extension,
+  JSONContentAttrs
 } from "@vrite/sdk/api";
 import { createContentTransformer, gfmTransformer } from "@vrite/sdk/transformers";
 
 const processContent = (content: JSONContent): string => {
+  const matchers = {
+    youtube:
+      /^ *https?:\/\/(?:www\.)?youtu\.?be(?:.com)?\/(?:watch\?v=|embed\/)?(.+?)(?:[ &/?].*)*$/i,
+    codepen: /^ *https?:\/\/(?:www\.)?codepen\.io\/.+?\/(?:embed|pen)?\/(.+?)(?:[ &/?].*)*$/i,
+    codesandbox: /^ *https?:\/\/(?:www\.)?codesandbox\.io\/(?:s|embed)\/(.+?)(?:[ &/?].*)*$/i
+  };
+  const getEmbedId = (value: string, embedType: keyof typeof matchers): string => {
+    const matcher = matchers[embedType];
+    const match = matcher.exec(value);
+
+    if (match) {
+      return match[1];
+    }
+
+    return value;
+  };
+  const transformEmbed = (attrs: JSONContentAttrs) => {
+    switch (attrs.embed) {
+      case "codepen":
+        return `\n%[https://codepen.io/codepen/embed/${getEmbedId(`${attrs.src}`, "codepen")}]\n`;
+      case "codesandbox":
+        return `\n%[https://codesandbox.io/s/${getEmbedId(`${attrs.src}`, "codesandbox")}]\n`;
+      case "youtube":
+        return `\n%[https://www.youtube.com/watch?v=${getEmbedId(`${attrs.src}`, "youtube")}]\n`;
+      default:
+        return "";
+    }
+  };
   const hashnodeTransformer = createContentTransformer({
     applyInlineFormatting(type, attrs, content) {
       if (type === "strike") {
@@ -34,7 +63,7 @@ const processContent = (content: JSONContent): string => {
     transformNode(type, attrs, content) {
       switch (type) {
         case "embed":
-          return `\n%[${attrs?.src || ""}]\n`;
+          return transformEmbed(attrs);
         case "taskList":
           return "";
         default:

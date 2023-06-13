@@ -4,11 +4,43 @@ import {
   JSONContent,
   createClient,
   ContentPieceWithAdditionalData,
-  Extension
+  Extension,
+  JSONContentAttrs
 } from "@vrite/sdk/api";
 import { createContentTransformer, gfmTransformer } from "@vrite/sdk/transformers";
 
 const processContent = (content: JSONContent): string => {
+  const matchers = {
+    youtube:
+      /^ *https?:\/\/(?:www\.)?youtu\.?be(?:.com)?\/(?:watch\?v=|embed\/)?(.+?)(?:[ &/?].*)*$/i,
+    codepen: /^ *https?:\/\/(?:www\.)?codepen\.io\/.+?\/(?:embed|pen)?\/(.+?)(?:[ &/?].*)*$/i,
+    codesandbox: /^ *https?:\/\/(?:www\.)?codesandbox\.io\/(?:s|embed)\/(.+?)(?:[ &/?].*)*$/i
+  };
+  const getEmbedId = (value: string, embedType: keyof typeof matchers): string => {
+    const matcher = matchers[embedType];
+    const match = matcher.exec(value);
+
+    if (match) {
+      return match[1];
+    }
+
+    return value;
+  };
+  const transformEmbed = (attrs: JSONContentAttrs) => {
+    switch (attrs.embed) {
+      case "codepen":
+        return `\n{% codepen https://codepen.io/codepen/embed/${getEmbedId(
+          `${attrs.src}`,
+          "codepen"
+        )} %}\n`;
+      case "codesandbox":
+        return `\n{% codesandbox ${getEmbedId(`${attrs.src}`, "codesandbox")} %}\n`;
+      case "youtube":
+        return `\n{% youtube ${getEmbedId(`${attrs.src}`, "youtube")} %}\n`;
+      default:
+        return "";
+    }
+  };
   const devTransformer = createContentTransformer({
     applyInlineFormatting(type, attrs, content) {
       return gfmTransformer({
@@ -26,7 +58,7 @@ const processContent = (content: JSONContent): string => {
     transformNode(type, attrs, content) {
       switch (type) {
         case "embed":
-          return `\n{% embed ${attrs?.src || ""} %}\n`;
+          return transformEmbed(attrs);
         case "taskList":
           return "";
         default:
@@ -81,9 +113,8 @@ const publishToDEV = async (
         method: "PUT",
         headers: {
           "api-key": `${extension.config.apiKey}`,
-          "Accept": contentType,
-          "content-type": contentType,
-          "User-Agent": "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; .NET CLR 1.1.4322)"
+          "Accept": "application/vnd.forem.api-v1+json",
+          "content-type": contentType
         },
         body: JSON.stringify({
           article
@@ -91,11 +122,13 @@ const publishToDEV = async (
       });
       const data: { error?: string; id?: string } = await response.json();
       if (data.error) {
+        console.error(data.error);
         throw errors.serverError();
       }
 
       return { devId: `${data.id || ""}` };
     } catch (error) {
+      console.error(error);
       throw errors.serverError();
     }
   } else {
@@ -105,19 +138,20 @@ const publishToDEV = async (
         body: JSON.stringify({ article }),
         headers: {
           "api-key": `${extension.config.apiKey}`,
-          "Accept": contentType,
-          "content-type": contentType,
-          "User-Agent": "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; .NET CLR 1.1.4322)"
+          "Accept": "application/vnd.forem.api-v1+json",
+          "content-type": contentType
         }
       });
       const data: { error?: string; id?: string } = await response.json();
 
       if (data.error) {
+        console.error(data.error);
         throw errors.serverError();
       }
 
       return { devId: `${data.id || ""}` };
     } catch (error) {
+      console.error(error);
       throw errors.serverError();
     }
   }
