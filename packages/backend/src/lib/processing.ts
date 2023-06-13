@@ -7,10 +7,11 @@ import {
   BulletList,
   Code,
   CodeBlock,
-  CustomDocument,
-  CustomListItem,
-  CustomTaskItem,
+  Document,
+  ListItem,
+  TaskItem,
   Embed,
+  HardBreak,
   Heading,
   Highlight,
   HorizontalRule,
@@ -44,9 +45,10 @@ const bufferToJSON = (buffer: Buffer): DocJSON => {
 };
 const htmlToJSON = (html: string): DocJSON => {
   return generateJSON(html, [
-    CustomDocument,
+    Document,
     Paragraph,
     Text,
+    HardBreak,
     Bold,
     Italic,
     Strike,
@@ -64,8 +66,8 @@ const htmlToJSON = (html: string): DocJSON => {
     HorizontalRule,
     Image,
     Embed,
-    CustomTaskItem,
-    CustomListItem
+    TaskItem,
+    ListItem
   ]) as DocJSON;
 };
 const jsonToBuffer = (json: DocJSON): Buffer => {

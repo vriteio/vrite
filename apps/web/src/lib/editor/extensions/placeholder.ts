@@ -1,6 +1,6 @@
-import Placeholder from "@tiptap/extension-placeholder";
+import { Placeholder as BasePlaceholder } from "@tiptap/extension-placeholder";
 
-const CustomPlaceholder = Placeholder.configure({
+const Placeholder = BasePlaceholder.configure({
   showOnlyCurrent: true,
   placeholder: ({ node, editor }) => {
     if (node.type.name === "paragraph" && editor.state.doc.firstChild === node) {
@@ -11,4 +11,4 @@ const CustomPlaceholder = Placeholder.configure({
   }
 });
 
-export { CustomPlaceholder };
+export { Placeholder };

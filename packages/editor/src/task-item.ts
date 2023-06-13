@@ -1,7 +1,7 @@
-import TaskItem from "@tiptap/extension-task-item";
+import { TaskItem as BaseTaskItem } from "@tiptap/extension-task-item";
 
-const CustomTaskItem = TaskItem.extend({
+const TaskItem = BaseTaskItem.extend({
   content: "paragraph"
 });
 
-export { CustomTaskItem };
+export { TaskItem };

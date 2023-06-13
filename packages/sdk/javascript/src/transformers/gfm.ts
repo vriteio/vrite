@@ -12,7 +12,7 @@ const gfmTransformer = createContentTransformer({
         return `\`${content}\``;
 
       case "italic":
-        return `*${content}*`;
+        return `_${content}_`;
 
       case "strike":
         return `~~${content}~~`;
@@ -27,13 +27,16 @@ const gfmTransformer = createContentTransformer({
     switch (type) {
       case "paragraph":
         return `\n${content}\n`;
+      case "hardBreak":
+        return "\n";
       case "heading":
         return `\n${"#".repeat(Number(attrs?.level || 1))} ${content}\n`;
       case "blockquote":
         return `\n${content
           .split("\n")
-          .filter((line) => line)
           .map((line) => {
+            if (!line) return ">";
+
             return `> ${line}`;
           })
           .join("\n")}\n`;

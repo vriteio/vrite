@@ -14,15 +14,16 @@ import {
   BulletList,
   OrderedList,
   TaskList,
-  CustomListItem,
-  CustomTaskItem
+  ListItem,
+  TaskItem,
+  HardBreak
 } from "@vrite/editor";
 import { Component, createEffect, on } from "solid-js";
 import { Typography } from "@tiptap/extension-typography";
 import clsx from "clsx";
 import { Editor, Extensions } from "@tiptap/core";
 import { debounce } from "@solid-primitives/scheduled";
-import { TrailingNode, CustomPlaceholder, CustomDocument } from "#lib/editor";
+import { TrailingNode, Placeholder, Document } from "#lib/editor";
 import { Heading } from "@vrite/editor";
 
 interface ExtensionOptions {
@@ -45,8 +46,8 @@ interface MiniEditorProps extends ExtensionOptions {
 
 const getExtensions = (options: ExtensionOptions): Extensions => {
   const extensions = [
-    options.content ? CustomDocument.extend({ content: options.content }) : CustomDocument,
-    CustomPlaceholder.configure({
+    options.content ? Document.extend({ content: options.content }) : Document,
+    Placeholder.configure({
       placeholder: ({ node, editor }) => {
         if (node.type.name === "paragraph" && editor.state.doc.firstChild === node) {
           return options.placeholder || "";
@@ -57,9 +58,10 @@ const getExtensions = (options: ExtensionOptions): Extensions => {
     }),
     Paragraph,
     Text,
+    HardBreak,
     TrailingNode,
     ...(options.blocks ? [Heading, Blockquote] : []),
-    ...(options.lists ? [BulletList, OrderedList, TaskList, CustomTaskItem, CustomListItem] : []),
+    ...(options.lists ? [BulletList, OrderedList, TaskList, TaskItem, ListItem] : []),
     ...(options.extensions || [])
   ];
 
@@ -69,7 +71,7 @@ const getExtensions = (options: ExtensionOptions): Extensions => {
       Code,
       Italic,
       Strike,
-      Link.configure({ openOnClick: false }),
+      Link,
       Highlight,
       Superscript,
       Subscript,

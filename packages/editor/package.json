@@ -19,6 +19,7 @@
     "@tiptap/extension-dropcursor": "^2.0.3",
     "@tiptap/extension-floating-menu": "^2.0.3",
     "@tiptap/extension-gapcursor": "^2.0.3",
+    "@tiptap/extension-hard-break": "^2.0.3",
     "@tiptap/extension-highlight": "^2.0.3",
     "@tiptap/extension-horizontal-rule": "^2.0.3",
     "@tiptap/extension-image": "^2.0.3",

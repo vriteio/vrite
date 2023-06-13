@@ -18,8 +18,8 @@ import {
   OrderedList,
   TaskList,
   Level,
-  CustomTaskItem,
-  CustomListItem
+  TaskItem,
+  ListItem
 } from "@vrite/editor";
 import { HocuspocusProvider } from "@hocuspocus/provider";
 import {
@@ -96,7 +96,7 @@ const createExtensions = (
     italic: Italic,
     strike: Strike,
     code: Code,
-    link: Link.configure({ openOnClick: false }),
+    link: Link,
     highlight: Highlight,
     subscript: Subscript,
     superscript: Superscript
@@ -123,15 +123,15 @@ const createExtensions = (
     const itemNodes: NodeExtension[] = [];
 
     if (settings.blocks.includes("bulletList") || settings.blocks.includes("orderedList")) {
-      itemNodes.push(CustomListItem);
+      itemNodes.push(ListItem);
     } else {
-      itemNodes.push(CustomListItem.extend(resetExtensionConfig));
+      itemNodes.push(ListItem.extend(resetExtensionConfig));
     }
 
     if (settings.blocks.includes("taskList")) {
-      itemNodes.push(CustomTaskItem);
+      itemNodes.push(TaskItem);
     } else {
-      itemNodes.push(CustomTaskItem.extend(resetExtensionConfig));
+      itemNodes.push(TaskItem.extend(resetExtensionConfig));
     }
 
     return itemNodes;

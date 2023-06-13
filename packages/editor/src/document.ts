@@ -1,7 +1,7 @@
-import Document from "@tiptap/extension-document";
+import { Document as BaseDocument } from "@tiptap/extension-document";
 
-const CustomDocument = Document.extend({
+const Document = BaseDocument.extend({
   content: "block+"
 });
 
-export { CustomDocument };
+export { Document };

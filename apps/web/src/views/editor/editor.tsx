@@ -6,7 +6,7 @@ import {
   useEditor
 } from "@vrite/tiptap-solid";
 import { Component, createEffect, createSignal, on, onCleanup } from "solid-js";
-import { Paragraph, Text } from "@vrite/editor";
+import { HardBreak, Paragraph, Text } from "@vrite/editor";
 import { isTextSelection } from "@tiptap/core";
 import { Gapcursor } from "@tiptap/extension-gapcursor";
 import { Dropcursor } from "@tiptap/extension-dropcursor";
@@ -17,8 +17,8 @@ import * as Y from "yjs";
 import { useNavigate } from "@solidjs/router";
 import { App, hasPermission, useAuthenticatedContext, useUIContext } from "#context";
 import {
-  CustomDocument,
-  CustomPlaceholder,
+  Document,
+  Placeholder,
   TrailingNode,
   LinkPreviewWrapper,
   SlashMenuPlugin,
@@ -27,7 +27,8 @@ import {
   Collab,
   createClipboardSerializer,
   createExtensions,
-  createBlockMenuOptions
+  createBlockMenuOptions,
+  BlockPaste
 } from "#lib/editor";
 
 interface EditorProps {
@@ -72,10 +73,12 @@ const Editor: Component<EditorProps> = (props) => {
       }
     },
     extensions: [
-      CustomDocument,
-      CustomPlaceholder,
+      BlockPaste,
+      Document,
+      Placeholder,
       Paragraph,
       Text,
+      HardBreak,
       Typography,
       ...(workspaceSettings() ? createExtensions(workspaceSettings()!, provider) : []),
       TrailingNode,

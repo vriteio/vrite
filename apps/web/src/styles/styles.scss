@@ -184,6 +184,9 @@
   :where(ul p, ol p):not(:where(.not-prose, .not-prose *)) {
     @apply m-0;
   }
+  :where(li > ul, li > ol):not(:where(.not-prose, .not-prose *)) {
+    @apply m-0;
+  }
   :where(ul[data-type="taskList"]):not(:where(.not-prose, .not-prose *)) {
     padding-left: 0rem;
     li {

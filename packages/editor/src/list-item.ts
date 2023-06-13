@@ -1,7 +1,7 @@
-import ListItem from "@tiptap/extension-list-item";
+import { ListItem as BaseListItem } from "@tiptap/extension-list-item";
 
-const CustomListItem = ListItem.extend({
-  content: "paragraph (paragraph|list)*"
+const ListItem = BaseListItem.extend({
+  content: "paragraph list*"
 });
 
-export { CustomListItem };
+export { ListItem };

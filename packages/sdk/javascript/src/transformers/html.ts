@@ -53,6 +53,8 @@ const htmlTransformer = createContentTransformer({
     switch (type) {
       case "paragraph":
         return `<p>${content}</p>`;
+      case "hardBreak":
+        return "<br/>";
       case "heading":
         return `<h${attrs?.level || 1}>${content}</h${attrs?.level || 1}>`;
       case "blockquote":
