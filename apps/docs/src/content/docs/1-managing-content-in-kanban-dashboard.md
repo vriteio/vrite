@@ -4,7 +4,7 @@ category: Usage Guide
 slug: kanban-dashboard
 ---
 
-Managing content using traditional CMS tools is hard. Basic lists or tables just don’t cut it. It's especially difficult when working in teams or depending on a complex content production pipeline. You end up using many different tools, switching and copy-pasting between them, experiencing degraded UX and losing time.
+Managing content using traditional CMS tools is hard. Basic lists or tables just don’t cut it. It's especially difficult when working in teams or depending on a complex content production pipeline. You end up using many different tools, switching and copy-pasting between them, experiencing degraded UX, and losing time.
 
 That's why Vrite approaches content management differently — by implementing a **Kanban dashboard** many developers and project managers are familiar with and enjoy using.
 
@@ -18,13 +18,13 @@ You can **drag and drop** content pieces within a group to order them or move th
 
 ## Content Piece Card
 
-Every content piece card displays a summary of its metadata, like the date, title, description or a few of the assigned tags.
+Every content piece card displays a summary of its metadata, like the date, title, description, or a few of the assigned tags.
 
 Additionally, it has an _Open in editor_ button, which opens the content piece and navigates to the editor directly; It's **highlighted** when the content piece is currently opened.
 
 ## Content Group Menu
 
-Every content group column has an input field to name it, and a **dropdown menu**. From this menu you can:
+Every content group column has an input field to name it, and a **dropdown menu**. From this menu, you can:
 
 - _Copy ID_ - copies content group's ID into the clipboard; Useful when working with the Vrite API and JS SDK;
 - _Lock_ - locks the content group, preventing editing of it or its content pieces;

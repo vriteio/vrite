@@ -5,7 +5,9 @@ import {
   mdiGithub,
   mdiLogin,
   mdiLightbulb,
-  mdiTwitter
+  mdiTwitter,
+  mdiLanguageJavascript,
+  mdiServer
 } from "@mdi/js";
 import clsx from "clsx";
 import { Component, For } from "solid-js";
@@ -20,7 +22,8 @@ interface SideBarProps {
 }
 
 const apiDocsLink = "https://generator.swagger.io/?url=https://api.vrite.io/swagger.json";
-const sdkLink = "https://github.com/vriteio/sdk-js";
+const jsSDKLink = "/javascript-sdk";
+const selfHostingLink = "/self-hosting";
 const SideBar: Component<SideBarProps> = (props) => {
   return (
     <>
@@ -75,22 +78,30 @@ const SideBar: Component<SideBarProps> = (props) => {
         <IconButton
           variant="text"
           class="justify-start w-full font-bold m-0"
+          text={jsSDKLink === props.currentPath ? "base" : "soft"}
+          color={jsSDKLink === props.currentPath ? "primary" : "base"}
+          label="JavaScript SDK"
+          path={mdiLanguageJavascript}
+          link={jsSDKLink}
+        />
+        <IconButton
+          variant="text"
+          class="justify-start w-full font-bold m-0"
+          text={selfHostingLink === props.currentPath ? "base" : "soft"}
+          color={selfHostingLink === props.currentPath ? "primary" : "base"}
+          label="Self-hosting Vrite"
+          path={mdiServer}
+          link={selfHostingLink}
+        />
+        <IconButton
+          variant="text"
+          class="justify-start w-full font-bold m-0"
           text="soft"
           label="API Documentation"
           path={mdiLinkVariant}
           link={apiDocsLink}
           target="_blank"
-        ></IconButton>
-        <IconButton
-          variant="text"
-          class="justify-start w-full font-bold m-0"
-          text="soft"
-          label="JavaScript SDK"
-          path={mdiLinkVariant}
-          link={sdkLink}
-          target="_blank"
         />
-
         <IconButton
           link="https://github.com/vriteio/vrite"
           class="w-full font-bold m-0 justify-start md:hidden"
@@ -100,7 +111,7 @@ const SideBar: Component<SideBarProps> = (props) => {
           text="soft"
         ></IconButton>
         <IconButton
-          link="https://github.com/vriteio/vrite"
+          link="https://discord.gg/yYqDWyKnqE"
           class="w-full font-bold m-0 justify-start md:hidden"
           variant="text"
           path={discordIcon}
@@ -108,7 +119,7 @@ const SideBar: Component<SideBarProps> = (props) => {
           text="soft"
         ></IconButton>
         <IconButton
-          link="https://github.com/vriteio/vrite"
+          link="https://twitter.com/vriteio"
           class="w-full font-bold m-0 justify-start md:hidden"
           variant="text"
           path={mdiTwitter}

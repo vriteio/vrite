@@ -4,7 +4,7 @@ category: Usage Guide
 slug: content-editor
 ---
 
-The content editor is the core part of Vrite — this is where you can create your next technical masterpiece. And, thanks to all the features, formatting options and content blocks Vrite supports - it should be a breeze!
+The content editor is the core part of Vrite — this is where you can create your next technical masterpiece. And, thanks to all the features, formatting options, and content blocks Vrite supports - it should be a breeze!
 
 ## Editing Menus
 
@@ -20,7 +20,7 @@ Select some text for the bubble menu to appear. It's meant for inline formatting
 
 ![Block menu in Vrite editor](https://assets.vrite.io/6409e82d7dfc74cef7a72e0d/TfxcygyBCv25jW0r0UsD8.png)
 
-Used for inserting block content, like lists, headings, images or code blocks. Can be triggered at the beginning of any new paragraph by typing `/` or click a button on the left of the paragraph. You can **filter the list** by typing queries right after the `/`, and move between items with **arrow keys**.
+Used for inserting block content, like lists, headings, images, or code blocks. Can be triggered at the beginning of any new paragraph by typing `/` or clicking a button on the left of the paragraph. You can **filter the list** by typing queries right after the `/`, and move between items with **arrow keys**.
 
 ### Link Menu
 
@@ -63,7 +63,7 @@ Content blocks are large pieces of content, insertable from the block menu or wi
 
 ![Vrite embed block](https://assets.vrite.io/6409e82d7dfc74cef7a72e0d/0OxiNuaXHPy0sGNuJSsKq.png)
 
-**Embed** — lets you embed content from supported platforms. You can provide any link or ID and Vrite will generate proper preview. You can also drag and drop the block to change its position. Supported embeds are:
+**Embed** — lets you embed content from supported platforms. You can provide any link or ID and Vrite will generate a proper preview. You can also drag and drop the block to change its position. Supported embeds are:
 
 - **CodePen**
 - **CodeSandbox**
@@ -71,16 +71,16 @@ Content blocks are large pieces of content, insertable from the block menu or wi
 
 ![Vrite code block](https://assets.vrite.io/6409e82d7dfc74cef7a72e0d/NLQ2piOpD-6jOZEtv67gT.png)
 
-**Code block** — a full-featured VS-Code-like [Monaco editor](https://microsoft.github.io/monaco-editor/) for editing your code snippets. It supports syntax highlighting for vast majority of popular languages and full autocomplete for some, like JavaScript/TypeScript, CSS and HTML. You can select the code language using the input with autocomplete menu and, whenever possible, format the code using the built-in [Prettier integration](https://prettier.io/).
+**Code block** — a full-featured VS-Code-like [Monaco editor](https://microsoft.github.io/monaco-editor/) for editing your code snippets. It supports syntax highlighting for the vast majority of popular languages and full autocomplete for some, like JavaScript/TypeScript, CSS, and HTML. You can select the code language using the input with autocomplete menu and, whenever possible, format the code using the built-in [Prettier integration](https://prettier.io/).
 
 ## Editor Toolbar
 
 ![Vrite editor toolbar](https://assets.vrite.io/6409e82d7dfc74cef7a72e0d/Nm-ODaVo67yulTH5BhpQx.png)
 
-In addition to all the features available from the main editing view, Vrite editor also provides a toolbar with a few more options:
+In addition to all the features available from the main editing view, the Vrite editor also provides a toolbar with a few more options:
 
-- _Content Stats_ — opens a dropdown with detailed statistics about your content, like number of words or Lines of Code (LOCs) written;
-- _Export_ — allows you to “Export” the content to the underlying JSON format, HTML or GitHub-Flavored Markdown (GFM) for easy download or copy-paste;
+- _Content Stats_ — opens a dropdown with detailed statistics about your content, like the number of words or Lines of Code (LOCs) written;
+- _Export_ — allows you to “Export” the content to the underlying JSON format, HTML, or GitHub-Flavored Markdown (GFM) for easy download or copy-paste;
 - _Zen mode_ — allows you to focus solely on your content, hiding all the distractions and centering the content editor; You can easily go back by clicking the button in the top-right corner or using `ESC` key;
 
 The _Export_ functions opens a modal presenting the output and options to _Download_ or _Copy_ it easily:
@@ -92,3 +92,11 @@ The _Export_ functions opens a modal presenting the output and options to _Downl
 Vrite editor supports real-time collaboration, displaying not only the team members currently viewing/editing the piece, but also their current selection. In case of uncertainty, you can hover right over the cursor or the badge in the toolbar to view the username.
 
 ![Real-time collaboration in Vrite editor](https://assets.vrite.io/6409e82d7dfc74cef7a72e0d/RaOXP4MkcZZpEWJHQ3cAd.png)
+
+## Block Actions
+
+Block Actions are special actions provided by Vrite Extensions for various top-level blocks, like images, embeds, or paragraphs, that can process and change the content of the given block. A good example of this is the **GPT-3.5** extension, which can insert new content, generated by OpenAI’s LLM or entirely edit the given paragraph.
+
+![GPT-3.5 extension's block action](https://assets.vrite.io/6409e82d7dfc74cef7a72e0d/ytq0welaqPIu7XkycI0cv.png)
+
+You can read more about Vrite Extensions [here](/vrite-extensions).

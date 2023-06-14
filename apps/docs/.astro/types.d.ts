@@ -224,9 +224,30 @@ declare module 'astro:content' {
   collection: "docs";
   data: InferEntrySchema<"docs">
 } & { render(): Render[".md"] };
-"5-publishing-content.md": {
-	id: "5-publishing-content.md";
+"5-vrite-extensions.md": {
+	id: "5-vrite-extensions.md";
+  slug: "vrite-extensions";
+  body: string;
+  collection: "docs";
+  data: InferEntrySchema<"docs">
+} & { render(): Render[".md"] };
+"6-publishing-content.md": {
+	id: "6-publishing-content.md";
   slug: "publishing";
+  body: string;
+  collection: "docs";
+  data: InferEntrySchema<"docs">
+} & { render(): Render[".md"] };
+"7-javascript-sdk.md": {
+	id: "7-javascript-sdk.md";
+  slug: "javascript-sdk";
+  body: string;
+  collection: "docs";
+  data: InferEntrySchema<"docs">
+} & { render(): Render[".md"] };
+"8-self-hosting.md": {
+	id: "8-self-hosting.md";
+  slug: "self-hosting";
   body: string;
   collection: "docs";
   data: InferEntrySchema<"docs">

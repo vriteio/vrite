@@ -1,7 +1,6 @@
 import { mdiGithub, mdiTwitter } from "@mdi/js";
 import type { Component } from "solid-js";
 import { Button, IconButton } from "#components/primitives";
-import { setMenuOpened, menuOpened } from "#lib/state";
 import { discordIcon } from "#icons";
 
 const Header: Component = () => {
@@ -15,8 +14,8 @@ const Header: Component = () => {
           path={mdiGithub}
           label="Star on GitHub"
         ></IconButton>
-        <IconButton path={discordIcon} variant="text" />
-        <IconButton path={mdiTwitter} variant="text" />
+        <IconButton path={discordIcon} variant="text" link="https://discord.gg/yYqDWyKnqE" />
+        <IconButton path={mdiTwitter} variant="text" link="https://twitter.com/vrite.io" />
         <Button color="primary" link="https://app.vrite.io">
           Sign in
         </Button>
