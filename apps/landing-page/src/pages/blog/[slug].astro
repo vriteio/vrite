@@ -46,7 +46,7 @@ export { getStaticPaths };
           {
             members.map((member) => {
               return (
-                <Button class="flex gap-1 m-0 border-0 justify-center items-center pl-1.5">
+                <Button class="flex gap-1 m-0 border-0 justify-center items-center pl-1.5" badge>
                   <img src={member.profile.avatar} class="h-6 w-6 rounded-full" />
                   <span class="font-semibold">{member.profile.fullName}</span>
                 </Button>
