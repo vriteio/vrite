@@ -102,19 +102,23 @@ const verificationRouter = router({
         }
       );
 
-      const workspaceId = await createWorkspace(user, ctx.db, { defaultContent: true });
+      try {
+        const workspaceId = await createWorkspace(user, ctx.db, { defaultContent: false });
 
-      await userSettingsCollection.insertOne({
-        _id: new ObjectId(),
-        userId: user._id,
-        codeEditorTheme: "dark",
-        uiTheme: "auto",
-        accentColor: "energy",
-        currentWorkspaceId: workspaceId
-      });
-      await createSession(ctx, `${user._id}`);
+        await userSettingsCollection.insertOne({
+          _id: new ObjectId(),
+          userId: user._id,
+          codeEditorTheme: "dark",
+          uiTheme: "auto",
+          accentColor: "energy",
+          currentWorkspaceId: workspaceId
+        });
+        await createSession(ctx, `${user._id}`);
 
-      return redirect || "/";
+        return "/";
+      } catch (e) {
+        console.log(e);
+      }
     }),
   verifyWorkspaceInvite: authenticatedUserProcedure
     .input(z.object({ code: z.string(), membershipId: z.string() }))

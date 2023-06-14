@@ -35,7 +35,7 @@ const VerifyView: Component = () => {
     }
   });
   const verifyEmail = async (): Promise<void> => {
-    const redirect = await client.verification.verifyEmail.mutate({ code: code || "", userId: id });
+    const redirect = await client.verification.verifyEmail.mutate({ code: code!, userId: id });
 
     setRedirect(redirect);
     setVerified(true);
