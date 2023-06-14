@@ -1,7 +1,13 @@
 import { Observed } from "./observed";
 import clsx from "clsx";
 import { Component, createSignal } from "solid-js";
-import { mdiGithub } from "@mdi/js";
+import {
+  mdiBookOpen,
+  mdiBookOpenBlankVariant,
+  mdiBookOpenVariant,
+  mdiGithub,
+  mdiLoginVariant
+} from "@mdi/js";
 import { Button, IconButton, Input, Loader } from "#components/primitives";
 import { isEmailCorrect, setEmail, setEmailModal, submitEmailForm, emailContext } from "#lib/email";
 
@@ -105,22 +111,31 @@ const Headline: Component = () => {
           <span class="font-bold">technical content</span>
         </h1>
         <p class="max-w-md mt-4 text-lg md:text-xl">
-          Dedicated <b>headless Content Management System (CMS)</b> for your programming blogs,
+          Open-source <b>headless Content Management System (CMS)</b> for your programming blogs,
           documentation, and more.
         </p>
-        <div class="items-center justify-start hidden w-full gap-2 mt-2 md:flex">
-          <Button
-            color="primary"
-            class="flex items-center justify-center m-0 whitespace-nowrap"
-            link="https://app.vrite.io"
-          >
-            Get Started
-          </Button>
+        <div class="items-center justify-start hidden w-full mt-4 gap-2 md:flex">
           <IconButton
-            label="GitHub"
-            path={mdiGithub}
-            link="https://github.com/vriteio/vrite"
-          ></IconButton>
+            color="primary"
+            text="base"
+            class="flex items-center justify-center m-0 whitespace-nowrap p-1 px-1.5"
+            size="large"
+            variant="text"
+            link="https://app.vrite.io"
+            path={mdiLoginVariant}
+            label="Get started"
+            target="_blank"
+          />
+          <IconButton
+            class="flex items-center justify-center m-0 whitespace-nowrap p-1 px-1.5"
+            link="https://docs.vrite.io"
+            text="soft"
+            size="large"
+            variant="text"
+            path={mdiBookOpenBlankVariant}
+            label="Documentation"
+            target="_blank"
+          />
         </div>
       </div>
     </Observed>

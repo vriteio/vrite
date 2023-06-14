@@ -6,16 +6,16 @@ import "@fontsource/nunito/600.css";
 import "@fontsource/nunito/700.css";
 import "@fontsource/nunito/800.css";
 import "@fontsource/nunito/900.css";
-import { Card, IconButton } from "#components/primitives";
+import { Button, Card, IconButton } from "#components/primitives";
 import { mdiCalendar } from "@mdi/js";
 import { format } from "date-fns";
-import { FrameHeadline, BaseHead, Header,EmailModal,Footer  } from "#components/fragments";
+import { FrameHeadline, BaseHead, Header, EmailModal, Footer } from "#components/fragments";
 import { getContentPieces } from "virtual:vrite";
 
 const contentPieces = await getContentPieces({ limit: "all" });
 const title = "Vrite － headless CMS for technical content";
 const description =
-  "Dedicated headless Content Management System (CMS) for technical content, like programming blogs, documentation, and more.";
+  "Open-Source headless Content Management System (CMS) for technical content, like programming blogs, documentation, and more.";
 
 export const prerender = true;
 ---
@@ -39,45 +39,60 @@ export const prerender = true;
           <h1>Blog</h1>
         </header>
 
-        <div
-          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 py-4 flex-1"
-        >
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 py-4 flex-1">
           <a href="/" class="md:col-span-2">
             <Card class="p-8 m-0 cursor-pointer h-full">
               <FrameHeadline class="h-full" client:idle />
             </Card></a
           >
           {
-            contentPieces.map((contentPiece) => (
-              <a href={`/blog/${contentPiece.slug}/`}>
-                <div>
-                  <img
-                    class="w-full rounded-2xl hover:hero-image transition-transform duration-500"
-                    src={contentPiece.coverUrl}
-                  />
-                  <div class="px-2">
-                    <div class="flex justify-start items-center mt-2">
-                      <IconButton
-                        path={mdiCalendar}
-                        class="px-1"
-                        color="primary"
-                        size="small"
-                        badge
-                        label={format(
-                          contentPiece.date
-                            ? new Date(contentPiece.date)
-                            : new Date(),
-                          "dd MMM yyyy"
-                        )}
-                      />
+            contentPieces.map(function (contentPiece) {
+              console.log(contentPiece);
+              return (
+                <Fragment>
+                  <a href={`/blog/${contentPiece.slug}/`}>
+                    <div>
+                      <Card color="primary" class="m-0 pb-0 pl-0 pr-2 pt-2 overflow-hidden">
+                        <img
+                          class="w-full rounded-2xl hover:hero-image transition-transform duration-500 shadow-xl"
+                          src={contentPiece.coverUrl}
+                        />
+                      </Card>
+                      <div class="px-2">
+                        <div class="flex justify-start items-center mt-2">
+                          <>
+                            <IconButton
+                              path={mdiCalendar}
+                              class="px-1"
+                              color="primary"
+                              size="small"
+                              badge
+                              label={format(
+                                contentPiece.date ? new Date(contentPiece.date) : new Date(),
+                                "dd MMM yyyy"
+                              )}
+                            />
+                          </>
+                        </div>
+                        <h2 class="text-xl md:text-2xl text-gray-600 dark:text-gray-100">
+                          {contentPiece.title}
+                        </h2>
+                        <div class="flex justify-start items-center mt-1">
+                          {contentPiece.members.map((member) => {
+                            return (
+                              <Button class="flex gap-1 m-0 border-0 justify-center items-center pl-1.5">
+                                <img src={member.profile.avatar} class="h-6 w-6 rounded-full" />
+                                <span class="font-semibold">{member.profile.fullName}</span>
+                              </Button>
+                            );
+                          })}
+                        </div>
+                      </div>
                     </div>
-                    <h2 class="text-xl md:text-2xl text-gray-600 dark:text-gray-100">
-                      {contentPiece.title}
-                    </h2>
-                  </div>
-                </div>
-              </a>
-            ))
+                  </a>
+                </Fragment>
+              );
+            })
           }
         </div>
       </div>

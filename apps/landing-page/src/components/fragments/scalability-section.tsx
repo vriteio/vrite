@@ -3,7 +3,7 @@ import { Section } from "./section";
 import { UseCasesSection } from "./use-cases-section";
 import { FeatureCard } from "./feature-card";
 import { Component, For } from "solid-js";
-import { mdiAccountGroup, mdiConnection } from "@mdi/js";
+import { mdiAccountGroup, mdiConnection, mdiPuzzle } from "@mdi/js";
 import collaborationGraphicDark from "#assets/graphics/dark/collaboration.png";
 import apiIntegrationImageDark from "#assets/graphics/dark/api-integration.png";
 import collaborationGraphicLight from "#assets/graphics/light/collaboration.png";
@@ -14,8 +14,8 @@ const features = [
     imageDark: collaborationGraphicDark,
     imageLight: collaborationGraphicLight,
     imageAlt: "Collaboration",
-    label: "Collaboration",
-    header: "Say hi!",
+    header: "Collaboration",
+    label: "Say hi!",
     alt: "Collaboration",
     icon: mdiAccountGroup,
     vertical: true,
@@ -26,17 +26,18 @@ const features = [
   {
     imageDark: apiIntegrationImageDark,
     imageLight: apiIntegrationImageLight,
-    imageAlt: "API integration",
-    label: "API integration",
+    imageAlt: "Vrite API & Extensions",
+    header: "Vrite API & Extensions",
     gradient: true,
-    header: "Beep boop",
-    alt: "API integration and automation",
-    icon: mdiConnection,
+    label: "Build up",
+    alt: "Vrite API & Extensions",
+    icon: mdiPuzzle,
     vertical: true,
     content: (
       <>
-        Publish and manage your content the way you like thanks to full API interface and number of
-        integrations.
+        Customize your editing experience and publish content easily thanks to various Vrite
+        Extensions. Integrate with any frontend thanks to full REST API interface, with dedicated
+        SDKs.
       </>
     )
   }

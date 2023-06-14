@@ -70,7 +70,7 @@ const OverviewSection: Component = () => {
     <Section title="All-in-one technical content toolkit">
       <p class="text-lg max-w-[40rem] mb-4">
         From writing to publishing, Vrite empowers you to work with any kind of technical content,
-        while enjoying top User and Developer Experience.
+        while enjoying great User and Developer Experience.
       </p>
       <div class="relative flex-col lg:flex-col-reverse xl:flex-row flex items-center lg:gap-4">
         <div class="flex-1 lg:grid grid-cols-3 gap-4 xl:grid-cols-1 hidden">

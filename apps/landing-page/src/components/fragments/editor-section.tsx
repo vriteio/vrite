@@ -16,8 +16,8 @@ const features = [
   {
     imageDark: editorGraphicDark,
     imageLight: editorGraphicLight,
-    label: "Editing experience",
-    header: "Let it flow",
+    header: "Modern editing experience",
+    label: "Let it flow",
     imageAlt: "Content editor",
     icon: mdiPencil,
     gradient: false,
@@ -32,8 +32,8 @@ const features = [
   {
     imageDark: codeEditorGraphicDark,
     imageLight: codeEditorGraphicLight,
-    label: "Advanced code editor",
-    header: "All in on code",
+    header: "Advanced code editor",
+    label: "All in on code",
     imageAlt: "Integrated code editor",
     icon: mdiCodeTags,
     gradient: true,
@@ -50,20 +50,22 @@ const features = [
 const secondaryFeatures = [
   {
     icon: mdiGit,
-    label: "Version control",
-    header: "Backup every step",
+    header: "Version control",
+    label: "Backup every step",
+    comingSoon: true,
     text: "Enjoy Git-level version control, with full edit history and easy version tagging."
   },
   {
     icon: mdiCogOutline,
-    label: "Configurable",
-    header: "Everything as you want it",
+    header: "Configuration",
+    label: "Everything as you want it",
     text: "Configure the entire editing experience - from heading sizes to inline formatting options."
   },
   {
     icon: mdiArchiveOutline,
-    label: "Asset manager",
-    header: "Store anything",
+    header: "Asset manager",
+    label: "Store anything",
+    comingSoon: true,
     text: "Upload and manage images, videos, and other assets alongside your editor."
   }
 ];
@@ -82,8 +84,8 @@ const EditorSection: Component = () => {
         <div class="flex-1">
           <h2 class="text-3xl md:text-4xl pb-4">Content editor</h2>
           <p class="text-xl md:text-2xl">
-            Writing experience as developers like it - with everything from Markdown support to
-            keyboard shortcuts included.
+            Writing experience as developers like it - with everything from Markdown support to code
+            editor included.
           </p>
         </div>
       </div>

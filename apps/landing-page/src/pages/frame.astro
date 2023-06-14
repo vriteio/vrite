@@ -11,7 +11,7 @@ import { FrameHeadline, BaseHead } from "#components/fragments";
 const image = "https://vrite.io/meta-image.png";
 const title = "Vrite － headless CMS for technical content";
 const description =
-  "Dedicated headless Content Management System (CMS) for technical content, like programming blogs, documentation, and more.";
+  "Open-Source headless Content Management System (CMS) for technical content, like programming blogs, documentation, and more.";
 
 export const prerender = true;
 ---
@@ -19,20 +19,11 @@ export const prerender = true;
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <BaseHead
-      description={description}
-      title={title}
-      image={image}
-      analytics={false}
-    />
+    <BaseHead description={description} title={title} image={image} analytics={false} />
   </head>
   <body class="overflow-hidden overscroll-none">
-    <main
-      class="flex flex-col items-center justify-center gap-8 p-4 pb-0 bg-white dark:bg-black"
-    >
-      <div
-        class="h-[100vh] w-full flex justify-center items-start max-w-screen-xl"
-      >
+    <main class="flex flex-col items-center justify-center gap-8 p-4 pb-0 bg-white dark:bg-black">
+      <div class="h-[100vh] w-full flex justify-center items-start max-w-screen-xl">
         <div
           class="sticky top-0 flex flex-col-reverse items-center justify-center w-full h-screen -mt-16 md:flex-row max-w-screen-2xl"
         >

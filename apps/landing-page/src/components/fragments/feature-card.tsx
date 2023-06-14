@@ -1,6 +1,7 @@
 import clsx from "clsx";
-import type { Component, JSX } from "solid-js";
+import { Component, JSX, Show } from "solid-js";
 import { IconButton, Button, Card, Image } from "#components/primitives";
+import { mdiClock } from "@mdi/js";
 
 interface FeatureCardProps {
   reverse?: boolean;
@@ -19,6 +20,7 @@ interface TextFeatureCardProps {
   label: string;
   header: string;
   text: JSX.Element;
+  comingSoon?: boolean;
   class?: string;
 }
 
@@ -95,7 +97,7 @@ const TextFeatureCard: Component<TextFeatureCardProps> = (props) => {
   return (
     <Card class={clsx("h-full p-4 m-0", props.class)} color="contrast">
       <div class="flex flex-col items-start justify-center h-full">
-        <div class="flex flex-col items-start justify-center">
+        <div class="flex items-center justify-center w-full">
           <IconButton
             path={props.icon}
             badge
@@ -104,6 +106,12 @@ const TextFeatureCard: Component<TextFeatureCardProps> = (props) => {
             class="px-1"
             label={props.label}
           />
+          <div class="flex-1" />
+          <Show when={props.comingSoon}>
+            <Button size="small" class="px-1 px-1 py-0.5 text-xs m-0" text="soft" badge>
+              Coming soon
+            </Button>
+          </Show>
         </div>
         <h2 class="mt-2 text-xl text-gray-700 dark:text-gray-100 md:text-2xl">{props.header}</h2>
         <p class="mt-2 text-gray-600 dark:text-gray-200 md:text-lg">{props.text}</p>

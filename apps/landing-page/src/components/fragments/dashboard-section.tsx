@@ -16,8 +16,8 @@ const features = [
   {
     imageDark: dashboardGraphicDark,
     imageLight: dashboardGraphicLight,
-    label: "Integrated kanban",
-    header: "All inclusive",
+    header: "Integrated kanban",
+    label: "All inclusive",
     imageAlt: "Kanban dashboard",
     icon: mdiViewDashboard,
     reverse: true,
@@ -31,8 +31,8 @@ const features = [
   {
     imageDark: postSettingsGraphicDark,
     imageLight: postSettingsGraphicLight,
-    label: "Customizable metadata",
-    header: "So meta",
+    header: "Customizable metadata",
+    label: "So meta",
     imageAlt: "Metadata panel",
     icon: mdiDatabase,
     secondary: true,
@@ -49,14 +49,16 @@ const features = [
 const secondaryFeatures = [
   {
     icon: mdiFileImportOutline,
-    label: "Move in",
-    header: "Few clicks to come in",
+    header: "Data imports",
+    label: "Few clicks to come in",
+    comingSoon: true,
     text: "Make your move in easier and faster thanks to easy import from Trello, Dropbox Paper, and Notion."
   },
   {
     icon: mdiMagnify,
-    label: "Advanced search",
-    header: "Find it all",
+    header: "Advanced search",
+    label: "Find it all",
+    comingSoon: true,
     text: "Query any content, title, or metadata. Find and organize anything anytime you need."
   }
 ];
