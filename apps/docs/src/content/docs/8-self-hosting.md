@@ -4,19 +4,87 @@ category: Self-hosting
 slug: self-hosting
 ---
 
-With Vrite’s unique features like Kanban-based content management, the actual publishing flow is quite unique.
+Vrite aims to provide the best and most accessible technical writing experience of any headless CMS out there. To do so, we want to provide both a ready, [easy-to-use “Vrite Cloud” instance](https://app.vrite.io/), as well as allowing you to **self-host Vrite** on your own servers.
 
-## Dedicated Content Group
+That said, while in **Public Beta**, Vrite is in active development with updates coming weekly and often even daily. Until we stabilize the core feature set of Vrite, the focus will stay on development, with the latest updates coming to the hosted instance as soon as they’re available. During this phase, Vrite Cloud will remain free for all users.
 
-The recommended approach is to create a **dedicated**, ideally **locked**, **content group** for publishing, with an easily-identifiable name e.g. _Published_. You can then move any content piece that's ready to be published, to this content group.
+We plan to focus more on providing a better experience for **self-hosting** Vrite and **data migration** between different instances in a few months, right alongside Vrite entering its **first stable release** (planned for late **Q3 2023**)
 
-![](https://assets.vrite.io/6409e82d7dfc74cef7a72e0d/OwTKZrTdtlFUTAKUZrLlg.png)
+With this in mind, self-hosting Vrite right now isn’t the best experience. That said, if you’re really interested to try and self-host Vrite, or want to contribute to Vrite’s development, here’s some information to help you get started with the [Vrite monorepo](https://github.com/vriteio/vrite/).
 
-You can then access all the content pieces from this group using either [the API](https://generator.swagger.io/?url=https://api.vrite.io/swagger.json) or the [JavaScript SDK](https://github.com/vriteio/sdk-js). You can also setup automatic publishing by creating dedicated Webhooks that send messages to your server whenever an event is triggered by the given content group.
+## Project Structure
 
-## More Resources
+Vrite monorepo is based on [Turborepo](https://turbo.build/repo). Among its most important dependencies are:
 
-Given that Vrite is in Public Beta, it’s constantly evolving and new content delivery methods, alongside more resources on how to implement them are on the way. Below you can check out related articles from the Vrite blog:
+- [TypeScript](https://www.typescriptlang.org/) — the language the entirety of Vrite is written in;
+- [Solid.js](https://solidjs.com/) — really fast UI framework powering nearly all of Vrite’s frontends;
+- [Fastify](https://www.fastify.io/) — low-overhead Node.js web framework powering all of Vrite’s services;
+- [tRPC](https://trpc.io/) — allows for fast development of end-to-end typesafe API for Vrite;
+- [Tiptap](https://tiptap.dev/) & [ProseMirror](https://prosemirror.net/) — powerful Rich Text Editor (RTE) framework and toolkit powering Vrite editor;
+- [Y.js](https://github.com/yjs/yjs) & [HocusPocus](https://hocuspocus.dev/) — libraries powering real-time collaboration in Vrite;
+- [Monaco Editor](https://microsoft.github.io/monaco-editor/) — code editor providing VS Code-like experience for everything code in Vrite;
+- [Astro](https://astro.build/) — great Static Site Generator (SSG) powering Vrite landing page and docs;
 
-- **[Better blogging on Dev.to with Vrite - headless CMS for technical content](https://vrite.io/blog/better-blogging-on-dev-to-with-vrite-headless-cms-for-technical-content/)** - a guide on implementing a custom Webhook for auto-publishing your content to [the DEV platform](https://dev.to/), using Vrite API and **Content Transformers**.
-- [**Start programming blog in minutes with Astro and Vrite**](https://vrite.io/blog/start-programming-blog-in-minutes-with-astro-and-vrite/) - a guide on using Vrite’s dedicated [Astro](https://astro.build/) integration to build a static blog really fast;
+The following is the current project structure:
+
+- `/packages` — contains code shared by apps or packages meant for separate publication;
+  - `/backend` — (`@vrite/backend`) backend code shared by all services;
+  - `/components` — (`@vrite/component`) basic, primitive UI components shared by multiple frontend UI apps;
+  - `/editor` — (`@vrite/editor`) contains custom and re-exported extensions for the Vrite editor (also used on the backend for JSON output processing)
+  - `/extensions` — (`@vrite/extensions`) contains all of Vrite’s official Extensions;
+  - `/scripts` — (`@vrite/script`) internal scripts for building and developing various packages and services;
+  - `/sdk/javascript` — (`@vrite/sdk`) Vrite’s JavaScript SDK;
+- `/apps` — contains all the frontends and services of Vrite
+  - `/backend/api` — (`@vrite/api`) the REST API service;
+  - `/backend/collaboration` — (`@vrite/collaboration`) the real-time collaboration service;
+  - `/backend/core` — (`@vrite/core`) the main service hosting the app and internal API;
+  - `/backend/extensions` — (`@vrite/extensions-backend`) the service dedicated to handling Vrite Extensions functions;
+  - `/docs` — (`@vrite/docs`) the Vrite documentation;
+  - `/landing-page` — (`@vrite/landing-page`) the Vrite landing page;
+  - `/web` — (`@vrite/web`) the main Vrite app;
+
+You can start a development server for all projects in the monorepo from the root using `pnpm dev` or for just a specific one using the `--filter` flag (e.g. `pnpm dev --filter @vrite/docs`). The same is applicable for `build` and `start` commands.
+
+Not all packages projects provide all commands,
+
+## Environment Variables
+
+Most environment variables are meant to be configured at the root of the monorepo. To create your own `.env` file, you can follow the `.env.example`:
+
+```
+# Database
+MONGO_URL=
+REDIS_URL=
+DATABASE=
+# Security
+SECRET=
+# Domains
+TOP_DOMAIN=
+CALLBACK_DOMAIN=
+# Serve
+HOST=
+# Email
+SENDGRID_API_KEY=
+SENDGRID_EMAIL_VERIFICATION_TEMPLATE_ID=
+SENDGRID_MAGIC_LINK_TEMPLATE_ID=
+SENDGRID_PASSWORD_CHANGE_VERIFICATION_TEMPLATE_ID=
+SENDGRID_WORKSPACE_INVITE_TEMPLATE_ID=
+SENDGRID_EMAIL_CHANGE_VERIFICATION_TEMPLATE_ID=
+EMAIL=
+SENDER_NAME=
+# S3
+S3_BUCKET=
+S3_ENDPOINT=
+S3_REGION=
+S3_ACCESS_KEY=
+S3_SECRET_KEY=
+# GitHub OAuth2
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
+# Frontend
+VITE_COLLAB_HOST=
+VITE_APP_HOST=
+VITE_API_HOST=
+```
+
+Right now Vrite depends on [MongoDB](https://www.mongodb.com/), [Redis](https://redis.com/), S3 storage, and [SendGrid](https://sendgrid.com/) to function. We hope to make some of these dependencies, like the mailing service, more flexible in the future.
