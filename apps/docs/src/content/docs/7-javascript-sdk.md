@@ -141,10 +141,17 @@ If you're using **TypeScript**, add the following to your _tsconfig.json_, under
 Now you can import from a `virtual:vrite` module that provides configured API client, along with a few utils for integrating Vrite with Astro:
 
 ```html
-import { Content, client, getContentPieces, getStaticPaths } from "virtual:vrite"; // Pre-configured
-Vrite API client const settings = await client.userSettings.get(); // Utility to retrieve content
-pieces from the configured content group const contentPieces = await getContentPieces(); // Shortcut
-for retriving all content pieces for use with Astro SSG export getStaticPaths;
+---
+import { Content, client, getContentPieces, getStaticPaths } from "virtual:vrite";
+
+// Pre-configured Vrite API client
+const settings = await client.userSettings.get();
+// Utility to retrieve content pieces from the configured content group
+const contentPieces = await getContentPieces();
+// Shortcut for retriving all content pieces for use with Astro SSG
+export getStaticPaths;
+---
+
 <!-- Renders the Vrite content piece, specified by ID or slug -->
 <content contentPieceId="..." slug="..." />
 ```
