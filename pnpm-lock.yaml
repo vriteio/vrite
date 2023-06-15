@@ -926,13 +926,13 @@ importers:
       isomorphic-unfetch:
         specifier: ^3.1.0
         version: 3.1.0
-      vite:
-        specifier: ^4.1.4
-        version: 4.3.1(@types/node@18.7.1)(sass@1.60.0)(terser@5.17.4)
     devDependencies:
       unbuild:
         specifier: ^1.1.2
         version: 1.1.2
+      vite:
+        specifier: ^4.1.4
+        version: 4.3.1(@types/node@18.7.1)(sass@1.60.0)(terser@5.17.4)
 
 packages:
 
