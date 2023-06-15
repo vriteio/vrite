@@ -1,6 +1,6 @@
 {
   "name": "@vrite/sdk",
-  "version": "2023.6.15-beta.2",
+  "version": "2023.6.15-beta.3",
   "private": false,
   "description": "JavaScript SDK and API client for Vrite - headless CMS for technical content",
   "license": "MIT",
@@ -69,6 +69,11 @@
   },
   "peerDependencies": {
     "astro": "^2.1.0"
+  },
+  "peerDependenciesMeta": {
+    "astro": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "unbuild": "^1.1.2",
