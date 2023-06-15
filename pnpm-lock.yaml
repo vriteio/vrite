@@ -40,7 +40,7 @@ importers:
         version: 4.17.0
       trpc-openapi:
         specifier: ^1.1.2
-        version: 1.1.2(@trpc/server@10.9.1)(zod@3.20.2)
+        version: 1.1.2(@trpc/server@10.9.1)(zod@3.21.4)
     devDependencies:
       '@vrite/scripts':
         specifier: workspace:*
@@ -109,7 +109,7 @@ importers:
         version: 3.2.1
       trpc-openapi:
         specifier: ^1.1.2
-        version: 1.1.2(@trpc/server@10.9.1)(zod@3.20.2)
+        version: 1.1.2(@trpc/server@10.9.1)(zod@3.21.4)
     devDependencies:
       '@vrite/scripts':
         specifier: workspace:*
@@ -920,19 +920,19 @@ importers:
 
   packages/sdk/javascript:
     dependencies:
-      astro:
-        specifier: ^2.1.0
-        version: 2.5.1
       isomorphic-unfetch:
         specifier: ^3.1.0
         version: 3.1.0
     devDependencies:
+      astro:
+        specifier: ^2.5.1
+        version: 2.5.1
       unbuild:
         specifier: ^1.1.2
         version: 1.1.2
       vite:
         specifier: ^4.1.4
-        version: 4.2.1(@types/node@18.7.1)(sass@1.58.0)(terser@5.17.4)
+        version: 4.3.9
 
 packages:
 
@@ -9893,7 +9893,7 @@ packages:
         optional: true
     dependencies:
       defu: 6.1.2
-      esbuild: 0.17.15
+      esbuild: 0.17.19
       fs-extra: 11.1.1
       globby: 13.1.4
       jiti: 1.18.2
@@ -11678,6 +11678,21 @@ packages:
       zod-to-json-schema: 3.20.2(zod@3.20.2)
     dev: false
 
+  /trpc-openapi@1.1.2(@trpc/server@10.9.1)(zod@3.21.4):
+    resolution: {integrity: sha512-G2CT6q0nhhOGcYeAaK+volHNXRE8BFmNY+LwQA1cMXonh+iEUvl6T3OjF2HEGVvF0am9u9uo5hlMuXq5Wdweww==}
+    peerDependencies:
+      '@trpc/server': ^10.0.0
+      zod: ^3.14.4
+    dependencies:
+      '@trpc/server': 10.9.1
+      co-body: 6.1.0
+      lodash.clonedeep: 4.5.0
+      node-mocks-http: 1.12.2
+      openapi-types: 12.1.3
+      zod: 3.21.4
+      zod-to-json-schema: 3.20.2(zod@3.21.4)
+    dev: false
+
   /ts-interface-checker@0.1.13:
     resolution: {integrity: sha512-Y/arvbn+rrz3JCKl9C4kVNfTfSm2/mEp5FSz5EsZSANGPSlQrpRI5M4PKF+mJnE52jOO90PnPSc3Ur3bTQw0gA==}
     dev: true
@@ -11885,7 +11900,7 @@ packages:
       chalk: 5.2.0
       consola: 2.15.3
       defu: 6.1.2
-      esbuild: 0.17.15
+      esbuild: 0.17.19
       globby: 13.1.4
       hookable: 5.5.3
       jiti: 1.18.2
@@ -12255,7 +12270,7 @@ packages:
       terser:
         optional: true
     dependencies:
-      esbuild: 0.17.15
+      esbuild: 0.17.19
       postcss: 8.4.24
       rollup: 3.25.1
     optionalDependencies:
@@ -12521,6 +12536,14 @@ packages:
       zod: ^3.20.0
     dependencies:
       zod: 3.20.2
+    dev: false
+
+  /zod-to-json-schema@3.20.2(zod@3.21.4):
+    resolution: {integrity: sha512-qka3UAXmVXD8z5SHkRU89UyHp8JHJW7zc8RQCpt7QloJOn6uijwkjUm8o+M/cF1IysmKc5gxac/QeDikaQMdzQ==}
+    peerDependencies:
+      zod: ^3.20.0
+    dependencies:
+      zod: 3.21.4
     dev: false
 
   /zod@3.20.2:
