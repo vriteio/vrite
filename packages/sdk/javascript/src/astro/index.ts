@@ -1,5 +1,5 @@
 import { AstroIntegration } from "astro";
-import { Plugin as VitePlugin } from "vite";
+import type { Plugin as VitePlugin } from "vite";
 
 interface VritePluginOptions {
   accessToken: string;
