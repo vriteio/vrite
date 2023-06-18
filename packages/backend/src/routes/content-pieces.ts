@@ -380,7 +380,7 @@ const contentPiecesRouter = router({
         contentPieceId: contentPiece._id,
         ...(content && { content: new Binary(jsonToBuffer(htmlToJSON(content))) })
       });
-      runWebhooks(ctx, "contentGroupAdded", webhookPayload(contentPiece));
+      runWebhooks(ctx, "contentPieceAdded", webhookPayload(contentPiece));
 
       const tags = await fetchContentPieceTags(ctx.db, contentPiece);
       const members = await fetchContentPieceMembers(ctx.db, contentPiece);
@@ -698,7 +698,7 @@ const contentPiecesRouter = router({
         contentPiece &&
         !contentPiece.contentGroupId.equals(input.contentGroupId)
       ) {
-        runWebhooks(ctx, "contentGroupRemoved", webhookPayload(contentPiece));
+        runWebhooks(ctx, "contentPieceRemoved", webhookPayload(contentPiece));
         runWebhooks(
           ctx,
           "contentPieceAdded",
