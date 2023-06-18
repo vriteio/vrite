@@ -6,7 +6,7 @@ import {
   useEditor
 } from "@vrite/tiptap-solid";
 import { Component, createEffect, createSignal, on, onCleanup } from "solid-js";
-import { HardBreak, Paragraph, Text } from "@vrite/editor";
+import { HardBreak, Paragraph, Table, TableCell, TableHeader, TableRow, Text } from "@vrite/editor";
 import { isTextSelection } from "@tiptap/core";
 import { Gapcursor } from "@tiptap/extension-gapcursor";
 import { Dropcursor } from "@tiptap/extension-dropcursor";
@@ -81,6 +81,10 @@ const Editor: Component<EditorProps> = (props) => {
       HardBreak,
       Typography,
       ...(workspaceSettings() ? createExtensions(workspaceSettings()!, provider) : []),
+      Table,
+      TableRow,
+      TableHeader,
+      TableCell,
       TrailingNode,
       CharacterCount,
       Gapcursor,

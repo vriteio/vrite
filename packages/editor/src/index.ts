@@ -23,3 +23,7 @@ export { Strike } from "@tiptap/extension-strike";
 export { Subscript } from "@tiptap/extension-subscript";
 export { Superscript } from "@tiptap/extension-superscript";
 export { TaskList } from "@tiptap/extension-task-list";
+export { Table } from "@tiptap/extension-table";
+export { TableRow } from "@tiptap/extension-table-row";
+export { TableHeader } from "@tiptap/extension-table-header";
+export { TableCell } from "@tiptap/extension-table-cell";

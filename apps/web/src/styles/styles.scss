@@ -36,6 +36,11 @@
     table-layout: fixed;
     width: 100%;
 
+    tbody {
+      display: inline-table;
+      width: 100%;
+    }
+
     td,
     th {
       border: 2px solid #ced4da;

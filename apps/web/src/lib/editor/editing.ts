@@ -37,7 +37,8 @@ import {
   mdiCodeTags,
   mdiMinus,
   mdiCodepen,
-  mdiYoutube
+  mdiYoutube,
+  mdiTable
 } from "@mdi/js";
 import { createRef } from "#lib/utils";
 import { App } from "#context";
@@ -228,6 +229,16 @@ const createBlockMenuOptions = (settings: App.WorkspaceSettings): SlashMenuItem[
       }
     },
     {
+      label: "Table",
+      icon: mdiTable,
+      group: "Blocks",
+      block: "table" as any,
+      ref: createRef<HTMLElement | null>(null),
+      command({ editor, range }) {
+        return editor.chain().focus().deleteRange(range).insertTable({ rows: 3, cols: 3 }).run();
+      }
+    },
+    {
       label: "Image",
       icon: mdiImage,
       group: "Blocks",
@@ -295,6 +306,7 @@ const createBlockMenuOptions = (settings: App.WorkspaceSettings): SlashMenuItem[
   ];
 
   return blockMenuOptions.filter(({ embed, block }) => {
+    if ((block as any) === "table") return true;
     return (block && settings.blocks.includes(block)) || (embed && settings.embeds.includes(embed));
   }) as SlashMenuItem[];
 };
