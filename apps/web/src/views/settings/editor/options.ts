@@ -20,7 +20,8 @@ import {
   mdiImage,
   mdiMinus,
   mdiCodepen,
-  mdiYoutube
+  mdiYoutube,
+  mdiTable
 } from "@mdi/js";
 import { codeSandboxIcon } from "#assets/icons";
 import { App } from "#context";
@@ -92,6 +93,7 @@ const blocks: Record<
     { label: "Blockquote", icon: mdiFormatQuoteClose, value: "blockquote" },
     { label: "Code Block", icon: mdiCodeTags, value: "codeBlock" },
     { label: "Image", icon: mdiImage, value: "image" },
+    { label: "Table", icon: mdiTable, value: "table" },
     { label: "Horizontal Rule", icon: mdiMinus, value: "horizontalRule" }
   ]
 };

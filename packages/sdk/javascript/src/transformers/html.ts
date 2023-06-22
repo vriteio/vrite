@@ -88,6 +88,14 @@ const htmlTransformer = createContentTransformer({
         return `<li>${content}</li>`;
       case "horizontalRule":
         return `<hr/>`;
+      case "table":
+        return `<table>${content}</table>`;
+      case "tableRow":
+        return `<tr>${content}</tr>`;
+      case "tableCell":
+        return `<td>${content.replace(/\<p\>(.|\n)*\<\/p\>/g, "$1")}</td>`;
+      case "tableHeader":
+        return `<th>${content.replace(/\<p\>(.|\n)*\<\/p\>/g, "$1")}</th>`;
       default:
         return content;
     }

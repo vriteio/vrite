@@ -19,7 +19,11 @@ import {
   TaskList,
   Level,
   TaskItem,
-  ListItem
+  ListItem,
+  Table,
+  TableCell,
+  TableHeader,
+  TableRow
 } from "@vrite/editor";
 import { HocuspocusProvider } from "@hocuspocus/provider";
 import {
@@ -37,7 +41,8 @@ import {
   mdiCodeTags,
   mdiMinus,
   mdiCodepen,
-  mdiYoutube
+  mdiYoutube,
+  mdiTable
 } from "@mdi/js";
 import { createRef } from "#lib/utils";
 import { App } from "#context";
@@ -103,7 +108,7 @@ const createExtensions = (
   };
   const blocks: Record<
     Exclude<App.WorkspaceSettings["blocks"][number], `heading${number}`>,
-    NodeExtension
+    NodeExtension | NodeExtension[]
   > = {
     bulletList: BulletList,
     orderedList: OrderedList,
@@ -111,7 +116,8 @@ const createExtensions = (
     blockquote: Blockquote,
     codeBlock: CodeBlock.configure({ provider }),
     horizontalRule: HorizontalRule,
-    image: Image
+    image: Image,
+    table: [Table, TableCell, TableHeader, TableRow]
   };
   const getHeadingLevels = (settings: App.WorkspaceSettings): Level[] => {
     return settings.blocks
@@ -145,18 +151,22 @@ const createExtensions = (
 
       return extension.extend(resetExtensionConfig);
     }),
-    ...Object.entries(blocks).map(([name, extension]) => {
+    ...Object.entries(blocks).flatMap(([name, extension]) => {
       if (settings.blocks.includes(name as App.WorkspaceSettings["blocks"][number])) {
-        return extension;
+        return Array.isArray(extension) ? extension : [extension];
+      }
+
+      if (Array.isArray(extension)) {
+        return extension.map((ext) => ext.extend(resetExtensionConfig));
       }
 
       return extension.extend(resetExtensionConfig);
     }),
-    ...getItemNodes(),
     ...(settings.embeds.length > 0 ? [Embed] : []),
-    Heading.extend({ content: "text*", marks: "" }).configure({
+    Heading.configure({
       enabledLevels: getHeadingLevels(settings)
-    })
+    }),
+    ...getItemNodes()
   ];
 };
 const createBlockMenuOptions = (settings: App.WorkspaceSettings): SlashMenuItem[] => {
@@ -225,6 +235,21 @@ const createBlockMenuOptions = (settings: App.WorkspaceSettings): SlashMenuItem[
       ref: createRef<HTMLElement | null>(null),
       command({ editor, range }) {
         return editor.chain().focus().deleteRange(range).toggleTaskList().run();
+      }
+    },
+    {
+      label: "Table",
+      icon: mdiTable,
+      group: "Blocks",
+      block: "table",
+      ref: createRef<HTMLElement | null>(null),
+      command({ editor, range }) {
+        return editor
+          .chain()
+          .focus()
+          .deleteRange(range)
+          .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
+          .run();
       }
     },
     {

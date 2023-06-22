@@ -43,6 +43,7 @@ const runWebhooks = async (
         })
       });
     } catch (error) {
+      console.error(error);
       // eslint-disable-next-line no-console
       console.error("Failed to run webhook");
     }

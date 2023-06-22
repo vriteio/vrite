@@ -28,8 +28,11 @@ import {
   createClipboardSerializer,
   createExtensions,
   createBlockMenuOptions,
-  BlockPaste
+  BlockPaste,
+  TableMenuPlugin
 } from "#lib/editor";
+import { CellSelection } from "@tiptap/pm/tables";
+import { AllSelection } from "@tiptap/pm/state";
 
 interface EditorProps {
   reloaded?: boolean;
@@ -73,7 +76,7 @@ const Editor: Component<EditorProps> = (props) => {
       }
     },
     extensions: [
-      BlockPaste,
+      BlockPaste.configure({ workspaceSettings }),
       Document,
       Placeholder,
       Paragraph,
@@ -89,11 +92,13 @@ const Editor: Component<EditorProps> = (props) => {
         menuItems: workspaceSettings() ? createBlockMenuOptions(workspaceSettings()!) : []
       }),
       BlockActionMenuPlugin,
+      TableMenuPlugin,
       Collab.configure({
         document: ydoc
       }),
       CollabCursor(provider)
     ],
+    //enablePasteRules: false,
     editable: !props.editedContentPiece.locked && hasPermission("editContent"),
     editorProps: { attributes: { class: `outline-none` } }
   });
@@ -143,21 +148,27 @@ const Editor: Component<EditorProps> = (props) => {
             shouldShow={({ editor, state, view, from, to }) => {
               const { doc, selection } = state;
               const { empty } = selection;
+              const isAllSelection = selection instanceof AllSelection;
+              const isCellSelection = selection instanceof CellSelection;
               const isEmptyTextBlock =
                 !doc.textBetween(from, to).length && isTextSelection(state.selection);
 
-              if (!view.hasFocus()) {
+              if (!view.hasFocus() || isAllSelection) {
                 setBubbleMenuOpened(false);
 
                 return false;
               }
 
+              if (isCellSelection) {
+                setBubbleMenuOpened(true);
+
+                return true;
+              }
+
               if (
-                ["image", "table", "codeBlock", "heading", "embed", "horizontalRule"].some(
-                  (name) => {
-                    return editor.isActive(name);
-                  }
-                )
+                ["image", "codeBlock", "embed", "horizontalRule"].some((name) => {
+                  return editor.isActive(name);
+                })
               ) {
                 setBubbleMenuOpened(false);
 

@@ -22,11 +22,6 @@ interface BlockActionMenuProps {
     node: PMNode | null;
   };
 }
-interface BlockViewRendererProps {
-  extension: ExtensionDetails;
-  blockActionId: string;
-  content: any;
-}
 interface ExtensionIconProps {
   class?: string;
   spec: ExtensionSpec;

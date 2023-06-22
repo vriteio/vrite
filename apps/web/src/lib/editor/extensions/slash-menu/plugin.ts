@@ -25,6 +25,9 @@ const SlashMenuPlugin = Extension.create<SlashMenuPluginOptions>({
         editor: this.editor,
         allowSpaces: true,
         startOfLine: true,
+        allow({ editor }) {
+          return !editor.isActive("table");
+        },
         command({ editor, range, props }) {
           return props.command({
             editor: editor as SolidEditor,

@@ -116,8 +116,8 @@ const verificationRouter = router({
         await createSession(ctx, `${user._id}`);
 
         return "/";
-      } catch (e) {
-        console.log(e);
+      } catch (error) {
+        console.error(error);
       }
     }),
   verifyWorkspaceInvite: authenticatedUserProcedure
