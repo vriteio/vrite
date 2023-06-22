@@ -22,7 +22,7 @@ const gfmTransformer = createContentTransformer({
     }
   },
   transformNode(type, attrs, content) {
-    const listItemRegex = /^(?:-|(?:\d+\.))\s/;
+    const listItemRegex = /^(?:- \[(?: |x)\]|-|(?:\d+\.))\s/;
 
     switch (type) {
       case "paragraph":
@@ -43,10 +43,10 @@ const gfmTransformer = createContentTransformer({
       case "image":
         return `\n![${attrs?.alt || ""}](${attrs?.src || ""})\n`;
       case "codeBlock":
-        return `\n\`\`\`${attrs?.lang || ""}\n${content}\n\`\`\`\n`;
+        return `\n\`\`\`${attrs?.lang || ""}\n${content.trim()}\n\`\`\`\n`;
       case "bulletList":
         return `\n${content
-          .split("\n\n")
+          .split("\n\n\n")
           .filter((listItem) => listItem)
           .map((listItem) => {
             if (listItemRegex.test(listItem.trim())) {
@@ -59,13 +59,26 @@ const gfmTransformer = createContentTransformer({
               return list;
             }
 
-            return `- ${listItem.trim()}`;
+            const result = `${listItem
+              .split("\n")
+              .map((listItem, index) => {
+                if (index === 0) {
+                  return `- ${listItem}`;
+                }
+
+                return `  ${listItem}`;
+              })
+              .join("\n")
+              .trim()}`;
+
+            return result;
           })
-          .join("\n")}\n`;
+          .join("\n\n")}\n`;
       case "orderedList":
         let start = Number(attrs.start ?? 1);
+
         return `\n${content
-          .split("\n\n")
+          .split("\n\n\n")
           .filter((listItem) => listItem)
           .map((listItem) => {
             if (listItemRegex.test(listItem.trim())) {
@@ -77,8 +90,18 @@ const gfmTransformer = createContentTransformer({
 
               return list;
             }
+            const prefix = `${start}. `;
+            const result = `${listItem
+              .split("\n")
+              .map((listItem, index) => {
+                if (index === 0) {
+                  return `${prefix}${listItem}`;
+                }
 
-            const result = `${start}. ${listItem.trim()}`;
+                return `${prefix.replace(/./g, " ")}${listItem}`;
+              })
+              .join("\n")
+              .trim()}`;
 
             start += 1;
 
@@ -86,13 +109,29 @@ const gfmTransformer = createContentTransformer({
           })
           .join("\n")}\n`;
       case "taskList":
-        return `\n${content
-          .split("\n")
-          .filter((listItem) => listItem)
-          .map((listItem) => `- [${attrs?.checked ? "x" : " "}] ${listItem}`)
-          .join("\n")}\n`;
+        return `\n${content}\n`;
+      case "listItem":
+        return `${content}\n`;
+      case "taskItem":
+        return `- [${attrs?.checked ? "x" : " "}] ${content}\n`;
       case "horizontalRule":
         return `\n---\n`;
+      case "table":
+        return `\n${content}\n`;
+      case "tableRow":
+        const headerRow = content.split(" |--| ");
+
+        if (headerRow.length > 1) {
+          return `| ${headerRow.join(" | ")}\n${headerRow.map(() => "---").join(" | ")}\n`;
+        }
+
+        const row = content.split(" | ");
+
+        return `| ${row.join(" | ")}\n`;
+      case "tableCell":
+        return `${content.trim()} | `;
+      case "tableHeader":
+        return `${content.trim()} |--| `;
       default:
         return content;
     }

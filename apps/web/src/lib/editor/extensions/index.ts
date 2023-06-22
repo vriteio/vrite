@@ -10,3 +10,4 @@ export * from "./placeholder";
 export * from "./trailing-node";
 export * from "./block-action-menu";
 export * from "./block-paste";
+export * from "./table-menu";

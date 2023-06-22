@@ -28,43 +28,68 @@
 #side-panel > div {
   height: 100%;
 }
-.ProseMirror {
+
+.resize-cursor {
+  cursor: ew-resize;
+  cursor: col-resize;
+}
+.prose-editor {
+  .ProseMirror {
+    > * + div:not(.tableWrapper) {
+      @apply mb-5;
+    }
+  }
+  .tableWrapper {
+    @apply overflow-auto pb-2 mb-3;
+    &::-webkit-scrollbar {
+      @apply w-2 h-2 rounded-lg bg-gray-100 dark:bg-gray-800;
+    }
+    &::-webkit-scrollbar-thumb {
+      @apply bg-gray-200 rounded-lg dark:bg-gray-900;
+    }
+  }
   table {
+    overflow: visible;
     border-collapse: collapse;
+    border-spacing: 0;
     margin: 0;
-    overflow: hidden;
     table-layout: fixed;
     width: 100%;
 
     tbody {
-      display: inline-table;
       width: 100%;
     }
 
     td,
     th {
-      border: 2px solid #ced4da;
-      box-sizing: border-box;
-      min-width: 1em;
-      padding: 3px 5px;
-      position: relative;
-      vertical-align: top;
-
-      > * {
-        margin-bottom: 0;
+      @apply text-left font-500 border-2 border-gray-200 dark:border-gray-700 relative p-2 vertical-top;
+      min-width: 100px;
+      border-style: none solid solid none;
+      word-break: break-all;
+    }
+    tr:first-child {
+      th {
+        @apply bg-gray-50 dark:bg-gray-900;
+      }
+      td,
+      th {
+        border-top-style: solid;
       }
     }
-
-    th {
-      background-color: #f1f3f5;
-      font-weight: bold;
-      text-align: left;
-      overflow: auto;
-      position: relative;
+    tr {
+      td,
+      th {
+        &:first-child {
+          border-left-style: solid;
+        }
+      }
     }
-
+    p {
+      @apply px-2 m-0;
+    }
     .selectedCell:after {
-      background: rgba(200, 200, 255, 0.4);
+      @apply bg-primary;
+      opacity: 0.1;
       content: "";
       left: 0;
       right: 0;
@@ -76,31 +101,10 @@
     }
 
     .column-resize-handle {
-      background-color: #adf;
-      bottom: -2px;
-      position: absolute;
-      right: -2px;
-      pointer-events: none;
-      top: 0;
-      width: 4px;
-    }
-
-    p {
-      margin: 0;
+      @apply bg-primary absolute w-1 -bottom-0.5 -top-0.5 -right-0.75 z-10 pointer-events-none;
     }
   }
-}
 
-.tableWrapper {
-  padding: 1rem 0;
-  overflow-x: auto;
-}
-
-.resize-cursor {
-  cursor: ew-resize;
-  cursor: col-resize;
-}
-.prose-editor {
   font-kerning: none;
   :where(h1, h2, h3, h4, h5, h6):not(:where(.not-prose, .not-prose *)) {
     &::before,
@@ -188,6 +192,11 @@
   }
   :where(ul p, ol p):not(:where(.not-prose, .not-prose *)) {
     @apply m-0;
+  }
+  :where(ul:not([data-type="taskList"]) li > * + *, ol li > * + *):not(
+      :where(.not-prose, .not-prose *)
+    ) {
+    @apply my-5;
   }
   :where(li > ul, li > ol):not(:where(.not-prose, .not-prose *)) {
     @apply m-0;

@@ -5,9 +5,9 @@ import {
   CodeBlockAttributes
 } from "@vrite/editor";
 import { NodeViewWrapper, SolidNodeViewRenderer, useSolidNodeView } from "@vrite/tiptap-solid";
-import { isNodeSelection, createChainableState, CommandManager, Editor } from "@tiptap/core";
+import { isNodeSelection } from "@tiptap/core";
 import { keymap } from "@tiptap/pm/keymap";
-import { TextSelection, Plugin, EditorState } from "@tiptap/pm/state";
+import { TextSelection } from "@tiptap/pm/state";
 import { createNanoEvents } from "nanoevents";
 import { onCleanup, onMount } from "solid-js";
 import { createRef } from "#lib/utils";

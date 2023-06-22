@@ -19,7 +19,11 @@ import {
   TaskList,
   Level,
   TaskItem,
-  ListItem
+  ListItem,
+  Table,
+  TableCell,
+  TableHeader,
+  TableRow
 } from "@vrite/editor";
 import { HocuspocusProvider } from "@hocuspocus/provider";
 import {
@@ -104,7 +108,7 @@ const createExtensions = (
   };
   const blocks: Record<
     Exclude<App.WorkspaceSettings["blocks"][number], `heading${number}`>,
-    NodeExtension
+    NodeExtension | NodeExtension[]
   > = {
     bulletList: BulletList,
     orderedList: OrderedList,
@@ -112,7 +116,8 @@ const createExtensions = (
     blockquote: Blockquote,
     codeBlock: CodeBlock.configure({ provider }),
     horizontalRule: HorizontalRule,
-    image: Image
+    image: Image,
+    table: [Table, TableCell, TableHeader, TableRow]
   };
   const getHeadingLevels = (settings: App.WorkspaceSettings): Level[] => {
     return settings.blocks
@@ -146,18 +151,22 @@ const createExtensions = (
 
       return extension.extend(resetExtensionConfig);
     }),
-    ...Object.entries(blocks).map(([name, extension]) => {
+    ...Object.entries(blocks).flatMap(([name, extension]) => {
       if (settings.blocks.includes(name as App.WorkspaceSettings["blocks"][number])) {
-        return extension;
+        return Array.isArray(extension) ? extension : [extension];
+      }
+
+      if (Array.isArray(extension)) {
+        return extension.map((ext) => ext.extend(resetExtensionConfig));
       }
 
       return extension.extend(resetExtensionConfig);
     }),
-    ...getItemNodes(),
     ...(settings.embeds.length > 0 ? [Embed] : []),
-    Heading.extend({ content: "text*", marks: "" }).configure({
+    Heading.configure({
       enabledLevels: getHeadingLevels(settings)
-    })
+    }),
+    ...getItemNodes()
   ];
 };
 const createBlockMenuOptions = (settings: App.WorkspaceSettings): SlashMenuItem[] => {
@@ -232,10 +241,15 @@ const createBlockMenuOptions = (settings: App.WorkspaceSettings): SlashMenuItem[
       label: "Table",
       icon: mdiTable,
       group: "Blocks",
-      block: "table" as any,
+      block: "table",
       ref: createRef<HTMLElement | null>(null),
       command({ editor, range }) {
-        return editor.chain().focus().deleteRange(range).insertTable({ rows: 3, cols: 3 }).run();
+        return editor
+          .chain()
+          .focus()
+          .deleteRange(range)
+          .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
+          .run();
       }
     },
     {
@@ -306,7 +320,6 @@ const createBlockMenuOptions = (settings: App.WorkspaceSettings): SlashMenuItem[
   ];
 
   return blockMenuOptions.filter(({ embed, block }) => {
-    if ((block as any) === "table") return true;
     return (block && settings.blocks.includes(block)) || (embed && settings.embeds.includes(embed));
   }) as SlashMenuItem[];
 };

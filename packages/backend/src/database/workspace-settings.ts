@@ -54,7 +54,8 @@ const blocks = [
   "blockquote",
   "codeBlock",
   "horizontalRule",
-  "image"
+  "image",
+  "table"
 ] as const;
 const embeds = ["codepen", "codesandbox", "youtube"] as const;
 const workspaceSettings = z.object({

@@ -1,6 +1,5 @@
 import { Node, mergeAttributes } from "@tiptap/core";
 import { nodeInputRule } from "./node-input-rule";
-import { nodePasteRule } from "./node-paste-rule";
 
 interface ImageAttributes {
   src?: string;
@@ -90,20 +89,7 @@ const Image = Node.create<ImageOptions>({
   addInputRules() {
     return [
       nodeInputRule({
-        find: /^(!\[(.+|:?)]\((\S+)(?:(?:\s+)["'](\S+)["'])?\))/,
-        type: this.type,
-        getAttributes: (match) => {
-          const [, , alt, src] = match;
-
-          return { src, alt };
-        }
-      })
-    ];
-  },
-  addPasteRules() {
-    return [
-      nodePasteRule({
-        find: /^(!\[(.+|:?)]\((\S+)(?:(?:\s+)["'](\S+)["'])?\))/gm,
+        find: /(^!\[(.+|:?)]\((\S+)(?:(?:\s+)["'](\S+)["'])?\)$)/,
         type: this.type,
         getAttributes: (match) => {
           const [, , alt, src] = match;

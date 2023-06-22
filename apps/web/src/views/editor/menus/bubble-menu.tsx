@@ -9,9 +9,15 @@ import {
   mdiFormatSubscript,
   mdiFormatSuperscript,
   mdiCheck,
-  mdiDelete
+  mdiDelete,
+  mdiTableColumnRemove,
+  mdiTableRowRemove,
+  mdiTableMergeCells,
+  mdiTableSplitCell,
+  mdiTableRemove
 } from "@mdi/js";
-import { Component, createEffect, createSignal, For, Match, on, Switch } from "solid-js";
+import { CellSelection } from "@tiptap/pm/tables";
+import { Component, createEffect, createSignal, For, Match, on, Show, Switch } from "solid-js";
 import { createRef } from "#lib/utils";
 import { Card, IconButton, Input, Tooltip } from "#components/primitives";
 import { App, useAuthenticatedContext } from "#context";
@@ -24,7 +30,7 @@ interface BubbleMenuProps {
 const BubbleMenu: Component<BubbleMenuProps> = (props) => {
   const [activeMarks, setActiveMarks] = createSignal<string[]>([]);
   const { workspaceSettings } = useAuthenticatedContext();
-  const [mode, setMode] = createSignal<"format" | "link">("format");
+  const [mode, setMode] = createSignal<"format" | "link" | "table">("format");
   const [link, setLink] = createSignal("");
   const [linkInputRef, setLinkInputRef] = createRef<HTMLInputElement | null>(null);
   const menus = [
@@ -66,6 +72,110 @@ const BubbleMenu: Component<BubbleMenuProps> = (props) => {
 
     return workspaceSettings()!.marks.includes(mark as App.WorkspaceSettings["marks"][number]);
   });
+  const tableMenus = [
+    {
+      icon: mdiTableMergeCells,
+      label: "Merge cells",
+      show() {
+        const { selection } = props.editor.state;
+        if (selection instanceof CellSelection) {
+          return selection.$anchorCell.pos !== selection.$headCell.pos;
+        }
+
+        return false;
+      },
+      onClick() {
+        props.editor.chain().mergeCells().run();
+      }
+    },
+    {
+      icon: mdiTableSplitCell,
+      label: "Split cell",
+      show() {
+        const { selection } = props.editor.state;
+        if (selection instanceof CellSelection) {
+          if (selection.$anchorCell.pos === selection.$headCell.pos) {
+            return (
+              selection.$anchorCell.nodeAfter?.attrs.colspan > 1 ||
+              selection.$anchorCell.nodeAfter?.attrs.rowspan > 1
+            );
+          }
+        }
+
+        return false;
+      },
+      onClick() {
+        props.editor.chain().splitCell().run();
+      }
+    },
+    {
+      icon: mdiTableColumnRemove,
+      label: "Delete column(s)",
+      show() {
+        const { selection } = props.editor.state;
+        if (selection instanceof CellSelection) {
+          const tableNode = selection.$anchorCell.node(1);
+          let isSingleColumn = false;
+
+          tableNode.content.forEach((rowNode) => {
+            isSingleColumn = rowNode.childCount === 1;
+          });
+
+          return !isSingleColumn;
+        }
+
+        return true;
+      },
+      onClick() {
+        props.editor.chain().deleteColumn().focus().run();
+      }
+    },
+    {
+      icon: mdiTableRowRemove,
+      label: "Delete row(s)",
+
+      show() {
+        const { selection } = props.editor.state;
+        if (selection instanceof CellSelection) {
+          const tableNode = selection.$anchorCell.node(1);
+
+          if (tableNode.content.childCount === 1) {
+            return false;
+          }
+        }
+
+        return true;
+      },
+      onClick() {
+        props.editor.chain().deleteRow().focus().run();
+      }
+    },
+    {
+      icon: mdiTableRemove,
+      label: "Delete table",
+
+      show() {
+        const { selection } = props.editor.state;
+        if (selection instanceof CellSelection) {
+          const tableNode = selection.$anchorCell.node(1);
+
+          if (tableNode.childCount === 1) return true;
+          let isSingleColumn = false;
+
+          tableNode.content.forEach((rowNode) => {
+            isSingleColumn = rowNode.childCount === 1;
+          });
+
+          return isSingleColumn;
+        }
+
+        return false;
+      },
+      onClick() {
+        props.editor.chain().deleteTable().focus().run();
+      }
+    }
+  ];
   const marks = menus.map((menu) => menu.mark);
   const saveLink = (): void => {
     props.editor.chain().unsetCode().setLink({ href: link() }).focus().run();
@@ -77,6 +187,11 @@ const BubbleMenu: Component<BubbleMenuProps> = (props) => {
   });
   props.editor.on("selectionUpdate", () => {
     setActiveMarks(marks.filter((mark) => props.editor.isActive(mark)));
+    if (props.editor.state.selection instanceof CellSelection) {
+      setMode("table");
+    } else if (!props.editor.state.selection.empty) {
+      setMode("format");
+    }
   });
   createEffect(
     on(mode, (mode) => {
@@ -97,8 +212,10 @@ const BubbleMenu: Component<BubbleMenuProps> = (props) => {
       () => props.opened,
       (opened) => {
         if (!opened) {
-          setMode("format");
           setLink("");
+          setTimeout(() => {
+            setMode("format");
+          }, 300);
         }
       }
     )
@@ -107,6 +224,29 @@ const BubbleMenu: Component<BubbleMenuProps> = (props) => {
   return (
     <Card class="relative flex p-0">
       <Switch>
+        <Match when={mode() === "table"}>
+          {" "}
+          <For
+            each={tableMenus}
+            fallback={<span class="px-1.5 py-0.5 text-base">No available options</span>}
+          >
+            {(menuItem) => {
+              return (
+                <Show when={!menuItem.show || menuItem.show()}>
+                  <Tooltip text={menuItem.label} side="bottom" wrapperClass="snap-start">
+                    <IconButton
+                      path={menuItem.icon}
+                      text="soft"
+                      variant="text"
+                      color="base"
+                      onClick={menuItem.onClick}
+                    />
+                  </Tooltip>
+                </Show>
+              );
+            }}
+          </For>
+        </Match>
         <Match when={mode() === "format"}>
           <div class="flex">
             <For

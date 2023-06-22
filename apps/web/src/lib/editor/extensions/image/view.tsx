@@ -104,9 +104,13 @@ const ImageView: Component = () => {
   createEffect(
     on(
       () => attrs().src,
-      (src) => {
-        getImage.clear();
-        getImage(src);
+      (src, previousSrc) => {
+        if (src && src !== previousSrc) {
+          getImage.clear();
+          getImage(src);
+        }
+
+        return src;
       }
     )
   );
@@ -116,8 +120,7 @@ const ImageView: Component = () => {
       <div
         class={clsx(
           "relative rounded-2xl",
-          !options().cover && selected() && "ring ring-primary ring-2",
-          !options().cover && "my-5"
+          !options().cover && selected() && "ring ring-primary ring-2"
         )}
         data-drag-handle
       >

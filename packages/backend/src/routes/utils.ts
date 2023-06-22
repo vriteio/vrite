@@ -39,7 +39,7 @@ const utilsRouter = router({
           icon: data.result.favicon || "",
           description: data.result.ogDescription || data.result.twitterDescription || "",
           title: data.result.ogTitle || data.result.twitterTitle || "",
-          url: data.result.ogUrl || data.result.requestUrl
+          url: data.result.requestUrl
         };
       } catch (error) {
         throw errors.serverError();

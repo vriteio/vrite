@@ -22,7 +22,8 @@ type Block =
   | "blockquote"
   | "codeBlock"
   | "horizontalRule"
-  | "image";
+  | "image"
+  | "table";
 type Embed = "codepen" | "codesandbox" | "youtube";
 interface WorkspaceSettings {
   /**

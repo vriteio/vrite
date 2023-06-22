@@ -1,12 +1,4 @@
-import {
-  Accessor,
-  Component,
-  createEffect,
-  createMemo,
-  createResource,
-  createSignal,
-  Show
-} from "solid-js";
+import { Accessor, Component, createMemo, createResource, Show } from "solid-js";
 import { mdiWeb } from "@mdi/js";
 import clsx from "clsx";
 import { App, useClientContext } from "#context";
@@ -50,7 +42,8 @@ const LinkPreviewMenu: Component<LinkPreviewMenuProps> = (props) => {
     >
       <Card
         class={clsx(
-          previewData.loading && "flex justify-center items-center text-primary h-40 w-80"
+          previewData.loading && "flex justify-center items-center text-primary h-40 w-80",
+          "overflow-hidden"
         )}
       >
         <Show when={!previewData.loading} fallback={<Loader class="w-8 h-8" />}>
@@ -74,7 +67,7 @@ const LinkPreviewMenu: Component<LinkPreviewMenuProps> = (props) => {
               <Show when={icon()} fallback={<Icon path={mdiWeb} class="text-gray-700 h-7 w-7" />}>
                 <img src={icon()} class="w-7 h-7" />
               </Show>
-              <div class="flex flex-col text-xs">
+              <div class="flex flex-col text-xs overflow-hidden">
                 <span class="clamp-1">{previewData()?.title}</span>
                 <a href={previewData()?.url || props.link()} target="_blank" class="clamp-1">
                   {previewData()?.url}

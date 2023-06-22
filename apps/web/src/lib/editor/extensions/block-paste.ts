@@ -1,3 +1,4 @@
+import { App } from "#context";
 import {
   CommandManager,
   Editor,
@@ -8,6 +9,7 @@ import {
 import { EditorState, Plugin } from "@tiptap/pm/state";
 import { gfmTransformer } from "@vrite/sdk/transformers";
 import { marked } from "marked";
+import { Accessor } from "solid-js";
 
 interface BlockPasteRule {
   start(line: string): boolean;
@@ -16,10 +18,20 @@ interface BlockPasteRule {
   includeStart?: boolean;
   includeEnd?: boolean;
 }
+interface RunConfig {
+  editor: Editor;
+  state: EditorState;
+  from: number;
+  to: number;
+}
 
-const run = (config: { editor: Editor; state: EditorState; from: number; to: number }): boolean => {
+const run = (
+  config: RunConfig,
+  workspaceSettings: Accessor<App.WorkspaceSettings | null>
+): boolean => {
   const { editor, state, from, to } = config;
-  const blockPasteRules: Record<string, BlockPasteRule> = {
+  const enabledBlocks = workspaceSettings()?.blocks || [];
+  const allBlockPasteRules: Record<string, BlockPasteRule> = {
     codeBlock: {
       start: (line) => Boolean(line.match(/^```(.*)$/g)),
       end: (line) => Boolean(line.match(/^```$/g)),
@@ -32,17 +44,32 @@ const run = (config: { editor: Editor; state: EditorState; from: number; to: num
       acceptLastLineAsEnd: true,
       includeStart: true
     },
+    taskList: {
+      start: (line) => {
+        return Boolean(line.match(/^- \[(x|\s)\]\s(.*)$/g));
+      },
+      end: (line) => {
+        const emptyLine = line.trim().length === 0;
+
+        return emptyLine || !Boolean(line.trim().match(/^- \[(x|\s)\]\s(.*)$/g));
+      },
+      acceptLastLineAsEnd: true,
+      includeStart: true
+    },
     orderedList: {
-      start: (line) => Boolean(line.match(/^(\d+)\.\s(.*)$/g)),
+      start: (line) => {
+        return Boolean(line.match(/^(\d+)\.\s(.*)$/g));
+      },
       end: (line) => {
         const emptyLine = line.trim().length === 0;
 
         return (
           emptyLine ||
-          !(
-            Boolean(line.trim().match(/^(\d+)\.\s(.*)$/g)) ||
-            Boolean(line.trim().match(/^-\s(.*)$/g))
-          )
+          (line === line.trim() &&
+            !(
+              Boolean(line.trim().match(/^(\d+)\.\s(.*)$/g)) ||
+              Boolean(line.trim().match(/^-\s(.*)$/g))
+            ))
         );
       },
       acceptLastLineAsEnd: true,
@@ -55,16 +82,41 @@ const run = (config: { editor: Editor; state: EditorState; from: number; to: num
 
         return (
           emptyLine ||
-          !(
-            Boolean(line.trim().match(/^-\s(.*)$/g)) ||
-            Boolean(line.trim().match(/^(\d+)\.\s(.*)$/g))
-          )
+          (line === line.trim() &&
+            !(
+              Boolean(line.trim().match(/^-\s(.*)$/g)) ||
+              Boolean(line.trim().match(/^(\d+)\.\s(.*)$/g))
+            ))
         );
       },
       acceptLastLineAsEnd: true,
       includeStart: true
+    },
+    table: {
+      start: (line) => {
+        return Boolean(line.trim().match(/^\|?(?:\s?(.+?)\s?\|){1,}\s?(.+)\|?$/gm));
+      },
+      end: (line) => {
+        return !Boolean(line.trim().match(/^\|?(?:\s?(.+?)\s?\|){1,}\s?(.+)\|?$/gm));
+      },
+      includeStart: true,
+      includeEnd: false,
+      acceptLastLineAsEnd: true
+    },
+    image: {
+      start: (line) => {
+        return Boolean(line.trim().match(/^!\[(.*)\]\((.*)\)$/g));
+      },
+      end: () => true,
+      acceptLastLineAsEnd: true,
+      includeStart: true
     }
   };
+  const blockPasteRules = Object.fromEntries(
+    Object.entries(allBlockPasteRules).filter(([key]) => {
+      return enabledBlocks.includes(key as App.WorkspaceSettings["blocks"][number]);
+    })
+  );
   const { chain } = new CommandManager({
     editor,
     state
@@ -78,6 +130,34 @@ const run = (config: { editor: Editor; state: EditorState; from: number; to: num
     resolvedFrom: number;
     text: string;
   } | null;
+
+  marked.use({
+    renderer: {
+      paragraph(text) {
+        if (text.startsWith("<img")) {
+          return `${text}\n`;
+        }
+        return `<p>${text}</p>`;
+      },
+      image(href, title, text) {
+        const link = (href || "").replace(/^(?:\[.*\]\((.*)\))|(?:(.*))$/, "$1");
+
+        return `<img src="${link}" alt="${text}">`;
+      },
+      listitem(text, task, checked) {
+        return `<li${task ? ` data-type="taskItem"` : ""}${
+          checked ? ` data-checked="true"` : ""
+        }>${text.replace(/\<br\>\<(img|p|pre|blockquote|ul|ol|table)\s/g, "<$1 ")}</li>`;
+      },
+      list(body, ordered, start) {
+        const type = ordered ? "ol" : "ul";
+        const startAt = ordered && start !== 1 ? ` start="${start}"` : "";
+        const dataType = body.includes(`data-type="taskItem"`) ? ` data-type="taskList"` : "";
+
+        return `<${type}${startAt}${dataType}>${body}</${type}>\n`;
+      }
+    }
+  });
 
   state.doc.nodesBetween(from, to, (node, pos, parent, index) => {
     if (!node.isTextblock || node.type.spec.code) {
@@ -108,7 +188,10 @@ const run = (config: { editor: Editor; state: EditorState; from: number; to: num
 
         if (blockPasteRules[activeBlockType].includeEnd) lines.push(textToMatch);
 
-        const html = marked.parse(lines.join("\n"), { breaks: true, gfm: true });
+        const html = marked.parse(lines.join("\n"), {
+          breaks: true,
+          gfm: true
+        });
         const json = generateJSON(html, editor.extensionManager.extensions);
 
         if (json.content[0].type === activeBlockType) {
@@ -119,17 +202,23 @@ const run = (config: { editor: Editor; state: EditorState; from: number; to: num
             })
             .insertContentAt(rangeStart, json.content[0]);
         }
-        activeBlockType = "";
         lines = [];
         rangeStart = 0;
         rangeEnd = 0;
+
+        lastData = { text, resolvedFrom };
+        if (blockPasteRules[activeBlockType].includeEnd) {
+          activeBlockType = "";
+          return;
+        }
+
+        activeBlockType = "";
       } else {
         lines.push(textToMatch);
+
+        lastData = { text, resolvedFrom };
+        return;
       }
-
-      lastData = { text, resolvedFrom };
-
-      return;
     }
 
     for (const blockPasteRuleType in blockPasteRules) {
@@ -138,10 +227,10 @@ const run = (config: { editor: Editor; state: EditorState; from: number; to: num
 
       if (match) {
         const start = resolvedFrom;
-
         activeBlockType = blockPasteRuleType as keyof typeof blockPasteRules;
         if (blockPasteRules[activeBlockType].includeStart) lines.push(textToMatch);
         rangeStart = state.tr.mapping.map(start);
+        lastData = { text, resolvedFrom };
         break;
       }
     }
@@ -173,9 +262,14 @@ const run = (config: { editor: Editor; state: EditorState; from: number; to: num
 
   return true;
 };
-const BlockPaste = Extension.create({
+const BlockPaste = Extension.create<{ workspaceSettings: Accessor<App.WorkspaceSettings | null> }>({
+  addOptions() {
+    return {
+      workspaceSettings: () => null
+    };
+  },
   addProseMirrorPlugins() {
-    const { editor } = this;
+    const { editor, options } = this;
     let dragSourceElement: Element | null = null;
     let isPastedFromProseMirror = false;
     let isDroppedFromProseMirror = false;
@@ -224,7 +318,6 @@ const BlockPaste = Extension.create({
             return;
           }
 
-          // stop if there is no changed range
           const from = oldState.doc.content.findDiffStart(state.doc.content);
           const to = oldState.doc.content.findDiffEnd(state.doc.content);
 
@@ -238,12 +331,15 @@ const BlockPaste = Extension.create({
             transaction: tr
           });
 
-          const handler = run({
-            editor,
-            state: chainableState,
-            from: Math.max(from - 1, 0),
-            to: to.b - 1
-          });
+          const handler = run(
+            {
+              editor,
+              state: chainableState,
+              from: Math.max(from - 1, 0),
+              to: to.b - 1
+            },
+            options.workspaceSettings
+          );
 
           if (!handler || !tr.steps.length) {
             return;
