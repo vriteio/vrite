@@ -310,7 +310,7 @@ const ContentPieceView: Component = () => {
             </Dropdown>
           </Show>
         </div>
-        <div class="flex-1 border-gray-200 dark:border-gray-700 transition-all rounded-b-2xl p-3">
+        <div class="flex-1 border-gray-200 dark:border-gray-700 transition-all rounded-b-2xl p-3 overflow-y-auto scrollbar-sm-contrast">
           <ContentPieceTitle
             initialTitle={titleInitialValue()}
             editable={editable()}

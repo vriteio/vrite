@@ -33,6 +33,11 @@ const handleUpdate = (editor: Editor) => {
 };
 const CommentMenuPlugin = Extension.create({
   name: "commentMenu",
+  addStorage() {
+    return {
+      resizeHandler: () => {}
+    };
+  },
   onCreate() {
     const debouncedHandleUpdate = debounce(() => {
       handleUpdate(this.editor);
@@ -50,10 +55,12 @@ const CommentMenuPlugin = Extension.create({
     box.style.right = "100vw";
     box.appendChild(component.element);
     document.getElementById("pm-container")?.appendChild(box);
-    window.addEventListener("resize", () => {
-      debouncedHandleUpdate.clear();
-      debouncedHandleUpdate();
-    });
+    this.storage.resizeHandler = debouncedHandleUpdate;
+    window.addEventListener("resize", this.storage.resizeHandler);
+  },
+  onDestroy() {
+    window.removeEventListener("resize", this.storage.resizeHandler);
+    box.remove();
   },
   onFocus() {
     if (this.editor.isActive("comment")) {
