@@ -4,7 +4,7 @@ import { mdiDotsGrid, mdiLinkVariant, mdiText, mdiUpload } from "@mdi/js";
 import { Component, createEffect, createSignal, on, Show } from "solid-js";
 import { nanoid } from "nanoid";
 import { debounce } from "@solid-primitives/scheduled";
-import { useClientContext } from "#context";
+import { useAuthenticatedContext, useClientContext } from "#context";
 import { Button, IconButton, Input, Loader, Tooltip } from "#components/primitives";
 
 interface ImageMenuProps {
@@ -12,6 +12,7 @@ interface ImageMenuProps {
 }
 
 const ImageMenu: Component<ImageMenuProps> = (props) => {
+  const { currentWorkspaceId = () => null } = useAuthenticatedContext() || {};
   const { storage } = props.state.extension;
   const [inputMode, setInputMode] = createSignal<"alt" | "src">("src");
   const [uploading, setUploading] = createSignal(false);
@@ -26,9 +27,24 @@ const ImageMenu: Component<ImageMenuProps> = (props) => {
     if (file && file.type.includes("image")) {
       setUploading(true);
 
-      const { uploadUrl, key } = await client.utils.getUploadUrl.mutate({
-        contentType: file.type
-      });
+      let uploadUrl = "";
+      let key = "";
+
+      if (currentWorkspaceId()) {
+        const result = await client.utils.getUploadUrl.mutate({
+          contentType: file.type
+        });
+
+        uploadUrl = result.uploadUrl;
+        key = result.key;
+      } else {
+        const result = await client.utils.getAnonymousUploadUrl.mutate({
+          contentType: file.type
+        });
+
+        uploadUrl = result.uploadUrl;
+        key = result.key;
+      }
 
       await fetch(uploadUrl, {
         method: "PUT",
