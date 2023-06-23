@@ -40,6 +40,7 @@ const App: Component = () => {
         <Route path="/auth" component={AuthView} />
         <Route path="/verify" component={VerifyView} />
         <Route path="/workspaces" component={WorkspacesView} />
+        <Route path="/edit" component={EditorView} />
       </Route>
       <Route path={["/", "**"]} component={SecuredWrapper}>
         <Route path="/editor" component={EditorView} />

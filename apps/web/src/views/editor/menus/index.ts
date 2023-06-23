@@ -3,3 +3,4 @@ export * from "./export-menu";
 export * from "./floating-menu";
 export * from "./link-preview-menu";
 export * from "./stats-menu";
+export * from "./comment-threads-menu";

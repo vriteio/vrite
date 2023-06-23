@@ -8,7 +8,7 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "turbo run build",
+    "build": "dotenv -- turbo run build",
     "publish": "turbo run publish",
     "start": "dotenv -- turbo run start",
     "dev": "dotenv -- turbo run dev",

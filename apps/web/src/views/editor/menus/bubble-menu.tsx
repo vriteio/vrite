@@ -14,22 +14,26 @@ import {
   mdiTableRowRemove,
   mdiTableMergeCells,
   mdiTableSplitCell,
-  mdiTableRemove
+  mdiTableRemove,
+  mdiCommentOutline
 } from "@mdi/js";
 import { CellSelection } from "@tiptap/pm/tables";
 import { Component, createEffect, createSignal, For, Match, on, Show, Switch } from "solid-js";
 import { createRef } from "#lib/utils";
 import { Card, IconButton, Input, Tooltip } from "#components/primitives";
-import { App, useAuthenticatedContext } from "#context";
+import { App, useAuthenticatedContext, useClientContext } from "#context";
+import { nanoid } from "nanoid";
 
 interface BubbleMenuProps {
   editor: SolidEditor;
   opened: boolean;
+  contentPieceId: string;
 }
 
 const BubbleMenu: Component<BubbleMenuProps> = (props) => {
   const [activeMarks, setActiveMarks] = createSignal<string[]>([]);
   const { workspaceSettings } = useAuthenticatedContext();
+  const { client } = useClientContext();
   const [mode, setMode] = createSignal<"format" | "link" | "table">("format");
   const [link, setLink] = createSignal("");
   const [linkInputRef, setLinkInputRef] = createRef<HTMLInputElement | null>(null);
@@ -64,8 +68,31 @@ const BubbleMenu: Component<BubbleMenuProps> = (props) => {
     },
     { icon: mdiFormatColorHighlight, mark: "highlight", label: "Highlight" },
     { icon: mdiFormatSubscript, mark: "subscript", label: "Subscript" },
-    { icon: mdiFormatSuperscript, mark: "superscript", label: "Superscript" }
+    { icon: mdiFormatSuperscript, mark: "superscript", label: "Superscript" },
+    {
+      icon: mdiCommentOutline,
+      mark: "comment",
+      label: "Comment",
+      async onClick() {
+        if (props.editor.isActive("comment")) {
+          props.editor.commands.unsetComment();
+        } else {
+          const threadFragment = nanoid();
+
+          props.editor.chain().setComment({ thread: threadFragment }).focus().run();
+          try {
+            await client.comments.createThread.mutate({
+              contentPieceId: props.contentPieceId,
+              fragment: threadFragment
+            });
+          } catch (error) {
+            props.editor.commands.unsetComment();
+          }
+        }
+      }
+    }
   ].filter(({ mark }) => {
+    if (mark === "comment") return true;
     if (!workspaceSettings()) {
       return true;
     }
