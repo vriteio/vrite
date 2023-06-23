@@ -6,7 +6,7 @@ import {
   useEditor
 } from "@vrite/tiptap-solid";
 import { Component, createEffect, createSignal, on, onCleanup } from "solid-js";
-import { HardBreak, Paragraph, Text } from "@vrite/editor";
+import { HardBreak, Paragraph, Text, Comment } from "@vrite/editor";
 import { isTextSelection } from "@tiptap/core";
 import { Gapcursor } from "@tiptap/extension-gapcursor";
 import { Dropcursor } from "@tiptap/extension-dropcursor";
@@ -29,7 +29,8 @@ import {
   createExtensions,
   createBlockMenuOptions,
   BlockPaste,
-  TableMenuPlugin
+  TableMenuPlugin,
+  CommentMenuPlugin
 } from "#lib/editor";
 import { CellSelection } from "@tiptap/pm/tables";
 import { AllSelection } from "@tiptap/pm/state";
@@ -83,6 +84,7 @@ const Editor: Component<EditorProps> = (props) => {
       Text,
       HardBreak,
       Typography,
+      Comment,
       ...(workspaceSettings() ? createExtensions(workspaceSettings()!, provider) : []),
       TrailingNode,
       CharacterCount,
@@ -93,6 +95,7 @@ const Editor: Component<EditorProps> = (props) => {
       }),
       BlockActionMenuPlugin,
       TableMenuPlugin,
+      CommentMenuPlugin,
       Collab.configure({
         document: ydoc
       }),
@@ -186,7 +189,11 @@ const Editor: Component<EditorProps> = (props) => {
               return true;
             }}
           >
-            <BubbleMenu editor={editor()} opened={bubbleMenuOpened()} />
+            <BubbleMenu
+              editor={editor()}
+              opened={bubbleMenuOpened()}
+              contentPieceId={props.editedContentPiece.id}
+            />
           </BubbleMenuWrapper>
         )}
         {editor() && (

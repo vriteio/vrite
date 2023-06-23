@@ -445,6 +445,30 @@ const workspaceMembershipsRouter = router({
           }
         };
       });
+    }),
+  get: authenticatedProcedure
+    .input(z.object({ userId: zodId() }).or(z.void()))
+    .output(workspaceMembership)
+    .query(async ({ ctx, input }) => {
+      const workspaceMembershipCollection = getWorkspaceMembershipsCollection(ctx.db);
+      const usersCollection = getUsersCollection(ctx.db);
+      const workspaceMembership = await workspaceMembershipCollection.findOne({
+        workspaceId: ctx.auth.workspaceId,
+        userId: new ObjectId(input?.userId || ctx.auth.userId)
+      });
+
+      if (!workspaceMembership) throw errors.notFound("membership");
+
+      const user = await usersCollection.findOne({ _id: workspaceMembership.userId });
+
+      if (!user) throw errors.notFound("user");
+
+      return {
+        id: `${workspaceMembership._id}`,
+        workspaceId: `${workspaceMembership.workspaceId}`,
+        userId: `${workspaceMembership.userId}`,
+        roleId: `${workspaceMembership.roleId}`
+      };
     })
 });
 

@@ -9,5 +9,6 @@ export * from "./document";
 export * from "./placeholder";
 export * from "./trailing-node";
 export * from "./block-action-menu";
+export * from "./comment-menu";
 export * from "./block-paste";
 export * from "./table-menu";

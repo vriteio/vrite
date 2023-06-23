@@ -16,6 +16,7 @@ import { App, useClientContext } from "#context";
 interface AuthenticatedContextValue {
   userSettings: Accessor<App.AppearanceSettings | null>;
   profile: Accessor<App.Profile | null>;
+  membership: Accessor<App.WorkspaceMembership | null>;
   workspace: Accessor<Omit<App.Workspace, "contentGroups"> | null>;
   workspaceSettings: Accessor<App.WorkspaceSettings | null>;
   role: Accessor<App.Role | null>;
@@ -58,6 +59,12 @@ const AuthenticatedContextProvider: ParentComponent = (props) => {
       initialValue: null
     }
   );
+  const [membership, { mutate: setMembership }] = createResource<
+    App.WorkspaceMembership | null,
+    string | null
+  >(currentWorkspaceId, () => client.workspaceMemberships.get.query(), {
+    initialValue: null
+  });
   const [workspace, { mutate: setWorkspace }] = createResource<
     Omit<App.Workspace, "contentGroups"> | null,
     string | null
@@ -80,6 +87,7 @@ const AuthenticatedContextProvider: ParentComponent = (props) => {
       currentWorkspaceId.loading ||
       userSettings.loading ||
       profile.loading ||
+      membership.loading ||
       workspace.loading ||
       workspaceSettings.loading ||
       role.loading
@@ -108,6 +116,14 @@ const AuthenticatedContextProvider: ParentComponent = (props) => {
             navigate("/workspaces");
           } else if (action === "update" && data.userId === profile()?.id && data.role) {
             setRole(data.role);
+            setMembership((membership) => {
+              if (!membership) return null;
+
+              return {
+                ...membership,
+                roleId: data.role?.id || membership.roleId
+              };
+            });
           }
         }
       });
@@ -199,6 +215,7 @@ const AuthenticatedContextProvider: ParentComponent = (props) => {
           value={{
             userSettings,
             profile,
+            membership,
             workspace,
             workspaceSettings,
             role,

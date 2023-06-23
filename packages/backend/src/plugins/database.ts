@@ -8,10 +8,14 @@ import { getWebhooksCollection } from "#database/webhooks";
 import { getWorkspaceSettingsCollection } from "#database/workspace-settings";
 import { getContentsCollection } from "#database/contents";
 import { getUsersCollection } from "#database/users";
+import { getCommentThreadsCollection } from "#database/comment-threads";
+import { getCommentsCollection } from "#database/comments";
 
 const databasePlugin = publicPlugin(async (fastify) => {
   const db = fastify.mongo.db!;
   const contentPiecesCollection = getContentPiecesCollection(db);
+  const commentThreadsCollection = getCommentThreadsCollection(db);
+  const commentsCollection = getCommentsCollection(db);
   const contentsCollection = getContentsCollection(db);
   const rolesCollection = getRolesCollection(db);
   const tagsCollection = getTagsCollection(db);
@@ -27,6 +31,9 @@ const databasePlugin = publicPlugin(async (fastify) => {
     contentPiecesCollection.createIndex({ workspaceId: 1 }),
     contentPiecesCollection.createIndex({ contentGroupId: 1 }),
     contentPiecesCollection.createIndex({ tags: 1 }),
+    commentThreadsCollection.createIndex({ contentPieceId: 1, workspaceId: 1 }),
+    commentThreadsCollection.createIndex({ fragment: 1, workspaceId: 1 }),
+    commentsCollection.createIndex({ threadId: 1, workspaceId: 1 }),
     contentsCollection.createIndex({ contentPieceId: 1 }),
     rolesCollection.createIndex({ workspaceId: 1 }),
     tagsCollection.createIndex({ workspaceId: 1 }),

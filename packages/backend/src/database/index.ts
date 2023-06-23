@@ -10,3 +10,5 @@ export * from "./workspace-memberships";
 export * from "./workspace-settings";
 export * from "./workspaces";
 export * from "./extensions";
+export * from "./comment-threads";
+export * from "./comments";

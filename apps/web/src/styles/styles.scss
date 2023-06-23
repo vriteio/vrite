@@ -34,10 +34,12 @@
   cursor: col-resize;
 }
 .prose-editor {
-  .ProseMirror {
+  .ProseMirror:not(:where(.not-prose, .not-prose *)) {
     > * + div:not(.tableWrapper) {
       @apply mb-5;
     }
+
+    padding-bottom: 8rem;
   }
   .tableWrapper {
     @apply overflow-auto pb-2 mb-3;
@@ -255,8 +257,16 @@
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
       "Courier New", monospace !important;
   }
-  .ProseMirror {
-    padding-bottom: 8rem;
+  :where(mark) {
+    @apply text-gray-700 dark:text-gray-300;
+  }
+  :where(span[data-comment]) {
+    @apply text-primary relative;
+
+    &::before {
+      content: "";
+      @apply bg-primary opacity-20 absolute w-full h-full top-0 left-0 pointer-events-none;
+    }
   }
 }
 .scrollbar-sm {
