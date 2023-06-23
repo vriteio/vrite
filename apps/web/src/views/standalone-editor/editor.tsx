@@ -12,7 +12,7 @@ import { Gapcursor } from "@tiptap/extension-gapcursor";
 import { Dropcursor } from "@tiptap/extension-dropcursor";
 import { Typography } from "@tiptap/extension-typography";
 import { CharacterCount } from "@tiptap/extension-character-count";
-import { useNavigate } from "@solidjs/router";
+import { History } from "@tiptap/extension-history";
 import { useUIContext } from "#context";
 import {
   Heading,
@@ -42,25 +42,26 @@ import {
   TrailingNode,
   LinkPreviewWrapper,
   SlashMenuPlugin,
-  BlockActionMenuPlugin,
-  CollabCursor,
-  Collab,
-  createExtensions,
   createBlockMenuOptions,
   BlockPaste,
   TableMenuPlugin,
-  CommentMenuPlugin,
   CodeBlock,
   Image,
   Embed
 } from "#lib/editor";
 import { CellSelection } from "@tiptap/pm/tables";
 import { AllSelection } from "@tiptap/pm/state";
+import { initialContent } from "./initial-content";
 
 const Editor: Component = () => {
   const { storage, setStorage, setReferences } = useUIContext();
   const [bubbleMenuOpened, setBubbleMenuOpened] = createSignal(true);
   const [floatingMenuOpened, setFloatingMenuOpened] = createSignal(true);
+
+  if (!storage().html) {
+    setStorage((storage) => ({ ...storage, html: initialContent }));
+  }
+
   const editor = useEditor({
     extensions: [
       BlockPaste,
@@ -68,6 +69,7 @@ const Editor: Component = () => {
       Placeholder,
       Paragraph,
       Text,
+      History,
       HardBreak,
       Typography,
       Comment,

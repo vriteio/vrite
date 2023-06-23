@@ -16,7 +16,7 @@ importers:
         version: 0.8.1
       turbo:
         specifier: latest
-        version: 1.10.3
+        version: 1.9.9
       typescript:
         specifier: ^5.0.4
         version: 5.0.4
@@ -288,6 +288,9 @@ importers:
         specifier: ^2.0.3
         version: 2.0.3(@tiptap/core@2.0.0-beta.220)(@tiptap/pm@2.0.0-beta.220)
       '@tiptap/extension-gapcursor':
+        specifier: ^2.0.3
+        version: 2.0.3(@tiptap/core@2.0.0-beta.220)(@tiptap/pm@2.0.0-beta.220)
+      '@tiptap/extension-history':
         specifier: ^2.0.3
         version: 2.0.3(@tiptap/core@2.0.0-beta.220)(@tiptap/pm@2.0.0-beta.220)
       '@tiptap/extension-placeholder':
@@ -648,13 +651,13 @@ importers:
         version: 2.0.3(@tiptap/core@2.0.0-beta.220)
       '@tiptap/extension-code-block-lowlight':
         specifier: ^2.0.3
-        version: 2.0.3(@tiptap/core@2.0.0-beta.220)(@tiptap/pm@2.0.0-beta.220)
+        version: 2.0.3(@tiptap/core@2.0.0-beta.220)(@tiptap/extension-code-block@2.0.3)(@tiptap/pm@2.0.0-beta.220)
       '@tiptap/extension-collaboration':
         specifier: ^2.0.3
-        version: 2.0.3(@tiptap/core@2.0.0-beta.220)(@tiptap/pm@2.0.0-beta.220)
+        version: 2.0.3(@tiptap/core@2.0.0-beta.220)(@tiptap/pm@2.0.0-beta.220)(y-prosemirror@1.0.20)
       '@tiptap/extension-collaboration-cursor':
         specifier: ^2.0.3
-        version: 2.0.3(@tiptap/core@2.0.0-beta.220)
+        version: 2.0.3(@tiptap/core@2.0.0-beta.220)(y-prosemirror@1.0.20)
       '@tiptap/extension-document':
         specifier: 2.0.0-beta.220
         version: 2.0.0-beta.220(@tiptap/core@2.0.0-beta.220)
@@ -4721,11 +4724,22 @@ packages:
       '@tiptap/pm': 2.0.0-beta.220(@tiptap/core@2.0.0-beta.220)
     dev: false
 
-  /@tiptap/extension-code-block-lowlight@2.0.3(@tiptap/core@2.0.0-beta.220)(@tiptap/pm@2.0.0-beta.220):
+  /@tiptap/extension-code-block-lowlight@2.0.3(@tiptap/core@2.0.0-beta.220)(@tiptap/extension-code-block@2.0.3)(@tiptap/pm@2.0.0-beta.220):
     resolution: {integrity: sha512-thFXcFdFyHF0/dr9sqBedjj0Vt14k3m52YVc4l65+d65wRuHp4f8suu8T2ZGRJwqLCE3NIrvwQTSHhzjIqJVxQ==}
     peerDependencies:
       '@tiptap/core': ^2.0.0
       '@tiptap/extension-code-block': ^2.0.0
+      '@tiptap/pm': ^2.0.0
+    dependencies:
+      '@tiptap/core': 2.0.0-beta.220(@tiptap/pm@2.0.0-beta.220)
+      '@tiptap/extension-code-block': 2.0.3(@tiptap/core@2.0.0-beta.220)(@tiptap/pm@2.0.0-beta.220)
+      '@tiptap/pm': 2.0.0-beta.220(@tiptap/core@2.0.0-beta.220)
+    dev: false
+
+  /@tiptap/extension-code-block@2.0.3(@tiptap/core@2.0.0-beta.220)(@tiptap/pm@2.0.0-beta.220):
+    resolution: {integrity: sha512-F4xMy18EwgpyY9f5Te7UuF7UwxRLptOtCq1p2c2DfxBvHDWhAjQqVqcW/sq/I/WuED7FwCnPLyyAasPiVPkLPw==}
+    peerDependencies:
+      '@tiptap/core': ^2.0.0
       '@tiptap/pm': ^2.0.0
     dependencies:
       '@tiptap/core': 2.0.0-beta.220(@tiptap/pm@2.0.0-beta.220)
@@ -4768,13 +4782,14 @@ packages:
       '@tiptap/core': 2.0.3(@tiptap/pm@2.0.0-beta.220)
     dev: false
 
-  /@tiptap/extension-collaboration-cursor@2.0.3(@tiptap/core@2.0.0-beta.220):
+  /@tiptap/extension-collaboration-cursor@2.0.3(@tiptap/core@2.0.0-beta.220)(y-prosemirror@1.0.20):
     resolution: {integrity: sha512-pBcsk3ZkK8IQK6UP/a7Y4rjZRW/anhxFaTCcTxrUvn/azqRI+mcCsRwbc5lNLzcYq5JVOHGROjriNmGGkIr5jA==}
     peerDependencies:
       '@tiptap/core': ^2.0.0
       y-prosemirror: 1.0.20
     dependencies:
       '@tiptap/core': 2.0.0-beta.220(@tiptap/pm@2.0.0-beta.220)
+      y-prosemirror: 1.0.20(prosemirror-model@1.19.2)(prosemirror-state@1.4.3)(prosemirror-view@1.31.4)(y-protocols@1.0.5)(yjs@13.5.45)
     dev: false
 
   /@tiptap/extension-collaboration-cursor@2.0.3(@tiptap/core@2.0.0-beta.220)(y-prosemirror@1.2.0):
@@ -4787,7 +4802,7 @@ packages:
       y-prosemirror: 1.2.0(prosemirror-model@1.19.2)(prosemirror-state@1.4.3)(prosemirror-view@1.31.4)(y-protocols@1.0.5)(yjs@13.5.45)
     dev: false
 
-  /@tiptap/extension-collaboration@2.0.3(@tiptap/core@2.0.0-beta.220)(@tiptap/pm@2.0.0-beta.220):
+  /@tiptap/extension-collaboration@2.0.3(@tiptap/core@2.0.0-beta.220)(@tiptap/pm@2.0.0-beta.220)(y-prosemirror@1.0.20):
     resolution: {integrity: sha512-oA+5Dx+L1GfFrP2tUol8lfKNrLitYgHBaBJbAiqh/QPKVuUiEWgFS2W1oYaSGmwYjzdPCVJqXyQLzSJvEdnBWQ==}
     peerDependencies:
       '@tiptap/core': ^2.0.0
@@ -4796,6 +4811,7 @@ packages:
     dependencies:
       '@tiptap/core': 2.0.0-beta.220(@tiptap/pm@2.0.0-beta.220)
       '@tiptap/pm': 2.0.0-beta.220(@tiptap/core@2.0.0-beta.220)
+      y-prosemirror: 1.0.20(prosemirror-model@1.19.2)(prosemirror-state@1.4.3)(prosemirror-view@1.31.4)(y-protocols@1.0.5)(yjs@13.5.45)
     dev: false
 
   /@tiptap/extension-collaboration@2.0.3(@tiptap/core@2.0.0-beta.220)(@tiptap/pm@2.0.0-beta.220)(y-prosemirror@1.2.0):
@@ -4938,6 +4954,16 @@ packages:
       '@tiptap/core': ^2.0.0
     dependencies:
       '@tiptap/core': 2.0.0-beta.220(@tiptap/pm@2.0.0-beta.220)
+    dev: false
+
+  /@tiptap/extension-history@2.0.3(@tiptap/core@2.0.0-beta.220)(@tiptap/pm@2.0.0-beta.220):
+    resolution: {integrity: sha512-00KHIcJ8kivn2ARI6NQYphv2LfllVCXViHGm0EhzDW6NQxCrriJKE3tKDcTFCu7LlC5doMpq9Z6KXdljc4oVeQ==}
+    peerDependencies:
+      '@tiptap/core': ^2.0.0
+      '@tiptap/pm': ^2.0.0
+    dependencies:
+      '@tiptap/core': 2.0.0-beta.220(@tiptap/pm@2.0.0-beta.220)
+      '@tiptap/pm': 2.0.0-beta.220(@tiptap/core@2.0.0-beta.220)
     dev: false
 
   /@tiptap/extension-history@2.0.3(@tiptap/core@2.0.3)(@tiptap/pm@2.0.0-beta.220):
@@ -11736,65 +11762,65 @@ packages:
       typescript: 4.9.5
     dev: true
 
-  /turbo-darwin-64@1.10.3:
-    resolution: {integrity: sha512-IIB9IomJGyD3EdpSscm7Ip1xVWtYb7D0x7oH3vad3gjFcjHJzDz9xZ/iw/qItFEW+wGFcLSRPd+1BNnuLM8AsA==}
+  /turbo-darwin-64@1.9.9:
+    resolution: {integrity: sha512-UDGM9E21eCDzF5t1F4rzrjwWutcup33e7ZjNJcW/mJDPorazZzqXGKEPIy9kXwKhamUUXfC7668r6ZuA1WXF2Q==}
     cpu: [x64]
     os: [darwin]
     requiresBuild: true
     dev: true
     optional: true
 
-  /turbo-darwin-arm64@1.10.3:
-    resolution: {integrity: sha512-SBNmOZU9YEB0eyNIxeeQ+Wi0Ufd+nprEVp41rgUSRXEIpXjsDjyBnKnF+sQQj3+FLb4yyi/yZQckB+55qXWEsw==}
+  /turbo-darwin-arm64@1.9.9:
+    resolution: {integrity: sha512-VyfkXzTJpYLTAQ9krq2myyEq7RPObilpS04lgJ4OO1piq76RNmSpX9F/t9JCaY9Pj/4TL7i0d8PM7NGhwEA5Ag==}
     cpu: [arm64]
     os: [darwin]
     requiresBuild: true
     dev: true
     optional: true
 
-  /turbo-linux-64@1.10.3:
-    resolution: {integrity: sha512-kvAisGKE7xHJdyMxZLvg53zvHxjqPK1UVj4757PQqtx9dnjYHSc8epmivE6niPgDHon5YqImzArCjVZJYpIGHQ==}
+  /turbo-linux-64@1.9.9:
+    resolution: {integrity: sha512-Fu1MY29Odg8dHOqXcpIIGC3T63XLOGgnGfbobXMKdrC7JQDvtJv8TUCYciRsyknZYjyyKK1z6zKuYIiDjf3KeQ==}
     cpu: [x64]
     os: [linux]
     requiresBuild: true
     dev: true
     optional: true
 
-  /turbo-linux-arm64@1.10.3:
-    resolution: {integrity: sha512-Qgaqln0IYRgyL0SowJOi+PNxejv1I2xhzXOI+D+z4YHbgSx87ox1IsALYBlK8VRVYY8VCXl+PN12r1ioV09j7A==}
+  /turbo-linux-arm64@1.9.9:
+    resolution: {integrity: sha512-50LI8NafPuJxdnMCBeDdzgyt1cgjQG7FwkyY336v4e95WJPUVjrHdrKH6jYXhOUyrv9+jCJxwX1Yrg02t5yJ1g==}
     cpu: [arm64]
     os: [linux]
     requiresBuild: true
     dev: true
     optional: true
 
-  /turbo-windows-64@1.10.3:
-    resolution: {integrity: sha512-rbH9wManURNN8mBnN/ZdkpUuTvyVVEMiUwFUX4GVE5qmV15iHtZfDLUSGGCP2UFBazHcpNHG1OJzgc55GFFrUw==}
+  /turbo-windows-64@1.9.9:
+    resolution: {integrity: sha512-9IsTReoLmQl1IRsy3WExe2j2RKWXQyXujfJ4fXF+jp08KxjVF4/tYP2CIRJx/A7UP/7keBta27bZqzAjsmbSTA==}
     cpu: [x64]
     os: [win32]
     requiresBuild: true
     dev: true
     optional: true
 
-  /turbo-windows-arm64@1.10.3:
-    resolution: {integrity: sha512-ThlkqxhcGZX39CaTjsHqJnqVe+WImjX13pmjnpChz6q5HHbeRxaJSFzgrHIOt0sUUVx90W/WrNRyoIt/aafniw==}
+  /turbo-windows-arm64@1.9.9:
+    resolution: {integrity: sha512-CUu4hpeQo68JjDr0V0ygTQRLbS+/sNfdqEVV+Xz9136vpKn2WMQLAuUBVZV0Sp0S/7i+zGnplskT0fED+W46wQ==}
     cpu: [arm64]
     os: [win32]
     requiresBuild: true
     dev: true
     optional: true
 
-  /turbo@1.10.3:
-    resolution: {integrity: sha512-U4gKCWcKgLcCjQd4Pl8KJdfEKumpyWbzRu75A6FCj6Ctea1PIm58W6Ltw1QXKqHrl2pF9e1raAskf/h6dlrPCA==}
+  /turbo@1.9.9:
+    resolution: {integrity: sha512-+ZS66LOT7ahKHxh6XrIdcmf2Yk9mNpAbPEj4iF2cs0cAeaDU3xLVPZFF0HbSho89Uxwhx7b5HBgPbdcjQTwQkg==}
     hasBin: true
     requiresBuild: true
     optionalDependencies:
-      turbo-darwin-64: 1.10.3
-      turbo-darwin-arm64: 1.10.3
-      turbo-linux-64: 1.10.3
-      turbo-linux-arm64: 1.10.3
-      turbo-windows-64: 1.10.3
-      turbo-windows-arm64: 1.10.3
+      turbo-darwin-64: 1.9.9
+      turbo-darwin-arm64: 1.9.9
+      turbo-linux-64: 1.9.9
+      turbo-linux-arm64: 1.9.9
+      turbo-windows-64: 1.9.9
+      turbo-windows-arm64: 1.9.9
     dev: true
 
   /type-check@0.4.0:
@@ -12447,6 +12473,23 @@ packages:
   /xtend@4.0.2:
     resolution: {integrity: sha512-LKYU1iAXJXUgAXn9URjiu+MWhyUXHsvfp7mcuYm9dSUKK0/CjtrUwFAxD82/mCWbtLsGjFIad0wIsod4zrTAEQ==}
     engines: {node: '>=0.4'}
+    dev: false
+
+  /y-prosemirror@1.0.20(prosemirror-model@1.19.2)(prosemirror-state@1.4.3)(prosemirror-view@1.31.4)(y-protocols@1.0.5)(yjs@13.5.45):
+    resolution: {integrity: sha512-LVMtu3qWo0emeYiP+0jgNcvZkqhzE/otOoro+87q0iVKxy/sMKuiJZnokfJdR4cn9qKx0Un5fIxXqbAlR2bFkA==}
+    peerDependencies:
+      prosemirror-model: ^1.7.1
+      prosemirror-state: ^1.2.3
+      prosemirror-view: ^1.9.10
+      y-protocols: ^1.0.1
+      yjs: ^13.3.2
+    dependencies:
+      lib0: 0.2.78
+      prosemirror-model: 1.19.2
+      prosemirror-state: 1.4.3
+      prosemirror-view: 1.31.4
+      y-protocols: 1.0.5
+      yjs: 13.5.45
     dev: false
 
   /y-prosemirror@1.2.0(prosemirror-model@1.19.2)(prosemirror-state@1.4.3)(prosemirror-view@1.31.4)(y-protocols@1.0.5)(yjs@13.5.45):

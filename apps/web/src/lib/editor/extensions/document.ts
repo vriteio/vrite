@@ -47,38 +47,6 @@ const Document = BaseDocument.extend({
         return true;
       }
     };
-  },
-  addInputRules() {
-    return [
-      markInputRule({
-        find: /\[(.+?)]\(.+?\)/,
-        type: this.type.schema.marks.link,
-        getAttributes({ input = "" }: RegExpMatchArray) {
-          const [wrappedUrl] = input.match(/\(.+?\)/) || [];
-          const url = wrappedUrl ? wrappedUrl.slice(1, -1) : 0;
-
-          return {
-            href: url || ""
-          };
-        }
-      })
-    ];
-  },
-  addPasteRules() {
-    return [
-      markPasteRule({
-        find: /\[(.+?)]\(.+?\)/g,
-        type: this.type.schema.marks.link,
-        getAttributes({ input = "" }: RegExpMatchArray) {
-          const [wrappedUrl] = input.match(/\(.+?\)/) || [];
-          const url = wrappedUrl ? wrappedUrl.slice(1, -1) : 0;
-
-          return {
-            href: url || ""
-          };
-        }
-      })
-    ];
   }
 });
 

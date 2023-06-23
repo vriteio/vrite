@@ -11,6 +11,22 @@ import { Superscript as BaseSuperscript } from "@tiptap/extension-superscript";
 const Bold = BaseBold.extend({
   exitable: true,
   priority: 200,
+
+  parseHTML() {
+    return [
+      {
+        tag: "strong"
+      },
+      {
+        tag: "b",
+        getAttrs: (node) => (node as HTMLElement).style.fontWeight !== "normal" && null
+      },
+      {
+        style: "font-weight",
+        getAttrs: (value) => /^(bold(er)?|[7-9]\d{2,})$/.test(value as string) && null
+      }
+    ];
+  },
   addInputRules() {
     return [
       markInputRule({
@@ -107,7 +123,40 @@ const Code = BaseCode.extend({
   }
 });
 const Link = BaseLink.extend({
-  exitable: true
+  exitable: true,
+  addInputRules() {
+    return [
+      markInputRule({
+        find: /\[(.+?)]\(.+?\)$/,
+        type: this.type.schema.marks.link,
+        getAttributes({ input = "" }: RegExpMatchArray) {
+          const [wrappedUrl] = input.match(/\(.+?\)/) || [];
+          const url = wrappedUrl ? wrappedUrl.slice(1, -1) : 0;
+
+          return {
+            href: url || ""
+          };
+        }
+      })
+    ];
+  },
+  addPasteRules() {
+    return [
+      ...(this.parent?.() || []),
+      markPasteRule({
+        find: /\[(.+?)]\(.+?\)/g,
+        type: this.type.schema.marks.link,
+        getAttributes({ input = "" }: RegExpMatchArray) {
+          const [wrappedUrl] = input.match(/\(.+?\)/) || [];
+          const url = wrappedUrl ? wrappedUrl.slice(1, -1) : 0;
+
+          return {
+            href: url || ""
+          };
+        }
+      })
+    ];
+  }
 }).configure({
   openOnClick: false,
   validate(url) {

@@ -29,7 +29,7 @@ const handleUpdate = (editor: Editor) => {
   box.style.top = `${childPos.top - (parentPos?.top || 0)}px`;
   box.style.right = "0px";
   box.style.display = "block";
-  box.style.transform = `translateX(${viewWidth - parentPos.width + 24}px)`;
+  box.style.transform = `translateX(${Math.min(viewWidth - parentPos.width + 24, 384)}px)`;
 };
 const CommentMenuPlugin = Extension.create({
   name: "commentMenu",

@@ -14,7 +14,7 @@ Editing menus are one of the most important parts of the Vrite editing experienc
 
 ![Bubble menu in Vrite editor](https://assets.vrite.io/6409e82d7dfc74cef7a72e0d/Op7dQICGLf8LK1fb-00mF.png)
 
-Select some text for the bubble menu to appear. It's meant for inline formatting and inserting links.
+Select some text for the bubble menu to appear. It's meant for inline formatting, inserting links, and comments.
 
 ### Block Menu
 
@@ -33,12 +33,19 @@ Move the cursor into a linked text fragment to display a preview of the linked c
 The following inline formatting options are supported in the Vrite editor (on the side — where applicable — their respective Markdown and keyboard shortcuts):
 
 - **Bold** — `**markdown**` — `CTRL B`/`CMD B`;
+
 - **Italic** — `*markdown*` — `CTRL I`/`CMD I`;
+
 - **Strikethrough** — `~~markdown~~` — `CTRL SHIFT X`/`CMD SHIFT X`;
+
 - **Inline code** — `markdown` — `CTRL E`/`CMD E`;
+
 - **Highlight** — `==markdown==` — `CTRL SHIFT H`/`CMD SHIFT H`;
+
 - **Superscript** — `CTRL ,`/`CMD ,`;
+
 - **Subscript** — `CTRL .`/`CMD .`;
+
 - **Link** — `[markdown](link)` — you can also `CTRL V`/`CMD V` the URL to link the selected text fragment;
 
 ## Content blocks
@@ -48,11 +55,17 @@ Content blocks are large pieces of content, insertable from the block menu or wi
 ### Basic Content Blocks
 
 - **Headings** (up to 6 levels of nesting) — from `# markdown` to `###### markdown`;
+
 - **Blockquotes** — `> markdown`;
+
 - **Horizontal rule** — `--- `;
+
 - **Nestable Lists**:
+
   - **Ordered** — `1. markdown`;
+
   - **Unordered** — `- markdown`;
+
   - **Task-based** — `[x]` for checked or `[ ]` for unchecked item;
 
 ### Special Content Blocks
@@ -66,8 +79,38 @@ Content blocks are large pieces of content, insertable from the block menu or wi
 **Embed** — lets you embed content from supported platforms. You can provide any link or ID and Vrite will generate a proper preview. You can also drag and drop the block to change its position. Supported embeds are:
 
 - **CodePen**
+
 - **CodeSandbox**
+
 - **YouTube**
+
+![Table in Vrite](https://assets.vrite.io/6409e82d7dfc74cef7a72e0d/CThF1-P0HI4iWTIWlvQ0s.png)
+
+**Table** — lets you include and edit tabular data in your content. When you move your cursor inside the table, a special menu will appear on the bottom, with the following options (from left to right):
+
+- Insert row above
+
+- Insert row below
+
+- Insert column left
+
+- Insert column right
+
+- Add/remove header
+
+- Delete table
+
+You can also select individual cells by either tripple-clicking them, or holding and dragging through the table. Depending on the selection, the menu can contain a subset of the following options:
+
+- Merge cells
+
+- Split cell
+
+- Delete column(s)
+
+- Delete row(s)
+
+- Delete table
 
 ![Vrite code block](https://assets.vrite.io/6409e82d7dfc74cef7a72e0d/NLQ2piOpD-6jOZEtv67gT.png)
 
@@ -80,7 +123,9 @@ Content blocks are large pieces of content, insertable from the block menu or wi
 In addition to all the features available from the main editing view, the Vrite editor also provides a toolbar with a few more options:
 
 - _Content Stats_ — opens a dropdown with detailed statistics about your content, like the number of words or Lines of Code (LOCs) written;
+
 - _Export_ — allows you to “Export” the content to the underlying JSON format, HTML, or GitHub-Flavored Markdown (GFM) for easy download or copy-paste;
+
 - _Zen mode_ — allows you to focus solely on your content, hiding all the distractions and centering the content editor; You can easily go back by clicking the button in the top-right corner or using `ESC` key;
 
 The _Export_ functions opens a modal presenting the output and options to _Download_ or _Copy_ it easily:
@@ -92,6 +137,14 @@ The _Export_ functions opens a modal presenting the output and options to _Downl
 Vrite editor supports real-time collaboration, displaying not only the team members currently viewing/editing the piece, but also their current selection. In case of uncertainty, you can hover right over the cursor or the badge in the toolbar to view the username.
 
 ![Real-time collaboration in Vrite editor](https://assets.vrite.io/6409e82d7dfc74cef7a72e0d/RaOXP4MkcZZpEWJHQ3cAd.png)
+
+### Commenting
+
+You can use Vrite’s comments and threads to discuss specific pieces of content right within the editor. To do so, select a piece of text and choose _Comment_ from the bubble menu. You’ll see the thread and all of related comments on the right side of your content, while your cursor is within the commented fragment.
+
+In comments, you can use all inline formatting options that are also available in the editor, through Markdown and keyboard shortcuts. Once the discussion is done, you can mark the comment thread as _Resolved_ using the button in the top-right corner.
+
+![](https://assets.vrite.io/6409e82d7dfc74cef7a72e0d/hi3iXvouSZUg1TYpgKhsY.png)
 
 ## Block Actions
 

@@ -189,3 +189,9 @@ h2 {
 .prose img {
   @apply rounded-2xl border-2 border-gray-200 dark:border-gray-700;
 }
+.prose :where(li > ul, li > ol):not(:where(.not-prose, .not-prose *)) {
+  @apply !m-0;
+}
+.prose :where(ul p, ol p):not(:where(.not-prose, .not-prose *)) {
+  @apply !m-0;
+}
