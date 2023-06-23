@@ -55,7 +55,8 @@ const Embed = Node.create({
       "iframe",
       {
         "src": node.attrs.src,
-        "data-embed": node.attrs.embed
+        "data-embed": node.attrs.embed,
+        "data-input": node.attrs.input
       }
     ];
   },
