@@ -30,7 +30,7 @@ const run = (
   workspaceSettings: Accessor<App.WorkspaceSettings | null>
 ): boolean => {
   const { editor, state, from, to } = config;
-  const enabledBlocks = workspaceSettings()?.blocks || [];
+  const enabledBlocks = workspaceSettings()?.blocks || null;
   const allBlockPasteRules: Record<string, BlockPasteRule> = {
     codeBlock: {
       start: (line) => Boolean(line.match(/^```(.*)$/g)),
@@ -114,6 +114,8 @@ const run = (
   };
   const blockPasteRules = Object.fromEntries(
     Object.entries(allBlockPasteRules).filter(([key]) => {
+      if (!enabledBlocks) return true;
+
       return enabledBlocks.includes(key as App.WorkspaceSettings["blocks"][number]);
     })
   );

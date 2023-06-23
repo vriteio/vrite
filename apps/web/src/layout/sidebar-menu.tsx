@@ -106,7 +106,7 @@ const ProfileMenu: Component<{ close(): void }> = (props) => {
   );
 };
 const SidebarMenu: Component = () => {
-  const { profile } = useAuthenticatedContext();
+  const { profile = () => null } = useAuthenticatedContext() || {};
   const [profileMenuOpened, setProfileMenuOpened] = createSignal(false);
   const { storage, setStorage } = useUIContext();
   const location = useLocation();

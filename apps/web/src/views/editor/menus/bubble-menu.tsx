@@ -27,12 +27,12 @@ import { nanoid } from "nanoid";
 interface BubbleMenuProps {
   editor: SolidEditor;
   opened: boolean;
-  contentPieceId: string;
+  contentPieceId?: string;
 }
 
 const BubbleMenu: Component<BubbleMenuProps> = (props) => {
   const [activeMarks, setActiveMarks] = createSignal<string[]>([]);
-  const { workspaceSettings } = useAuthenticatedContext();
+  const { workspaceSettings = () => null } = useAuthenticatedContext() || {};
   const { client } = useClientContext();
   const [mode, setMode] = createSignal<"format" | "link" | "table">("format");
   const [link, setLink] = createSignal("");
@@ -69,28 +69,32 @@ const BubbleMenu: Component<BubbleMenuProps> = (props) => {
     { icon: mdiFormatColorHighlight, mark: "highlight", label: "Highlight" },
     { icon: mdiFormatSubscript, mark: "subscript", label: "Subscript" },
     { icon: mdiFormatSuperscript, mark: "superscript", label: "Superscript" },
-    {
-      icon: mdiCommentOutline,
-      mark: "comment",
-      label: "Comment",
-      async onClick() {
-        if (props.editor.isActive("comment")) {
-          props.editor.commands.unsetComment();
-        } else {
-          const threadFragment = nanoid();
+    ...(props.contentPieceId
+      ? [
+          {
+            icon: mdiCommentOutline,
+            mark: "comment",
+            label: "Comment",
+            async onClick() {
+              if (props.editor.isActive("comment")) {
+                props.editor.commands.unsetComment();
+              } else {
+                const threadFragment = nanoid();
 
-          props.editor.chain().setComment({ thread: threadFragment }).focus().run();
-          try {
-            await client.comments.createThread.mutate({
-              contentPieceId: props.contentPieceId,
-              fragment: threadFragment
-            });
-          } catch (error) {
-            props.editor.commands.unsetComment();
+                props.editor.chain().setComment({ thread: threadFragment }).focus().run();
+                try {
+                  await client.comments.createThread.mutate({
+                    contentPieceId: props.contentPieceId || "",
+                    fragment: threadFragment
+                  });
+                } catch (error) {
+                  props.editor.commands.unsetComment();
+                }
+              }
+            }
           }
-        }
-      }
-    }
+        ]
+      : [])
   ].filter(({ mark }) => {
     if (mark === "comment") return true;
     if (!workspaceSettings()) {

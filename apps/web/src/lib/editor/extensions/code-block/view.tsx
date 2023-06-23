@@ -31,8 +31,8 @@ const getExtension = (language: string): string => {
 };
 const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
   const { state } = useSolidNodeView<CodeBlockAttributes>();
-  const { workspaceSettings } = useAuthenticatedContext();
-  const { codeEditorTheme } = useAppearanceContext();
+  const { workspaceSettings = () => null } = useAuthenticatedContext() || {};
+  const { codeEditorTheme = () => "dark" } = useAppearanceContext() || {};
   const { notify } = useNotificationsContext();
   const attrs = (): CodeBlockAttributes => state().node.attrs;
   const options = (): CodeBlockOptions => state().extension.options;

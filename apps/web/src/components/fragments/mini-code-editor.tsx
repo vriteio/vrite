@@ -23,7 +23,7 @@ interface MiniCodeEditorProps {
 }
 
 const MiniCodeEditor: Component<MiniCodeEditorProps> = (props) => {
-  const { codeEditorTheme } = useAppearanceContext();
+  const { codeEditorTheme = () => "dark" } = useAppearanceContext() || {};
   const [editorContainerRef, setEditorContainerRef] = createRef<HTMLElement | null>(null);
   const [currentCode, setCurrentCode] = createSignal(props.code || "");
   const [codeEditor, setCodeEditor] = createSignal<monaco.editor.IStandaloneCodeEditor | null>(

@@ -9,19 +9,22 @@ import {
 } from "@mdi/js";
 import { Component, createSignal } from "solid-js";
 import { htmlTransformer, gfmTransformer } from "@vrite/sdk/transformers";
+import { JSONContent } from "@vrite/sdk";
 import { Card, Dropdown, Heading, IconButton, Overlay, Tooltip } from "#components/primitives";
 import { MiniCodeEditor } from "#components/fragments";
 import { App, useAuthenticatedContext, useClientContext, useNotificationsContext } from "#context";
 import { formatCode } from "#lib/code-editor";
 import { escapeHTML } from "#lib/utils";
+import { nanoid } from "nanoid";
 
 interface ExportMenuProps {
-  editedContentPiece: App.ContentPieceWithAdditionalData;
+  editedContentPiece?: App.ContentPieceWithAdditionalData;
+  content?: JSONContent;
 }
 
 const ExportMenu: Component<ExportMenuProps> = (props) => {
   const { client } = useClientContext();
-  const { workspaceSettings } = useAuthenticatedContext();
+  const { workspaceSettings = () => null } = useAuthenticatedContext() || {};
   const { notify } = useNotificationsContext();
   const [loading, setLoading] = createSignal(false);
   const [exportMenuOpened, setExportMenuOpened] = createSignal(false);
@@ -30,34 +33,37 @@ const ExportMenu: Component<ExportMenuProps> = (props) => {
   const [exportType, setExportType] = createSignal<"html" | "json" | "md">("html");
   const loadContent = async (type: "html" | "json" | "md"): Promise<string | undefined> => {
     try {
-      const contentPiece = await client.contentPieces.get.query({
-        content: true,
-        id: props.editedContentPiece.id
-      });
+      let content = props.content;
+
+      if (!content && props.editedContentPiece) {
+        const contentPiece = await client.contentPieces.get.query({
+          content: true,
+          id: props.editedContentPiece.id
+        });
+
+        content = contentPiece.content as JSONContent;
+      }
       const prettierConfig = JSON.parse(workspaceSettings()?.prettierConfig || "{}");
 
       if (type === "html") {
-        if (!contentPiece.content) return;
+        if (!content) return;
 
         return formatCode(
-          htmlTransformer(contentPiece.content as any).replace(
-            /<code>((?:.|\n)+?)<\/code>/g,
-            (_, code) => {
-              return `<code>${escapeHTML(code)}</code>`;
-            }
-          ),
+          htmlTransformer(content).replace(/<code>((?:.|\n)+?)<\/code>/g, (_, code) => {
+            return `<code>${escapeHTML(code)}</code>`;
+          }),
           "html",
           prettierConfig
         );
       }
 
       if (type === "md") {
-        if (!contentPiece.content) return;
+        if (!content) return;
 
-        return formatCode(gfmTransformer(contentPiece.content as any), "markdown", prettierConfig);
+        return formatCode(gfmTransformer(content), "markdown", prettierConfig);
       }
 
-      return formatCode(JSON.stringify(contentPiece.content), "json", prettierConfig);
+      return formatCode(JSON.stringify(content), "json", prettierConfig);
     } catch (e) {
       notify({ type: "error", text: "Couldn't export the content" });
       setLoading(false);
@@ -184,7 +190,7 @@ const ExportMenu: Component<ExportMenuProps> = (props) => {
                   });
 
                   a.href = URL.createObjectURL(file);
-                  a.download = `${props.editedContentPiece.id}.${exportType()}`;
+                  a.download = `${props.editedContentPiece?.id || nanoid()}.${exportType()}`;
                   a.click();
                 }}
               />

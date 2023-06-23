@@ -45,7 +45,10 @@ const EmbedView: Component = () => {
               )}
             >
               <div class="absolute flex flex-col items-center justify-center font-bold text-white transform -translate-y-1/2 top-1/2">
-                <Icon path={getPlaceholderIcon(state().node.attrs.embed)} class="w-16 h-16" />
+                <Icon
+                  path={getPlaceholderIcon(state().node.attrs.embed as EmbedType)}
+                  class="w-16 h-16"
+                />
                 <Show when={error()}>
                   <span class="absolute top-full">Error</span>
                 </Show>

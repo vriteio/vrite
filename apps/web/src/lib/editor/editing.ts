@@ -169,7 +169,7 @@ const createExtensions = (
     ...getItemNodes()
   ];
 };
-const createBlockMenuOptions = (settings: App.WorkspaceSettings): SlashMenuItem[] => {
+const createBlockMenuOptions = (settings?: App.WorkspaceSettings): SlashMenuItem[] => {
   const headingLevels = [1, 2, 3, 4, 5, 6] as const;
   const headingIcons = [
     mdiFormatHeader1,
@@ -320,6 +320,8 @@ const createBlockMenuOptions = (settings: App.WorkspaceSettings): SlashMenuItem[
   ];
 
   return blockMenuOptions.filter(({ embed, block }) => {
+    if (!settings) return true;
+
     return (block && settings.blocks.includes(block)) || (embed && settings.embeds.includes(embed));
   }) as SlashMenuItem[];
 };

@@ -93,7 +93,7 @@ const ClientContext = createContext<ClientContextData>();
 const ClientContextProvider: ParentComponent = (props) => {
   const wsClient = createWSClient({
     url: `ws${window.location.protocol.includes("https") ? "s" : ""}://${
-      import.meta.env.VITE_APP_HOST || "app.vrite.io"
+      import.meta.env.PUBLIC_APP_HOST
     }/api/v1`
   });
   const client = createTRPCProxyClient<App.Router>({

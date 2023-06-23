@@ -1,4 +1,4 @@
-import { BubbleMenu, LinkPreviewMenu, FloatingMenu } from "./menus";
+import { BubbleMenu, LinkPreviewMenu, FloatingMenu } from "../editor/menus";
 import {
   BubbleMenuWrapper,
   FloatingMenuWrapper,
@@ -11,11 +11,31 @@ import { isTextSelection } from "@tiptap/core";
 import { Gapcursor } from "@tiptap/extension-gapcursor";
 import { Dropcursor } from "@tiptap/extension-dropcursor";
 import { Typography } from "@tiptap/extension-typography";
-import { HocuspocusProvider } from "@hocuspocus/provider";
 import { CharacterCount } from "@tiptap/extension-character-count";
-import * as Y from "yjs";
 import { useNavigate } from "@solidjs/router";
-import { App, hasPermission, useAuthenticatedContext, useUIContext } from "#context";
+import { useUIContext } from "#context";
+import {
+  Heading,
+  Link,
+  Bold,
+  Code,
+  Italic,
+  HorizontalRule,
+  Blockquote,
+  Highlight,
+  Superscript,
+  Subscript,
+  Strike,
+  BulletList,
+  OrderedList,
+  TaskList,
+  TaskItem,
+  ListItem,
+  Table,
+  TableCell,
+  TableHeader,
+  TableRow
+} from "@vrite/editor";
 import {
   Document,
   Placeholder,
@@ -25,59 +45,25 @@ import {
   BlockActionMenuPlugin,
   CollabCursor,
   Collab,
-  createClipboardSerializer,
   createExtensions,
   createBlockMenuOptions,
   BlockPaste,
   TableMenuPlugin,
-  CommentMenuPlugin
+  CommentMenuPlugin,
+  CodeBlock,
+  Image,
+  Embed
 } from "#lib/editor";
 import { CellSelection } from "@tiptap/pm/tables";
 import { AllSelection } from "@tiptap/pm/state";
 
-interface EditorProps {
-  reloaded?: boolean;
-  editedContentPiece: App.ExtendedContentPieceWithAdditionalData<"locked">;
-  onLoad?(): void;
-  reload?(): void;
-}
-
-const Editor: Component<EditorProps> = (props) => {
-  const { setStorage, setReferences } = useUIContext();
-  const navigate = useNavigate();
-  const ydoc = new Y.Doc();
-  const provider = new HocuspocusProvider({
-    token: "vrite",
-    url: `ws${window.location.protocol.includes("https") ? "s" : ""}://${
-      import.meta.env.PUBLIC_COLLAB_HOST
-    }`,
-    async onSynced() {
-      props.onLoad?.();
-    },
-    async onAuthenticationFailed() {
-      if (props.reloaded) {
-        navigate("/");
-      } else {
-        await fetch("/session/refresh", { method: "POST" });
-        props.reload?.();
-      }
-    },
-    name: props.editedContentPiece.id || "",
-    document: ydoc
-  });
+const Editor: Component = () => {
+  const { storage, setStorage, setReferences } = useUIContext();
   const [bubbleMenuOpened, setBubbleMenuOpened] = createSignal(true);
   const [floatingMenuOpened, setFloatingMenuOpened] = createSignal(true);
-  const { workspaceSettings } = useAuthenticatedContext();
   const editor = useEditor({
-    onCreate({ editor }) {
-      if (workspaceSettings()) {
-        editor.view.setProps({
-          clipboardSerializer: createClipboardSerializer(editor, workspaceSettings()!)
-        });
-      }
-    },
     extensions: [
-      BlockPaste.configure({ workspaceSettings }),
+      BlockPaste,
       Document,
       Placeholder,
       Paragraph,
@@ -85,43 +71,63 @@ const Editor: Component<EditorProps> = (props) => {
       HardBreak,
       Typography,
       Comment,
-      ...(workspaceSettings() ? createExtensions(workspaceSettings()!, provider) : []),
+      Bold,
+      Italic,
+      Strike,
+      Code,
+      Link,
+      Highlight,
+      Subscript,
+      Superscript,
+      Heading,
+      BulletList,
+      OrderedList,
+      TaskList,
+      Blockquote,
+      CodeBlock,
+      HorizontalRule,
+      Image,
+      Embed,
+      ListItem,
+      TaskItem,
+      Table,
+      TableCell,
+      TableHeader,
+      TableRow,
       TrailingNode,
       CharacterCount,
       Gapcursor,
       Dropcursor.configure({ class: "ProseMirror-dropcursor" }),
       SlashMenuPlugin.configure({
-        menuItems: workspaceSettings() ? createBlockMenuOptions(workspaceSettings()!) : []
+        menuItems: createBlockMenuOptions()
       }),
-      BlockActionMenuPlugin,
-      TableMenuPlugin,
-      CommentMenuPlugin,
-      Collab.configure({
-        document: ydoc
-      }),
-      CollabCursor(provider)
+      //BlockActionMenuPlugin,
+      TableMenuPlugin
+      // CommentMenuPlugin
     ],
-    //enablePasteRules: false,
-    editable: !props.editedContentPiece.locked && hasPermission("editContent"),
-    editorProps: { attributes: { class: `outline-none` } }
+    editorProps: { attributes: { class: `outline-none` } },
+    content: storage().html,
+    onUpdate: ({ editor }) => {
+      setStorage((storage) => ({
+        ...storage,
+        html: editor.getHTML()
+      }));
+    }
   });
 
   onCleanup(() => {
     editor().destroy();
-    provider.destroy();
     setReferences({
       editor: undefined,
       provider: undefined,
       editedContentPiece: undefined
     });
   });
-  setStorage((storage) => ({ ...storage, toolbarView: "editor" }));
+  setStorage((storage) => ({ ...storage, toolbarView: "editorStandalone" }));
   createEffect(
-    on([() => props.editedContentPiece, editor], () => {
+    on([editor], () => {
       setReferences({
-        editor: editor(),
-        provider,
-        editedContentPiece: props.editedContentPiece
+        editor: editor()
       });
     })
   );
@@ -129,7 +135,7 @@ const Editor: Component<EditorProps> = (props) => {
   return (
     <>
       <div
-        class="w-full max-w-[70ch] prose prose-editor text-xl dark:prose-invert h-full relative"
+        class="w-full prose prose-editor text-xl dark:prose-invert h-full relative"
         id="pm-container"
       >
         {editor() && (
@@ -189,11 +195,7 @@ const Editor: Component<EditorProps> = (props) => {
               return true;
             }}
           >
-            <BubbleMenu
-              editor={editor()}
-              opened={bubbleMenuOpened()}
-              contentPieceId={props.editedContentPiece.id}
-            />
+            <BubbleMenu editor={editor()} opened={bubbleMenuOpened()} />
           </BubbleMenuWrapper>
         )}
         {editor() && (

@@ -18,6 +18,7 @@ import { createRef, getSelectionColor } from "#lib/utils";
 
 const useContentGroups = (): {
   contentGroups: Accessor<App.ContentGroup[]>;
+  setContentGroups: (contentGroups: App.ContentGroup[]) => void;
 } => {
   const { client } = useClientContext();
   const [state, setState] = createStore<{
@@ -87,7 +88,7 @@ const DashboardView: Component = () => {
   const provider = new HocuspocusProvider({
     token: "vrite",
     url: `ws${window.location.protocol.includes("https") ? "s" : ""}://${
-      import.meta.env.VITE_COLLAB_HOST || "collab.vrite.io"
+      import.meta.env.PUBLIC_COLLAB_HOST
     }`,
     name: `workspace:${workspace()?.id || ""}`,
     document: ydoc

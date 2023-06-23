@@ -24,7 +24,10 @@ const getInputPlaceholder = (embedType?: EmbedType): string => {
 const EmbedMenu: Component<ImageMenuProps> = (props) => {
   const attrs = (): EmbedAttributes => props.state.node.attrs;
   const getSrc = (input: string): string => {
-    return getEmbedSrc(getEmbedId(input, attrs().embed || "codepen"), attrs().embed || "codepen");
+    return getEmbedSrc(
+      getEmbedId(input, (attrs().embed as EmbedType) || "codepen"),
+      (attrs().embed as EmbedType) || "codepen"
+    );
   };
 
   return (
@@ -32,7 +35,7 @@ const EmbedMenu: Component<ImageMenuProps> = (props) => {
       <Input
         wrapperClass="flex-1 max-w-full"
         color="contrast"
-        placeholder={getInputPlaceholder(attrs().embed)}
+        placeholder={getInputPlaceholder(attrs().embed as EmbedType)}
         value={attrs().input || ""}
         disabled={!props.state.editor.isEditable}
         setValue={(value) => {

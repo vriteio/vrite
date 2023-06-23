@@ -34,7 +34,7 @@ const SlashMenuPlugin = Extension.create<SlashMenuPluginOptions>({
             range
           });
         },
-        items: ({ query, editor }) => {
+        items: ({ query }) => {
           const lowerCaseQuery = stringToRegex(query.toLowerCase());
           const conditions: Array<(item: SlashMenuItem) => boolean> = [
             (item) => item.label.toLowerCase().startsWith(query.toLowerCase()),
@@ -89,7 +89,6 @@ const SlashMenuPlugin = Extension.create<SlashMenuPluginOptions>({
               if (!props.clientRect) {
                 return;
               }
-
               popup = tippy(target, {
                 getReferenceClientRect: () => getReferenceClientRect(props),
                 appendTo: () => target,

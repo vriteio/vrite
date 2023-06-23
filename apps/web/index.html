@@ -21,26 +21,26 @@
     />
     <title>Vrite</title>
     <script type="module">
-      const baseUrl = `http${
-        window.location.protocol.includes("https") ? "s" : ""
-      }://${import.meta.env.VITE_API_HOST || "api.vrite.io"}`;
-      try{
-      await fetch("/session/refresh", { method: "POST" });
-      const response = await fetch(`${baseUrl}/user-settings`, {
-        credentials: "include",
-      });
-      if(!response.ok) throw new Error()
-      const settings = await response.json();
+      const baseUrl = `http${window.location.protocol.includes("https") ? "s" : ""}://${
+        import.meta.env.PUBLIC_API_HOST
+      }`;
+      try {
+        await fetch("/session/refresh", { method: "POST" });
+        const response = await fetch(`${baseUrl}/user-settings`, {
+          credentials: "include"
+        });
+        if (!response.ok) throw new Error();
+        const settings = await response.json();
 
-      document.documentElement.dataset.accentColor =
-        settings.accentColor || "energy";
-      if (settings.uiTheme === "dark") {
-        document.documentElement.classList.add("dark");
-      } else if (settings.uiTheme === "auto") {
-        if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+        document.documentElement.dataset.accentColor = settings.accentColor || "energy";
+        if (settings.uiTheme === "dark") {
           document.documentElement.classList.add("dark");
+        } else if (settings.uiTheme === "auto") {
+          if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+            document.documentElement.classList.add("dark");
+          }
         }
-      }}catch(error){
+      } catch (error) {
         if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
           document.documentElement.classList.add("dark");
         }

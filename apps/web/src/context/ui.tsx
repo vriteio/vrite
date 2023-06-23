@@ -19,6 +19,7 @@ interface StorageData {
   contentPieceId: string;
   settingsSection: string;
   zenMode: boolean;
+  html: string;
 }
 interface ReferencesData {
   editedContentPiece?: App.ExtendedContentPieceWithAdditionalData<"locked">;

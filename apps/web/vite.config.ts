@@ -6,6 +6,7 @@ import unocss from "unocss/vite";
 export default defineConfig(async () => {
   return {
     logLevel: "info",
+    envPrefix: "PUBLIC_",
     server: {
       proxy: {
         "/api": {

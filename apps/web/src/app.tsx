@@ -1,9 +1,15 @@
-import { Component, ParentComponent, lazy } from "solid-js";
+import { Component, Match, Switch, lazy } from "solid-js";
 import { Outlet, Route, Routes } from "@solidjs/router";
 import { AuthView } from "#views/auth";
-import { Layout } from "#layout";
+import { StandaloneLayout, SecuredLayout } from "#layout";
 import { VerifyView } from "#views/verify";
+import { isEditorApp } from "#lib/utils";
 
+const StandaloneEditorView = lazy(async () => {
+  const { StandaloneEditorView } = await import("#views/standalone-editor");
+
+  return { default: StandaloneEditorView };
+});
 const EditorView = lazy(async () => {
   const { EditorView } = await import("#views/editor");
 
@@ -21,9 +27,9 @@ const WorkspacesView = lazy(async () => {
 });
 const SecuredWrapper: Component = () => {
   return (
-    <Layout>
+    <SecuredLayout>
       <Outlet />
-    </Layout>
+    </SecuredLayout>
   );
 };
 const Wrapper: Component = () => {
@@ -33,19 +39,35 @@ const Wrapper: Component = () => {
     </div>
   );
 };
+const StandaloneWrapper: Component = () => {
+  return (
+    <StandaloneLayout>
+      <Outlet />
+    </StandaloneLayout>
+  );
+};
 const App: Component = () => {
   return (
     <Routes>
-      <Route path={["/", "**"]} component={Wrapper}>
-        <Route path="/auth" component={AuthView} />
-        <Route path="/verify" component={VerifyView} />
-        <Route path="/workspaces" component={WorkspacesView} />
-        <Route path="/edit" component={EditorView} />
-      </Route>
-      <Route path={["/", "**"]} component={SecuredWrapper}>
-        <Route path="/editor" component={EditorView} />
-        <Route path={["/", "**"]} component={DashboardView} />
-      </Route>
+      <Switch>
+        <Match when={isEditorApp()}>
+          <Route path={["/", "**"]} component={StandaloneWrapper}>
+            <Route path={["/", "**"]} component={StandaloneEditorView} />
+          </Route>
+        </Match>
+        <Match when={!isEditorApp()}>
+          <Route path={["/", "**"]} component={Wrapper}>
+            <Route path="/auth" component={AuthView} />
+            <Route path="/verify" component={VerifyView} />
+            <Route path="/workspaces" component={WorkspacesView} />
+            <Route path="/edit" component={EditorView} />
+          </Route>
+          <Route path={["/", "**"]} component={SecuredWrapper}>
+            <Route path="/editor" component={EditorView} />
+            <Route path={["/", "**"]} component={DashboardView} />
+          </Route>
+        </Match>
+      </Switch>
     </Routes>
   );
 };

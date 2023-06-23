@@ -9,5 +9,8 @@ const escapeHTML = (input: string): string => {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 };
+const isEditorApp = (): boolean => {
+  return import.meta.env.PUBLIC_APP === "editor";
+};
 
-export { navigateAndReload, escapeHTML };
+export { navigateAndReload, escapeHTML, isEditorApp };
