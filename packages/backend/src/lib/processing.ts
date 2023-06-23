@@ -24,7 +24,12 @@ import {
   Subscript,
   Superscript,
   TaskList,
-  Text
+  Text,
+  Comment,
+  Table,
+  TableCell,
+  TableHeader,
+  TableRow
 } from "@vrite/editor";
 
 type Attrs = Record<string, string | number | boolean>;
@@ -67,11 +72,45 @@ const htmlToJSON = (html: string): DocJSON => {
     Image,
     Embed,
     TaskItem,
-    ListItem
+    ListItem,
+    Comment,
+    Table,
+    TableCell,
+    TableHeader,
+    TableRow
   ]) as DocJSON;
 };
 const jsonToBuffer = (json: DocJSON): Buffer => {
-  const doc = TiptapTransformer.toYdoc(json, "default");
+  const doc = TiptapTransformer.toYdoc(json, "default", [
+    Document,
+    Paragraph,
+    Text,
+    HardBreak,
+    Bold,
+    Italic,
+    Strike,
+    Code,
+    Link,
+    Highlight,
+    Subscript,
+    Superscript,
+    Heading,
+    BulletList,
+    OrderedList,
+    TaskList,
+    Blockquote,
+    CodeBlock,
+    HorizontalRule,
+    Image,
+    Embed,
+    TaskItem,
+    ListItem,
+    Comment,
+    Table,
+    TableCell,
+    TableHeader,
+    TableRow
+  ]);
 
   return Buffer.from(Y.encodeStateAsUpdate(doc));
 };

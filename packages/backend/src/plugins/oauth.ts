@@ -92,7 +92,7 @@ const oAuth2Plugin = publicPlugin(async (fastify) => {
 
       if (!existingUser) {
         const workspaceId = await createWorkspace(user, fastify.mongo.db!, {
-          defaultContent: false
+          defaultContent: true
         });
 
         await userSettingsCollection.insertOne({
