@@ -1,34 +1,41 @@
 ---
 import { client, getContentGroupId } from "virtual:vrite";
-import type { Client } from "../api";
+import type { Client, JSONContent } from "../api";
 import Node from "./node.astro";
-import { ContentPieceWithAdditionalData } from "../api/content-pieces";
 
 interface Props {
   contentPieceId?: string;
+  content?: JSONContent;
   slug?: string;
 }
 
-let contentPiece: ContentPieceWithAdditionalData<Record<string, any>, true> | null = null;
-let contentPieceId = Astro.props.contentPieceId;
+let content: JSONContent | null = null;
 
-if (!contentPieceId && Astro.props.slug) {
-  const contentPieces = await (client as Client).contentPieces.list({
-    contentGroupId: getContentGroupId(),
-    slug: Astro.props.slug
-  });
-  if (contentPieces[0]) {
-    contentPieceId = contentPieces[0].id;
+if (Astro.props.content) {
+  content = Astro.props.content;
+} else {
+  let contentPieceId = Astro.props.contentPieceId;
+
+  if (!contentPieceId && Astro.props.slug) {
+    const contentPieces = await (client as Client).contentPieces.list({
+      contentGroupId: getContentGroupId(),
+      slug: Astro.props.slug
+    });
+    if (contentPieces[0]) {
+      contentPieceId = contentPieces[0].id;
+    }
   }
-}
 
-if (contentPieceId) {
-  contentPiece = await (client as Client).contentPieces.get({
-    id: contentPieceId,
-    content: true,
-    description: "text"
-  });
+  if (contentPieceId) {
+    const contentPiece = await (client as Client).contentPieces.get({
+      id: contentPieceId,
+      content: true,
+      description: "text"
+    });
+
+    content = contentPiece.content;
+  }
 }
 ---
 
-{contentPiece && <Node {...contentPiece.content} />}
+{content && <Node {...content} />}
