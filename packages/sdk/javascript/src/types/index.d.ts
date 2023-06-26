@@ -29,7 +29,12 @@ declare module "virtual:vrite" {
     UnauthorizedError
     // @ts-ignore
   } from "@vrite/sdk/api";
-  export function Content(props: { contentPieceId?: string; slug?: string; content?: string }): any;
+  export function Content(props: {
+    contentPieceId?: string;
+    slug?: string;
+    // @ts-ignore
+    content?: import("@vrite/sdk/api").JSONContent;
+  }): any;
   export function getStaticPaths(): Promise<
     Array<{
       params: { slug: string };
