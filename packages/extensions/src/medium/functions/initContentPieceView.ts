@@ -4,7 +4,9 @@ const initContentPieceView = async (context: ExtensionContentPieceViewContext): 
   context.setTemp({
     buttonLabel: context.data.mediumId ? "Republish" : "Publish",
     disabled:
-      !context.config.token || !context.config.contentGroupId || context.contentPiece.locked,
+      !context.config.token ||
+      !context.config.contentGroupId ||
+      (context.config.autoPublish && !context.config.contentGroupId),
     $loading: false
   });
 

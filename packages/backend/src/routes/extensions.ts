@@ -10,7 +10,9 @@ import {
   getExtensionsCollection,
   ContextObject,
   tokenPermission,
-  getTokensCollection
+  getTokensCollection,
+  getContentPiecesCollection,
+  FullContentPieceWithAdditionalData
 } from "#database";
 import { createEventPublisher, createEventSubscription } from "#lib/pub-sub";
 import * as errors from "#lib/errors";
@@ -23,6 +25,13 @@ type ExtensionEvent =
 
 const publishEvent = createEventPublisher<ExtensionEvent>((workspaceId) => {
   return `extensions:${workspaceId}`;
+});
+const publishContentPieceEvent = createEventPublisher<{
+  action: "update";
+  userId: string;
+  data: Partial<FullContentPieceWithAdditionalData> & { id: string };
+}>((contentGroupId) => {
+  return `contentPieces:${contentGroupId}`;
 });
 const authenticatedProcedure = procedure.use(isAuthenticated);
 const basePath = "/extension";
@@ -64,6 +73,68 @@ const extensionsRouter = router({
         ...extension,
         id: `${extension._id}`
       };
+    }),
+  updateContentPieceData: authenticatedProcedure
+    .meta({
+      openapi: {
+        method: "PUT",
+        path: `${basePath}/content-piece-data`
+      }
+    })
+    .input(
+      z.object({
+        contentPieceId: zodId(),
+        extensionId: zodId().optional(),
+        data: z.any()
+      })
+    )
+    .output(z.void())
+    .mutation(async ({ ctx, input }) => {
+      const extensionId = input.extensionId || ctx.req.headers["x-vrite-extension-id"];
+      const extensionsCollection = getExtensionsCollection(ctx.db);
+      const contentPiecesCollection = getContentPiecesCollection(ctx.db);
+
+      if (!extensionId || typeof extensionId !== "string") throw errors.invalid("extensionId");
+
+      const extension = await extensionsCollection.findOne({
+        _id: new ObjectId(extensionId),
+        workspaceId: ctx.auth.workspaceId
+      });
+
+      if (!extension) throw errors.notFound("extension");
+
+      const contentPiece = await contentPiecesCollection.findOne({
+        _id: new ObjectId(input.contentPieceId),
+        workspaceId: ctx.auth.workspaceId
+      });
+
+      if (!contentPiece) throw errors.notFound("content piece");
+
+      await contentPiecesCollection.updateOne(
+        {
+          _id: new ObjectId(input.contentPieceId)
+        },
+        {
+          $set: {
+            [`customData.__extensions__.${extension.name}`]: input.data
+          }
+        }
+      );
+
+      publishContentPieceEvent(ctx, `${contentPiece.contentGroupId}`, {
+        action: "update",
+        userId: `${ctx.auth.userId}`,
+        data: {
+          id: `${contentPiece._id}`,
+          customData: {
+            ...contentPiece.customData,
+            __extensions__: {
+              ...(contentPiece.customData?.__extensions__ || {}),
+              [extension.name]: input.data
+            }
+          }
+        }
+      });
     }),
   list: authenticatedProcedure
     .input(

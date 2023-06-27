@@ -4,7 +4,9 @@ const configure = async (context: ExtensionContentPieceViewContext): Promise<voi
   context.setTemp({
     buttonLabel: context.data.hashnode ? "Update" : "Publish",
     disabled:
-      !context.config.accessToken || !context.config.contentGroupId || context.contentPiece.locked,
+      !context.config.accessToken ||
+      !context.config.publicationId ||
+      (context.config.autoPublish && !context.config.contentGroupId),
     $loading: false
   });
 

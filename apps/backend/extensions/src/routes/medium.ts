@@ -39,6 +39,7 @@ const processContent = (content: JSONContent): string => {
           return `\n**${content}**\n`;
         case "embed":
           return `\n${attrs?.src || ""}\n`;
+        case "table":
         case "taskList":
           return "";
         default:
@@ -200,18 +201,9 @@ const mediumRouter = router({
       if (extension.config?.requireCanonicalLink && !contentPiece.canonicalLink) return;
 
       const { mediumId } = await publishToMedium(contentPiece, extension);
-      await client.contentPieces.update({
-        id: input.id,
-        customData: {
-          ...contentPiece.customData,
-          __extensions__: {
-            ...(contentPiece.customData?.__extensions__ || {}),
-            [extension.name || ""]: {
-              ...contentPiece.customData?.__extensions__?.[extension.name || ""],
-              mediumId
-            }
-          }
-        }
+      await client.extension.updateContentPieceData({
+        contentPieceId: input.id,
+        data: { ...contentPiece.customData?.__extensions__?.[extension.name || ""], mediumId }
       });
     })
 });

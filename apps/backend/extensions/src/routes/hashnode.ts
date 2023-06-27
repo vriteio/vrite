@@ -277,18 +277,9 @@ const hashnodeRouter = router({
 
       const { hashnodeId } = await publishToHashnode(contentPiece, extension);
 
-      await client.contentPieces.update({
-        id: input.id,
-        customData: {
-          ...contentPiece.customData,
-          __extensions__: {
-            ...(contentPiece.customData?.__extensions__ || {}),
-            [extension.name || ""]: {
-              ...contentPiece.customData?.__extensions__?.[extension.name || ""],
-              hashnodeId
-            }
-          }
-        }
+      await client.extension.updateContentPieceData({
+        contentPieceId: input.id,
+        data: { ...contentPiece.customData?.__extensions__?.[extension.name || ""], hashnodeId }
       });
     })
 });

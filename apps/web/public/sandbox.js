@@ -77,21 +77,21 @@
   // ../../packages/sdk/javascript/dist/api.mjs
   var api_exports = {};
   __export(api_exports, {
-    createClient: () => W
+    createClient: () => C
   });
-  var import_isomorphic_unfetch, b, P, s, y, k, T, G, o, g, w, U, c, S, L, x, p, D, m, O, j, I, f, W;
+  var import_isomorphic_unfetch, b, y, o, k, G, T, g, s, w, U, S, c, L, x, D, p, O, m, j, I, h, f, C;
   var init_api = __esm({
     "../../packages/sdk/javascript/dist/api.mjs"() {
       import_isomorphic_unfetch = __toESM(require_browser(), 1);
       b = "/content-groups";
-      P = (t) => ({ list: () => t("GET", `${b}/list`), create: (r) => t("POST", `${b}`, { body: r }), update: (r) => t("PUT", `${b}`, { body: r }), delete: (r) => t("DELETE", `${b}`, { params: r }) });
-      s = "/content-pieces";
-      y = (t) => ({ get: (r) => t("GET", `${s}`, { params: r }), create: (r) => t("POST", `${s}`, { body: r }), update: (r) => t("PUT", `${s}`, { body: r }), delete: (r) => t("DELETE", `${s}`, { params: r }), list: (r) => t("GET", `${s}/list`, { params: r }) });
-      k = (t) => {
-        let r = t.baseURL || "https://api.vrite.io", e = t.extensionId || "", l = t.headers || {}, { token: u } = t;
-        return { sendRequest: async (a, h, i) => {
+      y = (r) => ({ list: () => r("GET", `${b}/list`), create: (t) => r("POST", `${b}`, { body: t }), update: (t) => r("PUT", `${b}`, { body: t }), delete: (t) => r("DELETE", `${b}`, { params: t }) });
+      o = "/content-pieces";
+      k = (r) => ({ get: (t) => r("GET", `${o}`, { params: t }), create: (t) => r("POST", `${o}`, { body: t }), update: (t) => r("PUT", `${o}`, { body: t }), delete: (t) => r("DELETE", `${o}`, { params: t }), list: (t) => r("GET", `${o}/list`, { params: t }) });
+      G = (r) => {
+        let t = r.baseURL || "https://api.vrite.io", e = r.extensionId || "", u = r.headers || {}, { token: l } = r;
+        return { sendRequest: async (a, d, i) => {
           try {
-            const n = await fetch(`${r}${h}/?${encodeURI(Object.entries(i?.params || {}).filter(([, $]) => $).map(([$, d]) => `${$}=${d}`).join("&"))}`, { headers: { Authorization: `Bearer ${u}`, Accept: "application/json", ...i?.body ? { "Content-Type": "application/json" } : {}, ...e ? { "X-Vrite-Extension-ID": e } : {}, ...l }, body: i?.body ? JSON.stringify(i.body) : null, method: a });
+            const n = await fetch(`${t}${d}/?${encodeURI(Object.entries(i?.params || {}).filter(([, $]) => $).map(([$, P]) => `${$}=${P}`).join("&"))}`, { headers: { Authorization: `Bearer ${l}`, Accept: "application/json", ...i?.body ? { "Content-Type": "application/json" } : {}, ...e ? { "X-Vrite-Extension-ID": e } : {}, ...u }, body: i?.body ? JSON.stringify(i.body) : null, method: a });
             let E = null;
             try {
               if (E = await n.json(), !E)
@@ -106,29 +106,29 @@
             throw console.error(n), n;
           }
         }, reconfigure: (a) => {
-          r = a.baseURL || r, u = a.token || u, e = a.extensionId || e, l = a.headers || l;
+          t = a.baseURL || t, l = a.token || l, e = a.extensionId || e, u = a.headers || u;
         } };
       };
       T = "/user-settings";
-      G = (t) => ({ get: () => t("GET", `${T}`), update: (r) => t("PUT", `${T}`, { body: r }) });
-      o = "/tags";
-      g = (t) => ({ get: (r) => t("GET", `${o}`, { params: r }), update: (r) => t("PUT", `${o}`, { body: r }), create: (r) => t("PUT", `${o}`, { body: r }), delete: (r) => t("DELETE", `${o}`, { params: r }), list: (r) => t("GET", `${o}/list`, { params: r }) });
-      w = "/profile";
-      U = (t) => ({ get: () => t("GET", `${w}`) });
+      g = (r) => ({ get: () => r("GET", `${T}`), update: (t) => r("PUT", `${T}`, { body: t }) });
+      s = "/tags";
+      w = (r) => ({ get: (t) => r("GET", `${s}`, { params: t }), update: (t) => r("PUT", `${s}`, { body: t }), create: (t) => r("PUT", `${s}`, { body: t }), delete: (t) => r("DELETE", `${s}`, { params: t }), list: (t) => r("GET", `${s}/list`, { params: t }) });
+      U = "/profile";
+      S = (r) => ({ get: () => r("GET", `${U}`) });
       c = "/webhooks";
-      S = (t) => ({ get: (r) => t("GET", `${c}`, { params: r }), create: (r) => t("POST", `${c}`, { body: r }), update: (r) => t("PUT", `${c}`, { body: r }), delete: (r) => t("DELETE", `${c}`, { params: r }), list: (r) => t("GET", `${c}/list`, { params: r }) });
-      L = "/workspace";
-      x = (t) => ({ get: () => t("GET", `${L}`) });
+      L = (r) => ({ get: (t) => r("GET", `${c}`, { params: t }), create: (t) => r("POST", `${c}`, { body: t }), update: (t) => r("PUT", `${c}`, { body: t }), delete: (t) => r("DELETE", `${c}`, { params: t }), list: (t) => r("GET", `${c}/list`, { params: t }) });
+      x = "/workspace";
+      D = (r) => ({ get: () => r("GET", `${x}`) });
       p = "/roles";
-      D = (t) => ({ get: (r) => t("GET", `${p}`, { params: r }), create: (r) => t("POST", `${p}`, { body: r }), update: (r) => t("PUT", `${p}`, { body: r }), delete: (r) => t("DELETE", `${p}`, { params: r }), list: (r) => t("GET", `${p}/list`, { params: r }) });
+      O = (r) => ({ get: (t) => r("GET", `${p}`, { params: t }), create: (t) => r("POST", `${p}`, { body: t }), update: (t) => r("PUT", `${p}`, { body: t }), delete: (t) => r("DELETE", `${p}`, { params: t }), list: (t) => r("GET", `${p}/list`, { params: t }) });
       m = "/workspace-settings";
-      O = (t) => ({ get: () => t("GET", `${m}`), update: (r) => t("PUT", `${m}`, { body: r }) });
-      j = (t) => ({ listMembers: (r) => t("GET", "/workspace-memberships/list-members", { params: r }), listWorkspaces: (r) => t("GET", "/workspace-memberships/list-workspaces", { params: r }), create: (r) => t("POST", "/workspace-memberships", { body: r }), update: (r) => t("PUT", "/workspace-memberships", { body: r }), delete: (r) => t("DELETE", "/workspace-memberships", { params: r }) });
-      I = "/extension";
-      f = (t) => ({ get: () => t("GET", `${I}`) });
-      W = (t) => {
-        const { sendRequest: r, reconfigure: e } = k(t);
-        return { contentGroups: P(r), contentPieces: y(r), tags: g(r), profile: U(r), userSettings: G(r), webhooks: S(r), workspace: x(r), roles: D(r), workspaceSettings: O(r), workspaceMemberships: j(r), extension: f(r), reconfigure: e };
+      j = (r) => ({ get: () => r("GET", `${m}`), update: (t) => r("PUT", `${m}`, { body: t }) });
+      I = (r) => ({ listMembers: (t) => r("GET", "/workspace-memberships/list-members", { params: t }), listWorkspaces: (t) => r("GET", "/workspace-memberships/list-workspaces", { params: t }), create: (t) => r("POST", "/workspace-memberships", { body: t }), update: (t) => r("PUT", "/workspace-memberships", { body: t }), delete: (t) => r("DELETE", "/workspace-memberships", { params: t }) });
+      h = "/extension";
+      f = (r) => ({ get: () => r("GET", `${h}`), updateContentPieceData: (t) => r("POST", `${h}/content-piece-data`, { body: t }) });
+      C = (r) => {
+        const { sendRequest: t, reconfigure: e } = G(r);
+        return { contentGroups: y(t), contentPieces: k(t), tags: w(t), profile: S(t), userSettings: g(t), webhooks: L(t), workspace: D(t), roles: O(t), workspaceSettings: j(t), workspaceMemberships: I(t), extension: f(t), reconfigure: e };
       };
     }
   });

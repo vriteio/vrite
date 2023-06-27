@@ -2,13 +2,7 @@
   "name": "medium",
   "displayName": "Medium",
   "description": "Automatically publish articles to Medium",
-  "permissions": [
-    "contentGroups:read",
-    "contentPieces:read",
-    "contentPieces:write",
-    "webhooks:read",
-    "webhooks:write"
-  ],
+  "permissions": ["contentGroups:read", "contentPieces:read", "webhooks:read", "webhooks:write"],
   "lifecycle": {
     "on:install": "install",
     "on:uninstall": "uninstall",
@@ -27,13 +21,30 @@
       "slot:": "Your Medium Integration token. You can generate one in the [**Security and apps** section](https://medium.com/me/settings/security) of your account settings page"
     },
     {
-      "component": "Field[type=select][color=contrast]",
+      "component": "Show",
       "props": {
-        "label": "Content group",
-        "bind:options": "temp.lockedContentGroups",
-        "bind:value": "config.contentGroupId"
+        "bind:value": "config.autoPublish"
       },
-      "slot:": "Select a content group to enable the extension for. New posts will be auto-published when added to the group. Only **locked** content groups are allowed."
+      "slot:true": [
+        {
+          "component": "Field[type=select][color=contrast]",
+          "props": {
+            "label": "Content group",
+            "bind:options": "temp.lockedContentGroups",
+            "bind:value": "config.contentGroupId"
+          },
+          "slot:": "Select a content group to auto-publish from, when content pieces are moved to it. Only **locked** content groups are allowed."
+        },
+
+        {
+          "component": "Field[type=checkbox][color=contrast]",
+          "props": {
+            "label": "Require canonical link",
+            "bind:value": "config.requireCanonicalLink"
+          },
+          "slot:": "Don't auto-publish when no canonical link is set"
+        }
+      ]
     },
     {
       "component": "Field[type=checkbox][color=contrast]",
@@ -50,14 +61,6 @@
         "bind:value": "config.draft"
       },
       "slot:": "whether the article should have the draft status by default"
-    },
-    {
-      "component": "Field[type=checkbox][color=contrast]",
-      "props": {
-        "label": "Require canonical link",
-        "bind:value": "config.requireCanonicalLink"
-      },
-      "slot:": "Don't auto-publish when no canonical link is set"
     }
   ],
   "contentPieceView": {

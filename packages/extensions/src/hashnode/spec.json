@@ -2,13 +2,7 @@
   "name": "hashnode",
   "displayName": "Hashnode",
   "description": "Automatically publish and update articles on Hashnode",
-  "permissions": [
-    "contentGroups:read",
-    "contentPieces:read",
-    "contentPieces:write",
-    "webhooks:read",
-    "webhooks:write"
-  ],
+  "permissions": ["contentGroups:read", "contentPieces:read", "webhooks:read", "webhooks:write"],
   "lifecycle": {
     "on:install": "install",
     "on:uninstall": "uninstall",
@@ -27,15 +21,6 @@
       "slot:": "Your Hashnode API Access Token. You can generate one in the [Developer Settings](https://hashnode.com/settings/developer), of your Hashnode account"
     },
     {
-      "component": "Field[type=select][color=contrast]",
-      "props": {
-        "label": "Content group",
-        "bind:options": "temp.lockedContentGroups",
-        "bind:value": "config.contentGroupId"
-      },
-      "slot:": "Select a content group to enable the extension for. New or updated posts will be auto-published when added to the group. Only **locked** content groups are allowed."
-    },
-    {
       "component": "Field[type=text][color=contrast]",
       "props": {
         "label": "Publication ID",
@@ -44,20 +29,37 @@
       "slot:": "ID of the Hashnode publication/blog you are in and want to publish your posts to. You can find the publication ID in the URL (in form of **hashnode.com/[id]/dashboard**) when visiting your publication's dashboard."
     },
     {
+      "component": "Show",
+      "props": {
+        "bind:value": "config.autoPublish"
+      },
+      "slot:true": [
+        {
+          "component": "Field[type=select][color=contrast]",
+          "props": {
+            "label": "Content group",
+            "bind:options": "temp.lockedContentGroups",
+            "bind:value": "config.contentGroupId"
+          },
+          "slot:": "Select a content group to auto-publish from, when content pieces are moved to it. Only **locked** content groups are allowed."
+        },
+        {
+          "component": "Field[type=checkbox][color=contrast]",
+          "props": {
+            "label": "Require canonical link",
+            "bind:value": "config.requireCanonicalLink"
+          },
+          "slot:": "Don't auto-publish when no canonical link is set"
+        }
+      ]
+    },
+    {
       "component": "Field[type=checkbox][color=contrast]",
       "props": {
         "label": "Auto publish",
         "bind:value": "config.autoPublish"
       },
       "slot:": "Publish posts automatically"
-    },
-    {
-      "component": "Field[type=checkbox][color=contrast]",
-      "props": {
-        "label": "Require canonical link",
-        "bind:value": "config.requireCanonicalLink"
-      },
-      "slot:": "Don't auto-publish when no canonical link is set"
     }
   ],
   "contentPieceView": {

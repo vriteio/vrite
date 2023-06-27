@@ -4,7 +4,7 @@ const initContentPieceView = async (context: ExtensionContentPieceViewContext): 
   context.setTemp({
     buttonLabel: context.data.devId ? "Update" : "Publish",
     disabled:
-      !context.config.apiKey || !context.config.contentGroupId || context.contentPiece.locked,
+      !context.config.apiKey || (context.config.autoPublish && !context.config.contentGroupId),
     $loading: false
   });
 

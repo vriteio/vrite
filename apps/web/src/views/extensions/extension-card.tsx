@@ -28,7 +28,10 @@ const ExtensionCard: Component<ExtensionCardProps> = (props) => {
           label={props.installed ? "Configure" : "Install"}
           onClick={async () => {
             if (props.extension.id) {
-              props.setOpenedExtension(props.extension);
+              props.setOpenedExtension({
+                ...props.extension,
+                config: { ...props.extension.config }
+              });
             } else {
               const { id, token } = await client.extensions.install.mutate({
                 extension: {

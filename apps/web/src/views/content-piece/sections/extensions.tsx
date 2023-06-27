@@ -6,10 +6,10 @@ import {
   ExtensionSpec
 } from "@vrite/extensions";
 import { Loader, Tooltip, Card } from "#components/primitives";
-import { App, ExtensionDetails, useExtensionsContext } from "#context";
+import { App, ExtensionDetails, useClientContext, useExtensionsContext } from "#context";
 import { ViewContextProvider, ViewRenderer } from "#lib/extensions";
 import clsx from "clsx";
-import { createStore, reconcile } from "solid-js/store";
+import { createStore, reconcile, unwrap } from "solid-js/store";
 
 interface ExtensionsSectionProps {
   contentPiece: App.ExtendedContentPieceWithAdditionalData<"locked" | "coverWidth">;
@@ -39,6 +39,7 @@ const ExtensionIcon: Component<ExtensionIconProps> = (props) => {
   );
 };
 const ExtensionsSection: Component<ExtensionsSectionProps> = (props) => {
+  const { client } = useClientContext();
   const { installedExtensions } = useExtensionsContext();
   const extensionsWithContentPieceView = createMemo(() => {
     return installedExtensions().filter((extension) => {
@@ -126,19 +127,10 @@ const ExtensionsSection: Component<ExtensionsSectionProps> = (props) => {
                     setData(keyOrObject);
                   }
 
-                  if (props.contentPiece.locked) return;
-
-                  props.setCustomData({
-                    ...(props.contentPiece.customData || {}),
-                    __extensions__: {
-                      ...(props.contentPiece.customData?.__extensions__ || {}),
-                      [activeExtension()!.spec.name || ""]: {
-                        ...(props.contentPiece.customData?.__extensions__?.[
-                          activeExtension()!.spec.name || ""
-                        ] || {}),
-                        ...extensionDataUpdate
-                      }
-                    }
+                  client.extensions.updateContentPieceData.mutate({
+                    contentPieceId: props.contentPiece.id,
+                    extensionId: activeExtension()!.id,
+                    data: unwrap(data)
                   });
                 }}
               >

@@ -16,12 +16,16 @@ interface Extension {
 }
 interface ExtensionEndpoints {
   get(): Promise<Partial<Extension>>;
+  updateContentPieceData(input: { contentPieceId: string; data: ContextObject }): Promise<void>;
 }
 
 const basePath = "/extension";
 const createExtensionEndpoints = (sendRequest: SendRequest): ExtensionEndpoints => ({
   get: () => {
     return sendRequest<Partial<Extension>>("GET", `${basePath}`);
+  },
+  updateContentPieceData: (input) => {
+    return sendRequest("POST", `${basePath}/content-piece-data`, { body: input });
   }
 });
 

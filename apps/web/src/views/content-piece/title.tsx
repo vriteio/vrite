@@ -12,7 +12,7 @@ const ContentPieceTitle: Component<ContentPieceTitleProps> = (props) => {
     <MiniEditor
       content="paragraph"
       readOnly={props.editable === false}
-      initialValue={props.initialTitle}
+      initialValue={props.editable ? props.initialTitle : "[No title]"}
       onBlur={(editor) => {
         props.setTitle(editor.getText());
       }}

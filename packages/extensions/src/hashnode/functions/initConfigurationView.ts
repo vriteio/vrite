@@ -15,11 +15,11 @@ const configure = async (context: ExtensionConfigurationViewContext): Promise<vo
 
   context.setTemp("lockedContentGroups", lockedContentGroups);
 
-  if (!context.config.contentGroupId && lockedContentGroups.length > 0) {
-    context.setConfig("contentGroupId", lockedContentGroups[0].value);
-  }
   if (typeof context.config.autoPublish !== "boolean") {
     context.setConfig("autoPublish", true);
+  }
+  if (!context.config.contentGroupId && lockedContentGroups.length > 0) {
+    context.setConfig("contentGroupId", lockedContentGroups[0].value);
   }
 };
 

@@ -221,18 +221,10 @@ const devRouter = router({
       if (extension.config?.requireCanonicalLink && !contentPiece.canonicalLink) return;
 
       const { devId } = await publishToDEV(contentPiece, extension);
-      await client.contentPieces.update({
-        id: input.id,
-        customData: {
-          ...contentPiece.customData,
-          __extensions__: {
-            ...(contentPiece.customData?.__extensions__ || {}),
-            [extension.name || ""]: {
-              ...contentPiece.customData?.__extensions__?.[extension.name || ""],
-              devId
-            }
-          }
-        }
+
+      await client.extension.updateContentPieceData({
+        contentPieceId: input.id,
+        data: { ...contentPiece.customData?.__extensions__?.[extension.name || ""], devId }
       });
     })
 });
