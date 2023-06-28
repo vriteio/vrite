@@ -45,7 +45,7 @@ Learn more about all features of Vrite and how to use them from the [official Us
 - 🙋‍♀️ [**Request a feature**](https://github.com/vriteio/vrite/discussions)
 - 💬 [**Join Discord**](https://discord.gg/yYqDWyKnqE)
 - 🐦 [**Follow on Twitter**](https://twitter.com/vriteio)
-- 💼 [**Follow on LinkedIn**](https://www.linkedin.com/company/vriteio)
+- 💼 [**Follow on LinkedIn**](https://www.linkedin.com/company/vrite)
 
 ## License
 
