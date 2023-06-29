@@ -1,6 +1,8 @@
 ---
 import { DefaultLayout } from "#components/layouts";
+import { APIDocs } from "#components/fragments";
 import { getEntry, getCollection } from "astro:content";
+import { marked } from "marked";
 
 let { slug } = Astro.params;
 
@@ -27,5 +29,10 @@ const previousEntry = collection[entryIndex - 1];
   nextEntry={nextEntry}
   previousEntry={previousEntry}
 >
-  <Content />
+  <p
+    set:html={marked.parseInline(
+      `**Content pieces** are at the heart of Vrite - all content you create, as well as all the related metadata is stored across many content pieces.`
+    )}
+  />
+  <APIDocs />
 </DefaultLayout>

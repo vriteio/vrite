@@ -5,7 +5,10 @@
   "types": "./src/index.ts",
   "dependencies": {
     "@floating-ui/dom": "^0.5.4",
+    "@mdi/js": "^7.2.96",
     "clsx": "^1.2.1",
+    "monaco-editor": "^0.33.0",
+    "nanoid": "^4.0.0",
     "solid-js": "^1.7.0"
   }
 }

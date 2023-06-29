@@ -5,7 +5,7 @@ import { UnderscoreID, zodId } from "#lib/mongo";
 import { Profile, profile } from "./users";
 
 const contentPiece = z.object({
-  id: zodId(),
+  id: zodId().describe("Content piece ID"),
   date: z.string().optional().nullable().describe("ISO date"),
   title: z.string().describe("Title"),
   description: z.string().optional().nullable().describe("HTML-formatted description"),

@@ -146,7 +146,13 @@ const contentGroupsRouter = router({
     }),
   list: authenticatedProcedure
     .meta({
-      openapi: { method: "GET", path: `${basePath}/list`, protect: true },
+      openapi: {
+        method: "GET",
+        path: `${basePath}/list`,
+        protect: true,
+        summary: "Retrieve All Content Groups",
+        description: "Retrieves all content groups with their names and IDs."
+      },
       permissions: { token: ["contentGroups:read"] }
     })
     .input(z.void())

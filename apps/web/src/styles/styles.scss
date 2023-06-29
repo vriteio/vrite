@@ -110,11 +110,6 @@
   font-kerning: none;
   :where(h1, h2, h3, h4, h5, h6):not(:where(.not-prose, .not-prose *)) {
     &::before,
-    &::before,
-    &::before,
-    &::before,
-    &::before,
-    &::before,
     .open-slash-menu > button {
       @apply font-bold dark:bg-gray-900 dark:border-gray-700;
       position: absolute;

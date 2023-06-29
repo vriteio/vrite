@@ -14,7 +14,8 @@
     "@trpc/server": "^10.9.1",
     "@vrite/backend": "workspace:*",
     "fastify": "^4.17.0",
-    "trpc-openapi": "^1.1.2"
+    "remove": "^0.1.5",
+    "trpc-openapi": "^1.2.0"
   },
   "devDependencies": {
     "@vrite/scripts": "workspace:*"

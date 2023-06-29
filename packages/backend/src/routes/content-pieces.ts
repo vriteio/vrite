@@ -130,24 +130,38 @@ const authenticatedProcedure = procedure.use(isAuthenticated);
 const contentPiecesRouter = router({
   get: authenticatedProcedure
     .meta({
-      openapi: { method: "GET", path: basePath, protect: true },
+      openapi: {
+        method: "GET",
+        path: basePath,
+        protect: true,
+        example: {
+          request: { id: "5f9b2c7b9d9d8e1d9c9d9d9d", content: true, description: "text" }
+        },
+        summary: "Retrieve Full Content Piece",
+        description:
+          "Retrieves detailed information on a single, content piece, including detailed tags information and, optionally, its full content - in HTML or JSON format."
+      },
       permissions: { token: ["contentPieces:read"] }
     })
     .input(
       z.object({
-        id: zodId(),
-        content: z.boolean().default(false),
-        description: z.enum(["html", "text"]).default("html")
+        id: zodId().describe("Content piece ID"),
+        content: z.boolean().default(false).describe("Whether to include the content or not"),
+        description: z.enum(["html", "text"]).default("html").describe("Content description format")
       })
     )
     .output(
       contentPiece.omit({ tags: true }).extend({
-        tags: z.array(tag),
-        members: z.array(contentPieceMember),
-        slug: z.string(),
-        locked: z.boolean(),
-        coverWidth: z.string().optional(),
-        content: z.record(z.string(), z.any()).optional()
+        tags: z.array(tag).describe("Content piece tags"),
+        members: z.array(contentPieceMember).describe("Content piece members"),
+        slug: z.string().describe("Content piece slug"),
+        locked: z
+          .boolean()
+          .describe(
+            "Whether the content piece is locked or not (assigned to locked content group)"
+          ),
+        coverWidth: z.string().optional().describe("Content piece cover width"),
+        content: z.record(z.string(), z.any()).optional().describe("Content piece content")
       })
     )
     .query(async ({ ctx, input }) => {

@@ -1,7 +1,7 @@
 import { mdiGithub, mdiTwitter } from "@mdi/js";
 import type { Component } from "solid-js";
 import { Button, IconButton } from "#components/primitives";
-import { discordIcon } from "#icons";
+import { discordIcon } from "#assets/icons";
 
 const Header: Component = () => {
   return (

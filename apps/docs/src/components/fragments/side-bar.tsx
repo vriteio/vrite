@@ -7,23 +7,57 @@ import {
   mdiLightbulb,
   mdiTwitter,
   mdiLanguageJavascript,
-  mdiServer
+  mdiServer,
+  mdiApi,
+  mdiTransitConnectionVariant
 } from "@mdi/js";
 import clsx from "clsx";
-import { Component, For } from "solid-js";
+import { Component, For, JSX } from "solid-js";
 import { menuOpened, setMenuOpened } from "#lib/state";
 import { Card, Button, IconButton } from "#components/primitives";
-import { discordIcon } from "#icons";
-import { logoIcon } from "#icons/logo";
+import { discordIcon } from "#assets/icons";
+import { logoIcon } from "#assets/icons/logo";
 
 interface SideBarProps {
-  menu: Array<{ title: string; link: string }>;
+  usageGuideMenu: Array<{ title: string; link: string }>;
+  apiDocsMenu: Array<{ title: string; link: string }>;
   currentPath: string;
 }
 
-const apiDocsLink = "https://generator.swagger.io/?url=https://api.vrite.io/swagger.json";
+const apiDocsLink = "/api";
 const jsSDKLink = "/javascript-sdk";
 const selfHostingLink = "/self-hosting";
+const SideBarNestedMenu: Component<{
+  menu: Array<{ title: string; link: string }>;
+  currentPath: string;
+  children: JSX.Element;
+}> = (props) => {
+  return (
+    <div class="flex flex-col w-full">
+      {props.children}
+      <div class="flex flex-1 w-full pl-4 mt-2">
+        <div class="w-0.5 bg-gray-200 dark:bg-gray-700 mr-2 rounded-full"></div>
+        <div class="flex-1 flex flex-col gap-2">
+          <For each={props.menu}>
+            {(item) => {
+              return (
+                <Button
+                  variant="text"
+                  class="text-start w-full m-0"
+                  text={item.link === props.currentPath ? "base" : "soft"}
+                  color={item.link === props.currentPath ? "primary" : "base"}
+                  link={item.link}
+                >
+                  {item.title}
+                </Button>
+              );
+            }}
+          </For>
+        </div>
+      </div>
+    </div>
+  );
+};
 const SideBar: Component<SideBarProps> = (props) => {
   return (
     <>
@@ -44,7 +78,7 @@ const SideBar: Component<SideBarProps> = (props) => {
           />
           <span class="flex-1 text-2xl font-extrabold text-gray-600 dark:text-gray-200">rite</span>
         </div>
-        <div class="flex flex-col w-full">
+        <SideBarNestedMenu currentPath={props.currentPath} menu={props.usageGuideMenu}>
           <IconButton
             variant="text"
             class="justify-start w-full font-bold m-0"
@@ -54,27 +88,18 @@ const SideBar: Component<SideBarProps> = (props) => {
             badge
             hover={false}
           />
-          <div class="flex flex-1 w-full pl-4 mt-2">
-            <div class="w-0.5 bg-gray-200 dark:bg-gray-700 mr-2 rounded-full"></div>
-            <div class="flex-1 flex flex-col gap-2">
-              <For each={props.menu}>
-                {(item) => {
-                  return (
-                    <Button
-                      variant="text"
-                      class="text-start w-full m-0"
-                      text={item.link === props.currentPath ? "base" : "soft"}
-                      color={item.link === props.currentPath ? "primary" : "base"}
-                      link={item.link}
-                    >
-                      {item.title}
-                    </Button>
-                  );
-                }}
-              </For>
-            </div>
-          </div>
-        </div>
+        </SideBarNestedMenu>
+        <SideBarNestedMenu currentPath={props.currentPath} menu={props.apiDocsMenu}>
+          <IconButton
+            variant="text"
+            class="justify-start w-full font-bold m-0"
+            text="soft"
+            label="API Documentation"
+            path={mdiTransitConnectionVariant}
+            badge
+            hover={false}
+          />
+        </SideBarNestedMenu>
         <IconButton
           variant="text"
           class="justify-start w-full font-bold m-0"
@@ -92,15 +117,6 @@ const SideBar: Component<SideBarProps> = (props) => {
           label="Self-hosting Vrite"
           path={mdiServer}
           link={selfHostingLink}
-        />
-        <IconButton
-          variant="text"
-          class="justify-start w-full font-bold m-0"
-          text="soft"
-          label="API Documentation"
-          path={mdiLinkVariant}
-          link={apiDocsLink}
-          target="_blank"
         />
         <IconButton
           link="https://github.com/vriteio/vrite"
@@ -140,7 +156,7 @@ const SideBar: Component<SideBarProps> = (props) => {
         size="large"
         color={menuOpened() ? "contrast" : "base"}
         text="soft"
-        class="fixed bottom-4 right-4 z-50 md:hidden"
+        class="fixed bottom-4 right-4 z-50 md:hidden bg-gray-800 hover:bg-gray-700 text-gray-50 hover:text-gray-50 dark:bg-gray-200 dark:hover:bg-gray-300 dark:text-gray-900 dark:hover:text-gray-900"
         onClick={() => {
           setMenuOpened(!menuOpened());
         }}

@@ -50,7 +50,7 @@
     "nanoid": "^4.0.0",
     "open-graph-scraper": "^5.0.4",
     "otpauth": "^9.1.1",
-    "trpc-openapi": "^1.1.2",
+    "trpc-openapi": "^1.2.0",
     "typescript": "^4.9.5",
     "url-slug": "^3.0.4",
     "y-prosemirror": "^1.2.0",

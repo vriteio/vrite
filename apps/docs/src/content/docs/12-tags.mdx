@@ -1,0 +1,183 @@
+---
+title: Tags
+category: API Documentation
+slug: api/tags
+---
+
+import { EndpointCard } from "../../components/fragments/endpoint-card.tsx";
+
+**Tags** are used as a part of [content pieces'](/docs#using-api-content-pieces) metadata to allow better organization and categorization of the content.
+
+## Retrieve Tag
+
+Retrieves tag information by `id` or/and `value` (parsed tag label). Returns object where `tag` property either contains tag's details or is `null`.
+
+<EndpointCard
+  client:only
+  method="GET"
+  endpoint="/tags"
+  parameters={[
+    {
+      name: "id",
+      type: `string`,
+      description: "Tag ID"
+    },
+    {
+      name: "value",
+      type: `string`,
+      description: "Tag value"
+    }
+  ]}
+  responseExamples={[
+    {
+      data: {
+        tag: {
+          value: "tag_label",
+          label: "Tag Label",
+          color: "#ffffff",
+          id: "63efc451cf034ba9ca007e47"
+        }
+      },
+      name: "Success",
+      id: "success"
+    },
+    {
+      data: {
+        tag: null
+      },
+      name: "Not found",
+      id: "not-found"
+    }
+  ]}
+/>
+
+## Retrieve Multiple Tags
+
+Retrieves information on multiple tags with pagination and ability to filter by color.
+
+<EndpointCard
+  client:only
+  method="GET"
+  endpoint="/tags/list"
+  parameters={[
+    {
+      name: "color",
+      type: "string",
+      description: `HEX-encoded (e.g. "#ffffff") color to filter tags by.`,
+      default: "#000000"
+    },
+    {
+      name: "perPage",
+      type: `number`,
+      description: "Max number of tags returned in one request.",
+      default: 20
+    },
+    {
+      name: "page",
+      type: `number`,
+      description: "Page of the results.",
+      default: 1
+    }
+  ]}
+  responseExamples={[
+    {
+      data: [
+        {
+          value: "tag_label",
+          label: "Tag Label",
+          color: "#ffffff",
+          id: "63efc451cf034ba9ca007e47"
+        }
+      ],
+      name: "Success",
+      id: "success"
+    },
+    {
+      data: {
+        message: "Input validation failed",
+        code: "BAD_REQUEST",
+        issues: [
+          {
+            validation: "regex",
+            code: "invalid_string",
+            message: "Invalid",
+            path: ["color"]
+          }
+        ]
+      },
+      name: "Bad request",
+      id: "bad-request"
+    }
+  ]}
+/>
+
+## Create or Update a Tag
+
+Provided an ID (or tag value) and additional data, it updates the matching tag with the provided information. If no matching tag is found or
+no ID/value is provided, a new tag is created.
+
+<EndpointCard
+  client:only
+  method="PUT"
+  endpoint="/tags"
+  body={{
+    schema: "/tags/schema",
+    example: {
+      label: "New tag",
+      color: "#ff0000"
+    }
+  }}
+  responseExamples={[
+    { data: { id: "63efc451cf034ba9ca007e47" }, name: "Success", id: "success" },
+    { data: {
+      "message": "Input validation failed",
+      "code": "BAD_REQUEST",
+      "issues": [
+        {
+          "code": "invalid_type",
+          "expected": "string",
+          "received": "undefined",
+          "path": [
+            "label"
+          ],
+          "message": "Required"
+        }
+      ]
+    },
+    name: "Bad request",
+    id: "bad-request"
+    }
+  ]}
+
+/>
+
+## Delete Tag
+
+Provided an ID, deletes matching tag and returns the ID. If no matching tag is found (and deleted)
+it returns `null`.
+
+<EndpointCard
+  client:only
+  method="DELETE"
+  endpoint="/tags"
+  responseExamples={[
+    { data: { id: "63efc451cf034ba9ca007e47" }, name: "Success", id: "success" },
+    { 
+      data: {
+        "message": "Input validation failed",
+        "code": "BAD_REQUEST",
+        "issues": [
+          {
+            "code": "custom",
+            "message": "One of value or id is required",
+            "path": []
+          }
+        ]
+      },
+      name:"Bad request",
+      id:"bad-request"
+    }
+  ]}
+  parameters={[{ name: "id", type: "string", description: "ID of the tag to remove", required:true }]}
+
+/>

@@ -1,0 +1,72 @@
+---
+import { compile } from "json-schema-to-typescript";
+import EndpointCard from "./endpoint-card.astro";
+
+const response = await fetch("http://localhost:4444/swagger.json");
+const openApi = await response.json();
+const basePath = "/content-pieces";
+const definitions = await Promise.all(
+    Object.entries(openApi.paths)
+        .filter(([path]) => {
+            if (path.startsWith(basePath)) {
+                return true;
+            }
+        })
+        .flatMap(([path, data]: [string, any]) => {
+            return Object.entries(data).map(async ([method, definition]: [string, any]) => {
+                let responseTS = await compile(
+                    definition.responses[200].content["application/json"].schema,
+                    "APIResponse",
+                    {
+                        bannerComment: "",
+                        declareExternallyReferenced: true
+                    }
+                );
+                let requestBodyTS = "";
+
+                if (definition.requestBody) {
+                    requestBodyTS = await compile(
+                        definition.requestBody.content["application/json"].schema,
+                        "APIRequestBody",
+                        {
+                            bannerComment: "",
+                            declareExternallyReferenced: true
+                        }
+                    );
+                }
+
+                requestBodyTS = requestBodyTS.replace(/"null"/, "null").replace(/export /, "");
+                responseTS = responseTS.replace(/"null"/, "null").replace(/export /, "");
+
+                return {
+                    method: method.toUpperCase(),
+                    summary: definition.summary,
+                    description: definition.description,
+                    endpoint: path,
+                    parameters: definition.parameters,
+                    response: responseTS,
+                    requestBody: requestBodyTS,
+                    example: definition.example
+                };
+            });
+        })
+);
+---
+
+{
+    definitions.map((definition) => (
+        <>
+            <h2>{definition.summary}</h2>
+            <p>{definition.description}</p>
+            <EndpointCard
+                method={definition.method}
+                endpoint={definition.endpoint}
+                parameters={definition.parameters}
+                response={definition.response}
+                requestBody={definition.requestBody}
+                example={definition.example}
+            />
+        </>
+    ))
+}
+<slot />

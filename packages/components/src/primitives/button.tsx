@@ -41,7 +41,7 @@ const buttonColorsVariants = {
   successText: ` :base-2: text-green-500 dark:text-green-500`
 };
 const buttonColorsVariantsHover = {
-  primaryText: ` :base-2: hover:font-medium hover:text-current hover:bg-clip-border hover:text-white dark:hover:text-current dark:hover:bg-clip-border dark:hover:text-white`,
+  primaryText: ` :base-2: hover:font-bold hover:text-current hover:bg-clip-border hover:text-white dark:hover:text-current dark:hover:bg-clip-border dark:hover:text-white`,
   dangerText: ` :base-2: hover:font-medium hover:text-white hover:bg-red-600 dark:hover:bg-red-600 dark:hover:text-white`,
   successText: ` :base-2: hover:font-medium hover:text-white hover:bg-green-600 dark:hover:bg-green-600 dark:hover:text-white`
 };

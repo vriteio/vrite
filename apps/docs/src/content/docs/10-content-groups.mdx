@@ -1,0 +1,114 @@
+---
+title: Content Groups
+category: API Documentation
+slug: api/content-groups
+---
+
+import { EndpointCard } from "../../components/fragments/endpoint-card.tsx";
+
+In Vrite, **content groups** are used to group [content pieces](/docs#using-api-content-pieces) together, for the purpose of better content management and more organized content delivery. In the kanban UI a content group is equivalent to a **single column**.
+
+## Retrieve All Content Groups
+
+Retrieves all content groups with their names and IDs.
+
+<EndpointCard
+  client:only
+  method="GET"
+  endpoint="/content-groups/list"
+  responseExamples={[
+    {
+      data: [
+        { id: "63efc451cf034ba9ca007e47", name: "Drafts" },
+        { id: "63efc450cf054bc9fa007e47", name: "Published" }
+      ],
+      name: "Success",
+      id: "success"
+    },
+    {
+      data: {
+        message: "unauthorized",
+        code: "UNAUTHORIZED"
+      },
+      name: "Unauthorized",
+      id: "unauthorized"
+    }
+  ]}
+/>
+
+## Create or Update Content Group
+
+Provided an ID and additional data, updates the content group's name. If no matching group is found, or no ID is provided, a new one is created.
+
+<EndpointCard
+  client:only
+  method="PUT"
+  endpoint="/content-groups"
+  body={{
+    schema: "/content-groups/schema",
+    example: {
+      id: "63efc451cf034ba9ca007e47",
+      name: `Work In Progress`
+    }
+  }}
+  responseExamples={[
+    {
+      data: { id: "63efc451cf034ba9ca007e47" },
+      name: "Success",
+      id: "success"
+    },
+    {
+      data: {
+        message: "Input validation failed",
+        code: "BAD_REQUEST",
+        issues: [
+          {
+            code: "invalid_type",
+            expected: "string",
+            received: "undefined",
+            path: ["name"],
+            message: "Required"
+          }
+        ]
+      },
+      name: "Bad request",
+      id: "bad-request"
+    }
+  ]}
+/>
+
+## Delete Content Group
+
+Provided an ID, deletes the content group and returns its ID. If no matching column is found (and deleted) it returns `null`.
+
+<EndpointCard
+  client:only
+  method="DELETE"
+  endpoint="/content-groups"
+  parameters={[
+    { name: "id", type: "string", description: "ID of the content group to remove", required: true }
+  ]}
+  responseExamples={[
+    {
+      data: { id: "63efc451cf034ba9ca007e47" },
+      name: "Success",
+      id: "success"
+    },
+    {
+      data: {
+        message: "Input validation failed",
+        code: "BAD_REQUEST",
+        issues: [
+          {
+            validation: "regex",
+            code: "invalid_string",
+            message: "invalid id",
+            path: ["id"]
+          }
+        ]
+      },
+      name: "Bad request",
+      id: "bad-request"
+    }
+  ]}
+/>
