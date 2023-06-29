@@ -179,44 +179,46 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
           <span class="flex-1 text-2xl font-extrabold text-gray-600 dark:text-gray-200">rite</span>
         </div>
         <div class="flex-1" />
-        <Show when={references.editor}>
-          <StatsMenu editor={references.editor!} />
-          <ExportMenu content={references.editor!.getJSON() as JSONContent} />
-        </Show>
-        <IconButton
-          onClick={() => {
-            setStorage((storage) => ({ ...storage, zenMode: true }));
-          }}
-          class="m-0"
-          variant="text"
-          text="soft"
-          path={mdiFullscreen}
-          label="Zen mode"
-        />
-        <Tooltip text="Usage guide" class="mt-1">
+        <div class="gap-2 hidden lg:flex">
+          <Show when={references.editor}>
+            <StatsMenu editor={references.editor!} />
+            <ExportMenu content={references.editor!.getJSON() as JSONContent} />
+          </Show>
           <IconButton
-            path={mdiBookOpenBlankVariant}
+            onClick={() => {
+              setStorage((storage) => ({ ...storage, zenMode: true }));
+            }}
             class="m-0"
             variant="text"
             text="soft"
-            link="https://docs.vrite.io/content-editor"
-            target="_blank"
+            path={mdiFullscreen}
+            label="Zen mode"
           />
-        </Tooltip>
+          <Tooltip text="Usage guide" class="mt-1">
+            <IconButton
+              path={mdiBookOpenBlankVariant}
+              class="m-0"
+              variant="text"
+              text="soft"
+              link="https://docs.vrite.io/content-editor"
+              target="_blank"
+            />
+          </Tooltip>
 
-        <Tooltip text="Star on GitHub" class="mt-1">
-          <IconButton
-            class="m-0"
-            link="https://github.com/vriteio/vrite"
-            path={mdiGithub}
-            variant="text"
-            text="soft"
-            target="_blank"
-          ></IconButton>
-        </Tooltip>
-        <Button color="primary" link="https://app.vrite.io" class="m-0">
-          Sign in
-        </Button>
+          <Tooltip text="Star on GitHub" class="mt-1">
+            <IconButton
+              class="m-0"
+              link="https://github.com/vriteio/vrite"
+              path={mdiGithub}
+              variant="text"
+              text="soft"
+              target="_blank"
+            ></IconButton>
+          </Tooltip>
+          <Button color="primary" link="https://app.vrite.io" class="m-0">
+            Sign in
+          </Button>
+        </div>
       </div>
     );
   },

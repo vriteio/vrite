@@ -48,7 +48,10 @@ const SecuredLayout: ParentComponent = (props) => {
           >
             <SidebarMenu />
           </Show>
-          <div class="flex flex-col flex-1 h-full overflow-hidden" id="main-scrollable-container">
+          <div
+            class="flex flex-col flex-1 h-[calc(100%-3.5rem)] md:h-full overflow-hidden"
+            id="main-scrollable-container"
+          >
             <div class="flex flex-1 h-full">
               <Show when={!storage().zenMode}>
                 <SidePanel />

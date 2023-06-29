@@ -48,31 +48,11 @@ if (container) {
                     </div>
                   }
                 >
-                  <div class="relative hidden h-screen lg:flex">
+                  <div class="relative h-screen flex">
                     <SVGDefs />
                     <App />
                   </div>
                 </Show>
-                <div class="flex flex-col items-center justify-center w-full h-full lg:hidden">
-                  <div class="flex flex-col items-center justify-center">
-                    <IconButton
-                      path={logoIcon}
-                      color="primary"
-                      class="w-16 h-16 m-0 rounded-2xl"
-                      iconProps={{ class: "h-12 w-12" }}
-                      badge
-                    />
-                    <div class="flex flex-col gap-1 mt-3 text-center max-w-72">
-                      <p class="font-semibold">
-                        We're sorry but Vrite currently doesn't support small viewports.
-                      </p>
-
-                      <p class="text-sm text-gray-500 dark:text-gray-400">
-                        Please resize your browser window or visit Vrite from a desktop browser.
-                      </p>
-                    </div>
-                  </div>
-                </div>
               </UIContextProvider>
             </NotificationsProvider>
           </ConfirmationContextProvider>

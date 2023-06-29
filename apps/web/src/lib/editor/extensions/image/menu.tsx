@@ -134,7 +134,7 @@ const ImageMenu: Component<ImageMenuProps> = (props) => {
         </label>
       </Show>
       <Show when={!options().cover}>
-        <Tooltip text="Drag">
+        <Tooltip text="Drag" wrapperClass="hidden md:flex">
           <IconButton path={mdiDotsGrid} color="contrast" text="soft"></IconButton>
         </Tooltip>
       </Show>

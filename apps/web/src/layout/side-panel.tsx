@@ -51,7 +51,7 @@ const SidePanel: Component = () => {
       sidePanelWidth
     }));
   };
-  const onMouseMove = (event: MouseEvent): void => {
+  const onPointerMove = (event: MouseEvent): void => {
     if (dragging()) {
       const newWidth = previousWidth() - (prevX() || 0) + event.x;
 
@@ -69,21 +69,21 @@ const SidePanel: Component = () => {
       event.stopPropagation();
     }
   };
-  const onMouseUp = (): void => {
+  const onPointerUp = (): void => {
     setDragging(false);
   };
-  const onMouseLeave = (): void => {
+  const onPointerLeave = (): void => {
     setDragging(false);
   };
 
   setPreviousWidth(Number(localStorage.getItem("sidePanelWidth")));
-  window.addEventListener("mousemove", onMouseMove);
-  window.addEventListener("mouseup", onMouseUp);
-  window.addEventListener("mouseleave", onMouseLeave);
+  window.addEventListener("pointermove", onPointerMove);
+  window.addEventListener("pointerup", onPointerUp);
+  window.addEventListener("pointerleave", onPointerLeave);
   onCleanup(() => {
-    window.removeEventListener("mousemove", onMouseMove);
-    window.removeEventListener("mouseup", onMouseUp);
-    window.removeEventListener("mouseleave", onMouseLeave);
+    window.removeEventListener("pointermove", onPointerMove);
+    window.removeEventListener("pointerup", onPointerUp);
+    window.removeEventListener("pointerleave", onPointerLeave);
   });
 
   return (
@@ -108,15 +108,15 @@ const SidePanel: Component = () => {
         class={clsx(
           "w-4 cursor-col-resize flex justify-start items-center absolute -right-4 top-0 h-full z-50"
         )}
-        onMouseDown={(event) => {
+        onPointerDown={(event) => {
           setDragging(true);
           setPreviousWidth(storage().sidePanelWidth || 0);
           setPrevX(event.x);
         }}
-        onMouseEnter={() => {
+        onPointerEnter={() => {
           triggerHandleHover();
         }}
-        onMouseLeave={() => {
+        onPointerLeave={() => {
           triggerHandleHover.clear();
           setHandleHover(false);
         }}

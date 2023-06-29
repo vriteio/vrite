@@ -170,12 +170,12 @@ const SidebarMenu: Component = () => {
       when={!hiddenLocations.some((hiddenLocation) => location.pathname.includes(hiddenLocation))}
     >
       <Card
-        class="z-20 transition-all duration-300 m-0 rounded-0 border-t-0 border-l-0 border-b-0 w-[3.75rem] h-full"
+        class="z-20 transition-all duration-300 m-0 rounded-0 border-0 md:border-r-2 w-full md:w-[3.75rem] md:h-full fixed md:relative bottom-0 md:bottom-unset"
         color="base"
         onTransitionEnd={() => tooltipController.updatePosition()}
       >
-        <div class="flex flex-col h-full">
-          <div class="flex items-center justify-start mb-4">
+        <div class="flex md:flex-col h-full">
+          <div class="flex items-center justify-start md:mb-4">
             <IconButton
               path={logoIcon}
               color="primary"
