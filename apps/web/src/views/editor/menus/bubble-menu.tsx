@@ -15,7 +15,8 @@ import {
   mdiTableMergeCells,
   mdiTableSplitCell,
   mdiTableRemove,
-  mdiCommentOutline
+  mdiCommentOutline,
+  mdiTableHeadersEyeOff
 } from "@mdi/js";
 import { CellSelection } from "@tiptap/pm/tables";
 import { Component, createEffect, createSignal, For, Match, on, Show, Switch } from "solid-js";
@@ -104,6 +105,28 @@ const BubbleMenu: Component<BubbleMenuProps> = (props) => {
     return workspaceSettings()!.marks.includes(mark as App.WorkspaceSettings["marks"][number]);
   });
   const tableMenus = [
+    {
+      icon: mdiTableHeadersEyeOff,
+      label: "Toggle header cell off",
+      show() {
+        const { selection } = props.editor.state;
+        if (selection instanceof CellSelection) {
+          const tableNode = selection.$anchorCell.node(1);
+          const rowNode = selection.$anchorCell.node(2);
+
+          if (tableNode.child(0) === rowNode) {
+            return false;
+          }
+
+          return selection.$anchorCell.nodeAfter?.type.name === "tableHeader";
+        }
+
+        return false;
+      },
+      onClick() {
+        props.editor.chain().toggleHeaderCell().focus().run();
+      }
+    },
     {
       icon: mdiTableMergeCells,
       label: "Merge cells",

@@ -20,7 +20,7 @@ interface TableMenuProps {
 }
 const TableMenu: Component<TableMenuProps> = (props) => {
   const hasHeader = createMemo(() => {
-    return props.state.container?.querySelector("th") !== null;
+    return props.state.container?.querySelector("tr:first-child > th") !== null;
   });
   const runCommand = (fn: (chain: ChainedCommands) => void) => {
     const chain = props.state.editor.chain();
@@ -72,7 +72,7 @@ const TableMenu: Component<TableMenuProps> = (props) => {
             },
             {
               label() {
-                return hasHeader() ? "Remove header" : "Add header";
+                return hasHeader() ? "Remove header row" : "Add header row";
               },
               icon() {
                 return hasHeader() ? mdiTableHeadersEyeOff : mdiTableHeadersEye;
