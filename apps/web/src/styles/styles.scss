@@ -62,6 +62,9 @@
       width: 100%;
     }
 
+    tr {
+      @apply border-2 border-gray-200 dark:border-gray-700;
+    }
     td,
     th {
       @apply text-left font-500 border-2 border-gray-200 dark:border-gray-700 relative p-2 vertical-top;

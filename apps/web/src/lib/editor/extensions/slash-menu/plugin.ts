@@ -89,6 +89,7 @@ const SlashMenuPlugin = Extension.create<SlashMenuPluginOptions>({
               if (!props.clientRect) {
                 return;
               }
+
               popup = tippy(target, {
                 getReferenceClientRect: () => getReferenceClientRect(props),
                 appendTo: () => target,
@@ -98,6 +99,7 @@ const SlashMenuPlugin = Extension.create<SlashMenuPluginOptions>({
                 trigger: "manual",
                 placement: "bottom-start"
               });
+              popup.popper.classList.add("slash-menu");
             },
 
             onUpdate(props) {

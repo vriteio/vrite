@@ -106,7 +106,7 @@ const createTokens = async (ctx: Context, sessionId: string): Promise<void> => {
     httpOnly: true,
     sameSite: true,
     signed: true,
-    secure: true,
+    secure: false, //true,
     domain: ctx.fastify.config.TOP_DOMAIN
   };
 

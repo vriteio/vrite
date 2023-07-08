@@ -122,7 +122,7 @@ const Tooltip: Component<TooltipProps> = (props) => {
             ref={setFloatingRef}
             style={{ left: `${position().x}px`, top: `${position().y}px` }}
             class={clsx(
-              `:base: text-sm whitespace-nowrap py-0.5 px-1 leading-none transition-transform transform dark:bg-gray-200 dark:text-gray-800 rounded-md bg-gray-800 text-gray-50 z-60 pointer-events-none`,
+              `:base: hidden md:block text-sm whitespace-nowrap py-0.5 px-1 leading-none transition-transform transform dark:bg-gray-200 dark:text-gray-800 rounded-md bg-gray-800 text-gray-50 z-60 pointer-events-none`,
               {
                 ":base: group-hover:visible group-hover:scale-100)": visible(),
                 ":base: invisible scale-0)": !visible()

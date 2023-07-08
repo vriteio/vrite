@@ -12,11 +12,11 @@ const buttonColors = {
   primary: `:base: bg-gradient-to-tr fill-[url(#gradient)] disabled:opacity-70`
 };
 const buttonColorsHover = {
-  base: `:base: hover:bg-gray-300 dark:hover:bg-gray-700`,
-  contrast: `:base: hover:bg-gray-300 dark:hover:bg-gray-700`,
-  danger: `:base: hover:bg-red-600 dark:hover:bg-red-600 hover:fill-current`,
-  success: `:base: hover:bg-green-600 dark:hover:bg-green-600 hover:fill-current`,
-  primary: `:base: hover:bg-gradient-to-bl hover:fill-current`
+  base: `:base: @hover-bg-gray-300 dark:@hover-bg-gray-700`,
+  contrast: `:base: @hover-bg-gray-300 dark:@hover-bg-gray-700`,
+  danger: `:base: @hover-bg-red-600 dark:@hover-bg-red-600 @hover-fill-current`,
+  success: `:base: @hover-bg-green-600 dark:@hover-bg-green-600 @hover-fill-current`,
+  primary: `:base: @hover-bg-gradient-to-bl @hover-fill-current`
 };
 const textColors = {
   base: `:base: text-gray-700 dark:text-gray-100`,
@@ -41,9 +41,9 @@ const buttonColorsVariants = {
   successText: ` :base-2: text-green-500 dark:text-green-500`
 };
 const buttonColorsVariantsHover = {
-  primaryText: ` :base-2: hover:font-medium hover:text-current hover:bg-clip-border hover:text-white dark:hover:text-current dark:hover:bg-clip-border dark:hover:text-white`,
-  dangerText: ` :base-2: hover:font-medium hover:text-white hover:bg-red-600 dark:hover:bg-red-600 dark:hover:text-white`,
-  successText: ` :base-2: hover:font-medium hover:text-white hover:bg-green-600 dark:hover:bg-green-600 dark:hover:text-white`
+  primaryText: ` :base-2: @hover-font-medium @hover-text-current @hover-bg-clip-border @hover-text-white dark:@hover-text-current dark:@hover-bg-clip-border dark:@hover-text-white`,
+  dangerText: ` :base-2: @hover-font-medium @hover-text-white @hover-bg-red-600 dark:@hover-bg-red-600 dark:@hover-text-white`,
+  successText: ` :base-2: @hover-font-medium @hover-text-white @hover-bg-green-600 dark:@hover-bg-green-600 dark:@hover-text-white`
 };
 const iconButtonSizes = {
   small: {

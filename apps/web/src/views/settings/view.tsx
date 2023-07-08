@@ -11,6 +11,7 @@ import { Dynamic } from "solid-js/web";
 import {
   mdiAccount,
   mdiChevronLeft,
+  mdiClose,
   mdiDatabase,
   mdiHexagonSlice6,
   mdiPalette,
@@ -22,8 +23,10 @@ import {
 import { Component, createMemo, createSignal, Setter, Show } from "solid-js";
 import { createRef } from "#lib/utils";
 import { ScrollShadow } from "#components/fragments";
-import { Heading, IconButton } from "#components/primitives";
+import { Card, Heading, IconButton } from "#components/primitives";
 import { MetadataSection } from "./metadata";
+import { useUIContext } from "#context";
+import { Motion, Presence } from "@motionone/solid";
 
 interface SubSection {
   label: string;
@@ -38,6 +41,7 @@ type SettingsSectionComponent = Component<{
 }>;
 
 const SettingsView: Component = () => {
+  const { storage, setStorage } = useUIContext();
   const [currentSectionId, setCurrentSectionId] = createSignal("menu");
   const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
   const [subSection, setSubSection] = createSignal<SubSection | null>(null);
@@ -101,77 +105,133 @@ const SettingsView: Component = () => {
   });
 
   return (
-    <>
-      <div class="@container pb-0 flex flex-col h-full overflow-auto scrollbar-sm-contrast">
-        <div
-          class={clsx(
-            "flex justify-start items-start mb-4 px-5 flex-col",
-            currentSectionId() === "menu" ? "pt-5" : "pt-2"
-          )}
-        >
-          <IconButton
-            variant="text"
-            class={clsx("m-0 h-6 -mb-1", currentSectionId() === "menu" && "hidden")}
-            onClick={() => {
-              if (subSection()) {
-                subSection()?.goBack();
-                setSubSection(null);
-              } else {
-                setActionComponent(null);
-                setCurrentSectionId("menu");
-              }
-            }}
-            label={subSection() ? currentSection().label : "Settings"}
-            size="small"
-            path={mdiChevronLeft}
-          ></IconButton>
+    <Card
+      class="@container m-0 p-0 border-0 rounded-none pb-0 flex flex-col h-full overflow-auto scrollbar-sm-contrast"
+      color="contrast"
+    >
+      <div
+        class={clsx(
+          "flex justify-start items-start mb-4 px-5 flex-col",
+          currentSectionId() === "menu" ? "pt-5" : "pt-2"
+        )}
+      >
+        <IconButton
+          variant="text"
+          class={clsx("m-0 h-6 -mb-1", currentSectionId() === "menu" && "hidden")}
+          onClick={() => {
+            if (subSection()) {
+              subSection()?.goBack();
+              setSubSection(null);
+            } else {
+              setActionComponent(null);
+              setCurrentSectionId("menu");
+            }
+          }}
+          label={subSection() ? currentSection().label : "Settings"}
+          size="small"
+          path={mdiChevronLeft}
+        ></IconButton>
 
-          <Show
-            when={currentSectionId() !== "menu"}
-            fallback={<Heading level={1}>{currentSection().label}</Heading>}
-          >
-            <div class="flex justify-center items-center w-full">
+        <Show
+          when={currentSectionId() !== "menu"}
+          fallback={
+            <div class="flex justify-center items-center">
               <IconButton
-                class="m-0 mr-1"
-                path={subSection() ? subSection()?.icon : currentSection().icon}
-                variant="text"
-                hover={false}
+                path={mdiClose}
+                color="contrast"
+                text="soft"
                 badge
+                class="flex md:hidden mr-2 m-0"
+                onClick={() => {
+                  setStorage((storage) => ({
+                    ...storage,
+                    sidePanelWidth: 0
+                  }));
+                }}
               />
-              <Heading level={2} class="flex-1">
-                {subSection() ? subSection()?.label : currentSection().label}
+              <Heading level={1} class="py-1">
+                {currentSection().label}
               </Heading>
-              <Show when={actionComponent()}>
-                <Dynamic component={actionComponent()!} />
+            </div>
+          }
+        >
+          <div class="flex justify-center items-center w-full">
+            <IconButton
+              class="m-0 mr-1"
+              path={subSection() ? subSection()?.icon : currentSection().icon}
+              variant="text"
+              hover={false}
+              badge
+            />
+            <Heading level={2} class="flex-1">
+              {subSection() ? subSection()?.label : currentSection().label}
+            </Heading>
+            <Show when={actionComponent()}>
+              <Dynamic component={actionComponent()!} />
+            </Show>
+          </div>
+        </Show>
+      </div>
+      <div class="flex-col h-full relative flex overflow-hidden">
+        <ScrollShadow scrollableContainerRef={scrollableContainerRef} color="contrast" />
+        <div
+          class="w-full h-full overflow-x-hidden overflow-y-auto scrollbar-sm-contrast px-5 pb-5"
+          ref={setScrollableContainerRef}
+        >
+          <div class="flex justify-start flex-col min-h-full h-full items-start w-full gap-5 relative">
+            <Presence>
+              <Show when={currentSectionId()} keyed>
+                <Motion.div
+                  initial={{ opacity: 0, x: "-100%" }}
+                  animate={{ opacity: 1, x: "0%" }}
+                  exit={{ opacity: 0, x: "100%" }}
+                  transition={{ duration: 0.35 }}
+                  class="flex justify-start flex-col min-h-[calc(100%-env(safe-area-inset-bottom,0px))] items-start w-full gap-5 absolute"
+                >
+                  <Dynamic
+                    component={sections[currentSectionId()]}
+                    setSubSection={setSubSection}
+                    setSection={(section: string) => {
+                      setActionComponent(null);
+                      setCurrentSectionId(section);
+                    }}
+                    setActionComponent={(component: Component<{}> | null) => {
+                      setActionComponent(() => component);
+                    }}
+                  />
+                </Motion.div>
               </Show>
-            </div>
-          </Show>
-        </div>
-        <div class="flex-col h-full relative flex overflow-hidden">
-          <ScrollShadow scrollableContainerRef={scrollableContainerRef} color="contrast" />
-          <div
-            class="w-full h-full overflow-x-hidden overflow-y-auto scrollbar-sm-contrast px-5 pb-5"
-            ref={setScrollableContainerRef}
-          >
-            <div class="flex justify-start flex-col min-h-full items-start w-full gap-5">
-              <Dynamic
-                component={sections[currentSectionId()]}
-                setSubSection={setSubSection}
-                setSection={(section: string) => {
-                  setActionComponent(null);
-                  setCurrentSectionId(section);
-                }}
-                setActionComponent={(component: Component<{}> | null) => {
-                  setActionComponent(() => component);
-                }}
-              />
-            </div>
+            </Presence>
           </div>
         </div>
       </div>
-    </>
+    </Card>
   );
 };
 
 export { SettingsView };
 export type { SettingsSectionComponent, SubSection };
+
+/*
+
+<For each={Object.entries(sections)}>
+              {([key, Component]) => {
+                return (
+                  <Presence exitBeforeEnter>
+                    <Show when={key === currentSectionId()}>
+                      <Component
+                        setSubSection={setSubSection}
+                        setSection={(section: string) => {
+                          setActionComponent(null);
+                          setCurrentSectionId(section);
+                        }}
+                        setActionComponent={(component: Component<{}> | null) => {
+                          setActionComponent(() => component);
+                        }}
+                      />
+                    </Show>
+                  </Presence>
+                );
+              }}
+            </For>
+*/

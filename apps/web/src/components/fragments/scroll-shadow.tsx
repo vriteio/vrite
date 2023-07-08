@@ -105,7 +105,7 @@ const ScrollShadow: Component<ScrollShadowProps> = (props) => {
     <>
       <div
         class={clsx(
-          "pointer-events-none absolute z-1 to-transparent duration-150 transition-opacity",
+          "hidden lg:block pointer-events-none absolute z-1 to-transparent duration-150 transition-opacity",
           props.direction === "horizontal" && "h-full w-8 bg-gradient-to-r",
           props.direction !== "horizontal" && "h-16 w-full bg-gradient-to-b",
           props.color === "contrast" && "from-gray-100 dark:from-gray-800",
@@ -118,7 +118,7 @@ const ScrollShadow: Component<ScrollShadowProps> = (props) => {
       />
       <div
         class={clsx(
-          "pointer-events-none absolute z-1 to-transparent duration-150 transition-opacity",
+          "hidden lg:block pointer-events-none absolute z-1 to-transparent duration-150 transition-opacity",
           props.direction === "horizontal" && "h-full w-8 bg-gradient-to-l",
           props.direction !== "horizontal" && "h-16 w-full bg-gradient-to-t",
           props.color === "contrast" && "from-gray-100 dark:from-gray-800",

@@ -29,19 +29,11 @@
   @apply text-primary;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    @apply text-white bg-gray-900;
-  }
-}
-@media (prefers-color-scheme: light) {
-  html {
-    @apply text-gray-900 bg-gray-100;
-  }
-}
 html {
   font-family: "NunitoVariable", sans-serif;
-  @apply h-full text-gray-700 bg-gray-100 from-secondary to-primary overflow-hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: none;
+  @apply h-[100dvh] text-gray-700 bg-gray-100 from-secondary to-primary overflow-hidden;
 }
 html.dark {
   @apply text-white bg-gray-800;
@@ -155,4 +147,20 @@ button:focus-visible {
 }
 button:focus {
   outline: none !important;
+}
+* {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -webkit-tap-highlight-color: transparent;
+}
+#dropdowns {
+  @apply transform w-full absolute overflow-hidden z-60 transition-all duration-500 pointer-events-none;
+  height: calc(100% - 3.625rem - env(safe-area-inset-bottom, 0px));
+}
+#dropdowns > * {
+  @apply pointer-events-auto;
+}
+
+.slash-menu {
+  @apply lt-md:!transform-none;
 }

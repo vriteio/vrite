@@ -216,9 +216,12 @@ const Input: Component<InputProps> = (props) => {
                       "text-start",
                       selectedIndex() === index() && "bg-gray-300 dark:bg-gray-700"
                     )}
-                    onClick={enterHandler}
+                    onClick={() => {
+                      setSelectedIndex(index());
+                      enterHandler();
+                    }}
                     hover={false}
-                    onMouseEnter={() => {
+                    onPointerEnter={() => {
                       setSelectedIndex(index());
                     }}
                   >

@@ -14,7 +14,9 @@ import {
   Show
 } from "solid-js";
 import { computePosition, flip, hide, Placement, size } from "@floating-ui/dom";
-import { Dynamic } from "solid-js/web";
+import { Dynamic, Portal } from "solid-js/web";
+import { createMediaQuery } from "@solid-primitives/media";
+import { createActiveElement } from "@solid-primitives/active-element";
 
 interface DropdownProps extends JSX.SelectHTMLAttributes<HTMLSelectElement> {
   class?: string;
@@ -27,14 +29,20 @@ interface DropdownProps extends JSX.SelectHTMLAttributes<HTMLSelectElement> {
   autoFocus?: boolean;
   overlay?: boolean;
   attachActivatorHandler?: boolean;
+  activatorWrapperClass?: string;
   activatorButton: Component<{ opened: boolean; computeDropdownPosition(): void }>;
   setOpened?(opened: boolean): void;
 }
 
 const Dropdown: Component<DropdownProps> = (props) => {
+  const md = createMediaQuery("(min-width: 768px)");
+  const activeElement = createActiveElement();
   const [buttonRef, setButtonRef] = createRef<HTMLElement | null>(null);
   const [boxRef, setBoxRef] = createRef<HTMLElement | null>(null);
   const [opened, setOpened] = createSignal(props.opened || false);
+  const [resizing, setResizing] = createSignal(false);
+  const [height, setHeight] = createSignal(0);
+  const [minHeight, setMinHeight] = createSignal(0);
   const computeDropdownPosition = (): void => {
     const button = buttonRef();
     const box = boxRef();
@@ -81,6 +89,9 @@ const Dropdown: Component<DropdownProps> = (props) => {
         document.documentElement.classList.add("dropdown-opened");
       } else {
         document.documentElement.classList.remove("dropdown-opened");
+        setTimeout(() => {
+          setHeight(0);
+        }, 300);
       }
       if (opened && props.autoFocus !== false) {
         computeDropdownPosition();
@@ -88,6 +99,14 @@ const Dropdown: Component<DropdownProps> = (props) => {
       }
     })
   );
+  createEffect(() => {
+    if (!md() && boxRef()?.contains(activeElement()) && activeElement()?.tagName === "INPUT") {
+      setHeight(document.getElementById("dropdowns")?.getBoundingClientRect().height || 0);
+      setTimeout(() => {
+        window.scrollTo(0, 0);
+      }, 100);
+    }
+  });
   createEffect(
     on([() => props.overlay, opened], ([overlay, opened]) => {
       const handleClick = (event: MouseEvent): void => {
@@ -116,6 +135,7 @@ const Dropdown: Component<DropdownProps> = (props) => {
       <Show when={props.overlay !== false}>
         <Overlay
           shadeClass="bg-transparent"
+          portal={!md()}
           class={clsx(!opened() && "pointer-events-none h-0 w-0")}
           opened={opened()}
           onOverlayClick={() => {
@@ -131,7 +151,7 @@ const Dropdown: Component<DropdownProps> = (props) => {
             setOpened(!opened());
           }
         }}
-        class="flex"
+        class={clsx("flex", props.activatorWrapperClass)}
       >
         <Dynamic
           component={props.activatorButton}
@@ -139,18 +159,74 @@ const Dropdown: Component<DropdownProps> = (props) => {
           opened={opened()}
         />
       </div>
-      <Card
-        {...props.cardProps}
-        class={clsx(
-          `:base-2: z-50 flex flex-col p-1 overflow-hidden transform shadow-2xl`,
-          props.fixed ? "fixed" : "absolute",
-          opened() ? `:base-2: visible opacity-100` : `:base-2: invisible opacity-0`,
-          props.cardProps?.class
-        )}
-        ref={setBoxRef}
+      <Dynamic
+        component={md() ? "div" : Portal}
+        mount={(!md() && document.getElementById("dropdowns")) || undefined}
       >
-        {props.children}
-      </Card>
+        <Card
+          {...props.cardProps}
+          class={clsx(
+            `:base-2: z-50 flex flex-col p-1 overflow-hidden transform shadow-2xl`,
+            !md() &&
+              "fixed !left-0 w-full !max-w-full !max-h-full m-0 border-0 border-t-2 shadow-none rounded-none duration-250 !top-unset bottom-0 h-unset",
+            props.fixed ? "fixed" : "absolute",
+            opened() ? "" : "translate-y-full !shadow-none",
+            opened() ? `:base-2: visible md:opacity-100` : `:base-2: invisible md:opacity-0`,
+            props.cardProps?.class
+          )}
+          style={
+            !md()
+              ? {
+                  "transition-property": "transform, box-shadow, visibility, opacity",
+                  "box-shadow": "0 -25px 50px -12px rgba(0, 0, 0, 0.25)",
+                  "height": height() ? `${height()}px` : undefined
+                }
+              : { height: height() ? `${height()}px` : undefined }
+          }
+          ref={setBoxRef}
+        >
+          <div
+            class="md:hidden flex justify-center items-center h-8 min-h-8"
+            onPointerDown={(event) => {
+              setResizing(true);
+              setHeight(boxRef()?.getBoundingClientRect().height || 0);
+              setMinHeight(
+                (minHeight) => minHeight || boxRef()?.getBoundingClientRect().height || 0
+              );
+
+              let prevY = event.pageY;
+              let prevHeight = height();
+              let delta = 0;
+              const onMove = (event: PointerEvent) => {
+                delta = (prevY || 0) - event.pageY;
+                setHeight(() => prevHeight + delta);
+                event.preventDefault();
+                event.stopPropagation();
+              };
+              const up = () => {
+                document.body.removeEventListener("pointermove", onMove);
+                document.body.removeEventListener("pointerup", up);
+                setMinHeight(0);
+                if (delta > 0) {
+                  setHeight(
+                    document.getElementById("dropdowns")?.getBoundingClientRect().height || 0
+                  );
+                } else {
+                  setOpened(false);
+                }
+              };
+
+              document.body.addEventListener("pointermove", onMove);
+              document.body.addEventListener("pointerup", up);
+            }}
+          >
+            <div class="h-1.5 w-16 rounded-full bg-gray-200 dark:bg-gray-700"></div>
+          </div>
+          <div class="overflow-hidden" style={{ "min-height": `${minHeight()}px` }}>
+            {props.children}
+          </div>
+        </Card>
+      </Dynamic>
     </div>
   );
 };

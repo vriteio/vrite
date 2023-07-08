@@ -20,15 +20,18 @@ import {
 } from "@mdi/js";
 import { CellSelection } from "@tiptap/pm/tables";
 import { Component, createEffect, createSignal, For, Match, on, Show, Switch } from "solid-js";
-import { createRef } from "#lib/utils";
+import { nanoid } from "nanoid";
+import clsx from "clsx";
+import { createRef, Ref } from "#lib/utils";
 import { Card, IconButton, Input, Tooltip } from "#components/primitives";
 import { App, useAuthenticatedContext, useClientContext } from "#context";
-import { nanoid } from "nanoid";
 
 interface BubbleMenuProps {
   editor: SolidEditor;
   opened: boolean;
   contentPieceId?: string;
+  class?: string;
+  ref?: Ref<HTMLElement>[1];
 }
 
 const BubbleMenu: Component<BubbleMenuProps> = (props) => {
@@ -38,6 +41,29 @@ const BubbleMenu: Component<BubbleMenuProps> = (props) => {
   const [mode, setMode] = createSignal<"format" | "link" | "table">("format");
   const [link, setLink] = createSignal("");
   const [linkInputRef, setLinkInputRef] = createRef<HTMLInputElement | null>(null);
+  const commentMenuItem = {
+    icon: mdiCommentOutline,
+    mark: "comment",
+    label: "Comment",
+    async onClick() {
+      if (props.editor.isActive("comment")) {
+        props.editor.commands.unsetComment();
+      } else {
+        const threadFragment = nanoid();
+
+        props.editor.chain().setComment({ thread: threadFragment }).focus().run();
+
+        try {
+          await client.comments.createThread.mutate({
+            contentPieceId: props.contentPieceId || "",
+            fragment: threadFragment
+          });
+        } catch (error) {
+          props.editor.commands.unsetComment();
+        }
+      }
+    }
+  };
   const menus = [
     {
       icon: mdiFormatBold,
@@ -70,34 +96,10 @@ const BubbleMenu: Component<BubbleMenuProps> = (props) => {
     { icon: mdiFormatColorHighlight, mark: "highlight", label: "Highlight" },
     { icon: mdiFormatSubscript, mark: "subscript", label: "Subscript" },
     { icon: mdiFormatSuperscript, mark: "superscript", label: "Superscript" },
-    ...(props.contentPieceId
-      ? [
-          {
-            icon: mdiCommentOutline,
-            mark: "comment",
-            label: "Comment",
-            async onClick() {
-              if (props.editor.isActive("comment")) {
-                props.editor.commands.unsetComment();
-              } else {
-                const threadFragment = nanoid();
-
-                props.editor.chain().setComment({ thread: threadFragment }).focus().run();
-                try {
-                  await client.comments.createThread.mutate({
-                    contentPieceId: props.contentPieceId || "",
-                    fragment: threadFragment
-                  });
-                } catch (error) {
-                  props.editor.commands.unsetComment();
-                }
-              }
-            }
-          }
-        ]
-      : [])
+    ...(props.contentPieceId ? [commentMenuItem] : [])
   ].filter(({ mark }) => {
     if (mark === "comment") return true;
+
     if (!workspaceSettings()) {
       return true;
     }
@@ -110,6 +112,7 @@ const BubbleMenu: Component<BubbleMenuProps> = (props) => {
       label: "Toggle header cell off",
       show() {
         const { selection } = props.editor.state;
+
         if (selection instanceof CellSelection) {
           const tableNode = selection.$anchorCell.node(1);
           const rowNode = selection.$anchorCell.node(2);
@@ -132,6 +135,7 @@ const BubbleMenu: Component<BubbleMenuProps> = (props) => {
       label: "Merge cells",
       show() {
         const { selection } = props.editor.state;
+
         if (selection instanceof CellSelection) {
           return selection.$anchorCell.pos !== selection.$headCell.pos;
         }
@@ -147,13 +151,15 @@ const BubbleMenu: Component<BubbleMenuProps> = (props) => {
       label: "Split cell",
       show() {
         const { selection } = props.editor.state;
-        if (selection instanceof CellSelection) {
-          if (selection.$anchorCell.pos === selection.$headCell.pos) {
-            return (
-              selection.$anchorCell.nodeAfter?.attrs.colspan > 1 ||
-              selection.$anchorCell.nodeAfter?.attrs.rowspan > 1
-            );
-          }
+
+        if (
+          selection instanceof CellSelection &&
+          selection.$anchorCell.pos === selection.$headCell.pos
+        ) {
+          return (
+            selection.$anchorCell.nodeAfter?.attrs.colspan > 1 ||
+            selection.$anchorCell.nodeAfter?.attrs.rowspan > 1
+          );
         }
 
         return false;
@@ -167,8 +173,10 @@ const BubbleMenu: Component<BubbleMenuProps> = (props) => {
       label: "Delete column(s)",
       show() {
         const { selection } = props.editor.state;
+
         if (selection instanceof CellSelection) {
           const tableNode = selection.$anchorCell.node(1);
+
           let isSingleColumn = false;
 
           tableNode.content.forEach((rowNode) => {
@@ -190,6 +198,7 @@ const BubbleMenu: Component<BubbleMenuProps> = (props) => {
 
       show() {
         const { selection } = props.editor.state;
+
         if (selection instanceof CellSelection) {
           const tableNode = selection.$anchorCell.node(1);
 
@@ -210,10 +219,12 @@ const BubbleMenu: Component<BubbleMenuProps> = (props) => {
 
       show() {
         const { selection } = props.editor.state;
+
         if (selection instanceof CellSelection) {
           const tableNode = selection.$anchorCell.node(1);
 
           if (tableNode.childCount === 1) return true;
+
           let isSingleColumn = false;
 
           tableNode.content.forEach((rowNode) => {
@@ -241,6 +252,7 @@ const BubbleMenu: Component<BubbleMenuProps> = (props) => {
   });
   props.editor.on("selectionUpdate", () => {
     setActiveMarks(marks.filter((mark) => props.editor.isActive(mark)));
+
     if (props.editor.state.selection instanceof CellSelection) {
       setMode("table");
     } else if (!props.editor.state.selection.empty) {
@@ -276,7 +288,7 @@ const BubbleMenu: Component<BubbleMenuProps> = (props) => {
   );
 
   return (
-    <Card class="relative flex p-0">
+    <Card class={clsx("relative flex p-0", props.class)} ref={props.ref}>
       <Switch>
         <Match when={mode() === "table"}>
           {" "}

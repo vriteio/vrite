@@ -1,15 +1,17 @@
 import { Component, createMemo, createSignal, Show } from "solid-js";
-import { mdiChevronLeft } from "@mdi/js";
+import { mdiChevronLeft, mdiClose } from "@mdi/js";
 import { ContextObject, ExtensionSpec } from "@vrite/extensions";
 import clsx from "clsx";
 import { Dynamic } from "solid-js/web";
-import { Heading, IconButton } from "#components/primitives";
+import { Card, Heading, IconButton } from "#components/primitives";
 import { ScrollShadow } from "#components/fragments";
 import { createRef } from "#lib/utils";
 import { ExtensionIcon } from "./extension-icon";
 import { ExtensionsMenuView } from "./extensions-menu-view";
 import { ExtensionConfigurationView } from "./extension-configuration-view";
 import { ExtensionDetails } from "#context/extensions";
+import { Motion, Presence } from "@motionone/solid";
+import { useUIContext } from "#context";
 
 interface SubSection {
   label: string;
@@ -18,6 +20,7 @@ interface SubSection {
 }
 
 const ExtensionsView: Component = () => {
+  const { setStorage } = useUIContext();
   const [openedExtension, setOpenedExtension] = createSignal<ExtensionDetails | null>(null);
   const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
   const [subSection, setSubSection] = createSignal<SubSection | null>(null);
@@ -34,7 +37,10 @@ const ExtensionsView: Component = () => {
   });
 
   return (
-    <div class="@container pb-0 flex flex-col h-full overflow-auto scrollbar-sm-contrast">
+    <Card
+      class="@container m-0 p-0 border-0 rounded-none flex flex-col h-full overflow-auto scrollbar-sm-contrast"
+      color="contrast"
+    >
       <div
         class={clsx(
           "flex justify-start items-start mb-4 px-5 flex-col",
@@ -60,7 +66,26 @@ const ExtensionsView: Component = () => {
 
         <Show
           when={openedExtension()}
-          fallback={<Heading level={1}>{currentSection().label}</Heading>}
+          fallback={
+            <div class="flex justify-center items-center">
+              <IconButton
+                path={mdiClose}
+                color="contrast"
+                text="soft"
+                badge
+                class="flex md:hidden mr-2 m-0"
+                onClick={() => {
+                  setStorage((storage) => ({
+                    ...storage,
+                    sidePanelWidth: 0
+                  }));
+                }}
+              />
+              <Heading level={1} class="py-1">
+                {currentSection().label}
+              </Heading>
+            </div>
+          }
         >
           <div class="flex justify-center items-center w-full">
             <div class="flex h-8 w-8 mr-1">
@@ -81,21 +106,33 @@ const ExtensionsView: Component = () => {
           class="w-full h-full overflow-x-hidden overflow-y-auto scrollbar-sm-contrast px-5 pb-5"
           ref={setScrollableContainerRef}
         >
-          <div class="flex justify-start flex-col min-h-full items-start w-full gap-5">
-            <Show
-              when={openedExtension()}
-              fallback={<ExtensionsMenuView setOpenedExtension={setOpenedExtension} />}
-            >
-              <ExtensionConfigurationView
-                close={() => setOpenedExtension(null)}
-                extension={openedExtension()!}
-                setActionComponent={(component) => setActionComponent(() => component)}
-              />
-            </Show>
+          <div class="flex justify-start flex-col min-h-full h-full items-start w-full gap-5 relative">
+            <Presence>
+              <Show when={openedExtension() || true} keyed>
+                <Motion.div
+                  initial={{ opacity: 0, x: "-100%" }}
+                  animate={{ opacity: 1, x: "0%" }}
+                  exit={{ opacity: 0, x: "100%" }}
+                  transition={{ duration: 0.35 }}
+                  class="flex justify-start flex-col min-h-[calc(100%-env(safe-area-inset-bottom,0px))] items-start w-full gap-5 absolute"
+                >
+                  <Show
+                    when={openedExtension()}
+                    fallback={<ExtensionsMenuView setOpenedExtension={setOpenedExtension} />}
+                  >
+                    <ExtensionConfigurationView
+                      close={() => setOpenedExtension(null)}
+                      extension={openedExtension()!}
+                      setActionComponent={(component) => setActionComponent(() => component)}
+                    />
+                  </Show>
+                </Motion.div>
+              </Show>
+            </Presence>
           </div>
         </div>
       </div>
-    </div>
+    </Card>
   );
 };
 

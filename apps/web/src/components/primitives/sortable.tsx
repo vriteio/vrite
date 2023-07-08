@@ -13,6 +13,7 @@ import { Dynamic } from "solid-js/web";
 import Sortable from "sortablejs";
 
 interface WrapperProps {
+  children?: JSX.Element;
   ref<E extends HTMLElement>(element: E): void;
 }
 interface SortableProps<D, W extends ParentComponent<WrapperProps> | keyof JSX.IntrinsicElements> {

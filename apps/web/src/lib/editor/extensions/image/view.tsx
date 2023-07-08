@@ -129,7 +129,7 @@ const ImageView: Component = () => {
           fallback={
             <div
               class={clsx(
-                "pt-[35%] w-full bg-gradient-to-tr flex justify-center items-center relative",
+                "pt-[35%] w-full bg-gradient-to-tr flex justify-center items-center relative min-h-48",
                 !options().cover && "rounded-t-2xl"
               )}
             >

@@ -2,7 +2,7 @@ import { ContentPieceTitle } from "./title";
 import { ContentPieceDescription } from "./description";
 import { ContentPieceMetadata } from "./metadata";
 import { Component, createEffect, createMemo, createSignal, on, onCleanup, Show } from "solid-js";
-import { mdiDotsVertical, mdiTrashCan, mdiPencil, mdiLock, mdiEye } from "@mdi/js";
+import { mdiDotsVertical, mdiTrashCan, mdiPencil, mdiLock, mdiEye, mdiClose } from "@mdi/js";
 import dayjs from "dayjs";
 import CustomParseFormat from "dayjs/plugin/customParseFormat";
 import { useLocation, useNavigate } from "@solidjs/router";
@@ -242,7 +242,7 @@ const ContentPieceView: Component = () => {
       }
     >
       <Card
-        class="flex flex-col m-0 relative p-0 border-0 h-full w-full overflow-visible"
+        class="flex flex-col m-0 relative p-0 border-0 rounded-none h-full w-full md:overflow-visible overflow-y-auto scrollbar-sm-contrast pt-[env(safe-area-inset-top)]"
         color="contrast"
       >
         <MiniEditor
@@ -260,7 +260,19 @@ const ContentPieceView: Component = () => {
           readOnly={!editable()}
           extensions={[Image.configure({ cover: true })]}
         />
-        <div class="absolute flex top-3 right-3 gap-2 justify-center items-center">
+        <div class="absolute flex top-[calc(env(safe-area-inset-top)+0.75rem)] right-3 gap-2 left-3 justify-center items-center">
+          <IconButton
+            path={mdiClose}
+            text="soft"
+            class="m-0 md:hidden"
+            onClick={async () => {
+              setStorage((storage) => ({
+                ...storage,
+                sidePanelWidth: 0
+              }));
+            }}
+          />
+          <div class="flex-1" />
           <Show when={location.pathname !== "/editor"}>
             <IconButton
               path={editable() ? mdiPencil : mdiEye}
@@ -310,7 +322,7 @@ const ContentPieceView: Component = () => {
             </Dropdown>
           </Show>
         </div>
-        <div class="flex-1 border-gray-200 dark:border-gray-700 transition-all rounded-b-2xl p-3 overflow-y-auto scrollbar-sm-contrast">
+        <div class="flex-1 border-gray-200 dark:border-gray-700 transition-all p-3 overflow-initial md:overflow-y-auto scrollbar-sm-contrast">
           <ContentPieceTitle
             initialTitle={titleInitialValue()}
             editable={editable()}

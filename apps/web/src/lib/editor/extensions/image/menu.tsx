@@ -96,7 +96,8 @@ const ImageMenu: Component<ImageMenuProps> = (props) => {
       </Tooltip>
       <Input
         color="contrast"
-        wrapperClass="flex-1 max-w-full"
+        wrapperClass="flex-1 max-w-full min-w-unset"
+        class="w-full"
         placeholder={getPlaceholder()}
         value={attrs()[inputMode()] || ""}
         disabled={!props.state.editor.isEditable}

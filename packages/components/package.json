@@ -5,6 +5,9 @@
   "types": "./src/index.ts",
   "dependencies": {
     "@floating-ui/dom": "^0.5.4",
+    "@mdi/js": "^7.2.96",
+    "@solid-primitives/active-element": "^2.0.15",
+    "@solid-primitives/media": "^2.1.5",
     "clsx": "^1.2.1",
     "solid-js": "^1.7.0"
   }
