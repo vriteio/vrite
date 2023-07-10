@@ -1,11 +1,11 @@
 import { Component, createEffect, createSignal, on, onCleanup, onMount, Show } from "solid-js";
 import { nanoid } from "nanoid";
 import clsx from "clsx";
+import { mdiCheckCircleOutline } from "@mdi/js";
 import { createRef } from "#lib/utils";
 import { monaco } from "#lib/code-editor";
 import { useAppearanceContext } from "#context";
 import { IconButton } from "#components/primitives";
-import { mdiCheckCircleOutline } from "@mdi/js";
 
 interface MiniCodeEditorProps {
   wrapperClass?: string;
@@ -58,6 +58,7 @@ const MiniCodeEditor: Component<MiniCodeEditorProps> = (props) => {
         minimap: { enabled: false },
         contextmenu: false,
         fontSize: 13,
+        fontFamily: "JetBrainsMonoVariable",
         hover: { enabled: !props.readOnly },
         scrollBeyondLastLine: false,
         model: null,

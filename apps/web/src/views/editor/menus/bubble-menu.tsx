@@ -16,7 +16,10 @@ import {
   mdiTableSplitCell,
   mdiTableRemove,
   mdiCommentOutline,
-  mdiTableHeadersEyeOff
+  mdiTableHeadersEyeOff,
+  mdiPlus,
+  mdiKeyboardClose,
+  mdiKeyboardCloseOutline
 } from "@mdi/js";
 import { CellSelection } from "@tiptap/pm/tables";
 import { Component, createEffect, createSignal, For, Match, on, Show, Switch } from "solid-js";
@@ -24,21 +27,25 @@ import { nanoid } from "nanoid";
 import clsx from "clsx";
 import { createRef, Ref } from "#lib/utils";
 import { Card, IconButton, Input, Tooltip } from "#components/primitives";
-import { App, useAuthenticatedContext, useClientContext } from "#context";
+import { App, useAuthenticatedContext, useClientContext, useUIContext } from "#context";
 
+type BubbleMenuMode = "format" | "link" | "table" | "block";
 interface BubbleMenuProps {
   editor: SolidEditor;
   opened: boolean;
   contentPieceId?: string;
   class?: string;
+  mode?: BubbleMenuMode;
   ref?: Ref<HTMLElement>[1];
+  setBlockMenuOpened?(opened: boolean): void;
 }
 
 const BubbleMenu: Component<BubbleMenuProps> = (props) => {
   const [activeMarks, setActiveMarks] = createSignal<string[]>([]);
+  const { breakpoints } = useUIContext();
   const { workspaceSettings = () => null } = useAuthenticatedContext() || {};
   const { client } = useClientContext();
-  const [mode, setMode] = createSignal<"format" | "link" | "table">("format");
+  const [mode, setMode] = createSignal<BubbleMenuMode>("format");
   const [link, setLink] = createSignal("");
   const [linkInputRef, setLinkInputRef] = createRef<HTMLInputElement | null>(null);
   const commentMenuItem = {
@@ -64,41 +71,51 @@ const BubbleMenu: Component<BubbleMenuProps> = (props) => {
       }
     }
   };
-  const menus = [
-    {
-      icon: mdiFormatBold,
-      mark: "bold",
-      label: "Bold"
-    },
-    {
-      icon: mdiFormatItalic,
-      mark: "italic",
-      label: "Italic"
-    },
-    {
-      icon: mdiFormatStrikethrough,
-      mark: "strike",
-      label: "Strike"
-    },
-    {
-      icon: mdiCodeTags,
-      mark: "code",
-      label: "Code"
-    },
-    {
-      icon: mdiLinkVariant,
-      mark: "link",
-      label: "Link",
-      onClick() {
-        setMode("link");
-      }
-    },
-    { icon: mdiFormatColorHighlight, mark: "highlight", label: "Highlight" },
-    { icon: mdiFormatSubscript, mark: "subscript", label: "Subscript" },
-    { icon: mdiFormatSuperscript, mark: "superscript", label: "Superscript" },
-    ...(props.contentPieceId ? [commentMenuItem] : [])
-  ].filter(({ mark }) => {
-    if (mark === "comment") return true;
+  const closeKeyboardItem = {
+    icon: mdiKeyboardCloseOutline,
+    label: "Close keyboard",
+    async onClick() {
+      props.editor.commands.blur();
+    }
+  };
+  const menus = (
+    [
+      {
+        icon: mdiFormatBold,
+        mark: "bold",
+        label: "Bold"
+      },
+      {
+        icon: mdiFormatItalic,
+        mark: "italic",
+        label: "Italic"
+      },
+      {
+        icon: mdiFormatStrikethrough,
+        mark: "strike",
+        label: "Strike"
+      },
+      {
+        icon: mdiCodeTags,
+        mark: "code",
+        label: "Code"
+      },
+      {
+        icon: mdiLinkVariant,
+        mark: "link",
+        label: "Link",
+        onClick() {
+          setMode("link");
+        }
+      },
+      { icon: mdiFormatColorHighlight, mark: "highlight", label: "Highlight" },
+      { icon: mdiFormatSubscript, mark: "subscript", label: "Subscript" },
+      { icon: mdiFormatSuperscript, mark: "superscript", label: "Superscript" },
+      ...(props.contentPieceId ? [commentMenuItem] : []),
+      ...(breakpoints.md() ? [] : [closeKeyboardItem])
+    ] as Array<{ icon: string; mark?: string; label: string; onClick?(): void }>
+  ).filter(({ mark }) => {
+    if (!mark || mark === "comment") return true;
 
     if (!workspaceSettings()) {
       return true;
@@ -248,10 +265,10 @@ const BubbleMenu: Component<BubbleMenuProps> = (props) => {
   };
 
   props.editor.on("update", () => {
-    setActiveMarks(marks.filter((mark) => props.editor.isActive(mark)));
+    setActiveMarks(marks.filter((mark) => mark && props.editor.isActive(mark)) as string[]);
   });
   props.editor.on("selectionUpdate", () => {
-    setActiveMarks(marks.filter((mark) => props.editor.isActive(mark)));
+    setActiveMarks(marks.filter((mark) => mark && props.editor.isActive(mark)) as string[]);
 
     if (props.editor.state.selection instanceof CellSelection) {
       setMode("table");
@@ -275,6 +292,14 @@ const BubbleMenu: Component<BubbleMenuProps> = (props) => {
   );
   createEffect(
     on(
+      () => props.mode,
+      (mode) => {
+        setMode((currentMode) => mode || currentMode);
+      }
+    )
+  );
+  createEffect(
+    on(
       () => props.opened,
       (opened) => {
         if (!opened) {
@@ -288,10 +313,31 @@ const BubbleMenu: Component<BubbleMenuProps> = (props) => {
   );
 
   return (
-    <Card class={clsx("relative flex p-0", props.class)} ref={props.ref}>
+    <Card
+      class={clsx("relative flex p-0 overflow-x-auto scrollbar-hidden", props.class)}
+      ref={props.ref}
+    >
       <Switch>
+        <Match when={mode() === "block"}>
+          <IconButton
+            path={mdiPlus}
+            text="soft"
+            variant="text"
+            label="Insert block"
+            onClick={() => {
+              props.setBlockMenuOpened?.(true);
+            }}
+          />
+          <IconButton
+            path={mdiKeyboardCloseOutline}
+            text="soft"
+            variant="text"
+            onClick={() => {
+              props.editor.commands.blur();
+            }}
+          />
+        </Match>
         <Match when={mode() === "table"}>
-          {" "}
           <For
             each={tableMenus}
             fallback={<span class="px-1.5 py-0.5 text-base">No available options</span>}
@@ -319,29 +365,35 @@ const BubbleMenu: Component<BubbleMenuProps> = (props) => {
               each={menus}
               fallback={<span class="px-1.5 py-0.5 text-base">No available options</span>}
             >
-              {(menu) => (
-                <Tooltip text={menu.label} side="bottom" wrapperClass="snap-start">
-                  <IconButton
-                    path={menu.icon}
-                    text={activeMarks().includes(menu.mark) ? "primary" : "soft"}
-                    variant={activeMarks().includes(menu.mark) ? "solid" : "text"}
-                    color={activeMarks().includes(menu.mark) ? "primary" : "base"}
-                    onClick={() => {
-                      const chain = props.editor.chain();
+              {(menu) => {
+                const active = (): boolean => {
+                  return Boolean(menu.mark && activeMarks().includes(menu.mark));
+                };
 
-                      if (menu.onClick) {
-                        menu.onClick();
-                      } else {
-                        if (menu.mark !== "code") {
-                          chain.unsetCode();
+                return (
+                  <Tooltip text={menu.label} side="bottom" wrapperClass="snap-start">
+                    <IconButton
+                      path={menu.icon}
+                      text={active() ? "primary" : "soft"}
+                      variant={active() ? "solid" : "text"}
+                      color={active() ? "primary" : "base"}
+                      onClick={() => {
+                        const chain = props.editor.chain();
+
+                        if (menu.onClick) {
+                          menu.onClick();
+                        } else if (menu.mark) {
+                          if (menu.mark !== "code") {
+                            chain.unsetCode();
+                          }
+
+                          chain.toggleMark(menu.mark).focus().run();
                         }
-
-                        chain.toggleMark(menu.mark).focus().run();
-                      }
-                    }}
-                  />
-                </Tooltip>
-              )}
+                      }}
+                    />
+                  </Tooltip>
+                );
+              }}
             </For>
           </div>
         </Match>

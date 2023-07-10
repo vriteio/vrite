@@ -1,8 +1,7 @@
 import { AddColumn, Column } from "./column";
 import { ColumnsContextProvider } from "./columns-context";
-import { Accessor, Component, Show, createEffect, createSignal, on, onCleanup } from "solid-js";
+import { Component, Show, createEffect, createSignal, on, onCleanup } from "solid-js";
 import clsx from "clsx";
-import { createStore } from "solid-js/store";
 import { HocuspocusProvider } from "@hocuspocus/provider";
 import * as Y from "yjs";
 import { Sortable } from "#components/primitives";
@@ -11,73 +10,14 @@ import {
   hasPermission,
   useAuthenticatedContext,
   useClientContext,
-  useUIContext
+  useUIContext,
+  useCacheContext
 } from "#context";
 import { ScrollShadow } from "#components/fragments";
 import { createRef, getSelectionColor } from "#lib/utils";
 
-const useContentGroups = (): {
-  contentGroups: Accessor<App.ContentGroup[]>;
-  setContentGroups: (contentGroups: App.ContentGroup[]) => void;
-} => {
-  const { client } = useClientContext();
-  const [state, setState] = createStore<{
-    contentGroups: App.ContentGroup[];
-  }>({
-    contentGroups: []
-  });
-  const moveContentGroup = (contentGroupId: string, index: number): void => {
-    const newContentGroups = [...state.contentGroups];
-    const contentGroupIndex = newContentGroups.findIndex((contentGroup) => {
-      return contentGroup.id === contentGroupId;
-    });
-    const [contentGroup] = newContentGroups.splice(contentGroupIndex, 1);
-
-    newContentGroups.splice(index, 0, contentGroup);
-    setState({
-      contentGroups: newContentGroups
-    });
-  };
-
-  client.contentGroups.list.query().then((contentGroups) => {
-    setState("contentGroups", contentGroups);
-  });
-
-  const contentGroupsChanges = client.contentGroups.changes.subscribe(undefined, {
-    onData({ action, data }) {
-      switch (action) {
-        case "create":
-          setState({ contentGroups: [...state.contentGroups, data] });
-          break;
-        case "update":
-          setState(
-            "contentGroups",
-            state.contentGroups.findIndex((column) => column.id === data.id),
-            (contentGroup) => ({ ...contentGroup, ...data })
-          );
-          break;
-        case "delete":
-          setState({
-            contentGroups: state.contentGroups.filter((column) => column.id !== data.id)
-          });
-          break;
-        case "move":
-          moveContentGroup(data.id, data.index);
-          break;
-      }
-    }
-  });
-
-  onCleanup(() => {
-    contentGroupsChanges.unsubscribe();
-  });
-
-  return {
-    contentGroups: () => state.contentGroups,
-    setContentGroups: (contentGroups) => setState("contentGroups", contentGroups)
-  };
-};
 const DashboardView: Component = () => {
+  const { useContentGroups } = useCacheContext();
   const { workspace, profile } = useAuthenticatedContext();
   const { contentGroups, setContentGroups } = useContentGroups();
   const { storage, setStorage, setReferences } = useUIContext();
@@ -158,13 +98,13 @@ const DashboardView: Component = () => {
               },
               onEnd() {
                 setSnapEnabled(true);
+
                 const children = [...(scrollableContainerRef()?.children || [])] as HTMLElement[];
                 const newItems = children
                   .map((v) => {
-                    return contentGroups().find(
-                      (contentGroup) =>
-                        contentGroup.id.toString() === (v.dataset.contentGroupId || "")
-                    );
+                    return contentGroups().find((contentGroup) => {
+                      return contentGroup.id.toString() === (v.dataset.contentGroupId || "");
+                    });
                   })
                   .filter((item) => item) as App.ContentGroup[];
 

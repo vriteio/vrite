@@ -5,3 +5,4 @@ export * from "./ui";
 export * from "./appearance";
 export * from "./authenticated";
 export * from "./extensions";
+export * from "./cache";

@@ -1,15 +1,6 @@
 import { ContentPieceCard } from "./content-piece-card";
 import { useColumnsContext } from "./columns-context";
-import {
-  Component,
-  createEffect,
-  createMemo,
-  createSignal,
-  For,
-  on,
-  onCleanup,
-  Show
-} from "solid-js";
+import { Component, createEffect, createMemo, createSignal, For, on, Show } from "solid-js";
 import {
   mdiDotsVertical,
   mdiFileDocumentPlus,
@@ -20,7 +11,6 @@ import {
   mdiTrashCan
 } from "@mdi/js";
 import clsx from "clsx";
-import { createStore } from "solid-js/store";
 import {
   Card,
   IconButton,
@@ -37,6 +27,7 @@ import {
   useNotificationsContext,
   useConfirmationContext,
   useUIContext,
+  useCacheContext,
   hasPermission
 } from "#context";
 import { createRef } from "#lib/utils";
@@ -51,139 +42,6 @@ interface AddColumnProps {
   class?: string;
 }
 
-const useContentPieces = (
-  contentGroupId: string
-): {
-  contentPieces(): Array<App.ExtendedContentPieceWithAdditionalData<"locked" | "order">>;
-  setContentPieces(
-    contentPieces: Array<App.ExtendedContentPieceWithAdditionalData<"locked" | "order">>
-  ): void;
-  loading(): boolean;
-  loadMore(): void;
-} => {
-  const { notify } = useNotificationsContext();
-  const { client } = useClientContext();
-  const [loading, setLoading] = createSignal(false);
-  const [moreToLoad, setMoreToLoad] = createSignal(true);
-  const [state, setState] = createStore<{
-    contentPieces: Array<App.ExtendedContentPieceWithAdditionalData<"locked" | "order">>;
-  }>({
-    contentPieces: []
-  });
-  const loadMore = (): void => {
-    const lastOrder = state.contentPieces[state.contentPieces.length - 1]?.order;
-
-    if (loading() || !moreToLoad()) return;
-
-    setLoading(true);
-    client.contentPieces.list.query({ contentGroupId, perPage: 20, lastOrder }).then((data) => {
-      setLoading(false);
-      setState("contentPieces", (contentPieces) => [...contentPieces, ...data]);
-      setMoreToLoad(data.length === 20);
-    });
-  };
-  const contentPiecesChanges = client.contentPieces.changes.subscribe(
-    { contentGroupId },
-    {
-      onData({ action, data }) {
-        switch (action) {
-          case "delete":
-            setState("contentPieces", (contentPieces) => {
-              return contentPieces.filter((contentPiece) => {
-                return contentPiece.id !== data.id;
-              });
-            });
-            notify({ text: "Content piece deleted", type: "success" });
-            break;
-          case "create":
-            setState("contentPieces", (contentPieces) => [data, ...contentPieces]);
-            break;
-          case "update":
-            setState(
-              "contentPieces",
-              state.contentPieces.findIndex((contentPiece) => contentPiece.id === data.id),
-              (contentPiece) => ({ ...contentPiece, ...data })
-            );
-            break;
-          case "move":
-            setState("contentPieces", (contentPieces) => {
-              const currentIndex = contentPieces.findIndex(
-                (contentPiece) => data.contentPiece.id === contentPiece.id
-              );
-
-              if (currentIndex >= 0) {
-                if (contentGroupId === data.contentPiece.contentGroupId) {
-                  const newContentPieces = [...contentPieces];
-
-                  newContentPieces.splice(currentIndex, 1);
-
-                  const previousReferenceIndex = newContentPieces.findIndex((contentPieces) => {
-                    return contentPieces.id === data.previousReferenceId;
-                  });
-
-                  if (previousReferenceIndex >= 0) {
-                    newContentPieces.splice(previousReferenceIndex, 0, data.contentPiece);
-                  } else {
-                    const nextReferenceIndex = newContentPieces.findIndex((contentPieces) => {
-                      return contentPieces.id === data.nextReferenceId;
-                    });
-
-                    if (nextReferenceIndex >= 0) {
-                      newContentPieces.splice(nextReferenceIndex + 1, 0, data.contentPiece);
-                    } else if (!data.previousReferenceId && !data.nextReferenceId) {
-                      newContentPieces.push(data.contentPiece);
-                    }
-                  }
-
-                  return newContentPieces;
-                }
-
-                return contentPieces.filter((contentPiece) => {
-                  return contentPiece.id !== data.contentPiece.id;
-                });
-              } else if (contentGroupId === data.contentPiece.contentGroupId) {
-                const newContentPieces = [...contentPieces];
-                const previousReferenceIndex = newContentPieces.findIndex((contentPieces) => {
-                  return contentPieces.id === data.previousReferenceId;
-                });
-
-                if (previousReferenceIndex >= 0) {
-                  newContentPieces.splice(previousReferenceIndex, 0, data.contentPiece);
-                } else {
-                  const nextReferenceIndex = newContentPieces.findIndex((contentPieces) => {
-                    return contentPieces.id === data.nextReferenceId;
-                  });
-
-                  if (nextReferenceIndex >= 0) {
-                    newContentPieces.splice(nextReferenceIndex + 1, 0, data.contentPiece);
-                  } else if (!data.previousReferenceId && !data.nextReferenceId) {
-                    newContentPieces.push(data.contentPiece);
-                  }
-                }
-
-                return newContentPieces;
-              }
-
-              return contentPieces;
-            });
-            break;
-        }
-      }
-    }
-  );
-
-  loadMore();
-  onCleanup(() => {
-    contentPiecesChanges.unsubscribe();
-  });
-
-  return {
-    contentPieces: () => state.contentPieces,
-    setContentPieces: (contentPieces) => setState("contentPieces", contentPieces),
-    loading,
-    loadMore
-  };
-};
 const AddColumn: Component<AddColumnProps> = (props) => {
   const { client } = useClientContext();
   const { notify } = useNotificationsContext();
@@ -216,6 +74,7 @@ const AddColumn: Component<AddColumnProps> = (props) => {
 const Column: Component<ColumnProps> = (props) => {
   const { notify } = useNotificationsContext();
   const { confirmDelete } = useConfirmationContext();
+  const { useContentPieces } = useCacheContext();
   const { setStorage } = useUIContext();
   const { contentPieces, setContentPieces, loadMore, loading } = useContentPieces(
     props.contentGroup.id
@@ -295,8 +154,6 @@ const Column: Component<ColumnProps> = (props) => {
                     return contentPiece.contentGroupId === props.contentGroup.id;
                   }) && { contentPieceId: undefined })
                 }));
-
-                // DELETE
                 notify({ text: "Content group deleted", type: "success" });
               } catch (error) {
                 notify({ text: "Couldn't delete the content group", type: "success" });
@@ -497,10 +354,9 @@ const Column: Component<ColumnProps> = (props) => {
                     const children = [...(sortableRef()?.children || [])] as HTMLElement[];
                     const newItems = children
                       .map((v) => {
-                        return contentPieces().find(
-                          (contentPiece) =>
-                            contentPiece.id.toString() === (v.dataset.contentPieceId || "")
-                        );
+                        return contentPieces().find((contentPiece) => {
+                          return contentPiece.id.toString() === (v.dataset.contentPieceId || "");
+                        });
                       })
                       .filter((item) => item) as App.FullContentPieceWithAdditionalData[];
 

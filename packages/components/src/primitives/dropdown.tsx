@@ -6,6 +6,7 @@ import {
   Component,
   ComponentProps,
   createEffect,
+  createMemo,
   createSignal,
   JSX,
   on,
@@ -43,6 +44,17 @@ const Dropdown: Component<DropdownProps> = (props) => {
   const [resizing, setResizing] = createSignal(false);
   const [height, setHeight] = createSignal(0);
   const [minHeight, setMinHeight] = createSignal(0);
+  const cardStyle = createMemo(() => {
+    if (md()) {
+      return { height: height() ? `${height()}px` : undefined };
+    }
+
+    return {
+      "transition-property": "transform, box-shadow, visibility, opacity",
+      "box-shadow": "0 -25px 50px -12px rgba(0, 0, 0, 0.25)",
+      "height": height() ? `${height()}px` : undefined
+    };
+  });
   const computeDropdownPosition = (): void => {
     const button = buttonRef();
     const box = boxRef();
@@ -93,6 +105,7 @@ const Dropdown: Component<DropdownProps> = (props) => {
           setHeight(0);
         }, 300);
       }
+
       if (opened && props.autoFocus !== false) {
         computeDropdownPosition();
         boxRef()?.focus();
@@ -166,7 +179,7 @@ const Dropdown: Component<DropdownProps> = (props) => {
         <Card
           {...props.cardProps}
           class={clsx(
-            `:base-2: z-50 flex flex-col p-1 overflow-hidden transform shadow-2xl`,
+            `:base-2: z-50 flex flex-col p-1 overflow-auto md:overflow-hidden transform shadow-2xl`,
             !md() &&
               "fixed !left-0 w-full !max-w-full !max-h-full m-0 border-0 border-t-2 shadow-none rounded-none duration-250 !top-unset bottom-0 h-unset",
             props.fixed ? "fixed" : "absolute",
@@ -174,15 +187,7 @@ const Dropdown: Component<DropdownProps> = (props) => {
             opened() ? `:base-2: visible md:opacity-100` : `:base-2: invisible md:opacity-0`,
             props.cardProps?.class
           )}
-          style={
-            !md()
-              ? {
-                  "transition-property": "transform, box-shadow, visibility, opacity",
-                  "box-shadow": "0 -25px 50px -12px rgba(0, 0, 0, 0.25)",
-                  "height": height() ? `${height()}px` : undefined
-                }
-              : { height: height() ? `${height()}px` : undefined }
-          }
+          style={cardStyle()}
           ref={setBoxRef}
         >
           <div
@@ -194,19 +199,22 @@ const Dropdown: Component<DropdownProps> = (props) => {
                 (minHeight) => minHeight || boxRef()?.getBoundingClientRect().height || 0
               );
 
-              let prevY = event.pageY;
-              let prevHeight = height();
+              const prevY = event.pageY;
+              const prevHeight = height();
+
               let delta = 0;
-              const onMove = (event: PointerEvent) => {
+
+              const onMove = (event: PointerEvent): void => {
                 delta = (prevY || 0) - event.pageY;
                 setHeight(() => prevHeight + delta);
                 event.preventDefault();
                 event.stopPropagation();
               };
-              const up = () => {
+              const up = (): void => {
                 document.body.removeEventListener("pointermove", onMove);
                 document.body.removeEventListener("pointerup", up);
                 setMinHeight(0);
+
                 if (delta > 0) {
                   setHeight(
                     document.getElementById("dropdowns")?.getBoundingClientRect().height || 0
@@ -222,7 +230,7 @@ const Dropdown: Component<DropdownProps> = (props) => {
           >
             <div class="h-1.5 w-16 rounded-full bg-gray-200 dark:bg-gray-700"></div>
           </div>
-          <div class="overflow-hidden" style={{ "min-height": `${minHeight()}px` }}>
+          <div class="overflow-auto" style={{ "min-height": `${minHeight()}px` }}>
             {props.children}
           </div>
         </Card>

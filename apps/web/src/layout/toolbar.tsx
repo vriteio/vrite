@@ -3,18 +3,19 @@ import {
   mdiBookOpenBlankVariant,
   mdiFileDocument,
   mdiFullscreen,
-  mdiGithub
+  mdiGithub,
+  mdiMenu
 } from "@mdi/js";
 import { Component, For, Show, createEffect, createMemo, onCleanup } from "solid-js";
 import { Dynamic } from "solid-js/web";
 import { HocuspocusProvider } from "@hocuspocus/provider";
 import clsx from "clsx";
 import { createStore } from "solid-js/store";
+import { JSONContent } from "@vrite/sdk";
 import { useAuthenticatedContext, useUIContext } from "#context";
 import { ExportMenu, StatsMenu } from "#views/editor/menus";
-import { Button, Icon, IconButton, Tooltip } from "#components/primitives";
+import { Button, Dropdown, Icon, IconButton, Tooltip } from "#components/primitives";
 import { logoIcon } from "#assets/icons";
-import { JSONContent } from "@vrite/sdk";
 
 interface UserAwarenessData {
   awarenessId: number;
@@ -226,7 +227,7 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
     const { references, setStorage } = useUIContext();
 
     return (
-      <div class="flex justify-start items-center px-4 w-full gap-2">
+      <div class="flex-col md:flex-row flex justify-start items-start md:items-center md:px-4 w-full gap-2">
         <Show when={references.provider}>
           <UserList provider={references.provider!} />
         </Show>
@@ -241,7 +242,7 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
           onClick={() => {
             setStorage((storage) => ({ ...storage, zenMode: true }));
           }}
-          class="m-0"
+          class="m-0 w-full md:w-auto justify-start md:justify-center"
           variant="text"
           text="soft"
           path={mdiFullscreen}
@@ -264,20 +265,41 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
   }
 };
 const Toolbar: Component<{ class?: string }> = (props) => {
-  const { storage } = useUIContext();
+  const { storage, breakpoints } = useUIContext();
   const view = createMemo(() => {
     return toolbarViews[storage().toolbarView || "default"];
   });
 
   return (
     <div
-      color="contrast"
       class={clsx(
         ":base-2: p-1 w-full flex justify-center items-center border-b-2 absolute h-12 border-gray-200 dark:border-gray-700",
+        "md:justify-center justify-end",
         props.class
       )}
     >
-      <Dynamic component={view()} />
+      <Show
+        when={breakpoints.md()}
+        fallback={
+          <Dropdown
+            activatorButton={() => (
+              <IconButton
+                path={mdiMenu}
+                text="soft"
+                variant="text"
+                class="flex-row-reverse"
+                label={<span class="mr-1">Menu</span>}
+              />
+            )}
+          >
+            <div class="overflow-hidden w-full h-full">
+              <Dynamic component={view()} />
+            </div>
+          </Dropdown>
+        }
+      >
+        <Dynamic component={view()} />
+      </Show>
     </div>
   );
 };

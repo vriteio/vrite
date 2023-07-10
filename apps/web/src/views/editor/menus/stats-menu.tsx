@@ -61,6 +61,7 @@ const StatsMenu: Component<StatsMenuProps> = (props) => {
       <Dropdown
         placement="bottom-start"
         cardProps={{ class: "mt-3" }}
+        fixed
         activatorButton={() => (
           <IconButton
             path={mdiInformationOutline}
@@ -72,7 +73,7 @@ const StatsMenu: Component<StatsMenuProps> = (props) => {
           />
         )}
       >
-        <div class="grid w-64 grid-cols-2 text-gray-700 dark:text-gray-200">
+        <div class="grid md:w-64 grid-cols-2 text-gray-700 dark:text-gray-200">
           <Button
             class="flex flex-col items-start justify-center p-2"
             color="contrast"

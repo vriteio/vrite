@@ -26,14 +26,14 @@ interface NotificationsContextData {
 
 const Notification: Component<NotificationProps> = (props) => {
   return (
-    <Card class="flex p-2 justify-center items-center shadow-lg">
+    <Card class="flex p-2 justify-center items-center shadow-lg w-full">
       <Show when={props.type !== "loading"} fallback={<Loader class="h-6 w-6" color="primary" />}>
         <Icon
           path={props.type === "error" ? mdiAlertCircle : mdiCheckCircle}
           class={clsx("h-6 w-6", props.type === "success" ? "text-green-500" : "text-red-500")}
         />
       </Show>
-      <span class="pl-2 pr-6 min-w-48">{props.text}</span>
+      <span class="pl-2 pr-6 min-w-48 flex-1">{props.text}</span>
       <Button size="small" variant="text" text="soft" onClick={() => props.onDismiss?.()}>
         Close
       </Button>
@@ -58,14 +58,14 @@ const NotificationsProvider: ParentComponent = (props) => {
             setTimeoutHandleRef(
               window.setTimeout(() => {
                 setNotification(null);
-              }, 5000)
+              }, 3000)
             );
           }
         }
       }}
     >
       {props.children}
-      <div class="fixed z-50 bottom-4 right-4">
+      <div class="fixed z-50 top-[calc(3rem+env(safe-area-inset-top,0px))] md:top-unset left-4 md:left-unset md:bottom-4 md:right-4 w-[calc(100%-2rem)] md:w-unset">
         <Presence exitBeforeEnter>
           <Show when={notification()} keyed>
             {(notification) => (

@@ -350,6 +350,9 @@ importers:
       clsx:
         specifier: ^1.2.1
         version: 1.2.1
+      codejar:
+        specifier: ^3.7.0
+        version: 3.7.0
       curl-string:
         specifier: ^3.0.0
         version: 3.0.0
@@ -377,6 +380,9 @@ importers:
       seamless-scroll-polyfill:
         specifier: ^2.3.0
         version: 2.3.0
+      shiki:
+        specifier: ^0.14.1
+        version: 0.14.1
       solid-js:
         specifier: ^1.7.0
         version: 1.7.0
@@ -6846,6 +6852,10 @@ packages:
       qs: 6.11.2
       raw-body: 2.5.2
       type-is: 1.6.18
+    dev: false
+
+  /codejar@3.7.0:
+    resolution: {integrity: sha512-rqyDu2zNwfu1EhXI++LEMQDzhykS+V0BV52RemtCj5lczgTgWSufyEa+tS7RP7qCXH/WXOkU0eIthmFUzvG78Q==}
     dev: false
 
   /color-convert@1.9.3:

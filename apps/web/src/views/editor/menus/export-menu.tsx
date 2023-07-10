@@ -10,12 +10,12 @@ import {
 import { Component, createSignal } from "solid-js";
 import { htmlTransformer, gfmTransformer } from "@vrite/sdk/transformers";
 import { JSONContent } from "@vrite/sdk";
+import { nanoid } from "nanoid";
 import { Card, Dropdown, Heading, IconButton, Overlay, Tooltip } from "#components/primitives";
 import { MiniCodeEditor } from "#components/fragments";
 import { App, useAuthenticatedContext, useClientContext, useNotificationsContext } from "#context";
 import { formatCode } from "#lib/code-editor";
 import { escapeHTML } from "#lib/utils";
-import { nanoid } from "nanoid";
 
 interface ExportMenuProps {
   editedContentPiece?: App.ContentPieceWithAdditionalData;
@@ -33,7 +33,7 @@ const ExportMenu: Component<ExportMenuProps> = (props) => {
   const [exportType, setExportType] = createSignal<"html" | "json" | "md">("html");
   const loadContent = async (type: "html" | "json" | "md"): Promise<string | undefined> => {
     try {
-      let content = props.content;
+      let { content } = props;
 
       if (!content && props.editedContentPiece) {
         const contentPiece = await client.contentPieces.get.query({
@@ -43,6 +43,7 @@ const ExportMenu: Component<ExportMenuProps> = (props) => {
 
         content = contentPiece.content as JSONContent;
       }
+
       const prettierConfig = JSON.parse(workspaceSettings()?.prettierConfig || "{}");
 
       if (type === "html") {
@@ -107,6 +108,7 @@ const ExportMenu: Component<ExportMenuProps> = (props) => {
           setOpened={setExportDropdownOpened}
           placement="bottom-start"
           cardProps={{ class: "mt-3" }}
+          fixed
         >
           <IconButton
             path={mdiLanguageHtml5}

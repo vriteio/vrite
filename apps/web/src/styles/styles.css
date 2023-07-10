@@ -161,6 +161,9 @@ button:focus {
   @apply pointer-events-auto;
 }
 
-.slash-menu {
+/*.slash-menu {
   @apply lt-md:!transform-none;
+}*/
+.shiki {
+  @apply h-full w-full pl-6;
 }

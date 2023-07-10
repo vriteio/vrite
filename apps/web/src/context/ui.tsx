@@ -10,6 +10,7 @@ import {
 } from "solid-js";
 import { SetStoreFunction, createStore } from "solid-js/store";
 import { HocuspocusProvider } from "@hocuspocus/provider";
+import { createMediaQuery } from "@solid-primitives/media";
 import { App } from "#context";
 
 interface StorageData {
@@ -31,10 +32,14 @@ interface UIContextData {
   references: ReferencesData;
   setStorage: Setter<Partial<StorageData>>;
   setReferences: SetStoreFunction<ReferencesData>;
+  breakpoints: {
+    md(): boolean;
+  };
 }
 
 const UIContext = createContext<UIContextData>();
 const UIContextProvider: ParentComponent = (props) => {
+  const md = createMediaQuery("(min-width: 768px)");
   const [storage, setStorage] = createSignal<Partial<StorageData>>({});
   const [references, setReferences] = createStore<ReferencesData>({});
 
@@ -73,7 +78,10 @@ const UIContextProvider: ParentComponent = (props) => {
         storage,
         references,
         setStorage,
-        setReferences
+        setReferences,
+        breakpoints: {
+          md
+        }
       }}
     >
       {props.children}
