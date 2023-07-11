@@ -1,9 +1,9 @@
 import { Fragment } from "./fragment";
 import clsx from "clsx";
-import { Component, JSX } from "solid-js";
+import { Component, JSX, splitProps } from "solid-js";
 import { Dynamic, Portal } from "solid-js/web";
 
-interface OverlayProps {
+interface OverlayProps extends JSX.HTMLAttributes<HTMLDivElement> {
   opened: boolean;
   children?: JSX.Element;
   class?: string;
@@ -13,6 +13,15 @@ interface OverlayProps {
 }
 
 const Overlay: Component<OverlayProps> = (props) => {
+  const [, passedProps] = splitProps(props, [
+    "opened",
+    "children",
+    "class",
+    "shadeClass",
+    "portal",
+    "onOverlayClick"
+  ]);
+
   return (
     <Dynamic component={props.portal ? Portal : Fragment}>
       <div
@@ -29,6 +38,7 @@ const Overlay: Component<OverlayProps> = (props) => {
             event.stopPropagation();
             props.onOverlayClick?.();
           }}
+          {...passedProps}
         />
         <div class="z-0">{props.children}</div>
       </div>

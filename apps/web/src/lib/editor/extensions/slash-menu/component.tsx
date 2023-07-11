@@ -6,7 +6,7 @@ import clsx from "clsx";
 import { scrollIntoView } from "seamless-scroll-polyfill";
 import { Ref } from "#lib/utils";
 import { Button, Card, IconButton } from "#components/primitives";
-import { App } from "#context";
+import { App, useUIContext } from "#context";
 
 interface SlashMenuItem {
   icon: string;
@@ -74,6 +74,7 @@ const BlockMenu: Component<{ items: SlashMenuItem[]; editor: SolidEditor; close(
   );
 };
 const SlashMenu: Component<SlashMenuProps> = (props) => {
+  const { breakpoints } = useUIContext();
   const [selectedIndex, setSelectedIndex] = createSignal(0);
   const [blockHoverSelect, setBlockHoverSelect] = createSignal(false);
   const selectItem = (index: number): void => {
@@ -147,63 +148,65 @@ const SlashMenu: Component<SlashMenuProps> = (props) => {
   );
 
   return (
-    <Card
-      class={clsx(
-        "shadow-2xl md:shadow-none rounded-none border-x-0 md:border-x-2 md:rounded-2xl -translate-x-2 md:translate-x-0 w-screen md:w-56 m-0 max-h-72 overflow-hidden transition duration-200 transform origin-top-left p-1"
-        // "w-screen -left-2 z-60 top-0 h-[calc(100vh-3.625rem-env(safe-area-inset-bottom,0px))] rounded-none border-x-0 border-y-2 fixed md:w-56 m-0 md:max-h-72 overflow-hidden transition duration-200 transform origin-top-left p-1"
-      )}
-    >
-      <div
+    <Show when={breakpoints.md()}>
+      <Card
         class={clsx(
-          // "w-full h-full overflow-auto md:max-h-64 scrollbar-sm"
-          "w-full h-full overflow-auto max-h-64 scrollbar-sm"
+          "shadow-2xl md:shadow-none rounded-none border-x-0 md:border-x-2 md:rounded-2xl -translate-x-2 md:translate-x-0 w-screen md:w-56 m-0 max-h-72 overflow-hidden transition duration-200 transform origin-top-left p-1"
+          // "w-screen -left-2 z-60 top-0 h-[calc(100vh-3.625rem-env(safe-area-inset-bottom,0px))] rounded-none border-x-0 border-y-2 fixed md:w-56 m-0 md:max-h-72 overflow-hidden transition duration-200 transform origin-top-left p-1"
         )}
       >
-        <For
-          each={props.state.items}
-          fallback={
-            <Button
-              variant="text"
-              text="soft"
-              class="justify-start text-start w-[calc(100%-0.5rem)]"
-              disabled
-            >
-              No results
-            </Button>
-          }
+        <div
+          class={clsx(
+            // "w-full h-full overflow-auto md:max-h-64 scrollbar-sm"
+            "w-full h-full overflow-auto max-h-64 scrollbar-sm"
+          )}
         >
-          {(menuItem, index) => {
-            return (
-              <>
-                <Show when={menuItem.group !== props.state.items[index() - 1]?.group}>
-                  <div class="px-2 font-semibold">{menuItem.group}</div>
-                </Show>
-                <IconButton
-                  path={menuItem.icon}
-                  label={menuItem.label}
-                  ref={menuItem.ref[1]}
-                  hover={false}
-                  onClick={() => selectItem(index())}
-                  onPointerMove={() => {
-                    setBlockHoverSelect(false);
-                  }}
-                  onPointerEnter={() => {
-                    if (!blockHoverSelect()) {
-                      setSelectedIndex(index());
-                    }
-                  }}
-                  variant="text"
-                  class={clsx(
-                    "justify-start w-[calc(100%-0.5rem)]",
-                    selectedIndex() === index() && "bg-gray-300 dark:bg-gray-700"
-                  )}
-                />
-              </>
-            );
-          }}
-        </For>
-      </div>
-    </Card>
+          <For
+            each={props.state.items}
+            fallback={
+              <Button
+                variant="text"
+                text="soft"
+                class="justify-start text-start w-[calc(100%-0.5rem)]"
+                disabled
+              >
+                No results
+              </Button>
+            }
+          >
+            {(menuItem, index) => {
+              return (
+                <>
+                  <Show when={menuItem.group !== props.state.items[index() - 1]?.group}>
+                    <div class="px-2 font-semibold">{menuItem.group}</div>
+                  </Show>
+                  <IconButton
+                    path={menuItem.icon}
+                    label={menuItem.label}
+                    ref={menuItem.ref[1]}
+                    hover={false}
+                    onClick={() => selectItem(index())}
+                    onPointerMove={() => {
+                      setBlockHoverSelect(false);
+                    }}
+                    onPointerEnter={() => {
+                      if (!blockHoverSelect()) {
+                        setSelectedIndex(index());
+                      }
+                    }}
+                    variant="text"
+                    class={clsx(
+                      "justify-start w-[calc(100%-0.5rem)]",
+                      selectedIndex() === index() && "bg-gray-300 dark:bg-gray-700"
+                    )}
+                  />
+                </>
+              );
+            }}
+          </For>
+        </div>
+      </Card>
+    </Show>
   );
 };
 

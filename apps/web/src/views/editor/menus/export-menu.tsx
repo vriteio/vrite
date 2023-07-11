@@ -11,6 +11,7 @@ import { Component, createSignal } from "solid-js";
 import { htmlTransformer, gfmTransformer } from "@vrite/sdk/transformers";
 import { JSONContent } from "@vrite/sdk";
 import { nanoid } from "nanoid";
+import clsx from "clsx";
 import { Card, Dropdown, Heading, IconButton, Overlay, Tooltip } from "#components/primitives";
 import { MiniCodeEditor } from "#components/fragments";
 import { App, useAuthenticatedContext, useClientContext, useNotificationsContext } from "#context";
@@ -20,6 +21,9 @@ import { escapeHTML } from "#lib/utils";
 interface ExportMenuProps {
   editedContentPiece?: App.ContentPieceWithAdditionalData;
   content?: JSONContent;
+  wrapperClass?: string;
+  class?: string;
+  onClick?(): void;
 }
 
 const ExportMenu: Component<ExportMenuProps> = (props) => {
@@ -92,53 +96,54 @@ const ExportMenu: Component<ExportMenuProps> = (props) => {
 
   return (
     <>
-      <div class="not-prose">
-        <Dropdown
-          activatorButton={() => (
-            <IconButton
-              path={mdiExportVariant}
-              label="Export"
-              text="soft"
-              class="m-0"
-              variant="text"
-              id="content-piece-export"
-            />
-          )}
-          opened={exportDropdownOpened()}
-          setOpened={setExportDropdownOpened}
-          placement="bottom-start"
-          cardProps={{ class: "mt-3" }}
-          fixed
-        >
+      <Dropdown
+        activatorWrapperClass="w-full"
+        activatorButton={() => (
           <IconButton
-            path={mdiLanguageHtml5}
+            path={mdiExportVariant}
+            label="Export"
             text="soft"
+            class={clsx("m-0", props.class)}
+            onClick={props.onClick}
             variant="text"
-            label="HTML"
-            disabled={loading()}
-            class="justify-start"
-            onClick={() => exportContent("html")}
+            id="content-piece-export"
           />
-          <IconButton
-            path={mdiCodeJson}
-            text="soft"
-            variant="text"
-            label="JSON"
-            disabled={loading()}
-            class="justify-start"
-            onClick={() => exportContent("json")}
-          />
-          <IconButton
-            path={mdiLanguageMarkdown}
-            text="soft"
-            variant="text"
-            label="GFM"
-            disabled={loading()}
-            class="justify-start"
-            onClick={() => exportContent("md")}
-          />
-        </Dropdown>
-      </div>
+        )}
+        class={props.wrapperClass}
+        opened={exportDropdownOpened()}
+        setOpened={setExportDropdownOpened}
+        placement="bottom-start"
+        cardProps={{ class: "mt-3" }}
+        fixed
+      >
+        <IconButton
+          path={mdiLanguageHtml5}
+          text="soft"
+          variant="text"
+          label="HTML"
+          disabled={loading()}
+          class="justify-start"
+          onClick={() => exportContent("html")}
+        />
+        <IconButton
+          path={mdiCodeJson}
+          text="soft"
+          variant="text"
+          label="JSON"
+          disabled={loading()}
+          class="justify-start"
+          onClick={() => exportContent("json")}
+        />
+        <IconButton
+          path={mdiLanguageMarkdown}
+          text="soft"
+          variant="text"
+          label="GFM"
+          disabled={loading()}
+          class="justify-start"
+          onClick={() => exportContent("md")}
+        />
+      </Dropdown>
       <Overlay
         opened={exportMenuOpened()}
         onOverlayClick={() => {

@@ -1,5 +1,5 @@
-import { Card, IconButton, Tooltip } from "#components/primitives";
 import {
+  mdiKeyboardCloseOutline,
   mdiTableColumnPlusAfter,
   mdiTableColumnPlusBefore,
   mdiTableHeadersEye,
@@ -11,6 +11,9 @@ import {
 import { ChainedCommands } from "@tiptap/core";
 import { SolidEditor } from "@vrite/tiptap-solid";
 import { Component, For, Show, createMemo } from "solid-js";
+import clsx from "clsx";
+import { Card, IconButton, Tooltip } from "#components/primitives";
+import { useUIContext } from "#context";
 
 interface TableMenuProps {
   state: {
@@ -18,12 +21,15 @@ interface TableMenuProps {
     editor: SolidEditor;
   };
 }
+
 const TableMenu: Component<TableMenuProps> = (props) => {
+  const { breakpoints } = useUIContext();
   const hasHeader = createMemo(() => {
     return props.state.container?.querySelector("tr:first-child > th") !== null;
   });
-  const runCommand = (fn: (chain: ChainedCommands) => void) => {
+  const runCommand = (fn: (chain: ChainedCommands) => void): void => {
     const chain = props.state.editor.chain();
+
     if (hasHeader()) {
       chain.toggleHeaderRow();
     }
@@ -39,7 +45,12 @@ const TableMenu: Component<TableMenuProps> = (props) => {
 
   return (
     <Show when={props.state.editor.isEditable}>
-      <Card class="mb-2 p-1 flex gap-2 m-0">
+      <Card
+        class={clsx(
+          "mb-2 p-1 flex gap-2 m-0",
+          !breakpoints.md() && "fixed w-screen -left-1 rounded-none border-x-0"
+        )}
+      >
         <For
           each={[
             {
@@ -87,7 +98,17 @@ const TableMenu: Component<TableMenuProps> = (props) => {
               onClick() {
                 props.state.editor.chain().deleteTable().focus().run();
               }
-            }
+            },
+            ...((!breakpoints.md() && [
+              {
+                icon: mdiKeyboardCloseOutline,
+                label: "Close keyboard",
+                async onClick() {
+                  props.state.editor.commands.blur();
+                }
+              }
+            ]) ||
+              [])
           ]}
         >
           {(menuItem) => {

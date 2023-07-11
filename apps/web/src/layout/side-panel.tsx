@@ -90,8 +90,8 @@ const SidePanel: Component = () => {
     <div
       class={clsx(
         "fixed z-20 top-0 left-0 !lt-md:w-full md:relative h-[calc(100%-3.25rem-env(safe-area-inset-bottom,0px))] md:h-full border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800",
-        "flex transition-transform ease-out duration-300",
-        collapsed() && "translate-y-full md:translate-y-0",
+        "flex transition-transform ease-out duration-500",
+        collapsed() && "translate-y-[100vh] md:translate-y-0",
         !collapsed() && "md:border-r-2"
       )}
       style={{

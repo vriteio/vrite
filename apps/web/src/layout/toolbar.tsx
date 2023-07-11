@@ -1,12 +1,12 @@
 import {
   mdiAccountCircle,
   mdiBookOpenBlankVariant,
-  mdiFileDocument,
+  mdiDotsVerticalCircleOutline,
   mdiFullscreen,
   mdiGithub,
   mdiMenu
 } from "@mdi/js";
-import { Component, For, Show, createEffect, createMemo, onCleanup } from "solid-js";
+import { Component, For, Show, createEffect, createMemo, createSignal, onCleanup } from "solid-js";
 import { Dynamic } from "solid-js/web";
 import { HocuspocusProvider } from "@hocuspocus/provider";
 import clsx from "clsx";
@@ -224,31 +224,80 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
     );
   },
   editor: () => {
-    const { references, setStorage } = useUIContext();
+    const { references, breakpoints, setStorage } = useUIContext();
+    const [menuOpened, setMenuOpened] = createSignal(false);
 
     return (
-      <div class="flex-col md:flex-row flex justify-start items-start md:items-center md:px-4 w-full gap-2">
-        <Show when={references.provider}>
-          <UserList provider={references.provider!} />
-        </Show>
-        <div class="flex-1" />
-        <Show when={references.editor}>
-          <StatsMenu editor={references.editor!} />
-        </Show>
-        <Show when={references.editedContentPiece}>
-          <ExportMenu editedContentPiece={references.editedContentPiece!} />
-        </Show>
-        <IconButton
-          onClick={() => {
-            setStorage((storage) => ({ ...storage, zenMode: true }));
-          }}
-          class="m-0 w-full md:w-auto justify-start md:justify-center"
-          variant="text"
-          text="soft"
-          path={mdiFullscreen}
-          label="Zen mode"
-        />
-      </div>
+      <Show
+        when={breakpoints.md()}
+        fallback={
+          <Dropdown
+            opened={menuOpened()}
+            setOpened={setMenuOpened}
+            activatorButton={() => (
+              <IconButton path={mdiMenu} text="soft" variant="text" class="flex-row-reverse mr-4" />
+            )}
+          >
+            <div class="overflow-hidden w-full h-full">
+              <div class="flex-col md:flex-row flex justify-start items-start md:items-center md:px-4 w-full gap-2">
+                <Show when={references.provider}>
+                  <UserList provider={references.provider!} />
+                </Show>
+                <div class="flex-1" />
+                <Show when={references.editor}>
+                  <StatsMenu
+                    editor={references.editor!}
+                    onClick={() => setMenuOpened(false)}
+                    class="w-full justify-start"
+                    wrapperClass="w-full"
+                  />
+                </Show>
+                <Show when={references.editedContentPiece}>
+                  <ExportMenu
+                    editedContentPiece={references.editedContentPiece!}
+                    onClick={() => setMenuOpened(false)}
+                    class="w-full justify-start"
+                    wrapperClass="w-full"
+                  />
+                </Show>
+                <IconButton
+                  onClick={() => {
+                    setStorage((storage) => ({ ...storage, zenMode: true }));
+                  }}
+                  class="m-0 w-full md:w-auto justify-start md:justify-center"
+                  variant="text"
+                  text="soft"
+                  path={mdiFullscreen}
+                  label="Zen mode"
+                />
+              </div>
+            </div>
+          </Dropdown>
+        }
+      >
+        <div class="flex-col md:flex-row flex justify-start items-start md:items-center md:px-4 w-full gap-2">
+          <Show when={references.provider}>
+            <UserList provider={references.provider!} />
+          </Show>
+          <div class="flex-1" />
+          <Show when={references.editor}>
+            <StatsMenu editor={references.editor!} />
+          </Show>
+          <Show when={references.editedContentPiece}>
+            <ExportMenu editedContentPiece={references.editedContentPiece!} />
+          </Show>
+          <IconButton
+            onClick={() => {
+              setStorage((storage) => ({ ...storage, zenMode: true }));
+            }}
+            class="m-0 w-full md:w-auto justify-start md:justify-center"
+            variant="text"
+            text="soft"
+            path={mdiFullscreen}
+            label="Zen mode"
+          />
+        </div>
+      </Show>
     );
   },
   default: () => {
@@ -265,7 +314,7 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
   }
 };
 const Toolbar: Component<{ class?: string }> = (props) => {
-  const { storage, breakpoints } = useUIContext();
+  const { storage } = useUIContext();
   const view = createMemo(() => {
     return toolbarViews[storage().toolbarView || "default"];
   });
@@ -273,33 +322,11 @@ const Toolbar: Component<{ class?: string }> = (props) => {
   return (
     <div
       class={clsx(
-        ":base-2: p-1 w-full flex justify-center items-center border-b-2 absolute h-12 border-gray-200 dark:border-gray-700",
-        "md:justify-center justify-end",
+        ":base-2: p-1 w-full flex items-center border-b-2 absolute h-12 border-gray-200 dark:border-gray-700 justify-end",
         props.class
       )}
     >
-      <Show
-        when={breakpoints.md()}
-        fallback={
-          <Dropdown
-            activatorButton={() => (
-              <IconButton
-                path={mdiMenu}
-                text="soft"
-                variant="text"
-                class="flex-row-reverse"
-                label={<span class="mr-1">Menu</span>}
-              />
-            )}
-          >
-            <div class="overflow-hidden w-full h-full">
-              <Dynamic component={view()} />
-            </div>
-          </Dropdown>
-        }
-      >
-        <Dynamic component={view()} />
-      </Show>
+      <Dynamic component={view()} />
     </div>
   );
 };

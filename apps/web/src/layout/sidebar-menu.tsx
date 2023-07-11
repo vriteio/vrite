@@ -10,11 +10,21 @@ import {
   mdiPuzzle,
   mdiMicrosoftXboxControllerMenu
 } from "@mdi/js";
-import { Accessor, Component, For, Show, createSignal } from "solid-js";
+import {
+  Accessor,
+  Component,
+  For,
+  Show,
+  createEffect,
+  createMemo,
+  createSignal,
+  on
+} from "solid-js";
 import { Link, useLocation, useNavigate } from "@solidjs/router";
 import { Dynamic } from "solid-js/web";
 import clsx from "clsx";
 import { createMediaQuery } from "@solid-primitives/media";
+import { createActiveElement } from "@solid-primitives/active-element";
 import { navigateAndReload } from "#lib/utils";
 import { useUIContext, useAuthenticatedContext } from "#context";
 import {
@@ -206,19 +216,45 @@ const ProfileMenu: Component<{ close(): void }> = (props) => {
 };
 const SidebarMenu: Component = () => {
   const { profile = () => null } = useAuthenticatedContext() || {};
-  const { storage } = useUIContext();
+  const { storage, breakpoints } = useUIContext();
+  const activeElement = createActiveElement();
   const [profileMenuOpened, setProfileMenuOpened] = createSignal(false);
+  const [hideMenu, setHideMenu] = createSignal(false);
   const location = useLocation();
   const hiddenLocations = ["auth"];
   const tooltipController = createTooltipController();
   const menuItems = useMenuItems();
+
+  createEffect(
+    on(activeElement, (activeElement) => {
+      const pmContainer = document.getElementById("pm-container");
+
+      if (breakpoints.md() || !pmContainer) {
+        setHideMenu(false);
+
+        return;
+      }
+
+      setHideMenu(pmContainer.contains(activeElement));
+    })
+  );
+  createEffect(() => {
+    if (hideMenu()) {
+      document.documentElement.classList.add("sidebar-hidden");
+    } else {
+      document.documentElement.classList.remove("sidebar-hidden");
+    }
+  });
 
   return (
     <Show
       when={!hiddenLocations.some((hiddenLocation) => location.pathname.includes(hiddenLocation))}
     >
       <Card
-        class="lg:p-2 fixed z-50 p-0 h-[calc(env(safe-area-inset-bottom,0)+3.625rem)] transition-all duration-300 m-0 rounded-0 border-0 border-t-2 md:border-t-0 md:border-r-2 w-full md:w-[calc(3.75rem+env(safe-area-inset-left,0px))] pl-[calc(env(safe-area-inset-left,0px))] md:h-full relative bottom-0 md:bottom-unset"
+        class={clsx(
+          "lg:p-2 fixed z-50 p-0 h-[calc(env(safe-area-inset-bottom,0)+3.625rem)] transition-all duration-300 m-0 rounded-0 border-0 border-t-2 md:border-t-0 md:border-r-2 w-full md:w-[calc(3.75rem+env(safe-area-inset-left,0px))] pl-[calc(env(safe-area-inset-left,0px))] md:h-full relative bottom-0 md:bottom-unset",
+          hideMenu() && "hidden"
+        )}
         color="base"
         onTransitionEnd={() => tooltipController.updatePosition()}
       >

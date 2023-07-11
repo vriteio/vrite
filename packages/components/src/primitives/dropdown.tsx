@@ -82,6 +82,37 @@ const Dropdown: Component<DropdownProps> = (props) => {
       });
     }
   };
+  const onPointerDown = (event: PointerEvent): void => {
+    setResizing(true);
+    setHeight(boxRef()?.getBoundingClientRect().height || 0);
+    setMinHeight((minHeight) => minHeight || boxRef()?.getBoundingClientRect().height || 0);
+
+    const prevY = event.pageY;
+    const prevHeight = height();
+
+    let delta = 0;
+
+    const onMove = (event: PointerEvent): void => {
+      delta = (prevY || 0) - event.pageY;
+      setHeight(() => prevHeight + delta);
+      event.preventDefault();
+      event.stopPropagation();
+    };
+    const up = (): void => {
+      document.body.removeEventListener("pointermove", onMove);
+      document.body.removeEventListener("pointerup", up);
+      setMinHeight(0);
+
+      if (delta > 25) {
+        setHeight(document.getElementById("dropdowns")?.getBoundingClientRect().height || 0);
+      } else if (delta < -25) {
+        setOpened(false);
+      }
+    };
+
+    document.body.addEventListener("pointermove", onMove);
+    document.body.addEventListener("pointerup", up);
+  };
 
   onMount(() => {
     computeDropdownPosition();
@@ -154,6 +185,7 @@ const Dropdown: Component<DropdownProps> = (props) => {
           onOverlayClick={() => {
             setOpened(false);
           }}
+          onPointerDown={onPointerDown}
           {...props.overlayProps}
         />
       </Show>
@@ -179,7 +211,7 @@ const Dropdown: Component<DropdownProps> = (props) => {
         <Card
           {...props.cardProps}
           class={clsx(
-            `:base-2: z-50 flex flex-col p-1 overflow-auto md:overflow-hidden transform shadow-2xl`,
+            `:base-2: z-50 flex flex-col p-1 overflow-hidden transform shadow-2xl`,
             !md() &&
               "fixed !left-0 w-full !max-w-full !max-h-full m-0 border-0 border-t-2 shadow-none rounded-none duration-250 !top-unset bottom-0 h-unset",
             props.fixed ? "fixed" : "absolute",
@@ -192,41 +224,7 @@ const Dropdown: Component<DropdownProps> = (props) => {
         >
           <div
             class="md:hidden flex justify-center items-center h-8 min-h-8"
-            onPointerDown={(event) => {
-              setResizing(true);
-              setHeight(boxRef()?.getBoundingClientRect().height || 0);
-              setMinHeight(
-                (minHeight) => minHeight || boxRef()?.getBoundingClientRect().height || 0
-              );
-
-              const prevY = event.pageY;
-              const prevHeight = height();
-
-              let delta = 0;
-
-              const onMove = (event: PointerEvent): void => {
-                delta = (prevY || 0) - event.pageY;
-                setHeight(() => prevHeight + delta);
-                event.preventDefault();
-                event.stopPropagation();
-              };
-              const up = (): void => {
-                document.body.removeEventListener("pointermove", onMove);
-                document.body.removeEventListener("pointerup", up);
-                setMinHeight(0);
-
-                if (delta > 0) {
-                  setHeight(
-                    document.getElementById("dropdowns")?.getBoundingClientRect().height || 0
-                  );
-                } else {
-                  setOpened(false);
-                }
-              };
-
-              document.body.addEventListener("pointermove", onMove);
-              document.body.addEventListener("pointerup", up);
-            }}
+            onPointerDown={onPointerDown}
           >
             <div class="h-1.5 w-16 rounded-full bg-gray-200 dark:bg-gray-700"></div>
           </div>

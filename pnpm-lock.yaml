@@ -254,6 +254,9 @@ importers:
       '@motionone/solid':
         specifier: ^10.16.0
         version: 10.16.0(solid-js@1.7.0)
+      '@solid-primitives/active-element':
+        specifier: ^2.0.15
+        version: 2.0.15(solid-js@1.7.0)
       '@solid-primitives/connectivity':
         specifier: ^0.3.12
         version: 0.3.12(solid-js@1.7.0)

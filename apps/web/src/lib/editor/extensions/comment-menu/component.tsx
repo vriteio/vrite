@@ -1,14 +1,14 @@
-import { MiniEditor, ScrollShadow } from "#components/fragments";
-import { Card, Heading, IconButton, Loader, Tooltip } from "#components/primitives";
-import { useAuthenticatedContext, useClientContext, useUIContext } from "#context";
-import { createRef } from "#lib/utils";
+import { CommentCard } from "./comment-card";
 import { mdiCheckCircleOutline, mdiSendOutline } from "@mdi/js";
 import { SolidEditor } from "@vrite/tiptap-solid";
 import clsx from "clsx";
 import dayjs from "dayjs";
 import { Component, For, Show, createResource, createSignal } from "solid-js";
 import RelativeTimePlugin from "dayjs/plugin/relativeTime";
-import { CommentCard } from "./comment-card";
+import { createRef } from "#lib/utils";
+import { useAuthenticatedContext, useClientContext, useUIContext } from "#context";
+import { Card, Heading, IconButton, Loader, Tooltip } from "#components/primitives";
+import { MiniEditor, ScrollShadow } from "#components/fragments";
 
 interface BlockActionMenuProps {
   state: {
@@ -17,6 +17,7 @@ interface BlockActionMenuProps {
 }
 
 dayjs.extend(RelativeTimePlugin);
+
 const CommentMenu: Component<BlockActionMenuProps> = (props) => {
   const { references } = useUIContext();
   const { membership } = useAuthenticatedContext();
@@ -63,7 +64,7 @@ const CommentMenu: Component<BlockActionMenuProps> = (props) => {
       setSelectedThreadFragment(null);
     }
   });
-  props.state.editor.on("update", () => {
+  props.state.editor.on("update", (): void => {
     if (props.state.editor.isActive("comment")) {
       setSelectedThreadFragment(props.state.editor.getAttributes("comment").thread);
     } else {
@@ -93,8 +94,9 @@ const CommentMenu: Component<BlockActionMenuProps> = (props) => {
   return (
     <div
       class={clsx(
-        "not-prose text-base w-96 m-0 transform transition-all max-h-[60vh] overflow-hidden backdrop-blur-lg bg-gray-100 dark:bg-gray-800 dark:bg-opacity-50 bg-opacity-50 rounded-l-2xl",
-        props.state.editor.isEditable && selectedThreadFragment() ? "z-10 -translate-x-0" : "hidden"
+        "hidden md:block not-prose text-base w-96 m-0 transform transition-all max-h-[60vh] overflow-hidden backdrop-blur-lg bg-gray-100 dark:bg-gray-800 dark:bg-opacity-50 bg-opacity-50 rounded-l-2xl",
+        props.state.editor.isEditable && selectedThreadFragment() && "z-10 -translate-x-0",
+        !props.state.editor.isEditable || (!selectedThreadFragment() && "!hidden")
       )}
     >
       <ScrollShadow scrollableContainerRef={scrollableContainerRef} color="contrast" />
@@ -124,7 +126,6 @@ const CommentMenu: Component<BlockActionMenuProps> = (props) => {
               await client.comments.resolveThread.mutate({
                 fragment: threadFragment
               });
-
               setCurrentContent("");
               clearCommentEditorRef()();
               props.state.editor.chain().extendMarkRange("comment").focus().unsetComment().run();
@@ -177,7 +178,6 @@ const CommentMenu: Component<BlockActionMenuProps> = (props) => {
                     fragment: threadFragment,
                     memberId
                   });
-
                   setCurrentContent("");
                   clearCommentEditorRef()();
                   setSending(false);

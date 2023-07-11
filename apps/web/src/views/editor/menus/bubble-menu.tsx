@@ -18,7 +18,6 @@ import {
   mdiCommentOutline,
   mdiTableHeadersEyeOff,
   mdiPlus,
-  mdiKeyboardClose,
   mdiKeyboardCloseOutline
 } from "@mdi/js";
 import { CellSelection } from "@tiptap/pm/tables";
@@ -37,6 +36,7 @@ interface BubbleMenuProps {
   class?: string;
   mode?: BubbleMenuMode;
   ref?: Ref<HTMLElement>[1];
+  blur?(): void;
   setBlockMenuOpened?(opened: boolean): void;
 }
 
@@ -75,7 +75,7 @@ const BubbleMenu: Component<BubbleMenuProps> = (props) => {
     icon: mdiKeyboardCloseOutline,
     label: "Close keyboard",
     async onClick() {
-      props.editor.commands.blur();
+      props.blur?.();
     }
   };
   const menus = (
@@ -111,7 +111,7 @@ const BubbleMenu: Component<BubbleMenuProps> = (props) => {
       { icon: mdiFormatColorHighlight, mark: "highlight", label: "Highlight" },
       { icon: mdiFormatSubscript, mark: "subscript", label: "Subscript" },
       { icon: mdiFormatSuperscript, mark: "superscript", label: "Superscript" },
-      ...(props.contentPieceId ? [commentMenuItem] : []),
+      ...(props.contentPieceId && breakpoints.md() ? [commentMenuItem] : []),
       ...(breakpoints.md() ? [] : [closeKeyboardItem])
     ] as Array<{ icon: string; mark?: string; label: string; onClick?(): void }>
   ).filter(({ mark }) => {
@@ -324,16 +324,20 @@ const BubbleMenu: Component<BubbleMenuProps> = (props) => {
             text="soft"
             variant="text"
             label="Insert block"
-            onClick={() => {
+            onClick={(event) => {
               props.setBlockMenuOpened?.(true);
+              event.preventDefault();
+              event.stopPropagation();
             }}
           />
           <IconButton
             path={mdiKeyboardCloseOutline}
             text="soft"
             variant="text"
-            onClick={() => {
-              props.editor.commands.blur();
+            onClick={(event) => {
+              props.blur?.();
+              event.preventDefault();
+              event.stopPropagation();
             }}
           />
         </Match>
@@ -351,7 +355,11 @@ const BubbleMenu: Component<BubbleMenuProps> = (props) => {
                       text="soft"
                       variant="text"
                       color="base"
-                      onClick={menuItem.onClick}
+                      onClick={(event) => {
+                        menuItem.onClick();
+                        event.preventDefault();
+                        event.stopPropagation();
+                      }}
                     />
                   </Tooltip>
                 </Show>
@@ -377,7 +385,7 @@ const BubbleMenu: Component<BubbleMenuProps> = (props) => {
                       text={active() ? "primary" : "soft"}
                       variant={active() ? "solid" : "text"}
                       color={active() ? "primary" : "base"}
-                      onClick={() => {
+                      onClick={(event) => {
                         const chain = props.editor.chain();
 
                         if (menu.onClick) {
@@ -389,6 +397,9 @@ const BubbleMenu: Component<BubbleMenuProps> = (props) => {
 
                           chain.toggleMark(menu.mark).focus().run();
                         }
+
+                        event.preventDefault();
+                        event.stopPropagation();
                       }}
                     />
                   </Tooltip>
@@ -401,6 +412,8 @@ const BubbleMenu: Component<BubbleMenuProps> = (props) => {
           <Input
             ref={setLinkInputRef}
             value={link()}
+            placeholder="Paste a link..."
+            wrapperClass="w-full md:w-auto"
             setValue={(value) => {
               setLink(value);
             }}

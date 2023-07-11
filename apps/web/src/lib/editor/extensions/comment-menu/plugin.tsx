@@ -1,5 +1,5 @@
-import { Editor, Extension } from "@tiptap/core";
 import { CommentMenu } from "./component";
+import { Editor, Extension } from "@tiptap/core";
 import { SolidEditor, SolidRenderer } from "@vrite/tiptap-solid";
 import { debounce } from "@solid-primitives/scheduled";
 
@@ -9,12 +9,13 @@ let component: SolidRenderer<{
   editor: SolidEditor;
 }> | null = null;
 
-const handleUpdate = (editor: Editor) => {
+const handleUpdate = (editor: Editor): void => {
   const { selection } = editor.state;
   const selectedNode = selection.$from.parent;
 
   if (!selectedNode || !editor.view) {
     box.style.display = "none";
+
     return;
   }
 
@@ -26,6 +27,7 @@ const handleUpdate = (editor: Editor) => {
   const childPos = node.getBoundingClientRect();
 
   if (!parentPos || !childPos) return;
+
   box.style.top = `${childPos.top - (parentPos?.top || 0)}px`;
   box.style.right = "0px";
   box.style.display = "block";
@@ -49,7 +51,6 @@ const CommentMenuPlugin = Extension.create({
         editor: this.editor as SolidEditor
       }
     });
-
     box.style.position = "absolute";
     box.style.top = "-100vh";
     box.style.right = "100vw";

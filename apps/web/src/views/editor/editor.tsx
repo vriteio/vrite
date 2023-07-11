@@ -18,9 +18,9 @@ import * as Y from "yjs";
 import { useNavigate } from "@solidjs/router";
 import { CellSelection } from "@tiptap/pm/tables";
 import { AllSelection } from "@tiptap/pm/state";
-import { createMediaQuery } from "@solid-primitives/media";
 import clsx from "clsx";
 import { Dropdown } from "@vrite/components";
+import { Instance } from "tippy.js";
 import {
   Document,
   Placeholder,
@@ -73,6 +73,7 @@ const Editor: Component<EditorProps> = (props) => {
   });
   const [containerRef, setContainerRef] = createRef<HTMLElement | null>(null);
   const [bubbleMenuOpened, setBubbleMenuOpened] = createSignal(true);
+  const [bubbleMenuInstance, setBubbleMenuInstance] = createSignal<Instance | null>(null);
   const [floatingMenuOpened, setFloatingMenuOpened] = createSignal(true);
   const [blockMenuOpened, setBlockMenuOpened] = createSignal(false);
   const [showBlockBubbleMenu, setShowBlockBubbleMenu] = createSignal(false);
@@ -116,12 +117,9 @@ const Editor: Component<EditorProps> = (props) => {
     // enablePasteRules: false,
     editable: !props.editedContentPiece.locked && hasPermission("editContent"),
     editorProps: { attributes: { class: `outline-none` } },
-    onBlur({ event }) {
+    onBlur({ event, transaction }) {
       el = event?.relatedTarget as HTMLElement | null;
     }
-    /* onSelectionUpdate({ editor }) {
-      editor.commands.scrollIntoView();
-    }*/
   });
   const shouldShow = (editor: SolidEditor): boolean => {
     el = null;
@@ -236,6 +234,9 @@ const Editor: Component<EditorProps> = (props) => {
               onHide() {
                 if (containerRef()?.contains(el)) return false;
               },
+              onCreate(instance) {
+                setBubbleMenuInstance(instance);
+              },
               maxWidth: "100%"
             }}
             shouldShow={({ editor }) => {
@@ -256,6 +257,11 @@ const Editor: Component<EditorProps> = (props) => {
               opened={bubbleMenuOpened()}
               setBlockMenuOpened={setBlockMenuOpened}
               mode={showBlockBubbleMenu() ? "block" : undefined}
+              blur={() => {
+                editor().commands.blur();
+                el = null;
+                bubbleMenuInstance()?.hide();
+              }}
               contentPieceId={props.editedContentPiece.id}
             />
           </BubbleMenuWrapper>

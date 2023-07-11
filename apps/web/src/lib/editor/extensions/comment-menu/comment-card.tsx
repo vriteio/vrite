@@ -1,8 +1,8 @@
-import { Icon, Card } from "#components/primitives";
-import { App } from "#context";
 import { mdiAccountCircle } from "@mdi/js";
 import dayjs from "dayjs";
 import { Component, Show, createMemo } from "solid-js";
+import { App } from "#context";
+import { Icon, Card } from "#components/primitives";
 
 interface CommentCardProps {
   comment: Omit<App.Comment, "memberId"> & { member: App.CommentMember | null };

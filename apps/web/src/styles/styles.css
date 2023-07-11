@@ -160,6 +160,9 @@ button:focus {
 #dropdowns > * {
   @apply pointer-events-auto;
 }
+.sidebar-hidden #dropdowns {
+  height: calc(100% - env(safe-area-inset-bottom, 0px));
+}
 
 /*.slash-menu {
   @apply lt-md:!transform-none;

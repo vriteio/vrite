@@ -30,7 +30,7 @@ const SecuredLayout: ParentComponent = (props) => {
             when={!storage().zenMode}
             fallback={
               <Tooltip
-                wrapperClass="fixed top-0 right-0 z-50 mt-4 mr-6"
+                wrapperClass="fixed top-0 right-0 z-50 mt-2 md:mt-4 mr-4 md:mr-6"
                 class="-ml-1"
                 text="Exit Zen mode"
                 side="left"
