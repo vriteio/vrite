@@ -228,22 +228,22 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
     const [menuOpened, setMenuOpened] = createSignal(false);
 
     return (
-      <Show
-        when={breakpoints.md()}
-        fallback={
-          <Dropdown
-            opened={menuOpened()}
-            setOpened={setMenuOpened}
-            activatorButton={() => (
-              <IconButton path={mdiMenu} text="soft" variant="text" class="flex-row-reverse mr-4" />
-            )}
-          >
-            <div class="overflow-hidden w-full h-full">
-              <div class="flex-col md:flex-row flex justify-start items-start md:items-center md:px-4 w-full gap-2">
-                <Show when={references.provider}>
-                  <UserList provider={references.provider!} />
-                </Show>
-                <div class="flex-1" />
+      <div class="flex-row flex justify-start items-center px-4 w-full gap-2">
+        <Show when={references.provider}>
+          <UserList provider={references.provider!} />
+        </Show>
+        <div class="flex-1" />
+        <Show
+          when={breakpoints.md()}
+          fallback={
+            <Dropdown
+              opened={menuOpened()}
+              setOpened={setMenuOpened}
+              activatorButton={() => (
+                <IconButton path={mdiMenu} text="soft" variant="text" class="flex-row-reverse" />
+              )}
+            >
+              <div class="overflow-hidden w-full h-full flex flex-col gap-1">
                 <Show when={references.editor}>
                   <StatsMenu
                     editor={references.editor!}
@@ -262,6 +262,7 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
                 </Show>
                 <IconButton
                   onClick={() => {
+                    setMenuOpened(false);
                     setStorage((storage) => ({ ...storage, zenMode: true }));
                   }}
                   class="m-0 w-full md:w-auto justify-start md:justify-center"
@@ -271,15 +272,9 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
                   label="Zen mode"
                 />
               </div>
-            </div>
-          </Dropdown>
-        }
-      >
-        <div class="flex-col md:flex-row flex justify-start items-start md:items-center md:px-4 w-full gap-2">
-          <Show when={references.provider}>
-            <UserList provider={references.provider!} />
-          </Show>
-          <div class="flex-1" />
+            </Dropdown>
+          }
+        >
           <Show when={references.editor}>
             <StatsMenu editor={references.editor!} />
           </Show>
@@ -296,8 +291,8 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
             path={mdiFullscreen}
             label="Zen mode"
           />
-        </div>
-      </Show>
+        </Show>
+      </div>
     );
   },
   default: () => {

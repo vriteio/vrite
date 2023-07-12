@@ -35,15 +35,15 @@ const ImageMenu: Component<ImageMenuProps> = (props) => {
           contentType: file.type
         });
 
-        uploadUrl = result.uploadUrl;
-        key = result.key;
+        uploadUrl = result.uploadUrl || "";
+        key = result.key || "";
       } else {
         const result = await client.utils.getAnonymousUploadUrl.mutate({
           contentType: file.type
         });
 
-        uploadUrl = result.uploadUrl;
-        key = result.key;
+        uploadUrl = result.uploadUrl || "";
+        key = result.key || "";
       }
 
       await fetch(uploadUrl, {
@@ -133,11 +133,6 @@ const ImageMenu: Component<ImageMenuProps> = (props) => {
             </Show>
           </Tooltip>
         </label>
-      </Show>
-      <Show when={!options().cover}>
-        <Tooltip text="Drag" wrapperClass="hidden md:flex">
-          <IconButton path={mdiDotsGrid} color="contrast" text="soft"></IconButton>
-        </Tooltip>
       </Show>
     </div>
   );

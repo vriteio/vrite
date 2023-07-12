@@ -1,16 +1,16 @@
+import { ExtensionIcon } from "./extension-icon";
+import { ExtensionsMenuView } from "./extensions-menu-view";
+import { ExtensionConfigurationView } from "./extension-configuration-view";
 import { Component, createMemo, createSignal, Show } from "solid-js";
 import { mdiChevronLeft, mdiClose } from "@mdi/js";
 import { ContextObject, ExtensionSpec } from "@vrite/extensions";
 import clsx from "clsx";
 import { Dynamic } from "solid-js/web";
+import { Motion, Presence } from "@motionone/solid";
 import { Card, Heading, IconButton } from "#components/primitives";
 import { ScrollShadow } from "#components/fragments";
 import { createRef } from "#lib/utils";
-import { ExtensionIcon } from "./extension-icon";
-import { ExtensionsMenuView } from "./extensions-menu-view";
-import { ExtensionConfigurationView } from "./extension-configuration-view";
 import { ExtensionDetails } from "#context/extensions";
-import { Motion, Presence } from "@motionone/solid";
 import { useUIContext } from "#context";
 
 interface SubSection {
@@ -107,12 +107,12 @@ const ExtensionsView: Component = () => {
           ref={setScrollableContainerRef}
         >
           <div class="flex justify-start flex-col min-h-full h-full items-start w-full gap-5 relative">
-            <Presence>
+            <Presence initial={false}>
               <Show when={openedExtension() || true} keyed>
                 <Motion.div
-                  initial={{ opacity: 0, x: "-100%" }}
+                  initial={{ opacity: 0, x: openedExtension() ? "100%" : "-100%" }}
                   animate={{ opacity: 1, x: "0%" }}
-                  exit={{ opacity: 0, x: "100%" }}
+                  exit={{ opacity: 0, x: openedExtension() ? "100%" : "-100%" }}
                   transition={{ duration: 0.35 }}
                   class="flex justify-start flex-col min-h-[calc(100%-env(safe-area-inset-bottom,0px))] items-start w-full gap-5 absolute"
                 >

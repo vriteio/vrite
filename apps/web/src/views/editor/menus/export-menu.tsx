@@ -116,33 +116,35 @@ const ExportMenu: Component<ExportMenuProps> = (props) => {
         cardProps={{ class: "mt-3" }}
         fixed
       >
-        <IconButton
-          path={mdiLanguageHtml5}
-          text="soft"
-          variant="text"
-          label="HTML"
-          disabled={loading()}
-          class="justify-start"
-          onClick={() => exportContent("html")}
-        />
-        <IconButton
-          path={mdiCodeJson}
-          text="soft"
-          variant="text"
-          label="JSON"
-          disabled={loading()}
-          class="justify-start"
-          onClick={() => exportContent("json")}
-        />
-        <IconButton
-          path={mdiLanguageMarkdown}
-          text="soft"
-          variant="text"
-          label="GFM"
-          disabled={loading()}
-          class="justify-start"
-          onClick={() => exportContent("md")}
-        />
+        <div class="gap-1 flex flex-col">
+          <IconButton
+            path={mdiLanguageHtml5}
+            text="soft"
+            variant="text"
+            label="HTML"
+            disabled={loading()}
+            class="justify-start w-full m-0"
+            onClick={() => exportContent("html")}
+          />
+          <IconButton
+            path={mdiCodeJson}
+            text="soft"
+            variant="text"
+            label="JSON"
+            disabled={loading()}
+            class="justify-start w-full m-0"
+            onClick={() => exportContent("json")}
+          />
+          <IconButton
+            path={mdiLanguageMarkdown}
+            text="soft"
+            variant="text"
+            label="GFM"
+            disabled={loading()}
+            class="justify-start w-full m-0"
+            onClick={() => exportContent("md")}
+          />
+        </div>
       </Dropdown>
       <Overlay
         opened={exportMenuOpened()}

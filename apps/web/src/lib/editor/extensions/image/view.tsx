@@ -122,7 +122,6 @@ const ImageView: Component = () => {
           "relative rounded-2xl",
           !options().cover && selected() && "ring ring-primary ring-2"
         )}
-        data-drag-handle
       >
         <Show
           when={objectURL()}

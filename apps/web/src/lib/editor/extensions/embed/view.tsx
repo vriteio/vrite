@@ -6,7 +6,7 @@ import clsx from "clsx";
 import { mdiCodepen, mdiYoutube } from "@mdi/js";
 import { Card, Icon } from "#components/primitives";
 import { codeSandboxIcon } from "#assets/icons";
-import { EmbedType } from "#lib/utils";
+import { EmbedType, createRef } from "#lib/utils";
 
 const getPlaceholderIcon = (embedType?: EmbedType): string => {
   switch (embedType) {
@@ -32,10 +32,7 @@ const EmbedView: Component = () => {
 
   return (
     <NodeViewWrapper>
-      <div
-        class={clsx("relative rounded-2xl my-5", selected() && "ring ring-primary ring-2")}
-        data-drag-handle
-      >
+      <div class={clsx("relative rounded-2xl my-5", selected() && "ring ring-primary ring-2")}>
         <Show
           when={attrs().src}
           fallback={

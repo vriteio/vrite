@@ -220,21 +220,23 @@ const Column: Component<ColumnProps> = (props) => {
               />
             )}
           >
-            <For each={menuOptions()}>
-              {(item) => {
-                return (
-                  <IconButton
-                    path={item.icon}
-                    label={item.label}
-                    variant="text"
-                    text="soft"
-                    color={item.color}
-                    class={clsx("justify-start whitespace-nowrap", item.class)}
-                    onClick={item.onClick}
-                  />
-                );
-              }}
-            </For>
+            <div class="w-full gap-1 flex flex-col">
+              <For each={menuOptions()}>
+                {(item) => {
+                  return (
+                    <IconButton
+                      path={item.icon}
+                      label={item.label}
+                      variant="text"
+                      text="soft"
+                      color={item.color}
+                      class={clsx("justify-start whitespace-nowrap w-full m-0", item.class)}
+                      onClick={item.onClick}
+                    />
+                  );
+                }}
+              </For>
+            </div>
           </Dropdown>
         </div>
         <div class="relative flex-1 w-full overflow-hidden">

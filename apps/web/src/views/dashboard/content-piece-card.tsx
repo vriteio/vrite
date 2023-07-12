@@ -14,7 +14,7 @@ interface ContentPieceProps {
 }
 
 const ContentPieceCard: Component<ContentPieceProps> = (props) => {
-  const { setStorage, storage, references } = useUIContext();
+  const { setStorage, storage, breakpoints } = useUIContext();
   const { deletedTags } = useAuthenticatedContext();
   const navigate = useNavigate();
   const editedArticleId = (): string => storage().contentPieceId || "";
@@ -117,7 +117,7 @@ const ContentPieceCard: Component<ContentPieceProps> = (props) => {
                   class="mt-1"
                   wrapperClass="-ml-2 hover:z-10"
                 >
-                  <div class="relative h-7 w-7 rounded-full">
+                  <div class="relative h-7 w-7 rounded-full overflow-hidden">
                     <Show when={member.profile?.avatar} fallback={<Icon path={mdiAccountCircle} />}>
                       <img src={member.profile?.avatar} />
                     </Show>
@@ -138,7 +138,7 @@ const ContentPieceCard: Component<ContentPieceProps> = (props) => {
               event.stopPropagation();
               setStorage((storage) => ({
                 ...storage,
-                sidePanelWidth: storage.sidePanelWidth || 375,
+                sidePanelWidth: breakpoints.md() ? storage.sidePanelWidth || 375 : 0,
                 sidePanelView: "contentPiece",
                 contentPieceId: props.contentPiece.id
               }));

@@ -42,9 +42,6 @@ const EmbedMenu: Component<ImageMenuProps> = (props) => {
           props.state.updateAttributes({ input: value, src: getSrc(value) });
         }}
       />
-      <Tooltip text="Drag" wrapperClass="hidden md:flex">
-        <IconButton path={mdiDotsGrid} color="contrast" text="soft"></IconButton>
-      </Tooltip>
     </div>
   );
 };

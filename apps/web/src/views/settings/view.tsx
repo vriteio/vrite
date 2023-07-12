@@ -6,6 +6,7 @@ import { APISection } from "./api";
 import { ProfileSection } from "./profile";
 import { EditorSection } from "./editor";
 import { SecuritySection } from "./security";
+import { MetadataSection } from "./metadata";
 import clsx from "clsx";
 import { Dynamic } from "solid-js/web";
 import {
@@ -21,12 +22,11 @@ import {
   mdiWebhook
 } from "@mdi/js";
 import { Component, createMemo, createSignal, Setter, Show } from "solid-js";
+import { Motion, Presence } from "@motionone/solid";
 import { createRef } from "#lib/utils";
 import { ScrollShadow } from "#components/fragments";
 import { Card, Heading, IconButton } from "#components/primitives";
-import { MetadataSection } from "./metadata";
 import { useUIContext } from "#context";
-import { Motion, Presence } from "@motionone/solid";
 
 interface SubSection {
   label: string;
@@ -179,12 +179,12 @@ const SettingsView: Component = () => {
           ref={setScrollableContainerRef}
         >
           <div class="flex justify-start flex-col min-h-full h-full items-start w-full gap-5 relative">
-            <Presence>
+            <Presence initial={false}>
               <Show when={currentSectionId()} keyed>
                 <Motion.div
-                  initial={{ opacity: 0, x: "-100%" }}
+                  initial={{ opacity: 0, x: currentSectionId() === "menu" ? "-100%" : "100%" }}
                   animate={{ opacity: 1, x: "0%" }}
-                  exit={{ opacity: 0, x: "100%" }}
+                  exit={{ opacity: 0, x: currentSectionId() === "menu" ? "-100%" : "100%" }}
                   transition={{ duration: 0.35 }}
                   class="flex justify-start flex-col min-h-[calc(100%-env(safe-area-inset-bottom,0px))] items-start w-full gap-5 absolute"
                 >

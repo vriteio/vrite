@@ -1,5 +1,5 @@
-import { Node, mergeAttributes } from "@tiptap/core";
 import { nodeInputRule } from "./node-input-rule";
+import { Node, mergeAttributes } from "@tiptap/core";
 
 interface CodeBlockAttributes {
   lang?: string;
@@ -49,7 +49,7 @@ const CodeBlock = Node.create<CodeBlockOptions>({
           const languages = classNames
             .filter((className) => className.startsWith("language-"))
             .map((className) => className.replace("language-", ""));
-          const language = languages[0];
+          const [language] = languages;
 
           if (!language) {
             return null;

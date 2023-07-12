@@ -45,7 +45,7 @@ const ContentPieceMetadata: Component<ContentPieceMetadataProps> = (props) => {
         opened={menuOpened()}
         setOpened={setMenuOpened}
       >
-        <div class="flex flex-col items-start justify-center gap-1 w-34">
+        <div class="flex flex-col items-start justify-center gap-1 w-full min-w-34">
           <For each={sections}>
             {(section) => {
               return (

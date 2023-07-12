@@ -127,7 +127,7 @@ const ProfileMenu: Component<{ close(): void }> = (props) => {
   const menuItems = useMenuItems();
 
   return (
-    <div class="flex flex-col min-w-xs p-2 gap-2">
+    <div class="flex flex-col min-w-xs p-1 gap-2">
       <div class="flex justify-center items-center">
         <Heading level={2} class="flex-1">
           Profile
@@ -227,15 +227,18 @@ const SidebarMenu: Component = () => {
 
   createEffect(
     on(activeElement, (activeElement) => {
-      const pmContainer = document.getElementById("pm-container");
+      setTimeout(() => {
+        const dataState = activeElement?.getAttribute("data-state");
+        const pmContainer = document.getElementById("pm-container");
 
-      if (breakpoints.md() || !pmContainer) {
-        setHideMenu(false);
+        if (breakpoints.md() || !pmContainer || dataState === "hidden") {
+          setHideMenu(false);
 
-        return;
-      }
+          return;
+        }
 
-      setHideMenu(pmContainer.contains(activeElement));
+        setHideMenu(pmContainer.contains(activeElement));
+      }, 0);
     })
   );
   createEffect(() => {

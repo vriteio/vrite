@@ -35,6 +35,28 @@ interface DropdownProps extends JSX.SelectHTMLAttributes<HTMLSelectElement> {
   setOpened?(opened: boolean): void;
 }
 
+const placementToTransformOrigin = (placement: Placement): string => {
+  switch (placement) {
+    case "bottom-start":
+      return "top left";
+    case "bottom-end":
+      return "top right";
+    case "top-start":
+      return "bottom left";
+    case "top-end":
+      return "bottom right";
+    case "right-start":
+      return "top left";
+    case "right-end":
+      return "bottom left";
+    case "left-start":
+      return "top right";
+    case "left-end":
+      return "bottom right";
+    default:
+      return "top left";
+  }
+};
 const Dropdown: Component<DropdownProps> = (props) => {
   const md = createMediaQuery("(min-width: 768px)");
   const activeElement = createActiveElement();
@@ -44,9 +66,13 @@ const Dropdown: Component<DropdownProps> = (props) => {
   const [resizing, setResizing] = createSignal(false);
   const [height, setHeight] = createSignal(0);
   const [minHeight, setMinHeight] = createSignal(0);
-  const cardStyle = createMemo(() => {
+  const cardStyle = createMemo((): JSX.CSSProperties => {
     if (md()) {
-      return { height: height() ? `${height()}px` : undefined };
+      return {
+        "transition-property": "transform, box-shadow, visibility, opacity",
+        "transform-origin": placementToTransformOrigin(props.placement || "bottom-start"),
+        "height": height() ? `${height()}px` : undefined
+      };
     }
 
     return {
@@ -211,11 +237,11 @@ const Dropdown: Component<DropdownProps> = (props) => {
         <Card
           {...props.cardProps}
           class={clsx(
-            `:base-2: z-50 flex flex-col p-1 overflow-hidden transform shadow-2xl`,
+            `:base-2: z-50 flex flex-col p-2 overflow-hidden transform shadow-2xl duration-250`,
             !md() &&
-              "fixed !left-0 w-full !max-w-full !max-h-full m-0 border-0 border-t-2 shadow-none rounded-none duration-250 !top-unset bottom-0 h-unset",
+              "fixed !left-0 w-full !max-w-full !max-h-full m-0 p-0 pb-1 border-0 border-t-2 shadow-none rounded-none !top-unset bottom-0 h-unset",
             props.fixed ? "fixed" : "absolute",
-            opened() ? "" : "translate-y-full !shadow-none",
+            opened() ? "" : "translate-y-full md:translate-y-0 md:scale-0 !shadow-none",
             opened() ? `:base-2: visible md:opacity-100` : `:base-2: invisible md:opacity-0`,
             props.cardProps?.class
           )}

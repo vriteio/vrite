@@ -153,12 +153,22 @@ button:focus {
   -webkit-user-select: none !important;
   -webkit-tap-highlight-color: transparent;
 }
+[contenteditable="true"] *,
+input,
+textarea {
+  user-select: auto !important;
+  -webkit-user-select: auto !important;
+}
 #dropdowns {
   @apply transform w-full absolute overflow-hidden z-60 transition-all duration-500 pointer-events-none;
   height: calc(100% - 3.625rem - env(safe-area-inset-bottom, 0px));
 }
 #dropdowns > * {
   @apply pointer-events-auto;
+}
+.dropdown-opened #bottom-space-filler {
+  @apply w-full fixed left-0 bottom-0 bg-gray-50 dark:bg-gray-800;
+  height: calc(env(safe-area-inset-bottom, 0px) + 1px);
 }
 .sidebar-hidden #dropdowns {
   height: calc(100% - env(safe-area-inset-bottom, 0px));

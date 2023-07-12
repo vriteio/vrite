@@ -19,7 +19,6 @@ declare module "@tiptap/core" {
 const Embed = Node.create({
   name: "embed",
   atom: true,
-  draggable: true,
   selectable: true,
   inline: false,
   group: "block",
