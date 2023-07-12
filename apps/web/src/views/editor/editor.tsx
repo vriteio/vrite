@@ -114,7 +114,6 @@ const Editor: Component<EditorProps> = (props) => {
       }),
       CollabCursor(provider)
     ],
-    // enablePasteRules: false,
     editable: !props.editedContentPiece.locked && hasPermission("editContent"),
     editorProps: { attributes: { class: `outline-none` } },
     onBlur({ event, transaction }) {

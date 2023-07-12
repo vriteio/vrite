@@ -8,6 +8,7 @@ import { IconButton, Tooltip } from "#components/primitives";
 const StandaloneLayout: ParentComponent = (props) => {
   const { storage, setStorage } = useUIContext();
 
+  document.documentElement.classList.add("sidebar-hidden");
   setStorage((storage) => ({ ...storage, toolbarView: "editorStandalone" }));
 
   return (

@@ -151,8 +151,12 @@ const ExportMenu: Component<ExportMenuProps> = (props) => {
         onOverlayClick={() => {
           setExportMenuOpened(false);
         }}
+        portal
       >
-        <Card class="w-[calc(100vw-8rem)] h-[calc(100vh-8rem)] p-4 flex flex-col" color="contrast">
+        <Card
+          class="h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] md:w-[calc(100vw-8rem)] md:h-[calc(100dvh-8rem)] md:p-4 flex flex-col"
+          color="contrast"
+        >
           <div class="flex items-center justify-center">
             <Heading class="flex-1">
               {exportType() === "html" && "HTML "}
