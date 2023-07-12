@@ -1,8 +1,9 @@
-import { Extension } from "@tiptap/core";
 import { TableMenu } from "./component";
+import { Extension } from "@tiptap/core";
 import { SolidEditor, SolidRenderer } from "@vrite/tiptap-solid";
 import { TextSelection } from "@tiptap/pm/state";
 import { CellSelection } from "@tiptap/pm/tables";
+import { breakpoints } from "#lib/utils";
 
 const generalMenuContainer = document.createElement("div");
 
@@ -25,7 +26,7 @@ const getTableParent = (node: Node): HTMLElement | null => {
 
   return null;
 };
-const handleUpdate = (editor: SolidEditor) => {
+const handleUpdate = (editor: SolidEditor): void => {
   const { selection } = editor.state;
   const isTextSelection = selection instanceof TextSelection;
   const isCellSelection = selection instanceof CellSelection;
@@ -38,6 +39,7 @@ const handleUpdate = (editor: SolidEditor) => {
     !(isTextSelection && selection.empty)
   ) {
     generalMenuContainer.style.display = "none";
+
     return;
   }
 
@@ -67,22 +69,18 @@ const handleUpdate = (editor: SolidEditor) => {
   generalMenuContainer.style.transform = `translate(${
     (tablePos?.width || 0) > 250 ? "-50%" : "0"
   },0.75rem)`;
-  if ((tablePos?.width || 0) > 250) {
+
+  if ((tablePos?.width || 0) > 250 && breakpoints.md()) {
     generalMenuContainer.style.left = `${
       relativePos.left + Math.min(tablePos?.width || parentPos.width, parentPos.width) / 2
     }px`;
-  } else {
+  } else if (breakpoints.md()) {
     generalMenuContainer.style.left = "0";
+  } else {
+    generalMenuContainer.style.left = "-0.25rem";
   }
+
   generalMenuContainer.style.display = "block";
-
-  if (isTextSelection) {
-    try {
-    } catch (e) {
-      generalMenuContainer.style.display = "none";
-    }
-  }
-
   generalMenu?.setState({
     node: selectedNode,
     container: blockParent,
@@ -99,7 +97,6 @@ const TableMenuPlugin = Extension.create({
         editor: this.editor as SolidEditor
       }
     });
-
     generalMenuContainer.style.position = "absolute";
     generalMenuContainer.style.top = "-100vh";
     generalMenuContainer.style.left = "-100vw";
@@ -108,7 +105,14 @@ const TableMenuPlugin = Extension.create({
   },
   onBlur() {
     const dropdownOpened = document.documentElement.classList.contains("dropdown-opened");
-    if (document.activeElement?.contains(generalMenuContainer) || dropdownOpened) return;
+
+    if (
+      (document.activeElement?.contains(generalMenuContainer) || dropdownOpened) &&
+      breakpoints.md()
+    ) {
+      return;
+    }
+
     generalMenuContainer.style.display = "none";
   },
   onFocus() {

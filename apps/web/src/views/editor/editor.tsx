@@ -2,6 +2,7 @@ import { BubbleMenu, LinkPreviewMenu, FloatingMenu } from "./menus";
 import {
   BubbleMenuWrapper,
   FloatingMenuWrapper,
+  SolidEditor,
   SolidEditorContent,
   useEditor
 } from "@vrite/tiptap-solid";
@@ -15,7 +16,11 @@ import { HocuspocusProvider } from "@hocuspocus/provider";
 import { CharacterCount } from "@tiptap/extension-character-count";
 import * as Y from "yjs";
 import { useNavigate } from "@solidjs/router";
-import { App, hasPermission, useAuthenticatedContext, useUIContext } from "#context";
+import { CellSelection } from "@tiptap/pm/tables";
+import { AllSelection } from "@tiptap/pm/state";
+import clsx from "clsx";
+import { Dropdown } from "@vrite/components";
+import { Instance } from "tippy.js";
 import {
   Document,
   Placeholder,
@@ -32,8 +37,9 @@ import {
   TableMenuPlugin,
   CommentMenuPlugin
 } from "#lib/editor";
-import { CellSelection } from "@tiptap/pm/tables";
-import { AllSelection } from "@tiptap/pm/state";
+import { App, hasPermission, useAuthenticatedContext, useUIContext } from "#context";
+import { createRef } from "#lib/utils";
+import { BlockMenu } from "#lib/editor/extensions/slash-menu/component";
 
 interface EditorProps {
   reloaded?: boolean;
@@ -43,7 +49,7 @@ interface EditorProps {
 }
 
 const Editor: Component<EditorProps> = (props) => {
-  const { setStorage, setReferences } = useUIContext();
+  const { setStorage, setReferences, breakpoints } = useUIContext();
   const navigate = useNavigate();
   const ydoc = new Y.Doc();
   const provider = new HocuspocusProvider({
@@ -65,9 +71,16 @@ const Editor: Component<EditorProps> = (props) => {
     name: props.editedContentPiece.id || "",
     document: ydoc
   });
+  const [containerRef, setContainerRef] = createRef<HTMLElement | null>(null);
   const [bubbleMenuOpened, setBubbleMenuOpened] = createSignal(true);
+  const [bubbleMenuInstance, setBubbleMenuInstance] = createSignal<Instance | null>(null);
   const [floatingMenuOpened, setFloatingMenuOpened] = createSignal(true);
+  const [blockMenuOpened, setBlockMenuOpened] = createSignal(false);
+  const [showBlockBubbleMenu, setShowBlockBubbleMenu] = createSignal(false);
   const { workspaceSettings } = useAuthenticatedContext();
+
+  let el: HTMLElement | null = null;
+
   const editor = useEditor({
     onCreate({ editor }) {
       if (workspaceSettings()) {
@@ -101,10 +114,78 @@ const Editor: Component<EditorProps> = (props) => {
       }),
       CollabCursor(provider)
     ],
-    //enablePasteRules: false,
     editable: !props.editedContentPiece.locked && hasPermission("editContent"),
-    editorProps: { attributes: { class: `outline-none` } }
+    editorProps: { attributes: { class: `outline-none` } },
+    onBlur({ event, transaction }) {
+      el = event?.relatedTarget as HTMLElement | null;
+    }
   });
+  const shouldShow = (editor: SolidEditor): boolean => {
+    el = null;
+
+    const { state, view } = editor;
+    const { doc, selection } = state;
+    const { ranges } = selection;
+    const from = Math.min(...ranges.map((range) => range.$from.pos));
+    const to = Math.max(...ranges.map((range) => range.$to.pos));
+    const { empty } = selection;
+    const isAllSelection = selection instanceof AllSelection;
+    const isCellSelection = selection instanceof CellSelection;
+    const isEmptyTextBlock = !doc.textBetween(from, to).length && isTextSelection(state.selection);
+
+    if (!view.hasFocus() || isAllSelection) {
+      setBubbleMenuOpened(false);
+
+      return false;
+    }
+
+    if (isCellSelection) {
+      setBubbleMenuOpened(true);
+
+      return true;
+    }
+
+    if (
+      ["image", "codeBlock", "embed", "horizontalRule"].some((name) => {
+        return editor.isActive(name);
+      })
+    ) {
+      setBubbleMenuOpened(false);
+
+      return false;
+    }
+
+    if (empty || isEmptyTextBlock) {
+      setBubbleMenuOpened(false);
+
+      return false;
+    }
+
+    setBubbleMenuOpened(true);
+
+    return true;
+  };
+  const shouldShowFloatingMenu = (editor: SolidEditor): boolean => {
+    const { state, view } = editor;
+    const { selection } = state;
+    const { $anchor, empty } = selection;
+    const isRootDepth = $anchor.depth === 1;
+    const isEmptyTextBlock =
+      $anchor.parent.isTextblock &&
+      !$anchor.parent.type.spec.code &&
+      $anchor.parent.type.name === "paragraph" &&
+      !$anchor.parent.textContent;
+
+    if (!view.hasFocus() || !empty || !isRootDepth || !isEmptyTextBlock || !editor.isEditable) {
+      setFloatingMenuOpened(false);
+
+      return false;
+    }
+
+    setFloatingMenuOpened(true);
+
+    return true;
+  };
 
   onCleanup(() => {
     editor().destroy();
@@ -130,6 +211,7 @@ const Editor: Component<EditorProps> = (props) => {
     <>
       <div
         class="w-full max-w-[70ch] prose prose-editor text-xl dark:prose-invert h-full relative"
+        ref={setContainerRef}
         id="pm-container"
       >
         {editor() && (
@@ -145,89 +227,66 @@ const Editor: Component<EditorProps> = (props) => {
             tippyOptions={{
               duration: [300, 250],
               zIndex: 30,
-              animation: "scale-subtle",
+              hideOnClick: false,
+              interactive: true,
+              animation: breakpoints.md() ? "scale-subtle" : "shift-away-subtle",
+              onHide() {
+                if (containerRef()?.contains(el)) return false;
+              },
+              onCreate(instance) {
+                setBubbleMenuInstance(instance);
+              },
               maxWidth: "100%"
             }}
-            shouldShow={({ editor, state, view, from, to }) => {
-              const { doc, selection } = state;
-              const { empty } = selection;
-              const isAllSelection = selection instanceof AllSelection;
-              const isCellSelection = selection instanceof CellSelection;
-              const isEmptyTextBlock =
-                !doc.textBetween(from, to).length && isTextSelection(state.selection);
-
-              if (!view.hasFocus() || isAllSelection) {
-                setBubbleMenuOpened(false);
-
-                return false;
-              }
-
-              if (isCellSelection) {
-                setBubbleMenuOpened(true);
+            shouldShow={({ editor }) => {
+              if (!breakpoints.md() && shouldShowFloatingMenu(editor as SolidEditor)) {
+                setShowBlockBubbleMenu(true);
 
                 return true;
               }
 
-              if (
-                ["image", "codeBlock", "embed", "horizontalRule"].some((name) => {
-                  return editor.isActive(name);
-                })
-              ) {
-                setBubbleMenuOpened(false);
+              setShowBlockBubbleMenu(false);
 
-                return false;
-              }
-
-              if (empty || isEmptyTextBlock) {
-                setBubbleMenuOpened(false);
-
-                return false;
-              }
-
-              setBubbleMenuOpened(true);
-
-              return true;
+              return shouldShow(editor as SolidEditor);
             }}
           >
             <BubbleMenu
+              class={clsx(!breakpoints.md() && "m-0 w-screen -left-1 rounded-none border-x-0")}
               editor={editor()}
               opened={bubbleMenuOpened()}
+              setBlockMenuOpened={setBlockMenuOpened}
+              mode={showBlockBubbleMenu() ? "block" : undefined}
+              blur={() => {
+                editor().commands.blur();
+                el = null;
+                bubbleMenuInstance()?.hide();
+              }}
               contentPieceId={props.editedContentPiece.id}
             />
           </BubbleMenuWrapper>
         )}
-        {editor() && (
+        {editor() && breakpoints.md() && (
           <FloatingMenuWrapper
             editor={editor()}
-            shouldShow={({ view, state }) => {
-              const { selection } = state;
-              const { $anchor, empty } = selection;
-              const isRootDepth = $anchor.depth === 1;
-              const isEmptyTextBlock =
-                $anchor.parent.isTextblock &&
-                !$anchor.parent.type.spec.code &&
-                $anchor.parent.type.name === "paragraph" &&
-                !$anchor.parent.textContent;
-
-              if (
-                !view.hasFocus() ||
-                !empty ||
-                !isRootDepth ||
-                !isEmptyTextBlock ||
-                !editor().isEditable
-              ) {
-                setFloatingMenuOpened(false);
-
-                return false;
-              }
-
-              setFloatingMenuOpened(true);
-
-              return true;
+            shouldShow={({ editor }) => {
+              return shouldShowFloatingMenu(editor as SolidEditor);
             }}
           >
             <FloatingMenu editor={editor()} opened={floatingMenuOpened()} />
           </FloatingMenuWrapper>
+        )}
+        {editor() && !breakpoints.md() && (
+          <Dropdown
+            activatorButton={() => <div />}
+            opened={blockMenuOpened()}
+            setOpened={setBlockMenuOpened}
+          >
+            <BlockMenu
+              items={workspaceSettings() ? createBlockMenuOptions(workspaceSettings()!) : []}
+              close={() => setBlockMenuOpened(false)}
+              editor={editor()}
+            />
+          </Dropdown>
         )}
         <SolidEditorContent editor={editor()} />
       </div>

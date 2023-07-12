@@ -1,159 +1,29 @@
 import { ContentPieceTitle } from "./title";
 import { ContentPieceDescription } from "./description";
 import { ContentPieceMetadata } from "./metadata";
-import { Component, createEffect, createMemo, createSignal, on, onCleanup, Show } from "solid-js";
-import { mdiDotsVertical, mdiTrashCan, mdiPencil, mdiLock, mdiEye } from "@mdi/js";
+import { Component, createEffect, createMemo, createSignal, on, Show } from "solid-js";
+import { mdiDotsVertical, mdiTrashCan, mdiPencil, mdiLock, mdiEye, mdiClose } from "@mdi/js";
 import dayjs from "dayjs";
 import CustomParseFormat from "dayjs/plugin/customParseFormat";
 import { useLocation, useNavigate } from "@solidjs/router";
-import { createStore } from "solid-js/store";
 import { Image } from "#lib/editor";
 import { Card, IconButton, Dropdown, Loader } from "#components/primitives";
 import {
   useConfirmationContext,
   App,
   useClientContext,
-  useAuthenticatedContext,
   useUIContext,
-  hasPermission
+  hasPermission,
+  useCacheContext
 } from "#context";
 import { MiniEditor } from "#components/fragments";
 
-interface OpenedContentPiece {
-  setContentPiece<
-    K extends keyof App.ExtendedContentPieceWithAdditionalData<"locked" | "coverWidth">
-  >(
-    keyOrObject: K | Partial<App.ExtendedContentPieceWithAdditionalData<"locked" | "coverWidth">>,
-    value?: App.ExtendedContentPieceWithAdditionalData<"locked" | "coverWidth">[K]
-  ): void;
-  loading(): boolean;
-  contentPiece(): App.ExtendedContentPieceWithAdditionalData<"locked" | "coverWidth"> | null;
-}
-
 dayjs.extend(CustomParseFormat);
 
-const useOpenedContentPiece = (): OpenedContentPiece => {
-  const { deletedTags } = useAuthenticatedContext();
-  const { profile } = useAuthenticatedContext();
-  const { storage, setStorage } = useUIContext();
-  const { client } = useClientContext();
-  const [loading, setLoading] = createSignal(true);
-  const [state, setState] = createStore<{
-    contentPiece: App.ExtendedContentPieceWithAdditionalData<"locked" | "coverWidth"> | null;
-  }>({ contentPiece: null });
-  const fetchContentPiece = async (): Promise<void> => {
-    setLoading(true);
-
-    const { contentPieceId } = storage();
-
-    if (contentPieceId) {
-      try {
-        const contentPiece = await client.contentPieces.get.query({
-          id: contentPieceId
-        });
-
-        setState({ contentPiece });
-      } catch (e) {
-        setState({ contentPiece: null });
-      }
-    } else {
-      setState({ contentPiece: null });
-    }
-
-    setLoading(false);
-  };
-
-  createEffect(
-    on(
-      () => storage().contentPieceId,
-      (contentPieceId, previousContentPieceId) => {
-        if (contentPieceId !== previousContentPieceId) {
-          fetchContentPiece();
-        }
-
-        return contentPieceId;
-      }
-    )
-  );
-  createEffect(
-    on(
-      () => state.contentPiece?.contentGroupId,
-      (contentGroupId, previousContentGroupId) => {
-        if (!contentGroupId || contentGroupId === previousContentGroupId) return;
-
-        const contentPiecesChanges = client.contentPieces.changes.subscribe(
-          {
-            contentGroupId
-          },
-          {
-            onData({ data, action, userId = "" }) {
-              if (action === "update") {
-                const { tags, members, ...updateData } = data;
-                const update: Partial<
-                  App.ExtendedContentPieceWithAdditionalData<"locked" | "coverWidth">
-                > = { ...updateData };
-
-                if (data.members && userId !== profile()?.id) {
-                  update.members = data.members.filter((member) => member.id !== profile()?.id);
-                }
-                if (data.tags && userId !== profile()?.id) {
-                  update.tags = data.tags.filter((tag) => !deletedTags().includes(tag.id));
-                }
-
-                setState("contentPiece", update);
-              } else if (action === "delete") {
-                setState("contentPiece", null);
-                setStorage((storage) => ({ ...storage, contentPieceId: undefined }));
-              } else if (action === "move") {
-                const move = {
-                  ...data.contentPiece
-                };
-
-                if (data.contentPiece.tags) {
-                  move.tags = data.contentPiece.tags.filter((tag) => {
-                    return !deletedTags().includes(tag.id);
-                  });
-                }
-
-                setState("contentPiece", move);
-              }
-            }
-          }
-        );
-
-        onCleanup(() => {
-          contentPiecesChanges.unsubscribe();
-        });
-
-        return contentGroupId;
-      }
-    )
-  );
-  createEffect(
-    on(deletedTags, (deletedTags) => {
-      if (state.contentPiece) {
-        setState("contentPiece", "tags", (tags) => {
-          return tags.filter((tag) => !deletedTags.includes(tag.id));
-        });
-      }
-    })
-  );
-
-  return {
-    loading,
-    contentPiece: () => state.contentPiece,
-    setContentPiece: (keyOrObject, value) => {
-      if (typeof keyOrObject === "string" && value) {
-        setState("contentPiece", keyOrObject, value);
-      } else if (typeof keyOrObject === "object") {
-        setState("contentPiece", keyOrObject);
-      }
-    }
-  };
-};
 const ContentPieceView: Component = () => {
+  const { useOpenedContentPiece } = useCacheContext();
   const { client } = useClientContext();
-  const { setStorage } = useUIContext();
+  const { setStorage, breakpoints } = useUIContext();
   const { confirmDelete } = useConfirmationContext();
   const { contentPiece, setContentPiece, loading } = useOpenedContentPiece();
   const location = useLocation();
@@ -182,6 +52,7 @@ const ContentPieceView: Component = () => {
     if (tags) {
       contentPieceUpdate.tags = tags?.map(({ id }) => id);
     }
+
     if (members) {
       contentPieceUpdate.members = members?.map(({ id }) => id);
     }
@@ -242,7 +113,7 @@ const ContentPieceView: Component = () => {
       }
     >
       <Card
-        class="flex flex-col m-0 relative p-0 border-0 h-full w-full overflow-visible"
+        class="flex flex-col m-0 relative p-0 border-0 rounded-none h-full w-full md:overflow-visible overflow-y-auto scrollbar-sm-contrast pt-[env(safe-area-inset-top)]"
         color="contrast"
       >
         <MiniEditor
@@ -260,7 +131,19 @@ const ContentPieceView: Component = () => {
           readOnly={!editable()}
           extensions={[Image.configure({ cover: true })]}
         />
-        <div class="absolute flex top-3 right-3 gap-2 justify-center items-center">
+        <div class="absolute flex top-[calc(env(safe-area-inset-top)+0.75rem)] right-3 gap-2 left-3 justify-center items-center">
+          <IconButton
+            path={mdiClose}
+            text="soft"
+            class="m-0 md:hidden"
+            onClick={async () => {
+              setStorage((storage) => ({
+                ...storage,
+                sidePanelWidth: 0
+              }));
+            }}
+          />
+          <div class="flex-1" />
           <Show when={location.pathname !== "/editor"}>
             <IconButton
               path={editable() ? mdiPencil : mdiEye}
@@ -268,6 +151,13 @@ const ContentPieceView: Component = () => {
               text="soft"
               class="m-0"
               onClick={async () => {
+                if (!breakpoints.md()) {
+                  setStorage((storage) => ({
+                    ...storage,
+                    sidePanelWidth: 0
+                  }));
+                }
+
                 setDropdownMenuOpened(false);
                 navigate("/editor");
               }}
@@ -285,7 +175,7 @@ const ContentPieceView: Component = () => {
                 label="Delete"
                 variant="text"
                 color="danger"
-                class="justify-start"
+                class="justify-start w-full m-0"
                 onClick={async () => {
                   setDropdownMenuOpened(false);
                   confirmDelete({
@@ -310,7 +200,7 @@ const ContentPieceView: Component = () => {
             </Dropdown>
           </Show>
         </div>
-        <div class="flex-1 border-gray-200 dark:border-gray-700 transition-all rounded-b-2xl p-3 overflow-y-auto scrollbar-sm-contrast">
+        <div class="flex-1 border-gray-200 dark:border-gray-700 transition-all p-3 overflow-initial md:overflow-y-auto scrollbar-sm-contrast">
           <ContentPieceTitle
             initialTitle={titleInitialValue()}
             editable={editable()}

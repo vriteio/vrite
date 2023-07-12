@@ -10,12 +10,12 @@ export default defineConfig(async () => {
     server: {
       proxy: {
         "/api": {
-          target: "http://localhost:3333",
+          target: "http://192.168.1.101:3333",
           ws: true
         },
-        "/session": { target: "http://localhost:3333", ws: true },
-        "/login": { target: "http://localhost:3333", ws: true },
-        "/proxy": { target: "http://localhost:3333", ws: true }
+        "/session": { target: "http://192.168.1.101:3333", ws: true },
+        "/login": { target: "http://192.168.1.101:3333", ws: true },
+        "/proxy": { target: "http://192.168.1.101:3333", ws: true }
       }
     },
     build: {

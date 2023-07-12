@@ -254,6 +254,9 @@ importers:
       '@motionone/solid':
         specifier: ^10.16.0
         version: 10.16.0(solid-js@1.7.0)
+      '@solid-primitives/active-element':
+        specifier: ^2.0.15
+        version: 2.0.15(solid-js@1.7.0)
       '@solid-primitives/connectivity':
         specifier: ^0.3.12
         version: 0.3.12(solid-js@1.7.0)
@@ -350,6 +353,9 @@ importers:
       clsx:
         specifier: ^1.2.1
         version: 1.2.1
+      codejar:
+        specifier: ^3.7.0
+        version: 3.7.0
       curl-string:
         specifier: ^3.0.0
         version: 3.0.0
@@ -377,6 +383,9 @@ importers:
       seamless-scroll-polyfill:
         specifier: ^2.3.0
         version: 2.3.0
+      shiki:
+        specifier: ^0.14.1
+        version: 0.14.1
       solid-js:
         specifier: ^1.7.0
         version: 1.7.0
@@ -616,6 +625,15 @@ importers:
       '@floating-ui/dom':
         specifier: ^0.5.4
         version: 0.5.4
+      '@mdi/js':
+        specifier: ^7.2.96
+        version: 7.2.96
+      '@solid-primitives/active-element':
+        specifier: ^2.0.15
+        version: 2.0.15(solid-js@1.7.0)
+      '@solid-primitives/media':
+        specifier: ^2.1.5
+        version: 2.1.5(solid-js@1.7.0)
       clsx:
         specifier: ^1.2.1
         version: 1.2.1
@@ -4171,6 +4189,10 @@ packages:
     resolution: {integrity: sha512-wlrJs6Ryhaa5CqhK3FjTfMRnb/s7HeLkKMFqwQySkK86cdN1TGdzpSM3O4tsmzCA1dYBeTbXvOwSE/Y42cUrvA==}
     dev: false
 
+  /@mdi/js@7.2.96:
+    resolution: {integrity: sha512-paR9M9ZT7rKbh2boksNUynuSZMHhqRYnEZOm/KrZTjQ4/FzyhjLHuvw/8XYzP+E7fS4+/Ms/82EN1pl/OFsiIA==}
+    dev: false
+
   /@microsoft/fetch-event-source@2.0.1:
     resolution: {integrity: sha512-W6CLUJ2eBMw3Rec70qrsEW0jOm/3twwJv21mrmj2yORiaVmVYGS4sSS5yUwvQc1ZlDLYGPnClVWmUUMagKNsfA==}
     dev: false
@@ -4487,6 +4509,16 @@ packages:
       tslib: 2.5.3
     dev: false
     optional: true
+
+  /@solid-primitives/active-element@2.0.15(solid-js@1.7.0):
+    resolution: {integrity: sha512-ShHOjC59Ng6QIMvKjWs8XpIksGmP93dZC0AmagCXEbWzkqQieAaiyCkEezuXOK3tiVke0HItRByv90eBn9QPXA==}
+    peerDependencies:
+      solid-js: ^1.6.12
+    dependencies:
+      '@solid-primitives/event-listener': 2.2.13(solid-js@1.7.0)
+      '@solid-primitives/utils': 6.2.0(solid-js@1.7.0)
+      solid-js: 1.7.0
+    dev: false
 
   /@solid-primitives/connectivity@0.3.12(solid-js@1.7.0):
     resolution: {integrity: sha512-ijS9LVuZd92SnO8eagBdhPyuVEhq0MR+Wz+zrwqpCmniSXHqYd+tS8v7kAzEQ7C40SvEnJOXDvR5EdjVjPaleA==}
@@ -6823,6 +6855,10 @@ packages:
       qs: 6.11.2
       raw-body: 2.5.2
       type-is: 1.6.18
+    dev: false
+
+  /codejar@3.7.0:
+    resolution: {integrity: sha512-rqyDu2zNwfu1EhXI++LEMQDzhykS+V0BV52RemtCj5lczgTgWSufyEa+tS7RP7qCXH/WXOkU0eIthmFUzvG78Q==}
     dev: false
 
   /color-convert@1.9.3:

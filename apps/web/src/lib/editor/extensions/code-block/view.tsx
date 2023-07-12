@@ -7,7 +7,12 @@ import { nanoid } from "nanoid";
 import { formatCode, monaco } from "#lib/code-editor";
 import { Card } from "#components/primitives";
 import { createRef, selectionClasses } from "#lib/utils";
-import { useAppearanceContext, useAuthenticatedContext, useNotificationsContext } from "#context";
+import {
+  useAppearanceContext,
+  useAuthenticatedContext,
+  useNotificationsContext,
+  useUIContext
+} from "#context";
 
 interface CodeBlockViewProps {
   codeEditorRef(): monaco.editor.IStandaloneCodeEditor | null;
@@ -31,6 +36,7 @@ const getExtension = (language: string): string => {
 };
 const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
   const { state } = useSolidNodeView<CodeBlockAttributes>();
+  const { breakpoints } = useUIContext();
   const { workspaceSettings = () => null } = useAuthenticatedContext() || {};
   const { codeEditorTheme = () => "dark" } = useAppearanceContext() || {};
   const { notify } = useNotificationsContext();
@@ -110,7 +116,7 @@ const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
     });
   };
 
-  onMount(() => {
+  onMount(async () => {
     const editorContainer = editorContainerRef();
 
     if (editorContainer) {
@@ -118,6 +124,7 @@ const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
         automaticLayout: true,
         model: null,
         fontSize: 13,
+        fontFamily: "JetBrainsMonoVariable",
         theme: "dark",
         tabSize: 2,
         insertSpaces: true,
@@ -272,8 +279,7 @@ const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
           "w-full bg-gray-50 dark:bg-gray-900 h-72 not-prose rounded-t-2xl",
           codeEditorTheme() === "light" && "border-2 border-b-0 dark:border-0"
         )}
-      ></div>
-
+      />
       <Card
         class={clsx(
           "m-0 rounded-t-none",

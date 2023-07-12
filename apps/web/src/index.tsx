@@ -10,7 +10,8 @@ import {
   ClientContextProvider,
   ConfirmationContextProvider,
   NotificationsProvider,
-  UIContextProvider
+  UIContextProvider,
+  CacheContextProvider
 } from "#context";
 
 const container = document.querySelector("#root");
@@ -48,7 +49,7 @@ if (container) {
                     </div>
                   }
                 >
-                  <div class="relative h-screen flex">
+                  <div class="relative h-[100dvh] flex flex-col-reverse md:flex-row">
                     <SVGDefs />
                     <App />
                   </div>

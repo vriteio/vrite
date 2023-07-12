@@ -5,6 +5,7 @@ import tippy, { Instance } from "tippy.js";
 import { posToDOMRect } from "@tiptap/core";
 import { Setter } from "solid-js";
 import "tippy.js/animations/scale-subtle.css";
+import "tippy.js/animations/shift-away-subtle.css";
 
 interface LinkPreviewOptions {
   editor: SolidEditor;

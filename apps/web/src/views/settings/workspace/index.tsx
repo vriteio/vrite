@@ -17,7 +17,13 @@ import {
 } from "solid-js";
 import { mdiAccountMultiple, mdiDotsVertical, mdiTagText, mdiTrashCan } from "@mdi/js";
 import { useNavigate } from "@solidjs/router";
-import { App, hasPermission, useClientContext, useConfirmationContext } from "#context";
+import {
+  App,
+  hasPermission,
+  useClientContext,
+  useConfirmationContext,
+  useUIContext
+} from "#context";
 import { Dropdown, IconButton } from "#components/primitives";
 
 const useRoles = (): {
@@ -168,6 +174,7 @@ const useWorkspace = (): {
   return { workspace, loading: () => workspace.loading };
 };
 const WorkspaceSection: SettingsSectionComponent = (props) => {
+  const { breakpoints } = useUIContext();
   const { client } = useClientContext();
   const navigate = useNavigate();
   const { confirmWithInput } = useConfirmationContext();
@@ -175,6 +182,7 @@ const WorkspaceSection: SettingsSectionComponent = (props) => {
     "none" | "invite-member" | "configure-role"
   >("none");
   const [editedRoleId, setEditedRoleId] = createSignal("");
+  const [dropdownOpened, setDropdownOpened] = createSignal(false);
   const rolesData = useRoles();
   const workspaceData = useWorkspace();
   const membersData = useMembers();
@@ -185,7 +193,10 @@ const WorkspaceSection: SettingsSectionComponent = (props) => {
         return (
           <Show when={hasPermission("manageWorkspace")}>
             <Dropdown
-              overlay={false}
+              overlay={!breakpoints.md()}
+              opened={dropdownOpened()}
+              setOpened={setDropdownOpened}
+              placement="bottom-end"
               activatorButton={() => {
                 return <IconButton path={mdiDotsVertical} variant="text" text="soft" class="m-0" />;
               }}
@@ -195,7 +206,9 @@ const WorkspaceSection: SettingsSectionComponent = (props) => {
                 label="Delete"
                 variant="text"
                 color="danger"
+                class="w-full m-0 justify-start"
                 onClick={() => {
+                  setDropdownOpened(false);
                   confirmWithInput({
                     header: "Delete workspace",
                     async onConfirm() {

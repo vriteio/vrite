@@ -9,6 +9,7 @@ const writingPlugin = publicPlugin(async (fastify) => {
   const contentsCollection = getContentsCollection(fastify.mongo.db!);
   const server = Server.configure({
     port: fastify.config.PORT,
+    address: fastify.config.HOST,
     async onAuthenticate(data) {
       const cookies = fastify.parseCookie(data.requestHeaders.cookie || "");
 

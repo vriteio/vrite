@@ -11,6 +11,7 @@ import {
 import { SetStoreFunction, createStore } from "solid-js/store";
 import { HocuspocusProvider } from "@hocuspocus/provider";
 import { App } from "#context";
+import { breakpoints } from "#lib/utils";
 
 interface StorageData {
   sidePanelView: string;
@@ -31,6 +32,9 @@ interface UIContextData {
   references: ReferencesData;
   setStorage: Setter<Partial<StorageData>>;
   setReferences: SetStoreFunction<ReferencesData>;
+  breakpoints: {
+    md(): boolean;
+  };
 }
 
 const UIContext = createContext<UIContextData>();
@@ -73,7 +77,8 @@ const UIContextProvider: ParentComponent = (props) => {
         storage,
         references,
         setStorage,
-        setReferences
+        setReferences,
+        breakpoints
       }}
     >
       {props.children}

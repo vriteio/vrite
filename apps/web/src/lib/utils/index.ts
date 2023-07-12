@@ -4,3 +4,4 @@ export * from "./validate";
 export * from "./embeds";
 export * from "./tags";
 export * from "./selection";
+export * from "./breakpoints";

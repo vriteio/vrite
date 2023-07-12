@@ -1,15 +1,13 @@
+import { MembersDropdown } from "./members-dropdown";
 import {
   mdiAccountCircle,
   mdiAccountMultipleOutline,
   mdiAccountMultiplePlusOutline,
-  mdiAccountMultipleRemoveOutline,
-  mdiClose
+  mdiAccountMultipleRemoveOutline
 } from "@mdi/js";
-import { IconButton, Dropdown, Tooltip, Button, Icon, Card } from "#components/primitives";
-import clsx from "clsx";
 import { Component, For, Show, createSignal } from "solid-js";
+import { IconButton, Dropdown, Tooltip, Button, Icon } from "#components/primitives";
 import { App } from "#context";
-import { MembersDropdown } from "./members-dropdown";
 
 interface MembersInputProps {
   members: App.ContentPieceMember[];

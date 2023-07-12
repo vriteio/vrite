@@ -1,20 +1,21 @@
-import { ParentComponent, Show } from "solid-js";
 import { Toolbar } from "./toolbar";
-import { AppearanceManager, useUIContext } from "#context";
-import { IconButton, Tooltip } from "#components/primitives";
+import { ParentComponent, Show } from "solid-js";
 import { mdiFullscreenExit } from "@mdi/js";
 import clsx from "clsx";
+import { AppearanceManager, useUIContext } from "#context";
+import { IconButton, Tooltip } from "#components/primitives";
 
 const StandaloneLayout: ParentComponent = (props) => {
   const { storage, setStorage } = useUIContext();
 
+  document.documentElement.classList.add("sidebar-hidden");
   setStorage((storage) => ({ ...storage, toolbarView: "editorStandalone" }));
 
   return (
     <AppearanceManager>
       <Show when={storage().zenMode}>
         <Tooltip
-          wrapperClass="fixed top-0 right-0 z-50 mt-4 mr-6"
+          wrapperClass="fixed top-0 right-0 z-50 mt-2 md:mt-4 mr-4 md:mr-6"
           class="-ml-1"
           text="Exit Zen mode"
           side="left"

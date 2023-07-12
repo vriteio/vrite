@@ -2,9 +2,15 @@
 <html lang="en" data-accent-color="energy">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
-    <link rel="shortcut icon" type="image/ico" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <link rel="apple-touch-icon" href="/icons/512.png" />
+    <link rel="shortcut icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="manifest" href="manifest.json" />
+    <meta name="theme-color" content="#F3F4F6" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#1f2937" media="(prefers-color-scheme: dark)" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <link
       rel="preload"
       as="font"
@@ -17,6 +23,13 @@
       as="font"
       crossorigin="anonymous"
       href="/nunito-latin-ext-variable-wghtOnly-normal.woff2"
+      type="font/woff2"
+    />
+    <link
+      rel="preload"
+      as="font"
+      crossorigin="anonymous"
+      href="/jetbrains-mono-wghtOnly-normal.woff2"
       type="font/woff2"
     />
     <title>Vrite</title>
@@ -51,6 +64,8 @@
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
     <div id="sandbox" class="hidden"></div>
+    <div id="dropdowns"></div>
+    <div id="bottom-space-filler"></div>
     <script src="/src/index.tsx" type="module"></script>
   </body>
 </html>

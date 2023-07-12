@@ -1,5 +1,5 @@
-import { Node, mergeAttributes } from "@tiptap/core";
 import { nodeInputRule } from "./node-input-rule";
+import { Node, mergeAttributes } from "@tiptap/core";
 
 interface ImageAttributes {
   src?: string;
@@ -37,7 +37,6 @@ const Image = Node.create<ImageOptions>({
   group() {
     return this.options.inline ? "inline" : "block";
   },
-  draggable: true,
   addAttributes() {
     return {
       src: {

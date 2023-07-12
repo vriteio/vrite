@@ -1,5 +1,6 @@
 import { LinkPreviewPlugin, LinkPreviewOptions } from "./plugin";
 import { Accessor, Component, createSignal, JSX, onMount } from "solid-js";
+import clsx from "clsx";
 import { createRef } from "#lib/utils";
 
 type LinkPreviewWrapperProps = Omit<LinkPreviewOptions, "element"> & {
@@ -29,7 +30,11 @@ const LinkPreviewWrapper: Component<LinkPreviewWrapperProps> = (props) => {
   });
 
   return (
-    <div ref={setContainer} class={props.class || ""} style={{ visibility: "hidden" }}>
+    <div
+      ref={setContainer}
+      class={clsx("hidden md:block", props.class)}
+      style={{ visibility: "hidden" }}
+    >
       {props.children(getLink)}
     </div>
   );

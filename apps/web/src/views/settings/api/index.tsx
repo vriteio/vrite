@@ -24,6 +24,7 @@ import {
 import { createStore } from "solid-js/store";
 import { IconButton, Heading, Input, Tooltip, Loader, Card, Button } from "#components/primitives";
 import { App, hasPermission, useClientContext, useNotificationsContext } from "#context";
+import { Motion } from "@motionone/solid";
 
 const useTokens = (): {
   loading: Accessor<boolean>;

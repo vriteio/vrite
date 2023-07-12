@@ -1,10 +1,14 @@
 import { SolidEditor } from "@vrite/tiptap-solid";
 import { mdiInformationOutline } from "@mdi/js";
 import { Component, createSignal, onCleanup } from "solid-js";
+import clsx from "clsx";
 import { Button, Dropdown, IconButton } from "#components/primitives";
 
 interface StatsMenuProps {
   editor?: SolidEditor;
+  wrapperClass?: string;
+  class?: string;
+  onClick?(): void;
 }
 
 const StatsMenu: Component<StatsMenuProps> = (props) => {
@@ -57,61 +61,63 @@ const StatsMenu: Component<StatsMenuProps> = (props) => {
   });
 
   return (
-    <div>
-      <Dropdown
-        placement="bottom-start"
-        cardProps={{ class: "mt-3" }}
-        activatorButton={() => (
-          <IconButton
-            path={mdiInformationOutline}
-            label={`${stats().words} word${stats().words === 1 ? "" : "s"}`}
-            text="soft"
-            variant="text"
-            class="m-0"
-            id="content-piece-stats"
-          />
-        )}
-      >
-        <div class="grid w-64 grid-cols-2 text-gray-700 dark:text-gray-200">
-          <Button
-            class="flex flex-col items-start justify-center p-2"
-            color="contrast"
-            text="soft"
-            badge
-          >
-            <span class="mr-2 text-2xl font-bold">{stats().paragraphs}</span>
-            <span class="text-sm">paragraphs</span>
-          </Button>
-          <Button
-            class="flex flex-col items-start justify-center p-2"
-            color="contrast"
-            text="soft"
-            badge
-          >
-            <span class="mr-2 text-2xl font-bold">{stats().words}</span>
-            <span class="text-sm">words</span>
-          </Button>
-          <Button
-            class="flex flex-col items-start justify-center p-2"
-            color="contrast"
-            text="soft"
-            badge
-          >
-            <span class="mr-2 text-2xl font-bold">{stats().textCharacters}</span>
-            <span class="text-sm whitespace-nowrap">text characters</span>
-          </Button>
-          <Button
-            class="flex flex-col items-start justify-center p-2"
-            color="contrast"
-            text="soft"
-            badge
-          >
-            <span class="mr-2 text-2xl font-bold">{stats().locs}</span>
-            <span class="text-sm">LOCs</span>
-          </Button>
-        </div>
-      </Dropdown>
-    </div>
+    <Dropdown
+      placement="bottom-start"
+      cardProps={{ class: "mt-3" }}
+      fixed
+      class={props.wrapperClass}
+      activatorWrapperClass="w-full"
+      activatorButton={() => (
+        <IconButton
+          path={mdiInformationOutline}
+          label={`${stats().words} word${stats().words === 1 ? "" : "s"}`}
+          onClick={props.onClick}
+          text="soft"
+          variant="text"
+          class={clsx("m-0", props.class)}
+          id="content-piece-stats"
+        />
+      )}
+    >
+      <div class="grid md:w-64 grid-cols-2 text-gray-700 dark:text-gray-200">
+        <Button
+          class="flex flex-col items-start justify-center p-2"
+          color="contrast"
+          text="soft"
+          badge
+        >
+          <span class="mr-2 text-2xl font-bold">{stats().paragraphs}</span>
+          <span class="text-sm">paragraphs</span>
+        </Button>
+        <Button
+          class="flex flex-col items-start justify-center p-2"
+          color="contrast"
+          text="soft"
+          badge
+        >
+          <span class="mr-2 text-2xl font-bold">{stats().words}</span>
+          <span class="text-sm">words</span>
+        </Button>
+        <Button
+          class="flex flex-col items-start justify-center p-2"
+          color="contrast"
+          text="soft"
+          badge
+        >
+          <span class="mr-2 text-2xl font-bold">{stats().textCharacters}</span>
+          <span class="text-sm whitespace-nowrap">text characters</span>
+        </Button>
+        <Button
+          class="flex flex-col items-start justify-center p-2"
+          color="contrast"
+          text="soft"
+          badge
+        >
+          <span class="mr-2 text-2xl font-bold">{stats().locs}</span>
+          <span class="text-sm">LOCs</span>
+        </Button>
+      </div>
+    </Dropdown>
   );
 };
 

@@ -10,16 +10,20 @@ import {
 import { Component, createSignal } from "solid-js";
 import { htmlTransformer, gfmTransformer } from "@vrite/sdk/transformers";
 import { JSONContent } from "@vrite/sdk";
+import { nanoid } from "nanoid";
+import clsx from "clsx";
 import { Card, Dropdown, Heading, IconButton, Overlay, Tooltip } from "#components/primitives";
 import { MiniCodeEditor } from "#components/fragments";
 import { App, useAuthenticatedContext, useClientContext, useNotificationsContext } from "#context";
 import { formatCode } from "#lib/code-editor";
 import { escapeHTML } from "#lib/utils";
-import { nanoid } from "nanoid";
 
 interface ExportMenuProps {
   editedContentPiece?: App.ContentPieceWithAdditionalData;
   content?: JSONContent;
+  wrapperClass?: string;
+  class?: string;
+  onClick?(): void;
 }
 
 const ExportMenu: Component<ExportMenuProps> = (props) => {
@@ -33,7 +37,7 @@ const ExportMenu: Component<ExportMenuProps> = (props) => {
   const [exportType, setExportType] = createSignal<"html" | "json" | "md">("html");
   const loadContent = async (type: "html" | "json" | "md"): Promise<string | undefined> => {
     try {
-      let content = props.content;
+      let { content } = props;
 
       if (!content && props.editedContentPiece) {
         const contentPiece = await client.contentPieces.get.query({
@@ -43,6 +47,7 @@ const ExportMenu: Component<ExportMenuProps> = (props) => {
 
         content = contentPiece.content as JSONContent;
       }
+
       const prettierConfig = JSON.parse(workspaceSettings()?.prettierConfig || "{}");
 
       if (type === "html") {
@@ -91,30 +96,34 @@ const ExportMenu: Component<ExportMenuProps> = (props) => {
 
   return (
     <>
-      <div class="not-prose">
-        <Dropdown
-          activatorButton={() => (
-            <IconButton
-              path={mdiExportVariant}
-              label="Export"
-              text="soft"
-              class="m-0"
-              variant="text"
-              id="content-piece-export"
-            />
-          )}
-          opened={exportDropdownOpened()}
-          setOpened={setExportDropdownOpened}
-          placement="bottom-start"
-          cardProps={{ class: "mt-3" }}
-        >
+      <Dropdown
+        activatorWrapperClass="w-full"
+        activatorButton={() => (
+          <IconButton
+            path={mdiExportVariant}
+            label="Export"
+            text="soft"
+            class={clsx("m-0", props.class)}
+            onClick={props.onClick}
+            variant="text"
+            id="content-piece-export"
+          />
+        )}
+        class={props.wrapperClass}
+        opened={exportDropdownOpened()}
+        setOpened={setExportDropdownOpened}
+        placement="bottom-start"
+        cardProps={{ class: "mt-3" }}
+        fixed
+      >
+        <div class="gap-1 flex flex-col">
           <IconButton
             path={mdiLanguageHtml5}
             text="soft"
             variant="text"
             label="HTML"
             disabled={loading()}
-            class="justify-start"
+            class="justify-start w-full m-0"
             onClick={() => exportContent("html")}
           />
           <IconButton
@@ -123,7 +132,7 @@ const ExportMenu: Component<ExportMenuProps> = (props) => {
             variant="text"
             label="JSON"
             disabled={loading()}
-            class="justify-start"
+            class="justify-start w-full m-0"
             onClick={() => exportContent("json")}
           />
           <IconButton
@@ -132,18 +141,22 @@ const ExportMenu: Component<ExportMenuProps> = (props) => {
             variant="text"
             label="GFM"
             disabled={loading()}
-            class="justify-start"
+            class="justify-start w-full m-0"
             onClick={() => exportContent("md")}
           />
-        </Dropdown>
-      </div>
+        </div>
+      </Dropdown>
       <Overlay
         opened={exportMenuOpened()}
         onOverlayClick={() => {
           setExportMenuOpened(false);
         }}
+        portal
       >
-        <Card class="w-[calc(100vw-8rem)] h-[calc(100vh-8rem)] p-4 flex flex-col" color="contrast">
+        <Card
+          class="h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] md:w-[calc(100vw-8rem)] md:h-[calc(100dvh-8rem)] md:p-4 flex flex-col"
+          color="contrast"
+        >
           <div class="flex items-center justify-center">
             <Heading class="flex-1">
               {exportType() === "html" && "HTML "}

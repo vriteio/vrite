@@ -89,17 +89,18 @@ const SidePanel: Component = () => {
   return (
     <div
       class={clsx(
-        "relative h-full border-gray-200 dark:border-gray-700",
+        "fixed z-20 top-0 left-0 !lt-md:w-full md:relative h-[calc(100%-3.25rem-env(safe-area-inset-bottom,0px))] md:h-full border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800",
+        "transition-transform ease-out duration-350",
         sidePanelEnabled() ? "flex" : "hidden",
-        !collapsed() && "border-r-2"
+        collapsed() && "translate-y-[100vh] md:translate-y-0",
+        !collapsed() && "md:border-r-2"
       )}
-      color="contrast"
       style={{
         "width": `${storage().sidePanelWidth || 0}px`,
         "max-width": `${maxWidth()}px`
       }}
     >
-      <div class={clsx("flex-1 w-full relative", collapsed() && "hidden")}>
+      <div class={clsx("flex-1 w-full relative", collapsed() && "md:hidden")}>
         <div class="h-full">
           <Dynamic component={view()} />
         </div>
@@ -123,7 +124,7 @@ const SidePanel: Component = () => {
       >
         <div
           class={clsx(
-            "w-1 -ml-0.25 fixed h-full bg-gradient-to-tr transition-opacity duration-200",
+            "w-1 -ml-0.25 fixed h-full bg-gradient-to-tr transition-opacity duration-350",
             dragging() || handleHover() ? "opacity-100" : "opacity-0"
           )}
         ></div>

@@ -1,8 +1,3 @@
-import { ScrollShadow } from "#components/fragments";
-import { Button, Dropdown, Tooltip } from "#components/primitives";
-import { ExtensionDetails, useExtensionsContext } from "#context";
-import { ViewContextProvider, ViewRenderer, useViewContext } from "#lib/extensions";
-import { createRef } from "#lib/utils";
 import { debounce } from "@solid-primitives/scheduled";
 import { Range, createNodeFromContent, generateJSON } from "@tiptap/core";
 import { Node as PMNode } from "@tiptap/pm/model";
@@ -14,6 +9,11 @@ import {
 import { SolidEditor } from "@vrite/tiptap-solid";
 import clsx from "clsx";
 import { Component, For, Show, createEffect, createMemo, createSignal, on } from "solid-js";
+import { createRef } from "#lib/utils";
+import { ViewContextProvider, ViewRenderer, useViewContext } from "#lib/extensions";
+import { ExtensionDetails, useExtensionsContext } from "#context";
+import { Button, Dropdown, Tooltip } from "#components/primitives";
+import { ScrollShadow } from "#components/fragments";
 
 interface BlockActionMenuProps {
   state: {
@@ -26,6 +26,7 @@ interface ExtensionIconProps {
   class?: string;
   spec: ExtensionSpec;
 }
+
 const ExtensionIcon: Component<ExtensionIconProps> = (props) => {
   return (
     <>
@@ -106,7 +107,10 @@ const BlockActionMenu: Component<BlockActionMenuProps> = (props) => {
 
   return (
     <div
-      class={clsx("flex-col ml-2 gap-1", props.state.editor.isEditable ? "flex" : "hidden")}
+      class={clsx(
+        "flex-col ml-2 gap-1 hidden",
+        props.state.editor.isEditable ? "md:flex" : "md:hidden"
+      )}
       ref={setContainerRef}
     >
       <For each={blockActions()}>
@@ -114,6 +118,7 @@ const BlockActionMenu: Component<BlockActionMenuProps> = (props) => {
           const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(
             null
           );
+
           return (
             <Dropdown
               placement="left-end"
@@ -170,8 +175,10 @@ const BlockActionMenu: Component<BlockActionMenuProps> = (props) => {
                   replaceContent={(content) => {
                     unlock.clear();
                     setLocked(true);
+
                     if (range()) {
                       let size = 0;
+
                       const nodeOrFragment = createNodeFromContent(
                         content,
                         props.state.editor.schema
@@ -180,8 +187,9 @@ const BlockActionMenu: Component<BlockActionMenuProps> = (props) => {
                       if (nodeOrFragment instanceof PMNode) {
                         size = nodeOrFragment.nodeSize;
                       } else {
-                        size = nodeOrFragment.size;
+                        size = nodeOrFragment.size || 0;
                       }
+
                       props.state.editor
                         .chain()
                         .focus()
@@ -195,6 +203,7 @@ const BlockActionMenu: Component<BlockActionMenuProps> = (props) => {
                       setRange({ from: range()!.from, to: range()!.from + size - 1 });
                       computeDropdownPosition()();
                     }
+
                     unlock();
                   }}
                 >

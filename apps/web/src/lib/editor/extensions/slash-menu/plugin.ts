@@ -89,15 +89,19 @@ const SlashMenuPlugin = Extension.create<SlashMenuPluginOptions>({
               if (!props.clientRect) {
                 return;
               }
+
               popup = tippy(target, {
                 getReferenceClientRect: () => getReferenceClientRect(props),
                 appendTo: () => target,
+                duration: 0,
                 content: component.element,
                 showOnCreate: true,
                 interactive: true,
                 trigger: "manual",
-                placement: "bottom-start"
+                placement: "bottom-start",
+                hideOnClick: "toggle"
               });
+              popup.popper.classList.add("slash-menu");
             },
 
             onUpdate(props) {

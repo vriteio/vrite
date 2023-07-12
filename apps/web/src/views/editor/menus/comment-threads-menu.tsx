@@ -1,8 +1,8 @@
-import { App, useClientContext } from "#context";
 import { mdiCommentMultipleOutline } from "@mdi/js";
 import { Editor } from "@tiptap/core";
-import { Dropdown, Heading, IconButton } from "#components/primitives";
 import { Component, For, Show, createMemo, createResource } from "solid-js";
+import { Dropdown, Heading, IconButton } from "#components/primitives";
+import { App, useClientContext } from "#context";
 import { CommentCard } from "#lib/editor";
 import { createRef } from "#lib/utils";
 import { ScrollShadow } from "#components/fragments";
