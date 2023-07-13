@@ -1,32 +1,45 @@
 import { JSONContent, JSONContentAttrs } from "../api";
 
-interface ContentTransformerConfig {
-  applyInlineFormatting(type: string, attrs: JSONContentAttrs, content: string): string;
-  transformNode(type: string, attrs: JSONContentAttrs, content: string): string;
+interface ContentTransformerConfig<O = string> {
+  applyInlineFormatting(
+    type: string,
+    attrs: JSONContentAttrs,
+    content: O,
+    ancestors: JSONContent[]
+  ): O;
+  transformNode(type: string, attrs: JSONContentAttrs, content: O, ancestors: JSONContent[]): O;
+  processOutput?(nodes: O[]): O;
 }
 
-type ContentTransformer = (...content: JSONContent[]) => string;
+type ContentTransformer<O = string> = (...content: JSONContent[]) => O;
 
-const createContentTransformer = (config: ContentTransformerConfig): ContentTransformer => {
-  const transformer = (...content: JSONContent[]): string => {
-    return content
-      .map((doc) => {
-        if (doc.type === "text") {
-          let content = doc?.text || "";
+const createContentTransformer = <O = string>(
+  config: ContentTransformerConfig<O>
+): ContentTransformer<O> => {
+  const transformerFn = (ancestors: JSONContent[] = [], ...content: JSONContent[]): O => {
+    const x = content.map((doc) => {
+      if (doc.type === "text") {
+        let content = (doc?.text || "") as O;
 
-          doc.marks?.forEach((mark) => {
-            content = config.applyInlineFormatting(mark.type, mark.attrs, content);
-          });
+        doc.marks?.forEach((mark) => {
+          content = config.applyInlineFormatting(mark.type, mark.attrs, content, ancestors);
+        });
 
-          return content;
-        }
+        return content;
+      }
 
-        return config.transformNode(doc.type, doc.attrs || {}, transformer(...(doc.content || [])));
-      })
-      .join("");
+      return config.transformNode(
+        doc.type,
+        doc.attrs || {},
+        transformerFn([...ancestors, doc], ...(doc.content || [])),
+        ancestors
+      );
+    });
+
+    return (config.processOutput?.(x) || x.join("")) as O;
   };
 
-  return transformer;
+  return (...content: JSONContent[]) => transformerFn([], ...content);
 };
 
 export { createContentTransformer };

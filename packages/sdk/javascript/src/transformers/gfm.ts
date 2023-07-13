@@ -23,6 +23,51 @@ const gfmTransformer = createContentTransformer({
   },
   transformNode(type, attrs, content) {
     const listItemRegex = /^(?:- \[(?: |x)\]|-|(?:\d+\.))\s/;
+    const processOrderedList = (): string => {
+      let start = Number(attrs.start ?? 1);
+
+      return `\n${content
+        .split("\n\n\n")
+        .filter((listItem) => listItem)
+        .map((listItem) => {
+          if (listItemRegex.test(listItem.trim())) {
+            return `${listItem
+              .split("\n")
+              .filter((line) => line)
+              .map((line) => `   ${line}`)
+              .join("\n")}`;
+          }
+
+          const prefix = `${start}. `;
+          const result = `${listItem
+            .split("\n")
+            .map((listItem, index) => {
+              if (index === 0) {
+                return `${prefix}${listItem}`;
+              }
+
+              return `${prefix.replace(/./g, " ")}${listItem}`;
+            })
+            .join("\n")
+            .trim()}`;
+
+          start += 1;
+
+          return result;
+        })
+        .join("\n")}\n`;
+    };
+    const processTableRow = (): string => {
+      const headerRow = content.split(" |--| ");
+
+      if (headerRow.length > 1) {
+        return `| ${headerRow.join(" | ")}\n${headerRow.map(() => "---").join(" | ")}\n`;
+      }
+
+      const row = content.split(" | ");
+
+      return `| ${row.join(" | ")}\n`;
+    };
 
     switch (type) {
       case "paragraph":
@@ -50,16 +95,14 @@ const gfmTransformer = createContentTransformer({
           .filter((listItem) => listItem)
           .map((listItem) => {
             if (listItemRegex.test(listItem.trim())) {
-              const list = `${listItem
+              return `${listItem
                 .split("\n")
                 .filter((line) => line)
                 .map((line) => `   ${line}`)
                 .join("\n")}`;
-
-              return list;
             }
 
-            const result = `${listItem
+            return `${listItem
               .split("\n")
               .map((listItem, index) => {
                 if (index === 0) {
@@ -70,44 +113,10 @@ const gfmTransformer = createContentTransformer({
               })
               .join("\n")
               .trim()}`;
-
-            return result;
           })
           .join("\n\n")}\n`;
       case "orderedList":
-        let start = Number(attrs.start ?? 1);
-
-        return `\n${content
-          .split("\n\n\n")
-          .filter((listItem) => listItem)
-          .map((listItem) => {
-            if (listItemRegex.test(listItem.trim())) {
-              const list = `${listItem
-                .split("\n")
-                .filter((line) => line)
-                .map((line) => `   ${line}`)
-                .join("\n")}`;
-
-              return list;
-            }
-            const prefix = `${start}. `;
-            const result = `${listItem
-              .split("\n")
-              .map((listItem, index) => {
-                if (index === 0) {
-                  return `${prefix}${listItem}`;
-                }
-
-                return `${prefix.replace(/./g, " ")}${listItem}`;
-              })
-              .join("\n")
-              .trim()}`;
-
-            start += 1;
-
-            return result;
-          })
-          .join("\n")}\n`;
+        return processOrderedList();
       case "taskList":
         return `\n${content}\n`;
       case "listItem":
@@ -119,15 +128,7 @@ const gfmTransformer = createContentTransformer({
       case "table":
         return `\n${content}\n`;
       case "tableRow":
-        const headerRow = content.split(" |--| ");
-
-        if (headerRow.length > 1) {
-          return `| ${headerRow.join(" | ")}\n${headerRow.map(() => "---").join(" | ")}\n`;
-        }
-
-        const row = content.split(" | ");
-
-        return `| ${row.join(" | ")}\n`;
+        return processTableRow();
       case "tableCell":
         return `${content.trim()} | `;
       case "tableHeader":
