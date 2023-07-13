@@ -2,19 +2,317 @@
   "type": "doc",
   "content": [
     {
+      "type": "heading",
+      "attrs": { "level": 1 },
+      "content": [{ "type": "text", "text": "Welcome to Vrite Editor 🚀" }]
+    },
+    {
       "type": "paragraph",
       "content": [
-        { "type": "text", "text": "Hello World and welcome to " },
         {
           "type": "text",
-          "text": "Vrite",
-          "marks": [{ "type": "bold", "attrs": {} }]
+          "marks": [{ "type": "bold" }],
+          "text": "Vrite Editor"
         },
         {
           "type": "text",
-          "text": "! Happy to see you here. Feel free to explore at your own pace or check out the resources linked below:"
+          "text": " provides a minimalistic, WYSIWYG editing experience with support for Markdown."
         }
       ]
+    },
+    {
+      "type": "heading",
+      "attrs": { "level": 2 },
+      "content": [{ "type": "text", "text": "Features" }]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "marks": [{ "type": "bold" }],
+          "text": "Integrated Monaco editor and Prettier for code snippets"
+        }
+      ]
+    },
+    {
+      "type": "codeBlock",
+      "attrs": { "lang": "javascript" },
+      "content": [{ "type": "text", "text": "console.log(\"Hello World!\");\n" }]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "marks": [{ "type": "bold" }],
+          "text": "Tables! 🎉"
+        }
+      ]
+    },
+    {
+      "type": "table",
+      "content": [
+        {
+          "type": "tableRow",
+          "content": [
+            {
+              "type": "tableHeader",
+              "attrs": { "colspan": 1, "rowspan": 1, "colwidth": null },
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [{ "type": "text", "text": "Header 1" }]
+                }
+              ]
+            },
+            {
+              "type": "tableHeader",
+              "attrs": { "colspan": 1, "rowspan": 1, "colwidth": null },
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [{ "type": "text", "text": "Header 2" }]
+                }
+              ]
+            },
+            {
+              "type": "tableHeader",
+              "attrs": { "colspan": 1, "rowspan": 1, "colwidth": null },
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [{ "type": "text", "text": "Header 3" }]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "tableRow",
+          "content": [
+            {
+              "type": "tableCell",
+              "attrs": { "colspan": 1, "rowspan": 1, "colwidth": null },
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [{ "type": "text", "text": "Cell 1A" }]
+                }
+              ]
+            },
+            {
+              "type": "tableCell",
+              "attrs": { "colspan": 1, "rowspan": 1, "colwidth": null },
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [{ "type": "text", "text": "Cell 1B" }]
+                }
+              ]
+            },
+            {
+              "type": "tableCell",
+              "attrs": { "colspan": 1, "rowspan": 1, "colwidth": null },
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [{ "type": "text", "text": "Cell 1C" }]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "tableRow",
+          "content": [
+            {
+              "type": "tableCell",
+              "attrs": { "colspan": 1, "rowspan": 1, "colwidth": null },
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [{ "type": "text", "text": "Cell 2A" }]
+                }
+              ]
+            },
+            {
+              "type": "tableCell",
+              "attrs": { "colspan": 1, "rowspan": 1, "colwidth": null },
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [{ "type": "text", "text": "Cell 2B" }]
+                }
+              ]
+            },
+            {
+              "type": "tableCell",
+              "attrs": { "colspan": 1, "rowspan": 1, "colwidth": null },
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [{ "type": "text", "text": "Cell 2C" }]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "tableRow",
+          "content": [
+            {
+              "type": "tableCell",
+              "attrs": { "colspan": 1, "rowspan": 1, "colwidth": null },
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [{ "type": "text", "text": "Cell 3A" }]
+                }
+              ]
+            },
+            {
+              "type": "tableCell",
+              "attrs": { "colspan": 1, "rowspan": 1, "colwidth": null },
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [{ "type": "text", "text": "Cell 3B" }]
+                }
+              ]
+            },
+            {
+              "type": "tableCell",
+              "attrs": { "colspan": 1, "rowspan": 1, "colwidth": null },
+              "content": [
+                {
+                  "type": "paragraph",
+                  "content": [{ "type": "text", "text": "Cell 3C" }]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "marks": [{ "type": "bold" }],
+          "text": "Embeds 🎥"
+        }
+      ]
+    },
+    {
+      "type": "embed",
+      "attrs": {
+        "embed": "youtube",
+        "input": "https://www.youtube.com/embed/dQw4w9WgXcQ",
+        "src": "https://www.youtube.com/embed/dQw4w9WgXcQ"
+      }
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "marks": [{ "type": "bold" }],
+          "text": "Zen mode"
+        },
+        { "type": "text", "text": ", " },
+        {
+          "type": "text",
+          "marks": [{ "type": "bold" }],
+          "text": "Markdown/HTML export"
+        },
+        { "type": "text", "text": ", " },
+        { "type": "text", "marks": [{ "type": "bold" }], "text": "Stats" }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [{ "type": "text", "text": "Check out the top-right corner!" }]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        {
+          "type": "text",
+          "marks": [{ "type": "bold" }],
+          "text": "A lot more stuff!"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        { "type": "text", "text": "Full usage guide here: " },
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "link",
+              "attrs": {
+                "href": "https://docs.vrite.io/content-editor",
+                "target": "_blank",
+                "class": null
+              }
+            }
+          ],
+          "text": "https://docs.vrite.io/content-editor"
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "attrs": { "level": 2 },
+      "content": [{ "type": "text", "text": "What is Vrite?" }]
+    },
+    {
+      "type": "paragraph",
+      "content": [
+        { "type": "text", "marks": [{ "type": "bold" }], "text": "Vrite" },
+        { "type": "text", "text": " is an " },
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "link",
+              "attrs": {
+                "href": "https://vrite.io",
+                "target": "_blank",
+                "class": null
+              }
+            }
+          ],
+          "text": "open-source, headless CMS for technical content"
+        },
+        { "type": "text", "text": ". It features " },
+        {
+          "type": "text",
+          "marks": [{ "type": "bold" }],
+          "text": "real-time collaboration"
+        },
+        {
+          "type": "text",
+          "text": ", Kanban-based content management, GPT integration, customization and easy API access to your content."
+        }
+      ]
+    },
+    {
+      "type": "image",
+      "attrs": {
+        "src": "https://assets.vrite.io/64957f5b1f760acf4204d146/AFSfsVOvYWDOUUa3I2JL0.png",
+        "alt": "Vrite dashboard",
+        "width": "100%",
+        "uploading": null
+      }
+    },
+    {
+      "type": "paragraph",
+      "content": [{ "type": "text", "text": "Some links to check out:" }]
     },
     {
       "type": "bulletList",
@@ -25,60 +323,15 @@
             {
               "type": "paragraph",
               "content": [
-                { "type": "text", "text": "📕 " },
-                {
-                  "type": "text",
-                  "text": "Vrite documentation",
-                  "marks": [
-                    {
-                      "type": "link",
-                      "attrs": {
-                        "href": "https://docs.vrite.io",
-                        "target": "_blank",
-                        "class": null
-                      }
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "type": "listItem",
-          "content": [
-            {
-              "type": "paragraph",
-              "content": [
-                { "type": "text", "text": "ℹ️ " },
-                {
-                  "type": "text",
-                  "text": "Learn more about Vrite",
-                  "marks": [
-                    {
-                      "type": "link",
-                      "attrs": {
-                        "href": "https://vrite.io",
-                        "target": "_blank",
-                        "class": null
-                      }
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "type": "listItem",
-          "content": [
-            {
-              "type": "paragraph",
-              "content": [
                 { "type": "text", "text": "🌟 " },
                 {
                   "type": "text",
-                  "text": "Star Vrite on GitHub",
+                  "marks": [{ "type": "bold" }],
+                  "text": "Star Vrite on GitHub"
+                },
+                { "type": "text", "text": " — " },
+                {
+                  "type": "text",
                   "marks": [
                     {
                       "type": "link",
@@ -88,7 +341,8 @@
                         "class": null
                       }
                     }
-                  ]
+                  ],
+                  "text": "https://github.com/vriteio/vrite"
                 }
               ]
             }
@@ -103,17 +357,23 @@
                 { "type": "text", "text": "🐞 " },
                 {
                   "type": "text",
-                  "text": "Report bugs",
+                  "marks": [{ "type": "bold" }],
+                  "text": "Report bugs"
+                },
+                { "type": "text", "text": " — " },
+                {
+                  "type": "text",
                   "marks": [
                     {
                       "type": "link",
                       "attrs": {
-                        "href": " https://github.com/vriteio/vrite/issues",
+                        "href": "https://github.com/vriteio/vrite/issues",
                         "target": "_blank",
                         "class": null
                       }
                     }
-                  ]
+                  ],
+                  "text": "https://github.com/vriteio/vrite/issues"
                 }
               ]
             }
@@ -128,7 +388,12 @@
                 { "type": "text", "text": "🐦 " },
                 {
                   "type": "text",
-                  "text": "Follow on Twitter",
+                  "marks": [{ "type": "bold" }],
+                  "text": "Follow on Twitter"
+                },
+                { "type": "text", "text": " — " },
+                {
+                  "type": "text",
                   "marks": [
                     {
                       "type": "link",
@@ -138,7 +403,8 @@
                         "class": null
                       }
                     }
-                  ]
+                  ],
+                  "text": "https://twitter.com/vriteio"
                 }
               ]
             }
@@ -153,7 +419,12 @@
                 { "type": "text", "text": "💬 " },
                 {
                   "type": "text",
-                  "text": "Join Vrite Discord",
+                  "marks": [{ "type": "bold" }],
+                  "text": "Join Vrite Discord"
+                },
+                { "type": "text", "text": " — " },
+                {
+                  "type": "text",
                   "marks": [
                     {
                       "type": "link",
@@ -163,7 +434,70 @@
                         "class": null
                       }
                     }
-                  ]
+                  ],
+                  "text": "https://discord.gg/yYqDWyKnqE"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "listItem",
+          "content": [
+            {
+              "type": "paragraph",
+              "content": [
+                { "type": "text", "text": "ℹ️ " },
+                {
+                  "type": "text",
+                  "marks": [{ "type": "bold" }],
+                  "text": "Learn more about Vrite"
+                },
+                { "type": "text", "text": " — " },
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "link",
+                      "attrs": {
+                        "href": "https://vrite.io",
+                        "target": "_blank",
+                        "class": null
+                      }
+                    }
+                  ],
+                  "text": "https://vrite.io"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "listItem",
+          "content": [
+            {
+              "type": "paragraph",
+              "content": [
+                { "type": "text", "text": "📕 " },
+                {
+                  "type": "text",
+                  "marks": [{ "type": "bold" }],
+                  "text": "Vrite documentation"
+                },
+                { "type": "text", "text": " — " },
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "link",
+                      "attrs": {
+                        "href": "https://docs.vrite.io",
+                        "target": "_blank",
+                        "class": null
+                      }
+                    }
+                  ],
+                  "text": "https://docs.vrite.io"
                 }
               ]
             }

@@ -1,5 +1,7 @@
 import { UnderscoreID } from "./mongo";
+import { jsonToBuffer, DocJSON } from "./processing";
 import { ObjectId, Db, Binary } from "mongodb";
+import { LexoRank } from "lexorank";
 import {
   blocks,
   embeds,
@@ -11,8 +13,6 @@ import { getWorkspaceMembershipsCollection } from "#database/workspace-membershi
 import { getRolesCollection } from "#database/roles";
 import { FullUser } from "#database/users";
 import { getContentPiecesCollection, getContentsCollection } from "#database";
-import { LexoRank } from "lexorank";
-import { jsonToBuffer, DocJSON } from "./processing";
 import initialContent from "#assets/initial-content.json";
 
 const createWorkspace = async (
@@ -34,6 +34,7 @@ const createWorkspace = async (
   const adminRoleId = new ObjectId();
   const workspaceId = new ObjectId();
   const ideasContentGroupId = new ObjectId();
+  const contentPieceId = new ObjectId();
 
   await workspacesCollection.insertOne({
     name: config?.name || `${user.username}'s workspace`,
@@ -86,9 +87,10 @@ const createWorkspace = async (
     userId: user._id,
     roleId: adminRoleId
   });
+
   if (config?.defaultContent) {
     await contentPiecesCollection.insertOne({
-      _id: new ObjectId(),
+      _id: contentPieceId,
       workspaceId,
       contentGroupId: ideasContentGroupId,
       title: "Hello World!",
@@ -100,7 +102,7 @@ const createWorkspace = async (
     await contentsCollection.insertOne({
       _id: new ObjectId(),
       workspaceId,
-      contentPieceId: ideasContentGroupId,
+      contentPieceId,
       contentGroupId: ideasContentGroupId,
       content: new Binary(jsonToBuffer(initialContent as DocJSON))
     });
