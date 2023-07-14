@@ -1,7 +1,7 @@
 import { UseContentGroups, useContentGroups } from "./content-groups";
 import { UseContentPieces, useContentPieces } from "./content-pieces";
 import { UseOpenedContentPiece, useOpenedContentPiece } from "./opened-content-piece";
-import { ParentComponent, createContext, onCleanup, useContext } from "solid-js";
+import { ParentComponent, createContext, createEffect, on, onCleanup, useContext } from "solid-js";
 
 interface CacheContextData {
   useContentGroups(): UseContentGroups;
@@ -11,16 +11,21 @@ interface CacheContextData {
 
 const CacheContext = createContext<CacheContextData>();
 const CacheContextProvider: ParentComponent = (props) => {
-  let useContentGroupsCache: UseContentGroups | null = null;
-
+  const useContentGroupsCache = useContentGroups();
   const useOpenedContentPieceCache = useOpenedContentPiece();
 
   let useContentPiecesCache: Record<string, UseContentPieces> = {};
 
-  onCleanup(() => {
-    useContentGroupsCache = null;
-    useContentPiecesCache = {};
-  });
+  createEffect(
+    on(useContentGroupsCache.contentGroups, (contentGroups) => {
+      contentGroups.forEach(({ id }) => {
+        useContentPiecesCache[id] = useContentPiecesCache[id] || useContentPieces(id);
+      });
+      onCleanup(() => {
+        useContentPiecesCache = {};
+      });
+    })
+  );
 
   return (
     <CacheContext.Provider
@@ -29,13 +34,10 @@ const CacheContextProvider: ParentComponent = (props) => {
           return useOpenedContentPieceCache;
         },
         useContentGroups() {
-          return useContentGroupsCache || (useContentGroupsCache = useContentGroups());
+          return useContentGroupsCache;
         },
-        useContentPieces(contentGroupId: string) {
-          return (
-            useContentPiecesCache[contentGroupId] ||
-            (useContentPiecesCache[contentGroupId] = useContentPieces(contentGroupId))
-          );
+        useContentPieces(id: string) {
+          return useContentPieces(id);
         }
       }}
     >
