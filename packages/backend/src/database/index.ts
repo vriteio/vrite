@@ -12,3 +12,6 @@ export * from "./workspaces";
 export * from "./extensions";
 export * from "./comment-threads";
 export * from "./comments";
+export * from "./content-piece-variants";
+export * from "./content-variants";
+export * from "./variants";

@@ -1,6 +1,6 @@
 import { Collection, Db, ObjectId } from "mongodb";
-import { UnderscoreID, zodId } from "#lib/mongo";
 import { z } from "zod";
+import { UnderscoreID, zodId } from "#lib/mongo";
 
 const commentThread = z.object({
   id: zodId(),

@@ -70,7 +70,9 @@ const createWorkspace = async (
         "manageDashboard",
         "manageTokens",
         "manageWebhooks",
-        "manageWorkspace"
+        "manageWorkspace",
+        "manageExtensions",
+        "manageVariants"
       ]
     },
     {

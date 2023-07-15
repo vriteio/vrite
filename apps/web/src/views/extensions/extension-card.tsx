@@ -1,8 +1,8 @@
-import { ExtensionDetails, useClientContext } from "#context";
-import { mdiTune, mdiDownloadOutline } from "@mdi/js";
-import { Card, Heading, IconButton } from "#components/primitives";
-import { Component } from "solid-js";
 import { ExtensionIcon } from "./extension-icon";
+import { mdiTune, mdiDownloadOutline } from "@mdi/js";
+import { Component, Show } from "solid-js";
+import { ExtensionDetails, hasPermission, useClientContext } from "#context";
+import { Card, Heading, IconButton } from "#components/primitives";
 
 interface ExtensionCardProps {
   extension: ExtensionDetails;
@@ -21,32 +21,34 @@ const ExtensionCard: Component<ExtensionCardProps> = (props) => {
           {props.extension.spec.displayName}
         </Heading>
         <div class="flex-1" />
-        <IconButton
-          path={props.installed ? mdiTune : mdiDownloadOutline}
-          color={props.installed ? "base" : "primary"}
-          text={props.installed ? "soft" : "primary"}
-          label={props.installed ? "Configure" : "Install"}
-          onClick={async () => {
-            if (props.extension.id) {
-              props.setOpenedExtension({
-                ...props.extension,
-                config: { ...props.extension.config }
-              });
-            } else {
-              const { id, token } = await client.extensions.install.mutate({
-                extension: {
-                  name: props.extension.spec.name,
-                  displayName: props.extension.spec.displayName,
-                  permissions: props.extension.spec.permissions || []
-                }
-              });
+        <Show when={hasPermission("manageExtensions")}>
+          <IconButton
+            path={props.installed ? mdiTune : mdiDownloadOutline}
+            color={props.installed ? "base" : "primary"}
+            text={props.installed ? "soft" : "primary"}
+            label={props.installed ? "Configure" : "Install"}
+            onClick={async () => {
+              if (props.extension.id) {
+                props.setOpenedExtension({
+                  ...props.extension,
+                  config: { ...props.extension.config }
+                });
+              } else {
+                const { id, token } = await client.extensions.install.mutate({
+                  extension: {
+                    name: props.extension.spec.name,
+                    displayName: props.extension.spec.displayName,
+                    permissions: props.extension.spec.permissions || []
+                  }
+                });
 
-              props.setOpenedExtension({ ...props.extension, config: {}, id, token });
-            }
-          }}
-          class="m-0 my-1"
-          size="small"
-        />
+                props.setOpenedExtension({ ...props.extension, config: {}, id, token });
+              }
+            }}
+            class="m-0 my-1"
+            size="small"
+          />
+        </Show>
       </div>
       <p class="text-gray-500 dark:text-gray-400">{props.extension.spec.description}</p>
     </Card>

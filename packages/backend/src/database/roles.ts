@@ -9,7 +9,8 @@ const permission = z.enum([
   "manageTokens",
   "manageWebhooks",
   "manageWorkspace",
-  "manageExtensions"
+  "manageExtensions",
+  "manageVariants"
 ]);
 const role = z.object({
   id: zodId(),

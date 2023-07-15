@@ -14,6 +14,7 @@ import { authRouter } from "./auth";
 import { contentGroupsRouter } from "./content-groups";
 import { extensionsRouter } from "./extensions";
 import { commentsRouter } from "./comments";
+import { variantsRouter } from "./variants";
 import type { TRPCClientError } from "@trpc/client";
 import { Context, createContext } from "#lib/context";
 import { router } from "#lib/trpc";
@@ -34,7 +35,8 @@ const appRouter = router({
   workspaceSettings: workspaceSettingsRouter,
   verification: verificationRouter,
   extensions: extensionsRouter,
-  comments: commentsRouter
+  comments: commentsRouter,
+  variants: variantsRouter
 });
 
 type Router = typeof appRouter;

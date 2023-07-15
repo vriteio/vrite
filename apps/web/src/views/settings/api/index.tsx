@@ -1,6 +1,5 @@
 import { ConfigureTokenSubSection, FreshToken } from "./configure-subsection";
 import { SettingsSectionComponent } from "../view";
-import { TitledCard } from "#components/fragments";
 import {
   mdiClipboardOutline,
   mdiKey,
@@ -24,7 +23,7 @@ import {
 import { createStore } from "solid-js/store";
 import { IconButton, Heading, Input, Tooltip, Loader, Card, Button } from "#components/primitives";
 import { App, hasPermission, useClientContext, useNotificationsContext } from "#context";
-import { Motion } from "@motionone/solid";
+import { TitledCard } from "#components/fragments";
 
 const useTokens = (): {
   loading: Accessor<boolean>;

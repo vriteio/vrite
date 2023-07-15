@@ -49,7 +49,7 @@ interface EditorProps {
 }
 
 const Editor: Component<EditorProps> = (props) => {
-  const { setStorage, setReferences, breakpoints } = useUIContext();
+  const { setStorage, setReferences, references, breakpoints } = useUIContext();
   const navigate = useNavigate();
   const ydoc = new Y.Doc();
   const provider = new HocuspocusProvider({
@@ -68,7 +68,9 @@ const Editor: Component<EditorProps> = (props) => {
         props.reload?.();
       }
     },
-    name: props.editedContentPiece.id || "",
+    name: `${props.editedContentPiece.id || ""}${references.activeVariant ? ":" : ""}${
+      references.activeVariant?.id || ""
+    }`,
     document: ydoc
   });
   const [containerRef, setContainerRef] = createRef<HTMLElement | null>(null);

@@ -66,6 +66,11 @@ const ConfigureTokenSubSection: Component<ConfigureTokenSubSectionProps> = (prop
       permissions: ["webhooks:read", "webhooks:write"]
     },
     {
+      label: "Variants",
+      description: "Access and manage registered Variants",
+      permissions: ["variants:read", "variants:write"]
+    },
+    {
       label: "Profile",
       description: "Access your personal profile settings",
       permissions: ["profile:read"]

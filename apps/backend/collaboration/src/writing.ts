@@ -1,4 +1,4 @@
-import { publicPlugin, getContentsCollection } from "@vrite/backend";
+import { publicPlugin, getContentsCollection, getContentVariantsCollection } from "@vrite/backend";
 import { Server } from "@hocuspocus/server";
 import { Database } from "@hocuspocus/extension-database";
 import { ObjectId, Binary } from "mongodb";
@@ -7,6 +7,7 @@ import { unauthorized } from "@vrite/backend/src/lib/errors";
 
 const writingPlugin = publicPlugin(async (fastify) => {
   const contentsCollection = getContentsCollection(fastify.mongo.db!);
+  const contentVariantsCollection = getContentVariantsCollection(fastify.mongo.db!);
   const server = Server.configure({
     port: fastify.config.PORT,
     address: fastify.config.HOST,
@@ -38,24 +39,54 @@ const writingPlugin = publicPlugin(async (fastify) => {
             return null;
           }
 
-          const articleContent = await contentsCollection.findOne({
-            contentPieceId: new ObjectId(documentName)
+          const [contentPieceId, variantId] = documentName.split(":");
+
+          if (variantId) {
+            const contentVariant = await contentVariantsCollection.findOne({
+              contentPieceId: new ObjectId(contentPieceId),
+              variantId: new ObjectId(variantId)
+            });
+
+            if (contentVariant && contentVariant.content) {
+              return new Uint8Array(contentVariant.content.buffer);
+            }
+          }
+
+          const content = await contentsCollection.findOne({
+            contentPieceId: new ObjectId(contentPieceId)
           });
 
-          if (articleContent && articleContent.content) {
-            return new Uint8Array(articleContent.content.buffer);
+          if (content && content.content) {
+            return new Uint8Array(content.content.buffer);
           }
 
           return null;
         },
-        store({ documentName, state }) {
+        store({ documentName, state, ...details }) {
+          const [contentPieceId, variantId] = documentName.split(":");
+
           if (documentName.startsWith("workspace:")) {
             return;
           }
 
           if (state) {
+            if (variantId) {
+              if (!(details as { update?: any }).update) {
+                return;
+              }
+
+              return contentVariantsCollection?.updateOne(
+                {
+                  contentPieceId: new ObjectId(contentPieceId),
+                  variantId: new ObjectId(variantId)
+                },
+                { $set: { content: new Binary(state) } },
+                { upsert: true }
+              );
+            }
+
             return contentsCollection?.updateOne(
-              { contentPieceId: new ObjectId(documentName) },
+              { contentPieceId: new ObjectId(contentPieceId) },
               { $set: { content: new Binary(state) } },
               { upsert: true }
             );

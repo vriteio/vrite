@@ -85,7 +85,9 @@ const useContentPieces = (contentGroupId: string): UseContentPieces => {
   const contentPiecesChanges = client.contentPieces.changes.subscribe(
     { contentGroupId },
     {
-      onData({ action, data }) {
+      onData(value) {
+        const { action, data } = value;
+
         switch (action) {
           case "delete":
             setState("contentPieces", (contentPieces) => {
@@ -99,11 +101,16 @@ const useContentPieces = (contentGroupId: string): UseContentPieces => {
             setState("contentPieces", (contentPieces) => [data, ...contentPieces]);
             break;
           case "update":
-            setState(
-              "contentPieces",
-              state.contentPieces.findIndex((contentPiece) => contentPiece.id === data.id),
-              (contentPiece) => ({ ...contentPiece, ...data })
-            );
+            if (!("variantId" in value)) {
+              setState(
+                "contentPieces",
+                state.contentPieces.findIndex((contentPiece) => contentPiece.id === data.id),
+                (contentPiece) => {
+                  return { ...contentPiece, ...data };
+                }
+              );
+            }
+
             break;
           case "move":
             setState("contentPieces", (contentPieces) => {

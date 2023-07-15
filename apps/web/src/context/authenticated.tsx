@@ -19,7 +19,7 @@ interface AuthenticatedContextValue {
   membership: Accessor<App.WorkspaceMembership | null>;
   workspace: Accessor<Omit<App.Workspace, "contentGroups"> | null>;
   workspaceSettings: Accessor<App.WorkspaceSettings | null>;
-  role: Accessor<App.Role | null>;
+  role: Accessor<App.ExtendedRole<"baseType"> | null>;
   deletedTags: Accessor<string[]>;
   currentWorkspaceId: Accessor<string | null>;
 }
@@ -75,13 +75,12 @@ const AuthenticatedContextProvider: ParentComponent = (props) => {
   >(currentWorkspaceId, () => client.workspaceSettings.get.query(), {
     initialValue: null
   });
-  const [role, { mutate: setRole }] = createResource<App.Role | null, string | null>(
-    currentWorkspaceId,
-    () => client.roles.get.query(),
-    {
-      initialValue: null
-    }
-  );
+  const [role, { mutate: setRole }] = createResource<
+    App.ExtendedRole<"baseType"> | null,
+    string | null
+  >(currentWorkspaceId, () => client.roles.get.query(), {
+    initialValue: null
+  });
   const loading = (): boolean => {
     return (
       currentWorkspaceId.loading ||
@@ -235,7 +234,7 @@ const useAuthenticatedContext = (): AuthenticatedContextValue => {
 const hasPermission = (permission: App.Permission): boolean => {
   const { role } = useAuthenticatedContext();
 
-  return role()?.permissions.includes(permission) || false;
+  return role()?.permissions.includes(permission) || role()?.baseType === "admin" || false;
 };
 
 export { AuthenticatedContextProvider, useAuthenticatedContext, hasPermission };

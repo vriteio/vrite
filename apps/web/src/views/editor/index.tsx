@@ -1,5 +1,13 @@
 import { Editor } from "./editor";
-import { Component, createEffect, createResource, createSignal, onCleanup, Show } from "solid-js";
+import {
+  Component,
+  createEffect,
+  createResource,
+  createSignal,
+  on,
+  onCleanup,
+  Show
+} from "solid-js";
 import clsx from "clsx";
 import { Loader } from "#components/primitives";
 import { useClientContext, useUIContext } from "#context";
@@ -7,7 +15,7 @@ import { createRef } from "#lib/utils";
 
 const EditorView: Component = () => {
   const { client } = useClientContext();
-  const { storage, setStorage } = useUIContext();
+  const { storage, setStorage, references } = useUIContext();
   const [syncing, setSyncing] = createSignal(true);
   const [lastScrollTop, setLastScrollTop] = createSignal(0);
   const [reloaded, setReloaded] = createSignal(false);
@@ -18,7 +26,8 @@ const EditorView: Component = () => {
       setReloaded(false);
 
       return client.contentPieces.get.query({
-        id: editedArticleId
+        id: editedArticleId,
+        variant: references.activeVariant?.id
       });
     }
 
@@ -47,6 +56,14 @@ const EditorView: Component = () => {
       });
     }
   });
+  createEffect(
+    on(
+      () => references.activeVariant,
+      () => {
+        refetch();
+      }
+    )
+  );
 
   return (
     <>

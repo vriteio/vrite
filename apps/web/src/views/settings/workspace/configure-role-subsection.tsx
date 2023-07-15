@@ -57,6 +57,16 @@ const ConfigureRoleSubsection: Component<ConfigureRoleSubsectionProps> = (props)
       permission: "manageWebhooks"
     },
     {
+      label: "Manage Extensions",
+      description: "Install, configure, and delete Extensions",
+      permission: "manageExtensions"
+    },
+    {
+      label: "Manage Variants",
+      description: "Create, edit, and delete Variants",
+      permission: "manageVariants"
+    },
+    {
       label: "Manage workspace",
       description:
         "Manage the workspace settings - including its details, members, roles, and editing experience",

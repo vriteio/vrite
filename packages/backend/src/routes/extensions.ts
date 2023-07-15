@@ -120,7 +120,6 @@ const extensionsRouter = router({
           }
         }
       );
-
       publishContentPieceEvent(ctx, `${contentPiece.contentGroupId}`, {
         action: "update",
         userId: `${ctx.auth.userId}`,

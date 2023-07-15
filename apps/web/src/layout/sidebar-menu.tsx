@@ -127,7 +127,7 @@ const ProfileMenu: Component<{ close(): void }> = (props) => {
   const menuItems = useMenuItems();
 
   return (
-    <div class="flex flex-col min-w-xs p-1 gap-2">
+    <div class="flex flex-col min-w-xs p-2 pb-1 md:p-1 gap-2">
       <div class="flex justify-center items-center">
         <Heading level={2} class="flex-1">
           Profile
@@ -166,7 +166,7 @@ const ProfileMenu: Component<{ close(): void }> = (props) => {
             </span>
           </Show>
         </div>
-        <Tooltip text="Logout" class="mt-1">
+        <Tooltip text="Logout" class="mt-1" fixed>
           <IconButton
             path={mdiLogout}
             text="soft"
@@ -255,7 +255,7 @@ const SidebarMenu: Component = () => {
     >
       <Card
         class={clsx(
-          "lg:p-2 fixed z-50 p-0 h-[calc(env(safe-area-inset-bottom,0)+3.625rem)] transition-all duration-300 m-0 rounded-0 border-0 border-t-2 md:border-t-0 md:border-r-2 w-full md:w-[calc(3.75rem+env(safe-area-inset-left,0px))] pl-[calc(env(safe-area-inset-left,0px))] md:h-full relative bottom-0 md:bottom-unset",
+          "lg:p-2 fixed z-50 p-0 md:py-2 h-[calc(env(safe-area-inset-bottom,0)+3.625rem)] transition-all duration-300 m-0 rounded-0 border-0 border-t-2 md:border-t-0 md:border-r-2 w-full md:w-[calc(3.75rem+env(safe-area-inset-left,0px))] pl-[calc(env(safe-area-inset-left,0px))] md:h-full relative bottom-0 md:bottom-unset",
           hideMenu() && "hidden"
         )}
         color="base"
@@ -318,41 +318,49 @@ const SidebarMenu: Component = () => {
           <Dropdown
             class="flex-1 md:flex-none"
             activatorWrapperClass="w-full h-full md:h-auto flex justify-center items-center"
-            activatorButton={() => (
-              <Button
-                class="group rounded-none md:rounded-lg p-1 w-full h-full pb-[calc(env(safe-area-inset-bottom,0)+0.25rem)] md:pb-1 md:h-auto md:w-auto flex justify-center items-center flex-col m-0 md:m-1"
-                variant="text"
-                text="soft"
-                color={storage().sidePanelView && storage().sidePanelWidth ? "primary" : "base"}
-              >
-                <Show
-                  when={profile()?.avatar}
-                  fallback={
-                    <Icon
-                      path={mdiAccountCircle}
-                      class="h-6 w-6 text-gray-500 dark:text-gray-400"
-                    />
-                  }
+            activatorButton={() => {
+              const active = (): boolean => {
+                return Boolean(
+                  storage().sidePanelView && storage().sidePanelWidth && !breakpoints.md()
+                );
+              };
+
+              return (
+                <Button
+                  class="group rounded-none md:rounded-lg p-1 w-full h-full pb-[calc(env(safe-area-inset-bottom,0)+0.25rem)] md:pb-1 md:h-auto md:w-auto flex justify-center items-center flex-col m-0 md:m-1"
+                  variant="text"
+                  text="soft"
+                  color={active() ? "primary" : "base"}
                 >
-                  <div class="relative">
-                    <img src={profile()?.avatar} class="h-6 w-6 rounded-full" />
-                    <IconButton
-                      path={mdiMicrosoftXboxControllerMenu}
-                      variant="text"
-                      badge
-                      hover={false}
-                      color={
-                        storage().sidePanelView && storage().sidePanelWidth ? "primary" : "base"
-                      }
-                      text="soft"
-                      size="small"
-                      class=" md:hidden absolute -right-2 -bottom-2 m-0"
-                    />
-                  </div>
-                  <span class="md:hidden text-xs mt-1 font-semibold">Menu</span>
-                </Show>
-              </Button>
-            )}
+                  <Show
+                    when={profile()?.avatar}
+                    fallback={
+                      <Icon
+                        path={mdiAccountCircle}
+                        class="h-6 w-6 text-gray-500 dark:text-gray-400"
+                      />
+                    }
+                  >
+                    <div class="relative">
+                      <img src={profile()?.avatar} class="h-6 w-6 rounded-full" />
+                      <IconButton
+                        path={mdiMicrosoftXboxControllerMenu}
+                        variant="text"
+                        badge
+                        hover={false}
+                        color={
+                          storage().sidePanelView && storage().sidePanelWidth ? "primary" : "base"
+                        }
+                        text="soft"
+                        size="small"
+                        class=" md:hidden absolute -right-2 -bottom-2 m-0"
+                      />
+                    </div>
+                    <span class="md:hidden text-xs mt-1 font-semibold">Menu</span>
+                  </Show>
+                </Button>
+              );
+            }}
             opened={profileMenuOpened()}
             setOpened={setProfileMenuOpened}
             placement="right-end"

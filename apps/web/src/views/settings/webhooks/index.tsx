@@ -1,7 +1,6 @@
 import { ConfigureWebhookSubsection } from "./configure-webhook-subsection";
 import { webhookEvents } from "./events";
 import { SettingsSectionComponent } from "../view";
-import { TitledCard } from "#components/fragments";
 import {
   Accessor,
   Component,
@@ -14,6 +13,7 @@ import {
 } from "solid-js";
 import { mdiFormatListBulleted, mdiPlusCircle, mdiPuzzle, mdiTrashCan, mdiTune } from "@mdi/js";
 import { createStore } from "solid-js/store";
+import { TitledCard } from "#components/fragments";
 import { App, hasPermission, useClientContext, useNotificationsContext } from "#context";
 import { Button, Card, Heading, IconButton, Loader, Tooltip } from "#components/primitives";
 

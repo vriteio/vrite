@@ -10,6 +10,11 @@ const validateUsername = (input: string): boolean => {
 
   return usernameRegex.test(input);
 };
+const validateVariantName = (input: string): boolean => {
+  const variantRegex = /^[a-z0-9_]*$/;
+
+  return variantRegex.test(input);
+};
 const validateURL = (input: string): boolean => {
   let url: URL | null = null;
 
@@ -27,4 +32,4 @@ const validatePassword = (input: string): boolean => {
   return passwordRegex.test(input);
 };
 
-export { validateEmail, validateUsername, validateURL, validatePassword };
+export { validateEmail, validateUsername, validateVariantName, validateURL, validatePassword };

@@ -24,7 +24,11 @@ import { getContentsCollection } from "#database/contents";
 import { runWebhooks } from "#lib/webhooks";
 import { createEventPublisher, createEventSubscription } from "#lib/pub-sub";
 import {
+  FullContentPieceVariant,
+  getContentPieceVariantsCollection,
+  getContentVariantsCollection,
   getUsersCollection,
+  getVariantsCollection,
   getWorkspaceMembershipsCollection,
   getWorkspaceSettingsCollection
 } from "#database";
@@ -35,6 +39,7 @@ type ContentPieceEvent =
   | {
       action: "update";
       userId: string;
+      variantId?: string;
       data: Partial<FullContentPieceWithAdditionalData> & { id: string };
     }
   | {
@@ -125,6 +130,41 @@ const fetchContentPieceMembers = async (
     })
     .filter((value) => value) as Array<ContentPieceMember>;
 };
+const mergeVariantData = (
+  contentPiece: UnderscoreID<FullContentPiece<ObjectId>>,
+  contentPieceVariant: UnderscoreID<FullContentPieceVariant<ObjectId>>
+): UnderscoreID<FullContentPiece<ObjectId>> => {
+  const { _id, contentPieceId, variantId, ...variantData } = contentPieceVariant;
+  const mergedVariantData = Object.fromEntries(
+    Object.keys(variantData).map((key) => {
+      const typedKey = key as keyof Omit<
+        UnderscoreID<FullContentPieceVariant<ObjectId>>,
+        "_id" | "contentPieceId" | "variantId"
+      >;
+
+      return [typedKey, variantData[typedKey] || contentPiece[typedKey]];
+    })
+  );
+
+  return { ...contentPiece, ...mergedVariantData };
+};
+const getVariantIdFromName = async (db: Db, variantName: string): Promise<ObjectId> => {
+  const variantsCollection = getVariantsCollection(db);
+  const variant = await variantsCollection.findOne({ name: variantName });
+
+  if (!variant) throw errors.notFound("variant");
+
+  return variant._id;
+};
+const getVariantId = async (db: Db, variant?: string): Promise<ObjectId | null> => {
+  if (!variant) return null;
+
+  if (ObjectId.isValid(variant)) {
+    return new ObjectId(variant);
+  }
+
+  return await getVariantIdFromName(db, variant);
+};
 const basePath = "/content-pieces";
 const authenticatedProcedure = procedure.use(isAuthenticated);
 const contentPiecesRouter = router({
@@ -137,6 +177,15 @@ const contentPiecesRouter = router({
       z.object({
         id: zodId(),
         content: z.boolean().default(false),
+        variant: zodId()
+          .or(
+            z
+              .string()
+              .min(1)
+              .max(20)
+              .regex(/^[a-z0-9_]*$/)
+          )
+          .optional(),
         description: z.enum(["html", "text"]).default("html")
       })
     )
@@ -154,15 +203,30 @@ const contentPiecesRouter = router({
       const workspaceSettingsCollection = getWorkspaceSettingsCollection(ctx.db);
       const contentPiecesCollection = getContentPiecesCollection(ctx.db);
       const workspacesCollection = getWorkspacesCollection(ctx.db);
+      const contentPieceVariantsCollection = getContentPieceVariantsCollection(ctx.db);
       const workspaceSettings = await workspaceSettingsCollection.findOne({
         workspaceId: ctx.auth.workspaceId
       });
       const workspace = await workspacesCollection.findOne({ _id: ctx.auth.workspaceId });
-      const contentPiece = await contentPiecesCollection.findOne({
+      const variantId = await getVariantId(ctx.db, input.variant);
+      const baseContentPiece = await contentPiecesCollection.findOne({
         _id: new ObjectId(input.id)
       });
 
-      if (!contentPiece) throw errors.notFound("contentPiece");
+      if (!baseContentPiece) throw errors.notFound("contentPiece");
+
+      let contentPiece = baseContentPiece;
+
+      if (variantId) {
+        const contentPieceVariant = await contentPieceVariantsCollection.findOne({
+          contentPieceId: new ObjectId(input.id),
+          variantId
+        });
+
+        if (contentPieceVariant) {
+          contentPiece = mergeVariantData(contentPiece, contentPieceVariant);
+        }
+      }
 
       const contentGroup = workspace?.contentGroups.find((contentGroup) => {
         return contentGroup._id.equals(contentPiece.contentGroupId);
@@ -175,15 +239,30 @@ const contentPiecesRouter = router({
       let content: DocJSON | null = null;
 
       if (input.content) {
-        const contentsCollection = await getContentsCollection(ctx.db);
-        const contents = await contentsCollection.findOne({
-          contentPieceId: new ObjectId(input.id)
-        });
+        const contentsCollection = getContentsCollection(ctx.db);
+        const contentVariantsCollection = getContentVariantsCollection(ctx.db);
 
-        if (contents && contents.content) {
-          content = bufferToJSON(Buffer.from(contents.content.buffer));
-        } else {
-          content = { type: "doc", content: [] };
+        if (variantId) {
+          const contentVariant = await contentVariantsCollection.findOne({
+            contentPieceId: new ObjectId(input.id),
+            variantId
+          });
+
+          if (contentVariant && contentVariant.content) {
+            content = bufferToJSON(Buffer.from(contentVariant.content.buffer));
+          }
+        }
+
+        if (!content) {
+          const retrievedContent = await contentsCollection.findOne({
+            contentPieceId: new ObjectId(input.id)
+          });
+
+          if (retrievedContent && retrievedContent.content) {
+            content = bufferToJSON(Buffer.from(retrievedContent.content.buffer));
+          } else {
+            content = { type: "doc", content: [] };
+          }
         }
       }
 
@@ -225,6 +304,15 @@ const contentPiecesRouter = router({
     .input(
       z.object({
         contentGroupId: zodId(),
+        variant: zodId()
+          .or(
+            z
+              .string()
+              .min(1)
+              .max(20)
+              .regex(/^[a-z0-9_]*$/)
+          )
+          .optional(),
         slug: z.string().optional(),
         tagId: zodId().optional(),
         lastOrder: z.string().optional(),
@@ -246,6 +334,7 @@ const contentPiecesRouter = router({
     .query(async ({ ctx, input }) => {
       const workspaceSettingsCollection = getWorkspaceSettingsCollection(ctx.db);
       const contentPiecesCollection = getContentPiecesCollection(ctx.db);
+      const contentPieceVariantsCollection = getContentPieceVariantsCollection(ctx.db);
       const workspacesCollection = getWorkspacesCollection(ctx.db);
       const workspaceSettings = await workspaceSettingsCollection.findOne({
         workspaceId: ctx.auth.workspaceId
@@ -253,6 +342,7 @@ const contentPiecesRouter = router({
       const workspace = await workspacesCollection.findOne({
         _id: ctx.auth.workspaceId
       });
+      const variantId = await getVariantId(ctx.db, input.variant);
       const contentGroup = workspace?.contentGroups.find((contentGroup) => {
         return contentGroup._id.equals(input.contentGroupId);
       });
@@ -275,7 +365,28 @@ const contentPiecesRouter = router({
         cursor.skip((input.page - 1) * input.perPage);
       }
 
-      const contentPieces = await cursor.limit(input.perPage).toArray();
+      let contentPieces = await cursor.limit(input.perPage).toArray();
+
+      if (variantId) {
+        const contentPieceVariants = await contentPieceVariantsCollection
+          .find({
+            contentPieceId: { $in: contentPieces.map((contentPiece) => contentPiece._id) },
+            variantId
+          })
+          .toArray();
+
+        contentPieces = contentPieces.map((contentPiece) => {
+          const contentPieceVariant = contentPieceVariants.find((contentPieceVariant) => {
+            return `${contentPieceVariant.contentPieceId}` === `${contentPiece._id}`;
+          });
+
+          if (contentPieceVariant) {
+            return mergeVariantData(contentPiece, contentPieceVariant);
+          }
+
+          return contentPiece;
+        });
+      }
 
       return Promise.all(
         contentPieces.map(async (contentPiece) => {
@@ -317,7 +428,6 @@ const contentPiecesRouter = router({
     .output(z.object({ id: zodId() }))
     .mutation(async ({ ctx, input }) => {
       const { referenceId, contentGroupId, customData, content, ...create } = input;
-
       const workspaceSettingsCollection = getWorkspaceSettingsCollection(ctx.db);
       const contentPiecesCollection = getContentPiecesCollection(ctx.db);
       const contentsCollection = getContentsCollection(ctx.db);
@@ -417,7 +527,16 @@ const contentPiecesRouter = router({
       contentPiece
         .extend({
           coverWidth: z.string(),
-          content: z.string()
+          content: z.string(),
+          variant: zodId()
+            .or(
+              z
+                .string()
+                .min(1)
+                .max(20)
+                .regex(/^[a-z0-9_]*$/)
+            )
+            .optional()
         })
         .partial()
         .required({ id: true })
@@ -426,6 +545,7 @@ const contentPiecesRouter = router({
     .mutation(async ({ ctx, input }) => {
       const {
         id,
+        variant,
         content: updatedContent,
         contentGroupId: updatedContentGroupId,
         customData: updatedCustomData,
@@ -436,18 +556,34 @@ const contentPiecesRouter = router({
       } = input;
       const extensionId = ctx.req.headers["x-vrite-extension-id"] as string | undefined;
       const contentPiecesCollection = getContentPiecesCollection(ctx.db);
+      const contentPieceVariantsCollection = getContentPieceVariantsCollection(ctx.db);
       const contentsCollection = getContentsCollection(ctx.db);
+      const contentVariantsCollection = getContentVariantsCollection(ctx.db);
       const workspacesCollection = getWorkspacesCollection(ctx.db);
       const workspaceSettingsCollection = getWorkspaceSettingsCollection(ctx.db);
       const workspaceSettings = await workspaceSettingsCollection.findOne({
         workspaceId: ctx.auth.workspaceId
       });
       const workspace = await workspacesCollection.findOne({ _id: ctx.auth.workspaceId });
-      const contentPiece = await contentPiecesCollection.findOne({
+      const variantId = await getVariantId(ctx.db, variant);
+      const baseContentPiece = await contentPiecesCollection.findOne({
         _id: new ObjectId(id)
       });
 
-      if (!contentPiece) throw errors.notFound("contentPiece");
+      if (!baseContentPiece) throw errors.notFound("contentPiece");
+
+      let contentPiece = baseContentPiece;
+
+      if (variantId) {
+        const contentPieceVariant = await contentPieceVariantsCollection.findOne({
+          contentPieceId: new ObjectId(id),
+          variantId
+        });
+
+        if (contentPieceVariant) {
+          contentPiece = mergeVariantData(contentPiece, contentPieceVariant);
+        }
+      }
 
       const contentGroup = await workspace?.contentGroups.find((contentGroup) => {
         return contentGroup._id.equals(contentPiece.contentGroupId);
@@ -474,9 +610,11 @@ const contentPiecesRouter = router({
       }
 
       if (updatedTags) contentPieceUpdates.tags = updatedTags.map((tag) => new ObjectId(tag));
+
       if (updatedMembers) {
         contentPieceUpdates.members = updatedMembers.map((member) => new ObjectId(member));
       }
+
       if (updatedDate) contentPieceUpdates.date = new Date(updatedDate);
       if (updatedDate === null) contentPieceUpdates.date = null;
 
@@ -498,22 +636,44 @@ const contentPiecesRouter = router({
 
       const newContentPiece = { ...contentPiece, ...contentPieceUpdates };
 
-      await contentPiecesCollection.updateOne(
-        { _id: new ObjectId(id) },
-        { $set: contentPieceUpdates }
-      );
+      if (variantId) {
+        await contentPieceVariantsCollection.updateOne(
+          { contentPieceId: new ObjectId(id), variantId },
+          { $set: contentPieceUpdates },
+          { upsert: true }
+        );
+      } else {
+        await contentPiecesCollection.updateOne(
+          { _id: new ObjectId(id) },
+          { $set: contentPieceUpdates }
+        );
+      }
 
       if (updatedContent) {
-        await contentsCollection.updateOne(
-          {
-            contentPieceId: contentPiece._id
-          },
-          {
-            $set: {
-              content: new Binary(jsonToBuffer(htmlToJSON(updatedContent)))
+        if (variantId) {
+          await contentVariantsCollection.updateOne(
+            {
+              contentPieceId: contentPiece._id,
+              variantId
+            },
+            {
+              $set: {
+                content: new Binary(jsonToBuffer(htmlToJSON(updatedContent)))
+              }
             }
-          }
-        );
+          );
+        } else {
+          await contentsCollection.updateOne(
+            {
+              contentPieceId: contentPiece._id
+            },
+            {
+              $set: {
+                content: new Binary(jsonToBuffer(htmlToJSON(updatedContent)))
+              }
+            }
+          );
+        }
       }
 
       if (!updatedContentGroupId || contentPiece.contentGroupId.equals(updatedContentGroupId)) {
@@ -547,7 +707,8 @@ const contentPiecesRouter = router({
           workspaceId: `${newContentPiece.workspaceId}`,
           date: newContentPiece.date?.toISOString() || null,
           tags,
-          members
+          members,
+          ...(variantId ? { variantId } : {})
         }
       });
     }),
@@ -560,15 +721,24 @@ const contentPiecesRouter = router({
     .output(z.object({ id: zodId().or(z.null()) }))
     .mutation(async ({ ctx, input }) => {
       const contentPiecesCollection = getContentPiecesCollection(ctx.db);
+      const contentPieceVariantsCollection = getContentPieceVariantsCollection(ctx.db);
       const contentsCollection = getContentsCollection(ctx.db);
+      const contentVariantsCollection = getContentVariantsCollection(ctx.db);
       const contentPiece = await contentPiecesCollection.findOne({
-        _id: new ObjectId(input.id)
+        _id: new ObjectId(input.id),
+        workspaceId: ctx.auth.workspaceId
       });
 
       if (!contentPiece) throw errors.notFound("contentPiece");
 
       await contentPiecesCollection.deleteOne({ _id: contentPiece._id });
-      await contentsCollection.deleteOne({ _id: contentPiece._id });
+      await contentsCollection.deleteOne({ contentPieceId: contentPiece._id });
+      await contentPieceVariantsCollection.deleteMany({
+        contentPieceId: contentPiece._id
+      });
+      await contentVariantsCollection.deleteMany({
+        contentPieceId: contentPiece._id
+      });
       publishEvent(ctx, `${contentPiece.contentGroupId}`, {
         action: "delete",
         userId: `${ctx.auth.userId}`,
@@ -602,7 +772,6 @@ const contentPiecesRouter = router({
       const contentPiece = await contentPiecesCollection.findOne({
         _id: new ObjectId(input.id)
       });
-
       const workspace = await workspacesCollection.findOne({ _id: ctx.auth.workspaceId });
       const contentGroup = workspace?.contentGroups.find((contentGroup) => {
         const contentGroupId = input.contentGroupId || contentPiece?.contentGroupId;

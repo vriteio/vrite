@@ -24,6 +24,7 @@ interface StorageData {
 }
 interface ReferencesData {
   editedContentPiece?: App.ExtendedContentPieceWithAdditionalData<"locked">;
+  activeVariant?: App.Variant;
   provider?: HocuspocusProvider;
   editor?: SolidEditor;
 }

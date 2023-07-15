@@ -10,6 +10,11 @@ import { getContentsCollection } from "#database/contents";
 import { getUsersCollection } from "#database/users";
 import { getCommentThreadsCollection } from "#database/comment-threads";
 import { getCommentsCollection } from "#database/comments";
+import {
+  getContentPieceVariantsCollection,
+  getContentVariantsCollection,
+  getVariantsCollection
+} from "#database";
 
 const databasePlugin = publicPlugin(async (fastify) => {
   const db = fastify.mongo.db!;
@@ -26,15 +31,20 @@ const databasePlugin = publicPlugin(async (fastify) => {
   const workspaceMembershipsCollection = getWorkspaceSettingsCollection(db);
   const workspaceSettingsCollection = getWorkspaceSettingsCollection(db);
   const extensionsCollection = getWorkspaceSettingsCollection(db);
+  const variantsCollection = getVariantsCollection(db);
+  const contentPieceVariantsCollection = getContentPieceVariantsCollection(db);
+  const contentVariants = getContentVariantsCollection(db);
 
   await Promise.all([
     contentPiecesCollection.createIndex({ workspaceId: 1 }),
     contentPiecesCollection.createIndex({ contentGroupId: 1 }),
     contentPiecesCollection.createIndex({ tags: 1 }),
+    contentPieceVariantsCollection.createIndex({ variantId: 1 }),
     commentThreadsCollection.createIndex({ contentPieceId: 1, workspaceId: 1 }),
     commentThreadsCollection.createIndex({ fragment: 1, workspaceId: 1 }),
     commentsCollection.createIndex({ threadId: 1, workspaceId: 1 }),
     contentsCollection.createIndex({ contentPieceId: 1 }),
+    contentVariants.createIndex({ contentPieceId: 1, variantId: 1 }),
     rolesCollection.createIndex({ workspaceId: 1 }),
     tagsCollection.createIndex({ workspaceId: 1 }),
     tokensCollection.createIndex({ workspaceId: 1 }),
@@ -57,7 +67,9 @@ const databasePlugin = publicPlugin(async (fastify) => {
     workspaceSettingsCollection.createIndex({ workspaceId: 1 }),
     usersCollection.createIndex({ email: 1 }, { unique: true }),
     extensionsCollection.createIndex({ workspaceId: 1 }),
-    extensionsCollection.createIndex({ name: 1 })
+    extensionsCollection.createIndex({ name: 1 }),
+    variantsCollection.createIndex({ workspaceId: 1 }),
+    variantsCollection.createIndex({ name: 1 })
   ]);
 });
 

@@ -19,7 +19,9 @@ const tokenPermission = z.enum([
   "userSettings:write",
   "webhooks:write",
   "workspaceMemberships:write",
-  "workspace:write"
+  "workspace:write",
+  "variants:read",
+  "variants:write"
 ]);
 const token = z.object({
   id: zodId(),

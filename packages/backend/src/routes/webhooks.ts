@@ -95,7 +95,7 @@ const webhooksRouter = router({
       if (!webhook) throw errors.notFound("webhook");
 
       let metadata: Webhook["metadata"] | null = null;
-      let extension: boolean | undefined = undefined;
+      let extension = false;
 
       if (webhook.metadata) {
         metadata = {
@@ -103,6 +103,7 @@ const webhooksRouter = router({
           contentGroupId: `${webhook.metadata.contentGroupId}`
         };
       }
+
       if (webhook.extensionId) {
         extension = true;
       }
@@ -198,7 +199,7 @@ const webhooksRouter = router({
       openapi: { method: "DELETE", path: basePath, protect: true },
       permissions: { session: ["manageWebhooks"], token: ["webhooks:write"] }
     })
-    .input(z.object({ id: z.string() }))
+    .input(z.object({ id: zodId() }))
     .output(z.void())
     .mutation(async ({ ctx, input }) => {
       const webhooksCollection = getWebhooksCollection(ctx.db);

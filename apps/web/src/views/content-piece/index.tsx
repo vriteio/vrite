@@ -2,12 +2,24 @@ import { ContentPieceTitle } from "./title";
 import { ContentPieceDescription } from "./description";
 import { ContentPieceMetadata } from "./metadata";
 import { Component, createEffect, createMemo, createSignal, on, Show } from "solid-js";
-import { mdiDotsVertical, mdiTrashCan, mdiPencil, mdiLock, mdiEye, mdiClose } from "@mdi/js";
+import {
+  mdiDotsVertical,
+  mdiTrashCan,
+  mdiPencil,
+  mdiLock,
+  mdiEye,
+  mdiClose,
+  mdiCardsOutline,
+  mdiCards,
+  mdiInformationOutline,
+  mdiCodeJson,
+  mdiPuzzleOutline
+} from "@mdi/js";
 import dayjs from "dayjs";
 import CustomParseFormat from "dayjs/plugin/customParseFormat";
 import { useLocation, useNavigate } from "@solidjs/router";
 import { Image } from "#lib/editor";
-import { Card, IconButton, Dropdown, Loader } from "#components/primitives";
+import { Card, IconButton, Dropdown, Loader, Tooltip } from "#components/primitives";
 import {
   useConfirmationContext,
   App,
@@ -21,17 +33,25 @@ import { MiniEditor } from "#components/fragments";
 dayjs.extend(CustomParseFormat);
 
 const ContentPieceView: Component = () => {
+  const sections = [
+    { label: "Details", id: "details", icon: mdiInformationOutline },
+    { label: "Custom data", id: "custom-data", icon: mdiCodeJson },
+    { label: "Extensions", id: "extensions", icon: mdiPuzzleOutline },
+    { label: "Variants", id: "variants", icon: mdiCardsOutline }
+  ];
   const { useOpenedContentPiece } = useCacheContext();
   const { client } = useClientContext();
   const { setStorage, breakpoints } = useUIContext();
   const { confirmDelete } = useConfirmationContext();
-  const { contentPiece, setContentPiece, loading } = useOpenedContentPiece();
+  const { contentPiece, setContentPiece, loading, activeVariant, setActiveVariant } =
+    useOpenedContentPiece();
   const location = useLocation();
   const navigate = useNavigate();
   const [dropdownMenuOpened, setDropdownMenuOpened] = createSignal(false);
   const [coverInitialValue, setCoverInitialValue] = createSignal("");
   const [titleInitialValue, setTitleInitialValue] = createSignal("");
   const [descriptionInitialValue, setDescriptionInitialValue] = createSignal("");
+  const [activeSection, setActiveSection] = createSignal(sections[0]);
   const editable = createMemo(() => {
     return !contentPiece()?.locked && hasPermission("editMetadata");
   });
@@ -59,6 +79,7 @@ const ContentPieceView: Component = () => {
 
     client.contentPieces.update.mutate({
       id,
+      variant: activeVariant()?.id,
       ...contentPieceUpdate
     });
   };
@@ -201,6 +222,21 @@ const ContentPieceView: Component = () => {
           </Show>
         </div>
         <div class="flex-1 border-gray-200 dark:border-gray-700 transition-all p-3 overflow-initial md:overflow-y-auto scrollbar-sm-contrast">
+          <div class="flex justify-start items-center mb-1">
+            <Tooltip text="Active Variant" side="right" class="ml-1">
+              <IconButton
+                class="m-0"
+                size="small"
+                path={mdiCards}
+                color={activeVariant() ? "primary" : "base"}
+                text={activeVariant() ? "primary" : "soft"}
+                label={activeVariant() ? activeVariant()?.label : "Base"}
+                onClick={() => {
+                  setActiveSection(sections[3]);
+                }}
+              />
+            </Tooltip>
+          </div>
           <ContentPieceTitle
             initialTitle={titleInitialValue()}
             editable={editable()}
@@ -209,9 +245,14 @@ const ContentPieceView: Component = () => {
             }}
           />
           <ContentPieceMetadata
+            activeVariant={activeVariant()}
+            setActiveVariant={setActiveVariant}
             contentPiece={contentPiece()!}
             setContentPiece={handleChange}
             editable={editable()}
+            sections={sections}
+            activeSection={activeSection()}
+            setActiveSection={setActiveSection}
           />
           <ContentPieceDescription
             descriptionExists={typeof contentPiece()?.description === "string"}

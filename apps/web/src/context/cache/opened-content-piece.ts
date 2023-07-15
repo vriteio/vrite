@@ -1,10 +1,11 @@
-import { createSignal, createEffect, on, onCleanup } from "solid-js";
+import { createSignal, createEffect, on, onCleanup, Accessor } from "solid-js";
 import { createStore } from "solid-js/store";
 import { useAuthenticatedContext } from "#context/authenticated";
 import { useClientContext, App } from "#context/client";
 import { useUIContext } from "#context/ui";
 
 interface UseOpenedContentPiece {
+  activeVariant: Accessor<App.Variant | null>;
   setContentPiece<
     K extends keyof App.ExtendedContentPieceWithAdditionalData<"locked" | "coverWidth">
   >(
@@ -12,10 +13,12 @@ interface UseOpenedContentPiece {
     value?: App.ExtendedContentPieceWithAdditionalData<"locked" | "coverWidth">[K]
   ): void;
   loading(): boolean;
+  setActiveVariant(variant: App.Variant | null): void;
   contentPiece(): App.ExtendedContentPieceWithAdditionalData<"locked" | "coverWidth"> | null;
 }
 
 const useOpenedContentPiece = (): UseOpenedContentPiece => {
+  const [activeVariant, setActiveVariant] = createSignal<App.Variant | null>(null);
   const { deletedTags } = useAuthenticatedContext();
   const { profile } = useAuthenticatedContext();
   const { storage, setStorage } = useUIContext();
@@ -32,7 +35,8 @@ const useOpenedContentPiece = (): UseOpenedContentPiece => {
     if (contentPieceId) {
       try {
         const contentPiece = await client.contentPieces.get.query({
-          id: contentPieceId
+          id: contentPieceId,
+          variant: activeVariant()?.id
         });
 
         setState({ contentPiece });
@@ -48,9 +52,11 @@ const useOpenedContentPiece = (): UseOpenedContentPiece => {
 
   createEffect(
     on(
-      () => storage().contentPieceId,
-      (contentPieceId, previousContentPieceId) => {
-        if (contentPieceId !== previousContentPieceId) {
+      [() => storage().contentPieceId, () => activeVariant()?.id || ""],
+      ([contentPieceId, variantId], previous) => {
+        const [previousContentPieceId, previousVariantId] = previous || [];
+
+        if (contentPieceId !== previousContentPieceId || variantId !== previousVariantId) {
           fetchContentPiece();
         }
 
@@ -69,22 +75,26 @@ const useOpenedContentPiece = (): UseOpenedContentPiece => {
             contentGroupId
           },
           {
-            onData({ data, action, userId = "" }) {
+            onData(value) {
+              const { data, action, userId = "" } = value;
+
               if (action === "update") {
-                const { tags, members, ...updateData } = data;
-                const update: Partial<
-                  App.ExtendedContentPieceWithAdditionalData<"locked" | "coverWidth">
-                > = { ...updateData };
+                if (!("variantId" in value) || value.variantId === activeVariant()?.id) {
+                  const { tags, members, ...updateData } = data;
+                  const update: Partial<
+                    App.ExtendedContentPieceWithAdditionalData<"locked" | "coverWidth">
+                  > = { ...updateData };
 
-                if (data.members && userId !== profile()?.id) {
-                  update.members = data.members.filter((member) => member.id !== profile()?.id);
+                  if (data.members && userId !== profile()?.id) {
+                    update.members = data.members.filter((member) => member.id !== profile()?.id);
+                  }
+
+                  if (data.tags && userId !== profile()?.id) {
+                    update.tags = data.tags.filter((tag) => !deletedTags().includes(tag.id));
+                  }
+
+                  setState("contentPiece", update);
                 }
-
-                if (data.tags && userId !== profile()?.id) {
-                  update.tags = data.tags.filter((tag) => !deletedTags().includes(tag.id));
-                }
-
-                setState("contentPiece", update);
               } else if (action === "delete") {
                 setState("contentPiece", null);
                 setStorage((storage) => ({ ...storage, contentPieceId: undefined }));
@@ -125,6 +135,8 @@ const useOpenedContentPiece = (): UseOpenedContentPiece => {
 
   return {
     loading,
+    activeVariant,
+    setActiveVariant,
     contentPiece: () => state.contentPiece,
     setContentPiece: (keyOrObject, value) => {
       if (typeof keyOrObject === "string" && value) {

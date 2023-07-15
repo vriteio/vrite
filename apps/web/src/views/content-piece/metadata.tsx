@@ -1,12 +1,23 @@
-import { DetailsSection, CustomDataSection, ExtensionsSection } from "./sections";
-import { mdiInformationOutline, mdiCodeJson, mdiMenu, mdiPuzzleOutline } from "@mdi/js";
-import { Component, createSignal, For, Switch, Match, createEffect } from "solid-js";
+import { DetailsSection, CustomDataSection, ExtensionsSection, VariantsSection } from "./sections";
+import { mdiMenu } from "@mdi/js";
+import { Component, createSignal, For, Switch, Match } from "solid-js";
 import { App } from "#context";
 import { Dropdown, IconButton, Heading } from "#components/primitives";
+
+interface ContentPieceMetadataSection {
+  label: string;
+  id: string;
+  icon: string;
+}
 
 interface ContentPieceMetadataProps {
   contentPiece: App.ExtendedContentPieceWithAdditionalData<"locked" | "coverWidth">;
   editable?: boolean;
+  activeSection: ContentPieceMetadataSection;
+  sections: ContentPieceMetadataSection[];
+  activeVariant: App.Variant | null;
+  setActiveVariant(variant: App.Variant | null): void;
+  setActiveSection(activeSection: ContentPieceMetadataSection): void;
   setContentPiece(
     value: Partial<App.ExtendedContentPieceWithAdditionalData<"locked" | "coverWidth">>
   ): void;
@@ -14,18 +25,6 @@ interface ContentPieceMetadataProps {
 
 const ContentPieceMetadata: Component<ContentPieceMetadataProps> = (props) => {
   const [menuOpened, setMenuOpened] = createSignal(false);
-  const sections = [
-    { label: "Details", id: "details", icon: mdiInformationOutline },
-    { label: "Custom data", id: "custom-data", icon: mdiCodeJson },
-    { label: "Extensions", id: "extensions", icon: mdiPuzzleOutline }
-  ];
-  const [activeSection, setActiveSection] = createSignal(sections[0]);
-
-  createEffect(() => {
-    if (props.contentPiece.locked) {
-      setActiveSection(sections[0]);
-    }
-  });
 
   return (
     <>
@@ -36,7 +35,7 @@ const ContentPieceMetadata: Component<ContentPieceMetadataProps> = (props) => {
             class="mx-0"
             label={
               <Heading level={2} class="ml-2">
-                {activeSection().label}
+                {props.activeSection.label}
               </Heading>
             }
             variant="text"
@@ -46,18 +45,18 @@ const ContentPieceMetadata: Component<ContentPieceMetadataProps> = (props) => {
         setOpened={setMenuOpened}
       >
         <div class="flex flex-col items-start justify-center gap-1 w-full min-w-34">
-          <For each={sections}>
+          <For each={props.sections}>
             {(section) => {
               return (
                 <IconButton
-                  color={section.id === activeSection().id ? "primary" : "base"}
-                  text={section.id === activeSection().id ? "base" : "soft"}
+                  color={section.id === props.activeSection.id ? "primary" : "base"}
+                  text={section.id === props.activeSection.id ? "base" : "soft"}
                   variant="text"
                   class="flex justify-start w-full m-0"
                   label={section.label}
                   path={section.icon}
                   onClick={() => {
-                    setActiveSection(section);
+                    props.setActiveSection(section);
                     setMenuOpened(false);
                   }}
                 ></IconButton>
@@ -67,7 +66,7 @@ const ContentPieceMetadata: Component<ContentPieceMetadataProps> = (props) => {
         </div>
       </Dropdown>
       <Switch>
-        <Match when={activeSection().id === "details"}>
+        <Match when={props.activeSection.id === "details"}>
           <DetailsSection
             slug={props.contentPiece.slug}
             canonicalLink={props.contentPiece.canonicalLink}
@@ -92,7 +91,7 @@ const ContentPieceMetadata: Component<ContentPieceMetadataProps> = (props) => {
             }}
           />
         </Match>
-        <Match when={activeSection().id === "custom-data"}>
+        <Match when={props.activeSection.id === "custom-data"}>
           <CustomDataSection
             editable={props.editable}
             customData={props.contentPiece.customData}
@@ -101,7 +100,7 @@ const ContentPieceMetadata: Component<ContentPieceMetadataProps> = (props) => {
             }}
           />
         </Match>
-        <Match when={activeSection().id === "extensions"}>
+        <Match when={props.activeSection.id === "extensions"}>
           <ExtensionsSection
             contentPiece={props.contentPiece}
             setCustomData={(customData) => {
@@ -109,6 +108,12 @@ const ContentPieceMetadata: Component<ContentPieceMetadataProps> = (props) => {
                 customData
               });
             }}
+          />
+        </Match>
+        <Match when={props.activeSection.id === "variants"}>
+          <VariantsSection
+            activeVariant={props.activeVariant}
+            setActiveVariant={props.setActiveVariant}
           />
         </Match>
       </Switch>

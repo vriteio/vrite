@@ -51,7 +51,7 @@ const SecuredLayout: ParentComponent = (props) => {
               <SidebarMenu />
             </Show>
             <div
-              class="flex flex-col flex-1 md:h-full overflow-hidden"
+              class="flex flex-col flex-1 md:h-full overflow-visible"
               id="main-scrollable-container"
             >
               <div class="flex flex-1 h-full">
