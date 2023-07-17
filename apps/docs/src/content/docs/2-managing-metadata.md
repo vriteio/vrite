@@ -35,7 +35,7 @@ In Vrite you can assign existing tags to the content piece by using the _Select 
 
 Assigning members to the content piece helps you manage the work in the Kanban better, especially in larger teams. To do so you use the _Assign members_ dropdown to search and select members in your workspace who you’d like to assign to the content piece.
 
-![Assigning members ](https://assets.vrite.io/6409e82d7dfc74cef7a72e0d/KweUZD3FRhnQCVbSX6-if.png)
+![Assigning members to content piece](https://assets.vrite.io/6409e82d7dfc74cef7a72e0d/KweUZD3FRhnQCVbSX6-if.png)
 
 ## Custom JSON Data
 
@@ -60,3 +60,9 @@ When needed, Vrite Extensions can provide _Content Piece Views_ to e.g. manage n
 ![Dev.to extension's content piece view](https://assets.vrite.io/6409e82d7dfc74cef7a72e0d/FBJlSqp-X712TBA5cmdXv.png)
 
 You can read more about Vrite Extensions [here](/vrite-extensions).
+
+## Variants
+
+You can switch between _Content Piece Variants_ in the _Variants_ section. Once activated, all changes will be applied to the specified Variant. You can go back to the _Base Variant_ by clicking on and deactivating the currently-selected one.
+
+![Content Piece Variants section](https://assets.vrite.io/6409e82d7dfc74cef7a72e0d/pDAdkIDD7ECTErujXJCTD.png)

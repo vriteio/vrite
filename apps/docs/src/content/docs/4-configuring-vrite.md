@@ -266,3 +266,19 @@ At the bottom of the same section, you can provide your Prettier configuration i
 The _Metadata_ section is where you can configure options related to content piece metadata. Right now, it enables you to set a custom pattern for a **canonical link** which will be used by default for any content piece lacking a custom canonical link. This can be useful if you’re running a publication based on Vrite and cross-post often to different frontends or platforms.
 
 ![Metadata settings section](https://assets.vrite.io/6409e82d7dfc74cef7a72e0d/bHQsixD8DlNnm-w_i5u8m.png)
+
+## Managing Variants
+
+_Content Piece Variants_ allow you to create and manage different alterations of your content pieces. They serve as “overlays” on top of your _Base Variant_, i.e. the piece’s default content and metadata and are great for managing multi-language content or for slightly customizing your content for different endpoints.
+
+You can create and manage your Variants in the _Variants_ settings section.
+
+![Variants settings section](https://assets.vrite.io/6409e82d7dfc74cef7a72e0d/R4DOfYmkxcR61c0_oIBCs.png)
+
+The following details can be configured:
+
+- _Label_ — label for identifying the Variant
+- _Name_ — name for the Variant; You’ll be able to use it to retrieve the Content Piece Variants through the API;
+- _Description_ — optional description for additional details;
+
+![Configuring new Variant](https://assets.vrite.io/6409e82d7dfc74cef7a72e0d/HkvBrnygrWRGUMfjg35PD.png)
