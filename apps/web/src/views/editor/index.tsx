@@ -10,18 +10,20 @@ import {
 } from "solid-js";
 import clsx from "clsx";
 import { Loader } from "#components/primitives";
-import { useClientContext, useUIContext } from "#context";
+import { useAuthenticatedContext, useCacheContext, useClientContext, useUIContext } from "#context";
 import { createRef } from "#lib/utils";
 
 const EditorView: Component = () => {
+  const { useOpenedContentPiece } = useCacheContext();
   const { client } = useClientContext();
   const { storage, setStorage, references } = useUIContext();
+  const { workspaceSettings } = useAuthenticatedContext();
   const [syncing, setSyncing] = createSignal(true);
   const [lastScrollTop, setLastScrollTop] = createSignal(0);
   const [reloaded, setReloaded] = createSignal(false);
   const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
   const editedArticleId = (): string => storage().contentPieceId || "";
-  const [contentPiece, { refetch }] = createResource(editedArticleId, async (editedArticleId) => {
+  /* const [contentPiece, { refetch }] = createResource(editedArticleId, async (editedArticleId) => {
     if (editedArticleId) {
       setReloaded(false);
 
@@ -32,16 +34,19 @@ const EditorView: Component = () => {
     }
 
     return null;
-  });
+  });*/
+  const { contentPiece, loading } = useOpenedContentPiece();
 
-  client.workspaceSettings.changes.subscribe(undefined, {
-    onData({ action }) {
-      if (action === "update") {
+  createEffect(
+    on(
+      workspaceSettings,
+      () => {
+        setSyncing(true);
         setLastScrollTop(scrollableContainerRef()?.scrollTop || 0);
-        refetch();
-      }
-    }
-  });
+      },
+      { defer: true }
+    )
+  );
   createEffect(() => {
     if (storage().zenMode) {
       const escapeHandler = (event: KeyboardEvent): void => {
@@ -56,14 +61,6 @@ const EditorView: Component = () => {
       });
     }
   });
-  createEffect(
-    on(
-      () => references.activeVariant,
-      () => {
-        refetch();
-      }
-    )
-  );
 
   return (
     <>
@@ -71,7 +68,7 @@ const EditorView: Component = () => {
         when={contentPiece()}
         fallback={
           <div class="flex items-center justify-center w-full h-full">
-            <Show when={!contentPiece.loading}>
+            <Show when={!loading()}>
               <span class="text-2xl font-semibold text-gray-500 dark:text-gray-400">
                 To edit, select an article in the dashboard
               </span>
@@ -92,12 +89,11 @@ const EditorView: Component = () => {
               storage().zenMode ? "items-center" : "items-start"
             )}
           >
-            <Show when={!contentPiece.loading}>
+            <Show when={!loading() && workspaceSettings()} keyed>
               <Editor
                 editedContentPiece={contentPiece()!}
                 reloaded={reloaded()}
                 reload={async () => {
-                  await refetch();
                   setReloaded(true);
                 }}
                 onLoad={() => {
@@ -111,7 +107,7 @@ const EditorView: Component = () => {
           </div>
         </div>
       </Show>
-      <Show when={contentPiece.loading || (contentPiece() && syncing())}>
+      <Show when={loading() || (contentPiece() && syncing())}>
         <div class="flex items-center justify-center w-full h-full bg-gray-100 dark:bg-gray-800 absolute top-0 left-0">
           <Loader />
         </div>

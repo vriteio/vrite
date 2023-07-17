@@ -14,6 +14,7 @@ import {
   createWorkspaceMembershipsEndpoints
 } from "./workspace-memberships";
 import { ExtensionEndpoints, createExtensionEndpoints } from "./extension";
+import { VariantsEndpoints, createVariantsEndpoints } from "./variants";
 
 interface ClientConfig extends APIFetcherConfig {}
 interface Client {
@@ -28,6 +29,7 @@ interface Client {
   workspaceSettings: WorkspaceSettingsEndpoints;
   workspaceMemberships: WorkspaceMembershipsEndpoints;
   extension: ExtensionEndpoints;
+  variants: VariantsEndpoints;
   reconfigure(config: ClientConfig): void;
 }
 
@@ -46,6 +48,7 @@ const createClient = (config: ClientConfig): Client => {
     workspaceSettings: createWorkspaceSettingsEndpoints(sendRequest),
     workspaceMemberships: createWorkspaceMembershipsEndpoints(sendRequest),
     extension: createExtensionEndpoints(sendRequest),
+    variants: createVariantsEndpoints(sendRequest),
     reconfigure
   };
 };

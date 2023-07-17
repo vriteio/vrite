@@ -9,10 +9,10 @@ import { isNodeSelection } from "@tiptap/core";
 import { keymap } from "@tiptap/pm/keymap";
 import { TextSelection } from "@tiptap/pm/state";
 import { createNanoEvents } from "nanoevents";
-import { onCleanup, onMount } from "solid-js";
-import { createRef } from "#lib/utils";
-import { monaco } from "#lib/code-editor";
+import { Show, createSignal, onCleanup, onMount } from "solid-js";
 import { HocuspocusProvider } from "@hocuspocus/provider";
+import type { monaco } from "#lib/monaco";
+import { createRef } from "#lib/utils";
 
 interface CodeBlockOptions extends BaseCodeBlockOptions {
   provider: HocuspocusProvider | null;
@@ -42,12 +42,14 @@ const CodeBlock = BaseCodeBlock.extend<CodeBlockOptions>({
       null
     );
     const [updatingRef, setUpdatingRef] = createRef(false);
+    const [monacoRef, setMonacoRef] = createRef<typeof monaco | null>(null);
 
     return SolidNodeViewRenderer(
       () => {
         const { state } = useSolidNodeView();
+        const [loading, setLoading] = createSignal(true);
 
-        onMount(() => {
+        onMount(async () => {
           const unbind = emitter.on("focus", () => {
             if (state().selected) {
               const tr = state().editor.state.tr.setSelection(
@@ -66,16 +68,23 @@ const CodeBlock = BaseCodeBlock.extend<CodeBlockOptions>({
           onCleanup(() => {
             unbind();
           });
+          import("#lib/monaco").then(({ monaco }) => {
+            setMonacoRef(monaco);
+            setLoading(false);
+          });
         });
 
         return (
           <NodeViewWrapper>
-            <CodeBlockView
-              updatingRef={updatingRef}
-              codeEditorRef={codeEditorRef}
-              setUpdatingRef={setUpdatingRef}
-              setCodeEditorRef={setCodeEditorRef}
-            />
+            <Show when={!loading()}>
+              <CodeBlockView
+                monaco={monacoRef()!}
+                updatingRef={updatingRef}
+                codeEditorRef={codeEditorRef}
+                setUpdatingRef={setUpdatingRef}
+                setCodeEditorRef={setCodeEditorRef}
+              />
+            </Show>
           </NodeViewWrapper>
         );
       },
@@ -120,7 +129,7 @@ const CodeBlock = BaseCodeBlock.extend<CodeBlockOptions>({
                 {
                   forceMoveMarkers: true,
                   text: newText.slice(start, newEnd),
-                  range: monaco.Range.fromPositions(
+                  range: monacoRef()!.Range.fromPositions(
                     model.getPositionAt(start),
                     model.getPositionAt(curEnd)
                   )

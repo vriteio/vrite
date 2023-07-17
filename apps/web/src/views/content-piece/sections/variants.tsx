@@ -1,6 +1,5 @@
 import { Accessor, Component, For, Show, createSignal, onCleanup } from "solid-js";
 import { createStore } from "solid-js/store";
-import clsx from "clsx";
 import { App, useClientContext, useUIContext } from "#context";
 import { Button, Loader } from "#components/primitives";
 
@@ -66,17 +65,21 @@ const VariantsSection: Component<VariantsSectionProps> = (props) => {
 
   return (
     <div class="w-full flex flex-col m-0 p-0 gap-1 items-start">
-      <div class="flex flex-wrap justify-start items-center gap-2 w-full p-0">
+      <div class="flex flex-col justify-center items-start gap-1 w-full p-0">
         <For
           each={variants()}
           fallback={
             <Show
               when={loading()}
               fallback={
-                <span class="text-gray-500 dark:text-gray-400 px-1">No Variants found</span>
+                <span class="text-gray-500 dark:text-gray-400 px-1 text-center w-full">
+                  No Variants found
+                </span>
               }
             >
-              <Loader />
+              <div class="flex justify-center items-center w-full">
+                <Loader />
+              </div>
             </Show>
           }
         >
@@ -87,7 +90,7 @@ const VariantsSection: Component<VariantsSectionProps> = (props) => {
 
             return (
               <Button
-                class="flex text-start pr-1 m-0"
+                class="flex text-start pr-1 m-0 w-full"
                 color={active() ? "primary" : "base"}
                 text={active() ? "primary" : "soft"}
                 onClick={() => {

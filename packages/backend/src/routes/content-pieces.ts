@@ -148,22 +148,34 @@ const mergeVariantData = (
 
   return { ...contentPiece, ...mergedVariantData };
 };
-const getVariantIdFromName = async (db: Db, variantName: string): Promise<ObjectId> => {
+const getVariantDetails = async (
+  db: Db,
+  variantIdOrName?: string
+): Promise<{ variantId: ObjectId | null; variantName: string | null }> => {
   const variantsCollection = getVariantsCollection(db);
-  const variant = await variantsCollection.findOne({ name: variantName });
+
+  if (!variantIdOrName) return { variantId: null, variantName: null };
+
+  const isId = ObjectId.isValid(variantIdOrName);
+  const variant = await variantsCollection.findOne({
+    ...(isId && { _id: new ObjectId(variantIdOrName) }),
+    ...(!isId && { name: variantIdOrName })
+  });
 
   if (!variant) throw errors.notFound("variant");
 
-  return variant._id;
+  return { variantId: variant._id || null, variantName: variant.name || null };
 };
-const getVariantId = async (db: Db, variant?: string): Promise<ObjectId | null> => {
-  if (!variant) return null;
-
-  if (ObjectId.isValid(variant)) {
-    return new ObjectId(variant);
-  }
-
-  return await getVariantIdFromName(db, variant);
+const getCanonicalLinkFromPattern = (
+  pattern: string,
+  data: { slug: string; variant?: string | null }
+): string => {
+  return pattern
+    .replace(/{{slug}}/g, data.slug)
+    .replace(/{{variant}}/g, data.variant || "")
+    .replace(/((?:[^:]))\/\/{1,}/g, (match) => {
+      return match.replace(/\/{1,}/g, "/");
+    });
 };
 const basePath = "/content-pieces";
 const authenticatedProcedure = procedure.use(isAuthenticated);
@@ -208,7 +220,7 @@ const contentPiecesRouter = router({
         workspaceId: ctx.auth.workspaceId
       });
       const workspace = await workspacesCollection.findOne({ _id: ctx.auth.workspaceId });
-      const variantId = await getVariantId(ctx.db, input.variant);
+      const { variantId, variantName } = await getVariantDetails(ctx.db, input.variant);
       const baseContentPiece = await contentPiecesCollection.findOne({
         _id: new ObjectId(input.id)
       });
@@ -220,6 +232,7 @@ const contentPiecesRouter = router({
       if (variantId) {
         const contentPieceVariant = await contentPieceVariantsCollection.findOne({
           contentPieceId: new ObjectId(input.id),
+          workspaceId: ctx.auth.workspaceId,
           variantId
         });
 
@@ -245,6 +258,7 @@ const contentPiecesRouter = router({
         if (variantId) {
           const contentVariant = await contentVariantsCollection.findOne({
             contentPieceId: new ObjectId(input.id),
+            workspaceId: ctx.auth.workspaceId,
             variantId
           });
 
@@ -280,9 +294,9 @@ const contentPiecesRouter = router({
         ...contentPiece,
         ...(workspaceSettings?.metadata?.canonicalLinkPattern &&
           typeof contentPiece.canonicalLink !== "string" && {
-            canonicalLink: workspaceSettings.metadata.canonicalLinkPattern.replace(
-              /{{slug}}/g,
-              contentPiece.slug
+            canonicalLink: getCanonicalLinkFromPattern(
+              workspaceSettings.metadata.canonicalLinkPattern,
+              { slug: contentPiece.slug, variant: variantName }
             )
           }),
         id: `${contentPiece._id}`,
@@ -342,7 +356,7 @@ const contentPiecesRouter = router({
       const workspace = await workspacesCollection.findOne({
         _id: ctx.auth.workspaceId
       });
-      const variantId = await getVariantId(ctx.db, input.variant);
+      const { variantId, variantName } = await getVariantDetails(ctx.db, input.variant);
       const contentGroup = workspace?.contentGroups.find((contentGroup) => {
         return contentGroup._id.equals(input.contentGroupId);
       });
@@ -371,6 +385,7 @@ const contentPiecesRouter = router({
         const contentPieceVariants = await contentPieceVariantsCollection
           .find({
             contentPieceId: { $in: contentPieces.map((contentPiece) => contentPiece._id) },
+            workspaceId: ctx.auth.workspaceId,
             variantId
           })
           .toArray();
@@ -397,9 +412,9 @@ const contentPiecesRouter = router({
             ...contentPiece,
             ...(workspaceSettings?.metadata?.canonicalLinkPattern &&
               typeof contentPiece.canonicalLink !== "string" && {
-                canonicalLink: workspaceSettings.metadata.canonicalLinkPattern.replace(
-                  /{{slug}}/g,
-                  contentPiece.slug
+                canonicalLink: getCanonicalLinkFromPattern(
+                  workspaceSettings.metadata.canonicalLinkPattern,
+                  { slug: contentPiece.slug, variant: variantName }
                 )
               }),
             id: `${contentPiece._id}`,
@@ -502,9 +517,9 @@ const contentPiecesRouter = router({
           ...contentPiece,
           ...(workspaceSettings?.metadata?.canonicalLinkPattern &&
             typeof contentPiece.canonicalLink !== "string" && {
-              canonicalLink: workspaceSettings.metadata.canonicalLinkPattern.replace(
-                /{{slug}}/g,
-                contentPiece.slug
+              canonicalLink: getCanonicalLinkFromPattern(
+                workspaceSettings.metadata.canonicalLinkPattern,
+                { slug: contentPiece.slug }
               )
             }),
           id: `${contentPiece._id}`,
@@ -565,7 +580,7 @@ const contentPiecesRouter = router({
         workspaceId: ctx.auth.workspaceId
       });
       const workspace = await workspacesCollection.findOne({ _id: ctx.auth.workspaceId });
-      const variantId = await getVariantId(ctx.db, variant);
+      const { variantId, variantName } = await getVariantDetails(ctx.db, variant);
       const baseContentPiece = await contentPiecesCollection.findOne({
         _id: new ObjectId(id)
       });
@@ -577,6 +592,7 @@ const contentPiecesRouter = router({
       if (variantId) {
         const contentPieceVariant = await contentPieceVariantsCollection.findOne({
           contentPieceId: new ObjectId(id),
+          workspaceId: ctx.auth.workspaceId,
           variantId
         });
 
@@ -639,7 +655,7 @@ const contentPiecesRouter = router({
       if (variantId) {
         await contentPieceVariantsCollection.updateOne(
           { contentPieceId: new ObjectId(id), variantId },
-          { $set: contentPieceUpdates },
+          { $set: { ...contentPieceUpdates, workspaceId: ctx.auth.workspaceId } },
           { upsert: true }
         );
       } else {
@@ -654,11 +670,13 @@ const contentPiecesRouter = router({
           await contentVariantsCollection.updateOne(
             {
               contentPieceId: contentPiece._id,
+              workspaceId: ctx.auth.workspaceId,
               variantId
             },
             {
               $set: {
-                content: new Binary(jsonToBuffer(htmlToJSON(updatedContent)))
+                content: new Binary(jsonToBuffer(htmlToJSON(updatedContent))),
+                workspaceId: ctx.auth.workspaceId
               }
             }
           );
@@ -697,9 +715,9 @@ const contentPiecesRouter = router({
           ...newContentPiece,
           ...(workspaceSettings?.metadata?.canonicalLinkPattern &&
             typeof newContentPiece.canonicalLink !== "string" && {
-              canonicalLink: workspaceSettings.metadata.canonicalLinkPattern.replace(
-                /{{slug}}/g,
-                newContentPiece.slug
+              canonicalLink: getCanonicalLinkFromPattern(
+                workspaceSettings.metadata.canonicalLinkPattern,
+                { slug: newContentPiece.slug, variant: variantName }
               )
             }),
           id: `${newContentPiece._id}`,
@@ -734,10 +752,12 @@ const contentPiecesRouter = router({
       await contentPiecesCollection.deleteOne({ _id: contentPiece._id });
       await contentsCollection.deleteOne({ contentPieceId: contentPiece._id });
       await contentPieceVariantsCollection.deleteMany({
-        contentPieceId: contentPiece._id
+        contentPieceId: contentPiece._id,
+        workspaceId: ctx.auth.workspaceId
       });
       await contentVariantsCollection.deleteMany({
-        contentPieceId: contentPiece._id
+        contentPieceId: contentPiece._id,
+        workspaceId: ctx.auth.workspaceId
       });
       publishEvent(ctx, `${contentPiece.contentGroupId}`, {
         action: "delete",
@@ -843,9 +863,9 @@ const contentPiecesRouter = router({
               ...contentPiece,
               ...(workspaceSettings?.metadata?.canonicalLinkPattern &&
                 typeof contentPiece.canonicalLink !== "string" && {
-                  canonicalLink: workspaceSettings.metadata.canonicalLinkPattern.replace(
-                    /{{slug}}/g,
-                    contentPiece.slug
+                  canonicalLink: getCanonicalLinkFromPattern(
+                    workspaceSettings.metadata.canonicalLinkPattern,
+                    { slug: contentPiece.slug }
                   )
                 }),
               id: `${contentPiece._id}`,

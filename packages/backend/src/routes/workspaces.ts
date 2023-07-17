@@ -92,7 +92,7 @@ const workspacesRouter = router({
     })
     .input(z.void())
     .output(z.void())
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ ctx }) => {
       await deleteWorkspace(ctx.auth.workspaceId, ctx.db);
       publishEvent(ctx, `${ctx.auth.workspaceId}`, {
         action: "delete",

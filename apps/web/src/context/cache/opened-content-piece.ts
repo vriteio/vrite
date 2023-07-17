@@ -68,7 +68,7 @@ const useOpenedContentPiece = (): UseOpenedContentPiece => {
     on(
       () => state.contentPiece?.contentGroupId,
       (contentGroupId, previousContentGroupId) => {
-        if (!contentGroupId || contentGroupId === previousContentGroupId) return;
+        if (!contentGroupId) return;
 
         const contentPiecesChanges = client.contentPieces.changes.subscribe(
           {

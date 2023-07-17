@@ -1,5 +1,5 @@
 const config = {
-  version: "Beta, v2023.7.12"
+  version: "Beta, v2023.7.17"
 };
 
 export { config };

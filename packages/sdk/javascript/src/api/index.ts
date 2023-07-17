@@ -16,4 +16,5 @@ export type { WorkspaceDetails } from "./workspace";
 export type { Block, Embed, Mark, WorkspaceSettings } from "./workspace-settings";
 export type { ListedMember, ListedWorkspace } from "./workspace-memberships";
 export type { Extension } from "./extension";
+export type { Variant } from "./variants";
 export * from "./errors";

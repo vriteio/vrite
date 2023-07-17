@@ -1,10 +1,18 @@
 import { Component, Match, Switch, lazy } from "solid-js";
 import { Outlet, Route, Routes } from "@solidjs/router";
-import { AuthView } from "#views/auth";
 import { StandaloneLayout, SecuredLayout } from "#layout";
-import { VerifyView } from "#views/verify";
 import { isEditorApp } from "#lib/utils";
 
+const AuthView = lazy(async () => {
+  const { AuthView } = await import("#views/auth");
+
+  return { default: AuthView };
+});
+const VerifyView = lazy(async () => {
+  const { VerifyView } = await import("#views/verify");
+
+  return { default: VerifyView };
+});
 const StandaloneEditorView = lazy(async () => {
   const { StandaloneEditorView } = await import("#views/standalone-editor");
 

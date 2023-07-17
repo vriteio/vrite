@@ -5,23 +5,15 @@ import { Dynamic } from "solid-js/web";
 import { useUIContext } from "#context";
 import { createRef } from "#lib/utils";
 import { ContentPieceView } from "#views/content-piece";
-import { SettingsView } from "#views/settings/view";
-import { GettingStartedView } from "#views/getting-started";
+import { SettingsView } from "#views/settings";
 import { ExtensionsView } from "#views/extensions";
+import { GettingStartedView } from "#views/getting-started";
 
 const sidePanelViews: Record<string, Component<Record<string, any>>> = {
-  contentPiece: () => {
-    return <ContentPieceView />;
-  },
-  settings: () => {
-    return <SettingsView />;
-  },
-  extensions: () => {
-    return <ExtensionsView />;
-  },
-  default: () => {
-    return <GettingStartedView />;
-  }
+  contentPiece: ContentPieceView,
+  settings: SettingsView,
+  extensions: ExtensionsView,
+  default: GettingStartedView
 };
 const SidePanel: Component = () => {
   const { storage, setStorage } = useUIContext();

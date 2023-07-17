@@ -8,9 +8,13 @@ interface ContentVariant<ID extends string | ObjectId = string> {
   id: ID;
 }
 
+interface FullContentVariant<ID extends string | ObjectId = string> extends ContentVariant<ID> {
+  workspaceId: ID;
+}
+
 const getContentVariantsCollection = (
   db: Db
-): Collection<UnderscoreID<ContentVariant<ObjectId>>> => {
+): Collection<UnderscoreID<FullContentVariant<ObjectId>>> => {
   return db.collection("content-variants");
 };
 

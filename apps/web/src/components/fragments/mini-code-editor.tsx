@@ -1,13 +1,23 @@
-import { Component, createEffect, createSignal, on, onCleanup, onMount, Show } from "solid-js";
+import {
+  Component,
+  createEffect,
+  createSignal,
+  lazy,
+  on,
+  onCleanup,
+  onMount,
+  Show
+} from "solid-js";
 import { nanoid } from "nanoid";
 import clsx from "clsx";
 import { mdiCheckCircleOutline } from "@mdi/js";
+import type { monaco } from "#lib/monaco";
 import { createRef } from "#lib/utils";
-import { monaco } from "#lib/code-editor";
 import { useAppearanceContext } from "#context";
 import { IconButton } from "#components/primitives";
 
 interface MiniCodeEditorProps {
+  monaco: typeof monaco;
   wrapperClass?: string;
   wrap?: boolean;
   class?: string;
@@ -29,6 +39,13 @@ const MiniCodeEditor: Component<MiniCodeEditorProps> = (props) => {
   const [codeEditor, setCodeEditor] = createSignal<monaco.editor.IStandaloneCodeEditor | null>(
     null
   );
+  const getUri = (): monaco.Uri => {
+    if (props.fileName) {
+      return props.monaco.Uri.file(props.fileName);
+    }
+
+    return props.monaco.Uri.parse(`file:///${nanoid()}`);
+  };
 
   onMount(() => {
     const editorContainer = editorContainerRef();
@@ -53,7 +70,7 @@ const MiniCodeEditor: Component<MiniCodeEditorProps> = (props) => {
     };
 
     if (editorContainer) {
-      const codeEditor = monaco.editor.create(editorContainer, {
+      const codeEditor = props.monaco.editor.create(editorContainer, {
         automaticLayout: true,
         minimap: { enabled: false },
         contextmenu: false,
@@ -77,13 +94,9 @@ const MiniCodeEditor: Component<MiniCodeEditorProps> = (props) => {
       }
 
       codeEditor.setModel(
-        monaco.editor.createModel(
-          props.code || "",
-          props.language || "json",
-          props.fileName ? monaco.Uri.file(props.fileName) : monaco.Uri.parse(`file:///${nanoid()}`)
-        )
+        props.monaco.editor.createModel(props.code || "", props.language || "json", getUri())
       );
-      codeEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, async () => {
+      codeEditor.addCommand(props.monaco.KeyMod.CtrlCmd | props.monaco.KeyCode.KeyS, async () => {
         props.onSave?.(codeEditor.getValue());
       });
 
@@ -111,20 +124,24 @@ const MiniCodeEditor: Component<MiniCodeEditorProps> = (props) => {
           () => props.language,
           () => {
             if (props.readOnly) {
-              let fileName = monaco.Uri.parse(`file:///${nanoid()}`);
+              let fileName = props.monaco.Uri.parse(`file:///${nanoid()}`);
 
-              if (props.fileName) fileName = monaco.Uri.file(props.fileName);
+              if (props.fileName) fileName = props.monaco.Uri.file(props.fileName);
 
               codeEditor.getModel()?.dispose();
               codeEditor.setModel(
-                monaco.editor.createModel(props.code || "", props.language || "json", fileName)
+                props.monaco.editor.createModel(
+                  props.code || "",
+                  props.language || "json",
+                  fileName
+                )
               );
             }
           }
         )
       );
       createEffect(() => {
-        monaco.editor.setTheme(
+        props.monaco.editor.setTheme(
           `${codeEditorTheme()}${props.color === "contrast" ? "-contrast" : ""}`
         );
       });
@@ -161,5 +178,14 @@ const MiniCodeEditor: Component<MiniCodeEditorProps> = (props) => {
     </div>
   );
 };
+const MiniCodeEditorWrapper = lazy(async () => {
+  const { monaco } = await import("#lib/monaco");
 
-export { MiniCodeEditor };
+  return {
+    default: (props: Omit<MiniCodeEditorProps, "monaco">) => (
+      <MiniCodeEditor monaco={monaco} {...props} />
+    )
+  };
+});
+
+export { MiniCodeEditorWrapper as MiniCodeEditor };

@@ -22,6 +22,7 @@ interface ContentPieceVariantWithAdditionalData<ID extends string | ObjectId = s
 }
 interface FullContentPieceVariant<ID extends string | ObjectId = string>
   extends ContentPieceVariant<ID> {
+  workspaceId: ID;
   coverWidth?: string;
 }
 interface FullContentPieceVariantWithAdditionalData<ID extends string | ObjectId = string>

@@ -7,6 +7,7 @@ interface Props {
   contentPieceId?: string;
   content?: JSONContent;
   slug?: string;
+  variant?: string;
 }
 
 let content: JSONContent | null = null;
@@ -30,7 +31,8 @@ if (Astro.props.content) {
     const contentPiece = await (client as Client).contentPieces.get({
       id: contentPieceId,
       content: true,
-      description: "text"
+      description: "text",
+      variant: Astro.props.variant
     });
 
     content = contentPiece.content;

@@ -48,12 +48,12 @@ interface WebhooksEndpoints {
 const basePath = `/webhooks`;
 const createWebhooksEndpoints = (sendRequest: SendRequest): WebhooksEndpoints => ({
   get: (input) => {
-    return sendRequest<Webhook>("GET", `${basePath}`, {
+    return sendRequest("GET", `${basePath}`, {
       params: input
     });
   },
   create: (input) => {
-    return sendRequest<Pick<Webhook, "id">>("POST", `${basePath}`, {
+    return sendRequest("POST", `${basePath}`, {
       body: input
     });
   },
@@ -68,7 +68,7 @@ const createWebhooksEndpoints = (sendRequest: SendRequest): WebhooksEndpoints =>
     });
   },
   list: (input) => {
-    return sendRequest<Webhook[]>("GET", `${basePath}/list`, {
+    return sendRequest("GET", `${basePath}/list`, {
       params: input
     });
   }

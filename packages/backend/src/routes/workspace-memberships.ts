@@ -149,6 +149,7 @@ const workspaceMembershipsRouter = router({
           }
         }
       );
+      await updateSessionUser(ctx, `${membership.userId}`);
       publishEvent(ctx, `${ctx.auth.workspaceId}`, {
         action: "update",
         data: {

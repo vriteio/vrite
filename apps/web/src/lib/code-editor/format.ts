@@ -3,7 +3,7 @@ import type { Options, Plugin } from "prettier";
 
 const languageParserMap = {
   javascript: "babel",
-  typescript: "typescript",
+  typescript: "babel-ts",
   json: "yaml",
   graphql: "graphql",
   html: "html",
@@ -23,9 +23,8 @@ const isFormattable = (language: string): boolean => {
 const loadParserPlugin = async (language: string): Promise<Plugin | null> => {
   switch (language as SupportedLanguages) {
     case "javascript":
-      return import("prettier/parser-babel");
     case "typescript":
-      return import("prettier/parser-typescript");
+      return import("prettier/parser-babel");
     case "graphql":
       return import("prettier/parser-graphql");
     case "html":

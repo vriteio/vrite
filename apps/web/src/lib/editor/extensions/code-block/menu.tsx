@@ -2,10 +2,12 @@ import { CodeBlockAttributes } from "./node";
 import { useSolidNodeView } from "@vrite/tiptap-solid";
 import { mdiCodeTagsCheck } from "@mdi/js";
 import { Component, createEffect, createMemo, createSignal, on, Show } from "solid-js";
+import type { monaco } from "#lib/monaco";
 import { IconButton, Input, Tooltip } from "#components/primitives";
 import { useSuggestLanguage, isFormattable } from "#lib/code-editor";
 
 interface CodeBlockMenuProps {
+  monaco: typeof monaco;
   format(): void;
   changeLanguage(languageId: string | null): void;
 }
@@ -14,7 +16,7 @@ const CodeBlockMenu: Component<CodeBlockMenuProps> = (props) => {
   const { state } = useSolidNodeView();
   const attrs = (): CodeBlockAttributes => state().node.attrs;
   const [suggestions, setSuggestions] = createSignal<string[]>([]);
-  const suggestLanguage = useSuggestLanguage();
+  const suggestLanguage = useSuggestLanguage(props.monaco.languages.getLanguages());
   const formattingAvailable = createMemo(() => {
     return isFormattable(attrs().lang || "");
   });

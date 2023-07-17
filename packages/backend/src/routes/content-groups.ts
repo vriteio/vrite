@@ -9,6 +9,7 @@ import { getContentPiecesCollection } from "#database/content-pieces";
 import { createEventPublisher, createEventSubscription } from "#lib/pub-sub";
 import { getContentsCollection } from "#database/contents";
 import { runWebhooks } from "#lib/webhooks";
+import { getContentPieceVariantsCollection, getContentVariantsCollection } from "#database";
 
 type ContentGroupEvent =
   | {
@@ -120,6 +121,8 @@ const contentGroupsRouter = router({
       const workspacesCollection = getWorkspacesCollection(ctx.db);
       const contentPiecesCollection = getContentPiecesCollection(ctx.db);
       const contentsCollection = getContentsCollection(ctx.db);
+      const contentPieceVariantsCollection = getContentPieceVariantsCollection(ctx.db);
+      const contentVariantsCollection = getContentVariantsCollection(ctx.db);
       const workspace = await workspacesCollection.findOne({ _id: ctx.auth.workspaceId });
       const contentGroupId = new ObjectId(input.id);
       const contentGroup = workspace?.contentGroups.find((contentGroup) => {
@@ -136,8 +139,17 @@ const contentGroupsRouter = router({
           $pull: { contentGroups: { _id: contentGroupId } }
         }
       );
+
+      const contentPieceIds = await contentPiecesCollection
+        .find({ contentGroupId })
+        .project({ _id: true })
+        .map(({ _id }) => _id)
+        .toArray();
+
       await contentPiecesCollection.deleteMany({ contentGroupId });
       await contentsCollection.deleteMany({ contentGroupId });
+      await contentPieceVariantsCollection.deleteMany({ contentPieceId: { $in: contentPieceIds } });
+      await contentVariantsCollection.deleteMany({ contentPieceId: { $in: contentPieceIds } });
       publishEvent(ctx, `${ctx.auth.workspaceId}`, {
         action: "delete",
         data: input

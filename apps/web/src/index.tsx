@@ -10,8 +10,7 @@ import {
   ClientContextProvider,
   ConfirmationContextProvider,
   NotificationsProvider,
-  UIContextProvider,
-  CacheContextProvider
+  UIContextProvider
 } from "#context";
 
 const container = document.querySelector("#root");

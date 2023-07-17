@@ -314,7 +314,10 @@ const BubbleMenu: Component<BubbleMenuProps> = (props) => {
 
   return (
     <Card
-      class={clsx("relative flex p-0 overflow-x-auto scrollbar-hidden", props.class)}
+      class={clsx(
+        "relative flex p-0 overflow-x-auto scrollbar-hidden md:overflow-initial",
+        props.class
+      )}
       ref={props.ref}
     >
       <Switch>

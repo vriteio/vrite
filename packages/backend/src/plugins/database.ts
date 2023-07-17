@@ -33,18 +33,22 @@ const databasePlugin = publicPlugin(async (fastify) => {
   const extensionsCollection = getWorkspaceSettingsCollection(db);
   const variantsCollection = getVariantsCollection(db);
   const contentPieceVariantsCollection = getContentPieceVariantsCollection(db);
-  const contentVariants = getContentVariantsCollection(db);
+  const contentVariantsCollection = getContentVariantsCollection(db);
 
   await Promise.all([
     contentPiecesCollection.createIndex({ workspaceId: 1 }),
     contentPiecesCollection.createIndex({ contentGroupId: 1 }),
     contentPiecesCollection.createIndex({ tags: 1 }),
-    contentPieceVariantsCollection.createIndex({ variantId: 1 }),
+    contentPieceVariantsCollection.createIndex({ contentPieceId: 1, variantId: 1 }),
+    contentPieceVariantsCollection.createIndex({ contentPieceId: 1 }),
+    contentPieceVariantsCollection.createIndex({ workspaceId: 1 }),
     commentThreadsCollection.createIndex({ contentPieceId: 1, workspaceId: 1 }),
     commentThreadsCollection.createIndex({ fragment: 1, workspaceId: 1 }),
     commentsCollection.createIndex({ threadId: 1, workspaceId: 1 }),
     contentsCollection.createIndex({ contentPieceId: 1 }),
-    contentVariants.createIndex({ contentPieceId: 1, variantId: 1 }),
+    contentVariantsCollection.createIndex({ contentPieceId: 1, variantId: 1 }),
+    contentVariantsCollection.createIndex({ contentPieceId: 1 }),
+    contentVariantsCollection.createIndex({ workspaceId: 1 }),
     rolesCollection.createIndex({ workspaceId: 1 }),
     tagsCollection.createIndex({ workspaceId: 1 }),
     tokensCollection.createIndex({ workspaceId: 1 }),

@@ -32,6 +32,7 @@ declare module "virtual:vrite" {
   export function Content(props: {
     contentPieceId?: string;
     slug?: string;
+    variant?: string;
     // @ts-ignore
     content?: import("@vrite/sdk/api").JSONContent;
   }): any;
@@ -47,6 +48,7 @@ declare module "virtual:vrite" {
       limit?: number | "all";
       startPage?: number;
       tagId?: string;
+      variant?: string;
     }
     // @ts-ignore
   ): Promise<Array<Omit<import("@vrite/sdk/api").ContentPieceWithAdditionalData, "content">>>;

@@ -91,6 +91,7 @@ interface ContentPiecesEndpoints {
     input: Pick<ContentPiece, "id"> & {
       content?: IncludeContent;
       description?: "html" | "text";
+      variant?: string;
     }
   ): Promise<ContentPieceWithAdditionalData<CustomData, IncludeContent>>;
   create<CustomData extends Record<string, any> = Record<string, any>>(
@@ -124,7 +125,7 @@ interface ContentPiecesEndpoints {
         | "customData"
         | "canonicalLink"
         | "coverWidth"
-      > & { content?: string }
+      > & { content?: string; variant?: string }
     > &
       Pick<ContentPiece<CustomData>, "id">
   ): Promise<void>;
@@ -134,6 +135,7 @@ interface ContentPiecesEndpoints {
       contentGroupId: string;
       tagId?: string;
       slug?: string;
+      variant?: string;
     }
   ): Promise<Array<Omit<ContentPieceWithAdditionalData<CustomData>, "content">>>;
 }
@@ -147,6 +149,7 @@ const createContentPiecesEndpoints = (sendRequest: SendRequest): ContentPiecesEn
     input: Pick<ContentPiece, "id"> & {
       content?: IncludeContent;
       description?: "html" | "text";
+      variant?: string;
     }
   ) => {
     return sendRequest<ContentPieceWithAdditionalData<CustomData, IncludeContent>>(
@@ -192,6 +195,7 @@ const createContentPiecesEndpoints = (sendRequest: SendRequest): ContentPiecesEn
       contentGroupId: string;
       tagId?: string;
       slug?: string;
+      variant?: string;
     }
   ) => {
     return sendRequest<Array<Omit<ContentPieceWithAdditionalData<CustomData>, "content">>>(

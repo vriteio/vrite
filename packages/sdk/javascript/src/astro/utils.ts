@@ -8,6 +8,7 @@ const getContentPieces = async (
     limit?: number | "all";
     startPage?: number;
     tagId?: string;
+    variant?: string;
   }
 ): Promise<Array<Omit<ContentPieceWithAdditionalData, "content">>> => {
   const contentPieces: Array<Omit<ContentPieceWithAdditionalData, "content">> = [];
@@ -19,7 +20,8 @@ const getContentPieces = async (
       contentGroupId,
       page,
       perPage: config?.limit === "all" ? 50 : config?.limit || 50,
-      tagId: config?.tagId
+      tagId: config?.tagId,
+      variant: config?.variant
     });
 
     contentPieces.push(...paginatedContentPieces);

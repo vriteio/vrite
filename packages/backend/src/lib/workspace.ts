@@ -12,7 +12,13 @@ import { getWorkspacesCollection } from "#database/workspaces";
 import { getWorkspaceMembershipsCollection } from "#database/workspace-memberships";
 import { getRolesCollection } from "#database/roles";
 import { FullUser } from "#database/users";
-import { getContentPiecesCollection, getContentsCollection } from "#database";
+import {
+  getContentPieceVariantsCollection,
+  getContentPiecesCollection,
+  getContentVariantsCollection,
+  getContentsCollection,
+  getVariantsCollection
+} from "#database";
 import initialContent from "#assets/initial-content.json";
 
 const createWorkspace = async (
@@ -119,6 +125,9 @@ const deleteWorkspace = async (workspaceId: ObjectId, db: Db): Promise<void> => 
   const contentPiecesCollection = getContentPiecesCollection(db);
   const contentsCollection = getContentsCollection(db);
   const rolesCollection = getRolesCollection(db);
+  const variantsCollection = getVariantsCollection(db);
+  const contentPieceVariantsCollection = getContentPieceVariantsCollection(db);
+  const contentVariantsCollection = getContentVariantsCollection(db);
 
   await workspacesCollection.deleteOne({
     _id: workspaceId
@@ -136,6 +145,15 @@ const deleteWorkspace = async (workspaceId: ObjectId, db: Db): Promise<void> => 
     workspaceId
   });
   await contentsCollection.deleteMany({
+    workspaceId
+  });
+  await variantsCollection.deleteMany({
+    workspaceId
+  });
+  await contentPieceVariantsCollection.deleteMany({
+    workspaceId
+  });
+  await contentVariantsCollection.deleteMany({
     workspaceId
   });
 };

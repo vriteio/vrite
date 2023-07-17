@@ -4,7 +4,8 @@ import { useSolidNodeView } from "@vrite/tiptap-solid";
 import clsx from "clsx";
 import { Component, createEffect, createSignal, onMount } from "solid-js";
 import { nanoid } from "nanoid";
-import { formatCode, monaco } from "#lib/code-editor";
+import type { monaco } from "#lib/monaco";
+import { formatCode } from "#lib/code-editor";
 import { Card } from "#components/primitives";
 import { createRef, selectionClasses } from "#lib/utils";
 import {
@@ -15,13 +16,17 @@ import {
 } from "#context";
 
 interface CodeBlockViewProps {
+  monaco: typeof monaco;
   codeEditorRef(): monaco.editor.IStandaloneCodeEditor | null;
   updatingRef(): boolean | null;
   setCodeEditorRef(value: monaco.editor.IStandaloneCodeEditor): void;
   setUpdatingRef(value: boolean): void;
 }
 
-const getExtension = (language: string): string => {
+const getExtension = (
+  languages: monaco.languages.ILanguageExtensionPoint[],
+  language: string
+): string => {
   if (language === "typescript") {
     return ".tsx";
   } else if (language === "javascript") {
@@ -29,7 +34,7 @@ const getExtension = (language: string): string => {
   }
 
   return (
-    monaco.languages.getLanguages().find((item) => {
+    languages.find((item) => {
       return item.id === language;
     })?.extensions?.[0] || ""
   );
@@ -74,8 +79,8 @@ const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
       }
 
       const range = model.getFullModelRange();
-      const start = model.getOffsetAt(monaco.Range.getStartPosition(range));
-      const end = model.getOffsetAt(monaco.Range.getEndPosition(range));
+      const start = model.getOffsetAt(props.monaco.Range.getStartPosition(range));
+      const end = model.getOffsetAt(props.monaco.Range.getEndPosition(range));
 
       tr.replaceWith(offset + start, offset + end, state().editor.schema.text(formattedCode));
       state().editor.view.dispatch(tr);
@@ -97,7 +102,7 @@ const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
     const model = codeEditor()?.getModel();
 
     if (model) {
-      monaco.editor.setModelLanguage(model, languageId || "");
+      props.monaco.editor.setModelLanguage(model, languageId || "");
     }
   };
   const updateEditorHeight = (monacoEditor: monaco.editor.IStandaloneCodeEditor): void => {
@@ -120,7 +125,7 @@ const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
     const editorContainer = editorContainerRef();
 
     if (editorContainer) {
-      const codeEditor = monaco.editor.create(editorContainer, {
+      const codeEditor = props.monaco.editor.create(editorContainer, {
         automaticLayout: true,
         model: null,
         fontSize: 13,
@@ -139,10 +144,12 @@ const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
       const languageId = attrs().lang || "";
 
       codeEditor.setModel(
-        monaco.editor.createModel(
+        props.monaco.editor.createModel(
           state().node.textContent,
           languageId,
-          monaco.Uri.file(`${nanoid()}${getExtension(languageId)}`)
+          props.monaco.Uri.file(
+            `${nanoid()}${getExtension(props.monaco.languages.getLanguages(), languageId)}`
+          )
         )
       );
       setCurrentModelValue(codeEditor.getModel()?.getValue() || "");
@@ -155,14 +162,16 @@ const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
         if (updating || !codeEditor.hasTextFocus() || !model) return;
 
         const { tr } = state().editor.state;
-        const previousModel = monaco.editor.createModel(currentModelValue() || "");
+        const previousModel = props.monaco.editor.createModel(currentModelValue() || "");
 
         let offset = state().getPos() + 1;
 
         event.changes.forEach((change) => {
           if (change.text.length) {
-            const start = previousModel.getOffsetAt(monaco.Range.getStartPosition(change.range));
-            const end = previousModel.getOffsetAt(monaco.Range.getEndPosition(change.range));
+            const start = previousModel.getOffsetAt(
+              props.monaco.Range.getStartPosition(change.range)
+            );
+            const end = previousModel.getOffsetAt(props.monaco.Range.getEndPosition(change.range));
 
             tr.replaceWith(
               offset + start,
@@ -171,8 +180,10 @@ const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
             );
             offset -= end - start;
           } else {
-            const start = previousModel.getOffsetAt(monaco.Range.getStartPosition(change.range));
-            const end = previousModel.getOffsetAt(monaco.Range.getEndPosition(change.range));
+            const start = previousModel.getOffsetAt(
+              props.monaco.Range.getStartPosition(change.range)
+            );
+            const end = previousModel.getOffsetAt(props.monaco.Range.getEndPosition(change.range));
 
             tr.delete(offset + start, offset + end);
           }
@@ -197,7 +208,7 @@ const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
         let anchor = model.getOffsetAt(sel.getStartPosition());
         let head = model.getOffsetAt(sel.getEndPosition());
 
-        if (sel.getDirection() === monaco.SelectionDirection.RTL) {
+        if (sel.getDirection() === props.monaco.SelectionDirection.RTL) {
           const tmp = anchor;
 
           anchor = head;
@@ -229,7 +240,12 @@ const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
             }
 
             newDecorations.push({
-              range: new monaco.Range(start.lineNumber, start.column, end.lineNumber, end.column),
+              range: new props.monaco.Range(
+                start.lineNumber,
+                start.column,
+                end.lineNumber,
+                end.column
+              ),
               options: {
                 className: clsx(
                   "bg-opacity-40 dark:bg-opacity-40",
@@ -247,18 +263,18 @@ const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
         setDecorationsRef(codeEditor.deltaDecorations(decorationsRef() || [], newDecorations));
       });
       codeEditor.onKeyDown((event) => {
-        if (event.keyCode === monaco.KeyCode.Escape) {
+        if (event.keyCode === props.monaco.KeyCode.Escape) {
           state().editor.commands.setNodeSelection(state().getPos());
           state().editor.commands.focus();
         }
       });
-      codeEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, async () => {
+      codeEditor.addCommand(props.monaco.KeyMod.CtrlCmd | props.monaco.KeyCode.KeyS, async () => {
         await format();
         state().editor.commands.setNodeSelection(state().getPos());
         state().editor.commands.focus();
       });
       createEffect(() => {
-        monaco.editor.setTheme(codeEditorTheme());
+        props.monaco.editor.setTheme(codeEditorTheme());
       });
     }
   });
@@ -288,7 +304,7 @@ const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
         )}
         contentEditable={false}
       >
-        <CodeBlockMenu format={format} changeLanguage={changeLanguage} />
+        <CodeBlockMenu monaco={props.monaco} format={format} changeLanguage={changeLanguage} />
       </Card>
     </div>
   );

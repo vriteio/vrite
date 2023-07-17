@@ -31,7 +31,6 @@ const GettingStartedView: Component = () => {
         <div class="flex justify-center items-center">
           <IconButton
             path={mdiClose}
-            color="contrast"
             text="soft"
             badge
             class="flex md:hidden mr-2 m-0"
@@ -46,7 +45,7 @@ const GettingStartedView: Component = () => {
         </div>
       </div>
       <div class="flex-col h-full relative flex overflow-hidden">
-        <div class="w-full h-full overflow-x-hidden overflow-y-auto scrollbar-sm-contrast px-5 pb-5">
+        <div class="w-full h-full overflow-x-hidden overflow-y-auto scrollbar-sm-contrast px-5 mb-5">
           <div class="flex justify-start flex-col min-h-full items-start w-full gap-5">
             <div class="grid grid-cols-1 @lg:grid-cols-2 w-full gap-4">
               <For each={sectionMenuItems}>
