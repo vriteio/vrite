@@ -167,6 +167,7 @@ const ImageView: Component = () => {
               <img
                 alt={attrs().alt}
                 src={objectURL()}
+                data-src={currentSrc()}
                 class={clsx("object-contain w-full m-0 transition-opacity duration-300")}
                 onError={() => {
                   removeImage();

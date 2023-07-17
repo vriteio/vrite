@@ -1,4 +1,3 @@
-import { App } from "#context";
 import {
   CommandManager,
   Editor,
@@ -10,13 +9,14 @@ import { EditorState, Plugin } from "@tiptap/pm/state";
 import { gfmTransformer } from "@vrite/sdk/transformers";
 import { marked } from "marked";
 import { Accessor } from "solid-js";
+import { App } from "#context";
 
 interface BlockPasteRule {
-  start(line: string): boolean;
-  end(line: string): boolean;
   acceptLastLineAsEnd?: boolean;
   includeStart?: boolean;
   includeEnd?: boolean;
+  start(line: string): boolean;
+  end(line: string): boolean;
 }
 interface RunConfig {
   editor: Editor;
@@ -51,7 +51,7 @@ const run = (
       end: (line) => {
         const emptyLine = line.trim().length === 0;
 
-        return emptyLine || !Boolean(line.trim().match(/^- \[(x|\s)\]\s(.*)$/g));
+        return emptyLine || !line.trim().match(/^- \[(x|\s)\]\s(.*)$/g);
       },
       acceptLastLineAsEnd: true,
       includeStart: true
@@ -97,7 +97,7 @@ const run = (
         return Boolean(line.trim().match(/^\|?(?:\s?(.+?)\s?\|){1,}\s?(.+)\|?$/gm));
       },
       end: (line) => {
-        return !Boolean(line.trim().match(/^\|?(?:\s?(.+?)\s?\|){1,}\s?(.+)\|?$/gm));
+        return !line.trim().match(/^\|?(?:\s?(.+?)\s?\|){1,}\s?(.+)\|?$/gm);
       },
       includeStart: true,
       includeEnd: false,
@@ -139,17 +139,21 @@ const run = (
         if (text.startsWith("<img")) {
           return `${text}\n`;
         }
+
         return `<p>${text}</p>`;
       },
-      image(href, title, text) {
-        const link = (href || "").replace(/^(?:\[.*\]\((.*)\))|(?:(.*))$/, "$1");
+      image(href, _title, text) {
+        const link = (href || "").replace(
+          /^(?:\[.*\]\((.*)\))|(?:(.*))$/,
+          (_match, p1, p2) => p1 || p2
+        );
 
         return `<img src="${link}" alt="${text}">`;
       },
       listitem(text, task, checked) {
         return `<li${task ? ` data-type="taskItem"` : ""}${
           checked ? ` data-checked="true"` : ""
-        }>${text.replace(/\<br\>\<(img|p|pre|blockquote|ul|ol|table)\s/g, "<$1 ")}</li>`;
+        }>${text.replace(/<br><(img|p|pre|blockquote|ul|ol|table)\s/g, "<$1 ")}</li>`;
       },
       list(body, ordered, start) {
         const type = ordered ? "ol" : "ul";
@@ -160,7 +164,7 @@ const run = (
       }
     }
   });
-
+  // eslint-disable-next-line max-params
   state.doc.nodesBetween(from, to, (node, pos, parent, index) => {
     if (!node.isTextblock || node.type.spec.code) {
       return;
@@ -204,21 +208,23 @@ const run = (
             })
             .insertContentAt(rangeStart, json.content[0]);
         }
+
         lines = [];
         rangeStart = 0;
         rangeEnd = 0;
-
         lastData = { text, resolvedFrom };
+
         if (blockPasteRules[activeBlockType].includeEnd) {
           activeBlockType = "";
+
           return;
         }
 
         activeBlockType = "";
       } else {
         lines.push(textToMatch);
-
         lastData = { text, resolvedFrom };
+
         return;
       }
     }
@@ -229,8 +235,10 @@ const run = (
 
       if (match) {
         const start = resolvedFrom;
+
         activeBlockType = blockPasteRuleType as keyof typeof blockPasteRules;
         if (blockPasteRules[activeBlockType].includeStart) lines.push(textToMatch);
+
         rangeStart = state.tr.mapping.map(start);
         lastData = { text, resolvedFrom };
         break;
@@ -272,6 +280,7 @@ const BlockPaste = Extension.create<{ workspaceSettings: Accessor<App.WorkspaceS
   },
   addProseMirrorPlugins() {
     const { editor, options } = this;
+
     let dragSourceElement: Element | null = null;
     let isPastedFromProseMirror = false;
     let isDroppedFromProseMirror = false;
@@ -279,10 +288,12 @@ const BlockPaste = Extension.create<{ workspaceSettings: Accessor<App.WorkspaceS
     return [
       new Plugin({
         view(view) {
-          const handleDragstart = (event: DragEvent) => {
-            dragSourceElement = view.dom.parentElement?.contains(event.target as Element)
-              ? view.dom.parentElement
-              : null;
+          const handleDragstart = (event: DragEvent): void => {
+            if (view.dom.parentElement?.contains(event.target as Element)) {
+              dragSourceElement = view.dom.parentElement;
+            } else {
+              dragSourceElement = null;
+            }
           };
 
           window.addEventListener("dragstart", handleDragstart);
@@ -312,7 +323,7 @@ const BlockPaste = Extension.create<{ workspaceSettings: Accessor<App.WorkspaceS
           }
         },
         appendTransaction(transactions, oldState, state) {
-          const transaction = transactions[0];
+          const [transaction] = transactions;
           const isPaste = transaction.getMeta("uiEvent") === "paste" && !isPastedFromProseMirror;
           const isDrop = transaction.getMeta("uiEvent") === "drop" && !isDroppedFromProseMirror;
 
@@ -327,12 +338,11 @@ const BlockPaste = Extension.create<{ workspaceSettings: Accessor<App.WorkspaceS
             return;
           }
 
-          const tr = state.tr;
+          const { tr } = state;
           const chainableState = createChainableState({
             state,
             transaction: tr
           });
-
           const handler = run(
             {
               editor,

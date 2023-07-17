@@ -40,7 +40,10 @@ const Image = Node.create<ImageOptions>({
   addAttributes() {
     return {
       src: {
-        default: null
+        default: null,
+        parseHTML: (element) => {
+          return element.getAttribute("data-src") || element.getAttribute("src");
+        }
       },
       alt: {
         default: null
