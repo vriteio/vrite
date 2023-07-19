@@ -156,8 +156,8 @@ button:focus {
 [contenteditable="true"] *,
 input,
 textarea {
-  user-select: auto !important;
-  -webkit-user-select: auto !important;
+  user-select: text !important;
+  -webkit-user-select: text !important;
 }
 #dropdowns {
   @apply transform w-full absolute overflow-hidden z-60 transition-all duration-500 pointer-events-none;
