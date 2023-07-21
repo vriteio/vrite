@@ -1,20 +1,10 @@
 import { AddColumn, Column } from "./column";
 import { ContentGroupsContextProvider } from "./content-groups-context";
-import {
-  Component,
-  For,
-  Show,
-  createEffect,
-  createResource,
-  createSignal,
-  on,
-  onCleanup
-} from "solid-js";
+import { Component, Show, createEffect, createSignal, on, onCleanup } from "solid-js";
 import clsx from "clsx";
 import { HocuspocusProvider } from "@hocuspocus/provider";
 import * as Y from "yjs";
-import { mdiChevronRight, mdiFolder, mdiHexagonSlice6 } from "@mdi/js";
-import { Button, Card, IconButton, Sortable } from "#components/primitives";
+import { Sortable } from "#components/primitives";
 import {
   App,
   hasPermission,
@@ -74,8 +64,8 @@ const DashboardView: Component = () => {
   );
 
   return (
-    <div class="relative flex-1 overflow-hidden flex flex-row h-full">
-      <div class="relative overflow-hidden w-full">
+    <div class="relative flex-1 overflow-hidden flex flex-row h-full pt-5 pb-2.5">
+      <div class="relative overflow-hidden">
         <ScrollShadow
           scrollableContainerRef={scrollableContainerRef}
           color="contrast"
@@ -84,7 +74,7 @@ const DashboardView: Component = () => {
         />
         <ContentGroupsContextProvider ancestor={ancestor} setAncestor={setAncestor}>
           <Sortable
-            each={[...contentGroups()]}
+            each={[...contentGroups(), null]}
             wrapper="div"
             options={{
               ghostClass: `:base: border-4 border-gray-200 opacity-50 dark:border-gray-700 children:invisible !p-0 !m-2 !mt-0 !h-unset rounded-2xl`,
@@ -134,24 +124,29 @@ const DashboardView: Component = () => {
             }}
             ref={setScrollableContainerRef}
             wrapperProps={{
-              class: clsx("flex flex-col w-full h-full")
+              class: clsx(
+                "flex-1 h-full auto-rows-fr grid-flow-column grid-flow-col grid-template-rows grid auto-cols-[calc(100vw-2.5rem)] md:auto-cols-85 overflow-x-scroll scrollbar-sm-contrast md:mx-5",
+                snapEnabled() && `snap-mandatory snap-x`
+              )
             }}
           >
             {(contentGroup, index) => {
               if (contentGroup) {
                 return (
-                  <button
-                    onClick={() => {
-                      setAncestor(contentGroup);
-                    }}
-                  >
-                    <Card class="m-0 border-x-0 border-t-0 rounded-none flex justify-start items-center hover:bg-gray-200 hover:cursor-pointer">
-                      <IconButton path={mdiFolder} variant="text" text="soft" hover={false} badge />
-                      {contentGroup.name}
-                    </Card>
-                  </button>
+                  <Column
+                    contentGroup={contentGroup}
+                    index={index()}
+                    onDragStart={() => setSnapEnabled(false)}
+                    onDragEnd={() => setSnapEnabled(true)}
+                  />
                 );
               }
+
+              return (
+                <Show when={hasPermission("manageDashboard")}>
+                  <AddColumn class="locked" />
+                </Show>
+              );
             }}
           </Sortable>
         </ContentGroupsContextProvider>

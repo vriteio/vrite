@@ -25,6 +25,7 @@ import { runWebhooks } from "#lib/webhooks";
 import { createEventPublisher, createEventSubscription } from "#lib/pub-sub";
 import {
   FullContentPieceVariant,
+  getContentGroupsCollection,
   getContentPieceVariantsCollection,
   getContentVariantsCollection,
   getUsersCollection,
@@ -177,6 +178,24 @@ const getCanonicalLinkFromPattern = (
       return match.replace(/\/{1,}/g, "/");
     });
 };
+const isLocked = async (db: Db, contentGroupId: string): Promise<boolean> => {
+  const contentGroupsCollection = getContentGroupsCollection(db);
+  const contentGroup = await contentGroupsCollection.findOne({
+    _id: new ObjectId(contentGroupId)
+  });
+
+  if (!contentGroup) throw errors.incomplete("contentPiece");
+
+  const ancestors = await contentGroupsCollection
+    .find({
+      _id: {
+        $in: contentGroup.ancestors.map((ancestor) => new ObjectId(ancestor))
+      }
+    })
+    .toArray();
+
+  return ancestors.some(({ locked }) => locked);
+};
 const basePath = "/content-pieces";
 const authenticatedProcedure = procedure.use(isAuthenticated);
 const contentPiecesRouter = router({
@@ -214,12 +233,10 @@ const contentPiecesRouter = router({
     .query(async ({ ctx, input }) => {
       const workspaceSettingsCollection = getWorkspaceSettingsCollection(ctx.db);
       const contentPiecesCollection = getContentPiecesCollection(ctx.db);
-      const workspacesCollection = getWorkspacesCollection(ctx.db);
       const contentPieceVariantsCollection = getContentPieceVariantsCollection(ctx.db);
       const workspaceSettings = await workspaceSettingsCollection.findOne({
         workspaceId: ctx.auth.workspaceId
       });
-      const workspace = await workspacesCollection.findOne({ _id: ctx.auth.workspaceId });
       const { variantId, variantName } = await getVariantDetails(ctx.db, input.variant);
       const baseContentPiece = await contentPiecesCollection.findOne({
         _id: new ObjectId(input.id)
@@ -239,14 +256,6 @@ const contentPiecesRouter = router({
         if (contentPieceVariant) {
           contentPiece = mergeVariantData(contentPiece, contentPieceVariant);
         }
-      }
-
-      const contentGroup = workspace?.contentGroups.find((contentGroup) => {
-        return contentGroup._id.equals(contentPiece.contentGroupId);
-      });
-
-      if (!contentGroup) {
-        throw errors.incomplete("contentPiece");
       }
 
       let content: DocJSON | null = null;
@@ -302,7 +311,7 @@ const contentPiecesRouter = router({
         id: `${contentPiece._id}`,
         description: getDescription(),
         contentGroupId: `${contentPiece.contentGroupId}`,
-        locked: contentGroup?.locked || false,
+        locked: await isLocked(ctx.db, `${contentPiece.contentGroupId}`),
         workspaceId: `${contentPiece.workspaceId}`,
         date: contentPiece.date?.toISOString(),
         tags,
@@ -349,26 +358,26 @@ const contentPiecesRouter = router({
       const workspaceSettingsCollection = getWorkspaceSettingsCollection(ctx.db);
       const contentPiecesCollection = getContentPiecesCollection(ctx.db);
       const contentPieceVariantsCollection = getContentPieceVariantsCollection(ctx.db);
-      const workspacesCollection = getWorkspacesCollection(ctx.db);
+      const contentGroupsCollection = getContentGroupsCollection(ctx.db);
       const workspaceSettings = await workspaceSettingsCollection.findOne({
         workspaceId: ctx.auth.workspaceId
       });
-      const workspace = await workspacesCollection.findOne({
-        _id: ctx.auth.workspaceId
-      });
+      const contentGroupId = new ObjectId(input.contentGroupId);
       const { variantId, variantName } = await getVariantDetails(ctx.db, input.variant);
-      const contentGroup = workspace?.contentGroups.find((contentGroup) => {
-        return contentGroup._id.equals(input.contentGroupId);
-      });
+      const contentGroups = await contentGroupsCollection
+        .find({
+          _id: {
+            $in: Array.isArray(contentGroupId) ? contentGroupId : [contentGroupId]
+          }
+        })
+        .toArray();
 
-      if (!contentGroup) {
-        throw errors.incomplete("contentPiece");
-      }
+      if (!contentGroups.length) throw errors.incomplete("contentPiece");
 
       const cursor = contentPiecesCollection
         .find({
           workspaceId: ctx.auth.workspaceId,
-          ...(input.contentGroupId ? { contentGroupId: new ObjectId(input.contentGroupId) } : {}),
+          contentGroupId,
           ...(input.tagId ? { tags: new ObjectId(input.tagId) } : {}),
           ...(input.slug ? { slug: stringToRegex(input.slug) } : {}),
           ...(input.lastOrder ? { order: { $lt: input.lastOrder } } : {})
@@ -420,7 +429,7 @@ const contentPiecesRouter = router({
             id: `${contentPiece._id}`,
             contentGroupId: `${contentPiece.contentGroupId}`,
             workspaceId: `${contentPiece.workspaceId}`,
-            locked: contentGroup?.locked || false,
+            locked: contentGroups?.some(({ locked }) => locked) || false,
             date: contentPiece.date?.toISOString(),
             tags,
             members
@@ -446,13 +455,12 @@ const contentPiecesRouter = router({
       const workspaceSettingsCollection = getWorkspaceSettingsCollection(ctx.db);
       const contentPiecesCollection = getContentPiecesCollection(ctx.db);
       const contentsCollection = getContentsCollection(ctx.db);
-      const workspacesCollection = getWorkspacesCollection(ctx.db);
+      const contentGroupsCollection = getContentGroupsCollection(ctx.db);
       const workspaceSettings = await workspaceSettingsCollection.findOne({
         workspaceId: ctx.auth.workspaceId
       });
-      const workspace = await workspacesCollection.findOne({ _id: ctx.auth.workspaceId });
-      const contentGroup = workspace?.contentGroups.find((contentGroup) => {
-        return contentGroup._id.equals(contentGroupId);
+      const contentGroup = await contentGroupsCollection.findOne({
+        _id: new ObjectId(contentGroupId)
       });
       const contentPiece: UnderscoreID<FullContentPiece<ObjectId>> = {
         ...create,
@@ -466,8 +474,7 @@ const contentPiecesRouter = router({
         slug: create.slug || convertToSlug(create.title)
       };
 
-      if (!workspace) throw errors.notFound("workspace");
-      if (!contentGroup) throw errors.notFound("contentGroup");
+      if (contentGroup) throw errors.notFound("contentGroup");
 
       let referenceContentPiece: UnderscoreID<FullContentPiece<ObjectId>> | null = null;
 
@@ -500,7 +507,6 @@ const contentPiecesRouter = router({
       await contentPiecesCollection.insertOne(contentPiece);
       await contentsCollection.insertOne({
         _id: new ObjectId(),
-        contentGroupId: contentPiece.contentGroupId,
         workspaceId: contentPiece.workspaceId,
         contentPieceId: contentPiece._id,
         ...(content && { content: new Binary(jsonToBuffer(htmlToJSON(content))) })
@@ -572,14 +578,13 @@ const contentPiecesRouter = router({
       const extensionId = ctx.req.headers["x-vrite-extension-id"] as string | undefined;
       const contentPiecesCollection = getContentPiecesCollection(ctx.db);
       const contentPieceVariantsCollection = getContentPieceVariantsCollection(ctx.db);
+      const contentGroupsCollection = getContentGroupsCollection(ctx.db);
       const contentsCollection = getContentsCollection(ctx.db);
       const contentVariantsCollection = getContentVariantsCollection(ctx.db);
-      const workspacesCollection = getWorkspacesCollection(ctx.db);
       const workspaceSettingsCollection = getWorkspaceSettingsCollection(ctx.db);
       const workspaceSettings = await workspaceSettingsCollection.findOne({
         workspaceId: ctx.auth.workspaceId
       });
-      const workspace = await workspacesCollection.findOne({ _id: ctx.auth.workspaceId });
       const { variantId, variantName } = await getVariantDetails(ctx.db, variant);
       const baseContentPiece = await contentPiecesCollection.findOne({
         _id: new ObjectId(id)
@@ -601,14 +606,19 @@ const contentPiecesRouter = router({
         }
       }
 
-      const contentGroup = await workspace?.contentGroups.find((contentGroup) => {
-        return contentGroup._id.equals(contentPiece.contentGroupId);
-      });
+      const { contentGroupId } = contentPiece;
+      const contentGroups = await contentGroupsCollection
+        .find({
+          _id: {
+            $in: Array.isArray(contentGroupId) ? contentGroupId : [contentGroupId]
+          }
+        })
+        .toArray();
 
-      if (!contentGroup) throw errors.notFound("contentGroup");
+      if (!contentGroups.length) throw errors.notFound("contentGroup");
 
       if (
-        contentGroup.locked &&
+        contentGroups.some(({ locked }) => locked) &&
         (Object.keys(input).length > 1 || !input.contentGroupId) &&
         !extensionId
       ) {
@@ -635,13 +645,13 @@ const contentPiecesRouter = router({
       if (updatedDate === null) contentPieceUpdates.date = null;
 
       if (updatedContentGroupId) {
-        const newContentGroup = workspace?.contentGroups.find((contentGroup) => {
-          return contentGroup._id.equals(updatedContentGroupId);
+        const newContentGroup = await contentGroupsCollection.findOne({
+          _id: new ObjectId(updatedContentGroupId)
         });
 
         if (!newContentGroup) throw errors.notFound("contentGroup");
 
-        contentPieceUpdates.contentGroupId = new ObjectId(updatedContentGroupId);
+        contentPieceUpdates.contentGroupId = newContentGroup._id;
       }
 
       if (updatedCustomData) {
@@ -694,7 +704,7 @@ const contentPiecesRouter = router({
         }
       }
 
-      if (!updatedContentGroupId || contentPiece.contentGroupId.equals(updatedContentGroupId)) {
+      if (!updatedContentGroupId || `${contentPiece.contentGroupId}` === updatedContentGroupId) {
         runWebhooks(ctx, "contentPieceUpdated", webhookPayload(newContentPiece));
       } else {
         runWebhooks(ctx, "contentPieceRemoved", webhookPayload(contentPiece));
@@ -784,7 +794,7 @@ const contentPiecesRouter = router({
     .mutation(async ({ ctx, input }) => {
       const contentPiecesCollection = getContentPiecesCollection(ctx.db);
       const contentsCollection = getContentsCollection(ctx.db);
-      const workspacesCollection = getWorkspacesCollection(ctx.db);
+      const contentGroupsCollection = getContentGroupsCollection(ctx.db);
       const workspaceSettingsCollection = getWorkspaceSettingsCollection(ctx.db);
       const workspaceSettings = await workspaceSettingsCollection.findOne({
         workspaceId: ctx.auth.workspaceId
@@ -792,13 +802,9 @@ const contentPiecesRouter = router({
       const contentPiece = await contentPiecesCollection.findOne({
         _id: new ObjectId(input.id)
       });
-      const workspace = await workspacesCollection.findOne({ _id: ctx.auth.workspaceId });
-      const contentGroup = workspace?.contentGroups.find((contentGroup) => {
-        const contentGroupId = input.contentGroupId || contentPiece?.contentGroupId;
-
-        if (!contentGroupId) return false;
-
-        return contentGroup._id.equals(contentGroupId);
+      const contentGroup = await contentGroupsCollection.findOne({
+        _id: new ObjectId(input.contentGroupId || contentPiece?.contentGroupId),
+        workspaceId: ctx.auth.workspaceId
       });
 
       if (!contentGroup) throw errors.notFound("contentGroup");
@@ -870,7 +876,11 @@ const contentPiecesRouter = router({
                 }),
               id: `${contentPiece._id}`,
               contentGroupId: `${update.contentGroupId || contentPiece.contentGroupId}`,
-              locked: contentGroup?.locked || false,
+              locked:
+                (await isLocked(
+                  ctx.db,
+                  `${update.contentGroupId || contentPiece.contentGroupId}`
+                )) || false,
               workspaceId: `${contentPiece.workspaceId}`,
               date: contentPiece.date?.toISOString(),
               tags,

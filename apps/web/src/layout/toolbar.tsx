@@ -1,17 +1,33 @@
 import {
   mdiAccountCircle,
   mdiBookOpenBlankVariant,
+  mdiChevronDoubleRight,
+  mdiChevronLeft,
+  mdiChevronRight,
   mdiFullscreen,
   mdiGithub,
-  mdiMenu
+  mdiHexagonSlice6,
+  mdiMenu,
+  mdiSlashForward,
+  mdiViewDashboard,
+  mdiViewList
 } from "@mdi/js";
-import { Component, For, Show, createEffect, createMemo, createSignal, onCleanup } from "solid-js";
+import {
+  Component,
+  For,
+  Show,
+  createEffect,
+  createMemo,
+  createResource,
+  createSignal,
+  onCleanup
+} from "solid-js";
 import { Dynamic } from "solid-js/web";
 import { HocuspocusProvider } from "@hocuspocus/provider";
 import clsx from "clsx";
 import { createStore } from "solid-js/store";
 import { JSONContent } from "@vrite/sdk";
-import { useAuthenticatedContext, useUIContext } from "#context";
+import { useAuthenticatedContext, useClientContext, useUIContext } from "#context";
 import { ExportMenu, StatsMenu } from "#views/editor/menus";
 import { Button, Dropdown, Icon, IconButton, Tooltip } from "#components/primitives";
 import { logoIcon } from "#assets/icons";
@@ -159,6 +175,65 @@ const UserList: Component<{ provider?: HocuspocusProvider }> = (props) => {
         >
           +{state.users.length - shownUsers().length}
         </div>
+      </Show>
+    </div>
+  );
+};
+const Breadcrumb: Component = () => {
+  const { client } = useClientContext();
+  const { references } = useUIContext();
+  const [ancestors] = createResource(
+    () => references.ancestor,
+    (ancestor) => {
+      return client.contentGroups.listAncestors.query({ contentGroupId: ancestor?.id || "" });
+    },
+    { initialValue: [] }
+  );
+
+  return (
+    <div class="flex bg-gray-200 rounded-lg">
+      <Show when={references.ancestor && references.setAncestor}>
+        <IconButton
+          path={mdiHexagonSlice6}
+          variant="text"
+          text="soft"
+          class="m-0"
+          onClick={() => {
+            references.setAncestor!(null);
+          }}
+        />
+        <IconButton
+          path={mdiChevronRight}
+          variant="text"
+          text="soft"
+          class="m-0 p-0"
+          badge
+          hover={false}
+        />
+        <For each={[...ancestors(), references.ancestor!]}>
+          {(ancestor) => (
+            <>
+              <Button
+                variant="text"
+                text="soft"
+                class="m-0"
+                onClick={() => references.setAncestor!(ancestor)}
+              >
+                {ancestor.name}
+              </Button>
+              <Show when={ancestor.id !== references.ancestor!.id}>
+                <IconButton
+                  path={mdiChevronRight}
+                  variant="text"
+                  text="soft"
+                  class="m-0 p-0"
+                  badge
+                  hover={false}
+                />
+              </Show>
+            </>
+          )}
+        </For>
       </Show>
     </div>
   );
@@ -360,9 +435,53 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
   },
   default: () => {
     const { references } = useUIContext();
+    const [view, setView] = createSignal<"kanban" | "list">("kanban");
+    const [viewSelectorOpened, setViewSelectorOpened] = createSignal(false);
 
     return (
-      <div class="flex justify-end items-center w-full px-4">
+      <div class="flex justify-end items-center w-full px-4 gap-2">
+        <Dropdown
+          opened={viewSelectorOpened()}
+          setOpened={setViewSelectorOpened}
+          activatorButton={() => {
+            return (
+              <IconButton
+                path={view() === "kanban" ? mdiViewDashboard : mdiViewList}
+                class="m-0"
+                label={view() === "kanban" ? "Kanban" : "List"}
+                text="soft"
+              />
+            );
+          }}
+        >
+          <div class="gap-1 flex flex-col">
+            <IconButton
+              onClick={() => {
+                setView("kanban");
+                setViewSelectorOpened(false);
+              }}
+              path={mdiViewDashboard}
+              class="w-full m-0 justify-start"
+              label="Kanban"
+              variant={view() === "kanban" ? "solid" : "text"}
+              text={view() === "kanban" ? "primary" : "soft"}
+              color={view() === "kanban" ? "primary" : "base"}
+            />
+            <IconButton
+              onClick={() => {
+                setView("list");
+                setViewSelectorOpened(false);
+              }}
+              path={mdiViewList}
+              class="w-full m-0 justify-start"
+              label="List"
+              variant={view() === "list" ? "solid" : "text"}
+              text={view() === "list" ? "primary" : "soft"}
+              color={view() === "list" ? "primary" : "base"}
+            />
+          </div>
+        </Dropdown>
+        <Breadcrumb />
         <Show when={references.provider}>
           <UserList provider={references.provider} />
         </Show>

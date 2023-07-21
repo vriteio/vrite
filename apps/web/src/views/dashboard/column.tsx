@@ -1,18 +1,19 @@
 import { ContentPieceCard } from "./content-piece-card";
-import { useColumnsContext } from "./columns-context";
+import { useContentGroupsContext } from "./content-groups-context";
 import {
   Component,
   createEffect,
   createMemo,
+  createResource,
   createSignal,
   For,
   on,
-  onCleanup,
   Show
 } from "solid-js";
 import {
   mdiDotsVertical,
   mdiFileDocumentPlus,
+  mdiFolder,
   mdiFolderPlus,
   mdiIdentifier,
   mdiLock,
@@ -20,7 +21,6 @@ import {
   mdiTrashCan
 } from "@mdi/js";
 import clsx from "clsx";
-import { createStore } from "solid-js/store";
 import {
   Card,
   IconButton,
@@ -55,6 +55,7 @@ interface AddColumnProps {
 const AddColumn: Component<AddColumnProps> = (props) => {
   const { client } = useClientContext();
   const { notify } = useNotificationsContext();
+  const { ancestor } = useContentGroupsContext();
 
   return (
     <div
@@ -67,11 +68,20 @@ const AddColumn: Component<AddColumnProps> = (props) => {
         class="flex-col flex justify-center items-center w-full h-full m-0 mb-1 bg-transparent border-2 rounded-2xl dark:border-gray-700 text-gray-500 dark:text-gray-400 @hover-bg-gray-300 dark:@hover-bg-gray-700 @hover:cursor-pointer"
         color="contrast"
         onClick={async () => {
+          const ancestors: string[] = [];
+
           try {
-            await client.contentGroups.create.mutate({ name: "" });
+            if (ancestor()) {
+              ancestors.push(...ancestor()!.ancestors, ancestor()!.id);
+            }
+
+            await client.contentGroups.create.mutate({
+              name: "",
+              ancestors
+            });
             notify({ text: "New content group created", type: "success" });
           } catch (error) {
-            notify({ text: "Couldn't create new content group", type: "success" });
+            notify({ text: "Couldn't create new content group", type: "error" });
           }
         }}
       >
@@ -89,7 +99,7 @@ const Column: Component<ColumnProps> = (props) => {
   const { contentPieces, setContentPieces, loadMore, loading } = useContentPieces(
     props.contentGroup.id
   );
-  const { activeDraggable, setActiveDraggable } = useColumnsContext();
+  const { activeDraggable, setActiveDraggable, ancestor, setAncestor } = useContentGroupsContext();
   const scrollShadowController = createScrollShadowController();
   const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
   const [dropdownOpened, setDropdownOpened] = createSignal(false);
@@ -118,25 +128,41 @@ const Column: Component<ColumnProps> = (props) => {
     ];
 
     if (hasPermission("manageDashboard")) {
-      menuOptions.push({
-        icon: props.contentGroup.locked ? mdiLockOpen : mdiLock,
-        label: props.contentGroup.locked ? "Unlock" : "Lock",
-        async onClick() {
-          await client.contentGroups.update.mutate({
-            id: props.contentGroup.id,
-            locked: !props.contentGroup.locked
-          });
-          setContentPieces(
-            contentPieces().map((contentPiece) => {
-              return {
-                ...contentPiece,
-                locked: !props.contentGroup.locked
-              };
-            })
-          );
-          setDropdownOpened(false);
+      menuOptions.push(
+        {
+          icon: mdiFolderPlus,
+          label: "Subgroup",
+          onClick() {
+            const ancestors: string[] = [];
+
+            if (ancestor()) {
+              ancestors.push(...ancestor()!.ancestors, ancestor()!.id);
+            }
+
+            ancestors.push(props.contentGroup.id);
+            client.contentGroups.create.mutate({ ancestors, name: "" });
+          }
+        },
+        {
+          icon: props.contentGroup.locked ? mdiLockOpen : mdiLock,
+          label: props.contentGroup.locked ? "Unlock" : "Lock",
+          async onClick() {
+            await client.contentGroups.update.mutate({
+              id: props.contentGroup.id,
+              locked: !props.contentGroup.locked
+            });
+            setContentPieces(
+              contentPieces().map((contentPiece) => {
+                return {
+                  ...contentPiece,
+                  locked: !props.contentGroup.locked
+                };
+              })
+            );
+            setDropdownOpened(false);
+          }
         }
-      });
+      );
     }
 
     if (!props.contentGroup.locked && hasPermission("manageDashboard")) {
@@ -175,6 +201,9 @@ const Column: Component<ColumnProps> = (props) => {
     }
 
     return menuOptions;
+  });
+  const [subgroups] = createResource(() => {
+    return client.contentGroups.list.query({ ancestorId: props.contentGroup.id });
   });
 
   createEffect(
@@ -389,7 +418,25 @@ const Column: Component<ColumnProps> = (props) => {
           </div>
         </div>
         <Show when={!props.contentGroup.locked && hasPermission("manageDashboard")}>
-          <div class="w-full h-16" />
+          <div class={clsx("w-full", subgroups()?.length ? "h-24" : "h-16")} />
+          <Show when={subgroups()?.length}>
+            <div class="flex gap-1 w-full overflow-x-auto overflow-y-hidden scrollbar-sm absolute bottom-16 left-0 p-1">
+              <For each={subgroups() || []}>
+                {(subContentGroup) => {
+                  return (
+                    <IconButton
+                      onClick={() => setAncestor(props.contentGroup)}
+                      label={subContentGroup.name}
+                      path={mdiFolder}
+                      text="soft"
+                      class="m-0 whitespace-nowrap"
+                      variant="text"
+                    />
+                  );
+                }}
+              </For>
+            </div>
+          </Show>
           <Card
             color="soft"
             class="absolute bottom-0 left-0 flex items-center justify-center w-full h-16 m-0 border-b-0 rounded-none border-x-0"

@@ -15,3 +15,4 @@ export * from "./comments";
 export * from "./content-piece-variants";
 export * from "./content-variants";
 export * from "./variants";
+export * from "./content-groups";

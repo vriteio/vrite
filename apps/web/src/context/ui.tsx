@@ -24,9 +24,11 @@ interface StorageData {
 }
 interface ReferencesData {
   editedContentPiece?: App.ExtendedContentPieceWithAdditionalData<"locked">;
+  ancestor?: App.ContentGroup | null;
   activeVariant?: App.Variant;
   provider?: HocuspocusProvider;
   editor?: SolidEditor;
+  setAncestor?: (ancestor: App.ContentGroup | null) => void;
 }
 interface UIContextData {
   storage: Accessor<Partial<StorageData>>;

@@ -3,8 +3,7 @@ import axios from "axios";
 import { z } from "zod";
 import { zodId } from "#lib/mongo";
 import { WebhookEvent, getWebhooksCollection } from "#database/webhooks";
-import { contentPiece } from "#database/content-pieces";
-import { contentGroup } from "#database/workspaces";
+import { contentGroup, contentPiece } from "#database";
 import { workspaceMembership } from "#database/workspace-memberships";
 
 const webhookPayload = z.union([

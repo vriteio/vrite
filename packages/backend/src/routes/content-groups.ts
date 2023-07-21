@@ -2,14 +2,21 @@ import { ObjectId } from "mongodb";
 import { z } from "zod";
 import { procedure, router } from "#lib/trpc";
 import { isAuthenticated } from "#lib/middleware";
-import { zodId } from "#lib/mongo";
+import { UnderscoreID, zodId } from "#lib/mongo";
 import * as errors from "#lib/errors";
-import { ContentGroup, contentGroup, getWorkspacesCollection } from "#database/workspaces";
-import { getContentPiecesCollection } from "#database/content-pieces";
 import { createEventPublisher, createEventSubscription } from "#lib/pub-sub";
-import { getContentsCollection } from "#database/contents";
 import { runWebhooks } from "#lib/webhooks";
-import { getContentPieceVariantsCollection, getContentVariantsCollection } from "#database";
+import {
+  ContentGroup,
+  contentGroup,
+  getContentsCollection,
+  getContentPiecesCollection,
+  getContentGroupsCollection,
+  getContentPieceVariantsCollection,
+  getContentVariantsCollection,
+  getWorkspacesCollection,
+  FullContentGroup
+} from "#database";
 
 type ContentGroupEvent =
   | {
@@ -21,47 +28,65 @@ type ContentGroupEvent =
       data: Partial<ContentGroup> & { id: string };
     }
   | { action: "delete"; data: { id: string } }
-  | { action: "move"; data: { id: string; index: number } };
+  | { action: "move"; data: { id: string; ancestor: string | null } }
+  | { action: "reorder"; data: { id: string; index: number } };
 
 const publishEvent = createEventPublisher<ContentGroupEvent>(
   (workspaceId) => `contentGroups:${workspaceId}`
 );
 const basePath = "/content-groups";
 const authenticatedProcedure = procedure.use(isAuthenticated);
+const rearrangeContentGroups = (
+  contentGroups: Array<UnderscoreID<FullContentGroup<ObjectId>>>,
+  ids: ObjectId[]
+): ContentGroup[] => {
+  return ids
+    .map((id) => {
+      const contentGroup = contentGroups.find((contentGroup) => {
+        return contentGroup._id.equals(id);
+      });
+
+      if (!contentGroup) return null;
+
+      return {
+        id: `${contentGroup!._id}`,
+        descendants: contentGroup.descendants.map((id) => `${id}`),
+        ancestors: contentGroup.ancestors.map((id) => `${id}`),
+        name: contentGroup.name,
+        locked: contentGroup.locked
+      };
+    })
+    .filter(Boolean) as ContentGroup[];
+};
 const contentGroupsRouter = router({
   update: authenticatedProcedure
     .meta({
       openapi: { method: "PUT", path: basePath, protect: true },
       permissions: { session: ["manageDashboard"], token: ["contentGroups:write"] }
     })
-    .input(contentGroup.partial().required({ id: true }))
+    .input(
+      contentGroup.omit({ ancestors: true, descendants: true }).partial().required({ id: true })
+    )
     .output(z.void())
     .mutation(async ({ ctx, input }) => {
       const { id, ...update } = input;
-      const workspacesCollection = getWorkspacesCollection(ctx.db);
-      const workspace = await workspacesCollection.findOne({ _id: ctx.auth.workspaceId });
-      const contentGroup = workspace?.contentGroups.find((contentGroup) => {
-        return contentGroup._id.equals(id);
+      const contentGroupsCollection = getContentGroupsCollection(ctx.db);
+      const contentGroupId = new ObjectId(id);
+      const contentGroup = await contentGroupsCollection.findOne({
+        _id: contentGroupId,
+        workspaceId: ctx.auth.workspaceId
       });
 
       if (!contentGroup) throw errors.notFound("contentGroup");
 
-      await workspacesCollection.updateOne(
+      await contentGroupsCollection.updateOne(
         {
-          _id: ctx.auth.workspaceId
+          _id: contentGroupId,
+          workspaceId: ctx.auth.workspaceId
         },
         {
           $set: {
-            contentGroups: workspace!.contentGroups.map((contentGroup) => {
-              if (contentGroup._id.equals(id)) {
-                return {
-                  ...contentGroup,
-                  ...update
-                };
-              }
-
-              return contentGroup;
-            })
+            ...update
           }
         }
       );
@@ -72,37 +97,51 @@ const contentGroupsRouter = router({
       openapi: { method: "POST", path: basePath, protect: true },
       permissions: { session: ["manageDashboard"], token: ["contentGroups:write"] }
     })
-    .input(contentGroup.omit({ id: true }))
+    .input(contentGroup.omit({ descendants: true, id: true }))
     .output(z.object({ id: zodId() }))
     .mutation(async ({ ctx, input }) => {
+      const contentGroupsCollection = getContentGroupsCollection(ctx.db);
       const workspacesCollection = getWorkspacesCollection(ctx.db);
-      const workspace = await workspacesCollection.findOne({ _id: ctx.auth.workspaceId });
-
-      if (!workspace) throw errors.notFound("workspace");
-
-      const contentGroup = {
-        ...input,
-        _id: new ObjectId()
+      const contentGroup: UnderscoreID<FullContentGroup<ObjectId>> = {
+        name: input.name,
+        locked: false,
+        descendants: [],
+        workspaceId: ctx.auth.workspaceId,
+        _id: new ObjectId(),
+        ...(input.ancestors && {
+          ancestors: input.ancestors.map((ancestor) => new ObjectId(ancestor))
+        })
       };
 
-      await workspacesCollection.updateOne(
-        {
-          _id: ctx.auth.workspaceId
-        },
-        {
-          $push: {
-            contentGroups: contentGroup
-          }
-        }
-      );
+      if (input.ancestors.length > 0) {
+        const { matchedCount } = await contentGroupsCollection.updateOne(
+          { _id: new ObjectId(input.ancestors[input.ancestors.length - 1]) },
+          { $push: { descendants: contentGroup._id } }
+        );
+
+        if (!matchedCount) throw errors.notFound("contentGroup");
+      } else {
+        await workspacesCollection.updateOne(
+          { _id: ctx.auth.workspaceId },
+          { $push: { contentGroups: contentGroup._id } }
+        );
+      }
+
+      await contentGroupsCollection.insertOne(contentGroup);
       publishEvent(ctx, `${ctx.auth.workspaceId}`, {
         action: "create",
         data: {
           id: `${contentGroup._id}`,
+          descendants: [],
           ...input
         }
       });
-      runWebhooks(ctx, "contentGroupAdded", { id: `${contentGroup._id}`, ...input });
+      runWebhooks(ctx, "contentGroupAdded", {
+        ...input,
+        id: `${contentGroup._id}`,
+        ancestors: contentGroup.ancestors.map((id) => `${id}`),
+        descendants: contentGroup.descendants.map((id) => `${id}`)
+      });
 
       return { id: `${contentGroup._id}` };
     }),
@@ -119,26 +158,35 @@ const contentGroupsRouter = router({
     .output(z.void())
     .mutation(async ({ ctx, input }) => {
       const workspacesCollection = getWorkspacesCollection(ctx.db);
+      const contentGroupsCollection = getContentGroupsCollection(ctx.db);
       const contentPiecesCollection = getContentPiecesCollection(ctx.db);
       const contentsCollection = getContentsCollection(ctx.db);
       const contentPieceVariantsCollection = getContentPieceVariantsCollection(ctx.db);
       const contentVariantsCollection = getContentVariantsCollection(ctx.db);
-      const workspace = await workspacesCollection.findOne({ _id: ctx.auth.workspaceId });
       const contentGroupId = new ObjectId(input.id);
-      const contentGroup = workspace?.contentGroups.find((contentGroup) => {
-        return contentGroup._id.equals(contentGroupId);
+      const contentGroup = await contentGroupsCollection.findOne({
+        _id: contentGroupId,
+        workspaceId: ctx.auth.workspaceId
       });
 
       if (!contentGroup) throw errors.notFound("contentGroup");
 
-      await workspacesCollection.updateOne(
-        {
-          _id: new ObjectId(ctx.auth.workspaceId)
-        },
-        {
-          $pull: { contentGroups: { _id: contentGroupId } }
-        }
-      );
+      await contentGroupsCollection.deleteOne({
+        _id: contentGroupId,
+        workspaceId: ctx.auth.workspaceId
+      });
+
+      if (contentGroup.ancestors.length > 0) {
+        await contentGroupsCollection.updateOne(
+          { _id: contentGroup.ancestors[contentGroup.ancestors.length - 1] },
+          { $pull: { descendants: contentGroupId } }
+        );
+      } else {
+        await workspacesCollection.updateOne(
+          { _id: ctx.auth.workspaceId },
+          { $pull: { contentGroups: contentGroupId } }
+        );
+      }
 
       const contentPieceIds = await contentPiecesCollection
         .find({ contentGroupId })
@@ -154,52 +202,237 @@ const contentGroupsRouter = router({
         action: "delete",
         data: input
       });
-      runWebhooks(ctx, "contentGroupAdded", { ...contentGroup, id: `${contentGroup._id}` });
+      runWebhooks(ctx, "contentGroupAdded", {
+        ...contentGroup,
+        ancestors: contentGroup.ancestors.map((id) => `${id}`),
+        descendants: contentGroup.descendants.map((id) => `${id}`),
+        id: `${contentGroup._id}`
+      });
+    }),
+  listAncestors: authenticatedProcedure
+    .meta({
+      openapi: { method: "GET", path: `${basePath}/list`, protect: true },
+      permissions: { token: ["contentGroups:read"] }
+    })
+    .input(
+      z.object({
+        contentGroupId: zodId()
+      })
+    )
+    .output(z.array(contentGroup))
+    .query(async ({ ctx, input }) => {
+      const contentGroupsCollection = getContentGroupsCollection(ctx.db);
+      const contentGroup = await contentGroupsCollection.findOne({
+        _id: new ObjectId(input.contentGroupId),
+        workspaceId: ctx.auth.workspaceId
+      });
+
+      if (!contentGroup) throw errors.notFound("contentGroup");
+
+      const { ancestors } = contentGroup;
+      const contentGroups = await contentGroupsCollection
+        .find({
+          workspaceId: ctx.auth.workspaceId,
+          _id: { $in: ancestors }
+        })
+        .toArray();
+
+      return rearrangeContentGroups(contentGroups, ancestors);
     }),
   list: authenticatedProcedure
     .meta({
       openapi: { method: "GET", path: `${basePath}/list`, protect: true },
       permissions: { token: ["contentGroups:read"] }
     })
-    .input(z.void())
+    .input(
+      z
+        .object({
+          ancestorId: zodId().optional()
+        })
+        .optional()
+    )
     .output(z.array(contentGroup))
-    .query(async ({ ctx }) => {
+    .query(async ({ ctx, input }) => {
+      const contentGroupsCollection = getContentGroupsCollection(ctx.db);
       const workspacesCollection = getWorkspacesCollection(ctx.db);
-      const workspace = await workspacesCollection.findOne({ _id: ctx.auth.workspaceId });
+      const ids: ObjectId[] = [];
+      const ancestorId = input?.ancestorId ? new ObjectId(input.ancestorId) : null;
 
-      if (!workspace) throw errors.notFound("workspace");
+      if (ancestorId) {
+        const ancestor = await contentGroupsCollection.findOne({ _id: ancestorId });
 
-      return workspace.contentGroups.map((contentGroup) => {
-        return {
-          ...contentGroup,
-          id: `${contentGroup._id}`
-        };
-      });
+        if (!ancestor) throw errors.notFound("contentGroup");
+
+        ids.push(...ancestor.descendants);
+      } else {
+        const workspace = await workspacesCollection.findOne({ _id: ctx.auth.workspaceId });
+
+        if (!workspace) throw errors.notFound("workspace");
+
+        ids.push(...workspace.contentGroups);
+      }
+
+      const contentGroups = await contentGroupsCollection
+        .find({
+          workspaceId: ctx.auth.workspaceId,
+          _id: { $in: ids }
+        })
+        .toArray();
+
+      return rearrangeContentGroups(contentGroups, ids);
     }),
   move: authenticatedProcedure
     .meta({
       permissions: { session: ["manageDashboard"] }
     })
-    .input(z.object({ id: zodId(), index: z.number() }))
+    .input(
+      z.object({
+        id: zodId(),
+        ancestor: zodId().or(z.null())
+      })
+    )
     .mutation(async ({ ctx, input }) => {
+      const contentGroupsCollection = getContentGroupsCollection(ctx.db);
       const workspacesCollection = getWorkspacesCollection(ctx.db);
-      const workspace = await workspacesCollection.findOne({ _id: ctx.auth.workspaceId });
-      const contentGroup = workspace?.contentGroups.find((contentGroup) => {
-        return contentGroup._id.equals(input.id);
+      const contentGroup = await contentGroupsCollection.findOne({
+        _id: new ObjectId(input.id),
+        workspaceId: ctx.auth.workspaceId
       });
 
-      if (!workspace || !contentGroup) throw errors.notFound("contentGroup");
+      let ancestors: ObjectId[] = [];
 
-      const newContentGroups = [...workspace!.contentGroups];
+      if (!contentGroup) throw errors.notFound("contentGroup");
 
-      newContentGroups.splice(newContentGroups.indexOf(contentGroup), 1);
-      newContentGroups.splice(input.index, 0, contentGroup);
-      await workspacesCollection.updateOne(
-        { _id: workspace!._id },
-        { $set: { contentGroups: newContentGroups } }
+      // Remove from current ancestor
+      if (contentGroup.ancestors.length > 0) {
+        const { matchedCount } = await contentGroupsCollection.updateOne(
+          {
+            _id: contentGroup.ancestors[contentGroup.ancestors.length - 1],
+            workspaceId: ctx.auth.workspaceId
+          },
+          { $pull: { descendants: contentGroup._id } }
+        );
+
+        if (!matchedCount) throw errors.notFound("contentGroup");
+      } else {
+        const { matchedCount } = await workspacesCollection.updateOne(
+          {
+            _id: ctx.auth.workspaceId
+          },
+          {
+            $pull: { contentGroups: contentGroup._id }
+          }
+        );
+
+        if (!matchedCount) throw errors.notFound("contentGroup");
+      }
+
+      // Add to new ancestor
+      if (input.ancestor) {
+        const ancestor = await contentGroupsCollection.findOne({
+          _id: new ObjectId(input.ancestor),
+          workspaceId: ctx.auth.workspaceId
+        });
+
+        if (!ancestor) throw errors.notFound("contentGroup");
+
+        ancestors = [...ancestor.ancestors, ancestor._id];
+        await contentGroupsCollection.updateOne(
+          { _id: ancestor._id },
+          { $push: { descendants: contentGroup._id } }
+        );
+        await contentGroupsCollection.updateOne({ _id: contentGroup._id }, { $set: { ancestors } });
+      } else {
+        ancestors = [];
+        await workspacesCollection.updateOne(
+          { _id: ctx.auth.workspaceId },
+          { $push: { contentGroups: contentGroup._id } }
+        );
+        await contentGroupsCollection.updateOne({ _id: contentGroup._id }, { $set: { ancestors } });
+      }
+
+      // Update descendants' ancestors
+      const descendants = await contentGroupsCollection
+        .find({
+          ancestors: contentGroup._id
+        })
+        .toArray();
+
+      await contentGroupsCollection.bulkWrite(
+        descendants.map((descendant) => {
+          const descendantAncestors = [
+            ...ancestors,
+            ...descendant.ancestors.slice(
+              descendant.ancestors.findIndex((_id) => contentGroup._id.equals(_id))
+            )
+          ];
+
+          return {
+            updateOne: {
+              filter: { _id: descendant._id },
+              update: { $set: { ancestors: descendantAncestors } }
+            }
+          };
+        })
       );
       publishEvent(ctx, `${ctx.auth.workspaceId}`, {
         action: "move",
+        data: input
+      });
+    }),
+  reorder: authenticatedProcedure
+    .meta({
+      permissions: { session: ["manageDashboard"] }
+    })
+    .input(
+      z.object({
+        id: zodId(),
+        index: z.number()
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const contentGroupsCollection = getContentGroupsCollection(ctx.db);
+      const workspacesCollection = getWorkspacesCollection(ctx.db);
+      const contentGroup = await contentGroupsCollection.findOne({
+        _id: new ObjectId(input.id)
+      });
+
+      if (!contentGroup) throw errors.notFound("contentGroup");
+
+      if (contentGroup.ancestors.length > 0) {
+        const ancestor = await contentGroupsCollection.findOne({
+          _id: contentGroup.ancestors[contentGroup.ancestors.length - 1]
+        });
+
+        if (!ancestor) throw errors.notFound("contentGroup");
+
+        const newDescendants = [...ancestor.descendants];
+
+        newDescendants.splice(newDescendants.indexOf(contentGroup._id), 1);
+        newDescendants.splice(input.index, 0, contentGroup._id);
+        await contentGroupsCollection.updateOne(
+          { _id: ancestor._id },
+          { $set: { descendants: newDescendants } }
+        );
+      } else {
+        const workspace = await workspacesCollection.findOne({
+          _id: ctx.auth.workspaceId
+        });
+
+        if (!workspace) throw errors.notFound("workspace");
+
+        const newContentGroups = [...workspace.contentGroups];
+
+        newContentGroups.splice(newContentGroups.indexOf(contentGroup._id), 1);
+        newContentGroups.splice(input.index, 0, contentGroup._id);
+        await workspacesCollection.updateOne(
+          { _id: ctx.auth.workspaceId },
+          { $set: { contentGroups: newContentGroups } }
+        );
+      }
+
+      publishEvent(ctx, `${ctx.auth.workspaceId}`, {
+        action: "reorder",
         data: input
       });
     }),
