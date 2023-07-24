@@ -1,14 +1,8 @@
-import { TitledCard } from "#components/fragments";
 import { mdiInformation, mdiTagText, mdiTrashCan, mdiTune } from "@mdi/js";
 import { Show, For, Component, createSignal } from "solid-js";
+import { TitledCard } from "#components/fragments";
 import { Button, Card, Heading, IconButton, Tooltip } from "#components/primitives";
-import {
-  App,
-  hasPermission,
-  useClientContext,
-  useConfirmationContext,
-  useNotificationsContext
-} from "#context";
+import { App, hasPermission, useClient, useConfirmationModal, useNotifications } from "#context";
 
 interface RolesCardProps {
   roles: Array<App.ExtendedRole<"baseType">>;
@@ -25,9 +19,9 @@ const RoleDetails: Component<{
   onDelete?(): void;
   onEdit?(): void;
 }> = (props) => {
-  const { confirmDelete } = useConfirmationContext();
-  const { notify } = useNotificationsContext();
-  const { client } = useClientContext();
+  const { confirmDelete } = useConfirmationModal();
+  const { notify } = useNotifications();
+  const client = useClient();
   const [loading, setLoading] = createSignal(false);
   const handleDeleteRole = async (): Promise<void> => {
     setLoading(true);

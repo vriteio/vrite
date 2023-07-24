@@ -1,6 +1,6 @@
-import { Accessor, onCleanup } from "solid-js";
+import { Accessor, createSignal, onCleanup } from "solid-js";
 import { createStore } from "solid-js/store";
-import { useClientContext, App } from "#context/client";
+import { useClient, App } from "#context/client";
 
 interface UseContentGroups {
   contentGroups: Accessor<App.ContentGroup[]>;
@@ -8,8 +8,9 @@ interface UseContentGroups {
   setContentGroups(contentGroups: App.ContentGroup[]): void;
 }
 
-const useContentGroups = (): UseContentGroups => {
-  const { client } = useClientContext();
+const useContentGroups = (initialAncestorId?: string): UseContentGroups => {
+  const [ancestorId, setAncestorId] = createSignal(initialAncestorId);
+  const client = useClient();
   const [state, setState] = createStore<{
     contentGroups: App.ContentGroup[];
   }>({
@@ -30,13 +31,17 @@ const useContentGroups = (): UseContentGroups => {
   const refetch = async (ancestorId?: string): Promise<void> => {
     const contentGroups = await client.contentGroups.list.query({ ancestorId });
 
+    setAncestorId(ancestorId);
     setState("contentGroups", contentGroups);
   };
   const contentGroupsChanges = client.contentGroups.changes.subscribe(undefined, {
     onData({ action, data }) {
       switch (action) {
         case "create":
-          setState({ contentGroups: [...state.contentGroups, data] });
+          if (data.ancestors[data.ancestors.length - 1] === ancestorId()) {
+            setState({ contentGroups: [...state.contentGroups, data] });
+          }
+
           break;
         case "update":
           setState(
@@ -60,7 +65,7 @@ const useContentGroups = (): UseContentGroups => {
   onCleanup(() => {
     contentGroupsChanges.unsubscribe();
   });
-  refetch();
+  refetch(ancestorId());
 
   return {
     refetch,

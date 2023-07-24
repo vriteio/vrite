@@ -13,7 +13,7 @@ import { SolidEditor } from "@vrite/tiptap-solid";
 import { Component, For, Show, createMemo } from "solid-js";
 import clsx from "clsx";
 import { Card, IconButton, Tooltip } from "#components/primitives";
-import { useUIContext } from "#context";
+import { breakpoints } from "#lib/utils";
 
 interface TableMenuProps {
   state: {
@@ -23,7 +23,6 @@ interface TableMenuProps {
 }
 
 const TableMenu: Component<TableMenuProps> = (props) => {
-  const { breakpoints } = useUIContext();
   const hasHeader = createMemo(() => {
     return props.state.container?.querySelector("tr:first-child > th") !== null;
   });

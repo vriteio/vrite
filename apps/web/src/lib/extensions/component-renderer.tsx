@@ -4,7 +4,7 @@ import { marked } from "marked";
 import { createStore } from "solid-js/store";
 import { ExtensionSpec, ExtensionView } from "@vrite/extensions";
 import { Dynamic } from "solid-js/web";
-import { useExtensionsContext } from "#context";
+import { useExtensions } from "#context";
 import { Button, IconButton, Loader, Tooltip } from "#components/primitives";
 import { InputField } from "#components/fragments";
 
@@ -91,6 +91,7 @@ const components = {
 };
 const renderer = new marked.Renderer();
 const linkRenderer = renderer.link;
+
 renderer.link = (href, title, text) => {
   const html = linkRenderer.call(renderer, href, title, text);
 
@@ -100,8 +101,9 @@ renderer.link = (href, title, text) => {
 
   return html.replace(/^<a /, '<a target="_blank" rel="nofollow" ');
 };
+
 const ComponentRenderer: Component<ComponentRendererProps> = (props) => {
-  const { callFunction } = useExtensionsContext();
+  const { callFunction } = useExtensions();
   const { context, extension } = useViewContext();
 
   if (typeof props.view === "string") {

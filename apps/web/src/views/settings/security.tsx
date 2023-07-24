@@ -4,11 +4,11 @@ import { Show, createMemo, createResource, createSignal, onCleanup } from "solid
 import { InputField, TitledCard } from "#components/fragments";
 import { Button, IconButton, Loader, Tooltip } from "#components/primitives";
 import { validatePassword } from "#lib/utils";
-import { App, useClientContext, useNotificationsContext } from "#context";
+import { App, useClient, useNotifications } from "#context";
 
 const SecuritySection: SettingsSectionComponent = () => {
-  const { client } = useClientContext();
-  const { notify } = useNotificationsContext();
+  const client = useClient();
+  const { notify } = useNotifications();
   const [newPassword, setNewPassword] = createSignal("");
   const [oldPassword, setOldPassword] = createSignal("");
   const [hideOldPassword, setHideOldPassword] = createSignal(true);

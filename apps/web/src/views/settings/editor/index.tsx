@@ -6,14 +6,14 @@ import { SetStoreFunction, createStore } from "solid-js/store";
 import { debounce } from "@solid-primitives/scheduled";
 import { Heading, IconButton, Loader } from "#components/primitives";
 import { MiniCodeEditor, TitledCard } from "#components/fragments";
-import { App, hasPermission, useClientContext, useNotificationsContext } from "#context";
+import { App, hasPermission, useClient, useNotifications } from "#context";
 
 const useWorkspaceSettings = (): {
   loading: Accessor<boolean>;
   workspaceSettings: Omit<App.WorkspaceSettings, "id">;
   setWorkspaceSettings: SetStoreFunction<Omit<App.WorkspaceSettings, "id">>;
 } => {
-  const { client } = useClientContext();
+  const client = useClient();
   const [loading, setLoading] = createSignal(true);
   const [workspaceSettings, setWorkspaceSettings] = createStore<Omit<App.WorkspaceSettings, "id">>({
     marks: [],
@@ -46,8 +46,8 @@ const useWorkspaceSettings = (): {
   };
 };
 const EditorSection: SettingsSectionComponent = () => {
-  const { notify } = useNotificationsContext();
-  const { client } = useClientContext();
+  const { notify } = useNotifications();
+  const client = useClient();
   const { loading, workspaceSettings, setWorkspaceSettings } = useWorkspaceSettings();
   const updateMarks = debounce(() => {
     client.workspaceSettings.update.mutate({

@@ -211,7 +211,7 @@ const contentGroupsRouter = router({
     }),
   listAncestors: authenticatedProcedure
     .meta({
-      openapi: { method: "GET", path: `${basePath}/list`, protect: true },
+      openapi: { method: "GET", path: `${basePath}/list-ancestors`, protect: true },
       permissions: { token: ["contentGroups:read"] }
     })
     .input(
@@ -357,24 +357,26 @@ const contentGroupsRouter = router({
           ancestors: contentGroup._id
         })
         .toArray();
+      const writeOperations = descendants.map((descendant) => {
+        const descendantAncestors = [
+          ...ancestors,
+          ...descendant.ancestors.slice(
+            descendant.ancestors.findIndex((_id) => contentGroup._id.equals(_id))
+          )
+        ];
 
-      await contentGroupsCollection.bulkWrite(
-        descendants.map((descendant) => {
-          const descendantAncestors = [
-            ...ancestors,
-            ...descendant.ancestors.slice(
-              descendant.ancestors.findIndex((_id) => contentGroup._id.equals(_id))
-            )
-          ];
+        return {
+          updateOne: {
+            filter: { _id: descendant._id },
+            update: { $set: { ancestors: descendantAncestors } }
+          }
+        };
+      });
 
-          return {
-            updateOne: {
-              filter: { _id: descendant._id },
-              update: { $set: { ancestors: descendantAncestors } }
-            }
-          };
-        })
-      );
+      if (writeOperations.length > 0) {
+        await contentGroupsCollection.bulkWrite(writeOperations);
+      }
+
       publishEvent(ctx, `${ctx.auth.workspaceId}`, {
         action: "move",
         data: input

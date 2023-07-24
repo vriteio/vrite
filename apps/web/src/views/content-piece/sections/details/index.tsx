@@ -1,10 +1,10 @@
-import { Component } from "solid-js";
-import { App } from "#context";
 import { CanonicalLinkInput } from "./canonical-link";
 import { DateInput } from "./date";
 import { TagsInput } from "./tags";
 import { MembersInput } from "./members";
 import { SlugInput } from "./slug";
+import { Component } from "solid-js";
+import { App } from "#context";
 
 interface DetailsSectionProps {
   slug: string;

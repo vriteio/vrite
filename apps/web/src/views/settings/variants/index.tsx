@@ -10,10 +10,10 @@ import {
   on,
   onCleanup
 } from "solid-js";
-import { mdiFormatListBulleted, mdiPlusCircle, mdiPuzzle, mdiTrashCan, mdiTune } from "@mdi/js";
+import { mdiFormatListBulleted, mdiPlusCircle, mdiTrashCan, mdiTune } from "@mdi/js";
 import { createStore } from "solid-js/store";
 import { TitledCard } from "#components/fragments";
-import { App, hasPermission, useClientContext, useNotificationsContext } from "#context";
+import { App, hasPermission, useClient, useNotifications } from "#context";
 import { Button, Card, Heading, IconButton, Loader, Tooltip } from "#components/primitives";
 
 interface VariantDetailsProps {
@@ -26,7 +26,7 @@ const useVariants = (): {
   loading: Accessor<boolean>;
   variants(): Array<App.Variant>;
 } => {
-  const { client } = useClientContext();
+  const client = useClient();
   const [loading, setLoading] = createSignal(false);
   const [state, setState] = createStore<{
     variants: Array<App.Variant>;
@@ -74,8 +74,8 @@ const useVariants = (): {
   return { loading, variants: () => state.variants };
 };
 const VariantDetails: Component<VariantDetailsProps> = (props) => {
-  const { client } = useClientContext();
-  const { notify } = useNotificationsContext();
+  const client = useClient();
+  const { notify } = useNotifications();
   const [loading, setLoading] = createSignal(false);
 
   return (

@@ -474,7 +474,7 @@ const contentPiecesRouter = router({
         slug: create.slug || convertToSlug(create.title)
       };
 
-      if (contentGroup) throw errors.notFound("contentGroup");
+      if (!contentGroup) throw errors.notFound("contentGroup");
 
       let referenceContentPiece: UnderscoreID<FullContentPiece<ObjectId>> | null = null;
 

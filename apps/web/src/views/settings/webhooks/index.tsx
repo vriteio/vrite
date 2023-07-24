@@ -14,7 +14,7 @@ import {
 import { mdiFormatListBulleted, mdiPlusCircle, mdiPuzzle, mdiTrashCan, mdiTune } from "@mdi/js";
 import { createStore } from "solid-js/store";
 import { TitledCard } from "#components/fragments";
-import { App, hasPermission, useClientContext, useNotificationsContext } from "#context";
+import { App, hasPermission, useClient, useNotifications } from "#context";
 import { Button, Card, Heading, IconButton, Loader, Tooltip } from "#components/primitives";
 
 interface WebhookDetailsProps {
@@ -26,7 +26,7 @@ interface WebhookDetailsProps {
 const useContentGroups = (): {
   contentGroups: Accessor<App.ContentGroup[]>;
 } => {
-  const { client } = useClientContext();
+  const client = useClient();
   const [state, setState] = createStore<{
     contentGroups: App.ContentGroup[];
   }>({
@@ -73,7 +73,7 @@ const useWebhooks = (): {
   loadMore(): void;
   webhooks(): Array<App.Webhook & { extension?: boolean }>;
 } => {
-  const { client } = useClientContext();
+  const client = useClient();
   const [loading, setLoading] = createSignal(false);
   const [moreToLoad, setMoreToLoad] = createSignal(true);
   const [state, setState] = createStore<{
@@ -129,8 +129,8 @@ const useWebhooks = (): {
   return { loadMore, loading, moreToLoad, webhooks: () => state.webhooks };
 };
 const WebhookDetails: Component<WebhookDetailsProps> = (props) => {
-  const { client } = useClientContext();
-  const { notify } = useNotificationsContext();
+  const client = useClient();
+  const { notify } = useNotifications();
   const [loading, setLoading] = createSignal(false);
 
   return (

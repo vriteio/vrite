@@ -5,12 +5,12 @@ import { Show, createEffect, createMemo, createResource, createSignal, onCleanup
 import { createStore } from "solid-js/store";
 import { InputField, TitledCard } from "#components/fragments";
 import { Button, Loader, Heading, IconButton } from "#components/primitives";
-import { App, useClientContext, useNotificationsContext } from "#context";
+import { App, useClient, useNotifications } from "#context";
 import { validateEmail, validateUsername } from "#lib/utils";
 
 const ProfileSection: SettingsSectionComponent = (props) => {
-  const { client } = useClientContext();
-  const { notify } = useNotificationsContext();
+  const client = useClient();
+  const { notify } = useNotifications();
   const [initialLoad, setInitialLoad] = createSignal(true);
   const [loading, setLoading] = createSignal(false);
   const [edited, setEdited] = createSignal(false);

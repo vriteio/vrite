@@ -1,15 +1,15 @@
-import { useExtensionsContext } from "#context";
-import { TitledCard } from "#components/fragments";
-import { Loader } from "#components/primitives";
+import { ExtensionCard } from "./extension-card";
 import { mdiPuzzle, mdiDownload } from "@mdi/js";
 import { Component, createResource, Show, For } from "solid-js";
-import { ExtensionCard } from "./extension-card";
+import { useExtensions } from "#context";
+import { TitledCard } from "#components/fragments";
+import { Loader } from "#components/primitives";
 import { ExtensionDetails } from "#context/extensions";
 
 const ExtensionsMenuView: Component<{
   setOpenedExtension(extension: ExtensionDetails): void;
 }> = (props) => {
-  const { getAvailableExtensions, installedExtensions } = useExtensionsContext();
+  const { getAvailableExtensions, installedExtensions } = useExtensions();
   const [availableExtensions] = createResource(getAvailableExtensions, { initialValue: [] });
 
   return (

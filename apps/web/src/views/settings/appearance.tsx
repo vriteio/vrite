@@ -1,4 +1,3 @@
-import { TitledCard } from "#components/fragments";
 import {
   mdiWeatherNight,
   mdiWeatherSunny,
@@ -8,7 +7,8 @@ import {
 } from "@mdi/js";
 import clsx from "clsx";
 import { Component, For } from "solid-js";
-import { App, useAuthenticatedContext, useClientContext } from "#context";
+import { TitledCard } from "#components/fragments";
+import { App, useAuthenticatedUserData, useClient } from "#context";
 import { IconButton, Button } from "#components/primitives";
 
 interface ThemePickerProps {
@@ -44,8 +44,8 @@ const ThemePicker: Component<ThemePickerProps> = (props) => {
   );
 };
 const AppearanceSection: Component = () => {
-  const { client } = useClientContext();
-  const { userSettings } = useAuthenticatedContext();
+  const client = useClient();
+  const { userSettings } = useAuthenticatedUserData();
   const accentColors: App.AccentColor[] = ["energy", "neon", "sublime", "sunrise", "flow"];
 
   return (

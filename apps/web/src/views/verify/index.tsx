@@ -1,13 +1,13 @@
 import { mdiCheckCircle, mdiLinkVariantOff } from "@mdi/js";
 import { useNavigate } from "@solidjs/router";
 import { Component, Match, Show, Switch, createMemo, createSignal } from "solid-js";
-import { App, useClientContext, useUIContext } from "#context";
+import { App, useClient, useLocalStorage } from "#context";
 import { Button, Card, Heading, Icon, Loader } from "#components/primitives";
 import { navigateAndReload } from "#lib/utils";
 
 const VerifyView: Component = () => {
-  const { client } = useClientContext();
-  const { setStorage } = useUIContext();
+  const client = useClient();
+  const { setStorage } = useLocalStorage();
   const [verified, setVerified] = createSignal(false);
   const [navigating, setNavigating] = createSignal(false);
   const [newWorkspaceId, setNewWorkspaceId] = createSignal<string | null>(null);

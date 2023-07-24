@@ -1,6 +1,6 @@
 import { Component } from "solid-js";
 import { MiniCodeEditor } from "#components/fragments";
-import { useNotificationsContext } from "#context";
+import { useNotifications } from "#context";
 
 interface CustomDataSectionProps {
   customData: Record<string, any>;
@@ -10,7 +10,7 @@ interface CustomDataSectionProps {
 }
 
 const CustomDataSection: Component<CustomDataSectionProps> = (props) => {
-  const { notify } = useNotificationsContext();
+  const { notify } = useNotifications();
   const handleSave = (code: string): void => {
     try {
       const json = JSON.parse(code);

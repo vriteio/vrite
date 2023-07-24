@@ -9,10 +9,10 @@ import { formatCode } from "#lib/code-editor";
 import { Card } from "#components/primitives";
 import { createRef, selectionClasses } from "#lib/utils";
 import {
-  useAppearanceContext,
-  useAuthenticatedContext,
-  useNotificationsContext,
-  useUIContext
+  useAppearance,
+  useAuthenticatedUserData,
+  useNotifications,
+  useLocalStorage
 } from "#context";
 
 interface CodeBlockViewProps {
@@ -41,10 +41,9 @@ const getExtension = (
 };
 const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
   const { state } = useSolidNodeView<CodeBlockAttributes>();
-  const { breakpoints } = useUIContext();
-  const { workspaceSettings = () => null } = useAuthenticatedContext() || {};
-  const { codeEditorTheme = () => "dark" } = useAppearanceContext() || {};
-  const { notify } = useNotificationsContext();
+  const { workspaceSettings = () => null } = useAuthenticatedUserData() || {};
+  const { codeEditorTheme = () => "dark" } = useAppearance() || {};
+  const { notify } = useNotifications();
   const attrs = (): CodeBlockAttributes => state().node.attrs;
   const options = (): CodeBlockOptions => state().extension.options;
   const [editorContainerRef, setEditorContainerRef] = createRef<HTMLElement | null>(null);

@@ -4,14 +4,14 @@ import { Accessor, Show, createSignal, onCleanup } from "solid-js";
 import { SetStoreFunction, createStore } from "solid-js/store";
 import { Loader } from "#components/primitives";
 import { InputField, TitledCard } from "#components/fragments";
-import { App, useClientContext } from "#context";
+import { App, useClient } from "#context";
 
 const useMetadataSettings = (): {
   loading: Accessor<boolean>;
   metadataSettings: App.MetadataSettings;
   setMetadataSettings: SetStoreFunction<App.MetadataSettings>;
 } => {
-  const { client } = useClientContext();
+  const client = useClient();
   const [loading, setLoading] = createSignal(true);
   const [metadataSettings, setMetadataSettings] = createStore<App.MetadataSettings>({});
 
@@ -40,7 +40,7 @@ const useMetadataSettings = (): {
 };
 const MetadataSection: SettingsSectionComponent = () => {
   const { loading, metadataSettings, setMetadataSettings } = useMetadataSettings();
-  const { client } = useClientContext();
+  const client = useClient();
 
   return (
     <>

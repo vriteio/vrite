@@ -1,7 +1,7 @@
 import { mdiLink } from "@mdi/js";
-import { Tooltip, IconButton, Input } from "#components/primitives";
 import { Component, Show } from "solid-js";
 import { convert as convertToSlug } from "url-slug";
+import { Tooltip, IconButton, Input } from "#components/primitives";
 
 interface SlugInputProps {
   slug: string;

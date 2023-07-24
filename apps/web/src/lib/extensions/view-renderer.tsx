@@ -1,9 +1,9 @@
 import { ComponentRenderer } from "./component-renderer";
 import { useViewContext } from "./view-context";
 import { ExtensionSpec, ExtensionView } from "@vrite/extensions";
-import { Loader } from "#components/primitives";
 import { Component, For, Show, createSignal } from "solid-js";
-import { useExtensionsContext } from "#context";
+import { Loader } from "#components/primitives";
+import { useExtensions } from "#context";
 
 interface ViewRendererProps {
   spec: ExtensionSpec;
@@ -11,9 +11,10 @@ interface ViewRendererProps {
 }
 
 const ViewRenderer: Component<ViewRendererProps> = (props) => {
-  const { callFunction } = useExtensionsContext();
+  const { callFunction } = useExtensions();
   const [initiated, setInitiated] = createSignal(false);
   const { context, setContext, extension } = useViewContext();
+
   let initFunction = "";
   let views: ExtensionView | ExtensionView[] = [];
 
@@ -24,7 +25,7 @@ const ViewRenderer: Component<ViewRendererProps> = (props) => {
     views = props.spec.contentPieceView || [];
     initFunction = props.spec.lifecycle?.["on:initContentPieceView"] || "";
   } else {
-    const blockActionId = props.view.split(":")[1];
+    const [, blockActionId] = props.view.split(":");
     const blockAction = props.spec.blockActions?.find((blockAction) => {
       return blockAction.id === blockActionId;
     });

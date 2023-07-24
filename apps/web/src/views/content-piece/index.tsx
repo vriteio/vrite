@@ -21,14 +21,16 @@ import { useLocation, useNavigate } from "@solidjs/router";
 import { Image } from "#lib/editor";
 import { Card, IconButton, Dropdown, Loader, Tooltip } from "#components/primitives";
 import {
-  useConfirmationContext,
+  useConfirmationModal,
   App,
-  useClientContext,
-  useUIContext,
+  useClient,
+  useLocalStorage,
   hasPermission,
-  useCacheContext
+  useCache
 } from "#context";
 import { MiniEditor } from "#components/fragments";
+import { breakpoints } from "#lib/utils";
+import { useOpenedContentPiece } from "#lib/composables";
 
 dayjs.extend(CustomParseFormat);
 
@@ -39,12 +41,14 @@ const ContentPieceView: Component = () => {
     { label: "Extensions", id: "extensions", icon: mdiPuzzleOutline },
     { label: "Variants", id: "variants", icon: mdiCardsOutline }
   ];
-  const { useOpenedContentPiece } = useCacheContext();
-  const { client } = useClientContext();
-  const { setStorage, breakpoints } = useUIContext();
-  const { confirmDelete } = useConfirmationContext();
-  const { contentPiece, setContentPiece, loading, activeVariant, setActiveVariant } =
-    useOpenedContentPiece();
+  const cache = useCache();
+  const { contentPiece, setContentPiece, loading, activeVariant, setActiveVariant } = cache(
+    "openedContentPiece",
+    useOpenedContentPiece
+  );
+  const client = useClient();
+  const { setStorage } = useLocalStorage();
+  const { confirmDelete } = useConfirmationModal();
   const location = useLocation();
   const navigate = useNavigate();
   const [dropdownMenuOpened, setDropdownMenuOpened] = createSignal(false);

@@ -3,8 +3,8 @@ import { Show, For, createResource, Component, createSignal, createEffect } from
 import { createStore } from "solid-js/store";
 import clsx from "clsx";
 import { InputField, TitledCard } from "#components/fragments";
-import { Loader, Select, Heading, Button } from "#components/primitives";
-import { useClientContext, App, useNotificationsContext } from "#context";
+import { Loader, Button } from "#components/primitives";
+import { useClient, App, useNotifications } from "#context";
 
 interface ConfigureRoleSubsectionProps {
   editedRoleId?: string;
@@ -13,8 +13,8 @@ interface ConfigureRoleSubsectionProps {
 }
 
 const ConfigureRoleSubsection: Component<ConfigureRoleSubsectionProps> = (props) => {
-  const { client } = useClientContext();
-  const { notify } = useNotificationsContext();
+  const client = useClient();
+  const { notify } = useNotifications();
   const [loading, setLoading] = createSignal(false);
   const [editedRoleData] = createResource(() => {
     if (!props.editedRoleId) return null;

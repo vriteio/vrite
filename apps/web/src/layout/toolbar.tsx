@@ -1,14 +1,12 @@
 import {
   mdiAccountCircle,
   mdiBookOpenBlankVariant,
-  mdiChevronDoubleRight,
-  mdiChevronLeft,
   mdiChevronRight,
+  mdiFolder,
   mdiFullscreen,
   mdiGithub,
   mdiHexagonSlice6,
   mdiMenu,
-  mdiSlashForward,
   mdiViewDashboard,
   mdiViewList
 } from "@mdi/js";
@@ -20,6 +18,7 @@ import {
   createMemo,
   createResource,
   createSignal,
+  on,
   onCleanup
 } from "solid-js";
 import { Dynamic } from "solid-js/web";
@@ -27,10 +26,20 @@ import { HocuspocusProvider } from "@hocuspocus/provider";
 import clsx from "clsx";
 import { createStore } from "solid-js/store";
 import { JSONContent } from "@vrite/sdk";
-import { useAuthenticatedContext, useClientContext, useUIContext } from "#context";
+import Sortable from "sortablejs";
+import {
+  App,
+  useAuthenticatedUserData,
+  useCache,
+  useClient,
+  useLocalStorage,
+  useSharedState
+} from "#context";
 import { ExportMenu, StatsMenu } from "#views/editor/menus";
 import { Button, Dropdown, Icon, IconButton, Tooltip } from "#components/primitives";
 import { logoIcon } from "#assets/icons";
+import { breakpoints } from "#lib/utils";
+import { useContentGroups } from "#lib/composables";
 
 interface UserAwarenessData {
   awarenessId: number;
@@ -67,7 +76,7 @@ const profileIconColors = {
   emerald: "text-emerald-500"
 };
 const UserList: Component<{ provider?: HocuspocusProvider }> = (props) => {
-  const { profile } = useAuthenticatedContext();
+  const { profile } = useAuthenticatedUserData();
   const [state, setState] = createStore<{
     users: UserAwarenessData[];
   }>({ users: [] });
@@ -130,7 +139,7 @@ const UserList: Component<{ provider?: HocuspocusProvider }> = (props) => {
   });
 
   return (
-    <div class="flex pr-2">
+    <div class="flex">
       <For each={shownUsers()}>
         {(user) => {
           return (
@@ -179,27 +188,45 @@ const UserList: Component<{ provider?: HocuspocusProvider }> = (props) => {
     </div>
   );
 };
-const Breadcrumb: Component = () => {
-  const { client } = useClientContext();
-  const { references } = useUIContext();
-  const [ancestors] = createResource(
-    () => references.ancestor,
-    (ancestor) => {
-      return client.contentGroups.listAncestors.query({ contentGroupId: ancestor?.id || "" });
-    },
-    { initialValue: [] }
+const Breadcrumb: Component<{
+  ancestor?: App.ContentGroup | null;
+  setAncestor?(contentGroup: App.ContentGroup | null): void;
+}> = (props) => {
+  const client = useClient();
+  const cache = useCache();
+  const { contentGroups, setContentGroups } = cache("contentGroups", () => {
+    return useContentGroups();
+  });
+  const [highlight, setHighlight] = createSignal("");
+  const [renderedAncestors, setRenderedAncestors] = createSignal<App.ContentGroup[]>([]);
+
+  createEffect(
+    on(
+      () => props.ancestor,
+      async (ancestor) => {
+        if (ancestor) {
+          const ancestors = await client.contentGroups.listAncestors.query({
+            contentGroupId: ancestor.id || ""
+          });
+
+          setRenderedAncestors([...ancestors, ancestor]);
+        } else {
+          setRenderedAncestors([]);
+        }
+      }
+    )
   );
 
   return (
-    <div class="flex bg-gray-200 rounded-lg">
-      <Show when={references.ancestor && references.setAncestor}>
+    <div class="hidden md:flex bg-gray-200 dark:bg-gray-900 rounded-lg">
+      <Show when={props.ancestor && props.setAncestor}>
         <IconButton
           path={mdiHexagonSlice6}
           variant="text"
           text="soft"
           class="m-0"
           onClick={() => {
-            references.setAncestor!(null);
+            props.setAncestor!(null);
           }}
         />
         <IconButton
@@ -210,18 +237,76 @@ const Breadcrumb: Component = () => {
           badge
           hover={false}
         />
-        <For each={[...ancestors(), references.ancestor!]}>
+        <For each={renderedAncestors()}>
           {(ancestor) => (
             <>
-              <Button
-                variant="text"
-                text="soft"
-                class="m-0"
-                onClick={() => references.setAncestor!(ancestor)}
-              >
-                {ancestor.name}
-              </Button>
-              <Show when={ancestor.id !== references.ancestor!.id}>
+              <div>
+                <IconButton
+                  variant={highlight() === ancestor.id ? "solid" : "text"}
+                  text={highlight() === ancestor.id ? "primary" : "soft"}
+                  color={highlight() === ancestor.id ? "primary" : "base"}
+                  class="m-0"
+                  path={mdiFolder}
+                  label={ancestor.name}
+                  onClick={() => props.setAncestor!(ancestor)}
+                  ref={(el) => {
+                    let sorting = false;
+
+                    if (props.ancestor.id === ancestor.id) return;
+
+                    setTimeout(() => {
+                      Sortable.create(el.parentElement, {
+                        group: "shared",
+                        ghostClass: "!hidden",
+                        onStart() {
+                          sorting = true;
+                        },
+                        onEnd() {
+                          sorting = false;
+                        },
+                        onAdd(evt) {
+                          const el = evt.item;
+
+                          console.log(el.parentNode);
+                          el.parentNode.removeChild(el);
+                          setHighlight("");
+                          client.contentGroups.move.mutate({
+                            id: el.dataset.contentGroupId || "",
+                            ancestor: ancestor.id
+                          });
+                          setContentGroups(
+                            contentGroups().filter(
+                              (contentGroup) => contentGroup.id !== el.dataset.contentGroupId
+                            )
+                          );
+                        }
+                      });
+
+                      const targetElement = el!;
+
+                      console.log(el);
+                      targetElement.addEventListener("dragover", function (evt) {
+                        evt.preventDefault();
+                      });
+                      targetElement.addEventListener("dragenter", function (evt) {
+                        console.log("dragenter", evt.relatedTarget);
+
+                        if (!targetElement.contains(evt.relatedTarget)) {
+                          // Here is where you add the styling of targetElement;
+                          setHighlight(ancestor.id);
+                        }
+                      });
+                      targetElement.addEventListener("dragleave", function (evt) {
+                        if (!targetElement.contains(evt.relatedTarget)) {
+                          // Here is where you remove the styling of targetElement
+                          setHighlight("");
+                        }
+                      });
+                    }, 3000);
+                  }}
+                ></IconButton>
+              </div>
+              <Show when={ancestor.id !== props.ancestor!.id}>
                 <IconButton
                   path={mdiChevronRight}
                   variant="text"
@@ -240,7 +325,9 @@ const Breadcrumb: Component = () => {
 };
 const toolbarViews: Record<string, Component<Record<string, any>>> = {
   editorStandalone: () => {
-    const { references, setStorage, breakpoints } = useUIContext();
+    const createSharedSignal = useSharedState();
+    const [sharedEditor] = createSharedSignal("editor");
+    const { setStorage } = useLocalStorage();
     const [menuOpened, setMenuOpened] = createSignal(false);
 
     return (
@@ -270,15 +357,15 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
                 )}
               >
                 <div class="gap-1 flex flex-col">
-                  <Show when={references.editor}>
+                  <Show when={sharedEditor()}>
                     <StatsMenu
-                      editor={references.editor!}
+                      editor={sharedEditor()!}
                       onClick={() => setMenuOpened(false)}
                       class="w-full justify-start"
                       wrapperClass="w-full"
                     />
                     <ExportMenu
-                      content={references.editor!.getJSON() as JSONContent}
+                      content={sharedEditor()!.getJSON() as JSONContent}
                       onClick={() => setMenuOpened(false)}
                       class="w-full justify-start"
                       wrapperClass="w-full"
@@ -318,9 +405,9 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
           }
         >
           <div class="gap-2 flex">
-            <Show when={references.editor}>
-              <StatsMenu editor={references.editor!} />
-              <ExportMenu content={references.editor!.getJSON() as JSONContent} />
+            <Show when={sharedEditor()}>
+              <StatsMenu editor={sharedEditor()!} />
+              <ExportMenu content={sharedEditor()!.getJSON() as JSONContent} />
             </Show>
             <IconButton
               onClick={() => {
@@ -362,13 +449,17 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
     );
   },
   editor: () => {
-    const { references, breakpoints, setStorage } = useUIContext();
+    const createSharedSignal = useSharedState();
+    const [sharedEditor] = createSharedSignal("editor");
+    const [sharedProvider] = createSharedSignal("provider");
+    const [sharedEditedContentPiece] = createSharedSignal("editedContentPiece");
+    const { setStorage } = useLocalStorage();
     const [menuOpened, setMenuOpened] = createSignal(false);
 
     return (
       <div class="flex-row flex justify-start items-center px-4 w-full gap-2">
-        <Show when={references.provider}>
-          <UserList provider={references.provider!} />
+        <Show when={sharedProvider()}>
+          <UserList provider={sharedProvider()!} />
         </Show>
         <div class="flex-1" />
         <Show
@@ -382,17 +473,17 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
               )}
             >
               <div class="overflow-hidden w-full h-full flex flex-col gap-1">
-                <Show when={references.editor}>
+                <Show when={sharedEditor()}>
                   <StatsMenu
-                    editor={references.editor!}
+                    editor={sharedEditor()!}
                     onClick={() => setMenuOpened(false)}
                     class="w-full justify-start"
                     wrapperClass="w-full"
                   />
                 </Show>
-                <Show when={references.editedContentPiece}>
+                <Show when={sharedEditedContentPiece()}>
                   <ExportMenu
-                    editedContentPiece={references.editedContentPiece!}
+                    editedContentPiece={sharedEditedContentPiece()!}
                     onClick={() => setMenuOpened(false)}
                     class="w-full justify-start"
                     wrapperClass="w-full"
@@ -413,11 +504,11 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
             </Dropdown>
           }
         >
-          <Show when={references.editor}>
-            <StatsMenu editor={references.editor!} />
+          <Show when={sharedEditor()}>
+            <StatsMenu editor={sharedEditor()!} />
           </Show>
-          <Show when={references.editedContentPiece}>
-            <ExportMenu editedContentPiece={references.editedContentPiece!} />
+          <Show when={sharedEditedContentPiece()}>
+            <ExportMenu editedContentPiece={sharedEditedContentPiece()!} />
           </Show>
           <IconButton
             onClick={() => {
@@ -434,9 +525,11 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
     );
   },
   default: () => {
-    const { references } = useUIContext();
-    const [view, setView] = createSignal<"kanban" | "list">("kanban");
+    const createSharedSignal = useSharedState();
+    const [sharedProvider] = createSharedSignal("provider");
+    const [sharedAncestor, setSharedAncestor] = createSharedSignal("ancestor");
     const [viewSelectorOpened, setViewSelectorOpened] = createSignal(false);
+    const [view, setView] = createSharedSignal("dashboardView", "kanban");
 
     return (
       <div class="flex justify-end items-center w-full px-4 gap-2">
@@ -481,17 +574,17 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
             />
           </div>
         </Dropdown>
-        <Breadcrumb />
-        <Show when={references.provider}>
-          <UserList provider={references.provider} />
-        </Show>
+        <Breadcrumb ancestor={sharedAncestor()} setAncestor={setSharedAncestor} />
         <div class="flex-1" />
+        <Show when={sharedProvider()}>
+          <UserList provider={sharedProvider()!} />
+        </Show>
       </div>
     );
   }
 };
 const Toolbar: Component<{ class?: string }> = (props) => {
-  const { storage } = useUIContext();
+  const { storage } = useLocalStorage();
   const view = createMemo(() => {
     return toolbarViews[storage().toolbarView || "default"];
   });

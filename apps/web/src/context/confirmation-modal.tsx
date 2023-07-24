@@ -13,35 +13,35 @@ import {
 import clsx from "clsx";
 import { Card, Heading, IconButton, Input, Overlay } from "#components/primitives";
 
-interface ConfirmConfig {
+interface ConfirmationModalConfig {
   content?: JSX.Element;
   header: string;
   onCancel?(): void;
   onConfirm?(): void;
 }
-interface ConfirmationContextData {
-  confirmDelete(config: ConfirmConfig): void;
-  confirmAction(config: ConfirmConfig): void;
-  confirmWithInput(config: ConfirmConfig & { input: string }): void;
+interface ConfirmationModalContextData {
+  confirmDelete(config: ConfirmationModalConfig): void;
+  confirmAction(config: ConfirmationModalConfig): void;
+  confirmWithInput(config: ConfirmationModalConfig & { input: string }): void;
 }
 
-const ConfirmationContext = createContext<ConfirmationContextData>();
-const ConfirmationContextProvider: ParentComponent = (props) => {
-  const [config, setConfig] = createSignal<(ConfirmConfig & { input?: string }) | null>();
+const ConfirmationModalContext = createContext<ConfirmationModalContextData>();
+const ConfirmationModalProvider: ParentComponent = (props) => {
+  const [config, setConfig] = createSignal<(ConfirmationModalConfig & { input?: string }) | null>();
   const [type, setType] = createSignal<"action" | "delete" | "input" | null>(null);
   const [input, setInput] = createSignal<string>("");
   const filled = createMemo(() => {
     return type() !== "input" || input() === config()?.input;
   });
-  const confirmDelete = (config: ConfirmConfig): void => {
+  const confirmDelete = (config: ConfirmationModalConfig): void => {
     setType("delete");
     setConfig(config);
   };
-  const confirmAction = (config: ConfirmConfig): void => {
+  const confirmAction = (config: ConfirmationModalConfig): void => {
     setType("action");
     setConfig(config);
   };
-  const confirmWithInput = (config: ConfirmConfig & { input: string }): void => {
+  const confirmWithInput = (config: ConfirmationModalConfig & { input: string }): void => {
     setType("input");
     setConfig(config);
   };
@@ -51,7 +51,7 @@ const ConfirmationContextProvider: ParentComponent = (props) => {
   };
 
   return (
-    <ConfirmationContext.Provider value={{ confirmDelete, confirmAction, confirmWithInput }}>
+    <ConfirmationModalContext.Provider value={{ confirmDelete, confirmAction, confirmWithInput }}>
       {props.children}
       <Overlay opened={Boolean(config())} onOverlayClick={cancel}>
         <Show when={config()} keyed>
@@ -115,11 +115,11 @@ const ConfirmationContextProvider: ParentComponent = (props) => {
           }}
         </Show>
       </Overlay>
-    </ConfirmationContext.Provider>
+    </ConfirmationModalContext.Provider>
   );
 };
-const useConfirmationContext = (): ConfirmationContextData => {
-  return useContext(ConfirmationContext)!;
+const useConfirmationModal = (): ConfirmationModalContextData => {
+  return useContext(ConfirmationModalContext)!;
 };
 
-export { ConfirmationContextProvider, useConfirmationContext };
+export { ConfirmationModalProvider, useConfirmationModal };

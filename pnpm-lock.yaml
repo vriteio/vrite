@@ -63,6 +63,9 @@ importers:
       y-protocols:
         specifier: ^1.0.5
         version: 1.0.5
+      yjs:
+        specifier: ^13.5.45
+        version: 13.5.45
     devDependencies:
       '@vrite/scripts':
         specifier: workspace:*

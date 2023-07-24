@@ -1,5 +1,5 @@
-import { ContentPieceCard } from "./content-piece-card";
-import { useContentGroupsContext } from "./content-groups-context";
+import { ContentPieceCard } from "../../content-piece-card";
+import { useContentGroupsContext } from "../../content-groups-context";
 import {
   Component,
   createEffect,
@@ -14,6 +14,7 @@ import {
   mdiDotsVertical,
   mdiFileDocumentPlus,
   mdiFolder,
+  mdiFolderOpen,
   mdiFolderPlus,
   mdiIdentifier,
   mdiLock,
@@ -21,6 +22,7 @@ import {
   mdiTrashCan
 } from "@mdi/js";
 import clsx from "clsx";
+import SortableLib from "sortablejs";
 import {
   Card,
   IconButton,
@@ -33,28 +35,30 @@ import {
 import { MiniEditor, ScrollShadow, createScrollShadowController } from "#components/fragments";
 import {
   App,
-  useClientContext,
-  useNotificationsContext,
-  useConfirmationContext,
-  useUIContext,
+  useClient,
+  useNotifications,
+  useConfirmationModal,
+  useLocalStorage,
   hasPermission,
-  useCacheContext
+  useCache
 } from "#context";
 import { createRef } from "#lib/utils";
+import { useContentGroups, useContentPieces } from "#lib/composables";
 
 interface ColumnProps {
   contentGroup: App.ContentGroup;
   index: number;
   onDragStart?(): void;
   onDragEnd?(): void;
+  remove?(id: string): void;
 }
 interface AddColumnProps {
   class?: string;
 }
 
 const AddColumn: Component<AddColumnProps> = (props) => {
-  const { client } = useClientContext();
-  const { notify } = useNotificationsContext();
+  const client = useClient();
+  const { notify } = useNotifications();
   const { ancestor } = useContentGroupsContext();
 
   return (
@@ -92,19 +96,23 @@ const AddColumn: Component<AddColumnProps> = (props) => {
   );
 };
 const Column: Component<ColumnProps> = (props) => {
-  const { useContentPieces } = useCacheContext();
-  const { notify } = useNotificationsContext();
-  const { confirmDelete } = useConfirmationContext();
-  const { setStorage } = useUIContext();
-  const { contentPieces, setContentPieces, loadMore, loading } = useContentPieces(
-    props.contentGroup.id
+  const cache = useCache();
+  const { contentPieces, setContentPieces, loadMore, loading } = cache(
+    `contentPieces:${props.contentGroup.id}`,
+    () => {
+      return useContentPieces(props.contentGroup.id);
+    }
   );
-  const { activeDraggable, setActiveDraggable, ancestor, setAncestor } = useContentGroupsContext();
+  const { notify } = useNotifications();
+  const { confirmDelete } = useConfirmationModal();
+  const { setStorage } = useLocalStorage();
+  const { activeDraggable, setActiveDraggable, setAncestor, draggingGroup, setDraggingGroup } =
+    useContentGroupsContext();
   const scrollShadowController = createScrollShadowController();
   const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
   const [dropdownOpened, setDropdownOpened] = createSignal(false);
   const [sortableRef, setSortableRef] = createRef<HTMLElement | null>(null);
-  const { client } = useClientContext();
+  const client = useClient();
   const menuOptions = createMemo(() => {
     const menuOptions: Array<{
       icon: string;
@@ -128,41 +136,25 @@ const Column: Component<ColumnProps> = (props) => {
     ];
 
     if (hasPermission("manageDashboard")) {
-      menuOptions.push(
-        {
-          icon: mdiFolderPlus,
-          label: "Subgroup",
-          onClick() {
-            const ancestors: string[] = [];
-
-            if (ancestor()) {
-              ancestors.push(...ancestor()!.ancestors, ancestor()!.id);
-            }
-
-            ancestors.push(props.contentGroup.id);
-            client.contentGroups.create.mutate({ ancestors, name: "" });
-          }
-        },
-        {
-          icon: props.contentGroup.locked ? mdiLockOpen : mdiLock,
-          label: props.contentGroup.locked ? "Unlock" : "Lock",
-          async onClick() {
-            await client.contentGroups.update.mutate({
-              id: props.contentGroup.id,
-              locked: !props.contentGroup.locked
-            });
-            setContentPieces(
-              contentPieces().map((contentPiece) => {
-                return {
-                  ...contentPiece,
-                  locked: !props.contentGroup.locked
-                };
-              })
-            );
-            setDropdownOpened(false);
-          }
+      menuOptions.push({
+        icon: props.contentGroup.locked ? mdiLockOpen : mdiLock,
+        label: props.contentGroup.locked ? "Unlock" : "Lock",
+        async onClick() {
+          await client.contentGroups.update.mutate({
+            id: props.contentGroup.id,
+            locked: !props.contentGroup.locked
+          });
+          setContentPieces(
+            contentPieces().map((contentPiece) => {
+              return {
+                ...contentPiece,
+                locked: !props.contentGroup.locked
+              };
+            })
+          );
+          setDropdownOpened(false);
         }
-      );
+      });
     }
 
     if (!props.contentGroup.locked && hasPermission("manageDashboard")) {
@@ -202,9 +194,7 @@ const Column: Component<ColumnProps> = (props) => {
 
     return menuOptions;
   });
-  const [subgroups] = createResource(() => {
-    return client.contentGroups.list.query({ ancestorId: props.contentGroup.id });
-  });
+  const [highlight, setHighlight] = createSignal(false);
 
   createEffect(
     on(contentPieces, () => {
@@ -220,31 +210,178 @@ const Column: Component<ColumnProps> = (props) => {
     >
       <Card class="flex flex-col items-start justify-start h-full p-4 relative m-0 mb-1 pr-2 md:pr-1 overflow-hidden content-group select-none">
         <div class="flex items-center justify-center mb-2 w-full">
-          <Show when={props.contentGroup.locked}>
-            <Tooltip text="Edit-locked" side="right">
-              <IconButton
-                badge
-                path={mdiLock}
-                variant="text"
-                class="m-0 mr-1"
-                text="base"
-                color="primary"
-              />
-            </Tooltip>
-          </Show>
-          <MiniEditor
-            class="inline-flex flex-1 overflow-x-auto content-group-name scrollbar-hidden"
-            content="paragraph"
-            initialValue={props.contentGroup.name}
-            readOnly={props.contentGroup.locked || !hasPermission("manageDashboard")}
-            placeholder="Group name"
-            onBlur={(editor) => {
-              client.contentGroups.update.mutate({
-                id: props.contentGroup.id,
-                name: editor.getText()
+          <div
+            class="flex flex-1 justify-center items-center cursor-pointer overflow-hidden"
+            ref={(el) => {
+              let sorting = false;
+
+              SortableLib.create(el, {
+                group: {
+                  name: "shared",
+                  put: (to, from, dragEl) => {
+                    return dragEl.dataset.contentGroupId !== props.contentGroup.id;
+                  }
+                },
+                ghostClass: "!hidden",
+                revertOnSpill: true,
+                onRemove() {
+                  console.log("remove");
+                },
+                onChange() {
+                  console.log("change");
+                },
+                onUpdate() {
+                  console.log("update");
+                },
+                onAdd(evt) {
+                  const el = evt.item;
+
+                  el.parentNode.removeChild(el);
+                  setHighlight(false);
+                  client.contentGroups.move.mutate({
+                    id: el.dataset.contentGroupId || "",
+                    ancestor: props.contentGroup.id
+                  });
+                  props.remove?.(el.dataset.contentGroupId || "");
+                },
+                onStart() {
+                  console.log("start");
+                  sorting = true;
+                  setDraggingGroup(props.contentGroup);
+                },
+                onEnd() {
+                  console.log("end");
+                  sorting = false;
+                  setDraggingGroup(null);
+                }
+              });
+
+              const targetElement = el.firstElementChild!;
+
+              targetElement.addEventListener("dragover", function (evt) {
+                evt.preventDefault();
+              });
+              targetElement.addEventListener("dragenter", function (evt) {
+                console.log(
+                  "dragenter",
+                  draggingGroup(),
+                  !targetElement.contains(evt.relatedTarget)
+                );
+
+                if (!targetElement.contains(evt.relatedTarget)) {
+                  // Here is where you add the styling of targetElement;
+                  setHighlight(true);
+                }
+              });
+              targetElement.addEventListener("dragleave", function (evt) {
+                if (!targetElement.contains(evt.relatedTarget)) {
+                  // Here is where you remove the styling of targetElement
+                  setHighlight(false);
+                }
+              });
+              // For fallback
+              targetElement.addEventListener("mouseenter", function (evt) {
+                if (draggingGroup()) {
+                  // Here is where you change the styling of targetElement
+                  targetElement.style.backgroundColor = "red";
+                }
+              });
+              targetElement.addEventListener("mouseleave", function (evt) {
+                if (draggingGroup()) {
+                  // Here is where you remove the styling of targetElement
+                  targetElement.style.backgroundColor = "";
+                }
+              });
+              el.addEventListener("touchmove", function (evt) {
+                if (!draggingGroup()) {
+                  return;
+                }
+
+                const x = evt.touches[0].clientX;
+                const y = evt.touches[0].clientY;
+                const elementAtTouchPoint = document.elementFromPoint(x, y);
+
+                if (
+                  elementAtTouchPoint === targetElement ||
+                  /* In case of a ghost element, the element at touch point
+                     is the ghost element and thus we need to check if the parent
+                     of the ghost element is the targetElement. */
+                  elementAtTouchPoint.parentNode === targetElement
+                ) {
+                  targetElement.style.backgroundColor = "red";
+                } else {
+                  // Here is where you remove the styling of targetElement
+                  targetElement.style.backgroundColor = "";
+                }
               });
             }}
-          />
+          >
+            <div
+              class="flex flex-1 justify-center items-center overflow-hidden rounded-lg"
+              data-content-group-id={props.contentGroup.id}
+            >
+              <Show
+                when={props.contentGroup.locked}
+                fallback={
+                  <div class="h-8 w-8 relative group mr-1">
+                    <IconButton
+                      path={mdiFolder}
+                      variant="text"
+                      class={clsx(
+                        "m-0 absolute top-0 left-0 group-hover:opacity-0 transition-opacity duration-200 ease-in-out",
+                        highlight() && "!opacity-0"
+                      )}
+                      hover={false}
+                      onClick={() => {
+                        setAncestor(props.contentGroup);
+                      }}
+                    />
+                    <IconButton
+                      path={mdiFolderOpen}
+                      variant="text"
+                      class={clsx(
+                        "m-0 absolute top-0 left-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 ease-in-out",
+                        highlight() && "!opacity-100"
+                      )}
+                      color={highlight() ? "primary" : "base"}
+                      onClick={() => {
+                        setAncestor(props.contentGroup);
+                      }}
+                    />
+                  </div>
+                }
+              >
+                <Tooltip text="Edit-locked" side="right">
+                  <IconButton
+                    badge
+                    path={mdiLock}
+                    variant="text"
+                    class="m-0 mr-1"
+                    text="base"
+                    color="primary"
+                  />
+                </Tooltip>
+              </Show>
+              <MiniEditor
+                class={clsx(
+                  "inline-flex flex-1 overflow-x-auto content-group-name scrollbar-hidden hover:cursor-text",
+                  highlight() && "highlight-text"
+                )}
+                content="paragraph"
+                initialValue={props.contentGroup.name}
+                readOnly={
+                  draggingGroup() || props.contentGroup.locked || !hasPermission("manageDashboard")
+                }
+                placeholder="Group name"
+                onBlur={(editor) => {
+                  client.contentGroups.update.mutate({
+                    id: props.contentGroup.id,
+                    name: editor.getText()
+                  });
+                }}
+              />
+            </div>
+          </div>
           <Dropdown
             placement="bottom-end"
             opened={dropdownOpened()}
@@ -418,25 +555,7 @@ const Column: Component<ColumnProps> = (props) => {
           </div>
         </div>
         <Show when={!props.contentGroup.locked && hasPermission("manageDashboard")}>
-          <div class={clsx("w-full", subgroups()?.length ? "h-24" : "h-16")} />
-          <Show when={subgroups()?.length}>
-            <div class="flex gap-1 w-full overflow-x-auto overflow-y-hidden scrollbar-sm absolute bottom-16 left-0 p-1">
-              <For each={subgroups() || []}>
-                {(subContentGroup) => {
-                  return (
-                    <IconButton
-                      onClick={() => setAncestor(props.contentGroup)}
-                      label={subContentGroup.name}
-                      path={mdiFolder}
-                      text="soft"
-                      class="m-0 whitespace-nowrap"
-                      variant="text"
-                    />
-                  );
-                }}
-              </For>
-            </div>
-          </Show>
+          <div class="w-full h-16" />
           <Card
             color="soft"
             class="absolute bottom-0 left-0 flex items-center justify-center w-full h-16 m-0 border-b-0 rounded-none border-x-0"

@@ -10,8 +10,8 @@ import { SolidEditor } from "@vrite/tiptap-solid";
 import clsx from "clsx";
 import { Component, For, Show, createEffect, createMemo, createSignal, on } from "solid-js";
 import { createRef } from "#lib/utils";
-import { ViewContextProvider, ViewRenderer, useViewContext } from "#lib/extensions";
-import { ExtensionDetails, useExtensionsContext } from "#context";
+import { ViewContextProvider, ViewRenderer } from "#lib/extensions";
+import { ExtensionDetails, useExtensions } from "#context";
 import { Button, Dropdown, Tooltip } from "#components/primitives";
 import { ScrollShadow } from "#components/fragments";
 
@@ -48,7 +48,7 @@ const ExtensionIcon: Component<ExtensionIconProps> = (props) => {
   );
 };
 const BlockActionMenu: Component<BlockActionMenuProps> = (props) => {
-  const { installedExtensions } = useExtensionsContext();
+  const { installedExtensions } = useExtensions();
   const [computeDropdownPosition, setComputeDropdownPosition] = createRef(() => {});
   const [containerRef, setContainerRef] = createRef<HTMLDivElement | null>(null);
   const [range, setRange] = createSignal<Range | null>(props.state.range);

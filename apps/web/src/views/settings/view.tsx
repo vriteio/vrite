@@ -28,7 +28,7 @@ import { Motion, Presence } from "@motionone/solid";
 import { createRef } from "#lib/utils";
 import { ScrollShadow } from "#components/fragments";
 import { Card, Heading, IconButton } from "#components/primitives";
-import { useUIContext } from "#context";
+import { useLocalStorage } from "#context";
 
 interface SubSection {
   label: string;
@@ -43,7 +43,7 @@ type SettingsSectionComponent = Component<{
 }>;
 
 const SettingsView: Component = () => {
-  const { storage, setStorage } = useUIContext();
+  const { setStorage } = useLocalStorage();
   const [currentSectionId, setCurrentSectionId] = createSignal("menu");
   const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
   const [subSection, setSubSection] = createSignal<SubSection | null>(null);

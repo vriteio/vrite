@@ -2,7 +2,7 @@ import { debounce } from "@solid-primitives/scheduled";
 import clsx from "clsx";
 import { createSignal, createMemo, onCleanup, Component } from "solid-js";
 import { Dynamic } from "solid-js/web";
-import { useUIContext } from "#context";
+import { useLocalStorage } from "#context";
 import { createRef } from "#lib/utils";
 import { ContentPieceView } from "#views/content-piece";
 import { SettingsView } from "#views/settings";
@@ -16,7 +16,7 @@ const sidePanelViews: Record<string, Component<Record<string, any>>> = {
   default: GettingStartedView
 };
 const SidePanel: Component = () => {
-  const { storage, setStorage } = useUIContext();
+  const { storage, setStorage } = useLocalStorage();
   const [prevX, setPrevX] = createRef(0);
   const [dragging, setDragging] = createSignal(false);
   const [previousWidth, setPreviousWidth] = createRef(480);

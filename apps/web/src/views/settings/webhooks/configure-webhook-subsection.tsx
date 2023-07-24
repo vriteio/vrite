@@ -4,7 +4,7 @@ import { Component, Show, createEffect, createMemo, createResource, createSignal
 import { createStore } from "solid-js/store";
 import { InputField, TitledCard } from "#components/fragments";
 import { IconButton, Button, Loader, Tooltip } from "#components/primitives";
-import { App, useClientContext, useNotificationsContext } from "#context";
+import { App, useClient, useNotifications } from "#context";
 import { validateURL } from "#lib/utils";
 
 interface ConfigureWebhookSubsectionProps {
@@ -15,8 +15,8 @@ interface ConfigureWebhookSubsectionProps {
 }
 
 const ConfigureWebhookSubsection: Component<ConfigureWebhookSubsectionProps> = (props) => {
-  const { client } = useClientContext();
-  const { notify } = useNotificationsContext();
+  const client = useClient();
+  const { notify } = useNotifications();
   const [loading, setLoading] = createSignal(false);
   const [webhookData, setWebhookData] = createStore<Omit<App.Webhook, "id">>({
     description: "",

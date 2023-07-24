@@ -11,9 +11,9 @@ import {
   useContext
 } from "solid-js";
 import { useNavigate, useLocation } from "@solidjs/router";
-import { App, useClientContext } from "#context";
+import { App, useClient } from "#context";
 
-interface AuthenticatedContextValue {
+interface AuthenticatedUserDataContextValue {
   userSettings: Accessor<App.AppearanceSettings | null>;
   profile: Accessor<App.Profile | null>;
   membership: Accessor<App.WorkspaceMembership | null>;
@@ -24,9 +24,9 @@ interface AuthenticatedContextValue {
   currentWorkspaceId: Accessor<string | null>;
 }
 
-const AuthenticatedContext = createContext<AuthenticatedContextValue>();
-const AuthenticatedContextProvider: ParentComponent = (props) => {
-  const { client } = useClientContext();
+const AuthenticatedContext = createContext<AuthenticatedUserDataContextValue>();
+const AuthenticatedUserDataProvider: ParentComponent = (props) => {
+  const client = useClient();
   const navigate = useNavigate();
   const location = useLocation();
   const [deletedTags, setDeletedTags] = createSignal<string[]>([]);
@@ -228,13 +228,13 @@ const AuthenticatedContextProvider: ParentComponent = (props) => {
     </Show>
   );
 };
-const useAuthenticatedContext = (): AuthenticatedContextValue => {
+const useAuthenticatedUserData = (): AuthenticatedUserDataContextValue => {
   return useContext(AuthenticatedContext)!;
 };
 const hasPermission = (permission: App.Permission): boolean => {
-  const { role } = useAuthenticatedContext();
+  const { role } = useAuthenticatedUserData();
 
   return role()?.permissions.includes(permission) || role()?.baseType === "admin" || false;
 };
 
-export { AuthenticatedContextProvider, useAuthenticatedContext, hasPermission };
+export { AuthenticatedUserDataProvider, useAuthenticatedUserData, hasPermission };

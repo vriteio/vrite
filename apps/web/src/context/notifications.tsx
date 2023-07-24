@@ -84,8 +84,8 @@ const NotificationsProvider: ParentComponent = (props) => {
     </NotificationsContext.Provider>
   );
 };
-const useNotificationsContext = (): NotificationsContextData => {
+const useNotifications = (): NotificationsContextData => {
   return useContext(NotificationsContext)!;
 };
 
-export { NotificationsProvider, useNotificationsContext };
+export { NotificationsProvider, useNotifications };

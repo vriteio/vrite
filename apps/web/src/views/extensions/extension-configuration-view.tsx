@@ -1,13 +1,4 @@
-import {
-  ExtensionDetails,
-  useConfirmationContext,
-  useClientContext,
-  useExtensionsContext
-} from "#context";
-import { ViewContextProvider, ViewRenderer } from "#lib/extensions";
-import { TitledCard } from "#components/fragments";
 import { mdiInformation, mdiInformationOutline, mdiTrashCan, mdiTune } from "@mdi/js";
-import { Tooltip, IconButton, Button } from "#components/primitives";
 import {
   ExtensionSpec,
   ExtensionConfigurationViewContext,
@@ -16,6 +7,10 @@ import {
 } from "@vrite/extensions";
 import { Component, createEffect, createSignal, Show } from "solid-js";
 import { createStore } from "solid-js/store";
+import { ExtensionDetails, useConfirmationModal, useClient, useExtensions } from "#context";
+import { ViewContextProvider, ViewRenderer } from "#lib/extensions";
+import { TitledCard } from "#components/fragments";
+import { Tooltip, IconButton, Button } from "#components/primitives";
 
 interface ExtensionModalProps {
   extension: ExtensionDetails;
@@ -24,9 +19,9 @@ interface ExtensionModalProps {
 }
 
 const ExtensionConfigurationView: Component<ExtensionModalProps> = (props) => {
-  const { confirmDelete } = useConfirmationContext();
-  const { client } = useClientContext();
-  const { callFunction } = useExtensionsContext();
+  const { confirmDelete } = useConfirmationModal();
+  const client = useClient();
+  const { callFunction } = useExtensions();
   const [loading, setLoading] = createSignal(false);
   const [extensionInstallation, setExtensionInstallation] = createStore<{
     config: Record<string, any>;
@@ -76,6 +71,7 @@ const ExtensionConfigurationView: Component<ExtensionModalProps> = (props) => {
                         })
                       });
                     }
+
                     await client.extensions.uninstall.mutate({
                       id: props.extension.id || ""
                     });
@@ -98,6 +94,7 @@ const ExtensionConfigurationView: Component<ExtensionModalProps> = (props) => {
                   id: props.extension.id,
                   config: extensionInstallation.config
                 });
+
                 const onConfigureCallback = props.extension.spec.lifecycle?.["on:configure"];
 
                 if (onConfigureCallback) {
@@ -110,6 +107,7 @@ const ExtensionConfigurationView: Component<ExtensionModalProps> = (props) => {
                     })
                   });
                 }
+
                 setLoading(false);
               }
 

@@ -4,7 +4,7 @@ import { Component, For, Show, createEffect, createResource } from "solid-js";
 import { createStore } from "solid-js/store";
 import { InputField, TitledCard } from "#components/fragments";
 import { Select, Heading, Loader } from "#components/primitives";
-import { useClientContext, App } from "#context";
+import { useClient, App } from "#context";
 
 interface FreshToken {
   id: string;
@@ -18,7 +18,7 @@ interface ConfigureTokenSubSectionProps {
 }
 
 const ConfigureTokenSubSection: Component<ConfigureTokenSubSectionProps> = (props) => {
-  const { client } = useClientContext();
+  const client = useClient();
   const [editedTokenData] = createResource(() => {
     if (!props.editedTokenId) return null;
 

@@ -1,6 +1,6 @@
 import { Accessor, Component, For, Show, createSignal, onCleanup } from "solid-js";
 import { createStore } from "solid-js/store";
-import { App, useClientContext, useUIContext } from "#context";
+import { App, useClient, useLocalStorage, useSharedState } from "#context";
 import { Button, Loader } from "#components/primitives";
 
 interface VariantsSectionProps {
@@ -8,11 +8,17 @@ interface VariantsSectionProps {
   setActiveVariant(variant: App.Variant | null): void;
 }
 
+declare module "#context" {
+  interface SharedState {
+    activeVariant: App.Variant;
+  }
+}
+
 const useVariants = (): {
   loading: Accessor<boolean>;
   variants(): Array<App.Variant>;
 } => {
-  const { client } = useClientContext();
+  const client = useClient();
   const [loading, setLoading] = createSignal(false);
   const [state, setState] = createStore<{
     variants: Array<App.Variant>;
@@ -60,7 +66,8 @@ const useVariants = (): {
   return { loading, variants: () => state.variants };
 };
 const VariantsSection: Component<VariantsSectionProps> = (props) => {
-  const { setReferences } = useUIContext();
+  const createSharedSignal = useSharedState();
+  const [, setActiveVariant] = createSharedSignal("activeVariant");
   const { loading, variants } = useVariants();
 
   return (
@@ -96,10 +103,10 @@ const VariantsSection: Component<VariantsSectionProps> = (props) => {
                 onClick={() => {
                   if (active()) {
                     props.setActiveVariant(null);
-                    setReferences({ activeVariant: undefined });
+                    setActiveVariant(undefined);
                   } else {
                     props.setActiveVariant(variant);
-                    setReferences({ activeVariant: variant });
+                    setActiveVariant(variant);
                   }
                 }}
               >

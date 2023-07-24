@@ -11,10 +11,10 @@ import {
   validatePassword,
   validateUsername
 } from "#lib/utils";
-import { useClientContext } from "#context";
+import { useClient } from "#context";
 
 const PasswordForm: AuthFormComponent = (props) => {
-  const { client } = useClientContext();
+  const client = useClient();
   const [hidePassword, setHidePassword] = createSignal(true);
   const [formContainerRef, setFormContainerRef] = createRef<HTMLElement | null>(null);
   const isRegisterForm = (): boolean => props.formData.formType === "register";

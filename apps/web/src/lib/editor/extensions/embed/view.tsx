@@ -6,7 +6,7 @@ import clsx from "clsx";
 import { mdiCodepen, mdiYoutube } from "@mdi/js";
 import { Card, Icon } from "#components/primitives";
 import { codeSandboxIcon } from "#assets/icons";
-import { EmbedType, createRef } from "#lib/utils";
+import { EmbedType } from "#lib/utils";
 
 const getPlaceholderIcon = (embedType?: EmbedType): string => {
   switch (embedType) {

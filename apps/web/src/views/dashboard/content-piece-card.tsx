@@ -4,9 +4,9 @@ import dayjs from "dayjs";
 import DOMPurify from "dompurify";
 import clsx from "clsx";
 import { useNavigate } from "@solidjs/router";
-import { App, hasPermission, useAuthenticatedContext, useUIContext } from "#context";
+import { App, hasPermission, useAuthenticatedUserData, useLocalStorage } from "#context";
 import { Button, Card, Heading, Icon, IconButton, Tooltip } from "#components/primitives";
-import { tagColorClasses } from "#lib/utils";
+import { breakpoints, tagColorClasses } from "#lib/utils";
 
 interface ContentPieceProps {
   contentPiece: App.ExtendedContentPieceWithAdditionalData<"locked">;
@@ -14,8 +14,8 @@ interface ContentPieceProps {
 }
 
 const ContentPieceCard: Component<ContentPieceProps> = (props) => {
-  const { setStorage, storage, breakpoints } = useUIContext();
-  const { deletedTags } = useAuthenticatedContext();
+  const { setStorage, storage } = useLocalStorage();
+  const { deletedTags } = useAuthenticatedUserData();
   const navigate = useNavigate();
   const editedArticleId = (): string => storage().contentPieceId || "";
   const displayTags = createMemo(() => {

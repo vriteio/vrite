@@ -4,8 +4,8 @@ import {
   mdiLinkVariantPlus,
   mdiLinkVariantOff
 } from "@mdi/js";
-import { Tooltip, IconButton, Input } from "#components/primitives";
 import { Component, Show } from "solid-js";
+import { Tooltip, IconButton, Input } from "#components/primitives";
 
 interface CanonicalLinkInputProps {
   canonicalLink?: string | null;

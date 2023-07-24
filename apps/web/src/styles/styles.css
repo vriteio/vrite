@@ -180,3 +180,6 @@ textarea {
 .shiki {
   @apply h-full w-full pl-6;
 }
+.highlight-text * {
+  @apply bg-gradient-to-tr font-semibold text-transparent bg-clip-text dark:text-transparent dark:bg-clip-text;
+}

@@ -13,7 +13,8 @@
     "@hocuspocus/server": "^1.0.2",
     "@vrite/backend": "workspace:*",
     "mongodb": "^5.5.0",
-    "y-protocols": "^1.0.5"
+    "y-protocols": "^1.0.5",
+    "yjs": "^13.5.45"
   },
   "devDependencies": {
     "@vrite/scripts": "workspace:*"

@@ -22,7 +22,7 @@ import {
 } from "solid-js";
 import { createStore } from "solid-js/store";
 import { IconButton, Heading, Input, Tooltip, Loader, Card, Button } from "#components/primitives";
-import { App, hasPermission, useClientContext, useNotificationsContext } from "#context";
+import { App, hasPermission, useClient, useNotifications } from "#context";
 import { TitledCard } from "#components/fragments";
 
 const useTokens = (): {
@@ -36,7 +36,7 @@ const useTokens = (): {
   }>({
     tokens: []
   });
-  const { client } = useClientContext();
+  const client = useClient();
   const [loading, setLoading] = createSignal(false);
   const [moreToLoad, setMoreToLoad] = createSignal(true);
   const loadMore = (): void => {
@@ -96,9 +96,9 @@ const TokenDetails: Component<{
   onEdit?(): void;
   onDelete?(): void;
 }> = (props) => {
-  const { notify } = useNotificationsContext();
-  const { client } = useClientContext();
   const [loading, setLoading] = createSignal(false);
+  const { notify } = useNotifications();
+  const client = useClient();
 
   return (
     <Card class="flex flex-col gap-0 w-full m-0" color="contrast">
@@ -156,11 +156,11 @@ const TokenDetails: Component<{
   );
 };
 const APISection: SettingsSectionComponent = (props) => {
-  const { notify } = useNotificationsContext();
   const [createdToken, setCreatedToken] = createSignal<FreshToken | null>(null);
   const [editedTokenId, setEditedTokenId] = createSignal("");
   const [configureTokenSectionOpened, setConfigureTokenSectionOpened] = createSignal(false);
   const { loadMore, loading, moreToLoad, tokens } = useTokens();
+  const { notify } = useNotifications();
 
   createEffect(
     on(configureTokenSectionOpened, (configureTokenSectionOpened) => {

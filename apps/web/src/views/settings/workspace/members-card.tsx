@@ -1,4 +1,3 @@
-import { TitledCard } from "#components/fragments";
 import {
   mdiAccountCircle,
   mdiAccountMultiple,
@@ -8,6 +7,7 @@ import {
 } from "@mdi/js";
 import { Component, For, Show, createMemo } from "solid-js";
 import clsx from "clsx";
+import { TitledCard } from "#components/fragments";
 import {
   Button,
   Select,
@@ -21,10 +21,10 @@ import {
 import {
   App,
   hasPermission,
-  useAuthenticatedContext,
-  useClientContext,
-  useConfirmationContext,
-  useNotificationsContext
+  useAuthenticatedUserData,
+  useClient,
+  useConfirmationModal,
+  useNotifications
 } from "#context";
 
 type WorkspaceMemberData = App.WorkspaceMembership & {
@@ -47,10 +47,10 @@ interface MembersCardProps {
 }
 
 const MemberDetails: Component<MemberDetailsProps> = (props) => {
-  const { client } = useClientContext();
-  const { notify } = useNotificationsContext();
-  const { profile } = useAuthenticatedContext();
-  const { confirmAction: confirmDanger } = useConfirmationContext();
+  const client = useClient();
+  const { notify } = useNotifications();
+  const { profile } = useAuthenticatedUserData();
+  const { confirmAction: confirmDanger } = useConfirmationModal();
   const handleRoleChange = async (roleId: string): Promise<void> => {
     try {
       await client.workspaceMemberships.update.mutate({

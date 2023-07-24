@@ -3,7 +3,7 @@ import { mdiCheck, mdiRefresh } from "@mdi/js";
 import { Component, Show } from "solid-js";
 import { createStore } from "solid-js/store";
 import { Tooltip, IconButton, Button } from "#components/primitives";
-import { App, useClientContext, useNotificationsContext } from "#context";
+import { App, useClient, useNotifications } from "#context";
 
 interface ConfigureTokenActionProps {
   editedTokenId: string;
@@ -12,8 +12,8 @@ interface ConfigureTokenActionProps {
 }
 
 const ConfigureTokenAction: Component<ConfigureTokenActionProps> = (props) => {
-  const { client } = useClientContext();
-  const { notify } = useNotificationsContext();
+  const client = useClient();
+  const { notify } = useNotifications();
   const [loading, setLoading] = createStore({
     regenerate: false,
     save: false

@@ -4,7 +4,7 @@ import { mdiDotsGrid, mdiLinkVariant, mdiText, mdiUpload } from "@mdi/js";
 import { Component, createEffect, createSignal, on, Show } from "solid-js";
 import { nanoid } from "nanoid";
 import { debounce } from "@solid-primitives/scheduled";
-import { useAuthenticatedContext, useClientContext } from "#context";
+import { useAuthenticatedUserData, useClient } from "#context";
 import { Button, IconButton, Input, Loader, Tooltip } from "#components/primitives";
 
 interface ImageMenuProps {
@@ -12,11 +12,11 @@ interface ImageMenuProps {
 }
 
 const ImageMenu: Component<ImageMenuProps> = (props) => {
-  const { currentWorkspaceId = () => null } = useAuthenticatedContext() || {};
+  const { currentWorkspaceId = () => null } = useAuthenticatedUserData() || {};
   const { storage } = props.state.extension;
   const [inputMode, setInputMode] = createSignal<"alt" | "src">("src");
   const [uploading, setUploading] = createSignal(false);
-  const { client } = useClientContext();
+  const client = useClient();
   const attrs = (): ImageAttributes => props.state.node.attrs;
   const options = (): ImageOptions => props.state.extension.options;
   const updateAttribute = debounce((attribute: "src" | "alt", value: string) => {

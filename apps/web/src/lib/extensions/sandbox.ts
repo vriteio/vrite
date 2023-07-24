@@ -1,9 +1,8 @@
 import Sandbox from "@jetbrains/websandbox";
-import { SetStoreFunction } from "solid-js/store";
 import { ExtensionGeneralContext, ExtensionSpec } from "@vrite/extensions";
-import { createRef } from "#lib/utils";
-import { useNotificationsContext } from "#context";
 import { Accessor } from "solid-js";
+import { createRef } from "#lib/utils";
+import { useNotifications } from "#context";
 
 interface ExtensionsSandbox {
   callFunction(
@@ -20,7 +19,7 @@ interface ExtensionsSandbox {
 }
 
 const loadSandbox = (): ExtensionsSandbox => {
-  const { notify } = useNotificationsContext();
+  const { notify } = useNotifications();
   const [resolveRef, setResolveRef] = createRef(() => {});
   const [contextRef, setContextRef] = createRef<{
     value: Omit<ExtensionGeneralContext, "client" | "token" | "extensionId" | "notify">;
