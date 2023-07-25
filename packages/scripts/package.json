@@ -2,10 +2,10 @@
   "name": "@vrite/scripts",
   "private": true,
   "dependencies": {
-    "chalk": "^5.2.0",
-    "commander": "^10.0.0",
-    "esbuild": "^0.17.15",
-    "glob": "^9.3.4",
+    "chalk": "^5.3.0",
+    "commander": "^11.0.0",
+    "esbuild": "^0.18.16",
+    "glob": "^10.3.3",
     "image-type": "^5.2.0"
   },
   "bin": "cli/development.mjs"

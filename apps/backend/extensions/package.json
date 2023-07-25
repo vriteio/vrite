@@ -9,13 +9,13 @@
     "start": "node ./dist/index.js"
   },
   "dependencies": {
-    "@fastify/cors": "^8.2.1",
-    "@trpc/server": "^10.9.1",
+    "@fastify/cors": "^8.3.0",
+    "@trpc/server": "^10.35.0",
     "@vrite/backend": "workspace:*",
     "@vrite/sdk": "workspace:*",
-    "fastify": "^4.17.0",
-    "openai": "^3.2.1",
-    "trpc-openapi": "^1.1.2"
+    "fastify": "^4.20.0",
+    "openai": "^3.3.0",
+    "trpc-openapi": "^1.2.0"
   },
   "devDependencies": {
     "@vrite/scripts": "workspace:*"

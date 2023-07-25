@@ -15,16 +15,23 @@
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
   "devDependencies": {
-    "prettier": "^2.8.8",
-    "prettier-plugin-astro": "^0.8.1",
-    "turbo": "latest",
-    "typescript": "^5.0.4"
+    "@typescript-eslint/eslint-plugin": "^6.2.0",
+    "@typescript-eslint/parser": "^6.2.0",
+    "eslint": "^8.45.0",
+    "eslint-config-prettier": "^8.8.0",
+    "eslint-config-xtrict": "^3.0.1",
+    "eslint-plugin-import": "^2.27.5",
+    "eslint-plugin-solid": "^0.12.1",
+    "prettier": "^3.0.0",
+    "prettier-plugin-astro": "^0.11.0",
+    "turbo": "^1.10.11",
+    "typescript": "^5.1.6"
   },
   "engines": {
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "dotenv-cli": "^7.1.0"
+    "dotenv-cli": "^7.2.1"
   },
   "packageManager": "pnpm@7.26.0"
 }

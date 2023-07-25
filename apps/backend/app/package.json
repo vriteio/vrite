@@ -1,5 +1,5 @@
 {
-  "name": "@vrite/core",
+  "name": "@vrite/app",
   "private": true,
   "source": "src/index.ts",
   "main": "index.ts",
@@ -9,10 +9,10 @@
     "start": "node ./dist/index.js"
   },
   "dependencies": {
-    "@fastify/static": "^6.10.1",
-    "@fastify/websocket": "^8.1.0",
+    "@fastify/static": "^6.10.2",
+    "@fastify/websocket": "^8.2.0",
     "@vrite/backend": "workspace:*",
-    "axios": "^1.3.4"
+    "axios": "^1.4.0"
   },
   "devDependencies": {
     "@vrite/scripts": "workspace:*"
