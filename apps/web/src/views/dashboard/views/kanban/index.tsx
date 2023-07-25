@@ -1,11 +1,11 @@
+import { ContentGroupColumn, AddContentGroupColumn } from "./content-group-column";
+import { ContentGroupsContextProvider } from "../../content-groups-context";
 import clsx from "clsx";
-import { Component, createSignal, Show } from "solid-js";
+import { Component, createEffect, createSignal, on, Show } from "solid-js";
 import { Sortable } from "#components/primitives";
 import { createRef } from "#lib/utils";
 import { ScrollShadow } from "#components/fragments";
 import { hasPermission, App, useClient } from "#context";
-import { Column, AddColumn } from "#views/dashboard/views/kanban/column";
-import { ContentGroupsContextProvider } from "#views/dashboard/content-groups-context";
 
 interface DashboardKanbanViewProps {
   ancestor?: App.ContentGroup | null;
@@ -16,12 +16,24 @@ interface DashboardKanbanViewProps {
 
 const DashboardKanbanView: Component<DashboardKanbanViewProps> = (props) => {
   const client = useClient();
-  // Kanban
   const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
   const [snapEnabled, setSnapEnabled] = createSignal(true);
 
+  createEffect(
+    on(
+      () => props.contentGroups,
+      (_contentGroups, _previousContentGroups, previousAncestorId) => {
+        if (previousAncestorId === props.ancestor?.id) return;
+
+        scrollableContainerRef()!.scrollLeft = 0;
+
+        return props.ancestor?.id;
+      }
+    )
+  );
+
   return (
-    <div class="relative overflow-hidden">
+    <div class="relative overflow-hidden pt-5 pb-2.5">
       <ScrollShadow
         scrollableContainerRef={scrollableContainerRef}
         color="contrast"
@@ -35,11 +47,6 @@ const DashboardKanbanView: Component<DashboardKanbanViewProps> = (props) => {
           options={{
             ghostClass: `:base: border-4 border-gray-200 opacity-50 dark:border-gray-700 children:invisible !p-0 !m-2 !mt-0 !h-unset rounded-2xl`,
             filter: ".locked",
-            preventOnFilter: false,
-            fallbackOnBody: true,
-            scroll: true,
-            scrollSpeed: 10,
-            scrollSensitivity: 100,
             disabled: !hasPermission("manageDashboard"),
             onMove(event) {
               return !event.related.classList.contains("locked");
@@ -89,7 +96,7 @@ const DashboardKanbanView: Component<DashboardKanbanViewProps> = (props) => {
           {(contentGroup, index) => {
             if (contentGroup) {
               return (
-                <Column
+                <ContentGroupColumn
                   contentGroup={contentGroup}
                   index={index()}
                   onDragStart={() => setSnapEnabled(false)}
@@ -105,7 +112,7 @@ const DashboardKanbanView: Component<DashboardKanbanViewProps> = (props) => {
 
             return (
               <Show when={hasPermission("manageDashboard")}>
-                <AddColumn class="locked" />
+                <AddContentGroupColumn class="locked" />
               </Show>
             );
           }}

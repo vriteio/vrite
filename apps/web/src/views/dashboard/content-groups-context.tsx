@@ -13,29 +13,24 @@ interface ContentGroupsContextProviderProps {
   setAncestor(ancestor: App.ContentGroup | null | undefined): void;
 }
 interface ContentGroupsContextData extends ContentGroupsContextProviderProps {
-  activeDraggable: Accessor<App.ExtendedContentPieceWithAdditionalData<"locked"> | null>;
-  setActiveDraggable: Setter<App.ExtendedContentPieceWithAdditionalData<"locked"> | null>;
-  draggingGroup: Accessor<App.ContentGroup | null>;
-  setDraggingGroup: Setter<App.ContentGroup | null>;
+  activeDraggablePiece: Accessor<App.ExtendedContentPieceWithAdditionalData<"locked"> | null>;
+  setActiveDraggablePiece: Setter<App.ExtendedContentPieceWithAdditionalData<"locked"> | null>;
 }
 
 const ContentGroupsContext = createContext<ContentGroupsContextData>();
 const ContentGroupsContextProvider: ParentComponent<ContentGroupsContextProviderProps> = (
   props
 ) => {
-  const [activeDraggable, setActiveDraggable] =
+  const [activeDraggablePiece, setActiveDraggablePiece] =
     createSignal<App.ExtendedContentPieceWithAdditionalData<"locked"> | null>(null);
-  const [draggingGroup, setDraggingGroup] = createSignal<App.ContentGroup | null>(null);
 
   return (
     <ContentGroupsContext.Provider
       value={{
-        activeDraggable,
-        setActiveDraggable,
+        activeDraggablePiece,
+        setActiveDraggablePiece,
         ancestor: props.ancestor,
-        setAncestor: props.setAncestor,
-        draggingGroup,
-        setDraggingGroup
+        setAncestor: props.setAncestor
       }}
     >
       {props.children}

@@ -28,10 +28,26 @@ const useContentGroups = (initialAncestorId?: string): UseContentGroups => {
       contentGroups: newContentGroups
     });
   };
-  const refetch = async (ancestorId?: string): Promise<void> => {
-    const contentGroups = await client.contentGroups.list.query({ ancestorId });
+  const moveContentGroup = (contentGroup: App.ContentGroup): void => {
+    const newContentGroups = [...state.contentGroups];
+    const index = newContentGroups.findIndex((newContentGroup) => {
+      return newContentGroup.id === contentGroup.id;
+    });
 
-    setAncestorId(ancestorId);
+    if (index >= 0 && contentGroup.ancestors.at(-1) !== ancestorId()) {
+      newContentGroups.splice(index, 1);
+    } else if (index < 0 && contentGroup.ancestors.at(-1) === ancestorId()) {
+      newContentGroups.push(contentGroup);
+    }
+
+    setState({
+      contentGroups: newContentGroups
+    });
+  };
+  const refetch = async (ancestor?: string): Promise<void> => {
+    const contentGroups = await client.contentGroups.list.query({ ancestor });
+
+    setAncestorId(ancestor);
     setState("contentGroups", contentGroups);
   };
   const contentGroupsChanges = client.contentGroups.changes.subscribe(undefined, {
@@ -57,6 +73,10 @@ const useContentGroups = (initialAncestorId?: string): UseContentGroups => {
           break;
         case "reorder":
           reorderContentGroup(data.id, data.index);
+          break;
+        case "move":
+          moveContentGroup(data);
+
           break;
       }
     }

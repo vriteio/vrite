@@ -1,37 +1,21 @@
-import { ContentPieceCard } from "../../content-piece-card";
+import { ContentPieceCard } from "./content-piece-card";
 import { useContentGroupsContext } from "../../content-groups-context";
-import {
-  Component,
-  createEffect,
-  createMemo,
-  createResource,
-  createSignal,
-  For,
-  on,
-  Show
-} from "solid-js";
+import { Component, createEffect, createMemo, createSignal, For, on, Show } from "solid-js";
 import {
   mdiDotsVertical,
-  mdiFileDocumentPlus,
+  mdiFilePlus,
+  mdiFileLock,
+  mdiFileLockOpen,
   mdiFolder,
+  mdiFolderLock,
   mdiFolderOpen,
   mdiFolderPlus,
   mdiIdentifier,
-  mdiLock,
-  mdiLockOpen,
   mdiTrashCan
 } from "@mdi/js";
 import clsx from "clsx";
 import SortableLib from "sortablejs";
-import {
-  Card,
-  IconButton,
-  Sortable,
-  Dropdown,
-  Loader,
-  Tooltip,
-  Icon
-} from "#components/primitives";
+import { Card, IconButton, Sortable, Dropdown, Loader, Icon } from "#components/primitives";
 import { MiniEditor, ScrollShadow, createScrollShadowController } from "#components/fragments";
 import {
   App,
@@ -40,23 +24,30 @@ import {
   useConfirmationModal,
   useLocalStorage,
   hasPermission,
-  useCache
+  useCache,
+  useSharedState
 } from "#context";
 import { createRef } from "#lib/utils";
-import { useContentGroups, useContentPieces } from "#lib/composables";
+import { useContentPieces } from "#lib/composables";
 
-interface ColumnProps {
+interface ContentGroupColumnProps {
   contentGroup: App.ContentGroup;
   index: number;
   onDragStart?(): void;
   onDragEnd?(): void;
   remove?(id: string): void;
 }
-interface AddColumnProps {
+interface AddContentGroupColumnProps {
   class?: string;
 }
 
-const AddColumn: Component<AddColumnProps> = (props) => {
+declare module "#context" {
+  interface SharedState {
+    activeDraggableGroup: App.ContentGroup | null;
+  }
+}
+
+const AddContentGroupColumn: Component<AddContentGroupColumnProps> = (props) => {
   const client = useClient();
   const { notify } = useNotifications();
   const { ancestor } = useContentGroupsContext();
@@ -72,16 +63,10 @@ const AddColumn: Component<AddColumnProps> = (props) => {
         class="flex-col flex justify-center items-center w-full h-full m-0 mb-1 bg-transparent border-2 rounded-2xl dark:border-gray-700 text-gray-500 dark:text-gray-400 @hover-bg-gray-300 dark:@hover-bg-gray-700 @hover:cursor-pointer"
         color="contrast"
         onClick={async () => {
-          const ancestors: string[] = [];
-
           try {
-            if (ancestor()) {
-              ancestors.push(...ancestor()!.ancestors, ancestor()!.id);
-            }
-
             await client.contentGroups.create.mutate({
               name: "",
-              ancestors
+              ancestor: ancestor()?.id
             });
             notify({ text: "New content group created", type: "success" });
           } catch (error) {
@@ -95,8 +80,9 @@ const AddColumn: Component<AddColumnProps> = (props) => {
     </div>
   );
 };
-const Column: Component<ColumnProps> = (props) => {
+const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
   const cache = useCache();
+  const createSharedSignal = useSharedState();
   const { contentPieces, setContentPieces, loadMore, loading } = cache(
     `contentPieces:${props.contentGroup.id}`,
     () => {
@@ -106,8 +92,11 @@ const Column: Component<ColumnProps> = (props) => {
   const { notify } = useNotifications();
   const { confirmDelete } = useConfirmationModal();
   const { setStorage } = useLocalStorage();
-  const { activeDraggable, setActiveDraggable, setAncestor, draggingGroup, setDraggingGroup } =
-    useContentGroupsContext();
+  const { activeDraggablePiece, setActiveDraggablePiece, setAncestor } = useContentGroupsContext();
+  const [activeDraggableGroup, setActiveDraggableGroup] = createSharedSignal(
+    "activeDraggableGroup",
+    null
+  );
   const scrollShadowController = createScrollShadowController();
   const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
   const [dropdownOpened, setDropdownOpened] = createSignal(false);
@@ -137,7 +126,7 @@ const Column: Component<ColumnProps> = (props) => {
 
     if (hasPermission("manageDashboard")) {
       menuOptions.push({
-        icon: props.contentGroup.locked ? mdiLockOpen : mdiLock,
+        icon: props.contentGroup.locked ? mdiFileLockOpen : mdiFileLock,
         label: props.contentGroup.locked ? "Unlock" : "Lock",
         async onClick() {
           await client.contentGroups.update.mutate({
@@ -208,35 +197,24 @@ const Column: Component<ColumnProps> = (props) => {
       data-content-group-id={props.contentGroup.id}
       data-index={props.index}
     >
-      <Card class="flex flex-col items-start justify-start h-full p-4 relative m-0 mb-1 pr-2 md:pr-1 overflow-hidden content-group select-none">
+      <Card class="flex flex-col items-start justify-start h-full p-4 relative m-0 mb-1 pr-2 md:pr-1 overflow-x-hidden content-group select-none">
         <div class="flex items-center justify-center mb-2 w-full">
           <div
-            class="flex flex-1 justify-center items-center cursor-pointer overflow-hidden"
+            class="flex flex-1 justify-center items-center cursor-pointer overflow-x-hidden"
             ref={(el) => {
-              let sorting = false;
-
               SortableLib.create(el, {
                 group: {
                   name: "shared",
-                  put: (to, from, dragEl) => {
+                  put: (_to, _from, dragEl) => {
                     return dragEl.dataset.contentGroupId !== props.contentGroup.id;
                   }
                 },
                 ghostClass: "!hidden",
                 revertOnSpill: true,
-                onRemove() {
-                  console.log("remove");
-                },
-                onChange() {
-                  console.log("change");
-                },
-                onUpdate() {
-                  console.log("update");
-                },
                 onAdd(evt) {
                   const el = evt.item;
 
-                  el.parentNode.removeChild(el);
+                  el.remove();
                   setHighlight(false);
                   client.contentGroups.move.mutate({
                     id: el.dataset.contentGroupId || "",
@@ -245,73 +223,10 @@ const Column: Component<ColumnProps> = (props) => {
                   props.remove?.(el.dataset.contentGroupId || "");
                 },
                 onStart() {
-                  console.log("start");
-                  sorting = true;
-                  setDraggingGroup(props.contentGroup);
+                  setActiveDraggableGroup(props.contentGroup);
                 },
                 onEnd() {
-                  console.log("end");
-                  sorting = false;
-                  setDraggingGroup(null);
-                }
-              });
-
-              const targetElement = el.firstElementChild!;
-
-              targetElement.addEventListener("dragover", function (evt) {
-                evt.preventDefault();
-              });
-              targetElement.addEventListener("dragenter", function (evt) {
-                console.log(
-                  "dragenter",
-                  draggingGroup(),
-                  !targetElement.contains(evt.relatedTarget)
-                );
-
-                if (!targetElement.contains(evt.relatedTarget)) {
-                  // Here is where you add the styling of targetElement;
-                  setHighlight(true);
-                }
-              });
-              targetElement.addEventListener("dragleave", function (evt) {
-                if (!targetElement.contains(evt.relatedTarget)) {
-                  // Here is where you remove the styling of targetElement
-                  setHighlight(false);
-                }
-              });
-              // For fallback
-              targetElement.addEventListener("mouseenter", function (evt) {
-                if (draggingGroup()) {
-                  // Here is where you change the styling of targetElement
-                  targetElement.style.backgroundColor = "red";
-                }
-              });
-              targetElement.addEventListener("mouseleave", function (evt) {
-                if (draggingGroup()) {
-                  // Here is where you remove the styling of targetElement
-                  targetElement.style.backgroundColor = "";
-                }
-              });
-              el.addEventListener("touchmove", function (evt) {
-                if (!draggingGroup()) {
-                  return;
-                }
-
-                const x = evt.touches[0].clientX;
-                const y = evt.touches[0].clientY;
-                const elementAtTouchPoint = document.elementFromPoint(x, y);
-
-                if (
-                  elementAtTouchPoint === targetElement ||
-                  /* In case of a ghost element, the element at touch point
-                     is the ghost element and thus we need to check if the parent
-                     of the ghost element is the targetElement. */
-                  elementAtTouchPoint.parentNode === targetElement
-                ) {
-                  targetElement.style.backgroundColor = "red";
-                } else {
-                  // Here is where you remove the styling of targetElement
-                  targetElement.style.backgroundColor = "";
+                  setActiveDraggableGroup(null);
                 }
               });
             }}
@@ -319,49 +234,76 @@ const Column: Component<ColumnProps> = (props) => {
             <div
               class="flex flex-1 justify-center items-center overflow-hidden rounded-lg"
               data-content-group-id={props.contentGroup.id}
-            >
-              <Show
-                when={props.contentGroup.locked}
-                fallback={
-                  <div class="h-8 w-8 relative group mr-1">
-                    <IconButton
-                      path={mdiFolder}
-                      variant="text"
-                      class={clsx(
-                        "m-0 absolute top-0 left-0 group-hover:opacity-0 transition-opacity duration-200 ease-in-out",
-                        highlight() && "!opacity-0"
-                      )}
-                      hover={false}
-                      onClick={() => {
-                        setAncestor(props.contentGroup);
-                      }}
-                    />
-                    <IconButton
-                      path={mdiFolderOpen}
-                      variant="text"
-                      class={clsx(
-                        "m-0 absolute top-0 left-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 ease-in-out",
-                        highlight() && "!opacity-100"
-                      )}
-                      color={highlight() ? "primary" : "base"}
-                      onClick={() => {
-                        setAncestor(props.contentGroup);
-                      }}
-                    />
-                  </div>
+              onDragOver={(event) => event.preventDefault()}
+              onDragEnter={(event) => {
+                if (
+                  event.relatedTarget instanceof HTMLElement &&
+                  !event.target.contains(event.relatedTarget)
+                ) {
+                  setHighlight(true);
                 }
-              >
-                <Tooltip text="Edit-locked" side="right">
-                  <IconButton
-                    badge
-                    path={mdiLock}
-                    variant="text"
-                    class="m-0 mr-1"
-                    text="base"
-                    color="primary"
-                  />
-                </Tooltip>
-              </Show>
+              }}
+              onDragLeave={(event) => {
+                if (
+                  event.relatedTarget instanceof HTMLElement &&
+                  !event.target.contains(event.relatedTarget)
+                ) {
+                  setHighlight(false);
+                }
+              }}
+              onMouseEnter={() => {
+                if (activeDraggableGroup()) {
+                  setHighlight(true);
+                }
+              }}
+              onMouseLeave={() => {
+                if (activeDraggableGroup()) {
+                  setHighlight(false);
+                }
+              }}
+              onTouchMove={(event) => {
+                if (activeDraggableGroup()) {
+                  const x = event.touches[0].clientX;
+                  const y = event.touches[0].clientY;
+                  const elementAtTouchPoint = document.elementFromPoint(x, y);
+
+                  if (
+                    elementAtTouchPoint === event.target ||
+                    elementAtTouchPoint?.parentNode === event.target
+                  ) {
+                    setHighlight(true);
+                  } else {
+                    setHighlight(false);
+                  }
+                }
+              }}
+            >
+              <div class="h-8 w-8 relative group mr-1">
+                <IconButton
+                  path={props.contentGroup.locked ? mdiFolderLock : mdiFolder}
+                  variant="text"
+                  class={clsx(
+                    "m-0 absolute top-0 left-0 group-hover:opacity-0",
+                    highlight() && "!opacity-0"
+                  )}
+                  hover={false}
+                  onClick={() => {
+                    setAncestor(props.contentGroup);
+                  }}
+                />
+                <IconButton
+                  path={mdiFolderOpen}
+                  variant="text"
+                  class={clsx(
+                    "m-0 absolute top-0 left-0 opacity-0 group-hover:opacity-100",
+                    highlight() && "!opacity-100"
+                  )}
+                  color={highlight() ? "primary" : "base"}
+                  onClick={() => {
+                    setAncestor(props.contentGroup);
+                  }}
+                />
+              </div>
               <MiniEditor
                 class={clsx(
                   "inline-flex flex-1 overflow-x-auto content-group-name scrollbar-hidden hover:cursor-text",
@@ -369,9 +311,11 @@ const Column: Component<ColumnProps> = (props) => {
                 )}
                 content="paragraph"
                 initialValue={props.contentGroup.name}
-                readOnly={
-                  draggingGroup() || props.contentGroup.locked || !hasPermission("manageDashboard")
-                }
+                readOnly={Boolean(
+                  activeDraggableGroup() ||
+                    props.contentGroup.locked ||
+                    !hasPermission("manageDashboard")
+                )}
                 placeholder="Group name"
                 onBlur={(editor) => {
                   client.contentGroups.update.mutate({
@@ -443,13 +387,11 @@ const Column: Component<ColumnProps> = (props) => {
                 options={{
                   ghostClass: `:base: border-4 border-gray-200 opacity-50 dark:border-gray-700 children:invisible`,
                   group: "card",
-                  scroll: true,
-                  fallbackOnBody: true,
-                  scrollSpeed: 10,
-                  scrollSensitivity: 100,
                   onStart(event) {
                     props.onDragStart?.();
-                    setActiveDraggable(contentPieces()[parseInt(event.item.dataset.index || "0")]);
+                    setActiveDraggablePiece(
+                      contentPieces()[parseInt(event.item.dataset.index || "0")]
+                    );
                   },
                   onAdd(event) {
                     if (typeof event.oldIndex === "number" && typeof event.newIndex === "number") {
@@ -472,7 +414,7 @@ const Column: Component<ColumnProps> = (props) => {
                       return (
                         contentPieces().find(
                           (contentPiece) => contentPiece.id === value.dataset.contentPieceId
-                        ) || activeDraggable()
+                        ) || activeDraggablePiece()
                       );
                     });
 
@@ -525,7 +467,7 @@ const Column: Component<ColumnProps> = (props) => {
                         nextReferenceId: nextReferenceContentPiece?.id,
                         previousReferenceId: previousReferenceContentPiece?.id
                       });
-                      setActiveDraggable(null);
+                      setActiveDraggablePiece(null);
                     }
                   },
                   onEnd() {
@@ -564,7 +506,7 @@ const Column: Component<ColumnProps> = (props) => {
               class="w-full h-full m-0"
               color="contrast"
               variant="text"
-              path={mdiFileDocumentPlus}
+              path={mdiFilePlus}
               text="soft"
               label="New content piece"
               onClick={async () => {
@@ -592,4 +534,4 @@ const Column: Component<ColumnProps> = (props) => {
   );
 };
 
-export { Column, AddColumn };
+export { ContentGroupColumn, AddContentGroupColumn };

@@ -136,7 +136,12 @@ const MiniEditor: Component<MiniEditorProps> = (props) => {
   );
 
   return (
-    <div class={clsx("w-full text-lg", props.class)}>
+    <div
+      class={clsx("w-full text-lg", props.class)}
+      onClick={(event) => {
+        event.stopPropagation();
+      }}
+    >
       <SolidEditorContent editor={editor()} class="flex-1" />
     </div>
   );

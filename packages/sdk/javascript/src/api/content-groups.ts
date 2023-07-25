@@ -13,11 +13,24 @@ interface ContentGroup {
    * Is content group edit-locked
    */
   locked?: boolean;
+  /**
+   * IDs of ancestor content groups, ordered from furthest to closest
+   */
+  ancestors: string[];
+  /**
+   * IDs of directly-descendant content groups
+   */
+  descendants: string[];
 }
 interface ContentGroupsEndpoints {
-  list(): Promise<ContentGroup[]>;
-  create(input: Omit<ContentGroup, "id">): Promise<Pick<ContentGroup, "id">>;
-  update(input: Partial<ContentGroup> & Pick<ContentGroup, "id">): Promise<void>;
+  list(input?: { ancestor?: string }): Promise<ContentGroup[]>;
+  create(
+    input: Omit<ContentGroup, "id" | "ancestors" | "descendants"> & { ancestor?: string }
+  ): Promise<Pick<ContentGroup, "id">>;
+  update(
+    input: Partial<Omit<ContentGroup, "ancestors" | "descendants">> &
+      Pick<ContentGroup, "id"> & { ancestor?: string }
+  ): Promise<void>;
   delete(input: Pick<ContentGroup, "id">): Promise<void>;
 }
 

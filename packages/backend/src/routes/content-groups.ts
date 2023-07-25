@@ -21,14 +21,14 @@ import {
 type ContentGroupEvent =
   | {
       action: "create";
-      data: ContentGroup & { id: string };
+      data: ContentGroup;
     }
   | {
       action: "update";
       data: Partial<ContentGroup> & { id: string };
     }
   | { action: "delete"; data: { id: string } }
-  | { action: "move"; data: { id: string; ancestor: string | null } }
+  | { action: "move"; data: ContentGroup }
   | { action: "reorder"; data: { id: string; index: number } };
 
 const publishEvent = createEventPublisher<ContentGroupEvent>(
@@ -65,11 +65,15 @@ const contentGroupsRouter = router({
       permissions: { session: ["manageDashboard"], token: ["contentGroups:write"] }
     })
     .input(
-      contentGroup.omit({ ancestors: true, descendants: true }).partial().required({ id: true })
+      contentGroup
+        .omit({ ancestors: true, descendants: true })
+        .partial()
+        .extend({ ancestor: zodId().optional() })
+        .required({ id: true })
     )
     .output(z.void())
     .mutation(async ({ ctx, input }) => {
-      const { id, ...update } = input;
+      const { id, ancestor, ...update } = input;
       const contentGroupsCollection = getContentGroupsCollection(ctx.db);
       const contentGroupId = new ObjectId(id);
       const contentGroup = await contentGroupsCollection.findOne({
@@ -79,6 +83,15 @@ const contentGroupsRouter = router({
 
       if (!contentGroup) throw errors.notFound("contentGroup");
 
+      const ancestorContentGroup =
+        input.ancestor &&
+        (await contentGroupsCollection.findOne({
+          _id: new ObjectId(input.ancestor),
+          workspaceId: ctx.auth.workspaceId
+        }));
+
+      if (input.ancestor && !ancestorContentGroup) throw errors.notFound("contentGroup");
+
       await contentGroupsCollection.updateOne(
         {
           _id: contentGroupId,
@@ -86,10 +99,52 @@ const contentGroupsRouter = router({
         },
         {
           $set: {
-            ...update
+            ...update,
+            ...(ancestorContentGroup && {
+              ancestors: [...ancestorContentGroup.ancestors, ancestorContentGroup._id]
+            })
           }
         }
       );
+
+      if (ancestorContentGroup) {
+        const descendants = await contentGroupsCollection
+          .find({
+            ancestors: contentGroup._id
+          })
+          .toArray();
+
+        await contentGroupsCollection.bulkWrite([
+          {
+            updateOne: {
+              filter: { _id: contentGroup.ancestors[contentGroup.ancestors.length - 1] },
+              update: { $pull: { descendants: contentGroupId } }
+            }
+          },
+          {
+            updateOne: {
+              filter: { _id: ancestorContentGroup._id },
+              update: { $push: { descendants: contentGroupId } }
+            }
+          },
+          ...descendants.map((descendant) => {
+            const descendantAncestors = [
+              ...ancestorContentGroup.ancestors,
+              ...descendant.ancestors.slice(
+                descendant.ancestors.findIndex((_id) => contentGroup._id.equals(_id))
+              )
+            ];
+
+            return {
+              updateOne: {
+                filter: { _id: descendant._id },
+                update: { $set: { ancestors: descendantAncestors } }
+              }
+            };
+          })
+        ]);
+      }
+
       publishEvent(ctx, `${ctx.auth.workspaceId}`, { action: "update", data: { id, ...update } });
     }),
   create: authenticatedProcedure
@@ -97,25 +152,39 @@ const contentGroupsRouter = router({
       openapi: { method: "POST", path: basePath, protect: true },
       permissions: { session: ["manageDashboard"], token: ["contentGroups:write"] }
     })
-    .input(contentGroup.omit({ descendants: true, id: true }))
+    .input(
+      contentGroup
+        .omit({ descendants: true, ancestors: true, id: true })
+        .extend({ ancestor: zodId().optional() })
+    )
     .output(z.object({ id: zodId() }))
     .mutation(async ({ ctx, input }) => {
       const contentGroupsCollection = getContentGroupsCollection(ctx.db);
       const workspacesCollection = getWorkspacesCollection(ctx.db);
+      const ancestor =
+        input.ancestor &&
+        (await contentGroupsCollection.findOne({
+          _id: new ObjectId(input.ancestor),
+          workspaceId: ctx.auth.workspaceId
+        }));
+
+      if (input.ancestor && !ancestor) throw errors.notFound("contentGroup");
+
       const contentGroup: UnderscoreID<FullContentGroup<ObjectId>> = {
         name: input.name,
         locked: false,
         descendants: [],
         workspaceId: ctx.auth.workspaceId,
         _id: new ObjectId(),
-        ...(input.ancestors && {
-          ancestors: input.ancestors.map((ancestor) => new ObjectId(ancestor))
+        ancestors: [],
+        ...(ancestor && {
+          ancestors: [...ancestor.ancestors, ancestor._id]
         })
       };
 
-      if (input.ancestors.length > 0) {
+      if (ancestor) {
         const { matchedCount } = await contentGroupsCollection.updateOne(
-          { _id: new ObjectId(input.ancestors[input.ancestors.length - 1]) },
+          { _id: ancestor._id },
           { $push: { descendants: contentGroup._id } }
         );
 
@@ -132,7 +201,8 @@ const contentGroupsRouter = router({
         action: "create",
         data: {
           id: `${contentGroup._id}`,
-          descendants: [],
+          ancestors: contentGroup.ancestors.map((id) => `${id}`),
+          descendants: contentGroup.descendants.map((id) => `${id}`),
           ...input
         }
       });
@@ -210,10 +280,6 @@ const contentGroupsRouter = router({
       });
     }),
   listAncestors: authenticatedProcedure
-    .meta({
-      openapi: { method: "GET", path: `${basePath}/list-ancestors`, protect: true },
-      permissions: { token: ["contentGroups:read"] }
-    })
     .input(
       z.object({
         contentGroupId: zodId()
@@ -247,7 +313,7 @@ const contentGroupsRouter = router({
     .input(
       z
         .object({
-          ancestorId: zodId().optional()
+          ancestor: zodId().optional()
         })
         .optional()
     )
@@ -256,7 +322,7 @@ const contentGroupsRouter = router({
       const contentGroupsCollection = getContentGroupsCollection(ctx.db);
       const workspacesCollection = getWorkspacesCollection(ctx.db);
       const ids: ObjectId[] = [];
-      const ancestorId = input?.ancestorId ? new ObjectId(input.ancestorId) : null;
+      const ancestorId = input?.ancestor ? new ObjectId(input.ancestor) : null;
 
       if (ancestorId) {
         const ancestor = await contentGroupsCollection.findOne({ _id: ancestorId });
@@ -327,7 +393,6 @@ const contentGroupsRouter = router({
         if (!matchedCount) throw errors.notFound("contentGroup");
       }
 
-      // Add to new ancestor
       if (input.ancestor) {
         const ancestor = await contentGroupsCollection.findOne({
           _id: new ObjectId(input.ancestor),
@@ -379,7 +444,13 @@ const contentGroupsRouter = router({
 
       publishEvent(ctx, `${ctx.auth.workspaceId}`, {
         action: "move",
-        data: input
+        data: {
+          id: input.id,
+          ancestors: ancestors.map((id) => `${id}`),
+          descendants: contentGroup.descendants.map((id) => `${id}`),
+          name: contentGroup.name,
+          locked: contentGroup.locked
+        }
       });
     }),
   reorder: authenticatedProcedure
@@ -410,7 +481,12 @@ const contentGroupsRouter = router({
 
         const newDescendants = [...ancestor.descendants];
 
-        newDescendants.splice(newDescendants.indexOf(contentGroup._id), 1);
+        newDescendants.splice(
+          newDescendants.findIndex((newDescendantId) => {
+            return newDescendantId.equals(contentGroup._id);
+          }),
+          1
+        );
         newDescendants.splice(input.index, 0, contentGroup._id);
         await contentGroupsCollection.updateOne(
           { _id: ancestor._id },
@@ -425,7 +501,12 @@ const contentGroupsRouter = router({
 
         const newContentGroups = [...workspace.contentGroups];
 
-        newContentGroups.splice(newContentGroups.indexOf(contentGroup._id), 1);
+        newContentGroups.splice(
+          newContentGroups.findIndex((newContentGroupId) => {
+            return newContentGroupId.equals(contentGroup._id);
+          }),
+          1
+        );
         newContentGroups.splice(input.index, 0, contentGroup._id);
         await workspacesCollection.updateOne(
           { _id: ctx.auth.workspaceId },

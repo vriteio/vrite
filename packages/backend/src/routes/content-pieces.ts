@@ -186,15 +186,7 @@ const isLocked = async (db: Db, contentGroupId: string): Promise<boolean> => {
 
   if (!contentGroup) throw errors.incomplete("contentPiece");
 
-  const ancestors = await contentGroupsCollection
-    .find({
-      _id: {
-        $in: contentGroup.ancestors.map((ancestor) => new ObjectId(ancestor))
-      }
-    })
-    .toArray();
-
-  return ancestors.some(({ locked }) => locked);
+  return Boolean(contentGroup.locked);
 };
 const basePath = "/content-pieces";
 const authenticatedProcedure = procedure.use(isAuthenticated);
@@ -358,22 +350,11 @@ const contentPiecesRouter = router({
       const workspaceSettingsCollection = getWorkspaceSettingsCollection(ctx.db);
       const contentPiecesCollection = getContentPiecesCollection(ctx.db);
       const contentPieceVariantsCollection = getContentPieceVariantsCollection(ctx.db);
-      const contentGroupsCollection = getContentGroupsCollection(ctx.db);
       const workspaceSettings = await workspaceSettingsCollection.findOne({
         workspaceId: ctx.auth.workspaceId
       });
       const contentGroupId = new ObjectId(input.contentGroupId);
       const { variantId, variantName } = await getVariantDetails(ctx.db, input.variant);
-      const contentGroups = await contentGroupsCollection
-        .find({
-          _id: {
-            $in: Array.isArray(contentGroupId) ? contentGroupId : [contentGroupId]
-          }
-        })
-        .toArray();
-
-      if (!contentGroups.length) throw errors.incomplete("contentPiece");
-
       const cursor = contentPiecesCollection
         .find({
           workspaceId: ctx.auth.workspaceId,
@@ -412,6 +393,8 @@ const contentPiecesRouter = router({
         });
       }
 
+      const locked = await isLocked(ctx.db, `${input.contentGroupId}`);
+
       return Promise.all(
         contentPieces.map(async (contentPiece) => {
           const tags = await fetchContentPieceTags(ctx.db, contentPiece);
@@ -429,7 +412,7 @@ const contentPiecesRouter = router({
             id: `${contentPiece._id}`,
             contentGroupId: `${contentPiece.contentGroupId}`,
             workspaceId: `${contentPiece.workspaceId}`,
-            locked: contentGroups?.some(({ locked }) => locked) || false,
+            locked,
             date: contentPiece.date?.toISOString(),
             tags,
             members
@@ -607,18 +590,9 @@ const contentPiecesRouter = router({
       }
 
       const { contentGroupId } = contentPiece;
-      const contentGroups = await contentGroupsCollection
-        .find({
-          _id: {
-            $in: Array.isArray(contentGroupId) ? contentGroupId : [contentGroupId]
-          }
-        })
-        .toArray();
-
-      if (!contentGroups.length) throw errors.notFound("contentGroup");
 
       if (
-        contentGroups.some(({ locked }) => locked) &&
+        (await isLocked(ctx.db, `${contentGroupId}`)) &&
         (Object.keys(input).length > 1 || !input.contentGroupId) &&
         !extensionId
       ) {

@@ -65,7 +65,7 @@ const DashboardView: Component = () => {
   );
 
   return (
-    <div class="relative flex-1 overflow-hidden flex flex-row h-full pt-5 pb-2.5">
+    <div class="relative flex-1 overflow-hidden flex flex-row h-full">
       <Switch>
         <Match when={view() === "kanban"}>
           <DashboardKanbanView

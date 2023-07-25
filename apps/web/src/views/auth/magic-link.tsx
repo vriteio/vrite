@@ -3,10 +3,10 @@ import { getErrorMessage } from "./error-messages";
 import { Show, createMemo } from "solid-js";
 import { Input, Button } from "#components/primitives";
 import { createRef, validateEmail } from "#lib/utils";
-import { App, useClientContext } from "#context";
+import { App, useClient } from "#context";
 
 const MagicLinkForm: AuthFormComponent = (props) => {
-  const { client } = useClientContext();
+  const client = useClient();
   const setLoading = (loading: boolean): void => props.setFormData("loading", loading);
   const loading = (): boolean => props.formData.loading;
   const [formContainerRef, setFormContainerRef] = createRef<HTMLElement | null>(null);
