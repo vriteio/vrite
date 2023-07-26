@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@hocuspocus/extension-database": "^2.2.3",
+    "@hocuspocus/extension-redis": "^2.2.3",
     "@hocuspocus/server": "^2.2.3",
     "@vrite/backend": "workspace:*",
     "mongodb": "^5.7.0",

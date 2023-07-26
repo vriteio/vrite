@@ -1,6 +1,7 @@
 import { publicPlugin, getContentsCollection, getContentVariantsCollection } from "@vrite/backend";
 import { Server } from "@hocuspocus/server";
 import { Database } from "@hocuspocus/extension-database";
+import { Redis } from "@hocuspocus/extension-redis";
 import { ObjectId, Binary } from "mongodb";
 import { SessionData } from "@vrite/backend/src/lib/session";
 import { unauthorized } from "@vrite/backend/src/lib/errors";
@@ -33,6 +34,7 @@ const writingPlugin = publicPlugin(async (fastify) => {
       }
     },
     extensions: [
+      new Redis({ redis: fastify.redis }),
       new Database({
         async fetch({ documentName }) {
           if (documentName.startsWith("workspace:")) {
