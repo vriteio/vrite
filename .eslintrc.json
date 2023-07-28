@@ -34,7 +34,6 @@
         "max-lines": "off",
         "no-duplicate-imports": "off",
         "no-underscore-dangle": "off",
-        "@typescript-eslint/no-duplicate-imports": ["error"],
         "max-len": "off",
         "semi": "off",
         "sort-keys": "off",

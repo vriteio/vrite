@@ -15,6 +15,7 @@ export default defineConfig(async () => {
         },
         "/session": { target: "http://localhost:3333", ws: true },
         "/login": { target: "http://localhost:3333", ws: true },
+        "/github": { target: "http://localhost:3333", ws: true },
         "/proxy": { target: "http://localhost:3333", ws: true }
       }
     },

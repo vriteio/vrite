@@ -8,7 +8,8 @@ import {
   mdiAccountCircle,
   mdiHelpCircle,
   mdiPuzzle,
-  mdiMicrosoftXboxControllerMenu
+  mdiMicrosoftXboxControllerMenu,
+  mdiGit
 } from "@mdi/js";
 import { Accessor, Component, For, Show, createEffect, createSignal, on } from "solid-js";
 import { Link, useLocation, useNavigate } from "@solidjs/router";
@@ -84,13 +85,21 @@ const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
         if (!md()) setStorage((storage) => ({ ...storage, sidePanelWidth: 0 }));
       }
     },
+    {
+      icon: mdiGit,
+      label: "Source control",
+      active: () => storage().sidePanelView === "git",
+      onClick: () => {
+        setSidePanelView("git");
+      }
+    },
     null,
     {
       icon: mdiCog,
       label: "Settings",
       inMenu: true,
       active: () => storage().sidePanelView === "settings",
-      onClick: async () => {
+      onClick: () => {
         setSidePanelView("settings");
       }
     },

@@ -124,6 +124,9 @@ const Code = BaseCode.extend({
 });
 const Link = BaseLink.extend({
   exitable: true,
+  parseHTML() {
+    return [{ tag: 'a[href]:not([href ^= "javascript:" i])' }];
+  },
   addInputRules() {
     return [
       markInputRule({

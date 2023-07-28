@@ -8,9 +8,11 @@ import { ContentPieceView } from "#views/content-piece";
 import { SettingsView } from "#views/settings";
 import { ExtensionsView } from "#views/extensions";
 import { GettingStartedView } from "#views/getting-started";
+import { GitView } from "#views/git";
 
 const sidePanelViews: Record<string, Component<Record<string, any>>> = {
   contentPiece: ContentPieceView,
+  git: GitView,
   settings: SettingsView,
   extensions: ExtensionsView,
   default: GettingStartedView

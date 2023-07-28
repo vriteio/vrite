@@ -241,11 +241,6 @@ const contentGroupsRouter = router({
 
       if (!contentGroup) throw errors.notFound("contentGroup");
 
-      await contentGroupsCollection.deleteOne({
-        _id: contentGroupId,
-        workspaceId: ctx.auth.workspaceId
-      });
-
       if (contentGroup.ancestors.length > 0) {
         await contentGroupsCollection.updateOne(
           { _id: contentGroup.ancestors[contentGroup.ancestors.length - 1] },
@@ -258,16 +253,39 @@ const contentGroupsRouter = router({
         );
       }
 
+      const nestedContentGroups = await contentGroupsCollection
+        .find({
+          ancestors: contentGroupId
+        })
+        .map(({ _id }) => _id)
+        .toArray();
+      const deletedContentGroupIds = [contentGroupId, ...nestedContentGroups];
       const contentPieceIds = await contentPiecesCollection
-        .find({ contentGroupId })
+        .find({ contentGroupId: { $in: deletedContentGroupIds } })
         .project({ _id: true })
         .map(({ _id }) => _id)
         .toArray();
 
-      await contentPiecesCollection.deleteMany({ contentGroupId });
-      await contentsCollection.deleteMany({ contentGroupId });
-      await contentPieceVariantsCollection.deleteMany({ contentPieceId: { $in: contentPieceIds } });
-      await contentVariantsCollection.deleteMany({ contentPieceId: { $in: contentPieceIds } });
+      await contentGroupsCollection.deleteMany({
+        _id: { $in: deletedContentGroupIds },
+        workspaceId: ctx.auth.workspaceId
+      });
+      await contentPiecesCollection.deleteMany({
+        _id: { $in: contentPieceIds },
+        workspaceId: ctx.auth.workspaceId
+      });
+      await contentsCollection.deleteMany({
+        contentPieceId: { $in: contentPieceIds },
+        workspaceId: ctx.auth.workspaceId
+      });
+      await contentPieceVariantsCollection.deleteMany({
+        contentPieceId: { $in: contentPieceIds },
+        workspaceId: ctx.auth.workspaceId
+      });
+      await contentVariantsCollection.deleteMany({
+        contentPieceId: { $in: contentPieceIds },
+        workspaceId: ctx.auth.workspaceId
+      });
       publishEvent(ctx, `${ctx.auth.workspaceId}`, {
         action: "delete",
         data: input

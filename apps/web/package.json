@@ -21,6 +21,7 @@
     "@jetbrains/websandbox": "^1.0.7",
     "@mdi/js": "^7.2.96",
     "@motionone/solid": "^10.16.2",
+    "@octokit/rest": "^20.0.1",
     "@solid-primitives/active-element": "^2.0.15",
     "@solid-primitives/connectivity": "^0.3.15",
     "@solid-primitives/media": "^2.2.3",
