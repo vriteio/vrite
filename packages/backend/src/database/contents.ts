@@ -7,7 +7,6 @@ interface Contents<ID extends string | ObjectId = string> {
   id: ID;
 }
 interface FullContents<ID extends string | ObjectId = string> extends Contents<ID> {
-  workspaceId: ID;
   contentGroupId: ID;
 }
 
