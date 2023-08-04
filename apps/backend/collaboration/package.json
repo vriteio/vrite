@@ -13,6 +13,7 @@
     "@hocuspocus/extension-redis": "^2.2.3",
     "@hocuspocus/server": "^2.2.3",
     "@vrite/backend": "workspace:*",
+    "@vrite/sdk": "workspace:2023.7.17-beta",
     "mongodb": "^5.7.0",
     "y-protocols": "^1.0.5",
     "yjs": "^13.6.7"

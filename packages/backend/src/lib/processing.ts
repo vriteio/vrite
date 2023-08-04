@@ -41,12 +41,15 @@ interface DocJSON {
   marks?: Array<{ type: string; attrs: Attrs }>;
 }
 
+const docToJSON = (doc: Y.Doc): DocJSON => {
+  return TiptapTransformer.fromYdoc(doc, "default");
+};
 const bufferToJSON = (buffer: Buffer): DocJSON => {
   const doc = new Y.Doc();
 
   Y.applyUpdate(doc, new Uint8Array(buffer));
 
-  return TiptapTransformer.fromYdoc(doc, "default");
+  return docToJSON(doc);
 };
 const htmlToJSON = (html: string): DocJSON => {
   return generateJSON(html, [
@@ -115,5 +118,5 @@ const jsonToBuffer = (json: DocJSON): Buffer => {
   return Buffer.from(Y.encodeStateAsUpdate(doc));
 };
 
-export { bufferToJSON, htmlToJSON, jsonToBuffer };
+export { bufferToJSON, htmlToJSON, jsonToBuffer, docToJSON };
 export type { DocJSON };

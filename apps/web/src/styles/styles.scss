@@ -210,7 +210,7 @@
     ) {
     @apply my-5;
   }
-  :where(li > ul, li > ol):not(:where(.not-prose, .not-prose *)) {
+  :where(li > ul, li > ol, li > div > ul, li > div > ol):not(:where(.not-prose, .not-prose *)) {
     @apply m-0;
   }
   :where(ul[data-type="taskList"]):not(:where(.not-prose, .not-prose *)) {

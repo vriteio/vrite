@@ -25,7 +25,10 @@ const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
         }));
       }}
     >
-      <Card class="m-0 border-x-0 border-t-0 rounded-none justify-start items-center hover:bg-gray-200 dark:hover:bg-gray-700 hover:cursor-pointer pl-4 flex bg-transparent">
+      <Card
+        color="contrast"
+        class="m-0 border-x-0 border-t-0 rounded-none justify-start items-center hover:bg-gray-200 dark:hover:bg-gray-700 hover:cursor-pointer pl-4 flex bg-transparent"
+      >
         <div class="flex-1 flex justify-start items-center">
           <IconButton
             path={mdiFileOutline}

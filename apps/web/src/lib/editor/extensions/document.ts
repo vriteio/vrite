@@ -1,6 +1,6 @@
 import { markInputRule, markPasteRule } from "@tiptap/core";
 import { Document as BaseDocument } from "@vrite/editor";
-import { AllSelection, TextSelection } from "@tiptap/pm/state";
+import { AllSelection, PluginKey, Plugin, TextSelection } from "@tiptap/pm/state";
 import { useNotifications } from "#context";
 
 const Document = BaseDocument.extend({

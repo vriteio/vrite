@@ -7,11 +7,15 @@ import {
   createSignal,
   useContext
 } from "solid-js";
+import { App } from "#context";
 
 interface StorageData {
+  sourceControlConfiguredProvider: string;
   sidePanelView: string;
   sidePanelWidth: number;
   toolbarView: string;
+  dashboardView: string;
+  dashboardViewAncestor: App.ContentGroup;
   contentPieceId: string;
   settingsSection: string;
   zenMode: boolean;

@@ -8,7 +8,7 @@ import {
   mdiLanguageMarkdown
 } from "@mdi/js";
 import { Component, createSignal } from "solid-js";
-import { htmlTransformer, gfmTransformer } from "@vrite/sdk/transformers";
+import { gfmOutputTransformer, htmlOutputTransformer } from "@vrite/sdk/transformers";
 import { JSONContent } from "@vrite/sdk";
 import { nanoid } from "nanoid";
 import clsx from "clsx";
@@ -54,7 +54,7 @@ const ExportMenu: Component<ExportMenuProps> = (props) => {
         if (!content) return;
 
         return formatCode(
-          htmlTransformer(content).replace(/<code>((?:.|\n)+?)<\/code>/g, (_, code) => {
+          htmlOutputTransformer(content).replace(/<code>((?:.|\n)+?)<\/code>/g, (_, code) => {
             return `<code>${escapeHTML(code)}</code>`;
           }),
           "html",
@@ -65,7 +65,7 @@ const ExportMenu: Component<ExportMenuProps> = (props) => {
       if (type === "md") {
         if (!content) return;
 
-        return formatCode(gfmTransformer(content), "markdown", prettierConfig);
+        return formatCode(gfmOutputTransformer(content), "markdown", prettierConfig);
       }
 
       return formatCode(JSON.stringify(content), "json", prettierConfig);

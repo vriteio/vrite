@@ -306,7 +306,7 @@ const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
               </div>
               <MiniEditor
                 class={clsx(
-                  "inline-flex flex-1 overflow-x-auto content-group-name scrollbar-hidden hover:cursor-text",
+                  "inline-flex flex-1 overflow-x-auto content-group-name scrollbar-hidden hover:cursor-text whitespace-nowrap-children",
                   highlight() && "highlight-text"
                 )}
                 content="paragraph"

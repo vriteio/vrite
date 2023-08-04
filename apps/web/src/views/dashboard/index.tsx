@@ -7,13 +7,6 @@ import { App, useAuthenticatedUserData, useLocalStorage, useCache, useSharedStat
 import { getSelectionColor } from "#lib/utils";
 import { useContentGroups } from "#lib/composables";
 
-declare module "#context" {
-  interface SharedState {
-    ancestor: App.ContentGroup | null;
-    dashboardView: "kanban" | "list";
-  }
-}
-
 const DashboardView: Component = () => {
   const createSharedSignal = useSharedState();
   const cache = useCache();
@@ -23,8 +16,6 @@ const DashboardView: Component = () => {
   const { workspace, profile } = useAuthenticatedUserData();
   const { storage, setStorage } = useLocalStorage();
   const ydoc = new Y.Doc();
-  const [ancestor, setAncestor] = createSharedSignal("ancestor");
-  const [view] = createSharedSignal("dashboardView", "kanban");
   const [provider, setProvider] = createSharedSignal(
     "provider",
     new HocuspocusProvider({
@@ -36,6 +27,15 @@ const DashboardView: Component = () => {
       document: ydoc
     })
   );
+  const ancestor = (): App.ContentGroup | null => {
+    return storage().dashboardViewAncestor || null;
+  };
+  const setAncestor = (ancestor: App.ContentGroup | null): void => {
+    setStorage((storage) => ({
+      ...storage,
+      dashboardViewAncestor: ancestor || undefined
+    }));
+  };
 
   provider()?.awareness.setLocalStateField("user", {
     name: profile()?.username || "",
@@ -46,7 +46,6 @@ const DashboardView: Component = () => {
   onCleanup(() => {
     provider()?.destroy();
     setProvider(undefined);
-    setAncestor(undefined);
   });
   setStorage((storage) => ({ ...storage, toolbarView: "default" }));
   createEffect(
@@ -67,16 +66,16 @@ const DashboardView: Component = () => {
   return (
     <div class="relative flex-1 overflow-hidden flex flex-row h-full">
       <Switch>
-        <Match when={view() === "kanban"}>
-          <DashboardKanbanView
+        <Match when={storage().dashboardView === "list"}>
+          <DashboardListView
             ancestor={ancestor()}
             contentGroups={contentGroups()}
             setAncestor={setAncestor}
             setContentGroups={setContentGroups}
           />
         </Match>
-        <Match when={view() === "list"}>
-          <DashboardListView
+        <Match when={storage().dashboardView === "kanban" || !storage().dashboardView}>
+          <DashboardKanbanView
             ancestor={ancestor()}
             contentGroups={contentGroups()}
             setAncestor={setAncestor}

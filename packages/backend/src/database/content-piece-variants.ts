@@ -11,7 +11,8 @@ const contentPieceVariant = contentPiece
   .merge(z.object({ variantId: zodId(), contentPieceId: zodId() }));
 
 interface ContentPieceVariant<ID extends string | ObjectId = string>
-  extends Partial<Omit<ContentPiece<ID>, "contentGroupId" | "contentPieceId">> {
+  extends Partial<Omit<ContentPiece<ID>, "contentGroupId" | "contentPieceId" | "id">> {
+  id: ID;
   variantId: ID;
   contentPieceId: ID;
 }

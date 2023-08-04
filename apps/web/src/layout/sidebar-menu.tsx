@@ -85,6 +85,7 @@ const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
         if (!md()) setStorage((storage) => ({ ...storage, sidePanelWidth: 0 }));
       }
     },
+    null,
     {
       icon: mdiGit,
       label: "Source control",
@@ -93,7 +94,6 @@ const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
         setSidePanelView("git");
       }
     },
-    null,
     {
       icon: mdiCog,
       label: "Settings",

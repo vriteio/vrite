@@ -19,7 +19,7 @@ import { Dynamic, Portal } from "solid-js/web";
 import { createMediaQuery } from "@solid-primitives/media";
 import { createActiveElement } from "@solid-primitives/active-element";
 
-interface DropdownProps extends JSX.SelectHTMLAttributes<HTMLSelectElement> {
+interface DropdownProps extends JSX.HTMLAttributes<HTMLDivElement> {
   class?: string;
   cardProps?: Partial<ComponentProps<typeof Card>>;
   overlayProps?: Partial<ComponentProps<typeof Overlay>>;
@@ -31,6 +31,7 @@ interface DropdownProps extends JSX.SelectHTMLAttributes<HTMLSelectElement> {
   overlay?: boolean;
   attachActivatorHandler?: boolean;
   activatorWrapperClass?: string;
+  overflowContainerClass?: string;
   activatorButton: Component<{ opened: boolean; computeDropdownPosition(): void }>;
   setOpened?(opened: boolean): void;
 }
@@ -254,7 +255,10 @@ const Dropdown: Component<DropdownProps> = (props) => {
           >
             <div class="h-1.5 w-16 rounded-full bg-gray-200 dark:bg-gray-700"></div>
           </div>
-          <div class="overflow-auto" style={{ "min-height": `${minHeight()}px` }}>
+          <div
+            class={clsx("overflow-auto scrollbar-sm flex-1", props.overflowContainerClass)}
+            style={{ "min-height": `${minHeight()}px` }}
+          >
             {props.children}
           </div>
         </Card>

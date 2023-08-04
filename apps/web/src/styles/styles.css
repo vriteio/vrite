@@ -173,7 +173,9 @@ textarea {
 .sidebar-hidden #dropdowns {
   height: calc(100% - env(safe-area-inset-bottom, 0px));
 }
-
+.whitespace-nowrap-children * {
+  @apply !whitespace-nowrap;
+}
 /*.slash-menu {
   @apply lt-md:!transform-none;
 }*/

@@ -65,7 +65,9 @@
     "dist"
   ],
   "dependencies": {
-    "isomorphic-unfetch": "^3.1.0"
+    "@types/marked": "^5.0.1",
+    "isomorphic-unfetch": "^3.1.0",
+    "marked": "^5.1.2"
   },
   "peerDependenciesMeta": {
     "astro": {

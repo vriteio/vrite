@@ -1,15 +1,26 @@
 import { ProviderConfigurationView } from "./provider-configuration-view";
 import { InitialSetupView } from "./initial-setup-view";
 import { providers } from "./providers";
-import { Component, createMemo, createSignal, Show } from "solid-js";
-import { mdiChevronLeft, mdiClose } from "@mdi/js";
+import { SyncView } from "./sync-view";
+import {
+  Accessor,
+  Component,
+  createMemo,
+  createResource,
+  createSignal,
+  Match,
+  onCleanup,
+  Show,
+  Switch
+} from "solid-js";
+import { mdiChevronLeft, mdiClose, mdiGithub, mdiTune } from "@mdi/js";
 import clsx from "clsx";
 import { Dynamic } from "solid-js/web";
 import { Motion, Presence } from "@motionone/solid";
-import { Card, Heading, IconButton } from "#components/primitives";
+import { Card, Heading, IconButton, Loader } from "#components/primitives";
 import { ScrollShadow } from "#components/fragments";
 import { createRef } from "#lib/utils";
-import { useLocalStorage } from "#context";
+import { App, useClient, useLocalStorage } from "#context";
 
 interface SubSection {
   label: string;
@@ -17,19 +28,75 @@ interface SubSection {
   goBack(): void;
 }
 
+const useGitConfig = (): {
+  gitConfig: Accessor<App.GitData | null>;
+  loading: Accessor<boolean>;
+} => {
+  const client = useClient();
+  const [gitConfig, setGitConfig] = createSignal<App.GitData | null>(null);
+  const [loading, setLoading] = createSignal(true);
+  const gitConfigChanges = client.git.changes.subscribe(undefined, {
+    onData({ action, data }) {
+      if (action === "configure") {
+        setGitConfig(data);
+      } else if (action === "reset") {
+        setGitConfig(null);
+      } else if (action === "update") {
+        setGitConfig((gitConfig) => {
+          if (gitConfig) {
+            return {
+              ...gitConfig,
+              ...data
+            };
+          }
+
+          return null;
+        });
+      }
+    }
+  });
+
+  client.git.config
+    .query()
+    .then((gitConfig) => {
+      setGitConfig(gitConfig);
+    })
+    .catch(() => {
+      setGitConfig(null);
+    })
+    .finally(() => {
+      setLoading(false);
+    });
+  onCleanup(() => {
+    gitConfigChanges.unsubscribe();
+  });
+
+  return { gitConfig, loading };
+};
 const GitView: Component = () => {
-  const { setStorage } = useLocalStorage();
-  const [openedProvider, setOpenedProvider] = createSignal("");
+  const { setStorage, storage } = useLocalStorage();
   const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
   const [subSection, setSubSection] = createSignal<SubSection | null>(null);
   const [actionComponent, setActionComponent] = createSignal<Component<{}> | null>(null);
+  const client = useClient();
+  const openedProvider = (): string => storage().sourceControlConfiguredProvider || "";
+  const setOpenedProvider = (providerName: string): void => {
+    setStorage((storage) => ({
+      ...storage,
+      sourceControlConfiguredProvider: providerName
+    }));
+  };
+  const { gitConfig, loading } = useGitConfig();
+  const configured = createMemo(() => {
+    return Boolean(gitConfig()?.github);
+  });
   const currentSection = createMemo(() => {
     const providerName = openedProvider();
     const provider = providers.find(({ name }) => providerName === name);
 
     if (!provider) return { label: "Source control", name: "menu", icon: "" };
 
-    return provider;
+    return { label: `Configure ${provider.label}`, name: provider.name, icon: provider.icon };
   });
 
   return (
@@ -63,7 +130,7 @@ const GitView: Component = () => {
         <Show
           when={openedProvider()}
           fallback={
-            <div class="flex justify-center items-center">
+            <div class="flex justify-center items-center w-full">
               <IconButton
                 path={mdiClose}
                 text="soft"
@@ -76,9 +143,20 @@ const GitView: Component = () => {
                   }));
                 }}
               />
-              <Heading level={1} class="py-1">
+              <Heading level={1} class="py-1 flex-1">
                 {currentSection().label}
               </Heading>
+              <Show when={gitConfig()}>
+                <IconButton
+                  path={
+                    providers.find(({ name }) => name === gitConfig()!.provider)?.icon || mdiTune
+                  }
+                  class="m-0"
+                  onClick={() => {
+                    setOpenedProvider(gitConfig()!.provider);
+                  }}
+                />
+              </Show>
             </div>
           }
         >
@@ -115,16 +193,30 @@ const GitView: Component = () => {
                   transition={{ duration: 0.35 }}
                   class="flex justify-start flex-col min-h-[calc(100%-env(safe-area-inset-bottom,0px))] items-start w-full gap-5 absolute"
                 >
-                  <Show
-                    when={openedProvider()}
-                    fallback={<InitialSetupView setOpenedProvider={setOpenedProvider} />}
-                  >
-                    <ProviderConfigurationView
-                      close={() => setOpenedProvider("")}
-                      providerName={openedProvider()!}
-                      setActionComponent={(component) => setActionComponent(() => component)}
-                    />
-                  </Show>
+                  <Switch>
+                    <Match when={loading()}>
+                      <div class="flex justify-center items-center w-full">
+                        <Loader />
+                      </div>
+                    </Match>
+                    <Match when={openedProvider()}>
+                      <ProviderConfigurationView
+                        close={() => setOpenedProvider("")}
+                        gitData={gitConfig() || null}
+                        providerName={openedProvider()!}
+                        setActionComponent={(component) => setActionComponent(() => component)}
+                      />
+                    </Match>
+                    <Match when={!openedProvider() && !configured()}>
+                      <InitialSetupView setOpenedProvider={setOpenedProvider} />
+                    </Match>
+                    <Match when={!openedProvider() && configured()}>
+                      <SyncView
+                        gitData={gitConfig()!}
+                        setActionComponent={(component) => setActionComponent(() => component)}
+                      />
+                    </Match>
+                  </Switch>
                 </Motion.div>
               </Show>
             </Presence>

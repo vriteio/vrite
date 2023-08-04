@@ -100,6 +100,9 @@ importers:
       '@vrite/backend':
         specifier: workspace:*
         version: link:../../../packages/backend
+      '@vrite/sdk':
+        specifier: workspace:2023.7.17-beta
+        version: link:../../../packages/sdk/javascript
       mongodb:
         specifier: ^5.7.0
         version: 5.7.0
@@ -764,9 +767,15 @@ importers:
 
   packages/sdk/javascript:
     dependencies:
+      '@types/marked':
+        specifier: ^5.0.1
+        version: 5.0.1
       isomorphic-unfetch:
         specifier: ^3.1.0
         version: 3.1.0
+      marked:
+        specifier: ^5.1.2
+        version: 5.1.2
     devDependencies:
       astro:
         specifier: ^2.9.2

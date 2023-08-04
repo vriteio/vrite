@@ -1,14 +1,24 @@
-import { publicPlugin, getContentsCollection, getContentVariantsCollection } from "@vrite/backend";
+import {
+  publicPlugin,
+  getContentsCollection,
+  getContentVariantsCollection,
+  getGitDataCollection,
+  bufferToJSON,
+  docToJSON
+} from "@vrite/backend";
 import { Server } from "@hocuspocus/server";
 import { Database } from "@hocuspocus/extension-database";
 import { Redis } from "@hocuspocus/extension-redis";
 import { ObjectId, Binary } from "mongodb";
 import { SessionData } from "@vrite/backend/src/lib/session";
 import { unauthorized } from "@vrite/backend/src/lib/errors";
+import { gfmTransformer } from "@vrite/sdk/transformers";
+import crypto from "node:crypto";
 
 const writingPlugin = publicPlugin(async (fastify) => {
   const contentsCollection = getContentsCollection(fastify.mongo.db!);
   const contentVariantsCollection = getContentVariantsCollection(fastify.mongo.db!);
+  const gitDataCollection = getGitDataCollection(fastify.mongo.db!);
   const server = Server.configure({
     port: fastify.config.PORT,
     address: fastify.config.HOST,
@@ -32,6 +42,8 @@ const writingPlugin = publicPlugin(async (fastify) => {
       if (sessionData.baseType !== "admin" && !sessionData.permissions.includes("editContent")) {
         data.connection.readOnly = true;
       }
+
+      return sessionData;
     },
     extensions: [
       new Redis({ redis: fastify.redis }),
@@ -64,7 +76,7 @@ const writingPlugin = publicPlugin(async (fastify) => {
 
           return null;
         },
-        store({ documentName, state, ...details }) {
+        async store({ documentName, state, ...details }) {
           const [contentPieceId, variantId] = documentName.split(":");
 
           if (documentName.startsWith("workspace:")) {
@@ -86,6 +98,22 @@ const writingPlugin = publicPlugin(async (fastify) => {
                 { upsert: true }
               );
             }
+
+            const json = docToJSON(details.document);
+            const md = gfmTransformer(json);
+            const currentHash = crypto.createHash("md5").update(md).digest("hex");
+
+            await gitDataCollection.updateOne(
+              {
+                "workspaceId": new ObjectId(details.context.workspaceId),
+                "records.contentPieceId": new ObjectId(contentPieceId)
+              },
+              {
+                $set: {
+                  "records.$.currentHash": currentHash
+                }
+              }
+            );
 
             return contentsCollection?.updateOne(
               { contentPieceId: new ObjectId(contentPieceId) },

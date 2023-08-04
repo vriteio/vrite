@@ -1,11 +1,13 @@
-import { mdiChevronDown, mdiGithub, mdiUnfoldMoreHorizontal, mdiUnfoldMoreVertical } from "@mdi/js";
-import { Component, For, Show, createMemo, createResource, createSignal } from "solid-js";
+import { SearchableSelect } from "./searchable-select";
+import { mdiFileTree, mdiGithub, mdiRefresh, mdiSourceBranch, mdiSwapHorizontal } from "@mdi/js";
+import { Component, Match, Show, Switch, createMemo, createResource, createSignal } from "solid-js";
 import { Octokit, RestEndpointMethodTypes } from "@octokit/rest";
-import { Button, Dropdown, Heading, Icon, IconButton } from "#components/primitives";
-import { breakpoints } from "#lib/utils";
-import { useClient } from "#context";
+import { Button, Heading, IconButton, Input, Tooltip } from "#components/primitives";
+import { App, useClient } from "#context";
+import { InputField, TitledCard } from "#components/fragments";
 
 interface GitHubConfigurationViewProps {
+  gitData: App.GitData | null;
   setActionComponent(component: Component<{}> | null): void;
 }
 
@@ -17,21 +19,31 @@ type Branch = RestEndpointMethodTypes["repos"]["listBranches"]["response"]["data
 
 const GitHubConfigurationView: Component<GitHubConfigurationViewProps> = (props) => {
   const client = useClient();
-  const [installationId, setInstallationId] = createSignal(0);
-  const [selectedRepo, setSelectedRepo] = createSignal<{
-    owner: string;
-    name: string;
-    id: number;
-  } | null>(null);
-  const [branchName, setBranchName] = createSignal("");
-  const [installationDropdownOpened, setInstallationDropdownOpened] = createSignal(false);
-  const [repositoryDropdownOpened, setRepositoryDropdownOpened] = createSignal(false);
-  const [branchDropdownOpened, setBranchDropdownOpened] = createSignal(false);
+  const [selectedInstallation, setSelectedInstallation] = createSignal<Installation | null>(null);
+  const [selectedRepository, setSelectedRepository] = createSignal<Repository | null>(null);
+  const [selectedBranch, setSelectedBranch] = createSignal<Branch | null>(null);
+  const [baseDirectory, setBaseDirectory] = createSignal("");
+  const [matchPattern, setMatchPattern] = createSignal("");
+  const [variantsDirectory, setVariantsDirectory] = createSignal("");
+  const [inputTransformer, setInputTransformer] = createSignal("markdown");
+  const [outputTransformer, setOutputTransformer] = createSignal("markdown");
+  const [formatOutput, setFormatOutput] = createSignal(true);
   const [token, setToken] = createSignal("");
+  const savedGitHubConfig = (): App.GitHubData | null => props.gitData?.github || null;
   const octokit = createMemo(() => {
     return new Octokit({ auth: token() });
   });
-  const [installations] = createResource(
+  const filled = createMemo(() => {
+    return Boolean(
+      selectedInstallation() &&
+        selectedRepository() &&
+        selectedBranch() &&
+        baseDirectory() &&
+        inputTransformer() &&
+        outputTransformer()
+    );
+  });
+  const [installations, { refetch: refetchInstallations }] = createResource(
     token,
     async () => {
       if (!token()) return [];
@@ -45,14 +57,14 @@ const GitHubConfigurationView: Component<GitHubConfigurationViewProps> = (props)
     },
     { initialValue: [] }
   );
-  const [repositories] = createResource(
-    installationId,
-    async () => {
-      if (!token()) return [];
+  const [repositories, { refetch: refetchRepositories }] = createResource(
+    selectedInstallation,
+    async (installation) => {
+      if (!token() || !installation) return [];
 
       const response = await octokit().apps.listInstallationReposForAuthenticatedUser({
         // eslint-disable-next-line camelcase
-        installation_id: installationId(),
+        installation_id: installation.id,
         // eslint-disable-next-line camelcase
         per_page: 100
       });
@@ -61,243 +73,326 @@ const GitHubConfigurationView: Component<GitHubConfigurationViewProps> = (props)
     },
     { initialValue: [] }
   );
-  const [branches] = createResource(
-    selectedRepo,
-    async () => {
-      if (!token()) return [];
+  const [branches, { refetch: refetchBranches }] = createResource(
+    selectedRepository,
+    async (repository) => {
+      if (!token() || !repository) return [];
 
       const response = await octokit().repos.listBranches({
-        owner: selectedRepo()!.owner,
-        repo: selectedRepo()!.name
+        owner: repository.owner.login,
+        repo: repository.name
       });
 
       return response.data;
     },
     { initialValue: [] }
   );
-  const retrievedToken =
-    sessionStorage.getItem("github-token") || new URL(location.href).searchParams.get("token");
+  const retrievedToken = new URL(location.href).searchParams.get("token");
 
   if (retrievedToken) {
     const path =
       location.pathname + location.search.replace(/\b(token)=\w+/g, "").replace(/[?&]+$/, "");
 
     history.replaceState({}, "", path);
-    sessionStorage.setItem("github-token", retrievedToken || "");
     setToken(retrievedToken);
   }
 
   props.setActionComponent(() => {
     return (
-      <Button
-        class="m-0"
-        color="primary"
-        disabled={!installationId() || !selectedRepo() || !branchName()}
-        onClick={() => {
-          client.git.github.configure.mutate({
-            installationId: installationId(),
-            repositoryId: selectedRepo()?.id || 0,
-            repositoryName: selectedRepo()?.name || "",
-            repositoryOwner: selectedRepo()?.owner || "",
-            branchName: branchName()
-          });
-        }}
-      >
-        Save
-      </Button>
+      <Switch>
+        <Match when={!savedGitHubConfig()}>
+          <Button
+            class="m-0"
+            color="primary"
+            disabled={!filled()}
+            onClick={() => {
+              client.git.github.configure.mutate({
+                installationId: selectedInstallation()!.id,
+                repositoryName: selectedRepository()!.name,
+                repositoryOwner: selectedRepository()!.owner.login,
+                branchName: selectedBranch()!.name,
+                baseDirectory: baseDirectory(),
+                matchPattern: matchPattern(),
+                variantsDirectory: variantsDirectory(),
+                inputTransformer: inputTransformer(),
+                outputTransformer: outputTransformer(),
+                formatOutput: formatOutput()
+              });
+            }}
+          >
+            Save
+          </Button>
+        </Match>
+        <Match when={savedGitHubConfig()}>
+          <Button
+            class="m-0"
+            color="primary"
+            onClick={() => {
+              client.git.reset.mutate();
+            }}
+          >
+            Reset
+          </Button>
+        </Match>
+      </Switch>
     );
   });
 
   return (
-    <div class="flex flex-col items-start w-full gap-2">
-      <p class="prose text-gray-500 dark:text-gray-400 w-full">
-        Authenticate with your GitHub account
-      </p>
-      <IconButton
-        path={mdiGithub}
-        class="m-0"
-        label="Continue with GitHub"
-        onClick={() => {
-          window.location.replace("github/login");
-        }}
-      />
-      <Show when={token()}>
-        <Heading level={3}>Account</Heading>
-        <p class="prose text-gray-500 dark:text-gray-400 w-full">
-          Select the GitHub installation, user or organization.{" "}
-          <a href="https://github.com/apps/vrite-io/installations/select_target">
-            Install the GitHub app
-          </a>
-          .
-        </p>
-        <Dropdown
-          overlay={!breakpoints.md()}
-          opened={installationDropdownOpened()}
-          setOpened={setInstallationDropdownOpened}
-          activatorWrapperClass="w-full"
-          class="w-full"
-          activatorButton={() => {
-            const account = (): Installation["account"] => {
-              const installation = installations().find(({ id }) => id === installationId());
-
-              return installation?.account || null;
-            };
-
-            return (
-              <Button text="soft" class="flex m-0 px-1 w-full justify-center items-center">
-                <Show
-                  when={account()}
-                  keyed
-                  fallback={
-                    <>
-                      <span class="px-1 flex-1 text-start">Select Account</span>
-                      <Icon path={mdiChevronDown} class="h-6 w-6 mr-2" />
-                    </>
-                  }
-                >
-                  {(account) => {
-                    return (
-                      <>
-                        <img src={account?.avatar_url} class="h-6 w-6 mr-1" />
-                        <span class="flex-1 text-start">
-                          {account && "login" in account! ? account!.login : account?.name || ""}
-                        </span>
-                        <Icon path={mdiChevronDown} class="h-6 w-6 mr-2" />
-                      </>
-                    );
+    <>
+      <TitledCard
+        icon={mdiSourceBranch}
+        label="Repository"
+        action={
+          <Show when={!savedGitHubConfig()}>
+            <Tooltip text="Refresh" side="left" class="-ml-1">
+              <IconButton
+                path={mdiRefresh}
+                loading={installations.loading || repositories.loading || branches.loading}
+                text="soft"
+                class="m-0"
+                onClick={async () => {
+                  setSelectedInstallation(null);
+                  setSelectedRepository(null);
+                  setSelectedBranch(null);
+                  await refetchInstallations();
+                  await refetchRepositories();
+                  await refetchBranches();
+                }}
+              />
+            </Tooltip>
+          </Show>
+        }
+      >
+        <div class="flex flex-col items-start w-full gap-2">
+          <Show
+            when={token() || savedGitHubConfig()}
+            fallback={
+              <>
+                <p class="prose text-gray-500 dark:text-gray-400 w-full">
+                  Authenticate with your GitHub account
+                </p>
+                <IconButton
+                  path={mdiGithub}
+                  class="m-0"
+                  label="Continue with GitHub"
+                  color="contrast"
+                  onClick={() => {
+                    window.location.replace("github/login");
                   }}
-                </Show>
-              </Button>
-            );
-          }}
-        >
-          <div class="flex flex-col gap-1 overflow-visible min-w-48">
-            <For each={installations()}>
-              {(installation) => {
-                const { account, id } = installation;
+                />
+              </>
+            }
+          >
+            <p class="prose text-gray-500 dark:text-gray-400 w-full">
+              <a href="https://github.com/apps/vrite-io/installations/select_target">
+                Install the GitHub app
+              </a>{" "}
+              to provide access to the repository. Then, select it and one of its branches to sync
+              with.
+            </p>
+            <Heading level={3}>Account</Heading>
+            <p class="prose text-gray-500 dark:text-gray-400 w-full">
+              Select user or organization from ones with installed GitHub app.
+            </p>
+            <Show
+              when={!savedGitHubConfig()}
+              fallback={
+                <Input
+                  value={savedGitHubConfig()?.repositoryOwner || ""}
+                  class="w-full m-0"
+                  wrapperClass="w-full"
+                  color="contrast"
+                  disabled
+                />
+              }
+            >
+              <SearchableSelect
+                options={installations()}
+                selected={selectedInstallation()}
+                extractId={(installation) => installation.id.toString()}
+                renderOption={({ account }) => {
+                  const hasLogin = account && "login" in account;
 
-                return (
-                  <Button
-                    class="flex m-0 px-1"
-                    color={installationId() === id ? "primary" : "contrast"}
-                    text={installationId() === id ? "primary" : "soft"}
-                    variant={installationId() === id ? "solid" : "text"}
-                    onClick={() => {
-                      setInstallationId(id);
-                      setInstallationDropdownOpened(false);
-                    }}
-                  >
-                    <img src={account?.avatar_url} class="h-6 w-6 mr-1 bg-gray-100 rounded-full" />
-                    {account && "login" in account ? account.login : account?.name || ""}
-                  </Button>
-                );
-              }}
-            </For>
-          </div>
-        </Dropdown>
-      </Show>
-      <Show when={installationId()}>
-        <Heading level={3}>Repository</Heading>
-        <p class="prose text-gray-500 dark:text-gray-400 w-full">
-          Select the GitHub repository to sync this space with. This repository should be authorized
-          in the GitHub installation.
-        </p>
-        <Dropdown
-          overlay={!breakpoints.md()}
-          opened={repositoryDropdownOpened()}
-          setOpened={setRepositoryDropdownOpened}
-          activatorWrapperClass="w-full"
-          class="w-full"
-          activatorButton={() => {
-            const repository = (): Repository | null => {
-              return (
-                repositories().find((repository) => repository.id === selectedRepo()?.id) || null
-              );
-            };
+                  return (
+                    <div class="flex w-full">
+                      <img src={account?.avatar_url} class="h-6 w-6 mr-1" />
+                      <span class="flex-1 text-start">
+                        {hasLogin ? account.login : account?.name || ""}
+                      </span>
+                    </div>
+                  );
+                }}
+                filterOption={({ account }, query) => {
+                  const hasLogin = account && "login" in account;
+                  const name = hasLogin ? account.login : account?.name || "";
 
-            return (
-              <Button text="soft" class="flex m-0 w-full">
-                <Show when={repository()} keyed fallback="Select Repository">
-                  {(repository) => repository.name || ""}
-                </Show>
-              </Button>
-            );
-          }}
-        >
-          <div class="flex flex-col gap-1 overflow-visible min-w-48">
-            <For each={repositories()}>
-              {(repository) => {
-                const { id, name, owner } = repository;
-
-                return (
-                  <Button
-                    class="flex m-0"
-                    color={selectedRepo()?.id === id ? "primary" : "contrast"}
-                    text={selectedRepo()?.id === id ? "primary" : "soft"}
-                    variant={selectedRepo()?.id === id ? "solid" : "text"}
-                    onClick={() => {
-                      setSelectedRepo({ id, name, owner: owner.login || "" });
-                      setRepositoryDropdownOpened(false);
-                    }}
-                  >
-                    {name}
-                  </Button>
-                );
-              }}
-            </For>
-          </div>
-        </Dropdown>
-      </Show>
-      <Show when={selectedRepo()}>
-        <Heading level={3}>Branch</Heading>
-        <p class="prose text-gray-500 dark:text-gray-400 w-full">
-          Select a Git branch to sync your content with.
-        </p>
-        <Dropdown
-          overlay={!breakpoints.md()}
-          opened={branchDropdownOpened()}
-          setOpened={setBranchDropdownOpened}
-          activatorWrapperClass="w-full"
-          class="w-full"
-          activatorButton={() => {
-            const branch = (): Branch | null => {
-              return branches().find((branch) => branch.name === branchName()) || null;
-            };
-
-            return (
-              <Button text="soft" class="flex m-0 w-full">
-                <Show when={branch()} keyed fallback="Select Branch">
-                  {(branch) => branch.name || ""}
-                </Show>
-              </Button>
-            );
-          }}
-        >
-          <div class="flex flex-col gap-1 overflow-visible min-w-48">
-            <For each={branches()}>
-              {(branch) => {
-                const { name } = branch;
-
-                return (
-                  <Button
-                    class="flex m-0"
-                    color={branchName() === name ? "primary" : "contrast"}
-                    text={branchName() === name ? "primary" : "soft"}
-                    variant={branchName() === name ? "solid" : "text"}
-                    onClick={() => {
-                      setBranchName(name);
-                      setBranchDropdownOpened(false);
-                    }}
-                  >
-                    {name}
-                  </Button>
-                );
-              }}
-            </For>
-          </div>
-        </Dropdown>
-      </Show>
-    </div>
+                  return name.toLowerCase().includes(query.toLowerCase());
+                }}
+                selectOption={(option) => {
+                  setSelectedInstallation(option);
+                }}
+                loading={installations.loading}
+                placeholder="Select account"
+              />
+            </Show>
+          </Show>
+          <Show when={selectedInstallation() || savedGitHubConfig()}>
+            <Heading level={3}>Repository</Heading>
+            <p class="prose text-gray-500 dark:text-gray-400 w-full">
+              Select the GitHub repository to sync this space with. This repository should be
+              authorized in the GitHub installation.
+            </p>
+            <Show
+              when={!savedGitHubConfig()}
+              fallback={
+                <Input
+                  value={savedGitHubConfig()?.repositoryName || ""}
+                  class="w-full m-0"
+                  wrapperClass="w-full"
+                  color="contrast"
+                  disabled
+                />
+              }
+            >
+              <SearchableSelect
+                options={repositories()}
+                selected={selectedRepository()}
+                extractId={(repository) => repository.id.toString()}
+                renderOption={({ name }) => (
+                  <div class="text-start w-full clamp-1 px-1">{name}</div>
+                )}
+                filterOption={({ name }, query) => {
+                  return name.toLowerCase().includes(query.toLowerCase());
+                }}
+                selectOption={(option) => {
+                  setSelectedRepository(option);
+                }}
+                loading={repositories.loading}
+                placeholder="Select repository"
+              />
+            </Show>
+          </Show>
+          <Show when={selectedRepository() || savedGitHubConfig()}>
+            <Heading level={3}>Branch</Heading>
+            <p class="prose text-gray-500 dark:text-gray-400 w-full">
+              Select a Git branch to sync your content with.
+            </p>
+            <Show
+              when={!savedGitHubConfig()}
+              fallback={
+                <Input
+                  value={savedGitHubConfig()?.branchName || ""}
+                  class="w-full m-0"
+                  wrapperClass="w-full"
+                  color="contrast"
+                  disabled
+                />
+              }
+            >
+              <SearchableSelect
+                options={branches()}
+                selected={selectedBranch()}
+                extractId={(branch) => branch.name}
+                renderOption={({ name }) => (
+                  <div class="text-start w-full clamp-1 px-1">{name}</div>
+                )}
+                filterOption={({ name }, query) => {
+                  return name.toLowerCase().includes(query.toLowerCase());
+                }}
+                selectOption={(option) => {
+                  setSelectedBranch(option);
+                }}
+                loading={branches.loading}
+                placeholder="Select branch"
+              />
+            </Show>
+          </Show>
+        </div>
+      </TitledCard>
+      <TitledCard icon={mdiFileTree} label="Mapping">
+        <div class="flex flex-col items-start w-full gap-2">
+          <p class="prose text-gray-500 dark:text-gray-400 w-full">
+            Map your content to the GitHub repository.
+          </p>
+          <InputField
+            label="Base directory"
+            color="contrast"
+            type="text"
+            value={savedGitHubConfig()?.baseDirectory || baseDirectory()}
+            disabled={Boolean(savedGitHubConfig())}
+            setValue={setBaseDirectory}
+            placeholder="/docs"
+          >
+            Path to the base directory of which files will be synced.
+          </InputField>
+          <InputField
+            label="Match pattern"
+            color="contrast"
+            type="text"
+            optional
+            value={savedGitHubConfig()?.matchPattern || matchPattern()}
+            disabled={Boolean(savedGitHubConfig())}
+            setValue={setMatchPattern}
+            placeholder="**/*.md"
+          >
+            Provide a glob match pattern for the files to sync. (relative to the base directory)
+          </InputField>
+          <InputField
+            label="Variants directory"
+            color="contrast"
+            optional
+            type="text"
+            value={savedGitHubConfig()?.variantsDirectory || variantsDirectory()}
+            disabled={Boolean(savedGitHubConfig())}
+            setValue={setVariantsDirectory}
+            placeholder="/locales"
+          >
+            Path to the directory of which subdirectories will be mapped to Variants. (relative to
+            the base directory)
+          </InputField>
+        </div>
+      </TitledCard>
+      <TitledCard icon={mdiSwapHorizontal} label="Transformers">
+        <div class="flex flex-col items-start w-full gap-2">
+          <p class="prose text-gray-500 dark:text-gray-400 w-full">
+            Select the transformers to use for your content.
+          </p>
+          <InputField
+            label="Input transformer"
+            color="contrast"
+            type="select"
+            value={savedGitHubConfig()?.inputTransformer || inputTransformer()}
+            disabled={Boolean(savedGitHubConfig())}
+            setValue={setInputTransformer}
+            options={[{ label: "Markdown", value: "markdown" }]}
+            placeholder="Select input transformer"
+          >
+            Transformer to use for parsing the input files.
+          </InputField>
+          <InputField
+            label="Output transformer"
+            color="contrast"
+            type="select"
+            value={savedGitHubConfig()?.outputTransformer || outputTransformer()}
+            disabled={Boolean(savedGitHubConfig())}
+            setValue={setOutputTransformer}
+            options={[{ label: "Markdown", value: "markdown" }]}
+            placeholder="Select output transformer"
+          >
+            Transformer to use for generating the output files.
+          </InputField>
+          <InputField
+            label="Format output"
+            type="checkbox"
+            value={formatOutput()}
+            setValue={setFormatOutput}
+          >
+            Format the output files with Prettier.
+          </InputField>
+        </div>
+      </TitledCard>
+    </>
   );
 };
 

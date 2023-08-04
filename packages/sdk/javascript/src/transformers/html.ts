@@ -19,6 +19,9 @@ const stringifyAttributes = (
 
   return result.join(" ");
 };
+/**
+ * @deprecated Use `htmlOutputTransformer` instead.
+ */
 const htmlTransformer = createContentTransformer({
   applyInlineFormatting(type, attrs, content) {
     switch (type) {

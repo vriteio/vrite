@@ -12,7 +12,7 @@ import { Component, Show, createMemo, createSignal } from "solid-js";
 import { Dynamic } from "solid-js/web";
 import clsx from "clsx";
 import { JSONContent } from "@vrite/sdk";
-import { useLocalStorage, useSharedState } from "#context";
+import { App, useLocalStorage, useSharedState } from "#context";
 import { ExportMenu, StatsMenu } from "#views/editor/menus";
 import { Button, Dropdown, IconButton, Tooltip } from "#components/primitives";
 import { logoIcon } from "#assets/icons";
@@ -221,11 +221,23 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
   },
   default: () => {
     const createSharedSignal = useSharedState();
+    const { storage, setStorage } = useLocalStorage();
     const [provider] = createSharedSignal("provider");
-    const [ancestor, setAncestor] = createSharedSignal("ancestor");
     const [activeDraggableGroup] = createSharedSignal("activeDraggableGroup");
     const [viewSelectorOpened, setViewSelectorOpened] = createSignal(false);
-    const [view, setView] = createSharedSignal("dashboardView", "kanban");
+    const view = (): string => storage().dashboardView || "kanban";
+    const setView = (view: string): void => {
+      setStorage((storage) => ({ ...storage, dashboardView: view }));
+    };
+    const ancestor = (): App.ContentGroup | null => {
+      return storage().dashboardViewAncestor || null;
+    };
+    const setAncestor = (ancestor: App.ContentGroup | null): void => {
+      setStorage((storage) => ({
+        ...storage,
+        dashboardViewAncestor: ancestor || undefined
+      }));
+    };
 
     return (
       <div class="flex justify-end items-center w-full px-4 gap-2">
