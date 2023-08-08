@@ -18,7 +18,6 @@ import {
   getContentPiecesCollection
 } from "#database/content-pieces";
 import { Tag, getTagsCollection, tag } from "#database/tags";
-import { getWorkspacesCollection } from "#database/workspaces";
 import * as errors from "#lib/errors";
 import { getContentsCollection } from "#database/contents";
 import { runWebhooks } from "#lib/webhooks";
@@ -33,6 +32,7 @@ import {
   getWorkspaceMembershipsCollection,
   getWorkspaceSettingsCollection
 } from "#database";
+import { runGitSyncHook } from "#lib";
 
 type ContentPieceEvent =
   | { action: "delete"; userId: string; data: { id: string } }
@@ -476,7 +476,7 @@ const contentPiecesRouter = router({
       } else {
         const [lastContentPiece] = await contentPiecesCollection
           .find({ contentGroupId: contentPiece.contentGroupId })
-          .sort({ $natural: 1 })
+          .sort({ order: -1 })
           .limit(1)
           .toArray();
 
@@ -487,13 +487,16 @@ const contentPiecesRouter = router({
         }
       }
 
+      const contentBuffer = jsonToBuffer(htmlToJSON(content || "<p></p>"));
+
       await contentPiecesCollection.insertOne(contentPiece);
       await contentsCollection.insertOne({
         _id: new ObjectId(),
         workspaceId: contentPiece.workspaceId,
         contentPieceId: contentPiece._id,
-        ...(content && { content: new Binary(jsonToBuffer(htmlToJSON(content))) })
+        content: new Binary(contentBuffer)
       });
+      runGitSyncHook(ctx, "contentPieceCreated", { contentPiece, contentBuffer });
       runWebhooks(ctx, "contentPieceAdded", webhookPayload(contentPiece));
 
       const tags = await fetchContentPieceTags(ctx.db, contentPiece);
@@ -679,8 +682,13 @@ const contentPiecesRouter = router({
       }
 
       if (!updatedContentGroupId || `${contentPiece.contentGroupId}` === updatedContentGroupId) {
+        runGitSyncHook(ctx, "contentPieceUpdated", { contentPiece: newContentPiece });
         runWebhooks(ctx, "contentPieceUpdated", webhookPayload(newContentPiece));
       } else {
+        runGitSyncHook(ctx, "contentPieceMoved", {
+          contentPiece: newContentPiece,
+          contentGroupId: input.contentGroupId
+        });
         runWebhooks(ctx, "contentPieceRemoved", webhookPayload(contentPiece));
         runWebhooks(ctx, "contentPieceAdded", webhookPayload(newContentPiece));
         await contentsCollection.updateOne(
@@ -743,6 +751,7 @@ const contentPiecesRouter = router({
         contentPieceId: contentPiece._id,
         workspaceId: ctx.auth.workspaceId
       });
+      runGitSyncHook(ctx, "contentPieceRemoved", { contentPiece });
       publishEvent(ctx, `${contentPiece.contentGroupId}`, {
         action: "delete",
         userId: `${ctx.auth.userId}`,
@@ -767,7 +776,6 @@ const contentPiecesRouter = router({
     .output(z.void())
     .mutation(async ({ ctx, input }) => {
       const contentPiecesCollection = getContentPiecesCollection(ctx.db);
-      const contentsCollection = getContentsCollection(ctx.db);
       const contentGroupsCollection = getContentGroupsCollection(ctx.db);
       const workspaceSettingsCollection = getWorkspaceSettingsCollection(ctx.db);
       const workspaceSettings = await workspaceSettingsCollection.findOne({
@@ -829,6 +837,10 @@ const contentPiecesRouter = router({
       const tags = await fetchContentPieceTags(ctx.db, contentPiece);
       const members = await fetchContentPieceMembers(ctx.db, contentPiece);
 
+      runGitSyncHook(ctx, "contentPieceMoved", {
+        contentPiece,
+        contentGroupId: input.contentGroupId
+      });
       publishEvent(
         ctx,
         [
@@ -876,10 +888,6 @@ const contentPiecesRouter = router({
           ctx,
           "contentPieceAdded",
           webhookPayload({ ...contentPiece, contentGroupId: new ObjectId(input.contentGroupId) })
-        );
-        await contentsCollection.updateOne(
-          { contentPieceId: contentPiece._id },
-          { $set: { contentGroupId: new ObjectId(input.contentGroupId) } }
         );
       }
     }),

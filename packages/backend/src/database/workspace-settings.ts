@@ -26,9 +26,11 @@ const prettierConfig = z
     singleAttributePerLine: z.boolean()
   })
   .partial();
+const metadataField = z.enum(["slug", "canonical-link", "date", "tags", "members", "filename"]);
 const metadataSettings = z
   .object({
-    canonicalLinkPattern: z.string()
+    canonicalLinkPattern: z.string(),
+    enabledFields: z.array(metadataField).optional()
   })
   .partial();
 const marks = [
@@ -77,6 +79,8 @@ interface FullWorkspaceSettings<ID extends string | ObjectId = string>
 }
 interface MetadataSettings extends z.infer<typeof metadataSettings> {}
 
+type MetadataField = z.infer<typeof metadataField>;
+
 const getWorkspaceSettingsCollection = (
   db: Db
 ): Collection<UnderscoreID<FullWorkspaceSettings<ObjectId>>> => {
@@ -92,4 +96,4 @@ export {
   metadataSettings,
   getWorkspaceSettingsCollection
 };
-export type { MetadataSettings, WorkspaceSettings, FullWorkspaceSettings };
+export type { MetadataField, MetadataSettings, WorkspaceSettings, FullWorkspaceSettings };

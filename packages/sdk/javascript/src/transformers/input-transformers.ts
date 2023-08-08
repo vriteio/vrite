@@ -6,7 +6,22 @@ type InputTransformer<
   CustomData extends Record<string, any> = Record<string, any>
 > = (input: Input) => {
   content: string;
-  contentPiece?: Partial<ContentPiece<CustomData, false>>;
+  contentPiece?: Partial<
+    Pick<
+      ContentPiece<CustomData>,
+      | "date"
+      | "title"
+      | "slug"
+      | "description"
+      | "tags"
+      | "members"
+      | "coverUrl"
+      | "coverAlt"
+      | "customData"
+      | "canonicalLink"
+      | "coverWidth"
+    >
+  >;
 };
 
 const createInputTransformer = <

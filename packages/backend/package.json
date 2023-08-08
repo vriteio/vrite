@@ -21,6 +21,7 @@
     "@fastify/static": "^6.10.2",
     "@fastify/websocket": "^8.2.0",
     "@hocuspocus/transformer": "^2.2.3",
+    "@octokit/types": "^11.1.0",
     "@sendgrid/mail": "^7.7.0",
     "@tiptap/html": "^2.0.4",
     "@trpc/client": "^10.35.0",

@@ -17,6 +17,7 @@ import {
   getWorkspacesCollection,
   FullContentGroup
 } from "#database";
+import { runGitSyncHook } from "#lib";
 
 type ContentGroupEvent =
   | {
@@ -68,12 +69,12 @@ const contentGroupsRouter = router({
       contentGroup
         .omit({ ancestors: true, descendants: true })
         .partial()
-        .extend({ ancestor: zodId().optional() })
         .required({ id: true })
+        .extend({ ancestor: zodId().optional() })
     )
     .output(z.void())
     .mutation(async ({ ctx, input }) => {
-      const { id, ancestor, ...update } = input;
+      const { id, ...update } = input;
       const contentGroupsCollection = getContentGroupsCollection(ctx.db);
       const contentGroupId = new ObjectId(id);
       const contentGroup = await contentGroupsCollection.findOne({
@@ -84,13 +85,13 @@ const contentGroupsRouter = router({
       if (!contentGroup) throw errors.notFound("contentGroup");
 
       const ancestorContentGroup =
-        input.ancestor &&
+        "ancestor" in input &&
         (await contentGroupsCollection.findOne({
           _id: new ObjectId(input.ancestor),
           workspaceId: ctx.auth.workspaceId
         }));
 
-      if (input.ancestor && !ancestorContentGroup) throw errors.notFound("contentGroup");
+      if ("ancestor" in input && !ancestorContentGroup) throw errors.notFound("contentGroup");
 
       await contentGroupsCollection.updateOne(
         {
@@ -145,6 +146,11 @@ const contentGroupsRouter = router({
         ]);
       }
 
+      runGitSyncHook(ctx, "contentGroupUpdated", {
+        contentGroup,
+        ancestor: "ancestor" in input ? input.ancestor : undefined,
+        name: "name" in input ? input.name : undefined
+      });
       publishEvent(ctx, `${ctx.auth.workspaceId}`, { action: "update", data: { id, ...update } });
     }),
   create: authenticatedProcedure
@@ -205,6 +211,9 @@ const contentGroupsRouter = router({
           descendants: contentGroup.descendants.map((id) => `${id}`),
           ...input
         }
+      });
+      runGitSyncHook(ctx, "contentGroupCreated", {
+        contentGroup
       });
       runWebhooks(ctx, "contentGroupAdded", {
         ...input,
@@ -286,6 +295,7 @@ const contentGroupsRouter = router({
         contentPieceId: { $in: contentPieceIds },
         workspaceId: ctx.auth.workspaceId
       });
+      runGitSyncHook(ctx, "contentGroupRemoved", { contentGroup });
       publishEvent(ctx, `${ctx.auth.workspaceId}`, {
         action: "delete",
         data: input
@@ -460,6 +470,10 @@ const contentGroupsRouter = router({
         await contentGroupsCollection.bulkWrite(writeOperations);
       }
 
+      runGitSyncHook(ctx, "contentGroupMoved", {
+        ancestor: input.ancestor,
+        contentGroup
+      });
       publishEvent(ctx, `${ctx.auth.workspaceId}`, {
         action: "move",
         data: {

@@ -122,8 +122,14 @@ const Code = BaseCode.extend({
     ];
   }
 });
-const Link = BaseLink.extend({
+const Link = BaseLink.configure({
+  openOnClick: false,
+  validate(url) {
+    return url.startsWith("http://") || url.startsWith("https://") || url.startsWith("mailto:");
+  }
+}).extend({
   exitable: true,
+  inclusive: true,
   parseHTML() {
     return [{ tag: 'a[href]:not([href ^= "javascript:" i])' }];
   },
@@ -159,11 +165,6 @@ const Link = BaseLink.extend({
         }
       })
     ];
-  }
-}).configure({
-  openOnClick: false,
-  validate(url) {
-    return url.startsWith("http://") || url.startsWith("https://") || url.startsWith("mailto:");
   }
 });
 const Highlight = BaseHighlight.extend({

@@ -28,7 +28,10 @@ interface ContentGroupsEndpoints {
     input: Omit<ContentGroup, "id" | "ancestors" | "descendants"> & { ancestor?: string }
   ): Promise<Pick<ContentGroup, "id">>;
   update(
-    input: Partial<Omit<ContentGroup, "ancestors" | "descendants">> &
+    input: Partial<Omit<ContentGroup, "ancestors" | "descendants">> & Pick<ContentGroup, "id">
+  ): Promise<void>;
+  update(
+    input: Partial<Omit<ContentGroup, "ancestors" | "descendants" | "name" | "locked">> &
       Pick<ContentGroup, "id"> & { ancestor?: string }
   ): Promise<void>;
   delete(input: Pick<ContentGroup, "id">): Promise<void>;

@@ -12,7 +12,7 @@ import { Component, Show, createMemo, createSignal } from "solid-js";
 import { Dynamic } from "solid-js/web";
 import clsx from "clsx";
 import { JSONContent } from "@vrite/sdk";
-import { App, useLocalStorage, useSharedState } from "#context";
+import { App, useClient, useLocalStorage, useSharedState } from "#context";
 import { ExportMenu, StatsMenu } from "#views/editor/menus";
 import { Button, Dropdown, IconButton, Tooltip } from "#components/primitives";
 import { logoIcon } from "#assets/icons";
@@ -140,6 +140,33 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
             </Button>
           </div>
         </Show>
+      </div>
+    );
+  },
+  conflict: () => {
+    const createSharedSignal = useSharedState();
+    const client = useClient();
+    const [resolvedContent] = createSharedSignal("resolvedContent");
+    const [conflictData] = createSharedSignal("conflictData");
+
+    return (
+      <div class="flex-row flex justify-start items-center px-4 w-full gap-2">
+        <div class="flex-1" />
+        <Button
+          color="primary"
+          class="m-0"
+          onClick={async () => {
+            await client.git.github.resolveConflict.mutate({
+              content: resolvedContent()!,
+              contentPieceId: conflictData()!.contentPieceId,
+              syncedHash: conflictData()!.pulledHash,
+              path: conflictData()!.path
+            });
+            console.log("conflict resolved");
+          }}
+        >
+          Resolve
+        </Button>
       </div>
     );
   },
@@ -304,7 +331,7 @@ const Toolbar: Component<{ class?: string }> = (props) => {
   return (
     <div
       class={clsx(
-        ":base-2: p-1 w-full flex items-center border-b-2 absolute h-12 border-gray-200 dark:border-gray-700 justify-end",
+        ":base-2: p-1 w-full flex items-center border-b-2 absolute h-12 border-gray-200 dark:border-gray-700 justify-end @container",
         props.class
       )}
     >

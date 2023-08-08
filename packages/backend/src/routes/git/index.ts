@@ -2,9 +2,9 @@ import { githubRouter } from "./github";
 import { GitDataEvent, publishEvent } from "./events";
 import { z } from "zod";
 import { procedure, router } from "#lib/trpc";
-import { GitData, getGitDataCollection, gitData } from "#database";
+import { getGitDataCollection, gitData } from "#database";
 import { errors, isAuthenticated } from "#lib";
-import { createEventPublisher, createEventSubscription } from "#lib/pub-sub";
+import { createEventSubscription } from "#lib/pub-sub";
 
 const authenticatedProcedure = procedure.use(isAuthenticated);
 const gitRouter = router({
@@ -25,6 +25,10 @@ const gitRouter = router({
         github: gitData.github,
         lastCommitDate: gitData.lastCommitDate,
         lastCommitId: gitData.lastCommitId,
+        directories: gitData.directories.map((directory) => ({
+          ...directory,
+          contentGroupId: `${directory.contentGroupId}`
+        })),
         records: gitData.records.map((record) => ({
           ...record,
           contentPieceId: `${record.contentPieceId}`

@@ -204,6 +204,7 @@ const GitView: Component = () => {
                         close={() => setOpenedProvider("")}
                         gitData={gitConfig() || null}
                         providerName={openedProvider()!}
+                        setOpenedProvider={setOpenedProvider}
                         setActionComponent={(component) => setActionComponent(() => component)}
                       />
                     </Match>

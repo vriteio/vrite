@@ -332,3 +332,19 @@
     margin: 0;
   }
 }
+.rounded {
+  .monaco-editor,
+  .monaco-editor > *:first-child {
+    @apply rounded-2xl;
+  }
+  .ProseMirror .monaco-editor,
+  .ProseMirror .monaco-editor > *:first-child {
+    @apply rounded-b-none;
+  }
+  .monaco-editor .editor-widget {
+    @apply overflow-hidden rounded-lg;
+  }
+  .monaco-editor .monaco-hover {
+    @apply rounded-lg;
+  }
+}

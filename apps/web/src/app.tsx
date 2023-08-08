@@ -18,6 +18,11 @@ const StandaloneEditorView = lazy(async () => {
 
   return { default: StandaloneEditorView };
 });
+const ConflictView = lazy(async () => {
+  const { ConflictView } = await import("#views/conflict");
+
+  return { default: ConflictView };
+});
 const EditorView = lazy(async () => {
   const { EditorView } = await import("#views/editor");
 
@@ -72,6 +77,7 @@ const App: Component = () => {
           </Route>
           <Route path={["/", "**"]} component={SecuredWrapper}>
             <Route path="/editor" component={EditorView} />
+            <Route path="/conflict" component={ConflictView} />
             <Route path={["/", "**"]} component={DashboardView} />
           </Route>
         </Match>

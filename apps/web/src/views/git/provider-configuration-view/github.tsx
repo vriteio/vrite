@@ -1,5 +1,11 @@
 import { SearchableSelect } from "./searchable-select";
-import { mdiFileTree, mdiGithub, mdiRefresh, mdiSourceBranch, mdiSwapHorizontal } from "@mdi/js";
+import {
+  mdiFileTree,
+  mdiGithub,
+  mdiRefresh,
+  mdiSourceBranch,
+  mdiSwapHorizontalCircleOutline
+} from "@mdi/js";
 import { Component, Match, Show, Switch, createMemo, createResource, createSignal } from "solid-js";
 import { Octokit, RestEndpointMethodTypes } from "@octokit/rest";
 import { Button, Heading, IconButton, Input, Tooltip } from "#components/primitives";
@@ -9,6 +15,7 @@ import { InputField, TitledCard } from "#components/fragments";
 interface GitHubConfigurationViewProps {
   gitData: App.GitData | null;
   setActionComponent(component: Component<{}> | null): void;
+  setOpenedProvider(provider: string): void;
 }
 
 type Installation =
@@ -19,12 +26,12 @@ type Branch = RestEndpointMethodTypes["repos"]["listBranches"]["response"]["data
 
 const GitHubConfigurationView: Component<GitHubConfigurationViewProps> = (props) => {
   const client = useClient();
+  const [loading, setLoading] = createSignal(false);
   const [selectedInstallation, setSelectedInstallation] = createSignal<Installation | null>(null);
   const [selectedRepository, setSelectedRepository] = createSignal<Repository | null>(null);
   const [selectedBranch, setSelectedBranch] = createSignal<Branch | null>(null);
-  const [baseDirectory, setBaseDirectory] = createSignal("");
-  const [matchPattern, setMatchPattern] = createSignal("");
-  const [variantsDirectory, setVariantsDirectory] = createSignal("");
+  const [baseDirectory, setBaseDirectory] = createSignal("/");
+  const [matchPattern, setMatchPattern] = createSignal("**/*.md");
   const [inputTransformer, setInputTransformer] = createSignal("markdown");
   const [outputTransformer, setOutputTransformer] = createSignal("markdown");
   const [formatOutput, setFormatOutput] = createSignal(true);
@@ -105,19 +112,22 @@ const GitHubConfigurationView: Component<GitHubConfigurationViewProps> = (props)
             class="m-0"
             color="primary"
             disabled={!filled()}
-            onClick={() => {
-              client.git.github.configure.mutate({
+            loading={loading()}
+            onClick={async () => {
+              setLoading(true);
+              await client.git.github.configure.mutate({
                 installationId: selectedInstallation()!.id,
                 repositoryName: selectedRepository()!.name,
                 repositoryOwner: selectedRepository()!.owner.login,
                 branchName: selectedBranch()!.name,
                 baseDirectory: baseDirectory(),
                 matchPattern: matchPattern(),
-                variantsDirectory: variantsDirectory(),
                 inputTransformer: inputTransformer(),
                 outputTransformer: outputTransformer(),
                 formatOutput: formatOutput()
               });
+              setLoading(false);
+              props.setOpenedProvider("");
             }}
           >
             Save
@@ -330,7 +340,6 @@ const GitHubConfigurationView: Component<GitHubConfigurationViewProps> = (props)
             label="Match pattern"
             color="contrast"
             type="text"
-            optional
             value={savedGitHubConfig()?.matchPattern || matchPattern()}
             disabled={Boolean(savedGitHubConfig())}
             setValue={setMatchPattern}
@@ -338,22 +347,9 @@ const GitHubConfigurationView: Component<GitHubConfigurationViewProps> = (props)
           >
             Provide a glob match pattern for the files to sync. (relative to the base directory)
           </InputField>
-          <InputField
-            label="Variants directory"
-            color="contrast"
-            optional
-            type="text"
-            value={savedGitHubConfig()?.variantsDirectory || variantsDirectory()}
-            disabled={Boolean(savedGitHubConfig())}
-            setValue={setVariantsDirectory}
-            placeholder="/locales"
-          >
-            Path to the directory of which subdirectories will be mapped to Variants. (relative to
-            the base directory)
-          </InputField>
         </div>
       </TitledCard>
-      <TitledCard icon={mdiSwapHorizontal} label="Transformers">
+      <TitledCard icon={mdiSwapHorizontalCircleOutline} label="Transformers">
         <div class="flex flex-col items-start w-full gap-2">
           <p class="prose text-gray-500 dark:text-gray-400 w-full">
             Select the transformers to use for your content.

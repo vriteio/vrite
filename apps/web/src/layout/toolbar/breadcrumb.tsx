@@ -105,7 +105,7 @@ const Breadcrumb: Component<{
   );
 
   return (
-    <div class="hidden md:flex bg-gray-200 dark:bg-gray-900 rounded-lg">
+    <div class="hidden md:flex bg-gray-200 dark:bg-gray-900 rounded-lg overflow-auto scrollbar-hidden">
       <Show when={props.ancestor && props.setAncestor && ancestors().length}>
         <div
           ref={(el) => {
@@ -192,9 +192,9 @@ const Breadcrumb: Component<{
                   variant={highlightedAncestor() === ancestor.id ? "solid" : "text"}
                   text={highlightedAncestor() === ancestor.id ? "primary" : "soft"}
                   color={highlightedAncestor() === ancestor.id ? "primary" : "base"}
-                  class="m-0 locked"
+                  class="m-0 locked whitespace-nowrap"
                   path={ancestor.locked ? mdiFolderLock : mdiFolder}
-                  label={ancestor.name}
+                  label={<span class="pl-1 hidden @xl:block">{ancestor.name}</span>}
                   onClick={() => props.setAncestor!(ancestor)}
                   {...highlightDropzoneHandlers(ancestor.id)}
                 ></IconButton>

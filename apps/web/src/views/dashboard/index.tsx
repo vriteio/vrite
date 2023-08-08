@@ -58,9 +58,15 @@ const DashboardView: Component = () => {
     })
   );
   createEffect(
-    on(ancestor, (ancestor) => {
-      refetch(ancestor?.id);
-    })
+    on(
+      ancestor,
+      (ancestor, previousAncestor) => {
+        if (ancestor?.id !== previousAncestor?.id) {
+          refetch(ancestor?.id);
+        }
+      },
+      { defer: true }
+    )
   );
 
   return (

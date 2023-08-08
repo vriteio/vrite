@@ -214,27 +214,3 @@ const SettingsView: Component = () => {
 
 export { SettingsView };
 export type { SettingsSectionComponent, SubSection };
-
-/*
-
-<For each={Object.entries(sections)}>
-              {([key, Component]) => {
-                return (
-                  <Presence exitBeforeEnter>
-                    <Show when={key === currentSectionId()}>
-                      <Component
-                        setSubSection={setSubSection}
-                        setSection={(section: string) => {
-                          setActionComponent(null);
-                          setCurrentSectionId(section);
-                        }}
-                        setActionComponent={(component: Component<{}> | null) => {
-                          setActionComponent(() => component);
-                        }}
-                      />
-                    </Show>
-                  </Presence>
-                );
-              }}
-            </For>
-*/

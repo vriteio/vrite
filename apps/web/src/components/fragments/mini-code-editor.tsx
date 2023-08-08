@@ -157,7 +157,7 @@ const MiniCodeEditor: Component<MiniCodeEditorProps> = (props) => {
       <div
         ref={setEditorContainerRef}
         class={clsx(
-          "w-full bg-gray-100 border-2 not-prose dark:bg-gray-900 rounded-2xl dark:border-gray-700",
+          "w-full bg-gray-100 border-2 not-prose dark:bg-gray-900 rounded-2xl dark:border-gray-700 rounded",
           props.class
         )}
       ></div>

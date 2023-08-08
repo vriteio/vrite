@@ -10,7 +10,24 @@ import { ContentPiece } from "../api";
 type OutputTransformer<
   Output = string,
   CustomData extends Record<string, any> = Record<string, any>
-> = (contentNode: GenericJSONContentNode, contentPiece?: ContentPiece<CustomData>) => Output;
+> = (
+  contentNode: GenericJSONContentNode,
+  contentPiece?: Pick<
+    ContentPiece<CustomData>,
+    | "date"
+    | "title"
+    | "description"
+    | "tags"
+    | "members"
+    | "slug"
+    | "filename"
+    | "coverUrl"
+    | "coverAlt"
+    | "customData"
+    | "canonicalLink"
+    | "coverWidth"
+  >
+) => Output;
 
 const createOutputTransformer = <
   Output = string,

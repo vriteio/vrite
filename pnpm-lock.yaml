@@ -498,6 +498,9 @@ importers:
       '@hocuspocus/transformer':
         specifier: ^2.2.3
         version: 2.2.3(@tiptap/pm@2.0.4)(y-prosemirror@1.2.1)(yjs@13.6.7)
+      '@octokit/types':
+        specifier: ^11.1.0
+        version: 11.1.0
       '@sendgrid/mail':
         specifier: ^7.7.0
         version: 7.7.0

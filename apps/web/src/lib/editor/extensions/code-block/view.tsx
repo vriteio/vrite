@@ -291,7 +291,7 @@ const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
         ref={setEditorContainerRef}
         spellcheck={false}
         class={clsx(
-          "w-full bg-gray-50 dark:bg-gray-900 h-72 not-prose rounded-t-2xl",
+          "w-full bg-gray-50 dark:bg-gray-900 h-72 not-prose rounded-t-2xl rounded",
           codeEditorTheme() === "light" && "border-2 border-b-0 dark:border-0"
         )}
       />

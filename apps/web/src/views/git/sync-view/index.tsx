@@ -9,16 +9,27 @@ import {
 } from "@mdi/js";
 import { Component, For, Show, createSignal } from "solid-js";
 import { Button, Heading, IconButton, Input, Tooltip } from "@vrite/components";
+import clsx from "clsx";
+import { useNavigate } from "@solidjs/router";
 import { TitledCard } from "#components/fragments";
-import { App, useClient } from "#context";
+import { App, useClient, useLocalStorage, useSharedState } from "#context";
 
 interface SyncViewProps {
   gitData: App.GitData;
   setActionComponent(component: Component<{}> | null): void;
 }
+interface GitConflict {
+  path: string;
+  contentPieceId: string;
+  currentContent: string;
+  pulledContent: string;
+  pulledHash: string;
+}
 
 const SyncView: Component<SyncViewProps> = (props) => {
   const client = useClient();
+  const createSharedSignal = useSharedState();
+  const navigate = useNavigate();
   const extractFileName = (path: string): { fileName: string; directory: string } => {
     const pathParts = path.split("/");
     const fileName = pathParts.pop()!;
@@ -26,8 +37,10 @@ const SyncView: Component<SyncViewProps> = (props) => {
 
     return { fileName, directory };
   };
+  const [conflicts, setConflicts] = createSignal<GitConflict[]>([]);
   const [loading, setLoading] = createSignal(false);
   const [message, setMessage] = createSignal("");
+  const [, setConflictData] = createSharedSignal("conflictData");
   const changedRecords = (): App.GitRecord[] => {
     return props.gitData.records.filter((record) => record.currentHash !== record.syncedHash);
   };
@@ -68,7 +81,14 @@ const SyncView: Component<SyncViewProps> = (props) => {
                 class="m-0"
                 onClick={async () => {
                   setLoading(true);
-                  await client.git.github.commit.mutate({ message: message() });
+
+                  try {
+                    await client.git.github.commit.mutate({ message: message() });
+                    console.log("committed");
+                  } catch (e) {
+                    console.log("cannot commit");
+                  }
+
                   setLoading(false);
                 }}
               />
@@ -96,51 +116,85 @@ const SyncView: Component<SyncViewProps> = (props) => {
                 const { directory, fileName } = extractFileName(record.path);
 
                 return (
-                  <button class="p-1 border-b-2 last:border-b-0 dark:border-gray-700 w-full text-start !flex group items-center cursor-pointer">
+                  <div
+                    class={clsx(
+                      "p-1 border-b-2 last:border-b-0 dark:border-gray-700 w-full text-start !flex group items-center cursor-pointer",
+                      record.currentHash === "" && "line-through"
+                    )}
+                  >
                     <IconButton
                       path={mdiFileOutline}
                       size="small"
                       class="m-0 mr-1 whitespace-nowrap"
                       variant="text"
                       label={fileName}
+                      disabled={record.currentHash === ""}
+                      hover={record.currentHash !== ""}
                     />
                     <span class="text-gray-500 dark:text-gray-400 text-xs clamp-1 flex-1">
                       {directory}
                     </span>
-                    <Tooltip text="Discard">
-                      <IconButton
-                        path={mdiUndoVariant}
-                        class="hidden group-hover:flex"
-                        color="contrast"
-                        text="soft"
-                        size="small"
-                      />
-                    </Tooltip>
-                    <Tooltip text="Stage">
-                      <IconButton
-                        path={mdiPlus}
-                        class="hidden group-hover:flex"
-                        color="contrast"
-                        text="soft"
-                        size="small"
-                      />
-                    </Tooltip>
-                  </button>
+                  </div>
                 );
               }}
             </For>
           </div>
         </TitledCard>
-        <TitledCard icon={mdiSourcePull} label="Pull">
-          <Button
-            onClick={async () => {
-              const data = await client.git.github.pull.mutate();
+        <TitledCard
+          icon={mdiSourcePull}
+          label="Pull"
+          action={
+            <IconButton
+              path={mdiSync}
+              class="m-0"
+              color="primary"
+              onClick={async () => {
+                const data = await client.git.github.pull.mutate({});
 
-              console.log(data);
-            }}
-          >
-            Pull
-          </Button>
+                if (data.status === "conflict") {
+                  setConflicts(data.conflicted || []);
+                }
+
+                console.log("pulled");
+              }}
+            />
+          }
+        >
+          <div class="flex flex-col w-full">
+            <Heading level={3}>Conflicts</Heading>
+            <p class="text-gray-500 dark:text-gray-400 mb-2">
+              These are the conflicts that need to be resolved before you can pull.
+            </p>
+            <For each={conflicts()}>
+              {(conflict) => {
+                const { directory, fileName } = extractFileName(conflict.path);
+
+                return (
+                  <div class="p-1 border-b-2 last:border-b-0 dark:border-gray-700 w-full text-start !flex group items-center cursor-pointer">
+                    <IconButton
+                      path={mdiFileOutline}
+                      size="small"
+                      class="m-0 mr-1 whitespace-nowrap"
+                      variant="text"
+                      label={fileName}
+                      onClick={() => {
+                        setConflictData({
+                          pulledContent: conflict.pulledContent,
+                          pulledHash: conflict.pulledHash,
+                          contentPieceId: conflict.contentPieceId,
+                          path: conflict.path
+                        });
+                        navigate("/conflict");
+                      }}
+                    />
+                    <span class="text-gray-500 dark:text-gray-400 text-xs clamp-1 flex-1">
+                      {directory}
+                    </span>
+                  </div>
+                );
+              }}
+            </For>
+          </div>
         </TitledCard>
       </Show>
     </>
