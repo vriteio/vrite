@@ -53,7 +53,6 @@ const databasePlugin = publicPlugin(async (fastify) => {
     contentsCollection.createIndex({ contentPieceId: 1 }),
     contentVariantsCollection.createIndex({ contentPieceId: 1, variantId: 1 }),
     contentVariantsCollection.createIndex({ contentPieceId: 1 }),
-    contentVariantsCollection.createIndex({ workspaceId: 1 }),
     rolesCollection.createIndex({ workspaceId: 1 }),
     tagsCollection.createIndex({ workspaceId: 1 }),
     tokensCollection.createIndex({ workspaceId: 1 }),

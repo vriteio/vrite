@@ -109,7 +109,6 @@ const createWorkspace = async (
     });
     await contentsCollection.insertOne({
       _id: new ObjectId(),
-      workspaceId,
       contentPieceId,
       contentGroupId: ideasContentGroupId,
       content: new Binary(jsonToBuffer(initialContent as DocJSON))
