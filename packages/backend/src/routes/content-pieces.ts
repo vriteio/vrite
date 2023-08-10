@@ -818,7 +818,19 @@ const contentPiecesRouter = router({
           .between(LexoRank.parse(previousReferenceContentPiece.order))
           .toString();
       } else if (contentPiece) {
-        newOrder = LexoRank.parse(contentPiece.order).genNext().toString();
+        const [lastContentPiece] = await contentPiecesCollection
+          .find({ contentGroupId: contentGroup._id })
+          .sort({ order: -1 })
+          .limit(1)
+          .toArray();
+
+        previousReferenceContentPiece = lastContentPiece || null;
+
+        if (lastContentPiece) {
+          newOrder = LexoRank.parse(lastContentPiece.order).genNext().toString();
+        } else {
+          newOrder = LexoRank.min().toString();
+        }
       }
 
       const update: Partial<UnderscoreID<FullContentPiece<ObjectId>>> = { order: newOrder };
@@ -872,8 +884,8 @@ const contentPiecesRouter = router({
               tags,
               members
             },
-            nextReferenceId: input.nextReferenceId,
-            previousReferenceId: input.previousReferenceId
+            nextReferenceId: `${nextReferenceContentPiece?._id || ""}`,
+            previousReferenceId: `${previousReferenceContentPiece?._id || ""}`
           }
         }
       );

@@ -1,7 +1,9 @@
-import { Component, createEffect, createResource, lazy, onMount } from "solid-js";
+import { Component, Show, createEffect, createResource, lazy, onMount } from "solid-js";
 import { useNavigate } from "@solidjs/router";
+import { Loader } from "@vrite/components";
+import clsx from "clsx";
 import type { monaco } from "#lib/monaco";
-import { createRef } from "#lib/utils";
+import { breakpoints, createRef } from "#lib/utils";
 import { useAppearance, useClient, useLocalStorage, useSharedState } from "#context";
 
 declare module "#context" {
@@ -11,7 +13,7 @@ declare module "#context" {
       pulledHash: string;
       contentPieceId: string;
       path: string;
-    };
+    } | null;
     resolvedContent: string;
   }
 }
@@ -55,10 +57,12 @@ const ConflictView: Component<{ monaco: typeof monaco }> = (props) => {
     const diffEditor = monaco.editor.createDiffEditor(containerRef()!, {
       // You can optionally disable the resizing
       enableSplitViewResizing: false,
+      overviewRulerBorder: true,
       automaticLayout: true,
       minimap: { enabled: false },
       contextmenu: false,
       renderOverviewRuler: false,
+      renderSideBySide: false,
       fontSize: 13,
       fontFamily: "JetBrainsMonoVariable",
       scrollBeyondLastLine: false,
@@ -81,6 +85,9 @@ const ConflictView: Component<{ monaco: typeof monaco }> = (props) => {
     createEffect(() => {
       modifiedModel.setValue(currentContent() || "");
     });
+    createEffect(() => {
+      diffEditor.updateOptions({ renderSideBySide: breakpoints.md() });
+    });
   });
   createEffect(() => {
     props.monaco.editor.setTheme(`${codeEditorTheme()}`);
@@ -90,7 +97,48 @@ const ConflictView: Component<{ monaco: typeof monaco }> = (props) => {
     toolbarView: "conflict"
   }));
 
-  return <div ref={setContainerRef} class="h-full w-full split-view" />;
+  return (
+    <div class="flex flex-col h-full w-full relative">
+      <div
+        class={clsx(
+          "w-full h-8 border-b-2 hidden md:flex",
+          codeEditorTheme() === "light" && "bg-gray-50 text-gray-500 border-gray-200",
+          codeEditorTheme() === "dark" && "bg-gray-900 text-gray-400 border-gray-700"
+        )}
+      >
+        <div
+          class={clsx(
+            "flex-1 flex justify-center items-center border-r-1",
+            codeEditorTheme() === "light" ? "border-gray-200" : "border-gray-700"
+          )}
+        >
+          Incoming
+        </div>
+        <div
+          class={clsx(
+            "flex-1 flex justify-center items-center border-l-1",
+            codeEditorTheme() === "light" ? "border-gray-200" : "border-gray-700"
+          )}
+        >
+          Result
+        </div>
+      </div>
+      <div
+        ref={setContainerRef}
+        class="flex-1 h-full w-full split-view"
+        data-code-editor-theme={codeEditorTheme()}
+      />
+      <Show when={!conflictData() || currentContent.loading}>
+        <div class="h-full w-full absolute top-0 left-0 bg-gray-100 dark:bg-gray-800 flex justify-center items-center">
+          <Show when={!conflictData()} fallback={<Loader />}>
+            <span class="text-2xl font-semibold text-gray-500 dark:text-gray-400">
+              Select a conflict to resolve
+            </span>
+          </Show>
+        </div>
+      </Show>
+    </div>
+  );
 };
 const ConflictViewWrapper: Component = lazy(async () => {
   const { monaco } = await import("#lib/monaco");

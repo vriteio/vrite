@@ -1,18 +1,25 @@
 import {
   mdiCheck,
   mdiFileOutline,
-  mdiPlus,
+  mdiMinusBox,
+  mdiPlusBox,
   mdiSourceCommit,
   mdiSourcePull,
-  mdiSync,
-  mdiUndoVariant
+  mdiSync
 } from "@mdi/js";
-import { Component, For, Show, createSignal } from "solid-js";
-import { Button, Heading, IconButton, Input, Tooltip } from "@vrite/components";
+import { Component, For, Match, Show, Switch, createSignal } from "solid-js";
+import { Button, Heading, Icon, IconButton, Input } from "@vrite/components";
 import clsx from "clsx";
 import { useNavigate } from "@solidjs/router";
 import { TitledCard } from "#components/fragments";
-import { App, useClient, useLocalStorage, useSharedState } from "#context";
+import {
+  App,
+  useClient,
+  useConfirmationModal,
+  useLocalStorage,
+  useNotifications,
+  useSharedState
+} from "#context";
 
 interface SyncViewProps {
   gitData: App.GitData;
@@ -26,21 +33,256 @@ interface GitConflict {
   pulledHash: string;
 }
 
-const SyncView: Component<SyncViewProps> = (props) => {
+declare module "#context" {
+  interface SharedState {
+    conflicts: GitConflict[];
+  }
+}
+
+const extractFileName = (path: string): { fileName: string; directory: string } => {
+  const pathParts = path.split("/");
+  const fileName = pathParts.pop()!;
+  const directory = pathParts.filter(Boolean).join("/");
+
+  return { fileName, directory };
+};
+const InitialSyncCard: Component = () => {
+  const [loading, setLoading] = createSignal(false);
+  const client = useClient();
+
+  return (
+    <TitledCard icon={mdiSync} label="Sync">
+      <p class="text-gray-500 dark:text-gray-400 mb-2">
+        Perform the initial sync with your remote repository. Depending on the amount of synced
+        content, this may take a while.
+      </p>
+      <Button
+        color="primary"
+        class="m-0 w-full"
+        loading={loading()}
+        onClick={async () => {
+          setLoading(true);
+          await client.git.github.initialSync.mutate();
+          setLoading(false);
+        }}
+      >
+        Sync now
+      </Button>
+    </TitledCard>
+  );
+};
+const CommitCard: Component<{ changedRecords: App.GitRecord[] }> = (props) => {
+  const client = useClient();
+  const navigate = useNavigate();
+  const { notify } = useNotifications();
+  const { setStorage } = useLocalStorage();
+  const [message, setMessage] = createSignal("");
+  const [loading, setLoading] = createSignal(false);
+
+  return (
+    <TitledCard
+      icon={mdiSourceCommit}
+      label="Commit"
+      action={
+        <Show when={props.changedRecords.length}>
+          <IconButton
+            disabled={!message() || !props.changedRecords.length}
+            loading={loading()}
+            path={mdiCheck}
+            color="primary"
+            class="m-0"
+            onClick={async () => {
+              setLoading(true);
+
+              try {
+                const { status } = await client.git.github.commit.mutate({ message: message() });
+
+                if (status === "committed") {
+                  notify({ text: "Changes committed", type: "success" });
+                } else {
+                  notify({
+                    text: "Pull required before committing changes",
+                    type: "error"
+                  });
+                }
+              } catch (e) {
+                notify({ text: "Couldn't commit changes", type: "error" });
+              }
+
+              setLoading(false);
+            }}
+          />
+        </Show>
+      }
+    >
+      <Show
+        when={props.changedRecords.length}
+        fallback={
+          <div class="flex flex-col w-full">
+            <p class="text-gray-500 dark:text-gray-400">There are no changes to commit.</p>
+          </div>
+        }
+      >
+        <div class="flex flex-col w-full">
+          <Heading level={3}>Commit message</Heading>
+          <p class="text-gray-500 dark:text-gray-400 mb-2">
+            Briefly describe the changes you're committing.
+          </p>
+          <Input
+            placeholder="Message"
+            class="m-0 mb-2 w-full"
+            color="contrast"
+            value={message()}
+            setValue={setMessage}
+          />
+          <Heading level={3}>Changes</Heading>
+          <p class="text-gray-500 dark:text-gray-400 mb-2">
+            These are the changes that will be committed.
+          </p>
+          <For each={props.changedRecords}>
+            {(record) => {
+              const { directory, fileName } = extractFileName(record.path);
+
+              return (
+                <div class="p-1 border-b-2 last:border-b-0 dark:border-gray-700 w-full text-start !flex group items-center cursor-pointer hover:bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-700 to-transparent">
+                  <IconButton
+                    path={mdiFileOutline}
+                    size="small"
+                    class={clsx(
+                      "m-0 mr-1 whitespace-nowrap",
+                      record.currentHash === "" && "line-through"
+                    )}
+                    variant="text"
+                    label={fileName}
+                    disabled={record.currentHash === ""}
+                    hover={record.currentHash !== ""}
+                    onClick={() => {
+                      setStorage((storage) => ({
+                        ...storage,
+                        contentPieceId: record.contentPieceId
+                      }));
+                      navigate("/editor");
+                    }}
+                  />
+                  <span
+                    class={clsx(
+                      "text-gray-500 dark:text-gray-400 text-xs clamp-1 flex-1",
+                      record.currentHash === "" && "line-through"
+                    )}
+                  >
+                    {directory}
+                  </span>
+                  <Switch>
+                    <Match when={record.currentHash === ""}>
+                      <Icon path={mdiMinusBox} class="h-4 w-4 text-red-500 mr-0.25" />
+                    </Match>
+                    <Match when={record.syncedHash === ""}>
+                      <Icon path={mdiPlusBox} class="h-4 w-4 text-green-500 mr-0.25" />
+                    </Match>
+                  </Switch>
+                </div>
+              );
+            }}
+          </For>
+        </div>
+      </Show>
+    </TitledCard>
+  );
+};
+const PullCard: Component = () => {
   const client = useClient();
   const createSharedSignal = useSharedState();
   const navigate = useNavigate();
-  const extractFileName = (path: string): { fileName: string; directory: string } => {
-    const pathParts = path.split("/");
-    const fileName = pathParts.pop()!;
-    const directory = pathParts.filter(Boolean).join("/");
-
-    return { fileName, directory };
-  };
-  const [conflicts, setConflicts] = createSignal<GitConflict[]>([]);
+  const { notify } = useNotifications();
   const [loading, setLoading] = createSignal(false);
-  const [message, setMessage] = createSignal("");
-  const [, setConflictData] = createSharedSignal("conflictData");
+  const [conflicts, setConflicts] = createSharedSignal("conflicts", []);
+  const [conflictData, setConflictData] = createSharedSignal("conflictData");
+
+  return (
+    <TitledCard
+      icon={mdiSourcePull}
+      label="Pull"
+      action={
+        <IconButton
+          path={mdiSync}
+          class="m-0"
+          color="primary"
+          loading={loading()}
+          onClick={async () => {
+            setLoading(true);
+
+            try {
+              const data = await client.git.github.pull.mutate({});
+
+              if (data.status === "conflict") {
+                setConflicts(data.conflicted || []);
+                notify({ text: "Conflicts found", type: "error" });
+              } else {
+                notify({ text: "Latest changes pulled", type: "success" });
+              }
+
+              setLoading(false);
+            } catch (error) {
+              setLoading(false);
+              notify({ text: "Couldn't pull changes", type: "error" });
+            }
+          }}
+        />
+      }
+    >
+      <Show
+        when={conflicts()?.length}
+        fallback={
+          <div class="flex flex-col w-full">
+            <p class="text-gray-500 dark:text-gray-400">Pull to get the latest changes.</p>
+          </div>
+        }
+      >
+        <div class="flex flex-col w-full">
+          <Heading level={3}>Conflicts</Heading>
+          <p class="text-gray-500 dark:text-gray-400 mb-2">
+            These are the conflicts that need to be resolved before you can pull.
+          </p>
+          <For each={conflicts()}>
+            {(conflict) => {
+              const { directory, fileName } = extractFileName(conflict.path);
+              const isActive = (): boolean => {
+                return conflictData()?.contentPieceId === conflict.contentPieceId;
+              };
+
+              return (
+                <div class="p-1 border-b-2 last:border-b-0 dark:border-gray-700 w-full text-start !flex group items-center cursor-pointer">
+                  <IconButton
+                    path={mdiFileOutline}
+                    size="small"
+                    class="m-0 mr-1 whitespace-nowrap"
+                    variant="text"
+                    label={fileName}
+                    color={isActive() ? "primary" : "base"}
+                    text="base"
+                    onClick={() => {
+                      setConflictData({
+                        pulledContent: conflict.pulledContent,
+                        pulledHash: conflict.pulledHash,
+                        contentPieceId: conflict.contentPieceId,
+                        path: conflict.path
+                      });
+                      navigate("/conflict");
+                    }}
+                  />
+                  <span class="text-gray-500 dark:text-gray-400 text-xs clamp-1 flex-1">
+                    {directory}
+                  </span>
+                </div>
+              );
+            }}
+          </For>
+        </div>
+      </Show>
+    </TitledCard>
+  );
+};
+const SyncView: Component<SyncViewProps> = (props) => {
   const changedRecords = (): App.GitRecord[] => {
     return props.gitData.records.filter((record) => record.currentHash !== record.syncedHash);
   };
@@ -48,154 +290,11 @@ const SyncView: Component<SyncViewProps> = (props) => {
   return (
     <>
       <Show when={!props.gitData.lastCommitId}>
-        <TitledCard icon={mdiSync} label="Sync">
-          <p class="text-gray-500 dark:text-gray-400 mb-2">
-            Perform the initial sync with your remote repository. Depending on the amount of synced
-            content, this may take a while.
-          </p>
-          <Button
-            color="primary"
-            class="m-0 w-full"
-            loading={loading()}
-            onClick={async () => {
-              setLoading(true);
-              await client.git.github.initialSync.mutate();
-              setLoading(false);
-            }}
-          >
-            Sync now
-          </Button>
-        </TitledCard>
+        <InitialSyncCard />
       </Show>
       <Show when={props.gitData.lastCommitId}>
-        <TitledCard
-          icon={mdiSourceCommit}
-          label="Commit"
-          action={
-            <>
-              <IconButton
-                disabled={!message() || !changedRecords().length}
-                loading={loading()}
-                path={mdiCheck}
-                color="primary"
-                class="m-0"
-                onClick={async () => {
-                  setLoading(true);
-
-                  try {
-                    await client.git.github.commit.mutate({ message: message() });
-                    console.log("committed");
-                  } catch (e) {
-                    console.log("cannot commit");
-                  }
-
-                  setLoading(false);
-                }}
-              />
-            </>
-          }
-        >
-          <div class="flex flex-col w-full">
-            <Heading level={3}>Commit message</Heading>
-            <p class="text-gray-500 dark:text-gray-400 mb-2">
-              Committing will push your changes to the remote repository.
-            </p>
-            <Input
-              placeholder="Message"
-              class="m-0 mb-2 w-full"
-              color="contrast"
-              value={message()}
-              setValue={setMessage}
-            />
-            <Heading level={3}>Changes</Heading>
-            <p class="text-gray-500 dark:text-gray-400 mb-2">
-              These are the changes that will be committed.
-            </p>
-            <For each={changedRecords()}>
-              {(record) => {
-                const { directory, fileName } = extractFileName(record.path);
-
-                return (
-                  <div
-                    class={clsx(
-                      "p-1 border-b-2 last:border-b-0 dark:border-gray-700 w-full text-start !flex group items-center cursor-pointer",
-                      record.currentHash === "" && "line-through"
-                    )}
-                  >
-                    <IconButton
-                      path={mdiFileOutline}
-                      size="small"
-                      class="m-0 mr-1 whitespace-nowrap"
-                      variant="text"
-                      label={fileName}
-                      disabled={record.currentHash === ""}
-                      hover={record.currentHash !== ""}
-                    />
-                    <span class="text-gray-500 dark:text-gray-400 text-xs clamp-1 flex-1">
-                      {directory}
-                    </span>
-                  </div>
-                );
-              }}
-            </For>
-          </div>
-        </TitledCard>
-        <TitledCard
-          icon={mdiSourcePull}
-          label="Pull"
-          action={
-            <IconButton
-              path={mdiSync}
-              class="m-0"
-              color="primary"
-              onClick={async () => {
-                const data = await client.git.github.pull.mutate({});
-
-                if (data.status === "conflict") {
-                  setConflicts(data.conflicted || []);
-                }
-
-                console.log("pulled");
-              }}
-            />
-          }
-        >
-          <div class="flex flex-col w-full">
-            <Heading level={3}>Conflicts</Heading>
-            <p class="text-gray-500 dark:text-gray-400 mb-2">
-              These are the conflicts that need to be resolved before you can pull.
-            </p>
-            <For each={conflicts()}>
-              {(conflict) => {
-                const { directory, fileName } = extractFileName(conflict.path);
-
-                return (
-                  <div class="p-1 border-b-2 last:border-b-0 dark:border-gray-700 w-full text-start !flex group items-center cursor-pointer">
-                    <IconButton
-                      path={mdiFileOutline}
-                      size="small"
-                      class="m-0 mr-1 whitespace-nowrap"
-                      variant="text"
-                      label={fileName}
-                      onClick={() => {
-                        setConflictData({
-                          pulledContent: conflict.pulledContent,
-                          pulledHash: conflict.pulledHash,
-                          contentPieceId: conflict.contentPieceId,
-                          path: conflict.path
-                        });
-                        navigate("/conflict");
-                      }}
-                    />
-                    <span class="text-gray-500 dark:text-gray-400 text-xs clamp-1 flex-1">
-                      {directory}
-                    </span>
-                  </div>
-                );
-              }}
-            </For>
-          </div>
-        </TitledCard>
+        <CommitCard changedRecords={changedRecords()} />
+        <PullCard />
       </Show>
     </>
   );

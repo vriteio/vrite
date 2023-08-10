@@ -60,6 +60,34 @@ const rearrangeContentGroups = (
     .filter(Boolean) as ContentGroup[];
 };
 const contentGroupsRouter = router({
+  get: authenticatedProcedure
+    .meta({
+      openapi: { method: "GET", path: basePath, protect: true },
+      permissions: { token: ["contentGroups:read"] }
+    })
+    .input(
+      z.object({
+        id: zodId()
+      })
+    )
+    .output(contentGroup)
+    .query(async ({ ctx, input }) => {
+      const contentGroupsCollection = getContentGroupsCollection(ctx.db);
+      const contentGroup = await contentGroupsCollection.findOne({
+        _id: new ObjectId(input.id),
+        workspaceId: ctx.auth.workspaceId
+      });
+
+      if (!contentGroup) throw errors.notFound("contentGroup");
+
+      return {
+        id: `${contentGroup._id}`,
+        ancestors: contentGroup.ancestors.map((id) => `${id}`),
+        descendants: contentGroup.descendants.map((id) => `${id}`),
+        name: contentGroup.name,
+        locked: contentGroup.locked
+      };
+    }),
   update: authenticatedProcedure
     .meta({
       openapi: { method: "PUT", path: basePath, protect: true },
@@ -556,4 +584,4 @@ const contentGroupsRouter = router({
   })
 });
 
-export { contentGroupsRouter };
+export { contentGroupsRouter, publishEvent as publishContentGroupEvent };

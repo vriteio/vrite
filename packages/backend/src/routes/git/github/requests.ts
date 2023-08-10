@@ -119,16 +119,19 @@ const commitChanges = async ({
   expectedCommitId: string;
   additions: Array<{ path: string; contents: string }>;
   deletions: Array<{ path: string }>;
-}>): Promise<{ oid: string; committedDate: string } | null> => {
-  const result = await octokit.graphql<{
-    createCommitOnBranch: {
-      commit: {
-        oid: string;
-        committedDate: string;
-      };
-    } | null;
-  }>(
-    `mutation ($input: CreateCommitOnBranchInput!) {
+}>): Promise<
+  { oid: string; committedDate: string; status: "success" } | { status: "stale-data" } | null
+> => {
+  try {
+    const result = await octokit.graphql<{
+      createCommitOnBranch: {
+        commit: {
+          oid: string;
+          committedDate: string;
+        };
+      } | null;
+    }>(
+      `mutation ($input: CreateCommitOnBranchInput!) {
         createCommitOnBranch(input: $input) {
           commit {
             oid
@@ -136,23 +139,35 @@ const commitChanges = async ({
           }
         }
       }`,
-    {
-      input: {
-        branch: {
-          repositoryNameWithOwner: `${githubData.repositoryOwner}/${githubData.repositoryName}`,
-          branchName: githubData.branchName
-        },
-        message: { headline: payload.message },
-        expectedHeadOid: payload.expectedCommitId,
-        fileChanges: {
-          additions: payload.additions,
-          deletions: payload.deletions
+      {
+        input: {
+          branch: {
+            repositoryNameWithOwner: `${githubData.repositoryOwner}/${githubData.repositoryName}`,
+            branchName: githubData.branchName
+          },
+          message: { headline: payload.message },
+          expectedHeadOid: payload.expectedCommitId,
+          fileChanges: {
+            additions: payload.additions,
+            deletions: payload.deletions
+          }
         }
       }
-    }
-  );
+    );
+    const commit = result.createCommitOnBranch?.commit;
 
-  return result.createCommitOnBranch?.commit || null;
+    if (!commit) return null;
+
+    return { ...commit, status: "success" };
+  } catch (error) {
+    const errorType = (error as any)?.errors[0].type;
+
+    if (errorType === "STALE_DATA") {
+      return { status: "stale-data" };
+    }
+  }
+
+  return null;
 };
 const getDirectory = async ({
   octokit,

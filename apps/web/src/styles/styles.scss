@@ -348,3 +348,20 @@
     @apply rounded-lg;
   }
 }
+.split-view[data-code-editor-theme="dark"] .monaco-diff-editor {
+  .original .overflow-guard {
+    @apply md:(border-r-1 border-gray-700);
+  }
+  .modified .overflow-guard {
+    @apply md:(border-l-1 border-gray-700);
+  }
+}
+
+.split-view[data-code-editor-theme="light"] .monaco-diff-editor {
+  .original .overflow-guard {
+    @apply md:(border-r-1 border-gray-200);
+  }
+  .modified .overflow-guard {
+    @apply md:(border-l-1 border-gray-200);
+  }
+}

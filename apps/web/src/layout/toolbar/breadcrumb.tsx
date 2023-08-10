@@ -14,6 +14,7 @@ import { App, useClient, useCache } from "#context";
 const Breadcrumb: Component<{
   ancestor?: App.ContentGroup | null;
   activeDraggableGroup?: App.ContentGroup | null;
+  activeDraggablePiece?: App.ExtendedContentPieceWithAdditionalData<"locked" | "order"> | null;
   setAncestor?(contentGroup: App.ContentGroup | null): void;
 }> = (props) => {
   const client = useClient();
@@ -23,66 +24,66 @@ const Breadcrumb: Component<{
   const [ancestors, setAncestors] = createSignal<App.ContentGroup[]>([]);
   const highlightDropzoneHandlers = (
     ancestorId: string
-  ): JSX.CustomEventHandlersCamelCase<HTMLElement> => ({
-    onDragOver(event) {
-      event.preventDefault();
-    },
-    onDragEnter(event) {
-      if (
-        props.activeDraggableGroup &&
-        props.activeDraggableGroup.ancestors.at(-1) !== ancestorId &&
-        event.relatedTarget instanceof Node &&
-        !event.currentTarget.contains(event.relatedTarget)
-      ) {
-        setHighlightedAncestor(ancestorId);
-      }
-    },
-    onDragLeave(event) {
-      if (
-        props.activeDraggableGroup &&
-        props.activeDraggableGroup.ancestors.at(-1) !== ancestorId &&
-        event.relatedTarget instanceof Node &&
-        !event.currentTarget.contains(event.relatedTarget)
-      ) {
-        setHighlightedAncestor("");
-      }
-    },
-    onMouseEnter() {
-      if (
-        props.activeDraggableGroup &&
-        props.activeDraggableGroup.ancestors.at(-1) !== ancestorId
-      ) {
-        setHighlightedAncestor(ancestorId);
-      }
-    },
-    onMouseLeave() {
-      if (
-        props.activeDraggableGroup &&
-        props.activeDraggableGroup.ancestors.at(-1) !== ancestorId
-      ) {
-        setHighlightedAncestor("");
-      }
-    },
-    onTouchMove(event) {
-      if (
-        props.activeDraggableGroup &&
-        props.activeDraggableGroup.ancestors.at(-1) !== ancestorId
-      ) {
-        const x = event.touches[0].clientX;
-        const y = event.touches[0].clientY;
-        const elementAtTouchPoint = document.elementFromPoint(x, y);
+  ): JSX.CustomEventHandlersCamelCase<HTMLElement> => {
+    const draggableActive = (): boolean => {
+      const groupActive =
+        props.activeDraggableGroup && props.activeDraggableGroup.ancestors.at(-1) !== ancestorId;
+      const pieceActive =
+        props.activeDraggablePiece && props.activeDraggablePiece.contentGroupId !== ancestorId;
 
+      return Boolean(groupActive || pieceActive);
+    };
+
+    return {
+      onDragOver(event) {
+        event.preventDefault();
+      },
+      onDragEnter(event) {
         if (
-          elementAtTouchPoint === event.target ||
-          elementAtTouchPoint?.parentNode === event.target
+          draggableActive() &&
+          event.relatedTarget instanceof Node &&
+          !event.currentTarget.contains(event.relatedTarget)
         ) {
           setHighlightedAncestor(ancestorId);
-        } else {
+        }
+      },
+      onDragLeave(event) {
+        if (
+          draggableActive() &&
+          event.relatedTarget instanceof Node &&
+          !event.currentTarget.contains(event.relatedTarget)
+        ) {
           setHighlightedAncestor("");
         }
+      },
+      onMouseEnter() {
+        if (draggableActive()) {
+          setHighlightedAncestor(ancestorId);
+        }
+      },
+      onMouseLeave() {
+        if (draggableActive()) {
+          setHighlightedAncestor("");
+        }
+      },
+      onTouchMove(event) {
+        if (draggableActive()) {
+          const x = event.touches[0].clientX;
+          const y = event.touches[0].clientY;
+          const elementAtTouchPoint = document.elementFromPoint(x, y);
+
+          if (
+            elementAtTouchPoint === event.target ||
+            elementAtTouchPoint?.parentNode === event.target
+          ) {
+            setHighlightedAncestor(ancestorId);
+          } else {
+            setHighlightedAncestor("");
+          }
+        }
       }
-    }
-  });
+    };
+  };
   const renderedAncestors = createMemo(() => {
     return ancestors().slice(-3);
   });
@@ -173,17 +174,31 @@ const Breadcrumb: Component<{
                     onAdd(evt) {
                       const el = evt.item;
 
-                      el.remove();
-                      setHighlightedAncestor("");
-                      client.contentGroups.move.mutate({
-                        id: el.dataset.contentGroupId || "",
-                        ancestor: ancestor.id
-                      });
-                      setContentGroups(
-                        contentGroups().filter(
-                          (contentGroup) => contentGroup.id !== el.dataset.contentGroupId
-                        )
-                      );
+                      if (el.dataset.contentGroupId) {
+                        el.remove();
+                        setHighlightedAncestor("");
+                        client.contentGroups.move.mutate({
+                          id: el.dataset.contentGroupId || "",
+                          ancestor: ancestor.id
+                        });
+                        setContentGroups(
+                          contentGroups().filter(
+                            (contentGroup) => contentGroup.id !== el.dataset.contentGroupId
+                          )
+                        );
+
+                        return;
+                      }
+
+                      if (el.dataset.contentPieceId) {
+                        el.remove();
+                        setHighlightedAncestor("");
+                        client.contentPieces.move.mutate({
+                          id: el.dataset.contentPieceId,
+                          contentGroupId: ancestor.id
+                        });
+                        evt.from.parentElement?.remove();
+                      }
                     }
                   });
                 }}

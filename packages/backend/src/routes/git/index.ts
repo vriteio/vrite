@@ -1,5 +1,6 @@
 import { githubRouter } from "./github";
-import { GitDataEvent, publishEvent } from "./events";
+import { GitDataEvent, publishGitDataEvent } from "./events";
+import { processRecords } from "./process-records";
 import { z } from "zod";
 import { procedure, router } from "#lib/trpc";
 import { getGitDataCollection, gitData } from "#database";
@@ -18,6 +19,8 @@ const gitRouter = router({
 
       if (!gitData) throw errors.notFound("gitData");
 
+      const records = processRecords(gitData);
+
       return {
         ...(gitData.contentGroupId ? { contentGroupId: `${gitData.contentGroupId}` } : {}),
         id: `${gitData._id}`,
@@ -29,7 +32,7 @@ const gitRouter = router({
           ...directory,
           contentGroupId: `${directory.contentGroupId}`
         })),
-        records: gitData.records.map((record) => ({
+        records: records.map((record) => ({
           ...record,
           contentPieceId: `${record.contentPieceId}`
         }))
@@ -46,7 +49,7 @@ const gitRouter = router({
 
       if (!deletedCount) throw errors.notFound("gitData");
 
-      publishEvent(ctx, `${ctx.auth.workspaceId}`, { action: "reset", data: {} });
+      publishGitDataEvent(ctx, `${ctx.auth.workspaceId}`, { action: "reset", data: {} });
     }),
   changes: authenticatedProcedure.input(z.void()).subscription(async ({ ctx }) => {
     return createEventSubscription<GitDataEvent>(ctx, `gitData:${ctx.auth.workspaceId}`);

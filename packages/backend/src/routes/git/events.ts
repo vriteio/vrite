@@ -15,9 +15,9 @@ type GitDataEvent =
       data: {};
     };
 
-const publishEvent = createEventPublisher<GitDataEvent>((workspaceId) => {
+const publishGitDataEvent = createEventPublisher<GitDataEvent>((workspaceId) => {
   return `gitData:${workspaceId}`;
 });
 
-export { publishEvent };
+export { publishGitDataEvent };
 export type { GitDataEvent };

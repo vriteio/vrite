@@ -347,9 +347,6 @@ importers:
       '@types/marked':
         specifier: ^5.0.1
         version: 5.0.1
-      '@types/prettier':
-        specifier: ^2.7.3
-        version: 2.7.3
       '@types/sortablejs':
         specifier: ^1.15.1
         version: 1.15.1
@@ -549,6 +546,9 @@ importers:
       mime-types:
         specifier: ^2.1.35
         version: 2.1.35
+      minimatch:
+        specifier: ^9.0.3
+        version: 9.0.3
       mongodb:
         specifier: ^5.7.0
         version: 5.7.0
@@ -564,6 +564,9 @@ importers:
       otpauth:
         specifier: ^9.1.4
         version: 9.1.4
+      prettier:
+        specifier: ^3.0.0
+        version: 3.0.0
       saslprep:
         specifier: ^1.0.3
         version: 1.0.3
@@ -4462,10 +4465,6 @@ packages:
 
   /@types/parse5@6.0.3:
     resolution: {integrity: sha512-SuT16Q1K51EAVPz1K29DJ/sXjhSQ0zjvsypYJ6tlwVsRV9jwW5Adq2ch8Dq8kDBCkYnELS7N7VNCSB5nC56t/g==}
-
-  /@types/prettier@2.7.3:
-    resolution: {integrity: sha512-+68kP9yzs4LMp7VNh8gdzMSPZFL44MLGqiHWvttYJe+6qnuVr4Ek9wSBQoveqY/r+LwjCcU29kNVkidwim+kYA==}
-    dev: false
 
   /@types/resolve@1.20.2:
     resolution: {integrity: sha512-60BCwRFOZCQhDncwQdxxeOEEkbc5dIMccYLwbxsS4TUNeVECQ/pBJ0j09mrHOl/JJvpRPGwO9SvE4nR2Nb/a4Q==}

@@ -206,7 +206,10 @@ const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
                 group: {
                   name: "shared",
                   put: (_to, _from, dragEl) => {
-                    return dragEl.dataset.contentGroupId !== props.contentGroup.id;
+                    return (
+                      Boolean(dragEl.dataset.contentGroupId) &&
+                      dragEl.dataset.contentGroupId !== props.contentGroup.id
+                    );
                   }
                 },
                 ghostClass: "!hidden",
@@ -237,6 +240,7 @@ const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
               onDragOver={(event) => event.preventDefault()}
               onDragEnter={(event) => {
                 if (
+                  activeDraggableGroup() &&
                   event.relatedTarget instanceof HTMLElement &&
                   !event.target.contains(event.relatedTarget)
                 ) {
@@ -245,6 +249,7 @@ const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
               }}
               onDragLeave={(event) => {
                 if (
+                  activeDraggableGroup() &&
                   event.relatedTarget instanceof HTMLElement &&
                   !event.target.contains(event.relatedTarget)
                 ) {

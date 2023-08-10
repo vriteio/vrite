@@ -1,15 +1,25 @@
 import { ContentGroupRow } from "./content-group-row";
 import { ContentPieceRow } from "./content-piece-row";
 import { ContentGroupsContextProvider } from "../../content-groups-context";
-import { Component, For, Show } from "solid-js";
+import {
+  Component,
+  For,
+  Show,
+  createEffect,
+  createMemo,
+  createResource,
+  createSignal,
+  on
+} from "solid-js";
 import { mdiFilePlus, mdiFolderPlus } from "@mdi/js";
 import { createRef } from "@vrite/components/src/ref";
-import { Card, IconButton } from "#components/primitives";
+import { Card, IconButton, Loader } from "#components/primitives";
 import { App, useCache, useClient, useLocalStorage, useNotifications } from "#context";
 import { useContentPieces } from "#lib/composables";
 
 interface DashboardListViewProps {
   ancestor?: App.ContentGroup | null;
+  contentGroupsLoading?: boolean;
   contentGroups: App.ContentGroup<string>[];
   setAncestor(ancestor: App.ContentGroup | null | undefined): void;
   setContentGroups(contentGroups: App.ContentGroup<string>[]): void;
@@ -61,17 +71,28 @@ const NewContentPieceButton: Component<{
 };
 const ContentPieceList: Component<{
   ancestor: App.ContentGroup;
+  removedContentPieces?: string[];
+  setContentPiecesLoading(loading: boolean): void;
 }> = (props) => {
   const cache = useCache();
-  const { contentPieces, setContentPieces, loadMore, loading } = cache(
+  const { contentPieces, setContentPieces, loading } = cache(
     `contentPieces:${props.ancestor.id}`,
     () => {
       return useContentPieces(props.ancestor.id);
     }
   );
+  const filteredContentPieces = createMemo(() => {
+    return contentPieces().filter(
+      (contentPiece) => !props.removedContentPieces?.includes(contentPiece.id)
+    );
+  });
+
+  createEffect(() => {
+    props.setContentPiecesLoading(loading());
+  });
 
   return (
-    <For each={contentPieces()}>
+    <For each={filteredContentPieces()}>
       {(contentPiece) => {
         return <ContentPieceRow contentPiece={contentPiece} />;
       }}
@@ -81,29 +102,77 @@ const ContentPieceList: Component<{
 const DashboardListView: Component<DashboardListViewProps> = (props) => {
   const client = useClient();
   const { notify } = useNotifications();
-  const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
+  const [contentPiecesLoading, setContentPiecesLoading] = createSignal(false);
+  const [removedContentPieces, setRemovedContentPieces] = createSignal<string[]>([]);
+  const [, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
+  const [higherAncestor] = createResource(
+    () => props.ancestor,
+    (ancestor) => {
+      const higherAncestorId = ancestor?.ancestors[ancestor.ancestors.length - 1];
+
+      if (!higherAncestorId) return null;
+
+      try {
+        return client.contentGroups.get.query({ id: higherAncestorId });
+      } catch (error) {
+        return null;
+      }
+    }
+  );
+  const removeContentGroup = (id: string): void => {
+    props.setContentGroups(props.contentGroups.filter((contentGroup) => contentGroup.id !== id));
+  };
+  const removeContentPiece = (id: string): void => {
+    setRemovedContentPieces([...removedContentPieces(), id]);
+  };
+
+  createEffect(
+    on(
+      () => props.ancestor,
+      () => {
+        setRemovedContentPieces([]);
+      }
+    )
+  );
 
   return (
     <div class="relative overflow-hidden w-full">
       <ContentGroupsContextProvider ancestor={() => props.ancestor} setAncestor={props.setAncestor}>
-        <div class="flex flex-col w-full h-full" ref={setScrollableContainerRef}>
+        <div class="flex flex-col w-full h-full relative" ref={setScrollableContainerRef}>
+          <Show when={higherAncestor()} keyed>
+            <ContentGroupRow
+              contentGroup={higherAncestor()!}
+              draggable={false}
+              menuDisabled={true}
+              customLabel=".."
+              removeContentGroup={removeContentGroup}
+              removeContentPiece={removeContentPiece}
+            />
+          </Show>
           <For each={props.contentGroups}>
             {(contentGroup, index) => {
               return (
                 <ContentGroupRow
                   contentGroup={contentGroup}
-                  index={index()}
-                  remove={(id) => {
-                    props.setContentGroups(
-                      props.contentGroups.filter((contentGroup) => contentGroup.id !== id)
-                    );
-                  }}
+                  removeContentGroup={removeContentGroup}
+                  removeContentPiece={removeContentPiece}
                 />
               );
             }}
           </For>
           <Show when={props.ancestor} keyed>
-            <ContentPieceList ancestor={props.ancestor!} />
+            <ContentPieceList
+              ancestor={props.ancestor!}
+              setContentPiecesLoading={setContentPiecesLoading}
+              removedContentPieces={removedContentPieces()}
+            />
+          </Show>
+          <Show
+            when={props.contentGroupsLoading || contentPiecesLoading() || higherAncestor.loading}
+          >
+            <div class="h-full w-full absolute top-0 left-0 bg-gray-100 dark:bg-gray-800 flex justify-center items-center">
+              <Loader />
+            </div>
           </Show>
         </div>
         <Card class="flex fixed bottom-18 md:bottom-4 right-4 m-0 gap-2" color="soft">

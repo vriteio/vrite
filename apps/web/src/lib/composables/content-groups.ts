@@ -4,12 +4,14 @@ import { useClient, App } from "#context/client";
 
 interface UseContentGroups {
   contentGroups: Accessor<App.ContentGroup[]>;
+  loading: Accessor<boolean>;
   refetch(ancestorId?: string): Promise<void>;
   setContentGroups(contentGroups: App.ContentGroup[]): void;
 }
 
 const useContentGroups = (initialAncestorId?: string): UseContentGroups => {
   const [ancestorId, setAncestorId] = createSignal(initialAncestorId);
+  const [loading, setLoading] = createSignal(false);
   const client = useClient();
   const [state, setState] = createStore<{
     contentGroups: App.ContentGroup[];
@@ -45,10 +47,13 @@ const useContentGroups = (initialAncestorId?: string): UseContentGroups => {
     });
   };
   const refetch = async (ancestor?: string): Promise<void> => {
+    setLoading(true);
+
     const contentGroups = await client.contentGroups.list.query({ ancestor });
 
     setAncestorId(ancestor);
     setState("contentGroups", contentGroups);
+    setLoading(false);
   };
   const contentGroupsChanges = client.contentGroups.changes.subscribe(undefined, {
     onData({ action, data }) {
@@ -89,6 +94,7 @@ const useContentGroups = (initialAncestorId?: string): UseContentGroups => {
 
   return {
     refetch,
+    loading,
     contentGroups: () => state.contentGroups,
     setContentGroups: (contentGroups) => setState("contentGroups", contentGroups)
   };

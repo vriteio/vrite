@@ -9,6 +9,7 @@ import { hasPermission, App, useClient } from "#context";
 
 interface DashboardKanbanViewProps {
   ancestor?: App.ContentGroup | null;
+  contentGroupsLoading?: boolean;
   contentGroups: App.ContentGroup<string>[];
   setAncestor(ancestor: App.ContentGroup | null | undefined): void;
   setContentGroups(contentGroups: App.ContentGroup<string>[]): void;

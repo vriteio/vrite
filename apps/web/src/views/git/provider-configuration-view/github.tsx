@@ -349,45 +349,47 @@ const GitHubConfigurationView: Component<GitHubConfigurationViewProps> = (props)
           </InputField>
         </div>
       </TitledCard>
-      <TitledCard icon={mdiSwapHorizontalCircleOutline} label="Transformers">
-        <div class="flex flex-col items-start w-full gap-2">
-          <p class="prose text-gray-500 dark:text-gray-400 w-full">
-            Select the transformers to use for your content.
-          </p>
-          <InputField
-            label="Input transformer"
-            color="contrast"
-            type="select"
-            value={savedGitHubConfig()?.inputTransformer || inputTransformer()}
-            disabled={Boolean(savedGitHubConfig())}
-            setValue={setInputTransformer}
-            options={[{ label: "Markdown", value: "markdown" }]}
-            placeholder="Select input transformer"
-          >
-            Transformer to use for parsing the input files.
-          </InputField>
-          <InputField
-            label="Output transformer"
-            color="contrast"
-            type="select"
-            value={savedGitHubConfig()?.outputTransformer || outputTransformer()}
-            disabled={Boolean(savedGitHubConfig())}
-            setValue={setOutputTransformer}
-            options={[{ label: "Markdown", value: "markdown" }]}
-            placeholder="Select output transformer"
-          >
-            Transformer to use for generating the output files.
-          </InputField>
-          <InputField
-            label="Format output"
-            type="checkbox"
-            value={formatOutput()}
-            setValue={setFormatOutput}
-          >
-            Format the output files with Prettier.
-          </InputField>
-        </div>
-      </TitledCard>
+      <Show when={false}>
+        <TitledCard icon={mdiSwapHorizontalCircleOutline} label="Transformers">
+          <div class="flex flex-col items-start w-full gap-2">
+            <p class="prose text-gray-500 dark:text-gray-400 w-full">
+              Select the transformers to use for your content.
+            </p>
+            <InputField
+              label="Input transformer"
+              color="contrast"
+              type="select"
+              value={savedGitHubConfig()?.inputTransformer || inputTransformer()}
+              disabled={Boolean(savedGitHubConfig())}
+              setValue={setInputTransformer}
+              options={[{ label: "Markdown", value: "markdown" }]}
+              placeholder="Select input transformer"
+            >
+              Transformer to use for parsing the input files.
+            </InputField>
+            <InputField
+              label="Output transformer"
+              color="contrast"
+              type="select"
+              value={savedGitHubConfig()?.outputTransformer || outputTransformer()}
+              disabled={Boolean(savedGitHubConfig())}
+              setValue={setOutputTransformer}
+              options={[{ label: "Markdown", value: "markdown" }]}
+              placeholder="Select output transformer"
+            >
+              Transformer to use for generating the output files.
+            </InputField>
+            <InputField
+              label="Format output"
+              type="checkbox"
+              value={formatOutput()}
+              setValue={setFormatOutput}
+            >
+              Format the output files with Prettier.
+            </InputField>
+          </div>
+        </TitledCard>
+      </Show>
     </>
   );
 };

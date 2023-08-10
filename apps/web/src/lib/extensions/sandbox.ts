@@ -62,7 +62,6 @@ const loadSandbox = (): ExtensionsSandbox => {
   });
 
   sandbox.iframe.addEventListener("load", () => {
-    // eslint-disable-next-line func-names
     sandbox.importScript("/sandbox.js");
   });
 

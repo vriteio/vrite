@@ -2,6 +2,7 @@ import { UserList } from "./user-list";
 import { Breadcrumb } from "./breadcrumb";
 import {
   mdiBookOpenBlankVariant,
+  mdiFileOutline,
   mdiFullscreen,
   mdiGithub,
   mdiMenu,
@@ -12,9 +13,9 @@ import { Component, Show, createMemo, createSignal } from "solid-js";
 import { Dynamic } from "solid-js/web";
 import clsx from "clsx";
 import { JSONContent } from "@vrite/sdk";
-import { App, useClient, useLocalStorage, useSharedState } from "#context";
+import { App, useClient, useLocalStorage, useNotifications, useSharedState } from "#context";
 import { ExportMenu, StatsMenu } from "#views/editor/menus";
-import { Button, Dropdown, IconButton, Tooltip } from "#components/primitives";
+import { Button, Dropdown, Heading, IconButton, Tooltip } from "#components/primitives";
 import { logoIcon } from "#assets/icons";
 import { breakpoints } from "#lib/utils";
 
@@ -146,27 +147,60 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
   conflict: () => {
     const createSharedSignal = useSharedState();
     const client = useClient();
+    const { notify } = useNotifications();
     const [resolvedContent] = createSharedSignal("resolvedContent");
-    const [conflictData] = createSharedSignal("conflictData");
+    const [conflictData, setConflictData] = createSharedSignal("conflictData");
+    const [conflicts, setConflicts] = createSharedSignal("conflicts");
+    const [loading, setLoading] = createSignal(false);
+    const pathDetails = createMemo(() => {
+      const pathParts = (conflictData()?.path || "").split("/");
+      const fileName = pathParts.pop()!;
+      const directory = pathParts.filter(Boolean).join("/");
+
+      return { fileName, directory };
+    });
 
     return (
       <div class="flex-row flex justify-start items-center px-4 w-full gap-2">
-        <div class="flex-1" />
-        <Button
-          color="primary"
-          class="m-0"
-          onClick={async () => {
-            await client.git.github.resolveConflict.mutate({
-              content: resolvedContent()!,
-              contentPieceId: conflictData()!.contentPieceId,
-              syncedHash: conflictData()!.pulledHash,
-              path: conflictData()!.path
-            });
-            console.log("conflict resolved");
-          }}
-        >
-          Resolve
-        </Button>
+        <Show when={conflictData()}>
+          <IconButton
+            path={mdiFileOutline}
+            class="m-0 mr-1 whitespace-nowrap"
+            variant="text"
+            label={pathDetails().fileName}
+          />
+          <span class="text-gray-500 dark:text-gray-400 text-sm clamp-1 flex-1">
+            {pathDetails().directory}
+          </span>
+          <div class="flex-1" />
+          <Button
+            color="primary"
+            class="m-0"
+            loading={loading()}
+            onClick={async () => {
+              try {
+                setLoading(true);
+                await client.git.github.resolveConflict.mutate({
+                  content: resolvedContent()!,
+                  contentPieceId: conflictData()!.contentPieceId,
+                  syncedHash: conflictData()!.pulledHash,
+                  path: conflictData()!.path
+                });
+                setConflicts(
+                  (conflicts() || []).filter((conflict) => conflict.path !== conflictData()?.path)
+                );
+                setConflictData(null);
+                setLoading(false);
+                notify({ text: "Conflict resolved", type: "success" });
+              } catch (error) {
+                setLoading(false);
+                notify({ text: "Couldn't resolve conflict", type: "error" });
+              }
+            }}
+          >
+            Resolve
+          </Button>
+        </Show>
       </div>
     );
   },
@@ -251,6 +285,7 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
     const { storage, setStorage } = useLocalStorage();
     const [provider] = createSharedSignal("provider");
     const [activeDraggableGroup] = createSharedSignal("activeDraggableGroup");
+    const [activeDraggablePiece] = createSharedSignal("activeDraggablePiece");
     const [viewSelectorOpened, setViewSelectorOpened] = createSignal(false);
     const view = (): string => storage().dashboardView || "kanban";
     const setView = (view: string): void => {
@@ -312,6 +347,7 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
         <Breadcrumb
           ancestor={ancestor()}
           activeDraggableGroup={activeDraggableGroup()}
+          activeDraggablePiece={activeDraggablePiece()}
           setAncestor={setAncestor}
         />
         <div class="flex-1" />
@@ -331,7 +367,7 @@ const Toolbar: Component<{ class?: string }> = (props) => {
   return (
     <div
       class={clsx(
-        ":base-2: p-1 w-full flex items-center border-b-2 absolute h-12 border-gray-200 dark:border-gray-700 justify-end @container",
+        ":base-2: p-1 w-full flex items-center border-b-2 absolute h-12 border-gray-200 dark:border-gray-700 justify-end @container z-1",
         props.class
       )}
     >

@@ -5,7 +5,7 @@ import { Observable, observable } from "@trpc/server/observable";
 const createEventPublisher = <E extends PubSubMessage>(
   createEventName: (eventNameParam: string) => string
 ) => {
-  return (ctx: Context, eventNameParam: string | string[], event: E): void => {
+  return (ctx: Pick<Context, "fastify">, eventNameParam: string | string[], event: E): void => {
     if (typeof eventNameParam === "string") {
       ctx.fastify.pubsub.publish(createEventName(eventNameParam), event);
     } else {

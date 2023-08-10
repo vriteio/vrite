@@ -1,4 +1,4 @@
-import { createSyncedPiece, processInputContent } from "./process-content";
+import { createSyncedPiece, createInputContentProcessor } from "./process-content";
 import { LexoRank } from "lexorank";
 import { ObjectId, Binary } from "mongodb";
 import {
@@ -63,12 +63,15 @@ const processPulledRecords = async (
     pulledContent: string;
     pulledHash: string;
   }> = [];
+  const processInputContent = await createInputContentProcessor(ctx);
   const createDirectory = async (
     path: string
   ): Promise<UnderscoreID<FullContentGroup<ObjectId>>> => {
     const directories = path.split("/");
     const parentDirectory = directories.slice(0, -1).join("/");
-    const existingDirectory = newDirectories.find((directory) => directory.path === path);
+    const existingDirectory = newDirectories.find(
+      (directory) => directory.path === parentDirectory
+    );
 
     if (existingDirectory) {
       const ancestorContentGroup = await contentGroupsCollection.findOne({
@@ -140,113 +143,110 @@ const processPulledRecords = async (
           return record.path === `${directoryPath}/${changedRecord.fileName}`;
         });
 
-        if (existingRecord) {
-          // TODO: fix
-          // eslint-disable-next-line max-depth
-          if (
-            existingRecord.currentHash !== existingRecord.syncedHash &&
-            existingRecord.syncedHash !== changedRecord.hash
-          ) {
-            conflicts.push({
-              path: existingRecord.path,
-              contentPieceId: existingRecord.contentPieceId,
-              pulledContent: changedRecord.content || "",
-              pulledHash: changedRecord.hash
-            });
-          }
+        if (!existingRecord) continue;
 
-          // eslint-disable-next-line max-depth
-          if (existingRecord.currentHash === existingRecord.syncedHash) {
-            newRecords.splice(newRecords.indexOf(existingRecord), 1);
-            removedContentPieces.push(existingRecord.contentPieceId);
-          }
-        }
-      } else {
-        const existingRecord = newRecords.find((record) => {
-          return record.path === `${directoryPath}/${changedRecord.fileName}`;
-        });
-        const { contentGroupId } =
-          newDirectories.find((directory) => {
-            return directory.path === directoryPath;
-          }) || {};
-
-        if (!contentGroupId) continue;
-
-        if (existingRecord) {
-          const { buffer, contentHash, metadata } = processInputContent(
-            changedRecord.content || "",
-            gitData.github!
-          );
-          const { date, members, tags, ...restMetadata } = metadata;
-
-          // TODO: fix
-          // eslint-disable-next-line max-depth
-          if (
-            existingRecord.currentHash !== existingRecord.syncedHash &&
-            existingRecord.syncedHash !== changedRecord.hash
-          ) {
-            conflicts.push({
-              path: existingRecord.path,
-              contentPieceId: existingRecord.contentPieceId,
-              pulledContent: changedRecord.content || "",
-              pulledHash: changedRecord.hash
-            });
-          }
-
-          // eslint-disable-next-line max-depth
-          if (existingRecord.currentHash === existingRecord.syncedHash) {
-            updatedContentPieces.push({
-              _id: existingRecord.contentPieceId,
-              ...restMetadata,
-              ...(date && { date: new Date(date) }),
-              ...(members && { members: members.map((memberId) => new ObjectId(memberId)) }),
-              ...(tags && { tags: tags.map((tagId) => new ObjectId(tagId)) })
-            });
-            updatedContents.push({
-              contentPieceId: existingRecord.contentPieceId,
-              content: new Binary(buffer)
-            });
-            existingRecord.syncedHash = contentHash;
-            existingRecord.currentHash = contentHash;
-          }
-
-          continue;
+        if (
+          existingRecord.currentHash !== existingRecord.syncedHash &&
+          existingRecord.syncedHash !== changedRecord.hash
+        ) {
+          conflicts.push({
+            path: existingRecord.path,
+            contentPieceId: existingRecord.contentPieceId,
+            pulledContent: changedRecord.content || "",
+            pulledHash: changedRecord.hash
+          });
         }
 
-        const [lastContentPiece] = await contentPiecesCollection
-          .find({ contentGroupId })
-          .sort({ order: -1 })
-          .limit(1)
-          .toArray();
-
-        let order = "";
-
-        if (lastContentPiece) {
-          order = LexoRank.parse(lastContentPiece.order).genNext().toString();
-        } else {
-          order = LexoRank.min().toString();
+        if (existingRecord.currentHash === existingRecord.syncedHash) {
+          newRecords.splice(newRecords.indexOf(existingRecord), 1);
+          removedContentPieces.push(existingRecord.contentPieceId);
         }
 
-        const { content, contentHash, contentPiece } = createSyncedPiece(
-          {
-            content: changedRecord.content || "",
-            path: `${directoryPath}/${changedRecord.fileName}`,
-            workspaceId: ctx.auth.workspaceId,
-            contentGroupId,
-            order
-          },
+        continue;
+      }
+
+      const existingRecord = newRecords.find((record) => {
+        return record.path === `${directoryPath}/${changedRecord.fileName}`;
+      });
+      const { contentGroupId } =
+        newDirectories.find((directory) => {
+          return directory.path === directoryPath;
+        }) || {};
+
+      if (!contentGroupId) continue;
+
+      if (existingRecord) {
+        const { buffer, contentHash, metadata } = await processInputContent(
+          changedRecord.content || "",
           gitData.github!
         );
+        const { date, members, tags, ...restMetadata } = metadata;
 
-        newContentPieces.push(contentPiece);
-        newContents.push(content);
-        newRecords.push({
-          contentPieceId: contentPiece._id,
-          path: `${directoryPath}/${changedRecord.fileName}`,
-          currentHash: contentHash,
-          syncedHash: contentHash
-        });
+        if (
+          existingRecord.currentHash !== existingRecord.syncedHash &&
+          existingRecord.syncedHash !== changedRecord.hash
+        ) {
+          conflicts.push({
+            path: existingRecord.path,
+            contentPieceId: existingRecord.contentPieceId,
+            pulledContent: changedRecord.content || "",
+            pulledHash: changedRecord.hash
+          });
+        }
+
+        if (existingRecord.currentHash === existingRecord.syncedHash) {
+          updatedContentPieces.push({
+            _id: existingRecord.contentPieceId,
+            ...restMetadata,
+            ...(date && { date: new Date(date) }),
+            ...(members && { members: members.map((memberId) => new ObjectId(memberId)) }),
+            ...(tags && { tags: tags.map((tagId) => new ObjectId(tagId)) })
+          });
+          updatedContents.push({
+            contentPieceId: existingRecord.contentPieceId,
+            content: new Binary(buffer)
+          });
+          existingRecord.syncedHash = contentHash;
+          existingRecord.currentHash = contentHash;
+        }
+
+        continue;
       }
+
+      const [lastContentPiece] = await contentPiecesCollection
+        .find({ contentGroupId })
+        .sort({ order: -1 })
+        .limit(1)
+        .toArray();
+
+      let order = "";
+
+      if (lastContentPiece) {
+        order = LexoRank.parse(lastContentPiece.order).genNext().toString();
+      } else {
+        order = LexoRank.min().toString();
+      }
+
+      const { content, contentHash, contentPiece } = await createSyncedPiece(
+        {
+          content: changedRecord.content || "",
+          path: `${directoryPath}/${changedRecord.fileName}`,
+          workspaceId: ctx.auth.workspaceId,
+          contentGroupId,
+          order
+        },
+        gitData.github!,
+        processInputContent
+      );
+
+      newContentPieces.push(contentPiece);
+      newContents.push(content);
+      newRecords.push({
+        contentPieceId: contentPiece._id,
+        path: `${directoryPath}/${changedRecord.fileName}`,
+        currentHash: contentHash,
+        syncedHash: contentHash
+      });
     }
   }
 

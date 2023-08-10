@@ -1,5 +1,5 @@
 import { useContentGroupsContext } from "../../content-groups-context";
-import { Component, For, createMemo, createSignal } from "solid-js";
+import { Component, For, Show, createMemo, createSignal } from "solid-js";
 import {
   mdiDotsVertical,
   mdiFileLock,
@@ -25,8 +25,17 @@ import { MiniEditor } from "#components/fragments";
 
 interface ContentGroupRowProps {
   contentGroup: App.ContentGroup;
-  index: number;
-  remove?(id: string): void;
+  customLabel?: string;
+  menuDisabled?: boolean;
+  draggable?: boolean;
+  removeContentGroup(id: string): void;
+  removeContentPiece(id: string): void;
+}
+
+declare module "#context" {
+  interface SharedState {
+    activeDraggableGroup: App.ContentGroup | null;
+  }
 }
 
 const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
@@ -37,6 +46,10 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
   const { setAncestor } = useContentGroupsContext();
   const [activeDraggableGroup, setActiveDraggableGroup] = createSharedSignal(
     "activeDraggableGroup",
+    null
+  );
+  const [activeDraggablePiece, setActiveDraggablePiece] = createSharedSignal(
+    "activeDraggablePiece",
     null
   );
   const [dropdownOpened, setDropdownOpened] = createSignal(false);
@@ -123,16 +136,31 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
             },
             ghostClass: "!hidden",
             revertOnSpill: true,
+            filter: ".locked",
             onAdd(evt) {
               const el = evt.item;
 
-              el.remove();
-              setHighlight(false);
-              client.contentGroups.move.mutate({
-                id: el.dataset.contentGroupId || "",
-                ancestor: props.contentGroup.id
-              });
-              props.remove?.(el.dataset.contentGroupId || "");
+              if (el.dataset.contentGroupId) {
+                el.remove();
+                setHighlight(false);
+                client.contentGroups.move.mutate({
+                  id: el.dataset.contentGroupId,
+                  ancestor: props.contentGroup.id
+                });
+                props.removeContentGroup(el.dataset.contentGroupId);
+
+                return;
+              }
+
+              if (el.dataset.contentPieceId) {
+                el.remove();
+                setHighlight(false);
+                client.contentPieces.move.mutate({
+                  id: el.dataset.contentPieceId,
+                  contentGroupId: props.contentGroup.id
+                });
+                props.removeContentPiece(el.dataset.contentPieceId);
+              }
             },
             onStart() {
               setActiveDraggableGroup(props.contentGroup);
@@ -144,7 +172,10 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
         }}
       >
         <div
-          class="flex flex-1 justify-center items-center overflow-hidden rounded-lg"
+          class={clsx(
+            "flex flex-1 justify-center items-center overflow-hidden rounded-lg",
+            props.draggable === false && "locked"
+          )}
           data-content-group-id={props.contentGroup.id}
           onDragOver={(event) => event.preventDefault()}
           onDragEnter={(event) => {
@@ -222,9 +253,11 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
               highlight() && "highlight-text"
             )}
             content="paragraph"
-            initialValue={props.contentGroup.name}
+            initialValue={props.customLabel || props.contentGroup.name}
             readOnly={Boolean(
-              activeDraggableGroup() ||
+              props.customLabel ||
+                activeDraggableGroup() ||
+                activeDraggablePiece() ||
                 props.contentGroup.locked ||
                 !hasPermission("manageDashboard")
             )}
@@ -238,42 +271,45 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
           />
         </div>
       </div>
-      <Dropdown
-        placement="bottom-end"
-        opened={dropdownOpened()}
-        class="ml-1 mr-4"
-        setOpened={setDropdownOpened}
-        activatorButton={() => (
-          <IconButton
-            path={mdiDotsVertical}
-            class="justify-start m-0 content-group-menu"
-            variant="text"
-            text="soft"
-            onClick={(event) => {
-              event.stopPropagation();
-              setDropdownOpened(true);
-            }}
-          />
-        )}
-      >
-        <div class="w-full gap-1 flex flex-col">
-          <For each={menuOptions()}>
-            {(item) => {
-              return (
-                <IconButton
-                  path={item.icon}
-                  label={item.label}
-                  variant="text"
-                  text="soft"
-                  color={item.color}
-                  class={clsx("justify-start whitespace-nowrap w-full m-0", item.class)}
-                  onClick={item.onClick}
-                />
-              );
-            }}
-          </For>
-        </div>
-      </Dropdown>
+      <Show when={!props.menuDisabled}>
+        <Dropdown
+          placement="bottom-end"
+          opened={dropdownOpened()}
+          class="ml-1 mr-4"
+          setOpened={setDropdownOpened}
+          activatorButton={() => (
+            <IconButton
+              path={mdiDotsVertical}
+              class="justify-start m-0 content-group-menu @hover-dark:bg-gray-800"
+              variant="text"
+              color="contrast"
+              text="soft"
+              onClick={(event) => {
+                event.stopPropagation();
+                setDropdownOpened(true);
+              }}
+            />
+          )}
+        >
+          <div class="w-full gap-1 flex flex-col">
+            <For each={menuOptions()}>
+              {(item) => {
+                return (
+                  <IconButton
+                    path={item.icon}
+                    label={item.label}
+                    variant="text"
+                    text="soft"
+                    color={item.color}
+                    class={clsx("justify-start whitespace-nowrap w-full m-0", item.class)}
+                    onClick={item.onClick}
+                  />
+                );
+              }}
+            </For>
+          </div>
+        </Dropdown>
+      </Show>
     </Card>
   );
 };

@@ -1,4 +1,8 @@
-import { createSyncedPiece, processInputContent, processOutputContent } from "./process-content";
+import {
+  createSyncedPiece,
+  createInputContentProcessor,
+  createOutputContentProcessor
+} from "./process-content";
 import {
   commitChanges,
   getCommitsSince,
@@ -7,10 +11,11 @@ import {
   getDirectory
 } from "./requests";
 import { processPulledRecords } from "./pull";
-import { publishEvent } from "../events";
+import { publishGitDataEvent } from "../events";
 import { z } from "zod";
 import { LexoRank } from "lexorank";
 import { Binary } from "mongodb";
+import { minimatch } from "minimatch";
 import crypto from "node:crypto";
 import { isAuthenticated } from "#lib/middleware";
 import { procedure, router } from "#lib/trpc";
@@ -30,6 +35,7 @@ import {
   githubData
 } from "#database";
 import { ObjectId, UnderscoreID, zodId } from "#lib";
+import { publishContentGroupEvent } from "#routes/content-groups";
 
 const authenticatedProcedure = procedure.use(isAuthenticated);
 const githubRouter = router({
@@ -48,7 +54,7 @@ const githubRouter = router({
       };
 
       await gitDataCollection.insertOne(gitData);
-      publishEvent(ctx, `${ctx.auth.workspaceId}`, {
+      publishGitDataEvent(ctx, `${ctx.auth.workspaceId}`, {
         action: "configure",
         data: {
           github: input,
@@ -80,13 +86,20 @@ const githubRouter = router({
       const octokit = await ctx.fastify.github.getInstallationOctokit(
         gitData?.github.installationId
       );
-      const syncDirectory = async (path: string, ancestors: ObjectId[]): Promise<ObjectId> => {
+      const { baseDirectory } = gitData.github;
+      const basePath = baseDirectory.startsWith("/") ? baseDirectory.slice(1) : baseDirectory;
+      const syncDirectory = async (
+        path: string,
+        ancestors: ObjectId[]
+      ): Promise<UnderscoreID<FullContentGroup<ObjectId>>> => {
+        const syncedPath = path.startsWith("/") ? path.slice(1) : path;
+        const recordPath = path.replace(basePath, "").split("/").filter(Boolean).join("/");
         const entries = await getDirectory({
           githubData: gitData.github!,
           octokit,
-          payload: { path }
+          payload: { path: syncedPath }
         });
-        const name = path.split("/").pop() || gitData.github?.repositoryName || "";
+        const name = recordPath.split("/").pop() || gitData.github?.repositoryName || "";
         const contentGroupId = new ObjectId();
         const descendants: ObjectId[] = [];
 
@@ -94,22 +107,28 @@ const githubRouter = router({
 
         for await (const entry of entries) {
           if (entry.type === "tree") {
-            const id = await syncDirectory(
-              path.split("/").filter(Boolean).concat(entry.name).join("/"),
+            const descendantContentGroup = await syncDirectory(
+              syncedPath.split("/").filter(Boolean).concat(entry.name).join("/"),
               [...ancestors, contentGroupId]
             );
 
-            descendants.push(id);
-          } else if (entry.type === "blob" && entry.object.text) {
-            const { content, contentHash, contentPiece } = createSyncedPiece(
+            descendants.push(descendantContentGroup._id);
+          } else if (
+            entry.type === "blob" &&
+            entry.object.text &&
+            minimatch(entry.name, gitData.github!.matchPattern)
+          ) {
+            const processInputContent = await createInputContentProcessor(ctx);
+            const { content, contentHash, contentPiece } = await createSyncedPiece(
               {
                 content: entry.object.text,
-                path: `${path}/${entry.name}`,
+                path: [...recordPath.split("/"), entry.name].filter(Boolean).join("/"),
                 workspaceId: ctx.auth.workspaceId,
                 contentGroupId,
                 order: order.toString()
               },
-              gitData.github!
+              gitData.github!,
+              processInputContent
             );
 
             order = order.genNext();
@@ -119,7 +138,7 @@ const githubRouter = router({
               contentPieceId: contentPiece._id,
               currentHash: contentHash,
               syncedHash: contentHash,
-              path: `${path.startsWith("/") ? path.slice(1) : path}/${entry.name}`
+              path: [...recordPath.split("/"), entry.name].filter(Boolean).join("/")
             });
           }
         }
@@ -134,13 +153,13 @@ const githubRouter = router({
 
         newContentGroups.push(contentGroup);
         newDirectories.push({
-          path: path.startsWith("/") ? path.slice(1) : path,
+          path: recordPath,
           contentGroupId
         });
 
-        return contentGroup._id;
+        return contentGroup;
       };
-      const id = await syncDirectory("", []);
+      const topContentGroup = await syncDirectory(basePath, []);
 
       await contentGroupsCollection.insertMany(newContentGroups);
       await contentPiecesCollection.insertMany(newContentPieces);
@@ -156,7 +175,7 @@ const githubRouter = router({
           $set: {
             records: newRecords,
             directories: newDirectories,
-            contentGroupId: id,
+            contentGroupId: topContentGroup._id,
             lastCommitDate: lastCommit.committedDate,
             lastCommitId: lastCommit.oid
           }
@@ -165,10 +184,10 @@ const githubRouter = router({
       await workspaceCollection.updateOne(
         { _id: ctx.auth.workspaceId },
         {
-          $push: { contentGroups: id }
+          $push: { contentGroups: topContentGroup._id }
         }
       );
-      publishEvent(ctx, `${ctx.auth.workspaceId}`, {
+      publishGitDataEvent(ctx, `${ctx.auth.workspaceId}`, {
         action: "update",
         data: {
           records: newRecords.map((record) => ({
@@ -181,6 +200,15 @@ const githubRouter = router({
           })),
           lastCommitDate: lastCommit.committedDate,
           lastCommitId: lastCommit.oid
+        }
+      });
+      publishContentGroupEvent(ctx, `${ctx.auth.workspaceId}`, {
+        action: "create",
+        data: {
+          ...topContentGroup,
+          ancestors: topContentGroup.ancestors.map((ancestor) => `${ancestor}`),
+          descendants: topContentGroup.descendants.map((descendant) => `${descendant}`),
+          id: `${topContentGroup._id}`
         }
       });
     }),
@@ -226,6 +254,8 @@ const githubRouter = router({
         githubData: gitData.github!,
         octokit
       });
+      const { baseDirectory } = gitData.github!;
+      const basePath = baseDirectory.startsWith("/") ? baseDirectory.slice(1) : baseDirectory;
 
       for await (const commit of lastCommits) {
         const filesChangedInCommit = await getFilesChangedInCommit({
@@ -235,8 +265,20 @@ const githubRouter = router({
         });
 
         filesChangedInCommit.forEach((file) => {
-          const directory = file.filename.split("/").slice(0, -1).join("/");
-          const fileName = file.filename.split("/").pop() || "";
+          if (
+            !file.filename.startsWith(basePath) ||
+            !minimatch(file.filename, gitData.github!.matchPattern)
+          ) {
+            return;
+          }
+
+          const recordPath = file.filename
+            .replace(basePath, "")
+            .split("/")
+            .filter(Boolean)
+            .join("/");
+          const directory = recordPath.split("/").slice(0, -1).join("/");
+          const fileName = recordPath.split("/").pop() || "";
           const { status } = file;
           const directoryRecords = changedRecordsByDirectory.get(directory) || [];
           const existingRecordIndex = directoryRecords.findIndex(
@@ -257,7 +299,9 @@ const githubRouter = router({
         const directoryEntries = await getDirectory({
           githubData: gitData.github!,
           octokit,
-          payload: { path: directory }
+          payload: {
+            path: [...basePath.split("/"), ...directory.split("/")].filter(Boolean).join("/")
+          }
         });
 
         for await (const entry of directoryEntries) {
@@ -285,6 +329,7 @@ const githubRouter = router({
       );
 
       if (conflicts.length && !input.force) {
+        const processOutputContent = await createOutputContentProcessor(ctx);
         const contentPieceIds = conflicts.map((conflict) => conflict.contentPieceId);
         const contentPieces = await contentPiecesCollection
           .find({ _id: { $in: contentPieceIds } })
@@ -295,39 +340,43 @@ const githubRouter = router({
 
         return {
           status: "conflict",
-          conflicted: conflicts
-            .map((conflict) => {
-              const contentPiece = contentPieces.find(
-                (contentPiece) => `${contentPiece._id}` === `${conflict.contentPieceId}`
-              );
-              const { content } =
-                contents.find(
-                  (content) => `${content.contentPieceId}` === `${conflict.contentPieceId}`
-                ) || {};
+          conflicted: await Promise.all(
+            conflicts
+              .map(async (conflict) => {
+                const contentPiece = contentPieces.find(
+                  (contentPiece) => `${contentPiece._id}` === `${conflict.contentPieceId}`
+                );
+                const { content } =
+                  contents.find(
+                    (content) => `${content.contentPieceId}` === `${conflict.contentPieceId}`
+                  ) || {};
 
-              if (!contentPiece || !content) return null;
+                if (!contentPiece || !content) return null;
 
-              const { date, members, tags, description, ...metadata } = contentPiece;
+                const { date, members, tags, description, ...metadata } = contentPiece;
 
-              return {
-                path: conflict.path,
-                contentPieceId: `${conflict.contentPieceId}`,
-                currentContent: processOutputContent(
-                  Buffer.from(content.buffer),
-                  contentPiece,
-                  gitData.github!
-                ),
-                pulledContent: conflict.pulledContent,
-                pulledHash: conflict.pulledHash
-              };
-            })
-            .filter(Boolean) as Array<{
-            path: string;
-            contentPieceId: string;
-            currentContent: string;
-            pulledContent: string;
-            pulledHash: string;
-          }>
+                return {
+                  path: conflict.path,
+                  contentPieceId: `${conflict.contentPieceId}`,
+                  currentContent: await processOutputContent(
+                    Buffer.from(content.buffer),
+                    contentPiece,
+                    gitData.github!
+                  ),
+                  pulledContent: conflict.pulledContent,
+                  pulledHash: conflict.pulledHash
+                };
+              })
+              .filter(Boolean) as Array<
+              Promise<{
+                path: string;
+                contentPieceId: string;
+                currentContent: string;
+                pulledContent: string;
+                pulledHash: string;
+              }>
+            >
+          )
         };
       }
 
@@ -341,7 +390,11 @@ const githubRouter = router({
         message: z.string()
       })
     )
-    .output(z.void())
+    .output(
+      z.object({
+        status: z.enum(["stale-data", "committed"])
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const gitDataCollection = getGitDataCollection(ctx.db);
       const contentsCollection = getContentsCollection(ctx.db);
@@ -350,12 +403,14 @@ const githubRouter = router({
 
       if (!gitData?.github) throw errors.notFound("githubData");
 
+      const processOutputContent = await createOutputContentProcessor(ctx);
       const changedRecords = gitData.records.filter((record) => {
         return record.currentHash !== record.syncedHash;
       });
       const octokit = await ctx.fastify.github.getInstallationOctokit(
         gitData?.github.installationId
       );
+      const { baseDirectory } = gitData.github!;
       const additions: Array<{ path: string; contents: string }> = [];
       const deletions: Array<{ path: string }> = [];
 
@@ -368,7 +423,7 @@ const githubRouter = router({
           _id: record.contentPieceId
         });
 
-        if (record.currentHash === "") {
+        if (record.currentHash === "" && minimatch(record.path, gitData.github.matchPattern)) {
           deletions.push({
             path: record.path.startsWith("/") ? record.path.slice(1) : record.path
           });
@@ -376,11 +431,11 @@ const githubRouter = router({
           continue;
         }
 
-        if (content && contentPiece) {
+        if (content && contentPiece && minimatch(record.path, gitData.github.matchPattern)) {
           additions.push({
             path: record.path.startsWith("/") ? record.path.slice(1) : record.path,
             contents: Buffer.from(
-              processOutputContent(Buffer.from(content.buffer), contentPiece, gitData.github!)
+              await processOutputContent(Buffer.from(content.buffer), contentPiece, gitData.github!)
             ).toString("base64")
           });
         }
@@ -390,32 +445,60 @@ const githubRouter = router({
         githubData: gitData.github!,
         octokit,
         payload: {
-          additions,
-          deletions,
+          additions: additions.map((addition) => {
+            return {
+              ...addition,
+              path: [...baseDirectory.split("/"), ...addition.path.split("/")]
+                .filter(Boolean)
+                .join("/")
+            };
+          }),
+          deletions: deletions.map((deletion) => {
+            return {
+              ...deletion,
+              path: [...baseDirectory.split("/"), ...deletion.path.split("/")]
+                .filter(Boolean)
+                .join("/")
+            };
+          }),
           message: input.message,
           expectedCommitId: gitData.lastCommitId!
         }
       });
 
       if (!commit) throw errors.serverError();
+      if (commit.status === "stale-data") return { status: "stale-data" };
+
+      const outputRecords = gitData.records
+        .filter((record) => {
+          return record.currentHash;
+        })
+        .map((record) => ({
+          ...record,
+          syncedHash: record.currentHash
+        }));
 
       await gitDataCollection.updateOne(
         { workspaceId: ctx.auth.workspaceId },
         {
           $set: {
-            records: gitData.records
-              .filter((record) => {
-                return record.currentHash;
-              })
-              .map((record) => ({
-                ...record,
-                syncedHash: record.currentHash
-              })),
+            records: outputRecords,
             lastCommitId: commit.oid,
             lastCommitDate: commit.committedDate
           }
         }
       );
+      publishGitDataEvent(ctx, `${ctx.auth.workspaceId}`, {
+        action: "update",
+        data: {
+          records: outputRecords.map((record) => ({
+            ...record,
+            contentPieceId: `${record.contentPieceId}`
+          }))
+        }
+      });
+
+      return { status: "committed" };
     }),
   getConflictedContent: authenticatedProcedure
     .input(
@@ -436,6 +519,7 @@ const githubRouter = router({
 
       if (!gitData?.github) throw errors.notFound("githubData");
 
+      const processOutputContent = await createOutputContentProcessor(ctx);
       const contentPiece = await contentPiecesCollection.findOne({
         _id: new ObjectId(input.contentPieceId)
       });
@@ -450,7 +534,11 @@ const githubRouter = router({
       if (!content) throw errors.notFound("content");
 
       return {
-        content: processOutputContent(Buffer.from(content.buffer), contentPiece, gitData.github!)
+        content: await processOutputContent(
+          Buffer.from(content.buffer),
+          contentPiece,
+          gitData.github!
+        )
       };
     }),
   resolveConflict: authenticatedProcedure
@@ -471,7 +559,11 @@ const githubRouter = router({
 
       if (!gitData?.github) throw errors.notFound("githubData");
 
-      const { buffer, metadata, contentHash } = processInputContent(input.content, gitData.github!);
+      const processInputContent = await createInputContentProcessor(ctx);
+      const { buffer, metadata, contentHash } = await processInputContent(
+        input.content,
+        gitData.github!
+      );
       const { date, members, tags, ...restMetadata } = metadata;
 
       await contentsCollection.updateOne(
@@ -509,6 +601,23 @@ const githubRouter = router({
           }
         }
       );
+      publishGitDataEvent(ctx, `${ctx.auth.workspaceId}`, {
+        action: "update",
+        data: {
+          records: gitData.records.map((record) => {
+            if (`${record.contentPieceId}` === input.contentPieceId) {
+              return {
+                ...record,
+                contentPieceId: `${record.contentPieceId}`,
+                syncedHash: input.syncedHash,
+                currentHash: contentHash
+              };
+            }
+
+            return { ...record, contentPieceId: `${record.contentPieceId}` };
+          })
+        }
+      });
     })
 });
 

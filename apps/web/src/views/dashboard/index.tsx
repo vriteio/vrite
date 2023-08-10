@@ -10,11 +10,14 @@ import { useContentGroups } from "#lib/composables";
 const DashboardView: Component = () => {
   const createSharedSignal = useSharedState();
   const cache = useCache();
-  const { contentGroups, setContentGroups, refetch } = cache("contentGroups", () => {
-    return useContentGroups();
-  });
   const { workspace, profile } = useAuthenticatedUserData();
   const { storage, setStorage } = useLocalStorage();
+  const ancestor = (): App.ContentGroup | null => {
+    return storage().dashboardViewAncestor || null;
+  };
+  const { contentGroups, setContentGroups, refetch, loading } = cache("contentGroups", () => {
+    return useContentGroups();
+  });
   const ydoc = new Y.Doc();
   const [provider, setProvider] = createSharedSignal(
     "provider",
@@ -27,9 +30,6 @@ const DashboardView: Component = () => {
       document: ydoc
     })
   );
-  const ancestor = (): App.ContentGroup | null => {
-    return storage().dashboardViewAncestor || null;
-  };
   const setAncestor = (ancestor: App.ContentGroup | null): void => {
     setStorage((storage) => ({
       ...storage,
@@ -58,15 +58,11 @@ const DashboardView: Component = () => {
     })
   );
   createEffect(
-    on(
-      ancestor,
-      (ancestor, previousAncestor) => {
-        if (ancestor?.id !== previousAncestor?.id) {
-          refetch(ancestor?.id);
-        }
-      },
-      { defer: true }
-    )
+    on(ancestor, (ancestor, previousAncestor) => {
+      if (ancestor?.id !== previousAncestor?.id) {
+        refetch(ancestor?.id);
+      }
+    })
   );
 
   return (
@@ -76,6 +72,7 @@ const DashboardView: Component = () => {
           <DashboardListView
             ancestor={ancestor()}
             contentGroups={contentGroups()}
+            contentGroupsLoading={loading()}
             setAncestor={setAncestor}
             setContentGroups={setContentGroups}
           />
@@ -84,6 +81,7 @@ const DashboardView: Component = () => {
           <DashboardKanbanView
             ancestor={ancestor()}
             contentGroups={contentGroups()}
+            contentGroupsLoading={loading()}
             setAncestor={setAncestor}
             setContentGroups={setContentGroups}
           />
