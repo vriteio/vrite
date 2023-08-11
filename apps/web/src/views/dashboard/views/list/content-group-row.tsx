@@ -129,7 +129,7 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
   });
 
   return (
-    <Card class="m-0 border-x-0 border-t-0 rounded-none flex justify-start items-center hover:bg-gray-200 dark:hover:bg-gray-700 hover:cursor-pointer pl-4">
+    <Card class="m-0 border-x-0 border-t-0 rounded-none flex justify-start items-center @hover:bg-gray-200 dark:@hover:bg-gray-700 @hover:cursor-pointer pl-4">
       <div
         class="flex flex-1 justify-center items-center cursor-pointer overflow-x-hidden"
         ref={(el) => {
@@ -143,6 +143,8 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
                 );
               }
             },
+            delayOnTouchOnly: true,
+            delay: 500,
             disabled: !hasPermission("manageDashboard"),
             ghostClass: "!hidden",
             revertOnSpill: true,
@@ -259,7 +261,7 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
           </div>
           <MiniEditor
             class={clsx(
-              "!text-base inline-flex text-start flex-1 overflow-x-auto content-group-name scrollbar-hidden hover:cursor-text",
+              "!text-base inline-flex text-start flex-1 overflow-x-auto content-group-name scrollbar-hidden @hover:cursor-text",
               highlight() && "highlight-text"
             )}
             content="paragraph"

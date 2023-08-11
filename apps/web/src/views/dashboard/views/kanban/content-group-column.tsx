@@ -212,6 +212,8 @@ const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
                     );
                   }
                 },
+                delayOnTouchOnly: true,
+                delay: 500,
                 disabled: !hasPermission("manageDashboard"),
                 ghostClass: "!hidden",
                 revertOnSpill: true,

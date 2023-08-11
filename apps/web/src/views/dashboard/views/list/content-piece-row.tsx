@@ -2,7 +2,6 @@ import { Component } from "solid-js";
 import { mdiEye, mdiFileOutline, mdiPencil } from "@mdi/js";
 import { useNavigate } from "@solidjs/router";
 import SortableLib from "sortablejs";
-import clsx from "clsx";
 import { Card, IconButton, Tooltip } from "#components/primitives";
 import { App, hasPermission, useLocalStorage, useSharedState } from "#context";
 import { breakpoints } from "#lib/utils";
@@ -21,10 +20,7 @@ const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
   const { setStorage, storage } = useLocalStorage();
   const navigate = useNavigate();
   const createSharedSignal = useSharedState();
-  const [activeDraggablePiece, setActiveDraggablePiece] = createSharedSignal(
-    "activeDraggablePiece",
-    null
-  );
+  const [, setActiveDraggablePiece] = createSharedSignal("activeDraggablePiece", null);
   const editedArticleId = (): string => storage().contentPieceId || "";
 
   return (
@@ -40,7 +36,7 @@ const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
     >
       <Card
         color="contrast"
-        class="m-0 border-x-0 border-t-0 rounded-none justify-start items-center hover:bg-gray-200 dark:hover:bg-gray-700 hover:cursor-pointer pl-4 flex bg-transparent"
+        class="m-0 border-x-0 border-t-0 rounded-none justify-start items-center @hover:bg-gray-200 dark:@hover:bg-gray-700 @hover:cursor-pointer pl-4 flex bg-transparent"
       >
         <div
           class="flex flex-1 justify-center items-center cursor-pointer overflow-hidden rounded-lg"
@@ -50,6 +46,8 @@ const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
                 name: "shared",
                 put: () => false
               },
+              delayOnTouchOnly: true,
+              delay: 500,
               disabled: !hasPermission("manageDashboard"),
               ghostClass: "!hidden",
               revertOnSpill: true,
@@ -76,7 +74,7 @@ const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
               hover={false}
               badge
             />
-            {props.contentPiece.title}
+            <span class="clamp-1 text-start">{props.contentPiece.title}</span>
           </div>
         </div>
         <Tooltip text="Open in editor" side="left" wrapperClass="mr-4" class="-ml-1">

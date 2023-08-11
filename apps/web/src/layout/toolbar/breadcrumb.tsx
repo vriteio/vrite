@@ -114,6 +114,8 @@ const Breadcrumb: Component<{
               group: "shared",
               ghostClass: "!hidden",
               filter: ".locked",
+              delayOnTouchOnly: true,
+              delay: 500,
               onAdd(evt) {
                 const el = evt.item;
 
@@ -171,6 +173,8 @@ const Breadcrumb: Component<{
                     group: "shared",
                     ghostClass: "!hidden",
                     filter: ".locked",
+                    delayOnTouchOnly: true,
+                    delay: 500,
                     onAdd(evt) {
                       const el = evt.item;
 
