@@ -289,7 +289,7 @@ const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
                   path={props.contentGroup.locked ? mdiFolderLock : mdiFolder}
                   variant="text"
                   class={clsx(
-                    "m-0 absolute top-0 left-0 group-hover:opacity-0",
+                    "m-0 absolute top-0 left-0 @hover:group-hover:opacity-0",
                     highlight() && "!opacity-0"
                   )}
                   hover={false}
@@ -301,7 +301,7 @@ const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
                   path={mdiFolderOpen}
                   variant="text"
                   class={clsx(
-                    "m-0 absolute top-0 left-0 opacity-0 group-hover:opacity-100",
+                    "m-0 absolute top-0 left-0 opacity-0 @hover:group-hover:opacity-100",
                     highlight() && "!opacity-100"
                   )}
                   color={highlight() ? "primary" : "base"}
