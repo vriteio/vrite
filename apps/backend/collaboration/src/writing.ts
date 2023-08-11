@@ -7,7 +7,7 @@ import {
   getContentPiecesCollection,
   GitData
 } from "@vrite/backend";
-import { Server } from "@hocuspocus/server";
+import { Server, storePayload } from "@hocuspocus/server";
 import { Database } from "@hocuspocus/extension-database";
 import { Redis } from "@hocuspocus/extension-redis";
 import { ObjectId, Binary } from "mongodb";
@@ -26,10 +26,54 @@ const publishGitDataEvent = createEventPublisher<GitDataEvent>((workspaceId) => 
   return `gitData:${workspaceId}`;
 });
 const writingPlugin = publicPlugin(async (fastify) => {
+  const gitDataCollection = getGitDataCollection(fastify.mongo.db!);
   const contentsCollection = getContentsCollection(fastify.mongo.db!);
   const contentPiecesCollection = getContentPiecesCollection(fastify.mongo.db!);
   const contentVariantsCollection = getContentVariantsCollection(fastify.mongo.db!);
-  const gitDataCollection = getGitDataCollection(fastify.mongo.db!);
+  const updateGitRecord = async (
+    contentPieceId: string,
+    details: Pick<storePayload, "context" | "document">
+  ): Promise<void> => {
+    const gitData = await gitDataCollection.findOne({
+      workspaceId: new ObjectId(details.context.workspaceId)
+    });
+
+    if (!gitData) return;
+
+    const contentPiece = await contentPiecesCollection.findOne({
+      _id: new ObjectId(contentPieceId)
+    });
+    const json = docToJSON(details.document);
+    const md = gfmOutputTransformer(json, contentPiece);
+    const currentHash = crypto.createHash("md5").update(md).digest("hex");
+
+    await gitDataCollection.updateOne(
+      {
+        "workspaceId": new ObjectId(details.context.workspaceId),
+        "records.contentPieceId": new ObjectId(contentPieceId)
+      },
+      {
+        $set: {
+          "records.$.currentHash": currentHash
+        }
+      }
+    );
+    publishGitDataEvent({ fastify }, `${details.context.workspaceId}`, {
+      action: "update",
+      data: {
+        records: gitData.records.map((record) => {
+          if (record.contentPieceId.toString() === contentPieceId) {
+            return {
+              ...record,
+              currentHash
+            };
+          }
+
+          return record;
+        })
+      }
+    });
+  };
   const server = Server.configure({
     port: fastify.config.PORT,
     address: fastify.config.HOST,
@@ -110,42 +154,7 @@ const writingPlugin = publicPlugin(async (fastify) => {
               );
             }
 
-            const contentPiece = await contentPiecesCollection.findOne({
-              _id: new ObjectId(contentPieceId)
-            });
-            const gitData = await gitDataCollection.findOne({
-              workspaceId: new ObjectId(details.context.workspaceId)
-            });
-            const json = docToJSON(details.document);
-            const md = gfmOutputTransformer(json, contentPiece);
-            const currentHash = crypto.createHash("md5").update(md).digest("hex");
-
-            await gitDataCollection.updateOne(
-              {
-                "workspaceId": new ObjectId(details.context.workspaceId),
-                "records.contentPieceId": new ObjectId(contentPieceId)
-              },
-              {
-                $set: {
-                  "records.$.currentHash": currentHash
-                }
-              }
-            );
-            publishGitDataEvent({ fastify }, `${details.context.workspaceId}`, {
-              action: "update",
-              data: {
-                records: gitData.records.map((record) => {
-                  if (record.contentPieceId.toString() === contentPieceId) {
-                    return {
-                      ...record,
-                      currentHash
-                    };
-                  }
-
-                  return record;
-                })
-              }
-            });
+            updateGitRecord(contentPieceId, details);
 
             return contentsCollection?.updateOne(
               { contentPieceId: new ObjectId(contentPieceId) },
