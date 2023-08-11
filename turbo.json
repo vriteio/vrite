@@ -6,7 +6,7 @@
       "dependsOn": ["^build"],
       "cache": false
     },
-    "@vrite/core#build": {
+    "@vrite/app#build": {
       "dependsOn": ["@vrite/web#build"]
     },
     "lint": {
