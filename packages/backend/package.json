@@ -20,7 +20,7 @@
     "@fastify/redis": "^6.1.1",
     "@fastify/static": "^6.10.2",
     "@fastify/websocket": "^8.2.0",
-    "@hocuspocus/transformer": "^2.2.3",
+    "@hocuspocus/transformer": "^2.3.1",
     "@octokit/types": "^11.1.0",
     "@sendgrid/mail": "^7.7.0",
     "@tiptap/html": "^2.0.4",

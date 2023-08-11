@@ -17,7 +17,7 @@
     "vite-tsconfig-paths": "^4.2.0"
   },
   "dependencies": {
-    "@hocuspocus/provider": "^2.2.3",
+    "@hocuspocus/provider": "^2.3.1",
     "@jetbrains/websandbox": "^1.0.7",
     "@mdi/js": "^7.2.96",
     "@motionone/solid": "^10.16.2",
