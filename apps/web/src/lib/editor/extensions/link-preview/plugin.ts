@@ -23,11 +23,18 @@ class LinkPreview {
 
   private setLink: Setter<string>;
 
-  public constructor(options: LinkPreviewOptions, setLink: Setter<string>) {
+  private setTippy: Setter<Instance | undefined>;
+
+  public constructor(
+    options: LinkPreviewOptions,
+    setLink: Setter<string>,
+    setTippy: Setter<Instance | undefined>
+  ) {
     this.editor = options.editor;
     this.view = options.editor.view;
     this.element = options.element;
     this.setLink = setLink;
+    this.setTippy = setTippy;
     this.element.remove();
     this.element.style.visibility = "visible";
   }
@@ -35,6 +42,7 @@ class LinkPreview {
   public destroy(): void {
     this.tippy?.destroy();
     this.element.remove();
+    this.setTippy(undefined);
   }
 
   public update(view: EditorView, oldState?: EditorState): void {
@@ -94,6 +102,7 @@ class LinkPreview {
       placement: "bottom",
       hideOnClick: false
     });
+    this.setTippy(this.tippy);
   }
 
   private show(): void {
@@ -105,10 +114,14 @@ class LinkPreview {
   }
 }
 
-const LinkPreviewPlugin = (options: LinkPreviewOptions, setLink: Setter<string>): Plugin => {
+const LinkPreviewPlugin = (
+  options: LinkPreviewOptions,
+  setLink: Setter<string>,
+  setTippy: Setter<Instance | undefined>
+): Plugin => {
   return new Plugin({
     key: new PluginKey("link-preview"),
-    view: () => new LinkPreview(options, setLink)
+    view: () => new LinkPreview(options, setLink, setTippy)
   });
 };
 

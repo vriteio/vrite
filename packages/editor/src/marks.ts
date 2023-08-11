@@ -122,14 +122,25 @@ const Code = BaseCode.extend({
     ];
   }
 });
-const Link = BaseLink.configure({
-  openOnClick: false,
-  validate(url) {
-    return url.startsWith("http://") || url.startsWith("https://") || url.startsWith("mailto:");
-  }
-}).extend({
+const Link = BaseLink.extend({
   exitable: true,
   inclusive: true,
+  addOptions() {
+    return {
+      linkOnPaste: true,
+      autolink: true,
+      protocols: [],
+      HTMLAttributes: {
+        target: "_blank",
+        rel: "noopener noreferrer nofollow",
+        class: null
+      },
+      openOnClick: false,
+      validate(url) {
+        return url.startsWith("http://") || url.startsWith("https://") || url.startsWith("mailto:");
+      }
+    };
+  },
   parseHTML() {
     return [{ tag: 'a[href]:not([href ^= "javascript:" i])' }];
   },

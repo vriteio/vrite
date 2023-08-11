@@ -236,8 +236,8 @@ const Editor: Component<EditorProps> = (props) => {
       >
         {editor() && (
           <LinkPreviewWrapper editor={editor()}>
-            {(link) => {
-              return <LinkPreviewMenu link={link} />;
+            {(link, tippyInstance) => {
+              return <LinkPreviewMenu link={link} tippyInstance={tippyInstance} />;
             }}
           </LinkPreviewWrapper>
         )}

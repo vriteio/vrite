@@ -1,16 +1,18 @@
 import { LinkPreviewPlugin, LinkPreviewOptions } from "./plugin";
 import { Accessor, Component, createSignal, JSX, onMount } from "solid-js";
 import clsx from "clsx";
+import { Instance } from "tippy.js";
 import { createRef } from "#lib/utils";
 
 type LinkPreviewWrapperProps = Omit<LinkPreviewOptions, "element"> & {
   class?: string;
-  children: (link: Accessor<string>) => JSX.Element;
+  children: (link: Accessor<string>, tippyInstance: Accessor<Instance | undefined>) => JSX.Element;
 };
 
 const LinkPreviewWrapper: Component<LinkPreviewWrapperProps> = (props) => {
   const [getContainer, setContainer] = createRef<HTMLDivElement | null>(null);
-  const [getLink, setLink] = createSignal("");
+  const [tippyInstance, setTippyInstance] = createSignal<Instance | undefined>();
+  const [link, setLink] = createSignal("");
 
   onMount(() => {
     const { editor } = props;
@@ -23,7 +25,8 @@ const LinkPreviewWrapper: Component<LinkPreviewWrapperProps> = (props) => {
             editor,
             element: container
           },
-          setLink
+          setLink,
+          setTippyInstance
         )
       );
     }
@@ -35,7 +38,7 @@ const LinkPreviewWrapper: Component<LinkPreviewWrapperProps> = (props) => {
       class={clsx("hidden md:block", props.class)}
       style={{ visibility: "hidden" }}
     >
-      {props.children(getLink)}
+      {props.children(link, tippyInstance)}
     </div>
   );
 };

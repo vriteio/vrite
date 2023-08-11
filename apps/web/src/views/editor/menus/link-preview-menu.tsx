@@ -1,21 +1,34 @@
 import { Accessor, Component, createMemo, createResource, Show } from "solid-js";
 import { mdiWeb } from "@mdi/js";
 import clsx from "clsx";
+import { Instance } from "tippy.js";
 import { App, useClient } from "#context";
 import { Card, Icon, IconButton, Loader } from "#components/primitives";
 
 interface LinkPreviewMenuProps {
   link: Accessor<string>;
+  tippyInstance: Accessor<Instance | undefined>;
 }
 
 const LinkPreviewMenu: Component<LinkPreviewMenuProps> = (props) => {
   const client = useClient();
+  const updateTooltipPosition = (): void => {
+    setTimeout(() => {
+      props.tippyInstance()?.popperInstance?.update();
+    }, 0);
+  };
   const [previewData] = createResource<App.PreviewData | null, string>(props.link, async (link) => {
     if (!link) return null;
 
     try {
-      return await client.utils.openGraph.query({ url: props.link() });
+      const result = await client.utils.openGraph.query({ url: props.link() });
+
+      updateTooltipPosition();
+
+      return result;
     } catch (error) {
+      updateTooltipPosition();
+
       return null;
     }
   });
