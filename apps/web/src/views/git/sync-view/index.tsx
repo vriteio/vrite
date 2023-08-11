@@ -14,8 +14,8 @@ import { useNavigate } from "@solidjs/router";
 import { TitledCard } from "#components/fragments";
 import {
   App,
+  hasPermission,
   useClient,
-  useConfirmationModal,
   useLocalStorage,
   useNotifications,
   useSharedState
@@ -52,22 +52,31 @@ const InitialSyncCard: Component = () => {
 
   return (
     <TitledCard icon={mdiSync} label="Sync">
-      <p class="text-gray-500 dark:text-gray-400 mb-2">
-        Perform the initial sync with your remote repository. Depending on the amount of synced
-        content, this may take a while.
-      </p>
-      <Button
-        color="primary"
-        class="m-0 w-full"
-        loading={loading()}
-        onClick={async () => {
-          setLoading(true);
-          await client.git.github.initialSync.mutate();
-          setLoading(false);
-        }}
+      <Show
+        when={hasPermission("manageGit")}
+        fallback={
+          <p class="text-gray-500 dark:text-gray-400 mb-2">
+            You need additional permissions to perform initial sync with remote repository.
+          </p>
+        }
       >
-        Sync now
-      </Button>
+        <p class="text-gray-500 dark:text-gray-400 mb-2">
+          Perform the initial sync with your remote repository. Depending on the amount of synced
+          content, this may take a while.
+        </p>
+        <Button
+          color="primary"
+          class="m-0 w-full"
+          loading={loading()}
+          onClick={async () => {
+            setLoading(true);
+            await client.git.github.initialSync.mutate();
+            setLoading(false);
+          }}
+        >
+          Sync now
+        </Button>
+      </Show>
     </TitledCard>
   );
 };
@@ -84,7 +93,7 @@ const CommitCard: Component<{ changedRecords: App.GitRecord[] }> = (props) => {
       icon={mdiSourceCommit}
       label="Commit"
       action={
-        <Show when={props.changedRecords.length}>
+        <Show when={props.changedRecords.length && hasPermission("manageGit")}>
           <IconButton
             disabled={!message() || !props.changedRecords.length}
             loading={loading()}
@@ -124,17 +133,19 @@ const CommitCard: Component<{ changedRecords: App.GitRecord[] }> = (props) => {
         }
       >
         <div class="flex flex-col w-full">
-          <Heading level={3}>Commit message</Heading>
-          <p class="text-gray-500 dark:text-gray-400 mb-2">
-            Briefly describe the changes you're committing.
-          </p>
-          <Input
-            placeholder="Message"
-            class="m-0 mb-2 w-full"
-            color="contrast"
-            value={message()}
-            setValue={setMessage}
-          />
+          <Show when={hasPermission("manageGit")}>
+            <Heading level={3}>Commit message</Heading>
+            <p class="text-gray-500 dark:text-gray-400 mb-2">
+              Briefly describe the changes you're committing.
+            </p>
+            <Input
+              placeholder="Message"
+              class="m-0 mb-2 w-full"
+              color="contrast"
+              value={message()}
+              setValue={setMessage}
+            />
+          </Show>
           <Heading level={3}>Changes</Heading>
           <p class="text-gray-500 dark:text-gray-400 mb-2">
             These are the changes that will be committed.
@@ -294,7 +305,9 @@ const SyncView: Component<SyncViewProps> = (props) => {
       </Show>
       <Show when={props.gitData.lastCommitId}>
         <CommitCard changedRecords={changedRecords()} />
-        <PullCard />
+        <Show when={hasPermission("manageGit")}>
+          <PullCard />
+        </Show>
       </Show>
     </>
   );

@@ -255,7 +255,7 @@ const contentPiecesRouter = router({
       if (input.content) {
         const contentsCollection = getContentsCollection(ctx.db);
         const contentVariantsCollection = getContentVariantsCollection(ctx.db);
-      
+
         if (variantId) {
           const contentVariant = await contentVariantsCollection.findOne({
             contentPieceId: new ObjectId(input.id),
@@ -491,7 +491,6 @@ const contentPiecesRouter = router({
       await contentPiecesCollection.insertOne(contentPiece);
       await contentsCollection.insertOne({
         _id: new ObjectId(),
-        contentGroupId: contentPiece.contentGroupId,
         contentPieceId: contentPiece._id,
         content: new Binary(contentBuffer)
       });
@@ -746,7 +745,7 @@ const contentPiecesRouter = router({
         workspaceId: ctx.auth.workspaceId
       });
       await contentVariantsCollection.deleteMany({
-        contentPieceId: contentPiece._id,
+        contentPieceId: contentPiece._id
       });
       runGitSyncHook(ctx, "contentPieceRemoved", { contentPiece });
       publishEvent(ctx, `${contentPiece.contentGroupId}`, {

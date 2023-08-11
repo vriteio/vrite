@@ -1,5 +1,3 @@
-![Vrite JS SDK cover](./cover.png)
-
 # Vrite JavaScript SDK
 
 > Vrite JavaScript SDK, like the entire Vrite product is currently in Beta. Use with caution and report any bugs related to the SDK here in the GitHub Issues or through Vrite Discord server.
@@ -16,7 +14,6 @@ Currently it includes the following parts:
 
 ```shell
 npm i @vrite/sdk
-
 ```
 
 ## Usage

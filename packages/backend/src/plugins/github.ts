@@ -20,7 +20,7 @@ const githubPlugin = publicPlugin(async (fastify) => {
   });
 
   fastify.decorate("github", app);
-  fastify.get("/github/login", (req, res) => {
+  fastify.get("/github/authorize", (req, res) => {
     const { url } = app.oauth.getWebFlowAuthorizationUrl({});
 
     res.redirect(url);

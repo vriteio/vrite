@@ -11,11 +11,12 @@ import {
   createSignal,
   on
 } from "solid-js";
-import { mdiFilePlus, mdiFolderPlus } from "@mdi/js";
+import { mdiFilePlus, mdiFolderPlus, mdiPlus, mdiPlusCircle } from "@mdi/js";
 import { createRef } from "@vrite/components/src/ref";
-import { Card, IconButton, Loader } from "#components/primitives";
+import { Card, Dropdown, IconButton, Loader } from "#components/primitives";
 import { App, useCache, useClient, useLocalStorage, useNotifications } from "#context";
 import { useContentPieces } from "#lib/composables";
+import { breakpoints } from "#lib/utils";
 
 interface DashboardListViewProps {
   ancestor?: App.ContentGroup | null;
@@ -25,6 +26,32 @@ interface DashboardListViewProps {
   setContentGroups(contentGroups: App.ContentGroup<string>[]): void;
 }
 
+const NewContentGroupButton: Component<{ ancestor: App.ContentGroup }> = (props) => {
+  const client = useClient();
+  const { notify } = useNotifications();
+
+  return (
+    <IconButton
+      path={mdiFolderPlus}
+      class="whitespace-nowrap w-full m-0 justify-start"
+      text="soft"
+      variant="text"
+      color="base"
+      label="New group"
+      onClick={async () => {
+        try {
+          await client.contentGroups.create.mutate({
+            name: "",
+            ancestor: props.ancestor?.id
+          });
+          notify({ text: "New content group created", type: "success" });
+        } catch (error) {
+          notify({ text: "Couldn't create new content group", type: "error" });
+        }
+      }}
+    />
+  );
+};
 const NewContentPieceButton: Component<{
   ancestor: App.ContentGroup;
 }> = (props) => {
@@ -139,9 +166,9 @@ const DashboardListView: Component<DashboardListViewProps> = (props) => {
     <div class="relative overflow-hidden w-full">
       <ContentGroupsContextProvider ancestor={() => props.ancestor} setAncestor={props.setAncestor}>
         <div class="flex flex-col w-full h-full relative" ref={setScrollableContainerRef}>
-          <Show when={higherAncestor()} keyed>
+          <Show when={higherAncestor() || props.ancestor?.ancestors} keyed>
             <ContentGroupRow
-              contentGroup={higherAncestor()!}
+              contentGroup={higherAncestor()}
               draggable={false}
               menuDisabled={true}
               customLabel=".."
@@ -175,30 +202,35 @@ const DashboardListView: Component<DashboardListViewProps> = (props) => {
             </div>
           </Show>
         </div>
-        <Card class="flex fixed bottom-18 md:bottom-4 right-4 m-0 gap-2" color="soft">
-          <Show when={props.ancestor} keyed>
-            <NewContentPieceButton ancestor={props.ancestor!} />
-          </Show>
-          <IconButton
-            path={mdiFolderPlus}
-            class="whitespace-nowrap w-full m-0 justify-start"
-            text="soft"
-            variant="text"
-            color="base"
-            label="New group"
-            onClick={async () => {
-              try {
-                await client.contentGroups.create.mutate({
-                  name: "",
-                  ancestor: props.ancestor?.id
-                });
-                notify({ text: "New content group created", type: "success" });
-              } catch (error) {
-                notify({ text: "Couldn't create new content group", type: "error" });
-              }
-            }}
-          />
-        </Card>
+        <Show
+          when={breakpoints.md()}
+          fallback={
+            <Dropdown
+              activatorButton={() => (
+                <IconButton
+                  path={mdiPlus}
+                  size="large"
+                  text="soft"
+                  class="fixed bottom-18 md:bottom-4 right-4"
+                />
+              )}
+            >
+              <div class="w-full gap-1 flex flex-col">
+                <Show when={props.ancestor} keyed>
+                  <NewContentPieceButton ancestor={props.ancestor!} />
+                </Show>
+                <NewContentGroupButton ancestor={props.ancestor!} />
+              </div>
+            </Dropdown>
+          }
+        >
+          <Card class="flex fixed bottom-18 md:bottom-4 right-4 m-0 gap-2" color="soft">
+            <Show when={props.ancestor} keyed>
+              <NewContentPieceButton ancestor={props.ancestor!} />
+            </Show>
+            <NewContentGroupButton ancestor={props.ancestor!} />
+          </Card>
+        </Show>
       </ContentGroupsContextProvider>
     </div>
   );

@@ -132,7 +132,6 @@ const createSyncedPiece = async (
   const content = {
     _id: new ObjectId(),
     contentPieceId: contentPiece._id,
-    workspaceId: details.workspaceId,
     content: new Binary(buffer)
   };
 

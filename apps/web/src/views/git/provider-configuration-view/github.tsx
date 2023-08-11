@@ -9,7 +9,7 @@ import {
 import { Component, Match, Show, Switch, createMemo, createResource, createSignal } from "solid-js";
 import { Octokit, RestEndpointMethodTypes } from "@octokit/rest";
 import { Button, Heading, IconButton, Input, Tooltip } from "#components/primitives";
-import { App, useClient } from "#context";
+import { App, hasPermission, useClient, useConfirmationModal } from "#context";
 import { InputField, TitledCard } from "#components/fragments";
 
 interface GitHubConfigurationViewProps {
@@ -26,6 +26,7 @@ type Branch = RestEndpointMethodTypes["repos"]["listBranches"]["response"]["data
 
 const GitHubConfigurationView: Component<GitHubConfigurationViewProps> = (props) => {
   const client = useClient();
+  const { confirmAction } = useConfirmationModal();
   const [loading, setLoading] = createSignal(false);
   const [selectedInstallation, setSelectedInstallation] = createSignal<Installation | null>(null);
   const [selectedRepository, setSelectedRepository] = createSignal<Repository | null>(null);
@@ -107,7 +108,7 @@ const GitHubConfigurationView: Component<GitHubConfigurationViewProps> = (props)
   props.setActionComponent(() => {
     return (
       <Switch>
-        <Match when={!savedGitHubConfig()}>
+        <Match when={!savedGitHubConfig() && hasPermission("manageGit")}>
           <Button
             class="m-0"
             color="primary"
@@ -133,12 +134,18 @@ const GitHubConfigurationView: Component<GitHubConfigurationViewProps> = (props)
             Save
           </Button>
         </Match>
-        <Match when={savedGitHubConfig()}>
+        <Match when={savedGitHubConfig() && hasPermission("manageGit")}>
           <Button
             class="m-0"
             color="primary"
             onClick={() => {
-              client.git.reset.mutate();
+              confirmAction({
+                header: "Reset configuration",
+                content: "Are you sure you want to reset the GitHub configuration?",
+                onConfirm() {
+                  client.git.reset.mutate();
+                }
+              });
             }}
           >
             Reset
@@ -188,7 +195,7 @@ const GitHubConfigurationView: Component<GitHubConfigurationViewProps> = (props)
                   label="Continue with GitHub"
                   color="contrast"
                   onClick={() => {
-                    window.location.replace("github/login");
+                    window.location.replace("github/authorize");
                   }}
                 />
               </>

@@ -7,7 +7,11 @@ const contentPieceEvents = [
   "contentPieceAdded",
   "contentPieceRemoved"
 ] as const;
-const contentGroupEvents = ["contentGroupAdded", "contentGroupRemoved"] as const;
+const contentGroupEvents = [
+  "contentGroupAdded",
+  "contentGroupRemoved",
+  "contentGroupMoved"
+] as const;
 const memberEvents = ["memberInvited", "memberAdded", "memberRemoved"] as const;
 const webhookEvent = z.enum([...contentPieceEvents, ...contentGroupEvents, ...memberEvents]);
 const webhookMetadata = z.object({

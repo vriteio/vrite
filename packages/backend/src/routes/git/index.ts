@@ -39,6 +39,9 @@ const gitRouter = router({
       };
     }),
   reset: authenticatedProcedure
+    .meta({
+      permissions: { session: ["manageGit"] }
+    })
     .input(z.void())
     .output(z.void())
     .mutation(async ({ ctx }) => {

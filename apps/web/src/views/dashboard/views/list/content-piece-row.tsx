@@ -50,6 +50,7 @@ const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
                 name: "shared",
                 put: () => false
               },
+              disabled: !hasPermission("manageDashboard"),
               ghostClass: "!hidden",
               revertOnSpill: true,
               filter: ".locked",

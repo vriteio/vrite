@@ -60,7 +60,13 @@ const ConfirmationModalProvider: ParentComponent = (props) => {
               <Card class="max-w-full p-3 w-88">
                 <div class="flex items-start justify-center">
                   <Heading class="flex-1">{config.header}</Heading>
-                  <IconButton path={mdiClose} class="m-0" text="soft" onClick={cancel} />
+                  <IconButton
+                    path={mdiClose}
+                    class="m-0"
+                    text="soft"
+                    color="contrast"
+                    onClick={cancel}
+                  />
                 </div>
                 <div class={clsx("mt-2", type() === "input" ? "mb-4" : "mb-8")}>
                   {config.content}

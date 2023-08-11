@@ -40,6 +40,9 @@ import { publishContentGroupEvent } from "#routes/content-groups";
 const authenticatedProcedure = procedure.use(isAuthenticated);
 const githubRouter = router({
   configure: authenticatedProcedure
+    .meta({
+      permissions: { session: ["manageGit"] }
+    })
     .input(githubData)
     .output(z.void())
     .mutation(async ({ ctx, input }) => {
@@ -66,6 +69,9 @@ const githubRouter = router({
       });
     }),
   initialSync: authenticatedProcedure
+    .meta({
+      permissions: { session: ["manageGit"] }
+    })
     .input(z.void())
     .output(z.void())
     .mutation(async ({ ctx }) => {
@@ -213,6 +219,9 @@ const githubRouter = router({
       });
     }),
   pull: authenticatedProcedure
+    .meta({
+      permissions: { session: ["manageGit"] }
+    })
     .input(
       z.object({
         force: z.boolean().optional()
@@ -385,6 +394,9 @@ const githubRouter = router({
       return { status: "pulled" };
     }),
   commit: authenticatedProcedure
+    .meta({
+      permissions: { session: ["manageGit"] }
+    })
     .input(
       z.object({
         message: z.string()
@@ -542,6 +554,9 @@ const githubRouter = router({
       };
     }),
   resolveConflict: authenticatedProcedure
+    .meta({
+      permissions: { session: ["manageGit"] }
+    })
     .input(
       z.object({
         contentPieceId: z.string(),

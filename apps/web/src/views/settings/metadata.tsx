@@ -134,6 +134,7 @@ const MetadataSection: SettingsSectionComponent = () => {
           class="w-full m-0"
           wrapperClass="w-full"
           value={canonicalLinkPattern()}
+          color="contrast"
           placeholder="https://example.com/{{variant}}/{{slug}}"
           setValue={() => {}}
           onChange={(event) => {

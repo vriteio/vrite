@@ -6,14 +6,13 @@ import {
   Accessor,
   Component,
   createMemo,
-  createResource,
   createSignal,
   Match,
   onCleanup,
   Show,
   Switch
 } from "solid-js";
-import { mdiChevronLeft, mdiClose, mdiGithub, mdiTune } from "@mdi/js";
+import { mdiChevronLeft, mdiClose, mdiTune } from "@mdi/js";
 import clsx from "clsx";
 import { Dynamic } from "solid-js/web";
 import { Motion, Presence } from "@motionone/solid";

@@ -24,7 +24,7 @@ import {
 import { MiniEditor } from "#components/fragments";
 
 interface ContentGroupRowProps {
-  contentGroup: App.ContentGroup;
+  contentGroup?: App.ContentGroup | null;
   customLabel?: string;
   menuDisabled?: boolean;
   draggable?: boolean;
@@ -66,6 +66,8 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
         icon: mdiIdentifier,
         label: "Copy ID",
         async onClick() {
+          if (!props.contentGroup) return;
+
           await window.navigator.clipboard.writeText(props.contentGroup.id);
           setDropdownOpened(false);
           notify({
@@ -78,9 +80,11 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
 
     if (hasPermission("manageDashboard")) {
       menuOptions.push({
-        icon: props.contentGroup.locked ? mdiFileLockOpen : mdiFileLock,
-        label: props.contentGroup.locked ? "Unlock" : "Lock",
+        icon: props.contentGroup?.locked ? mdiFileLockOpen : mdiFileLock,
+        label: props.contentGroup?.locked ? "Unlock" : "Lock",
         async onClick() {
+          if (!props.contentGroup) return;
+
           await client.contentGroups.update.mutate({
             id: props.contentGroup.id,
             locked: !props.contentGroup.locked
@@ -90,7 +94,7 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
       });
     }
 
-    if (!props.contentGroup.locked && hasPermission("manageDashboard")) {
+    if (!props.contentGroup?.locked && hasPermission("manageDashboard")) {
       menuOptions.push({
         icon: mdiTrashCan,
         label: "Delete",
@@ -107,6 +111,8 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
               </p>
             ),
             async onConfirm() {
+              if (!props.contentGroup) return;
+
               try {
                 await client.contentGroups.delete.mutate({ id: props.contentGroup.id });
                 notify({ text: "Content group deleted", type: "success" });
@@ -131,9 +137,13 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
             group: {
               name: "shared",
               put: (_to, _from, dragEl) => {
-                return dragEl.dataset.contentGroupId !== props.contentGroup.id;
+                return (
+                  Boolean(dragEl.dataset.contentGroupId) &&
+                  dragEl.dataset.contentGroupId !== props.contentGroup?.id
+                );
               }
             },
+            disabled: !hasPermission("manageDashboard"),
             ghostClass: "!hidden",
             revertOnSpill: true,
             filter: ".locked",
@@ -145,14 +155,14 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
                 setHighlight(false);
                 client.contentGroups.move.mutate({
                   id: el.dataset.contentGroupId,
-                  ancestor: props.contentGroup.id
+                  ancestor: props.contentGroup?.id || null
                 });
                 props.removeContentGroup(el.dataset.contentGroupId);
 
                 return;
               }
 
-              if (el.dataset.contentPieceId) {
+              if (el.dataset.contentPieceId && props.contentGroup) {
                 el.remove();
                 setHighlight(false);
                 client.contentPieces.move.mutate({
@@ -176,7 +186,7 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
             "flex flex-1 justify-center items-center overflow-hidden rounded-lg",
             props.draggable === false && "locked"
           )}
-          data-content-group-id={props.contentGroup.id}
+          data-content-group-id={props.contentGroup?.id || ""}
           onDragOver={(event) => event.preventDefault()}
           onDragEnter={(event) => {
             if (
@@ -223,7 +233,7 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
         >
           <div class="h-8 w-8 relative group mr-1">
             <IconButton
-              path={props.contentGroup.locked ? mdiFolderLock : mdiFolder}
+              path={props.contentGroup?.locked ? mdiFolderLock : mdiFolder}
               variant="text"
               class={clsx(
                 "m-0 absolute top-0 left-0 group-hover:opacity-0",
@@ -253,16 +263,18 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
               highlight() && "highlight-text"
             )}
             content="paragraph"
-            initialValue={props.customLabel || props.contentGroup.name}
+            initialValue={props.customLabel || props.contentGroup?.name || ""}
             readOnly={Boolean(
               props.customLabel ||
                 activeDraggableGroup() ||
                 activeDraggablePiece() ||
-                props.contentGroup.locked ||
+                props.contentGroup?.locked ||
                 !hasPermission("manageDashboard")
             )}
             placeholder="Group name"
             onBlur={(editor) => {
+              if (!props.contentGroup) return;
+
               client.contentGroups.update.mutate({
                 id: props.contentGroup.id,
                 name: editor.getText()

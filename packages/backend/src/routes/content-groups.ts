@@ -312,16 +312,14 @@ const contentGroupsRouter = router({
         workspaceId: ctx.auth.workspaceId
       });
       await contentsCollection.deleteMany({
-        contentPieceId: { $in: contentPieceIds },
-        workspaceId: ctx.auth.workspaceId
+        contentPieceId: { $in: contentPieceIds }
       });
       await contentPieceVariantsCollection.deleteMany({
         contentPieceId: { $in: contentPieceIds },
         workspaceId: ctx.auth.workspaceId
       });
       await contentVariantsCollection.deleteMany({
-        contentPieceId: { $in: contentPieceIds },
-        workspaceId: ctx.auth.workspaceId
+        contentPieceId: { $in: contentPieceIds }
       });
       runGitSyncHook(ctx, "contentGroupRemoved", { contentGroup });
       publishEvent(ctx, `${ctx.auth.workspaceId}`, {
@@ -511,6 +509,13 @@ const contentGroupsRouter = router({
           name: contentGroup.name,
           locked: contentGroup.locked
         }
+      });
+      runWebhooks(ctx, "contentGroupMoved", {
+        id: input.id,
+        ancestors: ancestors.map((id) => `${id}`),
+        descendants: contentGroup.descendants.map((id) => `${id}`),
+        name: contentGroup.name,
+        locked: contentGroup.locked
       });
     }),
   reorder: authenticatedProcedure

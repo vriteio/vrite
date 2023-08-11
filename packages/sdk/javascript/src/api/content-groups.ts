@@ -24,6 +24,7 @@ interface ContentGroup {
 }
 interface ContentGroupsEndpoints {
   list(input?: { ancestor?: string }): Promise<ContentGroup[]>;
+  get(input: Pick<ContentGroup, "id">): Promise<ContentGroup>;
   create(
     input: Omit<ContentGroup, "id" | "ancestors" | "descendants"> & { ancestor?: string }
   ): Promise<Pick<ContentGroup, "id">>;
@@ -39,8 +40,15 @@ interface ContentGroupsEndpoints {
 
 const basePath = "/content-groups";
 const createContentGroupsEndpoints = (sendRequest: SendRequest): ContentGroupsEndpoints => ({
-  list: () => {
-    return sendRequest<ContentGroup[]>("GET", `${basePath}/list`);
+  get: (input) => {
+    return sendRequest<ContentGroup>("GET", `${basePath}`, {
+      params: input
+    });
+  },
+  list: (input) => {
+    return sendRequest<ContentGroup[]>("GET", `${basePath}/list`, {
+      params: input
+    });
   },
   create: (input) => {
     return sendRequest<Pick<ContentGroup, "id">>("POST", `${basePath}`, {

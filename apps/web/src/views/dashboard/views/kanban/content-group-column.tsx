@@ -212,6 +212,7 @@ const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
                     );
                   }
                 },
+                disabled: !hasPermission("manageDashboard"),
                 ghostClass: "!hidden",
                 revertOnSpill: true,
                 onAdd(evt) {
@@ -392,6 +393,7 @@ const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
                 options={{
                   ghostClass: `:base: border-4 border-gray-200 opacity-50 dark:border-gray-700 children:invisible`,
                   group: "card",
+                  disabled: !hasPermission("manageDashboard"),
                   onStart(event) {
                     props.onDragStart?.();
                     setActiveDraggablePiece(

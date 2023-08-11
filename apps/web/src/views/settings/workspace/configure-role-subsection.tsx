@@ -71,6 +71,12 @@ const ConfigureRoleSubsection: Component<ConfigureRoleSubsectionProps> = (props)
       description:
         "Manage the workspace settings - including its details, members, roles, and editing experience",
       permission: "manageWorkspace"
+    },
+    {
+      label: "Manage Git",
+      description:
+        "Setup and manage Git source control - including commits, pull requests, and provider configuration",
+      permission: "manageGit"
     }
   ];
 

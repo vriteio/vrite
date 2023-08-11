@@ -7,8 +7,8 @@ import { contentGroup, contentPiece, getContentGroupsCollection } from "#databas
 import { workspaceMembership } from "#database/workspace-memberships";
 
 const webhookPayload = z.union([
-  contentPiece.extend({ id: zodId(), slug: z.string(), locked: z.boolean().optional() }),
-  contentGroup.extend({ id: zodId() }),
+  contentPiece.extend({ slug: z.string(), locked: z.boolean().optional() }),
+  contentGroup,
   workspaceMembership.extend({ id: zodId() })
 ]);
 const runWebhooks = async (

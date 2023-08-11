@@ -89,6 +89,7 @@ const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
     {
       icon: mdiGit,
       label: "Source control",
+      inMenu: true,
       active: () => storage().sidePanelView === "git",
       onClick: () => {
         setSidePanelView("git");

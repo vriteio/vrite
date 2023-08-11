@@ -90,7 +90,7 @@ const createGenericOutputContentProcessor = async (
   return () => Promise.resolve("");
 };
 const handleContentGroupMoved: GitSyncHookHandler<"contentGroupMoved"> = async (
-  { ctx, gitData, directories, records, processOutputContent },
+  { ctx, directories, records, processOutputContent },
   data
 ) => {
   const contentGroupsCollection = getContentGroupsCollection(ctx.db);
@@ -157,7 +157,6 @@ const handleContentGroupMoved: GitSyncHookHandler<"contentGroupMoved"> = async (
     .toArray();
   const contents = await contentsCollection
     .find({
-      workspaceId: ctx.auth.workspaceId,
       contentPieceId: { $in: contentPieces.map((contentPiece) => contentPiece._id) }
     })
     .toArray();
@@ -356,7 +355,6 @@ const handleContentPieceMoved: GitSyncHookHandler<"contentPieceMoved"> = async (
 
   const { content } =
     (await contentsCollection.findOne({
-      workspaceId: ctx.auth.workspaceId,
       contentPieceId: data.contentPiece._id
     })) || {};
 
@@ -398,7 +396,6 @@ const handleContentPieceUpdated: GitSyncHookHandler<"contentPieceUpdated"> = asy
 
   const { content } =
     (await contentsCollection.findOne({
-      workspaceId: ctx.auth.workspaceId,
       contentPieceId: data.contentPiece._id
     })) || {};
 

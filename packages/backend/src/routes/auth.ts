@@ -16,11 +16,7 @@ import {
 import { processAuth } from "#lib/auth";
 import * as errors from "#lib/errors";
 import { isAuthenticated, isAuthenticatedUser } from "#lib/middleware";
-import {
-  getUserSettingsCollection,
-  getWorkspaceMembershipsCollection,
-  getWorkspacesCollection
-} from "#database";
+import { getUserSettingsCollection } from "#database";
 
 const totpConfig = {
   issuer: "Vrite",

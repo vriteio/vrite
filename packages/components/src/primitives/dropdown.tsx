@@ -67,11 +67,12 @@ const Dropdown: Component<DropdownProps> = (props) => {
   const [resizing, setResizing] = createSignal(false);
   const [height, setHeight] = createSignal(0);
   const [minHeight, setMinHeight] = createSignal(0);
+  const [placement, setPlacement] = createSignal<Placement>("bottom-start");
   const cardStyle = createMemo((): JSX.CSSProperties => {
     if (md()) {
       return {
         "transition-property": "transform, box-shadow, visibility, opacity",
-        "transform-origin": placementToTransformOrigin(props.placement || "bottom-start"),
+        "transform-origin": placementToTransformOrigin(placement()),
         "height": height() ? `${height()}px` : undefined
       };
     }
@@ -103,9 +104,10 @@ const Dropdown: Component<DropdownProps> = (props) => {
         ],
         placement: props.placement || "bottom-start",
         strategy: props.fixed ? "fixed" : "absolute"
-      }).then(({ x, y }) => {
+      }).then(({ x, y, placement }) => {
         box.style.top = `${y}px`;
         box.style.left = `${x}px`;
+        setPlacement(placement);
       });
     }
   };
