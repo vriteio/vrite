@@ -3,7 +3,7 @@ import { Show, Component, createSignal, createEffect, createMemo } from "solid-j
 import { createStore } from "solid-js/store";
 import { InputField, TitledCard } from "#components/fragments";
 import { Loader, Select, Heading, Button } from "#components/primitives";
-import { useClientContext, App, useNotificationsContext } from "#context";
+import { useClient, App, useNotifications } from "#context";
 import { validateEmail } from "#lib/utils";
 
 interface InviteMemberSubsectionProps {
@@ -14,8 +14,8 @@ interface InviteMemberSubsectionProps {
 }
 
 const InviteMemberSubsection: Component<InviteMemberSubsectionProps> = (props) => {
-  const { client } = useClientContext();
-  const { notify } = useNotificationsContext();
+  const client = useClient();
+  const { notify } = useNotifications();
   const [loading, setLoading] = createSignal(false);
   const [memberData, setMemberData] = createStore({
     email: "",

@@ -1,10 +1,10 @@
 import { Editor } from "./editor";
 import { Component, createEffect, onCleanup } from "solid-js";
 import clsx from "clsx";
-import { useUIContext } from "#context";
+import { useLocalStorage } from "#context";
 
 const StandaloneEditorView: Component = () => {
-  const { storage, setStorage } = useUIContext();
+  const { storage, setStorage } = useLocalStorage();
 
   createEffect(() => {
     if (storage().zenMode) {

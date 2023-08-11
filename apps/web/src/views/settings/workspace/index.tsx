@@ -17,14 +17,9 @@ import {
 } from "solid-js";
 import { mdiAccountMultiple, mdiDotsVertical, mdiTagText, mdiTrashCan } from "@mdi/js";
 import { useNavigate } from "@solidjs/router";
-import {
-  App,
-  hasPermission,
-  useClientContext,
-  useConfirmationContext,
-  useUIContext
-} from "#context";
+import { App, hasPermission, useClient, useConfirmationModal } from "#context";
 import { Dropdown, IconButton } from "#components/primitives";
+import { breakpoints } from "#lib/utils";
 
 const useRoles = (): {
   roles: Accessor<Array<App.ExtendedRole<"baseType">>>;
@@ -32,7 +27,7 @@ const useRoles = (): {
   moreToLoad: Accessor<boolean>;
   loadMore(): void;
 } => {
-  const { client } = useClientContext();
+  const client = useClient();
   const [loading, setLoading] = createSignal(false);
   const [moreToLoad, setMoreToLoad] = createSignal(true);
   const [state, setState] = createStore<{
@@ -96,7 +91,7 @@ const useMembers = (): {
   loadMore(): void;
   members(): WorkspaceMemberData[];
 } => {
-  const { client } = useClientContext();
+  const client = useClient();
   const [loading, setLoading] = createSignal(false);
   const [moreToLoad, setMoreToLoad] = createSignal(true);
   const [state, setState] = createStore<{
@@ -152,7 +147,7 @@ const useWorkspace = (): {
   workspace: Accessor<Omit<App.Workspace, "contentGroups"> | null>;
   loading(): boolean;
 } => {
-  const { client } = useClientContext();
+  const client = useClient();
   const [workspace, { mutate }] = createResource<Omit<App.Workspace, "contentGroups"> | null>(
     () => {
       return client.workspaces.get.query();
@@ -174,10 +169,9 @@ const useWorkspace = (): {
   return { workspace, loading: () => workspace.loading };
 };
 const WorkspaceSection: SettingsSectionComponent = (props) => {
-  const { breakpoints } = useUIContext();
-  const { client } = useClientContext();
+  const client = useClient();
   const navigate = useNavigate();
-  const { confirmWithInput } = useConfirmationContext();
+  const { confirmWithInput } = useConfirmationModal();
   const [openedSubsection, setOpenedSubsection] = createSignal<
     "none" | "invite-member" | "configure-role"
   >("none");

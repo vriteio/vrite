@@ -13,6 +13,7 @@ import { getWorkspaceMembershipsCollection } from "#database/workspace-membershi
 import { getRolesCollection } from "#database/roles";
 import { FullUser } from "#database/users";
 import {
+  getContentGroupsCollection,
   getContentPieceVariantsCollection,
   getContentPiecesCollection,
   getContentVariantsCollection,
@@ -37,10 +38,23 @@ const createWorkspace = async (
   const contentPiecesCollection = getContentPiecesCollection(db);
   const contentsCollection = getContentsCollection(db);
   const rolesCollection = getRolesCollection(db);
+  const contentGroupsCollection = getContentGroupsCollection(db);
   const adminRoleId = new ObjectId();
   const workspaceId = new ObjectId();
   const ideasContentGroupId = new ObjectId();
   const contentPieceId = new ObjectId();
+  const contentGroups = [
+    { _id: ideasContentGroupId, name: "Ideas", ancestors: [], descendants: [], workspaceId },
+    { _id: new ObjectId(), name: "Drafts", ancestors: [], descendants: [], workspaceId },
+    {
+      _id: new ObjectId(),
+      name: "Published",
+      ancestors: [],
+      descendants: [],
+      workspaceId,
+      locked: true
+    }
+  ];
 
   await workspacesCollection.insertOne({
     name: config?.name || `${user.username}'s workspace`,
@@ -49,11 +63,7 @@ const createWorkspace = async (
     ...(config?.logo && { logo: config.logo }),
     ...(config?.description && { description: config.description }),
     ...(config?.defaultContent && {
-      contentGroups: [
-        { _id: ideasContentGroupId, name: "Ideas" },
-        { _id: new ObjectId(), name: "Drafts" },
-        { _id: new ObjectId(), name: "Published", locked: true }
-      ]
+      contentGroups: contentGroups.map(({ _id }) => _id)
     })
   });
   await workspaceSettingsCollection.insertOne({
@@ -97,6 +107,7 @@ const createWorkspace = async (
   });
 
   if (config?.defaultContent) {
+    await contentGroupsCollection.insertMany(contentGroups);
     await contentPiecesCollection.insertOne({
       _id: contentPieceId,
       workspaceId,
@@ -110,7 +121,6 @@ const createWorkspace = async (
     await contentsCollection.insertOne({
       _id: new ObjectId(),
       contentPieceId,
-      contentGroupId: ideasContentGroupId,
       content: new Binary(jsonToBuffer(initialContent as DocJSON))
     });
   }
@@ -127,6 +137,10 @@ const deleteWorkspace = async (workspaceId: ObjectId, db: Db): Promise<void> => 
   const variantsCollection = getVariantsCollection(db);
   const contentPieceVariantsCollection = getContentPieceVariantsCollection(db);
   const contentVariantsCollection = getContentVariantsCollection(db);
+  const contentPieceIds = await contentPiecesCollection
+    .find({ workspaceId })
+    .map(({ _id }) => _id)
+    .toArray();
 
   await workspacesCollection.deleteOne({
     _id: workspaceId
@@ -144,7 +158,7 @@ const deleteWorkspace = async (workspaceId: ObjectId, db: Db): Promise<void> => 
     workspaceId
   });
   await contentsCollection.deleteMany({
-    workspaceId
+    contentPieceId: { $in: contentPieceIds }
   });
   await variantsCollection.deleteMany({
     workspaceId
@@ -153,7 +167,7 @@ const deleteWorkspace = async (workspaceId: ObjectId, db: Db): Promise<void> => 
     workspaceId
   });
   await contentVariantsCollection.deleteMany({
-    workspaceId
+    contentPieceId: { $in: contentPieceIds }
   });
 };
 

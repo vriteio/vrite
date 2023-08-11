@@ -1,5 +1,4 @@
 import { z } from "zod";
-import zodToJsonSchema from "zod-to-json-schema";
 
 const envSchema = z.object({
   MONGO_URL: z.string(),
@@ -24,7 +23,12 @@ const envSchema = z.object({
   SENDGRID_MAGIC_LINK_TEMPLATE_ID: z.string(),
   SENDGRID_PASSWORD_CHANGE_VERIFICATION_TEMPLATE_ID: z.string(),
   SENDGRID_WORKSPACE_INVITE_TEMPLATE_ID: z.string(),
-  SENDGRID_EMAIL_CHANGE_VERIFICATION_TEMPLATE_ID: z.string()
+  SENDGRID_EMAIL_CHANGE_VERIFICATION_TEMPLATE_ID: z.string(),
+  GITHUB_APP_ID: z.string(),
+  GITHUB_APP_PRIVATE_KEY: z.string(),
+  GITHUB_APP_CLIENT_ID: z.string(),
+  GITHUB_APP_CLIENT_SECRET: z.string(),
+  GITHUB_APP_WEBHOOK_SECRET: z.string()
 });
 
 declare module "fastify" {

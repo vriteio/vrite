@@ -2,7 +2,7 @@ import { mdiUpload } from "@mdi/js";
 import clsx from "clsx";
 import { nanoid } from "nanoid";
 import { Accessor, Component, Setter, Show, createEffect, createSignal, on } from "solid-js";
-import { useClientContext } from "#context";
+import { useClient } from "#context";
 import { Button, Loader, Icon } from "#components/primitives";
 
 interface SettingsImageUploadProps {
@@ -21,7 +21,7 @@ const useFileUpload = (
   setUrl: Setter<string>;
   uploadFile(file?: File | null): Promise<void>;
 } => {
-  const { client } = useClientContext();
+  const client = useClient();
   const [url, setUrl] = createSignal(initialUrl);
   const [uploading, setUploading] = createSignal(false);
   const uploadFile = async (file?: File | null): Promise<void> => {

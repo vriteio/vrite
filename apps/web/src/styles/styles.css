@@ -98,21 +98,6 @@ body {
   @apply h-full;
 }
 
-.monaco-editor,
-.monaco-editor > *:first-child {
-  @apply rounded-2xl;
-}
-.ProseMirror .monaco-editor,
-.ProseMirror .monaco-editor > *:first-child {
-  @apply rounded-b-none;
-}
-.monaco-editor .editor-widget {
-  @apply overflow-hidden rounded-lg;
-}
-.monaco-editor .monaco-hover {
-  @apply rounded-lg;
-}
-
 input[type="date"]::-webkit-calendar-picker-indicator {
   color: rgba(0, 0, 0, 0);
   opacity: 1;
@@ -173,10 +158,15 @@ textarea {
 .sidebar-hidden #dropdowns {
   height: calc(100% - env(safe-area-inset-bottom, 0px));
 }
-
+.whitespace-nowrap-children * {
+  @apply !whitespace-nowrap;
+}
 /*.slash-menu {
   @apply lt-md:!transform-none;
 }*/
 .shiki {
   @apply h-full w-full pl-6;
+}
+.highlight-text * {
+  @apply bg-gradient-to-tr font-semibold text-transparent bg-clip-text dark:text-transparent dark:bg-clip-text;
 }

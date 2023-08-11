@@ -6,7 +6,7 @@ import dayjs from "dayjs";
 import { Component, For, Show, createResource, createSignal } from "solid-js";
 import RelativeTimePlugin from "dayjs/plugin/relativeTime";
 import { createRef } from "#lib/utils";
-import { useAuthenticatedContext, useClientContext, useUIContext } from "#context";
+import { useAuthenticatedUserData, useClient, useLocalStorage, useSharedState } from "#context";
 import { Card, Heading, IconButton, Loader, Tooltip } from "#components/primitives";
 import { MiniEditor, ScrollShadow } from "#components/fragments";
 
@@ -19,9 +19,10 @@ interface BlockActionMenuProps {
 dayjs.extend(RelativeTimePlugin);
 
 const CommentMenu: Component<BlockActionMenuProps> = (props) => {
-  const { references } = useUIContext();
-  const { membership } = useAuthenticatedContext();
-  const { client } = useClientContext();
+  const createSharedSignal = useSharedState();
+  const [editedContentPiece] = createSharedSignal("editedContentPiece");
+  const { membership } = useAuthenticatedUserData();
+  const client = useClient();
   const [clearCommentEditorRef, setClearCommentEditorRef] = createRef<() => void>(() => {});
   const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLDivElement | null>(
     null
@@ -56,23 +57,18 @@ const CommentMenu: Component<BlockActionMenuProps> = (props) => {
     },
     { initialValue: [] }
   );
+  const handleStateUpdate = (): void => {
+    if (props.state.editor.isActive("comment")) {
+      setSelectedThreadFragment(props.state.editor.getAttributes("comment").thread);
+    } else {
+      setSelectedThreadFragment(null);
+    }
+  };
 
-  props.state.editor.on("selectionUpdate", () => {
-    if (props.state.editor.isActive("comment")) {
-      setSelectedThreadFragment(props.state.editor.getAttributes("comment").thread);
-    } else {
-      setSelectedThreadFragment(null);
-    }
-  });
-  props.state.editor.on("update", (): void => {
-    if (props.state.editor.isActive("comment")) {
-      setSelectedThreadFragment(props.state.editor.getAttributes("comment").thread);
-    } else {
-      setSelectedThreadFragment(null);
-    }
-  });
+  props.state.editor.on("selectionUpdate", handleStateUpdate);
+  props.state.editor.on("update", handleStateUpdate);
   client.comments.changes.subscribe(
-    { contentPieceId: references.editedContentPiece!.id },
+    { contentPieceId: editedContentPiece()!.id },
     {
       onData({ action, data }) {
         if (action === "createComment" && data.threadId === thread()?.id) {

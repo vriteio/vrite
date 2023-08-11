@@ -1,5 +1,4 @@
 import { mdiHexagonSlice6 } from "@mdi/js";
-import clsx from "clsx";
 import { Component, Show } from "solid-js";
 import { App } from "#context";
 import { Overlay, Icon } from "#components/primitives";

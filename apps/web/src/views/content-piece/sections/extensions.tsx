@@ -5,11 +5,11 @@ import {
   ExtensionContentPieceViewContext,
   ExtensionSpec
 } from "@vrite/extensions";
-import { Loader, Tooltip, Card } from "#components/primitives";
-import { App, ExtensionDetails, useClientContext, useExtensionsContext } from "#context";
-import { ViewContextProvider, ViewRenderer } from "#lib/extensions";
 import clsx from "clsx";
 import { createStore, reconcile, unwrap } from "solid-js/store";
+import { Loader, Tooltip, Card } from "#components/primitives";
+import { App, ExtensionDetails, useClient, useExtensions } from "#context";
+import { ViewContextProvider, ViewRenderer } from "#lib/extensions";
 
 interface ExtensionsSectionProps {
   contentPiece: App.ExtendedContentPieceWithAdditionalData<"locked" | "coverWidth">;
@@ -39,8 +39,8 @@ const ExtensionIcon: Component<ExtensionIconProps> = (props) => {
   );
 };
 const ExtensionsSection: Component<ExtensionsSectionProps> = (props) => {
-  const { client } = useClientContext();
-  const { installedExtensions } = useExtensionsContext();
+  const client = useClient();
+  const { installedExtensions } = useExtensions();
   const extensionsWithContentPieceView = createMemo(() => {
     return installedExtensions().filter((extension) => {
       return extension.spec.contentPieceView;
@@ -92,9 +92,9 @@ const ExtensionsSection: Component<ExtensionsSectionProps> = (props) => {
                         spec={extension.spec}
                         class={clsx(
                           "border-2",
-                          activeExtension()?.id === extension.id
-                            ? "border-primary"
-                            : "border-gray-200 dark:border-gray-700"
+                          activeExtension()?.id === extension.id && "border-primary",
+                          activeExtension()?.id !== extension.id &&
+                            "border-gray-200 dark:border-gray-700"
                         )}
                       />
                     </button>

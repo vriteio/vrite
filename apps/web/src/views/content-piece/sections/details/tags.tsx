@@ -1,10 +1,10 @@
-import { App } from "#context";
-import { tagColorClasses } from "#lib/utils";
 import { TagsDropdown } from "./tags-dropdown";
 import { mdiTagOutline, mdiTagPlusOutline, mdiTagRemoveOutline, mdiClose } from "@mdi/js";
-import { IconButton, Dropdown, Tooltip, Icon } from "#components/primitives";
 import clsx from "clsx";
 import { Component, For, Show, createSignal } from "solid-js";
+import { IconButton, Dropdown, Tooltip, Icon } from "#components/primitives";
+import { tagColorClasses } from "#lib/utils";
+import { App } from "#context";
 
 interface TagsInputProps {
   tags: App.Tag[];

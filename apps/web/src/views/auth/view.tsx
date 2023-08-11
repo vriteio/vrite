@@ -17,7 +17,7 @@ import { createStore, SetStoreFunction } from "solid-js/store";
 import { useNavigate } from "@solidjs/router";
 import { Card, IconButton, Tooltip } from "#components/primitives";
 import { createRef } from "#lib/utils";
-import { useClientContext } from "#context";
+import { useClient } from "#context";
 import { logoIcon } from "#assets/icons";
 
 type AuthForm = "login" | "register" | "verify-email" | "magic-link" | "magic-link-sent";
@@ -40,7 +40,7 @@ interface AuthFormComponentProps {
 type AuthFormComponent = Component<AuthFormComponentProps>;
 
 const AuthView: Component = () => {
-  const { client } = useClientContext();
+  const client = useClient();
   const navigate = useNavigate();
   const [showForm, setShowForm] = createSignal(false);
   const initialError = new URL(location.href).searchParams.get("error");

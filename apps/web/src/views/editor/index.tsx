@@ -10,32 +10,21 @@ import {
 } from "solid-js";
 import clsx from "clsx";
 import { Loader } from "#components/primitives";
-import { useAuthenticatedContext, useCacheContext, useClientContext, useUIContext } from "#context";
+import { useAuthenticatedUserData, useCache, useClient, useLocalStorage } from "#context";
 import { createRef } from "#lib/utils";
+import { useOpenedContentPiece } from "#lib/composables";
 
 const EditorView: Component = () => {
-  const { useOpenedContentPiece } = useCacheContext();
-  const { client } = useClientContext();
-  const { storage, setStorage, references } = useUIContext();
-  const { workspaceSettings } = useAuthenticatedContext();
+  const cache = useCache();
+  const { contentPiece, loading } = cache("openedContentPiece", useOpenedContentPiece);
+  const client = useClient();
+  const { storage, setStorage } = useLocalStorage();
+  const { workspaceSettings } = useAuthenticatedUserData();
   const [syncing, setSyncing] = createSignal(true);
   const [lastScrollTop, setLastScrollTop] = createSignal(0);
   const [reloaded, setReloaded] = createSignal(false);
   const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
   const editedArticleId = (): string => storage().contentPieceId || "";
-  /* const [contentPiece, { refetch }] = createResource(editedArticleId, async (editedArticleId) => {
-    if (editedArticleId) {
-      setReloaded(false);
-
-      return client.contentPieces.get.query({
-        id: editedArticleId,
-        variant: references.activeVariant?.id
-      });
-    }
-
-    return null;
-  });*/
-  const { contentPiece, loading } = useOpenedContentPiece();
 
   createEffect(
     on(

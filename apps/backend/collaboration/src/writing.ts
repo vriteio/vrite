@@ -1,13 +1,35 @@
-import { publicPlugin, getContentsCollection, getContentVariantsCollection } from "@vrite/backend";
+import {
+  publicPlugin,
+  getContentsCollection,
+  getContentVariantsCollection,
+  getGitDataCollection,
+  docToJSON,
+  getContentPiecesCollection,
+  GitData
+} from "@vrite/backend";
 import { Server } from "@hocuspocus/server";
 import { Database } from "@hocuspocus/extension-database";
+import { Redis } from "@hocuspocus/extension-redis";
 import { ObjectId, Binary } from "mongodb";
 import { SessionData } from "@vrite/backend/src/lib/session";
 import { unauthorized } from "@vrite/backend/src/lib/errors";
+import { createEventPublisher } from "@vrite/backend/src/lib/pub-sub";
+import { gfmOutputTransformer } from "@vrite/sdk/transformers";
+import crypto from "node:crypto";
 
+type GitDataEvent = {
+  action: "update";
+  data: Partial<GitData>;
+};
+
+const publishGitDataEvent = createEventPublisher<GitDataEvent>((workspaceId) => {
+  return `gitData:${workspaceId}`;
+});
 const writingPlugin = publicPlugin(async (fastify) => {
   const contentsCollection = getContentsCollection(fastify.mongo.db!);
+  const contentPiecesCollection = getContentPiecesCollection(fastify.mongo.db!);
   const contentVariantsCollection = getContentVariantsCollection(fastify.mongo.db!);
+  const gitDataCollection = getGitDataCollection(fastify.mongo.db!);
   const server = Server.configure({
     port: fastify.config.PORT,
     address: fastify.config.HOST,
@@ -31,8 +53,11 @@ const writingPlugin = publicPlugin(async (fastify) => {
       if (sessionData.baseType !== "admin" && !sessionData.permissions.includes("editContent")) {
         data.connection.readOnly = true;
       }
+
+      return sessionData;
     },
     extensions: [
+      new Redis({ redis: fastify.redis }),
       new Database({
         async fetch({ documentName }) {
           if (documentName.startsWith("workspace:")) {
@@ -62,7 +87,7 @@ const writingPlugin = publicPlugin(async (fastify) => {
 
           return null;
         },
-        store({ documentName, state, ...details }) {
+        async store({ documentName, state, ...details }) {
           const [contentPieceId, variantId] = documentName.split(":");
 
           if (documentName.startsWith("workspace:")) {
@@ -84,6 +109,43 @@ const writingPlugin = publicPlugin(async (fastify) => {
                 { upsert: true }
               );
             }
+
+            const contentPiece = await contentPiecesCollection.findOne({
+              _id: new ObjectId(contentPieceId)
+            });
+            const gitData = await gitDataCollection.findOne({
+              workspaceId: new ObjectId(details.context.workspaceId)
+            });
+            const json = docToJSON(details.document);
+            const md = gfmOutputTransformer(json, contentPiece);
+            const currentHash = crypto.createHash("md5").update(md).digest("hex");
+
+            await gitDataCollection.updateOne(
+              {
+                "workspaceId": new ObjectId(details.context.workspaceId),
+                "records.contentPieceId": new ObjectId(contentPieceId)
+              },
+              {
+                $set: {
+                  "records.$.currentHash": currentHash
+                }
+              }
+            );
+            publishGitDataEvent({ fastify }, `${details.context.workspaceId}`, {
+              action: "update",
+              data: {
+                records: gitData.records.map((record) => {
+                  if (record.contentPieceId.toString() === contentPieceId) {
+                    return {
+                      ...record,
+                      currentHash
+                    };
+                  }
+
+                  return record;
+                })
+              }
+            });
 
             return contentsCollection?.updateOne(
               { contentPieceId: new ObjectId(contentPieceId) },

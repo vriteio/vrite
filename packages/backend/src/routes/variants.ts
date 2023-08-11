@@ -3,7 +3,13 @@ import { isAuthenticated } from "#lib/middleware";
 import { procedure, router } from "#lib/trpc";
 import * as errors from "#lib/errors";
 import { createEventPublisher, createEventSubscription } from "#lib/pub-sub";
-import { Variant, getVariantsCollection, variant } from "#database";
+import {
+  Variant,
+  getContentPieceVariantsCollection,
+  getContentVariantsCollection,
+  getVariantsCollection,
+  variant
+} from "#database";
 import { ObjectId, zodId } from "#lib/mongo";
 
 type VariantsEvent =
@@ -77,9 +83,20 @@ const variantsRouter = router({
     .output(z.void())
     .mutation(async ({ ctx, input }) => {
       const variantsCollection = getVariantsCollection(ctx.db);
+      const contentPieceVariantsCollection = getContentPieceVariantsCollection(ctx.db);
+      const contentVariantsCollection = getContentVariantsCollection(ctx.db);
+      const variantId = new ObjectId(input.id);
       const { deletedCount } = await variantsCollection.deleteOne({
-        _id: new ObjectId(input.id),
+        _id: variantId,
         workspaceId: ctx.auth.workspaceId
+      });
+
+      await contentPieceVariantsCollection.deleteMany({
+        workspaceId: ctx.auth.workspaceId,
+        variantId
+      });
+      await contentVariantsCollection.deleteMany({
+        variantId
       });
 
       if (!deletedCount) throw errors.notFound("variant");

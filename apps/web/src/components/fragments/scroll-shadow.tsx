@@ -71,7 +71,7 @@ const ScrollShadow: Component<ScrollShadowProps> = (props) => {
   const debouncedScrollStateUpdate = debounce(() => {
     controller.processScrollState();
   }, 250);
-  const handleWindowResize = () => {
+  const handleWindowResize = (): void => {
     debouncedScrollStateUpdate.clear();
     debouncedScrollStateUpdate();
   };
@@ -95,7 +95,6 @@ const ScrollShadow: Component<ScrollShadowProps> = (props) => {
     }
   });
   window.addEventListener("resize", handleWindowResize);
-
   onCleanup(() => {
     window.removeEventListener("resize", handleWindowResize);
     resizeObserver.disconnect();

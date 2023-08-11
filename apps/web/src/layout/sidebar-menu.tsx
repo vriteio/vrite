@@ -8,25 +8,17 @@ import {
   mdiAccountCircle,
   mdiHelpCircle,
   mdiPuzzle,
-  mdiMicrosoftXboxControllerMenu
+  mdiMicrosoftXboxControllerMenu,
+  mdiGit
 } from "@mdi/js";
-import {
-  Accessor,
-  Component,
-  For,
-  Show,
-  createEffect,
-  createMemo,
-  createSignal,
-  on
-} from "solid-js";
+import { Accessor, Component, For, Show, createEffect, createSignal, on } from "solid-js";
 import { Link, useLocation, useNavigate } from "@solidjs/router";
 import { Dynamic } from "solid-js/web";
 import clsx from "clsx";
 import { createMediaQuery } from "@solid-primitives/media";
 import { createActiveElement } from "@solid-primitives/active-element";
-import { navigateAndReload } from "#lib/utils";
-import { useUIContext, useAuthenticatedContext } from "#context";
+import { breakpoints, navigateAndReload } from "#lib/utils";
+import { useLocalStorage, useAuthenticatedUserData } from "#context";
 import {
   Button,
   IconButton,
@@ -53,7 +45,7 @@ const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
   const navigate = useNavigate();
   const location = useLocation();
   const md = createMediaQuery("(min-width: 768px)");
-  const { storage, setStorage } = useUIContext();
+  const { storage, setStorage } = useLocalStorage();
   const setSidePanelView = (view: string): void => {
     setStorage((storage) => ({
       ...storage,
@@ -95,11 +87,20 @@ const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
     },
     null,
     {
+      icon: mdiGit,
+      label: "Source control",
+      inMenu: true,
+      active: () => storage().sidePanelView === "git",
+      onClick: () => {
+        setSidePanelView("git");
+      }
+    },
+    {
       icon: mdiCog,
       label: "Settings",
       inMenu: true,
       active: () => storage().sidePanelView === "settings",
-      onClick: async () => {
+      onClick: () => {
         setSidePanelView("settings");
       }
     },
@@ -122,8 +123,8 @@ const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
   ];
 };
 const ProfileMenu: Component<{ close(): void }> = (props) => {
-  const { profile } = useAuthenticatedContext();
-  const { storage, setStorage } = useUIContext();
+  const { profile } = useAuthenticatedUserData();
+  const { storage, setStorage } = useLocalStorage();
   const menuItems = useMenuItems();
 
   return (
@@ -215,8 +216,8 @@ const ProfileMenu: Component<{ close(): void }> = (props) => {
   );
 };
 const SidebarMenu: Component = () => {
-  const { profile = () => null } = useAuthenticatedContext() || {};
-  const { storage, breakpoints } = useUIContext();
+  const { profile = () => null } = useAuthenticatedUserData() || {};
+  const { storage } = useLocalStorage();
   const activeElement = createActiveElement();
   const [profileMenuOpened, setProfileMenuOpened] = createSignal(false);
   const [hideMenu, setHideMenu] = createSignal(false);

@@ -3,7 +3,7 @@ import { Component, createMemo, createSignal } from "solid-js";
 import { createStore } from "solid-js/store";
 import { mdiCheck } from "@mdi/js";
 import { InputField, ScrollShadow } from "#components/fragments";
-import { App, useClientContext } from "#context";
+import { App, useClient } from "#context";
 import { SettingsImageUpload } from "#views/settings/image-upload";
 import { Tooltip, IconButton } from "#components/primitives";
 import { createRef } from "#lib/utils";
@@ -14,7 +14,7 @@ interface WorkspaceCreateSectionProps {
 }
 
 const WorkspaceCreateSection: Component<WorkspaceCreateSectionProps> = (props) => {
-  const { client } = useClientContext();
+  const client = useClient();
   const [loading, setLoading] = createSignal(false);
   const [edited, setEdited] = createSignal(false);
   const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);

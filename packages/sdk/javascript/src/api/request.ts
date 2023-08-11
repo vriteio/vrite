@@ -1,3 +1,4 @@
+
 interface APIFetcherConfig {
   token: string;
   baseURL?: string;
@@ -29,6 +30,7 @@ const createAPIFetcher = (config: APIFetcherConfig): APIFetcher => {
 
   const sendRequest: SendRequest = async (method, path, options) => {
     try {
+      const { default: fetch } = await import("isomorphic-unfetch");
       const response = await fetch(
         `${baseURL}${path}/?${encodeURI(
           Object.entries(options?.params || {})

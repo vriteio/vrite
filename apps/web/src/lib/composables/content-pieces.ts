@@ -1,7 +1,7 @@
 import { createSignal, onCleanup } from "solid-js";
 import { createStore } from "solid-js/store";
-import { App, useClientContext } from "#context/client";
-import { useNotificationsContext } from "#context/notifications";
+import { App, useClient } from "#context/client";
+import { useNotifications } from "#context/notifications";
 
 interface UseContentPieces {
   contentPieces(): Array<App.ExtendedContentPieceWithAdditionalData<"locked" | "order">>;
@@ -13,8 +13,8 @@ interface UseContentPieces {
 }
 
 const useContentPieces = (contentGroupId: string): UseContentPieces => {
-  const { notify } = useNotificationsContext();
-  const { client } = useClientContext();
+  const { notify } = useNotifications();
+  const client = useClient();
   const [loading, setLoading] = createSignal(false);
   const [moreToLoad, setMoreToLoad] = createSignal(true);
   const [state, setState] = createStore<{

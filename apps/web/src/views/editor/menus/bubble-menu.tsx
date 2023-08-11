@@ -24,9 +24,9 @@ import { CellSelection } from "@tiptap/pm/tables";
 import { Component, createEffect, createSignal, For, Match, on, Show, Switch } from "solid-js";
 import { nanoid } from "nanoid";
 import clsx from "clsx";
-import { createRef, Ref } from "#lib/utils";
+import { breakpoints, createRef, Ref } from "#lib/utils";
 import { Card, IconButton, Input, Tooltip } from "#components/primitives";
-import { App, useAuthenticatedContext, useClientContext, useUIContext } from "#context";
+import { App, useAuthenticatedUserData, useClient } from "#context";
 
 type BubbleMenuMode = "format" | "link" | "table" | "block";
 interface BubbleMenuProps {
@@ -42,9 +42,8 @@ interface BubbleMenuProps {
 
 const BubbleMenu: Component<BubbleMenuProps> = (props) => {
   const [activeMarks, setActiveMarks] = createSignal<string[]>([]);
-  const { breakpoints } = useUIContext();
-  const { workspaceSettings = () => null } = useAuthenticatedContext() || {};
-  const { client } = useClientContext();
+  const { workspaceSettings = () => null } = useAuthenticatedUserData() || {};
+  const client = useClient();
   const [mode, setMode] = createSignal<BubbleMenuMode>("format");
   const [link, setLink] = createSignal("");
   const [linkInputRef, setLinkInputRef] = createRef<HTMLInputElement | null>(null);

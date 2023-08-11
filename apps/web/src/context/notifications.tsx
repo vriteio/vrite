@@ -65,7 +65,7 @@ const NotificationsProvider: ParentComponent = (props) => {
       }}
     >
       {props.children}
-      <div class="fixed z-50 top-[calc(3rem+env(safe-area-inset-top,0px))] md:top-unset left-4 md:left-unset md:bottom-4 md:right-4 w-[calc(100%-2rem)] md:w-unset">
+      <div class="fixed z-60 top-[calc(3rem+env(safe-area-inset-top,0px))] md:top-unset left-4 md:left-unset md:bottom-4 md:right-4 w-[calc(100%-2rem)] md:w-unset">
         <Presence exitBeforeEnter>
           <Show when={notification()} keyed>
             {(notification) => (
@@ -84,8 +84,8 @@ const NotificationsProvider: ParentComponent = (props) => {
     </NotificationsContext.Provider>
   );
 };
-const useNotificationsContext = (): NotificationsContextData => {
+const useNotifications = (): NotificationsContextData => {
   return useContext(NotificationsContext)!;
 };
 
-export { NotificationsProvider, useNotificationsContext };
+export { NotificationsProvider, useNotifications };

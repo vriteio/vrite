@@ -3,7 +3,7 @@ import { Component, For } from "solid-js";
 import { Button, Card, Heading, Icon, IconButton } from "#components/primitives";
 import { config } from "#config";
 import { discordIcon } from "#assets/icons";
-import { useUIContext } from "#context";
+import { useLocalStorage } from "#context";
 
 const sectionMenuItems = [
   {
@@ -20,7 +20,7 @@ const sectionMenuItems = [
   { label: "Discord", icon: discordIcon, link: "https://discord.gg/yYqDWyKnqE" }
 ];
 const GettingStartedView: Component = () => {
-  const { setStorage } = useUIContext();
+  const { setStorage } = useLocalStorage();
 
   return (
     <Card

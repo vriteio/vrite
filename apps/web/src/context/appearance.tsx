@@ -1,6 +1,6 @@
 import { createPrefersDark } from "@solid-primitives/media";
 import { Accessor, createContext, createEffect, ParentComponent, useContext } from "solid-js";
-import { App, useAuthenticatedContext } from "#context";
+import { App, useAuthenticatedUserData } from "#context";
 
 type BaseTheme = "light" | "dark";
 
@@ -11,10 +11,10 @@ interface AppearanceContextData {
 }
 
 const AppearanceContext = createContext<AppearanceContextData>();
-const AppearanceManager: ParentComponent = (props) => {
+const AppearanceProvider: ParentComponent = (props) => {
   const {
     userSettings = () => ({ accentColor: "energy", codeEditorTheme: "dark", uiTheme: "auto" })
-  } = useAuthenticatedContext() || {};
+  } = useAuthenticatedUserData() || {};
   const prefersDark = createPrefersDark();
   const uiTheme = (): BaseTheme => {
     if (userSettings()?.uiTheme === "auto") {
@@ -51,8 +51,8 @@ const AppearanceManager: ParentComponent = (props) => {
     </AppearanceContext.Provider>
   );
 };
-const useAppearanceContext = (): AppearanceContextData => {
+const useAppearance = (): AppearanceContextData => {
   return useContext(AppearanceContext)!;
 };
 
-export { AppearanceManager, useAppearanceContext };
+export { AppearanceProvider, useAppearance };

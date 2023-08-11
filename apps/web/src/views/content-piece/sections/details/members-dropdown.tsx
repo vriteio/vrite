@@ -1,18 +1,8 @@
 import { mdiAccountCircle } from "@mdi/js";
 import { createDebouncedMemoOn } from "@solid-primitives/memo";
 import clsx from "clsx";
-import {
-  Component,
-  createSignal,
-  createResource,
-  createEffect,
-  on,
-  Show,
-  For,
-  createMemo
-} from "solid-js";
-import { createStore } from "solid-js/store";
-import { App, useClientContext } from "#context";
+import { Component, createSignal, createResource, Show, For } from "solid-js";
+import { App, useClient } from "#context";
 import { Heading, Input, Icon, Button, Loader } from "#components/primitives";
 import { ScrollShadow } from "#components/fragments";
 
@@ -91,7 +81,7 @@ const MemberCard: Component<MemberCardProps> = (props) => {
   );
 };
 const MembersDropdown: Component<MembersDropdownProps> = (props) => {
-  const { client } = useClientContext();
+  const client = useClient();
   const [scrollableListRef, setScrollableListRef] = createSignal<HTMLElement | null>(null);
   const [query, setQuery] = createSignal("");
   const [members] = createResource(

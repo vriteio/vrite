@@ -15,6 +15,8 @@ import { contentGroupsRouter } from "./content-groups";
 import { extensionsRouter } from "./extensions";
 import { commentsRouter } from "./comments";
 import { variantsRouter } from "./variants";
+import { gitRouter } from "./git";
+import { versionsRouter } from "./versions";
 import type { TRPCClientError } from "@trpc/client";
 import { Context, createContext } from "#lib/context";
 import { router } from "#lib/trpc";
@@ -36,7 +38,9 @@ const appRouter = router({
   verification: verificationRouter,
   extensions: extensionsRouter,
   comments: commentsRouter,
-  variants: variantsRouter
+  variants: variantsRouter,
+  git: gitRouter,
+  versions: versionsRouter
 });
 
 type Router = typeof appRouter;

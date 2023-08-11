@@ -2,7 +2,7 @@ import { Fragment } from "./fragment";
 import { createRef } from "../ref";
 import clsx from "clsx";
 import { Component, createEffect, createSignal, JSX, onMount, Show, on, onCleanup } from "solid-js";
-import { computePosition, hide, autoUpdate } from "@floating-ui/dom";
+import { computePosition, autoUpdate } from "@floating-ui/dom";
 import { Dynamic, Portal } from "solid-js/web";
 
 type TooltipPosition = {
@@ -59,7 +59,6 @@ const Tooltip: Component<TooltipProps> = (props) => {
 
     if (referenceElement && floatingElement) {
       const { x, y } = await computePosition(referenceElement, floatingElement, {
-        middleware: [hide()],
         placement: props.side,
         strategy: props.fixed ? "fixed" : "absolute"
       });
@@ -74,7 +73,10 @@ const Tooltip: Component<TooltipProps> = (props) => {
     const floatingElement = floatingRef();
 
     if (referenceElement && floatingElement) {
-      const cleanup = autoUpdate(referenceElement, floatingElement, controller.updatePosition);
+      const cleanup = autoUpdate(referenceElement, floatingElement, controller.updatePosition, {
+        ancestorResize: false,
+        ancestorScroll: false
+      });
 
       setCleanupRef(cleanup);
     }

@@ -7,8 +7,8 @@ import {
   useContext
 } from "solid-js";
 import { ContextObject, ExtensionGeneralContext, ExtensionSpec } from "@vrite/extensions";
-import { useClientContext } from "#context";
-import { loadSandbox } from "#lib/extensions/sandbox";
+import { useClient } from "#context";
+import { loadSandbox } from "#lib/extensions";
 
 interface ExtensionDetails {
   spec: ExtensionSpec;
@@ -42,8 +42,8 @@ const isOfficialExtension = (id: string): boolean => {
   return id in officialExtensions;
 };
 const ExtensionsContext = createContext<ExtensionsContextData>();
-const ExtensionsContextProvider: ParentComponent = (props) => {
-  const { client } = useClientContext();
+const ExtensionsProvider: ParentComponent = (props) => {
+  const client = useClient();
   const getAvailableExtensions = async (): Promise<ExtensionDetails[]> => {
     const installedExtensions = await client.extensions.list.query();
     const result = [];
@@ -142,7 +142,7 @@ const ExtensionsContextProvider: ParentComponent = (props) => {
     </ExtensionsContext.Provider>
   );
 };
-const useExtensionsContext = (): ExtensionsContextData => useContext(ExtensionsContext)!;
+const useExtensions = (): ExtensionsContextData => useContext(ExtensionsContext)!;
 
-export { ExtensionsContextProvider, ExtensionsContext, useExtensionsContext, isOfficialExtension };
+export { ExtensionsProvider, ExtensionsContext, useExtensions, isOfficialExtension };
 export type { ExtensionDetails };

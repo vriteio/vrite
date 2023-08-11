@@ -11,6 +11,7 @@ import { getUsersCollection } from "#database/users";
 import { getCommentThreadsCollection } from "#database/comment-threads";
 import { getCommentsCollection } from "#database/comments";
 import {
+  getContentGroupsCollection,
   getContentPieceVariantsCollection,
   getContentVariantsCollection,
   getVariantsCollection
@@ -19,6 +20,7 @@ import {
 const databasePlugin = publicPlugin(async (fastify) => {
   const db = fastify.mongo.db!;
   const contentPiecesCollection = getContentPiecesCollection(db);
+  const contentGroupsCollection = getContentGroupsCollection(db);
   const commentThreadsCollection = getCommentThreadsCollection(db);
   const commentsCollection = getCommentsCollection(db);
   const contentsCollection = getContentsCollection(db);
@@ -34,19 +36,25 @@ const databasePlugin = publicPlugin(async (fastify) => {
   const variantsCollection = getVariantsCollection(db);
   const contentPieceVariantsCollection = getContentPieceVariantsCollection(db);
   const contentVariantsCollection = getContentVariantsCollection(db);
+  const gitDataCollection = db.collection("git-data");
 
   await Promise.all([
     contentPiecesCollection.createIndex({ workspaceId: 1 }),
     contentPiecesCollection.createIndex({ contentGroupId: 1 }),
     contentPiecesCollection.createIndex({ tags: 1 }),
     contentPieceVariantsCollection.createIndex({ contentPieceId: 1, variantId: 1 }),
+    contentPieceVariantsCollection.createIndex({ workspaceId: 1, variantId: 1 }),
     contentPieceVariantsCollection.createIndex({ contentPieceId: 1 }),
     contentPieceVariantsCollection.createIndex({ workspaceId: 1 }),
+    contentGroupsCollection.createIndex({ workspaceId: 1 }),
+    contentGroupsCollection.createIndex({ ancestor: 1 }),
+    contentGroupsCollection.createIndex({ descendants: 1 }),
     commentThreadsCollection.createIndex({ contentPieceId: 1, workspaceId: 1 }),
     commentThreadsCollection.createIndex({ fragment: 1, workspaceId: 1 }),
     commentsCollection.createIndex({ threadId: 1, workspaceId: 1 }),
     contentsCollection.createIndex({ contentPieceId: 1 }),
     contentVariantsCollection.createIndex({ contentPieceId: 1, variantId: 1 }),
+    contentVariantsCollection.createIndex({ variantId: 1 }),
     contentVariantsCollection.createIndex({ contentPieceId: 1 }),
     rolesCollection.createIndex({ workspaceId: 1 }),
     tagsCollection.createIndex({ workspaceId: 1 }),
@@ -72,7 +80,9 @@ const databasePlugin = publicPlugin(async (fastify) => {
     extensionsCollection.createIndex({ workspaceId: 1 }),
     extensionsCollection.createIndex({ name: 1 }),
     variantsCollection.createIndex({ workspaceId: 1 }),
-    variantsCollection.createIndex({ name: 1 })
+    variantsCollection.createIndex({ name: 1 }),
+    gitDataCollection.createIndex({ workspaceId: 1 }, { unique: true }),
+    gitDataCollection.createIndex({ "records.contentPieceId": 1 })
   ]);
 });
 

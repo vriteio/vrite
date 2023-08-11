@@ -17,7 +17,7 @@ import { Dynamic } from "solid-js/web";
 import { createStore } from "solid-js/store";
 import { useNavigate } from "@solidjs/router";
 import { createRef, navigateAndReload } from "#lib/utils";
-import { App, useClientContext, useUIContext } from "#context";
+import { App, useClient, useLocalStorage } from "#context";
 import { Button, Card, Heading, Icon, IconButton, Loader, Tooltip } from "#components/primitives";
 
 interface WorkspaceViewAction {
@@ -38,7 +38,7 @@ const useWorkspaces = (): {
   refetch(): Promise<void>;
   workspaces(): UserWorkspaceData[];
 } => {
-  const { client } = useClientContext();
+  const client = useClient();
   const [loading, setLoading] = createSignal(false);
   const [moreToLoad, setMoreToLoad] = createSignal(true);
   const [state, setState] = createStore<{
@@ -70,8 +70,8 @@ const useWorkspaces = (): {
   return { loadMore, loading, moreToLoad, refetch, workspaces: () => state.workspaces };
 };
 const WorkspacesView: Component = () => {
-  const { client } = useClientContext();
-  const { setStorage } = useUIContext();
+  const client = useClient();
+  const { setStorage } = useLocalStorage();
   const [currentWorkspaceId] = createResource<string | null>(
     async () => {
       try {

@@ -1,5 +1,5 @@
-import { Extension, Range } from "@tiptap/core";
 import { BlockActionMenu } from "./component";
+import { Extension, Range } from "@tiptap/core";
 import { SolidEditor, SolidRenderer } from "@vrite/tiptap-solid";
 import { TextSelection } from "@tiptap/pm/state";
 import { ResolvedPos, Node as PMNode } from "@tiptap/pm/model";
@@ -12,12 +12,16 @@ let component: SolidRenderer<{
   range: Range | null;
 }> | null = null;
 
-const findParentAtDepth = ($pos: ResolvedPos, depth: number) => {
+const findParentAtDepth = (
+  $pos: ResolvedPos,
+  depth: number
+): { pos: number; start: number; depth: number; node: PMNode } => {
   const node = $pos.node(depth);
+
   return {
     pos: depth > 0 ? $pos.before(depth) : 0,
     start: $pos.start(depth),
-    depth: depth,
+    depth,
     node
   };
 };
@@ -46,7 +50,6 @@ const BlockActionMenuPlugin = Extension.create({
         range: null as Range | null
       }
     });
-
     box.style.position = "absolute";
     box.style.top = "-100vh";
     box.style.left = "-100vw";
@@ -55,7 +58,9 @@ const BlockActionMenuPlugin = Extension.create({
   },
   onBlur() {
     const dropdownOpened = document.documentElement.classList.contains("dropdown-opened");
+
     if (document.activeElement?.contains(box) || dropdownOpened) return;
+
     box.style.display = "none";
   },
   onFocus() {
@@ -68,6 +73,7 @@ const BlockActionMenuPlugin = Extension.create({
 
     if (!selectedNode || this.editor.isActive("comment")) {
       box.style.display = "none";
+
       return;
     }
 
@@ -102,6 +108,7 @@ const BlockActionMenuPlugin = Extension.create({
     if (isTextSelection) {
       try {
         const p = findParentAtDepth(selection.$from, 1);
+
         rangeFrom = p.start - 1;
         rangeTo = p.start + p.node.nodeSize - 1;
       } catch (e) {

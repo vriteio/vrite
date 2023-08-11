@@ -6,9 +6,7 @@ interface Contents<ID extends string | ObjectId = string> {
   content?: Binary;
   id: ID;
 }
-interface FullContents<ID extends string | ObjectId = string> extends Contents<ID> {
-  contentGroupId: ID;
-}
+interface FullContents<ID extends string | ObjectId = string> extends Contents<ID> {}
 
 const getContentsCollection = (db: Db): Collection<UnderscoreID<FullContents<ObjectId>>> => {
   return db.collection("contents");

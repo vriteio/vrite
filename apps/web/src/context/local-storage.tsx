@@ -1,4 +1,3 @@
-import { SolidEditor } from "@vrite/tiptap-solid";
 import {
   Accessor,
   ParentComponent,
@@ -8,40 +7,28 @@ import {
   createSignal,
   useContext
 } from "solid-js";
-import { SetStoreFunction, createStore } from "solid-js/store";
-import { HocuspocusProvider } from "@hocuspocus/provider";
 import { App } from "#context";
-import { breakpoints } from "#lib/utils";
 
 interface StorageData {
+  sourceControlConfiguredProvider: string;
   sidePanelView: string;
   sidePanelWidth: number;
   toolbarView: string;
+  dashboardView: string;
+  dashboardViewAncestor: App.ContentGroup;
   contentPieceId: string;
   settingsSection: string;
   zenMode: boolean;
   html: string;
 }
-interface ReferencesData {
-  editedContentPiece?: App.ExtendedContentPieceWithAdditionalData<"locked">;
-  activeVariant?: App.Variant;
-  provider?: HocuspocusProvider;
-  editor?: SolidEditor;
-}
-interface UIContextData {
+interface LocalStorageContextData {
   storage: Accessor<Partial<StorageData>>;
-  references: ReferencesData;
   setStorage: Setter<Partial<StorageData>>;
-  setReferences: SetStoreFunction<ReferencesData>;
-  breakpoints: {
-    md(): boolean;
-  };
 }
 
-const UIContext = createContext<UIContextData>();
-const UIContextProvider: ParentComponent = (props) => {
+const LocalStorageContext = createContext<LocalStorageContextData>();
+const LocalStorageProvider: ParentComponent = (props) => {
   const [storage, setStorage] = createSignal<Partial<StorageData>>({});
-  const [references, setReferences] = createStore<ReferencesData>({});
 
   try {
     const storedData = localStorage.getItem("ui");
@@ -73,21 +60,18 @@ const UIContextProvider: ParentComponent = (props) => {
   });
 
   return (
-    <UIContext.Provider
+    <LocalStorageContext.Provider
       value={{
         storage,
-        references,
-        setStorage,
-        setReferences,
-        breakpoints
+        setStorage
       }}
     >
       {props.children}
-    </UIContext.Provider>
+    </LocalStorageContext.Provider>
   );
 };
-const useUIContext = (): UIContextData => {
-  return useContext(UIContext)!;
+const useLocalStorage = (): LocalStorageContextData => {
+  return useContext(LocalStorageContext)!;
 };
 
-export { UIContextProvider, useUIContext };
+export { LocalStorageProvider, useLocalStorage };

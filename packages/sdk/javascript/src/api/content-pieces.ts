@@ -64,6 +64,10 @@ type ContentPiece<
    */
   slug: string;
   /**
+   * Content piece filename
+   */
+  filename?: string;
+  /**
    * Whether content piece assigned to a locked content group
    */
   locked: boolean;

@@ -68,12 +68,16 @@ const ContentPieceMetadata: Component<ContentPieceMetadataProps> = (props) => {
       <Switch>
         <Match when={props.activeSection.id === "details"}>
           <DetailsSection
+            filename={props.contentPiece.filename || ""}
             slug={props.contentPiece.slug}
             canonicalLink={props.contentPiece.canonicalLink}
             date={props.contentPiece.date}
             tags={props.contentPiece.tags}
             members={props.contentPiece.members}
             editable={props.editable}
+            setFilename={(filename) => {
+              props.setContentPiece({ filename });
+            }}
             setSlug={(slug) => {
               props.setContentPiece({ slug });
             }}

@@ -85,12 +85,10 @@ const refreshTokenLink = (closeConnection: () => void): TRPCLink<App.Router> => 
   };
 };
 
-interface ClientContextData {
-  client: ReturnType<typeof createTRPCProxyClient<App.Router>>;
-}
+type Client = ReturnType<typeof createTRPCProxyClient<App.Router>>;
 
-const ClientContext = createContext<ClientContextData>();
-const ClientContextProvider: ParentComponent = (props) => {
+const ClientContext = createContext<Client>();
+const ClientProvider: ParentComponent = (props) => {
   const wsClient = createWSClient({
     url: `ws${window.location.protocol.includes("https") ? "s" : ""}://${
       import.meta.env.PUBLIC_APP_HOST
@@ -122,19 +120,11 @@ const ClientContextProvider: ParentComponent = (props) => {
     clearInterval(keepAliveHandle);
   });
 
-  return (
-    <ClientContext.Provider
-      value={{
-        client
-      }}
-    >
-      {props.children}
-    </ClientContext.Provider>
-  );
+  return <ClientContext.Provider value={client}>{props.children}</ClientContext.Provider>;
 };
-const useClientContext = (): ClientContextData => {
+const useClient = (): Client => {
   return useContext(ClientContext)!;
 };
 
-export { ClientContextProvider, useClientContext };
+export { ClientProvider, useClient };
 export type { App };

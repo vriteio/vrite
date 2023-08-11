@@ -1,5 +1,5 @@
-import { mergeAttributes, Node, textblockTypeInputRule } from "@tiptap/core";
 import { nodePasteRule } from "./node-paste-rule";
+import { mergeAttributes, Node, textblockTypeInputRule } from "@tiptap/core";
 
 type Level = 1 | 2 | 3 | 4 | 5 | 6;
 interface HeadingOptions {
@@ -27,7 +27,7 @@ const Heading = Node.create<HeadingOptions>({
       HTMLAttributes: {}
     };
   },
-  content: "inline*",
+  content: "text*",
 
   group: "block",
 

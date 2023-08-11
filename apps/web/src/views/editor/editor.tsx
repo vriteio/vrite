@@ -19,8 +19,8 @@ import { useNavigate } from "@solidjs/router";
 import { CellSelection } from "@tiptap/pm/tables";
 import { AllSelection } from "@tiptap/pm/state";
 import clsx from "clsx";
-import { Dropdown } from "@vrite/components";
 import { Instance } from "tippy.js";
+import { Dropdown } from "#components/primitives";
 import {
   Document,
   Placeholder,
@@ -37,9 +37,23 @@ import {
   TableMenuPlugin,
   CommentMenuPlugin
 } from "#lib/editor";
-import { App, hasPermission, useAuthenticatedContext, useUIContext } from "#context";
-import { createRef } from "#lib/utils";
+import {
+  App,
+  hasPermission,
+  useAuthenticatedUserData,
+  useLocalStorage,
+  useSharedState
+} from "#context";
+import { breakpoints, createRef } from "#lib/utils";
 import { BlockMenu } from "#lib/editor/extensions/slash-menu/component";
+
+declare module "#context" {
+  interface SharedState {
+    editor: SolidEditor;
+    provider: HocuspocusProvider;
+    editedContentPiece: App.ExtendedContentPieceWithAdditionalData<"locked">;
+  }
+}
 
 interface EditorProps {
   reloaded?: boolean;
@@ -49,8 +63,10 @@ interface EditorProps {
 }
 
 const Editor: Component<EditorProps> = (props) => {
-  const { setStorage, setReferences, references, breakpoints } = useUIContext();
+  const { setStorage } = useLocalStorage();
+  const createSharedSignal = useSharedState();
   const navigate = useNavigate();
+  const [activeVariant] = createSharedSignal("activeVariant");
   const ydoc = new Y.Doc();
   const provider = new HocuspocusProvider({
     token: "vrite",
@@ -68,8 +84,8 @@ const Editor: Component<EditorProps> = (props) => {
         props.reload?.();
       }
     },
-    name: `${props.editedContentPiece.id || ""}${references.activeVariant ? ":" : ""}${
-      references.activeVariant?.id || ""
+    name: `${props.editedContentPiece.id || ""}${activeVariant() ? ":" : ""}${
+      activeVariant()?.id || ""
     }`,
     document: ydoc
   });
@@ -79,7 +95,7 @@ const Editor: Component<EditorProps> = (props) => {
   const [floatingMenuOpened, setFloatingMenuOpened] = createSignal(true);
   const [blockMenuOpened, setBlockMenuOpened] = createSignal(false);
   const [showBlockBubbleMenu, setShowBlockBubbleMenu] = createSignal(false);
-  const { workspaceSettings } = useAuthenticatedContext();
+  const { workspaceSettings } = useAuthenticatedUserData();
 
   let el: HTMLElement | null = null;
 
@@ -118,10 +134,16 @@ const Editor: Component<EditorProps> = (props) => {
     ],
     editable: !props.editedContentPiece.locked && hasPermission("editContent"),
     editorProps: { attributes: { class: `outline-none` } },
-    onBlur({ event, transaction }) {
+    onBlur({ event }) {
       el = event?.relatedTarget as HTMLElement | null;
     }
   });
+  const [sharedEditor, setSharedEditor] = createSharedSignal("editor", editor());
+  const [sharedProvider, setSharedProvider] = createSharedSignal("provider", provider);
+  const [editedContentPiece, setEditedContentPiece] = createSharedSignal(
+    "editedContentPiece",
+    props.editedContentPiece
+  );
   const shouldShow = (editor: SolidEditor): boolean => {
     el = null;
 
@@ -192,20 +214,16 @@ const Editor: Component<EditorProps> = (props) => {
   onCleanup(() => {
     editor().destroy();
     provider.destroy();
-    setReferences({
-      editor: undefined,
-      provider: undefined,
-      editedContentPiece: undefined
-    });
+    setSharedEditor(undefined);
+    setSharedProvider(undefined);
+    setEditedContentPiece(undefined);
   });
   setStorage((storage) => ({ ...storage, toolbarView: "editor" }));
   createEffect(
     on([() => props.editedContentPiece, editor], () => {
-      setReferences({
-        editor: editor(),
-        provider,
-        editedContentPiece: props.editedContentPiece
-      });
+      setEditedContentPiece(props.editedContentPiece);
+      setSharedEditor(editor());
+      setSharedProvider(provider);
     })
   );
 

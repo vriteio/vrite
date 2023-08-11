@@ -24,21 +24,21 @@ const loadParserPlugin = async (language: string): Promise<Plugin | null> => {
   switch (language as SupportedLanguages) {
     case "javascript":
     case "typescript":
-      return import("prettier/parser-babel");
+      return import("prettier/plugins/babel");
     case "graphql":
-      return import("prettier/parser-graphql");
+      return import("prettier/plugins/graphql");
     case "html":
     case "vue":
-      return import("prettier/parser-html");
+      return import("prettier/plugins/html");
     case "markdown":
-      return import("prettier/parser-markdown");
+      return import("prettier/plugins/markdown");
     case "yaml":
     case "json":
-      return import("prettier/parser-yaml");
+      return import("prettier/plugins/yaml");
     case "css":
     case "less":
     case "scss":
-      return import("prettier/parser-postcss");
+      return import("prettier/plugins/postcss");
     default:
       return null;
   }

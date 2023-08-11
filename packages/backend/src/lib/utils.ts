@@ -14,7 +14,7 @@ const extractPreviewDataFromOpenGraph = (input: OgObject): string => {
       return input.ogImage[0].url;
     }
 
-    return input.ogImage.url;
+    return (input.ogImage as any).url;
   }
 
   if (input.twitterImage && typeof input.twitterImage === "string") {

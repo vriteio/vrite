@@ -11,7 +11,7 @@ import { Card, Heading, IconButton } from "#components/primitives";
 import { ScrollShadow } from "#components/fragments";
 import { createRef } from "#lib/utils";
 import { ExtensionDetails } from "#context/extensions";
-import { useUIContext } from "#context";
+import { useLocalStorage } from "#context";
 
 interface SubSection {
   label: string;
@@ -20,7 +20,7 @@ interface SubSection {
 }
 
 const ExtensionsView: Component = () => {
-  const { setStorage } = useUIContext();
+  const { setStorage } = useLocalStorage();
   const [openedExtension, setOpenedExtension] = createSignal<ExtensionDetails | null>(null);
   const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
   const [subSection, setSubSection] = createSignal<SubSection | null>(null);

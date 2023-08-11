@@ -4,9 +4,9 @@ import { Component, createEffect, createSignal, For, on, onMount, Show } from "s
 import { Editor, Range } from "@tiptap/core";
 import clsx from "clsx";
 import { scrollIntoView } from "seamless-scroll-polyfill";
-import { Ref } from "#lib/utils";
+import { Ref, breakpoints } from "#lib/utils";
 import { Button, Card, IconButton } from "#components/primitives";
-import { App, useUIContext } from "#context";
+import { App } from "#context";
 
 interface SlashMenuItem {
   icon: string;
@@ -74,7 +74,6 @@ const BlockMenu: Component<{ items: SlashMenuItem[]; editor: SolidEditor; close(
   );
 };
 const SlashMenu: Component<SlashMenuProps> = (props) => {
-  const { breakpoints } = useUIContext();
   const [selectedIndex, setSelectedIndex] = createSignal(0);
   const [blockHoverSelect, setBlockHoverSelect] = createSignal(false);
   const selectItem = (index: number): void => {

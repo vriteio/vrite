@@ -1,7 +1,7 @@
 import { mdiCalendarOutline, mdiCalendarRemoveOutline, mdiCalendarPlusOutline } from "@mdi/js";
-import { Tooltip, IconButton, Input } from "#components/primitives";
 import { Component, Show } from "solid-js";
 import dayjs from "dayjs";
+import { Tooltip, IconButton, Input } from "#components/primitives";
 
 interface DatePickerProps {
   date: string;

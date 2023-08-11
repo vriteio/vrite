@@ -1,0 +1,134 @@
+{
+  "records": [
+    {
+      "contentPieceId": {
+        "$oid": "64d09d89a76c5a6557a42870"
+      },
+      "currentHash": "7148d0d2d4b053ee0fdf627c6dcabcb1",
+      "syncedHash": "7148d0d2d4b053ee0fdf627c6dcabcb1",
+      "path": "/README.md"
+    },
+    {
+      "contentPieceId": {
+        "$oid": "64d09d8aa76c5a6557a42873"
+      },
+      "currentHash": "984d9183b5b22faa01b953bf8d44f406",
+      "syncedHash": "984d9183b5b22faa01b953bf8d44f406",
+      "path": "sections/bottom-line.md"
+    },
+    {
+      "contentPieceId": {
+        "$oid": "64d09d8ba76c5a6557a42876"
+      },
+      "currentHash": "e14570f9c66ebec271ae0f43902ca255",
+      "syncedHash": "e14570f9c66ebec271ae0f43902ca255",
+      "path": "sections/features-behind-the-scenes/README.md"
+    },
+    {
+      "contentPieceId": {
+        "$oid": "64d09d8ba76c5a6557a42878"
+      },
+      "currentHash": "ef21f239ac49cc721d749266d7247903",
+      "syncedHash": "ef21f239ac49cc721d749266d7247903",
+      "path": "sections/features-behind-the-scenes/code-editor.md"
+    },
+    {
+      "contentPieceId": {
+        "$oid": "64d09d8ba76c5a6557a4287a"
+      },
+      "currentHash": "05024dc25d13e845cb4ffc9e4454f3c2",
+      "syncedHash": "05024dc25d13e845cb4ffc9e4454f3c2",
+      "path": "sections/features-behind-the-scenes/markdown-exports.md"
+    },
+    {
+      "contentPieceId": {
+        "$oid": "64d09d8ba76c5a6557a4287c"
+      },
+      "currentHash": "b593b234410fea000391d80b7576c1c5",
+      "syncedHash": "b593b234410fea000391d80b7576c1c5",
+      "path": "sections/features-behind-the-scenes/markdown-pasting.md"
+    },
+    {
+      "contentPieceId": {
+        "$oid": "64d09d8ba76c5a6557a4287e"
+      },
+      "currentHash": "4d0e5c8231ba75f732a4cba15b4f1ba8",
+      "syncedHash": "4d0e5c8231ba75f732a4cba15b4f1ba8",
+      "path": "sections/features-behind-the-scenes/mobile-support.md"
+    },
+    {
+      "contentPieceId": {
+        "$oid": "64d09d8ba76c5a6557a42880"
+      },
+      "currentHash": "053c4ccea564bb82997f93aecc418fb8",
+      "syncedHash": "053c4ccea564bb82997f93aecc418fb8",
+      "path": "sections/features-behind-the-scenes/table-editor.md"
+    },
+    {
+      "contentPieceId": {
+        "$oid": "64d09d8ca76c5a6557a42883"
+      },
+      "currentHash": "ad31e101856b225e73e4b4650d6036b2",
+      "syncedHash": "ad31e101856b225e73e4b4650d6036b2",
+      "path": "sections/nested-test/nested.md"
+    },
+    {
+      "contentPieceId": {
+        "$oid": "64d09d8ca76c5a6557a42885"
+      },
+      "currentHash": "09c684e5d92e8bfcb88095bf00489825",
+      "syncedHash": "09c684e5d92e8bfcb88095bf00489825",
+      "path": "sections/the-stack.md"
+    },
+    {
+      "contentPieceId": {
+        "$oid": "64d09d8ca76c5a6557a42887"
+      },
+      "currentHash": "9837728cce5bcaf396ab6e9aeff0c85f",
+      "syncedHash": "9837728cce5bcaf396ab6e9aeff0c85f",
+      "path": "sections/the-why.md"
+    },
+    {
+      "contentPieceId": {
+        "$oid": "64d09d8ca76c5a6557a42889"
+      },
+      "currentHash": "bffa4dd3a81033553be30a23baec2094",
+      "syncedHash": "bffa4dd3a81033553be30a23baec2094",
+      "path": "sections/vrite-cloud.md"
+    },
+    {
+      "contentPieceId": {
+        "$oid": "64d09d8ca76c5a6557a4288b"
+      },
+      "currentHash": "bffa4dd3a81033553be30a23baec2094",
+      "syncedHash": "bffa4dd3a81033553be30a23baec2094",
+      "path": "sections/vrite-cms.md"
+    }
+  ],
+  "directories": [
+    {
+      "path": "sections/features-behind-the-scenes",
+      "contentGroupId": {
+        "$oid": "64d09d8ba76c5a6557a42875"
+      }
+    },
+    {
+      "path": "sections/nested-test",
+      "contentGroupId": {
+        "$oid": "64d09d8ca76c5a6557a42882"
+      }
+    },
+    {
+      "path": "sections",
+      "contentGroupId": {
+        "$oid": "64d09d8aa76c5a6557a42872"
+      }
+    },
+    {
+      "path": "",
+      "contentGroupId": {
+        "$oid": "64d09d89a76c5a6557a4286f"
+      }
+    }
+  ]
+}

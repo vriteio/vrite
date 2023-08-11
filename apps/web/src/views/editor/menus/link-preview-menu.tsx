@@ -1,7 +1,7 @@
 import { Accessor, Component, createMemo, createResource, Show } from "solid-js";
 import { mdiWeb } from "@mdi/js";
 import clsx from "clsx";
-import { App, useClientContext } from "#context";
+import { App, useClient } from "#context";
 import { Card, Icon, IconButton, Loader } from "#components/primitives";
 
 interface LinkPreviewMenuProps {
@@ -9,7 +9,7 @@ interface LinkPreviewMenuProps {
 }
 
 const LinkPreviewMenu: Component<LinkPreviewMenuProps> = (props) => {
-  const { client } = useClientContext();
+  const client = useClient();
   const [previewData] = createResource<App.PreviewData | null, string>(props.link, async (link) => {
     if (!link) return null;
 

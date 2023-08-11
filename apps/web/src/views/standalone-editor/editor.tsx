@@ -44,7 +44,7 @@ import { CellSelection } from "@tiptap/pm/tables";
 import { AllSelection } from "@tiptap/pm/state";
 import { Instance } from "tippy.js";
 import clsx from "clsx";
-import { Dropdown } from "@vrite/components";
+import { Dropdown } from "#components/primitives";
 import {
   Document,
   Placeholder,
@@ -58,12 +58,19 @@ import {
   Image,
   Embed
 } from "#lib/editor";
-import { useUIContext } from "#context";
-import { createRef } from "#lib/utils";
+import { useLocalStorage, useSharedState } from "#context";
+import { breakpoints, createRef } from "#lib/utils";
 import { BlockMenu } from "#lib/editor/extensions/slash-menu/component";
 
+declare module "#context" {
+  interface State {
+    editor: SolidEditor;
+  }
+}
+
 const Editor: Component = () => {
-  const { storage, setStorage, setReferences, breakpoints } = useUIContext();
+  const createSharedSignal = useSharedState();
+  const { storage, setStorage } = useLocalStorage();
   const [containerRef, setContainerRef] = createRef<HTMLElement | null>(null);
   const [bubbleMenuOpened, setBubbleMenuOpened] = createSignal(true);
   const [bubbleMenuInstance, setBubbleMenuInstance] = createSignal<Instance | null>(null);
@@ -131,6 +138,7 @@ const Editor: Component = () => {
       }));
     }
   });
+  const [, setSharedEditor] = createSharedSignal("editor", editor());
   const shouldShow = (editor: SolidEditor): boolean => {
     el = null;
 
@@ -200,20 +208,9 @@ const Editor: Component = () => {
 
   onCleanup(() => {
     editor().destroy();
-    setReferences({
-      editor: undefined,
-      provider: undefined,
-      editedContentPiece: undefined
-    });
+    setSharedEditor(undefined);
   });
   setStorage((storage) => ({ ...storage, toolbarView: "editorStandalone" }));
-  createEffect(
-    on([editor], () => {
-      setReferences({
-        editor: editor()
-      });
-    })
-  );
 
   return (
     <>

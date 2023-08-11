@@ -13,6 +13,7 @@ import jwtPlugin from "@fastify/jwt";
 import cookiePlugin from "@fastify/cookie";
 import zodToJsonSchema from "zod-to-json-schema";
 import { ZodRawShape } from "zod";
+import { githubPlugin } from "#plugins";
 
 const createServer = async (envSchemaExtension?: ZodRawShape): Promise<FastifyInstance> => {
   const server = createFastify({
@@ -46,6 +47,8 @@ const createServer = async (envSchemaExtension?: ZodRawShape): Promise<FastifyIn
     .register(oAuth2Plugin);
   // Email
   await server.register(mailPlugin);
+  // GitHub sync
+  await server.register(githubPlugin);
 
   return server;
 };

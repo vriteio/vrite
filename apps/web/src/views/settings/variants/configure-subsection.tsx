@@ -3,7 +3,7 @@ import { Component, createEffect, createMemo, createSignal, on } from "solid-js"
 import { createStore } from "solid-js/store";
 import { InputField, TitledCard } from "#components/fragments";
 import { IconButton, Button, Tooltip } from "#components/primitives";
-import { App, useClientContext, useNotificationsContext } from "#context";
+import { App, useClient, useNotifications } from "#context";
 import { validateVariantName } from "#lib/utils";
 
 interface ConfigureVariantSubsectionProps {
@@ -13,8 +13,8 @@ interface ConfigureVariantSubsectionProps {
 }
 
 const ConfigureVariantSubsection: Component<ConfigureVariantSubsectionProps> = (props) => {
-  const { client } = useClientContext();
-  const { notify } = useNotificationsContext();
+  const client = useClient();
+  const { notify } = useNotifications();
   const [loading, setLoading] = createSignal(false);
   const [variantData, setVariantData] = createStore<Omit<App.Variant, "id">>({
     description: "",

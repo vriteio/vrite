@@ -20,6 +20,7 @@ const contentPiece = z.object({
     .nullable()
     .describe("Canonical link for cross-posting to different platforms"),
   slug: z.string().describe("Content piece slug"),
+  filename: z.string().optional().describe("Content piece filename"),
   members: z.array(zodId()).describe("Array of member IDs")
 });
 const contentPieceMember = z.object({

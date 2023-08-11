@@ -216,7 +216,6 @@ const commentsRouter = router({
       };
 
       await commentThreadsCollection.insertOne(thread);
-
       publishEvent(ctx, `${input.contentPieceId}`, {
         action: "createThread",
         data: {
@@ -250,7 +249,6 @@ const commentsRouter = router({
           $set: { resolved: true }
         }
       );
-
       publishEvent(ctx, `${existingThread.contentPieceId}`, {
         action: "resolveThread",
         data: {
@@ -291,7 +289,6 @@ const commentsRouter = router({
           $push: { comments: comment._id }
         }
       );
-
       publishEvent(ctx, `${existingThread.contentPieceId}`, {
         action: "createComment",
         data: (await fetchCommentsMembers(ctx.db, [comment]))[0]
@@ -323,7 +320,6 @@ const commentsRouter = router({
         { _id: existingComment._id },
         { $set: { content: input.content } }
       );
-
       publishEvent(ctx, `${existingThread.contentPieceId}`, {
         action: "updateComment",
         data: {
@@ -357,7 +353,6 @@ const commentsRouter = router({
         { _id: existingThread._id },
         { $pull: { comments: existingComment._id } }
       );
-
       publishEvent(ctx, `${existingThread.contentPieceId}`, {
         action: "deleteComment",
         data: {
@@ -380,7 +375,6 @@ const commentsRouter = router({
 
       await commentThreadsCollection.deleteOne({ _id: existingThread._id });
       await commentsCollection.deleteMany({ threadId: existingThread._id });
-
       publishEvent(ctx, `${existingThread.contentPieceId}`, {
         action: "deleteThread",
         data: {

@@ -3,7 +3,7 @@ import { mdiInformation } from "@mdi/js";
 import { Component, Show, createEffect, createSignal } from "solid-js";
 import { createStore } from "solid-js/store";
 import { Button, Loader } from "#components/primitives";
-import { App, hasPermission, useClientContext, useNotificationsContext } from "#context";
+import { App, hasPermission, useClient, useNotifications } from "#context";
 import { InputField, TitledCard } from "#components/fragments";
 
 interface InformationCardProps {
@@ -12,8 +12,8 @@ interface InformationCardProps {
 }
 
 const InformationCard: Component<InformationCardProps> = (props) => {
-  const { client } = useClientContext();
-  const { notify } = useNotificationsContext();
+  const client = useClient();
+  const { notify } = useNotifications();
   const [loading, setLoading] = createSignal(false);
   const [edited, setEdited] = createSignal(false);
   const [workspaceData, setWorkspaceData] = createStore<Omit<App.Workspace, "contentGroups">>({

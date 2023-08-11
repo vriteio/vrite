@@ -9,10 +9,10 @@ import { formatCode } from "#lib/code-editor";
 import { Card } from "#components/primitives";
 import { createRef, selectionClasses } from "#lib/utils";
 import {
-  useAppearanceContext,
-  useAuthenticatedContext,
-  useNotificationsContext,
-  useUIContext
+  useAppearance,
+  useAuthenticatedUserData,
+  useNotifications,
+  useLocalStorage
 } from "#context";
 
 interface CodeBlockViewProps {
@@ -41,10 +41,9 @@ const getExtension = (
 };
 const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
   const { state } = useSolidNodeView<CodeBlockAttributes>();
-  const { breakpoints } = useUIContext();
-  const { workspaceSettings = () => null } = useAuthenticatedContext() || {};
-  const { codeEditorTheme = () => "dark" } = useAppearanceContext() || {};
-  const { notify } = useNotificationsContext();
+  const { workspaceSettings = () => null } = useAuthenticatedUserData() || {};
+  const { codeEditorTheme = () => "dark" } = useAppearance() || {};
+  const { notify } = useNotifications();
   const attrs = (): CodeBlockAttributes => state().node.attrs;
   const options = (): CodeBlockOptions => state().extension.options;
   const [editorContainerRef, setEditorContainerRef] = createRef<HTMLElement | null>(null);
@@ -292,7 +291,7 @@ const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
         ref={setEditorContainerRef}
         spellcheck={false}
         class={clsx(
-          "w-full bg-gray-50 dark:bg-gray-900 h-72 not-prose rounded-t-2xl",
+          "w-full bg-gray-50 dark:bg-gray-900 h-72 not-prose rounded-t-2xl rounded",
           codeEditorTheme() === "light" && "border-2 border-b-0 dark:border-0"
         )}
       />

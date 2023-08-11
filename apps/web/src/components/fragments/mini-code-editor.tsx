@@ -13,7 +13,7 @@ import clsx from "clsx";
 import { mdiCheckCircleOutline } from "@mdi/js";
 import type { monaco } from "#lib/monaco";
 import { createRef } from "#lib/utils";
-import { useAppearanceContext } from "#context";
+import { useAppearance } from "#context";
 import { IconButton } from "#components/primitives";
 
 interface MiniCodeEditorProps {
@@ -33,7 +33,7 @@ interface MiniCodeEditorProps {
 }
 
 const MiniCodeEditor: Component<MiniCodeEditorProps> = (props) => {
-  const { codeEditorTheme = () => "dark" } = useAppearanceContext() || {};
+  const { codeEditorTheme = () => "dark" } = useAppearance() || {};
   const [editorContainerRef, setEditorContainerRef] = createRef<HTMLElement | null>(null);
   const [currentCode, setCurrentCode] = createSignal(props.code || "");
   const [codeEditor, setCodeEditor] = createSignal<monaco.editor.IStandaloneCodeEditor | null>(
@@ -157,7 +157,7 @@ const MiniCodeEditor: Component<MiniCodeEditorProps> = (props) => {
       <div
         ref={setEditorContainerRef}
         class={clsx(
-          "w-full bg-gray-100 border-2 not-prose dark:bg-gray-900 rounded-2xl dark:border-gray-700",
+          "w-full bg-gray-100 border-2 not-prose dark:bg-gray-900 rounded-2xl dark:border-gray-700 rounded",
           props.class
         )}
       ></div>

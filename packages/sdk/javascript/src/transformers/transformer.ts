@@ -13,6 +13,9 @@ interface ContentTransformerConfig<O = string> {
 
 type ContentTransformer<O = string> = (...content: JSONContent[]) => O;
 
+/**
+ * @deprecated Use `createOutputTransformer` instead.
+ */
 const createContentTransformer = <O = string>(
   config: ContentTransformerConfig<O>
 ): ContentTransformer<O> => {

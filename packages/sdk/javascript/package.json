@@ -1,6 +1,6 @@
 {
   "name": "@vrite/sdk",
-  "version": "2023.7.17-beta",
+  "version": "2023.8.11-beta",
   "private": false,
   "description": "JavaScript SDK and API client for Vrite - headless CMS for technical content",
   "license": "MIT",
@@ -65,7 +65,9 @@
     "dist"
   ],
   "dependencies": {
-    "isomorphic-unfetch": "^3.1.0"
+    "@types/marked": "^5.0.1",
+    "isomorphic-unfetch": "^3.1.0",
+    "marked": "^5.1.2"
   },
   "peerDependenciesMeta": {
     "astro": {
@@ -73,11 +75,11 @@
     }
   },
   "devDependencies": {
-    "astro": "^2.5.1",
-    "unbuild": "^1.1.2",
-    "vite": "^4.1.4"
+    "astro": "^2.9.2",
+    "unbuild": "^1.2.1",
+    "vite": "^4.4.7"
   },
   "peerDependencies": {
-    "astro": "^2.5.1"
+    "astro": "^2.9.2"
   }
 }

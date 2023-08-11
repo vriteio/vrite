@@ -2,7 +2,7 @@ import { mdiCommentMultipleOutline } from "@mdi/js";
 import { Editor } from "@tiptap/core";
 import { Component, For, Show, createMemo, createResource } from "solid-js";
 import { Dropdown, Heading, IconButton } from "#components/primitives";
-import { App, useClientContext } from "#context";
+import { App, useClient } from "#context";
 import { CommentCard } from "#lib/editor";
 import { createRef } from "#lib/utils";
 import { ScrollShadow } from "#components/fragments";
@@ -13,7 +13,7 @@ interface CommentThreadsMenuProps {
 }
 
 const CommentThreadsMenu: Component<CommentThreadsMenuProps> = (props) => {
-  const { client } = useClientContext();
+  const client = useClient();
   const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLDivElement | null>(
     null
   );

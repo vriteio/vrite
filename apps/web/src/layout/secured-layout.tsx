@@ -5,16 +5,16 @@ import { ParentComponent, Show, createEffect } from "solid-js";
 import { useLocation } from "@solidjs/router";
 import { mdiFullscreenExit } from "@mdi/js";
 import {
-  AppearanceManager,
-  AuthenticatedContextProvider,
-  CacheContextProvider,
-  ExtensionsContextProvider,
-  useUIContext
+  AppearanceProvider,
+  AuthenticatedUserDataProvider,
+  CacheProvider,
+  ExtensionsProvider,
+  useLocalStorage
 } from "#context";
 import { IconButton, Tooltip } from "#components/primitives";
 
 const SecuredLayout: ParentComponent = (props) => {
-  const { storage, setStorage } = useUIContext();
+  const { storage, setStorage } = useLocalStorage();
   const location = useLocation();
 
   createEffect(() => {
@@ -24,10 +24,10 @@ const SecuredLayout: ParentComponent = (props) => {
   });
 
   return (
-    <AuthenticatedContextProvider>
-      <AppearanceManager>
-        <ExtensionsContextProvider>
-          <CacheContextProvider>
+    <AuthenticatedUserDataProvider>
+      <AppearanceProvider>
+        <ExtensionsProvider>
+          <CacheProvider>
             <Show
               when={!storage().zenMode}
               fallback={
@@ -66,10 +66,10 @@ const SecuredLayout: ParentComponent = (props) => {
                 </div>
               </div>
             </div>
-          </CacheContextProvider>
-        </ExtensionsContextProvider>
-      </AppearanceManager>
-    </AuthenticatedContextProvider>
+          </CacheProvider>
+        </ExtensionsProvider>
+      </AppearanceProvider>
+    </AuthenticatedUserDataProvider>
   );
 };
 

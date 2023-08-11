@@ -1,4 +1,3 @@
-import "isomorphic-unfetch";
 import { createContentGroupsEndpoints, ContentGroupsEndpoints } from "./content-groups";
 import { ContentPiecesEndpoints, createContentPiecesEndpoints } from "./content-pieces";
 import { APIFetcherConfig, createAPIFetcher } from "./request";

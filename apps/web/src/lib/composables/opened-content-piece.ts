@@ -1,8 +1,6 @@
 import { createSignal, createEffect, on, onCleanup, Accessor } from "solid-js";
 import { createStore } from "solid-js/store";
-import { useAuthenticatedContext } from "#context/authenticated";
-import { useClientContext, App } from "#context/client";
-import { useUIContext } from "#context/ui";
+import { useAuthenticatedUserData, useClient, useLocalStorage, App } from "#context";
 
 interface UseOpenedContentPiece {
   activeVariant: Accessor<App.Variant | null>;
@@ -19,10 +17,10 @@ interface UseOpenedContentPiece {
 
 const useOpenedContentPiece = (): UseOpenedContentPiece => {
   const [activeVariant, setActiveVariant] = createSignal<App.Variant | null>(null);
-  const { deletedTags } = useAuthenticatedContext();
-  const { profile } = useAuthenticatedContext();
-  const { storage, setStorage } = useUIContext();
-  const { client } = useClientContext();
+  const { deletedTags } = useAuthenticatedUserData();
+  const { profile } = useAuthenticatedUserData();
+  const { storage, setStorage } = useLocalStorage();
+  const client = useClient();
   const [loading, setLoading] = createSignal(true);
   const [state, setState] = createStore<{
     contentPiece: App.ExtendedContentPieceWithAdditionalData<"locked" | "coverWidth"> | null;

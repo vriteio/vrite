@@ -5,7 +5,7 @@ import { render } from "solid-js/web";
 import { Extension } from "@tiptap/core";
 import { yCursorPlugin } from "y-prosemirror";
 import clsx from "clsx";
-import { useAuthenticatedContext } from "#context";
+import { useAuthenticatedUserData } from "#context";
 import { getSelectionColor, selectionClasses, selectionColors } from "#lib/utils";
 
 const awarenessStatesToArray = (
@@ -19,7 +19,7 @@ const awarenessStatesToArray = (
   });
 };
 const CollabCursor = (provider: HocuspocusProvider): Extension => {
-  const { profile } = useAuthenticatedContext();
+  const { profile } = useAuthenticatedUserData();
 
   return CollaborationCursor.extend({
     addProseMirrorPlugins() {

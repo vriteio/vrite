@@ -22,7 +22,7 @@ import {
   createMemo
 } from "solid-js";
 import { createStore } from "solid-js/store";
-import { App, useClientContext } from "#context";
+import { App, useClient } from "#context";
 import { Heading, IconButton, Input, Tooltip, Icon, Button } from "#components/primitives";
 import { ScrollShadow } from "#components/fragments";
 import { tagColorClasses } from "#lib/utils";
@@ -35,7 +35,7 @@ interface TagsDropdownProps {
 }
 
 const TagsDropdown: Component<TagsDropdownProps> = (props) => {
-  const { client } = useClientContext();
+  const client = useClient();
   const [view, setView] = createSignal<"select" | "create">("select");
   const [scrollableListRef, setScrollableListRef] = createSignal<HTMLElement | null>(null);
   const [currentTag, setCurrentTag] = createStore<Omit<App.Tag, "id"> & { id?: string }>({

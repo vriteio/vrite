@@ -1,5 +1,8 @@
 import { createContentTransformer } from "./transformer";
 
+/**
+ * @deprecated Use `gfmOutputTransformer` instead.
+ */
 const gfmTransformer = createContentTransformer({
   applyInlineFormatting(type, attrs, content) {
     switch (type) {

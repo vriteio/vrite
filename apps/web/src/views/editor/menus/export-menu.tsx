@@ -8,13 +8,13 @@ import {
   mdiLanguageMarkdown
 } from "@mdi/js";
 import { Component, createSignal } from "solid-js";
-import { htmlTransformer, gfmTransformer } from "@vrite/sdk/transformers";
+import { gfmOutputTransformer, htmlOutputTransformer } from "@vrite/sdk/transformers";
 import { JSONContent } from "@vrite/sdk";
 import { nanoid } from "nanoid";
 import clsx from "clsx";
 import { Card, Dropdown, Heading, IconButton, Overlay, Tooltip } from "#components/primitives";
 import { MiniCodeEditor } from "#components/fragments";
-import { App, useAuthenticatedContext, useClientContext, useNotificationsContext } from "#context";
+import { App, useAuthenticatedUserData, useClient, useNotifications } from "#context";
 import { formatCode } from "#lib/code-editor";
 import { escapeHTML } from "#lib/utils";
 
@@ -27,9 +27,9 @@ interface ExportMenuProps {
 }
 
 const ExportMenu: Component<ExportMenuProps> = (props) => {
-  const { client } = useClientContext();
-  const { workspaceSettings = () => null } = useAuthenticatedContext() || {};
-  const { notify } = useNotificationsContext();
+  const client = useClient();
+  const { workspaceSettings = () => null } = useAuthenticatedUserData() || {};
+  const { notify } = useNotifications();
   const [loading, setLoading] = createSignal(false);
   const [exportMenuOpened, setExportMenuOpened] = createSignal(false);
   const [exportDropdownOpened, setExportDropdownOpened] = createSignal(false);
@@ -54,7 +54,7 @@ const ExportMenu: Component<ExportMenuProps> = (props) => {
         if (!content) return;
 
         return formatCode(
-          htmlTransformer(content).replace(/<code>((?:.|\n)+?)<\/code>/g, (_, code) => {
+          htmlOutputTransformer(content).replace(/<code>((?:.|\n)+?)<\/code>/g, (_, code) => {
             return `<code>${escapeHTML(code)}</code>`;
           }),
           "html",
@@ -65,7 +65,7 @@ const ExportMenu: Component<ExportMenuProps> = (props) => {
       if (type === "md") {
         if (!content) return;
 
-        return formatCode(gfmTransformer(content), "markdown", prettierConfig);
+        return formatCode(gfmOutputTransformer(content), "markdown", prettierConfig);
       }
 
       return formatCode(JSON.stringify(content), "json", prettierConfig);

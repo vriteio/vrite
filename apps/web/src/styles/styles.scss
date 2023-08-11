@@ -210,7 +210,7 @@
     ) {
     @apply my-5;
   }
-  :where(li > ul, li > ol):not(:where(.not-prose, .not-prose *)) {
+  :where(li > ul, li > ol, li > div > ul, li > div > ol):not(:where(.not-prose, .not-prose *)) {
     @apply m-0;
   }
   :where(ul[data-type="taskList"]):not(:where(.not-prose, .not-prose *)) {
@@ -330,5 +330,38 @@
   }
   :where(blockquote):not(:where(.not-prose, .not-prose *)) {
     margin: 0;
+  }
+}
+.rounded {
+  .monaco-editor,
+  .monaco-editor > *:first-child {
+    @apply rounded-2xl;
+  }
+  .ProseMirror .monaco-editor,
+  .ProseMirror .monaco-editor > *:first-child {
+    @apply rounded-b-none;
+  }
+  .monaco-editor .editor-widget {
+    @apply overflow-hidden rounded-lg;
+  }
+  .monaco-editor .monaco-hover {
+    @apply rounded-lg;
+  }
+}
+.split-view[data-code-editor-theme="dark"] .monaco-diff-editor {
+  .original .overflow-guard {
+    @apply md:(border-r-1 border-gray-700);
+  }
+  .modified .overflow-guard {
+    @apply md:(border-l-1 border-gray-700);
+  }
+}
+
+.split-view[data-code-editor-theme="light"] .monaco-diff-editor {
+  .original .overflow-guard {
+    @apply md:(border-r-1 border-gray-200);
+  }
+  .modified .overflow-guard {
+    @apply md:(border-l-1 border-gray-200);
   }
 }

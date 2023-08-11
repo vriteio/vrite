@@ -16,7 +16,8 @@ import {
   TaskList,
   ListItem,
   TaskItem,
-  HardBreak
+  HardBreak,
+  Heading
 } from "@vrite/editor";
 import { Component, createEffect, on } from "solid-js";
 import { Typography } from "@tiptap/extension-typography";
@@ -24,7 +25,6 @@ import clsx from "clsx";
 import { Editor, Extensions } from "@tiptap/core";
 import { debounce } from "@solid-primitives/scheduled";
 import { TrailingNode, Placeholder, Document } from "#lib/editor";
-import { Heading } from "@vrite/editor";
 
 interface ExtensionOptions {
   content?: string;
@@ -136,7 +136,12 @@ const MiniEditor: Component<MiniEditorProps> = (props) => {
   );
 
   return (
-    <div class={clsx("w-full text-lg", props.class)}>
+    <div
+      class={clsx("w-full text-lg", props.class)}
+      onClick={(event) => {
+        event.stopPropagation();
+      }}
+    >
       <SolidEditorContent editor={editor()} class="flex-1" />
     </div>
   );
