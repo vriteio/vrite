@@ -7,3 +7,4 @@ export * from "./authenticated-user-data";
 export * from "./extensions";
 export * from "./cache";
 export * from "./shared-state";
+export * from "./command-palette";

@@ -12,5 +12,11 @@ const escapeHTML = (input: string): string => {
 const isEditorApp = (): boolean => {
   return import.meta.env.PUBLIC_APP === "editor";
 };
+const isAppleDevice = (): boolean => {
+  const platform = typeof navigator === "object" ? navigator.platform : "";
+  const appleDeviceRegex = /Mac|iPod|iPhone|iPad/;
 
-export { navigateAndReload, escapeHTML, isEditorApp };
+  return appleDeviceRegex.test(platform);
+};
+
+export { navigateAndReload, escapeHTML, isEditorApp, isAppleDevice };

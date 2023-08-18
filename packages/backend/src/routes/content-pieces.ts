@@ -521,6 +521,10 @@ const contentPiecesRouter = router({
         }
       });
 
+      if (content) {
+        ctx.fastify.search.upsertContent({ contentPiece, content: contentBuffer });
+      }
+
       return { id: `${contentPiece._id}` };
     }),
   update: authenticatedProcedure
@@ -650,7 +654,11 @@ const contentPiecesRouter = router({
         );
       }
 
+      let contentBuffer: Buffer | null = null;
+
       if (updatedContent) {
+        contentBuffer = jsonToBuffer(htmlToJSON(updatedContent));
+
         if (variantId) {
           await contentVariantsCollection.updateOne(
             {
@@ -659,7 +667,7 @@ const contentPiecesRouter = router({
             },
             {
               $set: {
-                content: new Binary(jsonToBuffer(htmlToJSON(updatedContent))),
+                content: new Binary(contentBuffer),
                 workspaceId: ctx.auth.workspaceId
               }
             }
@@ -671,7 +679,7 @@ const contentPiecesRouter = router({
             },
             {
               $set: {
-                content: new Binary(jsonToBuffer(htmlToJSON(updatedContent)))
+                content: new Binary(contentBuffer)
               }
             }
           );
@@ -688,10 +696,6 @@ const contentPiecesRouter = router({
         });
         runWebhooks(ctx, "contentPieceRemoved", webhookPayload(contentPiece));
         runWebhooks(ctx, "contentPieceAdded", webhookPayload(newContentPiece));
-        await contentsCollection.updateOne(
-          { contentPieceId: contentPiece._id },
-          { $set: { contentGroupId: newContentPiece.contentGroupId } }
-        );
       }
 
       const tags = await fetchContentPieceTags(ctx.db, newContentPiece);
@@ -717,6 +721,11 @@ const contentPiecesRouter = router({
           members,
           ...(variantId ? { variantId } : {})
         }
+      });
+      ctx.fastify.search.upsertContent({
+        contentPiece: newContentPiece,
+        variantId: variantId || undefined,
+        content: contentBuffer || undefined
       });
     }),
   delete: authenticatedProcedure
@@ -748,12 +757,16 @@ const contentPiecesRouter = router({
         contentPieceId: contentPiece._id
       });
       runGitSyncHook(ctx, "contentPieceRemoved", { contentPiece });
+      runWebhooks(ctx, "contentPieceRemoved", webhookPayload(contentPiece));
       publishEvent(ctx, `${contentPiece.contentGroupId}`, {
         action: "delete",
         userId: `${ctx.auth.userId}`,
         data: { id: input.id }
       });
-      runWebhooks(ctx, "contentPieceRemoved", webhookPayload(contentPiece));
+      ctx.fastify.search.deleteContent({
+        contentPieceId: contentPiece._id,
+        workspaceId: ctx.auth.workspaceId
+      });
 
       return { id: input.id };
     }),

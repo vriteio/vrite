@@ -217,6 +217,26 @@ const githubRouter = router({
           id: `${topContentGroup._id}`
         }
       });
+
+      const bulkUpsertDetails: Array<{
+        contentPiece: UnderscoreID<FullContentPiece<ObjectId>>;
+        content: Buffer;
+      }> = [];
+
+      newContentPieces.forEach((contentPiece) => {
+        const { content } =
+          newContents.find(({ contentPieceId }) => {
+            return contentPieceId.equals(contentPiece._id);
+          }) || {};
+
+        if (content) {
+          bulkUpsertDetails.push({
+            contentPiece,
+            content: Buffer.from(content.buffer)
+          });
+        }
+      });
+      ctx.fastify.search.bulkUpsertContent(bulkUpsertDetails);
     }),
   pull: authenticatedProcedure
     .meta({

@@ -91,7 +91,7 @@ const oAuth2Plugin = publicPlugin(async (fastify) => {
       }
 
       if (!existingUser) {
-        const workspaceId = await createWorkspace(user, fastify.mongo.db!, {
+        const workspaceId = await createWorkspace(user, fastify, {
           defaultContent: true
         });
 

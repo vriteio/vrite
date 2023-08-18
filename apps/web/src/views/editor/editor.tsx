@@ -9,17 +9,19 @@ import {
 import { Component, createEffect, createSignal, on, onCleanup } from "solid-js";
 import { HardBreak, Paragraph, Text, Comment } from "@vrite/editor";
 import { isTextSelection } from "@tiptap/core";
+import { convert as convertToSlug } from "url-slug";
 import { Gapcursor } from "@tiptap/extension-gapcursor";
 import { Dropcursor } from "@tiptap/extension-dropcursor";
 import { Typography } from "@tiptap/extension-typography";
 import { HocuspocusProvider } from "@hocuspocus/provider";
 import { CharacterCount } from "@tiptap/extension-character-count";
 import * as Y from "yjs";
-import { useNavigate } from "@solidjs/router";
+import { useLocation, useNavigate } from "@solidjs/router";
 import { CellSelection } from "@tiptap/pm/tables";
 import { AllSelection } from "@tiptap/pm/state";
 import clsx from "clsx";
 import { Instance } from "tippy.js";
+import { scrollIntoView } from "seamless-scroll-polyfill";
 import { Dropdown } from "#components/primitives";
 import {
   Document,
@@ -66,8 +68,30 @@ const Editor: Component<EditorProps> = (props) => {
   const { setStorage } = useLocalStorage();
   const createSharedSignal = useSharedState();
   const navigate = useNavigate();
+  const location = useLocation<{ breadcrumb?: string[] }>();
   const [activeVariant] = createSharedSignal("activeVariant");
   const ydoc = new Y.Doc();
+  const [containerRef, setContainerRef] = createRef<HTMLElement | null>(null);
+  const handleReload = async (): Promise<void> => {
+    if (props.reloaded) {
+      navigate("/");
+    } else {
+      await fetch("/session/refresh", { method: "POST" });
+      props.reload?.();
+    }
+  };
+  const scrollToHeading = () => {
+    const headingText = location.state?.breadcrumb?.at(-1) || "";
+
+    if (headingText) {
+      const slug = convertToSlug(headingText);
+      const heading = containerRef()?.querySelector(`[data-slug="${slug}"]`);
+
+      if (heading) {
+        scrollIntoView(heading, { behavior: "smooth", block: "start" });
+      }
+    }
+  };
   const provider = new HocuspocusProvider({
     token: "vrite",
     url: `ws${window.location.protocol.includes("https") ? "s" : ""}://${
@@ -75,21 +99,15 @@ const Editor: Component<EditorProps> = (props) => {
     }`,
     async onSynced() {
       props.onLoad?.();
+      scrollToHeading();
     },
-    async onAuthenticationFailed() {
-      if (props.reloaded) {
-        navigate("/");
-      } else {
-        await fetch("/session/refresh", { method: "POST" });
-        props.reload?.();
-      }
-    },
+    onDisconnect: handleReload,
+    onAuthenticationFailed: handleReload,
     name: `${props.editedContentPiece.id || ""}${activeVariant() ? ":" : ""}${
       activeVariant()?.id || ""
     }`,
     document: ydoc
   });
-  const [containerRef, setContainerRef] = createRef<HTMLElement | null>(null);
   const [bubbleMenuOpened, setBubbleMenuOpened] = createSignal(true);
   const [bubbleMenuInstance, setBubbleMenuInstance] = createSignal<Instance | null>(null);
   const [floatingMenuOpened, setFloatingMenuOpened] = createSignal(true);
@@ -219,6 +237,14 @@ const Editor: Component<EditorProps> = (props) => {
     setEditedContentPiece(undefined);
   });
   setStorage((storage) => ({ ...storage, toolbarView: "editor" }));
+  createEffect(
+    on(
+      () => location.state,
+      () => {
+        scrollToHeading();
+      }
+    )
+  );
   createEffect(
     on([() => props.editedContentPiece, editor], () => {
       setEditedContentPiece(props.editedContentPiece);

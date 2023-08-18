@@ -79,47 +79,47 @@
   __export(api_exports, {
     createClient: () => q
   });
-  var d, w, o, G, k, u, U, r, f, S, D, n, L, O, x, p, j, y, R, C, g, I, T, v, q;
+  var o, h, r, w, k, u, U, p, f, S, D, n, L, O, x, c, j, y, R, C, g, I, T, v, q;
   var init_api = __esm({
     "../../packages/sdk/javascript/dist/api.mjs"() {
-      d = "/content-groups";
-      w = (t) => ({ list: () => t("GET", `${d}/list`), create: (e) => t("POST", `${d}`, { body: e }), update: (e) => t("PUT", `${d}`, { body: e }), delete: (e) => t("DELETE", `${d}`, { params: e }) });
-      o = "/content-pieces";
-      G = (t) => ({ get: (e) => t("GET", `${o}`, { params: e }), create: (e) => t("POST", `${o}`, { body: e }), update: (e) => t("PUT", `${o}`, { body: e }), delete: (e) => t("DELETE", `${o}`, { params: e }), list: (e) => t("GET", `${o}/list`, { params: e }) });
+      o = "/content-groups";
+      h = (t) => ({ get: (e) => t("GET", `${o}`, { params: e }), list: (e) => t("GET", `${o}/list`, { params: e }), create: (e) => t("POST", `${o}`, { body: e }), update: (e) => t("PUT", `${o}`, { body: e }), delete: (e) => t("DELETE", `${o}`, { params: e }) });
+      r = "/content-pieces";
+      w = (t) => ({ get: (e) => t("GET", `${r}`, { params: e }), create: (e) => t("POST", `${r}`, { body: e }), update: (e) => t("PUT", `${r}`, { body: e }), delete: (e) => t("DELETE", `${r}`, { params: e }), list: (e) => t("GET", `${r}/list`, { params: e }) });
       k = (t) => {
-        let e = t.baseURL || "https://api.vrite.io", s = t.extensionId || "", l = t.headers || {}, { token: E } = t;
-        return { sendRequest: async (a, P, c) => {
+        let e = t.baseURL || "https://api.vrite.io", s = t.extensionId || "", E = t.headers || {}, { token: l } = t;
+        return { sendRequest: async (a, G, $) => {
           try {
-            const { default: $ } = await Promise.resolve().then(() => __toESM(require_browser(), 1)), b = await $(`${e}${P}/?${encodeURI(Object.entries(c?.params || {}).filter(([, m]) => m).map(([m, h]) => `${m}=${h}`).join("&"))}`, { headers: { Authorization: `Bearer ${E}`, Accept: "application/json", ...c?.body ? { "Content-Type": "application/json" } : {}, ...s ? { "X-Vrite-Extension-ID": s } : {}, ...l }, body: c?.body ? JSON.stringify(c.body) : null, method: a });
-            let i = null;
+            const { default: i } = await Promise.resolve().then(() => __toESM(require_browser(), 1)), b = await i(`${e}${G}/?${encodeURI(Object.entries($?.params || {}).filter(([, m]) => m).map(([m, P]) => `${m}=${P}`).join("&"))}`, { headers: { Authorization: `Bearer ${l}`, Accept: "application/json", ...$?.body ? { "Content-Type": "application/json" } : {}, ...s ? { "X-Vrite-Extension-ID": s } : {}, ...E }, body: $?.body ? JSON.stringify($.body) : null, method: a });
+            let d = null;
             try {
-              if (i = await b.json(), !i)
+              if (d = await b.json(), !d)
                 return;
             } catch {
               return;
             }
             if (!b.ok)
-              throw i;
-            return i;
-          } catch ($) {
-            throw console.error($), $;
+              throw d;
+            return d;
+          } catch (i) {
+            throw console.error(i), i;
           }
         }, reconfigure: (a) => {
-          e = a.baseURL || e, E = a.token || E, s = a.extensionId || s, l = a.headers || l;
+          e = a.baseURL || e, l = a.token || l, s = a.extensionId || s, E = a.headers || E;
         } };
       };
       u = "/user-settings";
       U = (t) => ({ get: () => t("GET", `${u}`), update: (e) => t("PUT", `${u}`, { body: e }) });
-      r = "/tags";
-      f = (t) => ({ get: (e) => t("GET", `${r}`, { params: e }), update: (e) => t("PUT", `${r}`, { body: e }), create: (e) => t("PUT", `${r}`, { body: e }), delete: (e) => t("DELETE", `${r}`, { params: e }), list: (e) => t("GET", `${r}/list`, { params: e }) });
+      p = "/tags";
+      f = (t) => ({ get: (e) => t("GET", `${p}`, { params: e }), update: (e) => t("PUT", `${p}`, { body: e }), create: (e) => t("PUT", `${p}`, { body: e }), delete: (e) => t("DELETE", `${p}`, { params: e }), list: (e) => t("GET", `${p}/list`, { params: e }) });
       S = "/profile";
       D = (t) => ({ get: () => t("GET", `${S}`) });
       n = "/webhooks";
       L = (t) => ({ get: (e) => t("GET", `${n}`, { params: e }), create: (e) => t("POST", `${n}`, { body: e }), update: (e) => t("PUT", `${n}`, { body: e }), delete: (e) => t("DELETE", `${n}`, { params: e }), list: (e) => t("GET", `${n}/list`, { params: e }) });
       O = "/workspace";
       x = (t) => ({ get: () => t("GET", `${O}`) });
-      p = "/roles";
-      j = (t) => ({ get: (e) => t("GET", `${p}`, { params: e }), create: (e) => t("POST", `${p}`, { body: e }), update: (e) => t("PUT", `${p}`, { body: e }), delete: (e) => t("DELETE", `${p}`, { params: e }), list: (e) => t("GET", `${p}/list`, { params: e }) });
+      c = "/roles";
+      j = (t) => ({ get: (e) => t("GET", `${c}`, { params: e }), create: (e) => t("POST", `${c}`, { body: e }), update: (e) => t("PUT", `${c}`, { body: e }), delete: (e) => t("DELETE", `${c}`, { params: e }), list: (e) => t("GET", `${c}/list`, { params: e }) });
       y = "/workspace-settings";
       R = (t) => ({ get: () => t("GET", `${y}`), update: (e) => t("PUT", `${y}`, { body: e }) });
       C = (t) => ({ listMembers: (e) => t("GET", "/workspace-memberships/list-members", { params: e }), listWorkspaces: (e) => t("GET", "/workspace-memberships/list-workspaces", { params: e }), create: (e) => t("POST", "/workspace-memberships", { body: e }), update: (e) => t("PUT", "/workspace-memberships", { body: e }), delete: (e) => t("DELETE", "/workspace-memberships", { params: e }) });
@@ -129,7 +129,7 @@
       v = (t) => ({ create: (e) => t("POST", `${T}`, { body: e }), update: (e) => t("PUT", `${T}`, { body: e }), delete: (e) => t("DELETE", `${T}`, { params: e }), list: () => t("GET", `${T}/list`) });
       q = (t) => {
         const { sendRequest: e, reconfigure: s } = k(t);
-        return { contentGroups: w(e), contentPieces: G(e), tags: f(e), profile: D(e), userSettings: U(e), webhooks: L(e), workspace: x(e), roles: j(e), workspaceSettings: R(e), workspaceMemberships: C(e), extension: I(e), variants: v(e), reconfigure: s };
+        return { contentGroups: h(e), contentPieces: w(e), tags: f(e), profile: D(e), userSettings: U(e), webhooks: L(e), workspace: x(e), roles: j(e), workspaceSettings: R(e), workspaceMemberships: C(e), extension: I(e), variants: v(e), reconfigure: s };
       };
     }
   });

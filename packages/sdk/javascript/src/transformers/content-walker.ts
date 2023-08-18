@@ -237,6 +237,7 @@ type GenericJSONContentMark = {
 };
 type GenericJSONContentNode = {
   type: string;
+  text?: string;
   attrs?: Record<string, any>;
   content?: GenericJSONContentNode[];
   marks?: GenericJSONContentMark[];

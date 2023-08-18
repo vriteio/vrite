@@ -22,7 +22,7 @@ const generate = async (context: ExtensionBlockActionViewContext): Promise<void>
     context.refreshContent();
   });
   await fetchEventSource("https://extensions.vrite.io/gpt", {
-    method: "POST",
+    method: "GET",
     headers: {
       "Content-Type": "application/json",
       "Accept": "text/event-stream"

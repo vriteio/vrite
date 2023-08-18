@@ -82,7 +82,7 @@ const workspacesRouter = router({
 
       if (!user) throw errors.notFound("user");
 
-      const workspaceId = await createWorkspace(user, ctx.db, input);
+      const workspaceId = await createWorkspace(user, ctx.fastify, input);
 
       return `${workspaceId}`;
     }),
@@ -93,7 +93,7 @@ const workspacesRouter = router({
     .input(z.void())
     .output(z.void())
     .mutation(async ({ ctx }) => {
-      await deleteWorkspace(ctx.auth.workspaceId, ctx.db);
+      await deleteWorkspace(ctx.auth.workspaceId, ctx.fastify);
       publishEvent(ctx, `${ctx.auth.workspaceId}`, {
         action: "delete",
         data: {

@@ -1,5 +1,6 @@
 import { nodePasteRule } from "./node-paste-rule";
 import { mergeAttributes, Node, textblockTypeInputRule } from "@tiptap/core";
+import { convert as convertToSlug } from "url-slug";
 
 type Level = 1 | 2 | 3 | 4 | 5 | 6;
 interface HeadingOptions {
@@ -53,7 +54,13 @@ const Heading = Node.create<HeadingOptions>({
     const hasLevel = this.options.levels.includes(node.attrs.level);
     const level = hasLevel ? node.attrs.level : this.options.levels[0];
 
-    return [`h${level}`, mergeAttributes(this.options.HTMLAttributes, HTMLAttributes), 0];
+    return [
+      `h${level}`,
+      mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, {
+        "data-slug": convertToSlug(node.textContent)
+      }),
+      0
+    ];
   },
 
   addCommands() {

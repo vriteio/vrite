@@ -164,7 +164,11 @@ const CommitCard: Component<{ changedRecords: App.GitRecord[] }> = (props) => {
                       record.currentHash === "" && "line-through"
                     )}
                     variant="text"
-                    label={fileName}
+                    label={
+                      <span class="pl-1 clamp-1 flex-1 whitespace-break-spaces text-start">
+                        {fileName}
+                      </span>
+                    }
                     disabled={record.currentHash === ""}
                     hover={record.currentHash !== ""}
                     onClick={() => {

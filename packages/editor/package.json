@@ -42,6 +42,7 @@
     "@tiptap/extension-typography": "^2.0.4",
     "@tiptap/pm": "2.0.4",
     "clsx": "^2.0.0",
-    "solid-js": "^1.7.8"
+    "solid-js": "^1.7.8",
+    "url-slug": "^4.0.1"
   }
 }

@@ -28,7 +28,11 @@ const envSchema = z.object({
   GITHUB_APP_PRIVATE_KEY: z.string(),
   GITHUB_APP_CLIENT_ID: z.string(),
   GITHUB_APP_CLIENT_SECRET: z.string(),
-  GITHUB_APP_WEBHOOK_SECRET: z.string()
+  GITHUB_APP_WEBHOOK_SECRET: z.string(),
+  OPENAI_API_KEY: z.string(),
+  OPENAI_ORGANIZATION: z.string(),
+  WEAVIATE_API_KEY: z.string(),
+  WEAVIATE_URL: z.string()
 });
 
 declare module "fastify" {

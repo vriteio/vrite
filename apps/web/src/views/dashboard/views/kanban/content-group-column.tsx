@@ -25,7 +25,8 @@ import {
   useLocalStorage,
   hasPermission,
   useCache,
-  useSharedState
+  useSharedState,
+  useCommandPalette
 } from "#context";
 import { createRef } from "#lib/utils";
 import { useContentPieces } from "#lib/composables";
@@ -51,6 +52,25 @@ const AddContentGroupColumn: Component<AddContentGroupColumnProps> = (props) => 
   const client = useClient();
   const { notify } = useNotifications();
   const { ancestor } = useContentGroupsContext();
+  const { registerCommand } = useCommandPalette();
+  const createNewContentGroup = async (): Promise<void> => {
+    try {
+      await client.contentGroups.create.mutate({
+        name: "",
+        ancestor: ancestor()?.id
+      });
+      notify({ text: "New content group created", type: "success" });
+    } catch (error) {
+      notify({ text: "Couldn't create new content group", type: "error" });
+    }
+  };
+
+  registerCommand({
+    action: createNewContentGroup,
+    category: "dashboard",
+    icon: mdiFolderPlus,
+    name: "New content group"
+  });
 
   return (
     <div
@@ -62,17 +82,7 @@ const AddContentGroupColumn: Component<AddContentGroupColumnProps> = (props) => 
       <Card
         class="flex-col flex justify-center items-center w-full h-full m-0 mb-1 bg-transparent border-2 rounded-2xl dark:border-gray-700 text-gray-500 dark:text-gray-400 @hover-bg-gray-300 dark:@hover-bg-gray-700 @hover:cursor-pointer"
         color="contrast"
-        onClick={async () => {
-          try {
-            await client.contentGroups.create.mutate({
-              name: "",
-              ancestor: ancestor()?.id
-            });
-            notify({ text: "New content group created", type: "success" });
-          } catch (error) {
-            notify({ text: "Couldn't create new content group", type: "error" });
-          }
-        }}
+        onClick={createNewContentGroup}
       >
         <Icon path={mdiFolderPlus} class="h-6 w-6" />
         <span>New group</span>

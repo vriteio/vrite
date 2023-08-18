@@ -103,7 +103,7 @@ const verificationRouter = router({
       );
 
       try {
-        const workspaceId = await createWorkspace(user, ctx.db, { defaultContent: true });
+        const workspaceId = await createWorkspace(user, ctx.fastify, { defaultContent: true });
 
         await userSettingsCollection.insertOne({
           _id: new ObjectId(),
@@ -114,11 +114,12 @@ const verificationRouter = router({
           currentWorkspaceId: workspaceId
         });
         await createSession(ctx, `${user._id}`);
-
-        return "/";
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error(error);
       }
+
+      return "/";
     }),
   verifyWorkspaceInvite: authenticatedUserProcedure
     .input(z.object({ code: z.string(), membershipId: z.string() }))

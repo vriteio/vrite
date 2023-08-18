@@ -14,7 +14,7 @@
     "@vrite/backend": "workspace:*",
     "@vrite/sdk": "workspace:*",
     "fastify": "^4.20.0",
-    "openai": "^3.3.0",
+    "openai": "^4.0.0",
     "trpc-openapi": "^1.2.0"
   },
   "devDependencies": {

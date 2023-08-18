@@ -322,15 +322,19 @@ const contentGroupsRouter = router({
         contentPieceId: { $in: contentPieceIds }
       });
       runGitSyncHook(ctx, "contentGroupRemoved", { contentGroup });
-      publishEvent(ctx, `${ctx.auth.workspaceId}`, {
-        action: "delete",
-        data: input
-      });
       runWebhooks(ctx, "contentGroupAdded", {
         ...contentGroup,
         ancestors: contentGroup.ancestors.map((id) => `${id}`),
         descendants: contentGroup.descendants.map((id) => `${id}`),
         id: `${contentGroup._id}`
+      });
+      publishEvent(ctx, `${ctx.auth.workspaceId}`, {
+        action: "delete",
+        data: input
+      });
+      ctx.fastify.search.deleteContent({
+        contentPieceId: contentPieceIds,
+        workspaceId: ctx.auth.workspaceId
       });
     }),
   listAncestors: authenticatedProcedure

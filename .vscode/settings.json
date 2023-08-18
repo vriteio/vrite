@@ -18,7 +18,8 @@
     "srem",
     "totp",
     "unsign",
-    "Unsubscribable"
+    "Unsubscribable",
+    "weaviate"
   ],
   "unocss.root": ["apps/web"],
   "typescript.tsdk": "node_modules/typescript/lib"

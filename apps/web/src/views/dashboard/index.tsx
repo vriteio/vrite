@@ -3,6 +3,7 @@ import { DashboardListView } from "./views/list";
 import { Component, Match, Switch, createEffect, on, onCleanup } from "solid-js";
 import { HocuspocusProvider } from "@hocuspocus/provider";
 import * as Y from "yjs";
+import { useNavigate } from "@solidjs/router";
 import { App, useAuthenticatedUserData, useLocalStorage, useCache, useSharedState } from "#context";
 import { getSelectionColor } from "#lib/utils";
 import { useContentGroups } from "#lib/composables";
@@ -10,6 +11,7 @@ import { useContentGroups } from "#lib/composables";
 const DashboardView: Component = () => {
   const createSharedSignal = useSharedState();
   const cache = useCache();
+  const navigate = useNavigate();
   const { workspace, profile } = useAuthenticatedUserData();
   const { storage, setStorage } = useLocalStorage();
   const ancestor = (): App.ContentGroup | null => {
@@ -19,6 +21,10 @@ const DashboardView: Component = () => {
     return useContentGroups();
   });
   const ydoc = new Y.Doc();
+  const handleReload = async (): Promise<void> => {
+    await fetch("/session/refresh", { method: "POST" });
+    window.location.reload();
+  };
   const [provider, setProvider] = createSharedSignal(
     "provider",
     new HocuspocusProvider({
@@ -26,6 +32,8 @@ const DashboardView: Component = () => {
       url: `ws${window.location.protocol.includes("https") ? "s" : ""}://${
         import.meta.env.PUBLIC_COLLAB_HOST
       }`,
+      onDisconnect: handleReload,
+      onAuthenticationFailed: handleReload,
       name: `workspace:${workspace()?.id || ""}`,
       document: ydoc
     })

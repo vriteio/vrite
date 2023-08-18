@@ -54,7 +54,7 @@ const loadSandbox = (): ExtensionsSandbox => {
         contextRef()?.setter?.(data);
       }
     },
-    { frameContainer: "#sandbox" }
+    { frameContainer: "#sandbox", allowAdditionalAttributes: "" }
   );
 
   let hasLoaded = new Promise<void>((resolve) => {

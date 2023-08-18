@@ -18,7 +18,7 @@ import clsx from "clsx";
 import { createMediaQuery } from "@solid-primitives/media";
 import { createActiveElement } from "@solid-primitives/active-element";
 import { breakpoints, navigateAndReload } from "#lib/utils";
-import { useLocalStorage, useAuthenticatedUserData } from "#context";
+import { useLocalStorage, useAuthenticatedUserData, useCommandPalette } from "#context";
 import {
   Button,
   IconButton,
@@ -34,11 +34,10 @@ import { logoIcon, discordIcon } from "#assets/icons";
 interface MenuItem {
   icon: string;
   label: string;
-  link?: string;
   props?: Record<string, string>;
   inMenu?: boolean;
   active?: () => boolean;
-  onClick?(): void;
+  onClick(): void;
 }
 
 const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
@@ -218,6 +217,7 @@ const ProfileMenu: Component<{ close(): void }> = (props) => {
 const SidebarMenu: Component = () => {
   const { profile = () => null } = useAuthenticatedUserData() || {};
   const { storage } = useLocalStorage();
+  const { registerCommand } = useCommandPalette();
   const activeElement = createActiveElement();
   const [profileMenuOpened, setProfileMenuOpened] = createSignal(false);
   const [hideMenu, setHideMenu] = createSignal(false);
@@ -248,6 +248,20 @@ const SidebarMenu: Component = () => {
     } else {
       document.documentElement.classList.remove("sidebar-hidden");
     }
+  });
+  createEffect(() => {
+    registerCommand(
+      menuItems()
+        .filter(Boolean)
+        .map((menuItem) => ({
+          name: menuItem!.label,
+          action() {
+            menuItem!.onClick();
+          },
+          icon: menuItem!.icon,
+          category: "navigate"
+        }))
+    );
   });
 
   return (
@@ -286,12 +300,7 @@ const SidebarMenu: Component = () => {
                           menuItem().inMenu && "hidden md:flex"
                         )}
                       >
-                        <Dynamic
-                          component={menuItem()?.link ? Link : "div"}
-                          href={menuItem().link || ""}
-                          class="w-full h-full md:h-auto md:w-auto"
-                          target={menuItem()?.link?.startsWith("http") ? "_blank" : ""}
-                        >
+                        <div class="w-full h-full md:h-auto md:w-auto">
                           <IconButton
                             path={menuItem().icon}
                             variant="text"
@@ -308,7 +317,7 @@ const SidebarMenu: Component = () => {
                             }
                             {...(menuItem().props || {})}
                           />
-                        </Dynamic>
+                        </div>
                       </Tooltip>
                     );
                   }}

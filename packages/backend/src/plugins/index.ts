@@ -6,3 +6,4 @@ export * from "./s3";
 export * from "./session";
 export * from "./trpc";
 export * from "./github";
+export * from "./search";

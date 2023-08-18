@@ -107,7 +107,11 @@ const ComponentRenderer: Component<ComponentRendererProps> = (props) => {
   const { context, extension } = useViewContext();
 
   if (typeof props.view === "string") {
-    return <span innerHTML={marked.parseInline(props.view, { renderer })} />;
+    return (
+      <span
+        innerHTML={marked.parseInline(props.view, { renderer, mangle: false, headerIds: false })}
+      />
+    );
   }
 
   const shortcutProps: Record<string, string | boolean | number> = {};

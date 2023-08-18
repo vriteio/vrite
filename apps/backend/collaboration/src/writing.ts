@@ -74,6 +74,25 @@ const writingPlugin = publicPlugin(async (fastify) => {
       }
     });
   };
+  const upsertSearchContent = async (
+    contentPieceId: string,
+    details: {
+      contentBuffer: Buffer;
+      workspaceId: string;
+      variantId?: string;
+    }
+  ): Promise<void> => {
+    const contentPiece = await contentPiecesCollection.findOne({
+      _id: new ObjectId(contentPieceId),
+      workspaceId: new ObjectId(details.workspaceId)
+    });
+
+    await fastify.search.upsertContent({
+      contentPiece,
+      content: details.contentBuffer,
+      variantId: details.variantId
+    });
+  };
   const server = Server.configure({
     port: fastify.config.PORT,
     address: fastify.config.HOST,
@@ -139,11 +158,17 @@ const writingPlugin = publicPlugin(async (fastify) => {
           }
 
           if (state) {
-            if (variantId) {
-              if (!(details as { update?: any }).update) {
-                return;
-              }
+            if (!(details as { update?: any }).update) {
+              return;
+            }
 
+            upsertSearchContent(contentPieceId, {
+              workspaceId: details.context.workspaceId,
+              contentBuffer: state,
+              variantId
+            });
+
+            if (variantId) {
               return contentVariantsCollection?.updateOne(
                 {
                   contentPieceId: new ObjectId(contentPieceId),

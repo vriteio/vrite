@@ -31,7 +31,9 @@
   font-weight: 400 800;
   src: url("/jetbrains-mono-wghtOnly-normal.woff2") format("woff2");
 }
-
+kbd {
+  font-family: "JetBrainsMonoVariable", monospace;
+}
 #side-panel > div {
   height: 100%;
 }
@@ -337,16 +339,17 @@
   .monaco-editor > *:first-child {
     @apply rounded-2xl;
   }
-  .ProseMirror .monaco-editor,
-  .ProseMirror .monaco-editor > *:first-child {
-    @apply rounded-b-none;
-  }
   .monaco-editor .editor-widget {
     @apply overflow-hidden rounded-lg;
   }
   .monaco-editor .monaco-hover {
     @apply rounded-lg;
   }
+}
+
+.ProseMirror .rounded .monaco-editor,
+.ProseMirror .rounded .monaco-editor > *:first-child {
+  @apply rounded-b-none;
 }
 .split-view[data-code-editor-theme="dark"] .monaco-diff-editor {
   .original .overflow-guard {

@@ -1,23 +1,33 @@
 import { UserList } from "./user-list";
 import { Breadcrumb } from "./breadcrumb";
 import {
+  mdiAppleKeyboardCommand,
   mdiBookOpenBlankVariant,
   mdiFileOutline,
   mdiFullscreen,
   mdiGithub,
+  mdiInformationVariantCircleOutline,
+  mdiMagnify,
   mdiMenu,
   mdiViewDashboard,
   mdiViewList
 } from "@mdi/js";
-import { Component, Show, createMemo, createSignal } from "solid-js";
+import { Component, Show, createEffect, createMemo, createSignal } from "solid-js";
 import { Dynamic } from "solid-js/web";
 import clsx from "clsx";
 import { JSONContent } from "@vrite/sdk";
-import { App, useClient, useLocalStorage, useNotifications, useSharedState } from "#context";
+import {
+  App,
+  useClient,
+  useCommandPalette,
+  useLocalStorage,
+  useNotifications,
+  useSharedState
+} from "#context";
 import { ExportMenu, StatsMenu } from "#views/editor/menus";
-import { Button, Dropdown, Heading, IconButton, Tooltip } from "#components/primitives";
+import { Button, Dropdown, Heading, Icon, IconButton, Tooltip } from "#components/primitives";
 import { logoIcon } from "#assets/icons";
-import { breakpoints } from "#lib/utils";
+import { breakpoints, isAppleDevice } from "#lib/utils";
 
 const toolbarViews: Record<string, Component<Record<string, any>>> = {
   editorStandalone: () => {
@@ -206,11 +216,21 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
   },
   editor: () => {
     const createSharedSignal = useSharedState();
+    const { registerCommand } = useCommandPalette();
     const [sharedEditor] = createSharedSignal("editor");
     const [sharedProvider] = createSharedSignal("provider");
     const [sharedEditedContentPiece] = createSharedSignal("editedContentPiece");
     const { setStorage } = useLocalStorage();
     const [menuOpened, setMenuOpened] = createSignal(false);
+
+    registerCommand({
+      name: "Zen mode",
+      category: "editor",
+      icon: mdiFullscreen,
+      action() {
+        setStorage((storage) => ({ ...storage, zenMode: true }));
+      }
+    });
 
     return (
       <div class="flex-row flex justify-start items-center px-4 w-full gap-2">
@@ -283,6 +303,7 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
   default: () => {
     const createSharedSignal = useSharedState();
     const { storage, setStorage } = useLocalStorage();
+    const { setOpened, registerCommand } = useCommandPalette();
     const [provider] = createSharedSignal("provider");
     const [activeDraggableGroup] = createSharedSignal("activeDraggableGroup");
     const [activeDraggablePiece] = createSharedSignal("activeDraggablePiece");
@@ -300,6 +321,24 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
         dashboardViewAncestor: ancestor || undefined
       }));
     };
+
+    createEffect(() => {
+      if (view() === "list") {
+        registerCommand({
+          action: () => setView("kanban"),
+          category: "dashboard",
+          icon: mdiViewDashboard,
+          name: "Switch to Kanban view"
+        });
+      } else {
+        registerCommand({
+          action: () => setView("list"),
+          category: "dashboard",
+          icon: mdiViewList,
+          name: "Switch to List view"
+        });
+      }
+    });
 
     return (
       <div class="flex justify-end items-center w-full px-4 gap-2">
@@ -354,6 +393,27 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
         <Show when={provider()}>
           <UserList provider={provider()!} />
         </Show>
+        <IconButton
+          path={mdiMagnify}
+          label={
+            <div class="hidden @xl:flex w-full items-center">
+              <span class="pl-1 flex-1 text-start">Search</span>
+              <kbd class="bg-gray-300 dark:bg-gray-700 group-hover:bg-gray-200 dark:group-hover:bg-gray-800 flex justify-center items-center rounded-md px-1 h-5 text-sm">
+                {isAppleDevice() ? (
+                  <Icon path={mdiAppleKeyboardCommand} class="h-3 w-3" />
+                ) : (
+                  "Ctrl "
+                )}
+                K
+              </kbd>
+            </div>
+          }
+          text="soft"
+          class="@xl:min-w-48 justify-start m-0 bg-gray-200 group"
+          onClick={() => {
+            setOpened(true);
+          }}
+        />
       </div>
     );
   }

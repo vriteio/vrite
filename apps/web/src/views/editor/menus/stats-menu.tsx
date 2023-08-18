@@ -3,6 +3,7 @@ import { mdiInformationOutline } from "@mdi/js";
 import { Component, createSignal, onCleanup } from "solid-js";
 import clsx from "clsx";
 import { Button, Dropdown, IconButton } from "#components/primitives";
+import { useCommandPalette } from "#context";
 
 interface StatsMenuProps {
   editor?: SolidEditor;
@@ -12,6 +13,8 @@ interface StatsMenuProps {
 }
 
 const StatsMenu: Component<StatsMenuProps> = (props) => {
+  const { registerCommand } = useCommandPalette();
+  const [opened, setOpened] = createSignal(false);
   const [stats, setStats] = createSignal({
     words: 0,
     textCharacters: 0,
@@ -59,12 +62,22 @@ const StatsMenu: Component<StatsMenuProps> = (props) => {
   onCleanup(() => {
     props.editor?.off("update", updateStats);
   });
+  registerCommand({
+    action() {
+      setOpened(true);
+    },
+    category: "editor",
+    icon: mdiInformationOutline,
+    name: "View stats"
+  });
 
   return (
     <Dropdown
       placement="bottom-start"
       cardProps={{ class: "mt-3" }}
       fixed
+      opened={opened()}
+      setOpened={setOpened}
       class={props.wrapperClass}
       activatorWrapperClass="w-full"
       activatorButton={() => (

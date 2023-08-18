@@ -29,6 +29,18 @@ interface Client {
   workspaceMemberships: WorkspaceMembershipsEndpoints;
   extension: ExtensionEndpoints;
   variants: VariantsEndpoints;
+  search(input: {
+    query: string;
+    limit?: number;
+    variantId?: string;
+    contentPieceID?: string;
+  }): Promise<
+    Array<{
+      contentPieceId: string;
+      breadcrumb: string[];
+      content: string;
+    }>
+  >;
   reconfigure(config: ClientConfig): void;
 }
 
@@ -48,6 +60,11 @@ const createClient = (config: ClientConfig): Client => {
     workspaceMemberships: createWorkspaceMembershipsEndpoints(sendRequest),
     extension: createExtensionEndpoints(sendRequest),
     variants: createVariantsEndpoints(sendRequest),
+    search(input) {
+      return sendRequest("GET", "/search", {
+        params: input
+      });
+    },
     reconfigure
   };
 };

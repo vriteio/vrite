@@ -140,13 +140,17 @@ const Input: Component<InputProps> = (props) => {
           props.class
         )}
         value={props.value}
-        onKeyUp={(event: KeyboardEvent) => {
+        onKeyUp={(event: KeyboardEvent & { currentTarget: HTMLInputElement; target: Element }) => {
           if (event.key === "Enter") {
             props.onEnter?.(event);
           }
 
           if (event && props.suggestions) {
             onKeyUp(event);
+          }
+
+          if (typeof props.onKeyUp === "function") {
+            props.onKeyUp(event);
           }
         }}
         onFocus={(

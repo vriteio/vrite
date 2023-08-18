@@ -102,6 +102,7 @@ const variantsRouter = router({
       if (!deletedCount) throw errors.notFound("variant");
 
       publishEvent(ctx, `${ctx.auth.workspaceId}`, { action: "delete", data: input });
+      ctx.fastify.search.deleteContent({ variantId, workspaceId: ctx.auth.workspaceId });
     }),
   list: authenticatedProcedure
     .meta({

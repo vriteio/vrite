@@ -2,6 +2,7 @@ import { UnderscoreID } from "./mongo";
 import { jsonToBuffer, DocJSON } from "./processing";
 import { ObjectId, Db, Binary } from "mongodb";
 import { LexoRank } from "lexorank";
+import { FastifyInstance } from "fastify";
 import {
   blocks,
   embeds,
@@ -24,7 +25,7 @@ import initialContent from "#assets/initial-content.json";
 
 const createWorkspace = async (
   user: UnderscoreID<FullUser<ObjectId>>,
-  db: Db,
+  fastify: FastifyInstance,
   config?: {
     name?: string;
     logo?: string;
@@ -32,6 +33,7 @@ const createWorkspace = async (
     defaultContent?: boolean;
   }
 ): Promise<ObjectId> => {
+  const db = fastify.mongo.db!;
   const workspacesCollection = getWorkspacesCollection(db);
   const workspaceSettingsCollection = getWorkspaceSettingsCollection(db);
   const workspaceMembershipsCollection = getWorkspaceMembershipsCollection(db);
@@ -105,6 +107,7 @@ const createWorkspace = async (
     userId: user._id,
     roleId: adminRoleId
   });
+  await fastify.search.createTenant(workspaceId);
 
   if (config?.defaultContent) {
     await contentGroupsCollection.insertMany(contentGroups);
@@ -127,7 +130,8 @@ const createWorkspace = async (
 
   return workspaceId;
 };
-const deleteWorkspace = async (workspaceId: ObjectId, db: Db): Promise<void> => {
+const deleteWorkspace = async (workspaceId: ObjectId, fastify: FastifyInstance): Promise<void> => {
+  const db = fastify.mongo.db!;
   const workspacesCollection = getWorkspacesCollection(db);
   const workspaceSettingsCollection = getWorkspaceSettingsCollection(db);
   const workspaceMembershipsCollection = getWorkspaceMembershipsCollection(db);
@@ -169,6 +173,7 @@ const deleteWorkspace = async (workspaceId: ObjectId, db: Db): Promise<void> => 
   await contentVariantsCollection.deleteMany({
     contentPieceId: { $in: contentPieceIds }
   });
+  await fastify.search.deleteTenant(workspaceId);
 };
 
 export { createWorkspace, deleteWorkspace };

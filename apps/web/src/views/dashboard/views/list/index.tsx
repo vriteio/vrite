@@ -11,10 +11,17 @@ import {
   createSignal,
   on
 } from "solid-js";
-import { mdiFilePlus, mdiFolderPlus, mdiPlus, mdiPlusCircle } from "@mdi/js";
+import { mdiFilePlus, mdiFolderPlus, mdiPlus } from "@mdi/js";
 import { createRef } from "@vrite/components/src/ref";
 import { Card, Dropdown, IconButton, Loader } from "#components/primitives";
-import { App, useCache, useClient, useLocalStorage, useNotifications } from "#context";
+import {
+  App,
+  useCache,
+  useClient,
+  useCommandPalette,
+  useLocalStorage,
+  useNotifications
+} from "#context";
 import { useContentPieces } from "#lib/composables";
 import { breakpoints } from "#lib/utils";
 
@@ -29,6 +36,25 @@ interface DashboardListViewProps {
 const NewContentGroupButton: Component<{ ancestor: App.ContentGroup }> = (props) => {
   const client = useClient();
   const { notify } = useNotifications();
+  const { registerCommand } = useCommandPalette();
+  const createNewGroup = async (): Promise<void> => {
+    try {
+      await client.contentGroups.create.mutate({
+        name: "",
+        ancestor: props.ancestor?.id
+      });
+      notify({ text: "New content group created", type: "success" });
+    } catch (error) {
+      notify({ text: "Couldn't create new content group", type: "error" });
+    }
+  };
+
+  registerCommand({
+    action: createNewGroup,
+    category: "dashboard",
+    icon: mdiFolderPlus,
+    name: "New content group"
+  });
 
   return (
     <IconButton
@@ -38,17 +64,7 @@ const NewContentGroupButton: Component<{ ancestor: App.ContentGroup }> = (props)
       variant="text"
       color="base"
       label="New group"
-      onClick={async () => {
-        try {
-          await client.contentGroups.create.mutate({
-            name: "",
-            ancestor: props.ancestor?.id
-          });
-          notify({ text: "New content group created", type: "success" });
-        } catch (error) {
-          notify({ text: "Couldn't create new content group", type: "error" });
-        }
-      }}
+      onClick={createNewGroup}
     />
   );
 };
@@ -59,12 +75,36 @@ const NewContentPieceButton: Component<{
   const client = useClient();
   const { notify } = useNotifications();
   const { setStorage } = useLocalStorage();
-  const { contentPieces, setContentPieces, loadMore, loading } = cache(
-    `contentPieces:${props.ancestor.id}`,
-    () => {
-      return useContentPieces(props.ancestor.id);
+  const { registerCommand } = useCommandPalette();
+  const { contentPieces } = cache(`contentPieces:${props.ancestor.id}`, () => {
+    return useContentPieces(props.ancestor.id);
+  });
+  const createNewContentPiece = async (): Promise<void> => {
+    if (props.ancestor) {
+      const { id } = await client.contentPieces.create.mutate({
+        contentGroupId: props.ancestor.id,
+        referenceId: contentPieces()[0]?.id,
+        tags: [],
+        members: [],
+        title: ""
+      });
+
+      notify({ type: "success", text: "New content piece created" });
+      setStorage((storage) => ({
+        ...storage,
+        sidePanelView: "contentPiece",
+        sidePanelWidth: storage.sidePanelWidth || 375,
+        contentPieceId: id
+      }));
     }
-  );
+  };
+
+  registerCommand({
+    action: createNewContentPiece,
+    category: "dashboard",
+    icon: mdiFilePlus,
+    name: "New content piece"
+  });
 
   return (
     <IconButton
@@ -74,25 +114,7 @@ const NewContentPieceButton: Component<{
       variant="text"
       color="base"
       label="New content piece"
-      onClick={async () => {
-        if (props.ancestor) {
-          const { id } = await client.contentPieces.create.mutate({
-            contentGroupId: props.ancestor.id,
-            referenceId: contentPieces()[0]?.id,
-            tags: [],
-            members: [],
-            title: ""
-          });
-
-          notify({ type: "success", text: "New content piece created" });
-          setStorage((storage) => ({
-            ...storage,
-            sidePanelView: "contentPiece",
-            sidePanelWidth: storage.sidePanelWidth || 375,
-            contentPieceId: id
-          }));
-        }
-      }}
+      onClick={createNewContentPiece}
     />
   );
 };

@@ -45,7 +45,8 @@ const CodeBlock = Node.create<CodeBlockOptions>({
       lang: {
         default: null,
         parseHTML: (element) => {
-          const classNames = [...(element.firstElementChild?.classList || [])];
+          // Class name access must be supported by zeed-dom for server-side processing
+          const classNames = [...(element.children[0]?.className.split(" ") || [])];
           const languages = classNames
             .filter((className) => className.startsWith("language-"))
             .map((className) => className.replace("language-", ""));

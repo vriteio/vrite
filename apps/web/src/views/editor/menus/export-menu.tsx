@@ -14,7 +14,13 @@ import { nanoid } from "nanoid";
 import clsx from "clsx";
 import { Card, Dropdown, Heading, IconButton, Overlay, Tooltip } from "#components/primitives";
 import { MiniCodeEditor } from "#components/fragments";
-import { App, useAuthenticatedUserData, useClient, useNotifications } from "#context";
+import {
+  App,
+  useAuthenticatedUserData,
+  useClient,
+  useCommandPalette,
+  useNotifications
+} from "#context";
 import { formatCode } from "#lib/code-editor";
 import { escapeHTML } from "#lib/utils";
 
@@ -28,6 +34,7 @@ interface ExportMenuProps {
 
 const ExportMenu: Component<ExportMenuProps> = (props) => {
   const client = useClient();
+  const { registerCommand } = useCommandPalette();
   const { workspaceSettings = () => null } = useAuthenticatedUserData() || {};
   const { notify } = useNotifications();
   const [loading, setLoading] = createSignal(false);
@@ -93,6 +100,33 @@ const ExportMenu: Component<ExportMenuProps> = (props) => {
     setCode(code || "");
     setExportMenuOpened(true);
   };
+
+  registerCommand([
+    {
+      category: "editor",
+      icon: mdiLanguageHtml5,
+      name: "Export HTML",
+      action() {
+        exportContent("html");
+      }
+    },
+    {
+      category: "editor",
+      icon: mdiCodeJson,
+      name: "Export JSON",
+      action() {
+        exportContent("json");
+      }
+    },
+    {
+      category: "editor",
+      icon: mdiLanguageMarkdown,
+      name: "Export GFM",
+      action() {
+        exportContent("md");
+      }
+    }
+  ]);
 
   return (
     <>
