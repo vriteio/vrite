@@ -32,7 +32,7 @@ program
     const build = await context({
       entryPoints: [entry],
       bundle: true,
-      external:["saslprep"],
+      external: ["saslprep", "sharp"],
       outfile: "dist/index.js",
       platform: "node",
       plugins: [
@@ -83,7 +83,7 @@ program
     const build = await context({
       entryPoints: [entry],
       bundle: true,
-      external:["saslprep"],
+      external: ["saslprep", "sharp"],
       outfile: `${output}/index.js`,
       platform: "node",
       minify: true,

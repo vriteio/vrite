@@ -57,7 +57,8 @@ const fastifyTRPCOpenApiPlugin = <TRouter extends AnyRouter>(
 const apiService = publicPlugin(async (fastify) => {
   await fastify.register(rateLimitPlugin, {
     max: 500,
-    timeWindow: "1 minute"
+    timeWindow: "1 minute",
+    redis: fastify.redis
   });
   await fastify.register(corsPlugin, {
     credentials: true,

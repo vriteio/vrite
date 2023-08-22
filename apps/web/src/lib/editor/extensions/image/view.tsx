@@ -67,7 +67,7 @@ const ImageView: Component = () => {
         return;
       }
 
-      const response = await fetch(`/proxy?url=${src}`);
+      const response = await fetch(`/proxy?url=${encodeURIComponent(src)}`);
 
       if (!response.ok) {
         setError(true);

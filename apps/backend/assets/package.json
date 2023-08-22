@@ -1,0 +1,24 @@
+{
+  "name": "@vrite/assets",
+  "private": true,
+  "source": "src/index.ts",
+  "main": "index.ts",
+  "scripts": {
+    "dev": "scripts dev-node src/index.ts",
+    "build": "scripts build-node src/index.ts",
+    "start": "node ./dist/index.js"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.374.0",
+    "@fastify/cors": "^8.3.0",
+    "@fastify/rate-limit": "^8.0.3",
+    "@trpc/server": "^10.35.0",
+    "@vrite/backend": "workspace:*",
+    "fastify": "^4.20.0",
+    "sharp": "^0.32.5",
+    "trpc-openapi": "^1.2.0"
+  },
+  "devDependencies": {
+    "@vrite/scripts": "workspace:*"
+  }
+}
