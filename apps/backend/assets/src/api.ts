@@ -87,11 +87,13 @@ const assetsService = publicPlugin(async (fastify) => {
         format: req.query.format
       });
 
-      if (!Object.keys(options).length) {
+      if (!Object.keys(req.query).length) {
         return sendSource();
       }
 
-      const transformer = sharp(sourceAsset);
+      const transformer = sharp(sourceAsset, {
+        animated: sourceContentType === imageMimeTypes.gif
+      });
 
       if (options.w || options.h) {
         transformer.resize({
