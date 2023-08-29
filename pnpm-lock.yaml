@@ -565,9 +565,6 @@ importers:
       '@vrite/editor':
         specifier: workspace:*
         version: link:../editor
-      '@vrite/scripts':
-        specifier: workspace:*
-        version: link:../scripts
       '@vrite/sdk':
         specifier: workspace:*
         version: link:../sdk/javascript
