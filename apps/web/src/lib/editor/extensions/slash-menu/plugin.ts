@@ -26,7 +26,13 @@ const SlashMenuPlugin = Extension.create<SlashMenuPluginOptions>({
         allowSpaces: true,
         startOfLine: true,
         allow({ editor }) {
-          return !editor.isActive("table");
+          const { selection } = editor.state;
+          const selectedNode = selection.$from.node(selection.$from.depth);
+
+          return (
+            !editor.isActive("table") &&
+            (selectedNode?.textContent.startsWith("/") || !selectedNode?.textContent)
+          );
         },
         command({ editor, range, props }) {
           return props.command({

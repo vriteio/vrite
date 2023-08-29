@@ -270,12 +270,12 @@ kbd {
       "Courier New", monospace !important;
   }
   :where(mark) {
-    @apply text-gray-700 dark:text-gray-300;
+    @apply text-gray-700;
   }
   :where(span[data-comment]) {
     @apply text-primary relative;
 
-    &::before {
+    &::after {
       content: "";
       @apply bg-primary opacity-20 absolute w-full h-full top-0 left-0 pointer-events-none;
     }

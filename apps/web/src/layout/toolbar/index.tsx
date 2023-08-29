@@ -6,7 +6,6 @@ import {
   mdiFileOutline,
   mdiFullscreen,
   mdiGithub,
-  mdiInformationVariantCircleOutline,
   mdiMagnify,
   mdiMenu,
   mdiViewDashboard,

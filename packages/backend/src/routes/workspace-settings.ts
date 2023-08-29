@@ -106,4 +106,4 @@ const workspaceSettingsRouter = router({
     })
 });
 
-export { workspaceSettingsRouter };
+export { workspaceSettingsRouter, publishEvent as publishWorkspaceSettingsEvent };

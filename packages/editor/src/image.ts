@@ -5,6 +5,7 @@ interface ImageAttributes {
   src?: string;
   alt?: string;
   width?: string;
+  aspectRatio?: string;
 }
 interface ImageOptions {
   inline: boolean;
@@ -49,6 +50,9 @@ const Image = Node.create<ImageOptions>({
         default: null
       },
       width: {
+        default: null
+      },
+      aspectRatio: {
         default: null
       },
       uploading: {

@@ -47,7 +47,6 @@ const searchRouter = router({
     .input(
       z.object({
         query: z.string(),
-
         variantId: zodId().optional()
       })
     )

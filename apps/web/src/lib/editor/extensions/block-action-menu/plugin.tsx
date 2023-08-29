@@ -71,7 +71,7 @@ const BlockActionMenuPlugin = Extension.create({
     const isTextSelection = selection instanceof TextSelection;
     const selectedNode = selection.$from.node(1) || selection.$from.nodeAfter;
 
-    if (!selectedNode || this.editor.isActive("comment")) {
+    if (!selectedNode) {
       box.style.display = "none";
 
       return;

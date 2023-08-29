@@ -86,7 +86,6 @@ program
       external: ["saslprep", "sharp"],
       outfile: `${output}/index.js`,
       platform: "node",
-      minify: true,
       plugins: [
         {
           name: "run",

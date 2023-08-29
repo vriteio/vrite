@@ -18,7 +18,8 @@ import { githubPlugin, searchPlugin } from "#plugins";
 const createServer = async (envSchemaExtension?: ZodRawShape): Promise<FastifyInstance> => {
   const server = createFastify({
     maxParamLength: 5000,
-    logger: false
+    logger: false,
+    exposeHeadRoutes: false
   });
 
   // Env

@@ -23,50 +23,6 @@ interface WebhookDetailsProps {
   onDelete?(): void;
 }
 
-const useContentGroups = (): {
-  contentGroups: Accessor<App.ContentGroup[]>;
-} => {
-  const client = useClient();
-  const [state, setState] = createStore<{
-    contentGroups: App.ContentGroup[];
-  }>({
-    contentGroups: []
-  });
-
-  client.contentGroups.list.query().then((contentGroups) => {
-    setState("contentGroups", contentGroups);
-  });
-
-  const contentGroupsChanges = client.contentGroups.changes.subscribe(undefined, {
-    onData({ action, data }) {
-      switch (action) {
-        case "create":
-          setState({ contentGroups: [...state.contentGroups, data] });
-          break;
-        case "update":
-          setState(
-            "contentGroups",
-            state.contentGroups.findIndex((column) => column.id === data.id),
-            (contentGroup) => ({ ...contentGroup, ...data })
-          );
-          break;
-        case "delete":
-          setState({
-            contentGroups: state.contentGroups.filter((column) => column.id !== data.id)
-          });
-          break;
-      }
-    }
-  });
-
-  onCleanup(() => {
-    contentGroupsChanges.unsubscribe();
-  });
-
-  return {
-    contentGroups: () => state.contentGroups
-  };
-};
 const useWebhooks = (): {
   loading: Accessor<boolean>;
   moreToLoad: Accessor<boolean>;
@@ -196,7 +152,6 @@ const WebhookDetails: Component<WebhookDetailsProps> = (props) => {
 const WebhooksSection: SettingsSectionComponent = (props) => {
   const [editedWebhookId, setEditedWebhookId] = createSignal("");
   const { webhooks, loadMore, loading, moreToLoad } = useWebhooks();
-  const { contentGroups } = useContentGroups();
   const [configureWebhookSectionOpened, setConfigureWebhookSectionOpened] = createSignal(false);
 
   createEffect(
@@ -235,7 +190,6 @@ const WebhooksSection: SettingsSectionComponent = (props) => {
       when={!configureWebhookSectionOpened()}
       fallback={
         <ConfigureWebhookSubsection
-          contentGroups={contentGroups()}
           editedWebhookId={editedWebhookId()}
           setActionComponent={props.setActionComponent}
           onWebhookConfigured={() => {

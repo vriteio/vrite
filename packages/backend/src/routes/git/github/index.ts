@@ -17,7 +17,7 @@ import { LexoRank } from "lexorank";
 import { Binary } from "mongodb";
 import { minimatch } from "minimatch";
 import crypto from "node:crypto";
-import { isAuthenticated } from "#lib/middleware";
+import { AuthenticatedContext, isAuthenticated } from "#lib/middleware";
 import { procedure, router } from "#lib/trpc";
 import * as errors from "#lib/errors";
 import {
@@ -27,17 +27,55 @@ import {
   FullGitData,
   GitDirectory,
   GitRecord,
+  WorkspaceSettings,
   getContentGroupsCollection,
   getContentPiecesCollection,
   getContentsCollection,
   getGitDataCollection,
+  getWorkspaceSettingsCollection,
   getWorkspacesCollection,
   githubData
 } from "#database";
 import { ObjectId, UnderscoreID, zodId } from "#lib";
 import { publishContentGroupEvent } from "#routes/content-groups";
+import { publishWorkspaceSettingsEvent } from "#routes/workspace-settings";
 
 const authenticatedProcedure = procedure.use(isAuthenticated);
+const enableFilenameMetadata = async (ctx: AuthenticatedContext): Promise<void> => {
+  const workspaceSettingsCollection = getWorkspaceSettingsCollection(ctx.db);
+  const workspaceSettings = await workspaceSettingsCollection.findOne({
+    workspaceId: ctx.auth.workspaceId
+  });
+
+  if (!workspaceSettings || workspaceSettings.metadata?.enabledFields?.includes("filename")) return;
+
+  const metadata: WorkspaceSettings["metadata"] = {
+    ...(workspaceSettings.metadata || {}),
+    enabledFields: [
+      ...(workspaceSettings.metadata?.enabledFields || [
+        "slug",
+        "canonical-link",
+        "date",
+        "tags",
+        "members"
+      ]),
+      "filename"
+    ]
+  };
+
+  await workspaceSettingsCollection.updateOne(
+    { _id: ctx.auth.workspaceId },
+    {
+      $set: {
+        metadata
+      }
+    }
+  );
+  publishWorkspaceSettingsEvent(ctx, `${ctx.auth.workspaceId}`, {
+    action: "update",
+    data: { metadata }
+  });
+};
 const githubRouter = router({
   configure: authenticatedProcedure
     .meta({
@@ -57,6 +95,7 @@ const githubRouter = router({
       };
 
       await gitDataCollection.insertOne(gitData);
+      enableFilenameMetadata(ctx);
       publishGitDataEvent(ctx, `${ctx.auth.workspaceId}`, {
         action: "configure",
         data: {

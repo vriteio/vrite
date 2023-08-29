@@ -17,7 +17,7 @@
     "vite-tsconfig-paths": "^4.2.0"
   },
   "dependencies": {
-    "@hocuspocus/provider": "^2.3.1",
+    "@hocuspocus/provider": "^2.4.0",
     "@jetbrains/websandbox": "^1.0.7",
     "@mdi/js": "^7.2.96",
     "@microsoft/fetch-event-source": "^2.0.1",
@@ -61,7 +61,7 @@
     "monaco-editor": "^0.40.0",
     "nanoevents": "^8.0.0",
     "nanoid": "^4.0.2",
-    "prettier": "^3.0.0",
+    "prettier": "^3.0.2",
     "seamless-scroll-polyfill": "^2.3.4",
     "solid-js": "^1.7.8",
     "sortablejs": "^1.15.0",

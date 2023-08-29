@@ -8,7 +8,6 @@ import { App, useClient, useNotifications } from "#context";
 import { validateURL } from "#lib/utils";
 
 interface ConfigureWebhookSubsectionProps {
-  contentGroups: App.ContentGroup[];
   editedWebhookId?: string;
   onWebhookConfigured?(): void;
   setActionComponent(component: Component<{}> | null): void;
@@ -157,17 +156,14 @@ const ConfigureWebhookSubsection: Component<ConfigureWebhookSubsectionProps> = (
         </InputField>
         <Show when={webhookData.event.startsWith("contentPiece")}>
           <InputField
-            placeholder="Select Content Group"
+            placeholder="Content Group ID"
             color="contrast"
             label="Content Group"
-            type="select"
-            options={props.contentGroups.map((contentGroup) => {
-              return { label: contentGroup.name, value: contentGroup.id };
-            })}
+            type="text"
             value={webhookData.metadata?.contentGroupId || ""}
             setValue={(value) => setWebhookData("metadata", { contentGroupId: value })}
           >
-            Content group to listen for the event on
+            ID of the content group to listen for the event on
           </InputField>
         </Show>
       </Show>

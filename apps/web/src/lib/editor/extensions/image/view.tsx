@@ -16,6 +16,10 @@ const ImageView: Component = () => {
   const [currentSrc, setCurrentSrc] = createRef("");
   const [imageContainerRef, setImageContainerRef] = createRef<HTMLElement | null>(null);
   const updateWidth = debounce((width: string) => state().updateAttributes({ width }), 250);
+  const updateAspectRatio = debounce(
+    (aspectRatio: string) => state().updateAttributes({ aspectRatio }),
+    250
+  );
   const options = (): ImageOptions => state().extension.options;
   const selected = (): boolean => {
     return state().selected;
@@ -97,6 +101,17 @@ const ImageView: Component = () => {
     resizeObserver.observe(element);
     setImageContainerRef(element);
   };
+  const getPaddingTop = (): string => {
+    const { width, aspectRatio } = attrs();
+
+    if (aspectRatio && width) {
+      return `calc(${1 / Number(aspectRatio)} * ${width})`;
+    } else if (aspectRatio) {
+      return `${(1 / Number(aspectRatio)) * 100}%`;
+    }
+
+    return "35%";
+  };
 
   onCleanup(() => {
     resizeObserver.disconnect();
@@ -123,61 +138,74 @@ const ImageView: Component = () => {
           !options().cover && selected() && "ring ring-primary ring-2"
         )}
       >
-        <Show
-          when={objectURL()}
-          fallback={
-            <div
-              class={clsx(
-                "pt-[35%] w-full bg-gradient-to-tr flex justify-center items-center relative min-h-48",
-                !options().cover && "rounded-t-2xl"
-              )}
-            >
-              <div class="absolute flex flex-col items-center justify-center font-bold text-white transform -translate-y-1/2 top-1/2">
-                <Show when={!loading()} fallback={<Loader class="w-8 h-8" />}>
-                  <Show
-                    when={!error()}
-                    fallback={
-                      <>
-                        <Icon path={mdiAlertCircle} class="w-16 h-16" />
-                        <span class="absolute top-full">Error</span>
-                      </>
-                    }
-                  >
-                    <Icon path={mdiImage} class="w-16 h-16" />
+        <div class={clsx(!options().cover && "border-2 rounded-t-2xl")}>
+          <Show
+            when={objectURL()}
+            fallback={
+              <div
+                class={clsx(
+                  "w-full bg-gradient-to-tr flex justify-center items-center relative",
+                  !options().cover && "rounded-t-2xl"
+                )}
+                style={{
+                  "padding-top": getPaddingTop()
+                }}
+              >
+                <div class="absolute flex flex-col items-center justify-center font-bold text-white transform -translate-y-1/2 top-1/2">
+                  <Show when={!loading()} fallback={<Loader class="w-8 h-8" />}>
+                    <Show
+                      when={!error()}
+                      fallback={
+                        <>
+                          <Icon path={mdiAlertCircle} class="w-16 h-16" />
+                          <span class="absolute top-full">Error</span>
+                        </>
+                      }
+                    >
+                      <Icon path={mdiImage} class="w-16 h-16" />
+                    </Show>
                   </Show>
-                </Show>
+                </div>
               </div>
-            </div>
-          }
-        >
-          <div
-            class={clsx(
-              "w-full border-gray-200 dark:border-gray-700 flex justify-center items-center overflow-hidden bg-gray-100 dark:bg-gray-800 relative",
-              !options().cover && "rounded-t-2xl border-2"
-            )}
+            }
           >
             <div
               class={clsx(
-                "overflow-hidden min-w-40 !h-full",
-                state().editor.isEditable && "resize"
+                "w-full border-gray-200 dark:border-gray-700 flex justify-center items-center overflow-hidden bg-gray-100 dark:bg-gray-800 relative",
+                !options().cover && "rounded-t-2xl"
               )}
-              ref={handleNewImageContainer}
-              style={{ width: attrs().width }}
             >
-              <img
-                alt={attrs().alt}
-                src={objectURL()}
-                data-src={currentSrc()}
-                class={clsx("object-contain w-full m-0 transition-opacity duration-300")}
-                onError={() => {
-                  removeImage();
-                  setError(true);
-                }}
-              />
-            </div>
-          </div>
-        </Show>
+              <div
+                class={clsx(
+                  "overflow-hidden min-w-40 !h-full",
+                  state().editor.isEditable && "resize"
+                )}
+                ref={handleNewImageContainer}
+                style={{ width: attrs().width }}
+              >
+                <img
+                  alt={attrs().alt}
+                  src={objectURL()}
+                  data-src={currentSrc()}
+                  class={clsx("object-contain w-full m-0 transition-opacity duration-300")}
+                  onLoad={(event) => {
+                    const image = event.currentTarget;
+                    const w = image.naturalWidth;
+                    const h = image.naturalHeight;
+                    const aspectRatio = w / h;
 
+                    updateAspectRatio.clear();
+                    updateAspectRatio(`${aspectRatio}`);
+                  }}
+                  onError={() => {
+                    removeImage();
+                    setError(true);
+                  }}
+                />
+              </div>
+            </div>
+          </Show>
+        </div>
         <Card
           class={clsx(
             "m-0 border-0 border-b-2 rounded-t-none",

@@ -20,38 +20,41 @@ type SupportedLanguages = keyof typeof languageParserMap;
 const isFormattable = (language: string): boolean => {
   return Boolean(languageParserMap[language as SupportedLanguages]);
 };
-const loadParserPlugin = async (language: string): Promise<Plugin | null> => {
+const loadParserPlugins = async (language: string): Promise<Plugin[] | null> => {
   switch (language as SupportedLanguages) {
     case "javascript":
     case "typescript":
-      return import("prettier/plugins/babel");
+      return [
+        await import("prettier/plugins/babel"),
+        (await import("prettier/plugins/estree")) as Plugin
+      ];
     case "graphql":
-      return import("prettier/plugins/graphql");
+      return [await import("prettier/plugins/graphql")];
     case "html":
     case "vue":
-      return import("prettier/plugins/html");
+      return [await import("prettier/plugins/html")];
     case "markdown":
-      return import("prettier/plugins/markdown");
+      return [await import("prettier/plugins/markdown")];
     case "yaml":
     case "json":
-      return import("prettier/plugins/yaml");
+      return [await import("prettier/plugins/yaml")];
     case "css":
     case "less":
     case "scss":
-      return import("prettier/plugins/postcss");
+      return [await import("prettier/plugins/postcss")];
     default:
       return null;
   }
 };
 const formatCode = async (code: string, language: string, options?: Options): Promise<string> => {
   const parser = languageParserMap[language as SupportedLanguages];
-  const parserPlugin = await loadParserPlugin(language);
+  const parserPlugins = await loadParserPlugins(language);
 
-  if (parser && parserPlugin) {
+  if (parser && parserPlugins) {
     return format(code, {
       ...(options || {}),
       parser,
-      plugins: [parserPlugin],
+      plugins: parserPlugins,
       ...(language === "json" && {
         trailingComma: "none",
         singleQuote: false

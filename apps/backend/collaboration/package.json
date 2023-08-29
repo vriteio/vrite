@@ -9,9 +9,9 @@
     "start": "node ./dist/index.js"
   },
   "dependencies": {
-    "@hocuspocus/extension-database": "^2.3.1",
-    "@hocuspocus/extension-redis": "^2.3.1",
-    "@hocuspocus/server": "^2.3.1",
+    "@hocuspocus/extension-database": "^2.4.0",
+    "@hocuspocus/extension-redis": "^2.4.0",
+    "@hocuspocus/server": "^2.4.0",
     "@vrite/backend": "workspace:*",
     "@vrite/sdk": "workspace:*",
     "mongodb": "^5.7.0",
