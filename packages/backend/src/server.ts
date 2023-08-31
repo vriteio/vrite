@@ -48,8 +48,12 @@ const createServer = async (envSchemaExtension?: ZodRawShape): Promise<FastifyIn
     .register(oAuth2Plugin);
   // Email
   await server.register(mailPlugin);
-  // GitHub sync
-  await server.register(githubPlugin);
+
+  if (server.config.GITHUB_APP_ID !== undefined) {
+    // GitHub sync
+    await server.register(githubPlugin);
+  }
+
   await server.register(searchPlugin);
 
   return server;
