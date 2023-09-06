@@ -65,7 +65,7 @@ const SettingsView: Component = () => {
       section: "workspace"
     },
     {
-      label: "Editing experience",
+      label: "Editor",
       icon: mdiPencil,
       resize: true,
       section: "editor"
