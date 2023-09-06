@@ -10,8 +10,7 @@ const user = z.object({
     .object({
       github: z
         .object({
-          id: z.string(),
-          accessToken: z.string()
+          id: z.string()
         })
         .optional()
     })

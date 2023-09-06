@@ -2,9 +2,22 @@ import { appRouter, publicPlugin, trpcPlugin } from "@vrite/backend";
 import staticPlugin from "@fastify/static";
 import websocketPlugin from "@fastify/websocket";
 import axios from "axios";
+import fastifyViewPlugin from "@fastify/view";
+import handlebars from "handlebars";
+import { FastifyReply } from "fastify";
 import path from "path";
 
 const appService = publicPlugin(async (fastify) => {
+  const renderPage = async (reply: FastifyReply): Promise<void> => {
+    return reply.view("index.html", {
+      PUBLIC_APP_HOST: fastify.config.PUBLIC_APP_HOST,
+      PUBLIC_API_HOST: fastify.config.PUBLIC_API_HOST,
+      PUBLIC_COLLAB_HOST: fastify.config.PUBLIC_COLLAB_HOST,
+      PUBLIC_ASSETS_HOST: fastify.config.PUBLIC_ASSETS_HOST,
+      PUBLIC_APP_TYPE: fastify.config.PUBLIC_APP_TYPE
+    });
+  };
+
   await fastify.register(staticPlugin, {
     root: path.join(__dirname, "public"),
     prefix: "/"
@@ -12,9 +25,19 @@ const appService = publicPlugin(async (fastify) => {
   await fastify.register(websocketPlugin, {
     options: { maxPayload: 1048576 }
   });
+  fastify.register(fastifyViewPlugin, {
+    root: path.join(__dirname, "public"),
+    engine: {
+      handlebars
+    },
+    viewExt: "html"
+  });
   await fastify.register(trpcPlugin);
+  fastify.get("/", async (_request, reply) => {
+    return renderPage(reply);
+  });
   fastify.setNotFoundHandler(async (_request, reply) => {
-    return reply.sendFile("index.html");
+    return renderPage(reply);
   });
   fastify.get<{ Querystring: { url: string } }>("/proxy*", async (request, reply) => {
     reply.header("Access-Control-Allow-Origin", "*");

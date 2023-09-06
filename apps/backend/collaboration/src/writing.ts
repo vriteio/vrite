@@ -82,6 +82,8 @@ const writingPlugin = publicPlugin(async (fastify) => {
       variantId?: string;
     }
   ): Promise<void> => {
+    if (!fastify.hostConfig.search) return;
+
     const contentPiece = await contentPiecesCollection.findOne({
       _id: new ObjectId(contentPieceId),
       workspaceId: new ObjectId(details.workspaceId)

@@ -147,13 +147,13 @@ const authRouter = router({
       const user = await users.findOne({ email: input.email });
 
       if (!user || !user.hash) {
-        throw errors.notFound("user");
+        throw errors.unauthorized("invalidCredentials");
       }
 
       const correctPassword = await verifyValue(input.password, user.salt, user.hash);
 
       if (!correctPassword) {
-        throw errors.unauthorized("passwordInvalid");
+        throw errors.unauthorized("invalidCredentials");
       }
 
       if (user.emailVerificationCode) {

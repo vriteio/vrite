@@ -5,5 +5,6 @@ export * from "./pub-sub";
 export * from "./s3";
 export * from "./session";
 export * from "./trpc";
-export * from "./github";
+export * from "./git-sync";
 export * from "./search";
+export * from "./host-config";

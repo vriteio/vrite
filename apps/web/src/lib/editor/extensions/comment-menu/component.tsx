@@ -1,190 +1,123 @@
-import { CommentCard } from "./comment-card";
-import { mdiCheckCircleOutline, mdiSendOutline } from "@mdi/js";
+import { CommentThread } from "./comment-fragment";
+import { CommentDataProvider } from "./comment-data";
 import { SolidEditor } from "@vrite/tiptap-solid";
 import clsx from "clsx";
 import dayjs from "dayjs";
-import { Component, For, Show, createResource, createSignal } from "solid-js";
+import { Component, For, createEffect, createSignal, on, onCleanup } from "solid-js";
 import RelativeTimePlugin from "dayjs/plugin/relativeTime";
-import { createRef } from "#lib/utils";
-import { useAuthenticatedUserData, useClient, useLocalStorage, useSharedState } from "#context";
-import { Card, Heading, IconButton, Loader, Tooltip } from "#components/primitives";
-import { MiniEditor, ScrollShadow } from "#components/fragments";
+import { createStore } from "solid-js/store";
+import { useLocalStorage, useSharedState } from "#context";
 
 interface BlockActionMenuProps {
   state: {
     editor: SolidEditor;
+    contentOverlap: boolean;
+    fragment: string;
+    setFragment(fragment: string): void;
+    updatePosition(): void;
   };
+}
+interface CommentFragmentData {
+  id: string;
+  top: number;
+  computedTop: number;
+  overlap: number;
+  pos: number;
 }
 
 dayjs.extend(RelativeTimePlugin);
 
 const CommentMenu: Component<BlockActionMenuProps> = (props) => {
   const createSharedSignal = useSharedState();
+  const { storage } = useLocalStorage();
   const [editedContentPiece] = createSharedSignal("editedContentPiece");
-  const { membership } = useAuthenticatedUserData();
-  const client = useClient();
-  const [clearCommentEditorRef, setClearCommentEditorRef] = createRef<() => void>(() => {});
-  const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLDivElement | null>(
-    null
-  );
   const [selectedThreadFragment, setSelectedThreadFragment] = createSignal<string | null>(null);
-  const [currentContent, setCurrentContent] = createSignal("");
-  const [sending, setSending] = createSignal(false);
-  const [resolving, setResolving] = createSignal(false);
-  const [thread, { mutate: setThread }] = createResource(
-    selectedThreadFragment,
-    () => {
-      const threadFragment = selectedThreadFragment();
-
-      if (!threadFragment) return null;
-
-      return client.comments.getThread.query({
-        fragment: threadFragment
-      });
-    },
-    { initialValue: null }
-  );
-  const [comments, { mutate: setComments }] = createResource(
-    selectedThreadFragment,
-    () => {
-      const threadFragment = selectedThreadFragment();
-
-      if (!threadFragment) return [];
-
-      return client.comments.listComments.query({
-        fragment: threadFragment
-      });
-    },
-    { initialValue: [] }
-  );
+  const [store, setStore] = createStore<{
+    fragments: CommentFragmentData[];
+  }>({ fragments: [] });
   const handleStateUpdate = (): void => {
     if (props.state.editor.isActive("comment")) {
       setSelectedThreadFragment(props.state.editor.getAttributes("comment").thread);
     } else {
       setSelectedThreadFragment(null);
     }
+
+    const container = document.getElementById("pm-container");
+    const parentPos = container?.getBoundingClientRect();
+
+    props.state.editor.state.doc.descendants((node, pos) => {
+      const commentMark = node.marks.find((mark) => mark.type.name === "comment");
+      const existingFragments = store.fragments.map((fragment) => fragment.id);
+
+      if (node.type.name === "text" && commentMark) {
+        const fragmentId = commentMark.attrs.thread;
+        const existingFragmentIndex = existingFragments.indexOf(fragmentId);
+        const coords = props.state.editor.view.coordsAtPos(pos);
+        const previousFragment =
+          existingFragmentIndex > 0 ? store.fragments[existingFragmentIndex - 1] : null;
+        const top = coords.top - (parentPos?.top || 0);
+        const fragment = {
+          top,
+          computedTop: previousFragment ? Math.max(previousFragment.computedTop + 104, top) : top,
+          id: fragmentId,
+          overlap: 0,
+          pos: pos + node.nodeSize
+        };
+
+        if (existingFragmentIndex >= 0) {
+          setStore("fragments", existingFragmentIndex, fragment);
+        } else {
+          setStore("fragments", store.fragments.length, fragment);
+        }
+
+        return false;
+      }
+
+      return true;
+    });
   };
 
+  createEffect(
+    on(
+      () => storage().sidePanelWidth,
+      () => {
+        props.state.updatePosition();
+      }
+    )
+  );
   props.state.editor.on("selectionUpdate", handleStateUpdate);
   props.state.editor.on("update", handleStateUpdate);
-  client.comments.changes.subscribe(
-    { contentPieceId: editedContentPiece()!.id },
-    {
-      onData({ action, data }) {
-        if (action === "createComment" && data.threadId === thread()?.id) {
-          setComments((comments) => [...comments, data]);
-        } else if (action === "resolveThread" && data.id === thread()?.id) {
-          setThread((thread) => {
-            if (!thread) return null;
-
-            return {
-              ...thread,
-              resolved: true
-            };
-          });
-        }
-      }
-    }
-  );
+  onCleanup(() => {
+    props.state.editor.off("selectionUpdate", handleStateUpdate);
+    props.state.editor.off("update", handleStateUpdate);
+  });
 
   return (
-    <div
-      class={clsx(
-        "hidden md:block not-prose text-base w-96 m-0 transform transition-all max-h-[60vh] overflow-hidden backdrop-blur-lg bg-gray-100 dark:bg-gray-800 dark:bg-opacity-50 bg-opacity-50 rounded-l-2xl",
-        props.state.editor.isEditable && selectedThreadFragment() && "z-10 -translate-x-0",
-        !props.state.editor.isEditable || (!selectedThreadFragment() && "!hidden")
-      )}
-    >
-      <ScrollShadow scrollableContainerRef={scrollableContainerRef} color="contrast" />
+    <CommentDataProvider contentPieceId={editedContentPiece()?.id || ""}>
       <div
-        class="overflow-y-auto h-full scrollbar-sm-contrast max-h-[60vh] flex flex-col gap-2 p-2"
-        ref={setScrollableContainerRef}
+        class={clsx(
+          "hidden md:block not-prose text-base w-80 m-0 transform max-h-[60vh] backdrop-blur-lg bg-gray-100 dark:bg-gray-800 dark:bg-opacity-50 bg-opacity-50 rounded-l-2xl",
+          props.state.contentOverlap &&
+            props.state.fragment !== selectedThreadFragment() &&
+            "!hidden",
+          selectedThreadFragment() && "z-10 -translate-x-0"
+        )}
       >
-        <div class="flex justify-center items-center px-1">
-          <Heading level={2}>Comments</Heading>
-          <div class="flex-1" />
-          <IconButton
-            class="m-0"
-            path={mdiCheckCircleOutline}
-            label={thread()?.resolved ? "Resolved" : "Resolve"}
-            badge={thread()?.resolved}
-            hover={!thread()?.resolved}
-            variant="text"
-            color={thread()?.resolved ? "primary" : "base"}
-            text={thread()?.resolved ? "base" : "soft"}
-            onClick={async () => {
-              setResolving(true);
-
-              const threadFragment = selectedThreadFragment();
-
-              if (!threadFragment) return;
-
-              await client.comments.resolveThread.mutate({
-                fragment: threadFragment
-              });
-              setCurrentContent("");
-              clearCommentEditorRef()();
-              props.state.editor.chain().extendMarkRange("comment").focus().unsetComment().run();
-              setResolving(false);
-            }}
-          />
-        </div>
-        <Show
-          when={!comments.loading}
-          fallback={
-            <Card class="flex justify-center items-center h-24 m-0">
-              <Loader />
-            </Card>
-          }
-        >
-          <For each={comments()}>
-            {(comment) => {
-              return <CommentCard comment={comment} />;
-            }}
-          </For>
-          <div class={clsx("relative", thread()?.resolved && "hidden")}>
-            <MiniEditor
-              class="flex-1 min-h-24 border-gray-200 bg-gray-50 dark:bg-gray-900 dark:border-gray-700 px-3 pt-2 pb-12 border-2 rounded-2xl"
-              placeholder="Write here..."
-              initialValue=""
-              inline
-              onUpdate={(editor) => {
-                setCurrentContent(editor.getHTML());
-                setClearCommentEditorRef(() => editor.commands.clearContent());
-              }}
-            />
-            <Tooltip text="Send" fixed class="mt-1" wrapperClass="bottom-3 right-3 absolute">
-              <IconButton
-                class="m-0"
-                color="primary"
-                variant="text"
-                path={mdiSendOutline}
-                loading={sending()}
-                disabled={!currentContent() || currentContent() === "<p></p>"}
-                onClick={async () => {
-                  setSending(true);
-
-                  const threadFragment = selectedThreadFragment();
-                  const memberId = membership()?.id;
-
-                  if (!threadFragment || !memberId) return;
-
-                  await client.comments.createComment.mutate({
-                    content: currentContent(),
-                    fragment: threadFragment,
-                    memberId
-                  });
-                  setCurrentContent("");
-                  clearCommentEditorRef()();
-                  setSending(false);
-                }}
-                text="base"
+        <For each={store.fragments}>
+          {(fragment) => {
+            return (
+              <CommentThread
+                fragment={fragment}
+                selectedFragmentId={selectedThreadFragment()}
+                contentPieceId={editedContentPiece()?.id || ""}
+                editor={props.state.editor}
+                setFragment={props.state.setFragment}
               />
-            </Tooltip>
-          </div>
-        </Show>
+            );
+          }}
+        </For>
       </div>
-    </div>
+    </CommentDataProvider>
   );
 };
 

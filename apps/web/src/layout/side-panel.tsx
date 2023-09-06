@@ -1,8 +1,8 @@
 import { debounce } from "@solid-primitives/scheduled";
 import clsx from "clsx";
-import { createSignal, createMemo, onCleanup, Component } from "solid-js";
+import { createSignal, createMemo, onCleanup, Component, Show } from "solid-js";
 import { Dynamic } from "solid-js/web";
-import { useLocalStorage } from "#context";
+import { useHostConfig, useLocalStorage } from "#context";
 import { createRef } from "#lib/utils";
 import { ContentPieceView } from "#views/content-piece";
 import { SettingsView } from "#views/settings";
@@ -12,9 +12,25 @@ import { GitView } from "#views/git";
 
 const sidePanelViews: Record<string, Component<Record<string, any>>> = {
   contentPiece: ContentPieceView,
-  git: GitView,
+  git: () => {
+    const hostConfig = useHostConfig();
+
+    return (
+      <Show when={hostConfig.githubApp}>
+        <GitView />
+      </Show>
+    );
+  },
   settings: SettingsView,
-  extensions: ExtensionsView,
+  extensions: () => {
+    const hostConfig = useHostConfig();
+
+    return (
+      <Show when={hostConfig.extensions}>
+        <ExtensionsView />
+      </Show>
+    );
+  },
   default: GettingStartedView
 };
 const SidePanel: Component = () => {

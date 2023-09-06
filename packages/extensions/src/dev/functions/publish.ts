@@ -16,9 +16,11 @@ const publish = async (context: ExtensionContentPieceViewContext): Promise<void>
       })
     });
     const data = await response.json();
+
     if (!response.ok || !data.devId) {
       throw new Error("Couldn't publish to Dev.to");
     }
+
     if (context.data.devId) {
       context.notify({ text: "Updated on Dev.to", type: "success" });
     } else {

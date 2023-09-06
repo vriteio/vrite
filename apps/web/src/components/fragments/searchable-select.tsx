@@ -1,5 +1,14 @@
 import { mdiChevronDown } from "@mdi/js";
-import { For, JSX, Show, createEffect, createMemo, createSignal, on } from "solid-js";
+import {
+  ComponentProps,
+  For,
+  JSX,
+  Show,
+  createEffect,
+  createMemo,
+  createSignal,
+  on
+} from "solid-js";
 import clsx from "clsx";
 import { scrollIntoView } from "seamless-scroll-polyfill";
 import { Dropdown, Button, Icon, Input, Loader } from "#components/primitives";
@@ -10,6 +19,7 @@ interface SearchableSelectProps<O extends object> {
   selected: O | null;
   placeholder?: string;
   loading?: boolean;
+  buttonProps?: ComponentProps<typeof Button>;
   extractId(option: O): string;
   renderOption(option: O): JSX.Element;
   filterOption(option: O, query: string): boolean;
@@ -51,7 +61,7 @@ const SearchableSelect = <O extends object>(props: SearchableSelectProps<O>): JS
         const optionElement = optionsContainer.querySelector(`[data-option-id="${optionId}"]`);
 
         if (optionElement) {
-          optionElement.scrollIntoView({
+          scrollIntoView(optionElement, {
             behavior: smooth ? "smooth" : "instant",
             block: "nearest"
           });
@@ -121,8 +131,12 @@ const SearchableSelect = <O extends object>(props: SearchableSelectProps<O>): JS
         return (
           <Button
             text="soft"
-            class="flex m-0 px-1 w-full justify-center items-center"
             color="contrast"
+            {...props.buttonProps}
+            class={clsx(
+              "flex m-0 px-1 w-full justify-center items-center",
+              props.buttonProps?.class
+            )}
           >
             <Show
               when={selectedOption()}

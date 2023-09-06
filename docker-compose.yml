@@ -1,0 +1,30 @@
+version: "3.2"
+services:
+  app:
+    image: vrite/app:latest
+    env_file: ./.env
+    environment:
+      - PORT=3333
+    ports:
+      - "3333:3333"
+  api:
+    image: vrite/api:latest
+    env_file: ./.env
+    environment:
+      - PORT=4444
+    ports:
+      - "4444:4444"
+  assets:
+    image: vrite/assets:latest
+    env_file: ./.env
+    environment:
+      - PORT=8888
+    ports:
+      - "8888:8888"
+  collab:
+    image: vrite/collaboration:latest
+    env_file: ./.env
+    environment:
+      - PORT=5555
+    ports:
+      - "5555:5555"

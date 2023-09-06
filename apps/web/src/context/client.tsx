@@ -61,7 +61,11 @@ const refreshTokenLink = (closeConnection: () => void): TRPCLink<App.Router> => 
                 return;
               }
 
-              attempt();
+              if (error.data?.code === "UNAUTHORIZED") {
+                attempt();
+              } else {
+                observer.error(error);
+              }
             },
             next(result) {
               observer.next(result);
@@ -91,7 +95,7 @@ const ClientContext = createContext<Client>();
 const ClientProvider: ParentComponent = (props) => {
   const wsClient = createWSClient({
     url: `ws${window.location.protocol.includes("https") ? "s" : ""}://${
-      import.meta.env.PUBLIC_APP_HOST
+      window.env.PUBLIC_APP_HOST
     }/api/v1`
   });
   const client = createTRPCProxyClient<App.Router>({

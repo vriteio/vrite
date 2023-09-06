@@ -1,7 +1,7 @@
 import { DetailsSection, CustomDataSection, ExtensionsSection, VariantsSection } from "./sections";
 import { mdiMenu } from "@mdi/js";
 import { Component, createSignal, For, Switch, Match } from "solid-js";
-import { App } from "#context";
+import { App, useHostConfig } from "#context";
 import { Dropdown, IconButton, Heading } from "#components/primitives";
 
 interface ContentPieceMetadataSection {
@@ -24,6 +24,7 @@ interface ContentPieceMetadataProps {
 }
 
 const ContentPieceMetadata: Component<ContentPieceMetadataProps> = (props) => {
+  const hostConfig = useHostConfig();
   const [menuOpened, setMenuOpened] = createSignal(false);
 
   return (
@@ -104,7 +105,7 @@ const ContentPieceMetadata: Component<ContentPieceMetadataProps> = (props) => {
             }}
           />
         </Match>
-        <Match when={props.activeSection.id === "extensions"}>
+        <Match when={props.activeSection.id === "extensions" && hostConfig.extensions}>
           <ExtensionsSection
             contentPiece={props.contentPiece}
             setCustomData={(customData) => {

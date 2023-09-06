@@ -1,4 +1,4 @@
-import { CodeBlock, Embed, Image } from "./extensions";
+import { CodeBlock, Embed, Image, Wrapper } from "./extensions";
 import { SlashMenuItem } from "./extensions/slash-menu/component";
 import { Editor, Node as NodeExtension, Mark as MarkExtension } from "@tiptap/core";
 import { DOMOutputSpec, DOMSerializer, Mark, Node } from "@tiptap/pm/model";
@@ -42,7 +42,8 @@ import {
   mdiMinus,
   mdiCodepen,
   mdiYoutube,
-  mdiTable
+  mdiTable,
+  mdiCubeOutline
 } from "@mdi/js";
 import { createRef } from "#lib/utils";
 import { App } from "#context";
@@ -166,6 +167,7 @@ const createExtensions = (
     Heading.configure({
       enabledLevels: getHeadingLevels(settings)
     }),
+    Wrapper,
     ...getItemNodes()
   ];
 };
@@ -283,6 +285,16 @@ const createBlockMenuOptions = (settings?: App.WorkspaceSettings): SlashMenuItem
       }
     },
     {
+      label: "Wrapper",
+      group: "Blocks",
+      block: "wrapper",
+      icon: mdiCubeOutline,
+      ref: createRef<HTMLElement | null>(null),
+      command({ editor, range }) {
+        return editor.chain().focus().deleteRange(range).setWrapper().run();
+      }
+    },
+    {
       label: "CodePen",
       icon: mdiCodepen,
       group: "Embeds",
@@ -322,7 +334,11 @@ const createBlockMenuOptions = (settings?: App.WorkspaceSettings): SlashMenuItem
   return blockMenuOptions.filter(({ embed, block }) => {
     if (!settings) return true;
 
-    return (block && settings.blocks.includes(block)) || (embed && settings.embeds.includes(embed));
+    return (
+      (block && block === "wrapper") ||
+      (block && settings.blocks.includes(block)) ||
+      (embed && settings.embeds.includes(embed))
+    );
   }) as SlashMenuItem[];
 };
 

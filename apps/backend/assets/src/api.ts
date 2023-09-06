@@ -24,32 +24,6 @@ const assetsService = publicPlugin(async (fastify) => {
     timeWindow: "1 minute",
     redis: fastify.redis
   });
-  await fastify.register(corsPlugin, {
-    credentials: true,
-    methods: ["GET", "DELETE", "PUT", "POST"],
-    origin(origin, callback) {
-      if (!origin || origin === "null") {
-        callback(null, true);
-
-        return;
-      }
-
-      const { hostname } = new URL(origin);
-
-      if (
-        hostname === "localhost" ||
-        hostname.endsWith("vrite.io") ||
-        hostname.endsWith("swagger.io")
-      ) {
-        //  Request from localhost will pass
-        callback(null, true);
-
-        return;
-      }
-
-      callback(new Error("Not allowed"), false);
-    }
-  });
   fastify.get<{
     Params: {
       workspaceId: string;

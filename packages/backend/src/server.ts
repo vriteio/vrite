@@ -1,4 +1,4 @@
-import { oAuth2Plugin } from "./plugins/oauth";
+import { OAuthPlugin } from "./plugins/oauth";
 import { s3Plugin } from "./plugins/s3";
 import { mailPlugin } from "./plugins/email";
 import { sessionPlugin } from "./plugins/session";
@@ -13,20 +13,21 @@ import jwtPlugin from "@fastify/jwt";
 import cookiePlugin from "@fastify/cookie";
 import zodToJsonSchema from "zod-to-json-schema";
 import { ZodRawShape } from "zod";
-import { githubPlugin, searchPlugin } from "#plugins";
+import { gitSyncPlugin, hostConfigPlugin, searchPlugin } from "#plugins";
 
 const createServer = async (envSchemaExtension?: ZodRawShape): Promise<FastifyInstance> => {
   const server = createFastify({
     maxParamLength: 5000,
-    logger: false,
-    exposeHeadRoutes: false
+    logger: false
   });
 
   // Env
-  await server.register(envPlugin, {
-    dotenv: true,
-    schema: zodToJsonSchema(envSchema.extend(envSchemaExtension || {}))
-  });
+  await server
+    .register(envPlugin, {
+      dotenv: true,
+      schema: zodToJsonSchema(envSchema.extend(envSchemaExtension || {}))
+    })
+    .register(hostConfigPlugin);
   // Data
   await server
     .register(mongoPlugin, {
@@ -45,11 +46,11 @@ const createServer = async (envSchemaExtension?: ZodRawShape): Promise<FastifyIn
       cookie: { cookieName: "accessToken", signed: true }
     })
     .register(sessionPlugin)
-    .register(oAuth2Plugin);
+    .register(OAuthPlugin);
   // Email
   await server.register(mailPlugin);
   // GitHub sync
-  await server.register(githubPlugin);
+  await server.register(gitSyncPlugin);
   await server.register(searchPlugin);
 
   return server;

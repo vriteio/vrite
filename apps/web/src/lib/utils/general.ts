@@ -10,7 +10,7 @@ const escapeHTML = (input: string): string => {
     .replace(/'/g, "&#039;");
 };
 const isEditorApp = (): boolean => {
-  return import.meta.env.PUBLIC_APP === "editor";
+  return window.env.PUBLIC_APP_TYPE === "editor";
 };
 const isAppleDevice = (): boolean => {
   const platform = typeof navigator === "object" ? navigator.platform : "";

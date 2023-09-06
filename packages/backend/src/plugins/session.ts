@@ -20,7 +20,7 @@ const sessionPlugin = publicPlugin(async (fastify) => {
       return;
     }
   });
-  fastify.get("/session/logout", async (req, res) => {
+  fastify.post("/session/logout", async (req, res) => {
     const caller = appRouter.createCaller({ db: fastify.mongo.db!, fastify, req, res });
 
     try {

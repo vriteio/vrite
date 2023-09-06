@@ -1,6 +1,6 @@
 const errorMessages: Record<string, string> = {
   invalidEmail: "Incorrect email address",
-  passwordInvalid: "Invalid password",
+  invalidCredentials: "Invalid credentials",
   emailNotVerified: "Email not verified",
   totpTokenInvalid: "Invalid 2FA code",
   resourceNotFound: "User not found",

@@ -1,5 +1,5 @@
-import { App, Octokit, createNodeMiddleware } from "octokit";
-import MiddiePlugin from "@fastify/middie";
+import { App } from "octokit";
+import { FastifyInstance } from "fastify";
 import { publicPlugin } from "#lib/plugin";
 
 declare module "fastify" {
@@ -8,14 +8,16 @@ declare module "fastify" {
   }
 }
 
-const githubPlugin = publicPlugin(async (fastify) => {
+const registerGitHubApp = (fastify: FastifyInstance): void => {
   const app = new App({
-    appId: fastify.config.GITHUB_APP_ID,
-    privateKey: fastify.config.GITHUB_APP_PRIVATE_KEY,
-    webhooks: { secret: fastify.config.GITHUB_APP_WEBHOOK_SECRET },
+    appId: fastify.config.GITHUB_APP_ID || "",
+    privateKey: fastify.config.GITHUB_APP_PRIVATE_KEY || "",
+    webhooks: {
+      secret: " "
+    },
     oauth: {
-      clientId: fastify.config.GITHUB_APP_CLIENT_ID,
-      clientSecret: fastify.config.GITHUB_APP_CLIENT_SECRET
+      clientId: fastify.config.GITHUB_APP_CLIENT_ID || "",
+      clientSecret: fastify.config.GITHUB_APP_CLIENT_SECRET || ""
     }
   });
 
@@ -38,8 +40,11 @@ const githubPlugin = publicPlugin(async (fastify) => {
 
     res.redirect(`/?token=${authentication.token}`);
   });
-  await fastify.register(MiddiePlugin);
-  fastify.use(createNodeMiddleware(app));
+};
+const gitSyncPlugin = publicPlugin(async (fastify) => {
+  if (fastify.hostConfig.githubApp) {
+    registerGitHubApp(fastify);
+  }
 });
 
-export { githubPlugin };
+export { gitSyncPlugin };

@@ -30,7 +30,7 @@ const DashboardView: Component = () => {
     new HocuspocusProvider({
       token: "vrite",
       url: `ws${window.location.protocol.includes("https") ? "s" : ""}://${
-        import.meta.env.PUBLIC_COLLAB_HOST
+        window.env.PUBLIC_COLLAB_HOST
       }`,
       onDisconnect: handleReload,
       onAuthenticationFailed: handleReload,
@@ -45,7 +45,7 @@ const DashboardView: Component = () => {
     }));
   };
 
-  provider()?.awareness.setLocalStateField("user", {
+  provider()?.awareness?.setLocalStateField("user", {
     name: profile()?.username || "",
     avatar: profile()?.avatar || "",
     id: profile()?.id || "",
@@ -59,7 +59,7 @@ const DashboardView: Component = () => {
   createEffect(
     on(storage, (storage, previousContentPieceId) => {
       if (storage.contentPieceId !== previousContentPieceId) {
-        provider()?.awareness.setLocalStateField("contentPieceId", storage.contentPieceId);
+        provider()?.awareness?.setLocalStateField("contentPieceId", storage.contentPieceId);
       }
 
       return storage.contentPieceId;

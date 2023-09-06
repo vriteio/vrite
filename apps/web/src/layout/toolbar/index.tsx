@@ -3,6 +3,7 @@ import { Breadcrumb } from "./breadcrumb";
 import {
   mdiAppleKeyboardCommand,
   mdiBookOpenBlankVariant,
+  mdiConsoleLine,
   mdiFileOutline,
   mdiFullscreen,
   mdiGithub,
@@ -19,6 +20,7 @@ import {
   App,
   useClient,
   useCommandPalette,
+  useHostConfig,
   useLocalStorage,
   useNotifications,
   useSharedState
@@ -300,6 +302,7 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
     );
   },
   default: () => {
+    const hostConfig = useHostConfig();
     const createSharedSignal = useSharedState();
     const { storage, setStorage } = useLocalStorage();
     const { setOpened, registerCommand } = useCommandPalette();
@@ -393,10 +396,10 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
           <UserList provider={provider()!} />
         </Show>
         <IconButton
-          path={mdiMagnify}
+          path={hostConfig.search ? mdiMagnify : mdiConsoleLine}
           label={
             <div class="hidden @xl:flex w-full items-center">
-              <span class="pl-1 flex-1 text-start">Search</span>
+              <span class="pl-1 flex-1 text-start">{hostConfig.search ? "Search" : "Command"}</span>
               <kbd class="bg-gray-300 dark:bg-gray-700 group-hover:bg-gray-200 dark:group-hover:bg-gray-800 flex justify-center items-center rounded-md px-1 h-5 text-sm">
                 {isAppleDevice() ? (
                   <Icon path={mdiAppleKeyboardCommand} class="h-3 w-3" />

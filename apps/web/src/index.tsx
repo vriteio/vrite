@@ -11,7 +11,8 @@ import {
   ConfirmationModalProvider,
   NotificationsProvider,
   LocalStorageProvider,
-  SharedStateProvider
+  SharedStateProvider,
+  HostConfigProvider
 } from "#context";
 
 const container = document.querySelector("#root");
@@ -24,13 +25,16 @@ if (container) {
       <Router>
         <SharedStateProvider>
           <ClientProvider>
-            <ConfirmationModalProvider>
-              <NotificationsProvider>
-                <LocalStorageProvider>
-                  <Show
-                    when={isOnline()}
-                    fallback={
-                      <div class="flex flex-col items-center justify-center w-full h-full">
+            <HostConfigProvider>
+              <ConfirmationModalProvider>
+                <NotificationsProvider>
+                  <LocalStorageProvider>
+                    <div class="relative h-[100dvh] flex flex-col-reverse md:flex-row">
+                      <SVGDefs />
+                      <App />
+                    </div>
+                    <Show when={!isOnline()}>
+                      <div class="flex flex-col items-center justify-center w-full h-full fixed bg-gray-100 z-70">
                         <div class="flex flex-col items-center justify-center">
                           <IconButton
                             path={logoIcon}
@@ -48,16 +52,11 @@ if (container) {
                           </div>
                         </div>
                       </div>
-                    }
-                  >
-                    <div class="relative h-[100dvh] flex flex-col-reverse md:flex-row">
-                      <SVGDefs />
-                      <App />
-                    </div>
-                  </Show>
-                </LocalStorageProvider>
-              </NotificationsProvider>
-            </ConfirmationModalProvider>
+                    </Show>
+                  </LocalStorageProvider>
+                </NotificationsProvider>
+              </ConfirmationModalProvider>
+            </HostConfigProvider>
           </ClientProvider>
         </SharedStateProvider>
       </Router>

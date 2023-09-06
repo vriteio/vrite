@@ -80,7 +80,7 @@ const Editor: Component<EditorProps> = (props) => {
       props.reload?.();
     }
   };
-  const scrollToHeading = () => {
+  const scrollToHeading = (): void => {
     const headingText = location.state?.breadcrumb?.at(-1) || "";
 
     if (headingText) {
@@ -95,7 +95,7 @@ const Editor: Component<EditorProps> = (props) => {
   const provider = new HocuspocusProvider({
     token: "vrite",
     url: `ws${window.location.protocol.includes("https") ? "s" : ""}://${
-      import.meta.env.PUBLIC_COLLAB_HOST
+      window.env.PUBLIC_COLLAB_HOST
     }`,
     async onSynced() {
       props.onLoad?.();
@@ -211,7 +211,8 @@ const Editor: Component<EditorProps> = (props) => {
     const { state, view } = editor;
     const { selection } = state;
     const { $anchor, empty } = selection;
-    const isRootDepth = $anchor.depth === 1;
+    const isRootDepth =
+      $anchor.depth === 1 || ($anchor.depth === 2 && $anchor.node(1).type.name === "wrapper");
     const isEmptyTextBlock =
       $anchor.parent.isTextblock &&
       !$anchor.parent.type.spec.code &&

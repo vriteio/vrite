@@ -10,11 +10,15 @@
   },
   "dependencies": {
     "@fastify/static": "^6.10.2",
+    "@fastify/view": "^8.0.0",
     "@fastify/websocket": "^8.2.0",
     "@vrite/backend": "workspace:*",
-    "axios": "^1.4.0"
+    "axios": "^1.4.0",
+    "fastify": "^4.20.0",
+    "handlebars": "^4.7.8"
   },
   "devDependencies": {
-    "@vrite/scripts": "workspace:*"
+    "@vrite/scripts": "workspace:*",
+    "@vrite/web": "workspace:*"
   }
 }

@@ -1,6 +1,6 @@
 import { ExtensionGeneralContext } from "@vrite/extensions";
 
-const uninstall = async (context: ExtensionGeneralContext) => {
+const uninstall = async (context: ExtensionGeneralContext): Promise<void> => {
   const webhooks = await context.client.webhooks.list({ extensionOnly: true });
 
   if (webhooks.length > 0) {

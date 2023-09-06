@@ -1,4 +1,3 @@
-import { SearchableSelect } from "./searchable-select";
 import {
   mdiFileTree,
   mdiGithub,
@@ -10,7 +9,7 @@ import { Component, Match, Show, Switch, createMemo, createResource, createSigna
 import { Octokit, RestEndpointMethodTypes } from "@octokit/rest";
 import { Button, Heading, IconButton, Input, Tooltip } from "#components/primitives";
 import { App, hasPermission, useClient, useConfirmationModal } from "#context";
-import { InputField, TitledCard } from "#components/fragments";
+import { InputField, TitledCard, SearchableSelect } from "#components/fragments";
 
 interface GitHubConfigurationViewProps {
   gitData: App.GitData | null;

@@ -17,7 +17,7 @@ import { LexoRank } from "lexorank";
 import { Binary } from "mongodb";
 import { minimatch } from "minimatch";
 import crypto from "node:crypto";
-import { AuthenticatedContext, isAuthenticated } from "#lib/middleware";
+import { AuthenticatedContext, isAuthenticated, isEnabled } from "#lib/middleware";
 import { procedure, router } from "#lib/trpc";
 import * as errors from "#lib/errors";
 import {
@@ -40,7 +40,7 @@ import { ObjectId, UnderscoreID, zodId } from "#lib";
 import { publishContentGroupEvent } from "#routes/content-groups";
 import { publishWorkspaceSettingsEvent } from "#routes/workspace-settings";
 
-const authenticatedProcedure = procedure.use(isAuthenticated);
+const authenticatedProcedure = procedure.use(isAuthenticated).use(isEnabled);
 const enableFilenameMetadata = async (ctx: AuthenticatedContext): Promise<void> => {
   const workspaceSettingsCollection = getWorkspaceSettingsCollection(ctx.db);
   const workspaceSettings = await workspaceSettingsCollection.findOne({
@@ -79,7 +79,8 @@ const enableFilenameMetadata = async (ctx: AuthenticatedContext): Promise<void> 
 const githubRouter = router({
   configure: authenticatedProcedure
     .meta({
-      permissions: { session: ["manageGit"] }
+      permissions: { session: ["manageGit"] },
+      requiredConfig: ["githubApp"]
     })
     .input(githubData)
     .output(z.void())
@@ -109,7 +110,8 @@ const githubRouter = router({
     }),
   initialSync: authenticatedProcedure
     .meta({
-      permissions: { session: ["manageGit"] }
+      permissions: { session: ["manageGit"] },
+      requiredConfig: ["githubApp"]
     })
     .input(z.void())
     .output(z.void())
@@ -279,7 +281,8 @@ const githubRouter = router({
     }),
   pull: authenticatedProcedure
     .meta({
-      permissions: { session: ["manageGit"] }
+      permissions: { session: ["manageGit"] },
+      requiredConfig: ["githubApp"]
     })
     .input(
       z.object({
@@ -454,7 +457,8 @@ const githubRouter = router({
     }),
   commit: authenticatedProcedure
     .meta({
-      permissions: { session: ["manageGit"] }
+      permissions: { session: ["manageGit"] },
+      requiredConfig: ["githubApp"]
     })
     .input(
       z.object({
@@ -572,6 +576,9 @@ const githubRouter = router({
       return { status: "committed" };
     }),
   getConflictedContent: authenticatedProcedure
+    .meta({
+      requiredConfig: ["githubApp"]
+    })
     .input(
       z.object({
         contentPieceId: zodId()
@@ -614,7 +621,8 @@ const githubRouter = router({
     }),
   resolveConflict: authenticatedProcedure
     .meta({
-      permissions: { session: ["manageGit"] }
+      permissions: { session: ["manageGit"] },
+      requiredConfig: ["githubApp"]
     })
     .input(
       z.object({

@@ -1,6 +1,6 @@
 import { usersRouter } from "./users";
 import { contentPiecesRouter } from "./content-pieces";
-import { utilsRouter, PreviewData } from "./utils";
+import { utilsRouter, PreviewData, HostConfig } from "./utils";
 import { tagsRouter } from "./tags";
 import { tokensRouter } from "./tokens";
 import { userSettingsRouter } from "./user-settings";
@@ -52,4 +52,4 @@ type ClientError = TRPCClientError<Router> & {
 
 export { appRouter, createContext };
 export type * from "#database";
-export type { ClientError, Router, PreviewData, Context };
+export type { ClientError, Router, PreviewData, HostConfig, Context };

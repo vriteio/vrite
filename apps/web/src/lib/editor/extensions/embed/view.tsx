@@ -31,8 +31,8 @@ const EmbedView: Component = () => {
   };
 
   return (
-    <NodeViewWrapper>
-      <div class={clsx("relative rounded-2xl my-5", selected() && "ring ring-primary ring-2")}>
+    <NodeViewWrapper class="my-5">
+      <div class={clsx("relative rounded-2xl", selected() && "ring ring-primary ring-2")}>
         <Show
           when={attrs().src}
           fallback={

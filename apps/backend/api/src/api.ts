@@ -74,7 +74,7 @@ const apiService = publicPlugin(async (fastify) => {
 
       if (
         hostname === "localhost" ||
-        hostname.endsWith("vrite.io") ||
+        hostname.endsWith(fastify.config.TOP_DOMAIN) ||
         hostname.endsWith("swagger.io")
       ) {
         //  Request from localhost will pass

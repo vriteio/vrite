@@ -1,7 +1,8 @@
-import { Component, Match, Switch, lazy } from "solid-js";
+import { Component, Match, Show, Switch, lazy } from "solid-js";
 import { Outlet, Route, Routes } from "@solidjs/router";
 import { StandaloneLayout, SecuredLayout } from "#layout";
 import { isEditorApp } from "#lib/utils";
+import { useHostConfig } from "#context";
 
 const AuthView = lazy(async () => {
   const { AuthView } = await import("#views/auth");
@@ -60,6 +61,8 @@ const StandaloneWrapper: Component = () => {
   );
 };
 const App: Component = () => {
+  const hostConfig = useHostConfig();
+
   return (
     <Routes>
       <Switch>
@@ -77,7 +80,9 @@ const App: Component = () => {
           </Route>
           <Route path={["/", "**"]} component={SecuredWrapper}>
             <Route path="/editor" component={EditorView} />
-            <Route path="/conflict" component={ConflictView} />
+            <Show when={hostConfig.githubApp}>
+              <Route path="/conflict" component={ConflictView} />
+            </Show>
             <Route path={["/", "**"]} component={DashboardView} />
           </Route>
         </Match>

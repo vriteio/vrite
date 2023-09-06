@@ -66,6 +66,15 @@ const isAuthenticatedUser = middleware(async ({ ctx, next, meta }) => {
 
   return next({ ctx: authContextExtension });
 });
+const isEnabled = middleware(async ({ ctx, next, meta }) => {
+  const requiredConfig = meta?.requiredConfig || [];
 
-export { isAuthenticated, isAuthenticatedUser };
+  if (requiredConfig.some((property) => !ctx.fastify.hostConfig[property])) {
+    throw errors.serverError();
+  }
+
+  return next();
+});
+
+export { isAuthenticated, isAuthenticatedUser, isEnabled };
 export type { AuthenticatedContext };

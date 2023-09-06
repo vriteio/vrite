@@ -8,6 +8,7 @@ import { extractPreviewDataFromOpenGraph } from "#lib/utils";
 import { isAuthenticated } from "#lib/middleware";
 import { procedure, router } from "#lib/trpc";
 import * as errors from "#lib/errors";
+import { hostConfig, HostConfig } from "#plugins/host-config";
 
 const previewData = z
   .object({
@@ -23,6 +24,9 @@ interface PreviewData extends z.infer<typeof previewData> {}
 
 const authenticatedProcedure = procedure.use(isAuthenticated);
 const utilsRouter = router({
+  hostConfig: procedure.output(hostConfig).query(({ ctx }) => {
+    return ctx.fastify.hostConfig;
+  }),
   openGraph: procedure
     .input(z.object({ url: z.string() }))
     .output(previewData)
@@ -94,4 +98,4 @@ const utilsRouter = router({
 });
 
 export { utilsRouter };
-export type { PreviewData };
+export type { PreviewData, HostConfig };

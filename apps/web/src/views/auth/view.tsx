@@ -17,7 +17,7 @@ import { createStore, SetStoreFunction } from "solid-js/store";
 import { useNavigate } from "@solidjs/router";
 import { Card, IconButton, Tooltip } from "#components/primitives";
 import { createRef } from "#lib/utils";
-import { useClient } from "#context";
+import { useClient, useHostConfig } from "#context";
 import { logoIcon } from "#assets/icons";
 
 type AuthForm = "login" | "register" | "verify-email" | "magic-link" | "magic-link-sent";
@@ -40,6 +40,7 @@ interface AuthFormComponentProps {
 type AuthFormComponent = Component<AuthFormComponentProps>;
 
 const AuthView: Component = () => {
+  const hostConfig = useHostConfig();
   const client = useClient();
   const navigate = useNavigate();
   const [showForm, setShowForm] = createSignal(false);
@@ -118,16 +119,22 @@ const AuthView: Component = () => {
                 redirect={redirect}
                 footer={
                   <>
-                    <Tooltip text="GitHub" enabled={formData.formType !== "register"} class="mt-1">
-                      <IconButton
-                        path={mdiGithub}
-                        text="soft"
-                        variant="text"
-                        label={formData.formType === "register" ? "GitHub" : ""}
-                        class="m-0"
-                        onClick={continueWithGitHub}
-                      />
-                    </Tooltip>
+                    <Show when={hostConfig.githubOAuth}>
+                      <Tooltip
+                        text="GitHub"
+                        enabled={formData.formType !== "register"}
+                        class="mt-1"
+                      >
+                        <IconButton
+                          path={mdiGithub}
+                          text="soft"
+                          variant="text"
+                          label={formData.formType === "register" ? "GitHub" : ""}
+                          class="m-0"
+                          onClick={continueWithGitHub}
+                        />
+                      </Tooltip>
+                    </Show>
                     <Show when={formData.formType !== "register"}>
                       <Tooltip text="Magic link" class="mt-1">
                         <IconButton
@@ -162,15 +169,17 @@ const AuthView: Component = () => {
                 redirect={redirect}
                 footer={
                   <>
-                    <Tooltip text="GitHub" class="mt-1">
-                      <IconButton
-                        path={mdiGithub}
-                        text="soft"
-                        variant="text"
-                        class="m-0"
-                        onClick={continueWithGitHub}
-                      />
-                    </Tooltip>
+                    <Show when={hostConfig.githubOAuth}>
+                      <Tooltip text="GitHub" class="mt-1">
+                        <IconButton
+                          path={mdiGithub}
+                          text="soft"
+                          variant="text"
+                          class="m-0"
+                          onClick={continueWithGitHub}
+                        />
+                      </Tooltip>
+                    </Show>
                     <Tooltip text="Password login" class="mt-1">
                       <IconButton
                         path={mdiFormTextboxPassword}

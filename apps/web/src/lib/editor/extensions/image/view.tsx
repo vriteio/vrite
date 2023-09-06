@@ -131,21 +131,26 @@ const ImageView: Component = () => {
   );
 
   return (
-    <NodeViewWrapper>
+    <NodeViewWrapper class={clsx(!options().cover && "my-5")}>
       <div
         class={clsx(
           "relative rounded-2xl",
           !options().cover && selected() && "ring ring-primary ring-2"
         )}
       >
-        <div class={clsx(!options().cover && "border-2 rounded-t-2xl")}>
+        <div
+          class={clsx(
+            "border-gray-200 dark:border-gray-700",
+            options().cover ? "border-b-2" : "border-2 rounded-t-2xl"
+          )}
+        >
           <Show
             when={objectURL()}
             fallback={
               <div
                 class={clsx(
                   "w-full bg-gradient-to-tr flex justify-center items-center relative",
-                  !options().cover && "rounded-t-2xl"
+                  options().cover ? "min-h-48" : "rounded-t-2xl"
                 )}
                 style={{
                   "padding-top": getPaddingTop()

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en" data-accent-color="energy">
   <head>
     <meta charset="utf-8" />
@@ -33,9 +33,18 @@
       type="font/woff2"
     />
     <title>Vrite</title>
+    <script>
+      window.env = {
+        PUBLIC_API_HOST: "{{PUBLIC_API_HOST}}",
+        PUBLIC_APP_HOST: "{{PUBLIC_APP_HOST}}",
+        PUBLIC_ASSETS_HOST: "{{PUBLIC_ASSETS_HOST}}",
+        PUBLIC_COLLAB_HOST: "{{PUBLIC_COLLAB_HOST}}",
+        PUBLIC_APP_TYPE: "{{PUBLIC_APP_TYPE}}"
+      };
+    </script>
     <script type="module">
       const baseUrl = `http${window.location.protocol.includes("https") ? "s" : ""}://${
-        import.meta.env.PUBLIC_API_HOST
+        window.env.PUBLIC_API_HOST
       }`;
       try {
         await fetch("/session/refresh", { method: "POST" });
