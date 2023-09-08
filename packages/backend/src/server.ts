@@ -32,8 +32,7 @@ const createServer = async (envSchemaExtension?: ZodRawShape): Promise<FastifyIn
   await server
     .register(mongoPlugin, {
       forceClose: true,
-      url: server.config.MONGO_URL,
-      database: server.config.DATABASE
+      url: server.config.MONGO_URL
     })
     .register(redisPlugin, { url: server.config.REDIS_URL })
     .register(redisPlugin, { url: server.config.REDIS_URL, namespace: "sub" });

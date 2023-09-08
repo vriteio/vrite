@@ -1,6 +1,5 @@
 import { Observed } from "./observed";
 import { Section } from "./section";
-import { UseCasesSection } from "./use-cases-section";
 import { FeatureCard } from "./feature-card";
 import { Component, For } from "solid-js";
 import { mdiAccountGroup, mdiConnection, mdiPuzzle } from "@mdi/js";
@@ -11,8 +10,8 @@ import apiIntegrationImageLight from "#assets/graphics/light/api-integration.png
 
 const features = [
   {
-    imageDark: collaborationGraphicDark,
-    imageLight: collaborationGraphicLight,
+    imageDark: collaborationGraphicDark.src,
+    imageLight: collaborationGraphicLight.src,
     imageAlt: "Collaboration",
     header: "Collaboration",
     label: "Say hi!",
@@ -24,8 +23,8 @@ const features = [
     )
   },
   {
-    imageDark: apiIntegrationImageDark,
-    imageLight: apiIntegrationImageLight,
+    imageDark: apiIntegrationImageDark.src,
+    imageLight: apiIntegrationImageLight.src,
     imageAlt: "Vrite API & Extensions",
     header: "Vrite API & Extensions",
     gradient: true,
@@ -68,12 +67,6 @@ const ScalabilitySection: Component = () => {
             );
           }}
         </For>
-        <Observed
-          class="transform transition-all duration-500 ease-out md:col-span-2"
-          outOfViewClass="invisible translate-y-1/3"
-        >
-          <UseCasesSection />
-        </Observed>
       </div>
     </Section>
   );

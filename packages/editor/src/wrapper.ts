@@ -31,10 +31,10 @@ const Wrapper = Node.create<WrapperOptions>({
   },
   addAttributes() {
     return {
-      name: {
+      key: {
         default: null,
         parseHTML: (element) => {
-          return element.getAttribute("data-name");
+          return element.getAttribute("data-key");
         }
       }
     };
@@ -51,7 +51,7 @@ const Wrapper = Node.create<WrapperOptions>({
       "div",
       mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, {
         "data-wrapper": "true",
-        "data-name": node.attrs.name
+        "data-key": node.attrs.key
       }),
       0
     ];
@@ -81,9 +81,9 @@ const Wrapper = Node.create<WrapperOptions>({
         find: /(^:::(.*?)\s$)/,
         type: this.type,
         getAttributes: (match) => {
-          const [, , lang] = match;
+          const [, , key] = match;
 
-          return { lang };
+          return { key: key.trim() };
         }
       })
     ];

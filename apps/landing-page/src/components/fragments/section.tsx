@@ -9,7 +9,7 @@ interface SectionProps {
 
 const Section: ParentComponent<SectionProps> = (props) => {
   return (
-    <Card class="max-w-screen-xl w-full p-4 m-0 sm:p-8 md:p-8 relative">
+    <div class="max-w-screen-xl w-full p-4 m-0 sm:p-8 md:p-8 relative">
       <Show when={props.icon || props.label || props.title}>
         <div class="flex flex-col items-start justify-center pb-4">
           <Show when={props.icon || props.label}>
@@ -21,7 +21,7 @@ const Section: ParentComponent<SectionProps> = (props) => {
         </div>
       </Show>
       {props.children}
-    </Card>
+    </div>
   );
 };
 

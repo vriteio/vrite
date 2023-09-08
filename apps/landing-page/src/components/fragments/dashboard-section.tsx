@@ -14,8 +14,8 @@ import { Image } from "#components/primitives";
 
 const features = [
   {
-    imageDark: dashboardGraphicDark,
-    imageLight: dashboardGraphicLight,
+    imageDark: dashboardGraphicDark.src,
+    imageLight: dashboardGraphicLight.src,
     header: "Integrated kanban",
     label: "All inclusive",
     imageAlt: "Kanban dashboard",
@@ -29,8 +29,8 @@ const features = [
     )
   },
   {
-    imageDark: postSettingsGraphicDark,
-    imageLight: postSettingsGraphicLight,
+    imageDark: postSettingsGraphicDark.src,
+    imageLight: postSettingsGraphicLight.src,
     header: "Customizable metadata",
     label: "So meta",
     imageAlt: "Metadata panel",
@@ -69,8 +69,8 @@ const DashboardSection: Component = () => {
         <div class="flex-[2] gradient-image-mask max-h-[20rem]">
           <Image
             alt="Vrite Kanban dashboard"
-            srcDark={dashboardImageDark}
-            srcLight={dashboardImageLight}
+            srcDark={dashboardImageDark.src}
+            srcLight={dashboardImageLight.src}
             class="rounded-2xl"
           />
         </div>

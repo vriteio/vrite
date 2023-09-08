@@ -94,9 +94,7 @@ type Client = ReturnType<typeof createTRPCProxyClient<App.Router>>;
 const ClientContext = createContext<Client>();
 const ClientProvider: ParentComponent = (props) => {
   const wsClient = createWSClient({
-    url: `ws${window.location.protocol.includes("https") ? "s" : ""}://${
-      window.env.PUBLIC_APP_HOST
-    }/api/v1`
+    url: `${window.env.PUBLIC_APP_URL.replace("http", "ws")}/api/v1`
   });
   const client = createTRPCProxyClient<App.Router>({
     links: [

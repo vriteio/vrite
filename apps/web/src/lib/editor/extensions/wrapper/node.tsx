@@ -75,23 +75,24 @@ const Wrapper = BaseWrapper.extend({
       menu.setAttribute("class", "mb-5");
       menu.contentEditable = "false";
 
-      const renderer = new SolidRenderer<{ deleteNode(): void }>(WrapperMenu, {
-        editor: this.editor as SolidEditor,
-        state: {
-          deleteNode: () => {
-            if (typeof props.getPos === "function") {
-              editor
-                .chain()
-                .deleteRange({
-                  from: props.getPos(),
-                  to: props.getPos() + node.nodeSize
-                })
-                .focus()
-                .run();
+      const renderer = new SolidRenderer<{ key: string; setKey(value: string): void }>(
+        WrapperMenu,
+        {
+          editor: this.editor as SolidEditor,
+          state: {
+            key: node.attrs.key,
+            setKey: (key) => {
+              if (typeof props.getPos === "function") {
+                editor.view.dispatch(
+                  editor.view.state.tr.setNodeMarkup(props.getPos(), undefined, {
+                    key: key || null
+                  })
+                );
+              }
             }
           }
         }
-      });
+      );
 
       menu.append(renderer.element);
       dom.append(menu, content);
@@ -116,6 +117,10 @@ const Wrapper = BaseWrapper.extend({
           if (newNode.type.name !== "wrapper") return false;
 
           node = newNode as Node;
+          renderer.setState((state) => ({
+            ...state,
+            key: node.attrs.key
+          }));
 
           return true;
         }

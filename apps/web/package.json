@@ -45,7 +45,7 @@
     "@types/dompurify": "^3.0.2",
     "@types/marked": "^5.0.1",
     "@types/sortablejs": "^1.15.1",
-    "@unocss/reset": "^0.53.6",
+    "@unocss/reset": "^0.55.7",
     "@vrite/backend": "workspace:*",
     "@vrite/components": "workspace:*",
     "@vrite/editor": "workspace:*",

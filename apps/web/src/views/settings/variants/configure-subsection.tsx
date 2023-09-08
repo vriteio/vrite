@@ -4,7 +4,7 @@ import { createStore } from "solid-js/store";
 import { InputField, TitledCard } from "#components/fragments";
 import { IconButton, Button, Tooltip } from "#components/primitives";
 import { App, useClient, useNotifications } from "#context";
-import { validateVariantName } from "#lib/utils";
+import { validateKey } from "#lib/utils";
 
 interface ConfigureVariantSubsectionProps {
   editedVariantData: App.Variant | null;
@@ -22,7 +22,7 @@ const ConfigureVariantSubsection: Component<ConfigureVariantSubsectionProps> = (
     name: ""
   });
   const filled = createMemo(() => {
-    return Boolean(variantData.label && variantData.name && validateVariantName(variantData.name));
+    return Boolean(variantData.label && variantData.name && validateKey(variantData.name));
   });
   const onClick = async (): Promise<void> => {
     setLoading(true);

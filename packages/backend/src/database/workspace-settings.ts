@@ -40,7 +40,6 @@ const wrapper = z.object({
     .min(1)
     .max(20)
     .regex(/^[a-z0-9_]*$/),
-  id: zodId(),
   extension: z.boolean().optional()
 });
 const marks = [
@@ -81,9 +80,11 @@ const workspaceSettings = z.object({
   wrappers: z.array(wrapper).optional()
 });
 
+interface Wrapper extends z.infer<typeof wrapper> {}
 interface WorkspaceSettings<ID extends string | ObjectId = string>
-  extends Omit<z.infer<typeof workspaceSettings>, "id"> {
+  extends Omit<z.infer<typeof workspaceSettings>, "id" | "wrappers"> {
   id: ID;
+  wrappers?: Wrapper[];
 }
 interface FullWorkspaceSettings<ID extends string | ObjectId = string>
   extends WorkspaceSettings<ID> {
@@ -92,7 +93,6 @@ interface FullWorkspaceSettings<ID extends string | ObjectId = string>
 interface MetadataSettings extends z.infer<typeof metadataSettings> {}
 
 type MetadataField = z.infer<typeof metadataField>;
-type Wrapper = z.infer<typeof wrapper>;
 
 const getWorkspaceSettingsCollection = (
   db: Db
@@ -107,6 +107,7 @@ export {
   embeds,
   workspaceSettings,
   metadataSettings,
+  wrapper,
   getWorkspaceSettingsCollection
 };
 export type { MetadataField, MetadataSettings, WorkspaceSettings, FullWorkspaceSettings, Wrapper };

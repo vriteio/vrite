@@ -102,6 +102,7 @@ const Button: Component<ButtonProps> = (providedProps) => {
     "text",
     "variant",
     "size",
+    "link",
     "badge",
     "children"
   ]);
@@ -116,7 +117,7 @@ const Button: Component<ButtonProps> = (providedProps) => {
     <Dynamic
       component={component()}
       class={clsx(
-        `:base: transition relative duration-150 focus:outline-none`,
+        `:base: transition relative duration-150 !outline-none !ring-0 focus:!outline-none focus:!ring-0`,
         !props.badge && ":base: cursor-pointer",
         buttonVariants[props.variant],
         buttonSizes[props.size],

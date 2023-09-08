@@ -44,9 +44,7 @@ monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
   enableSchemaRequest: true,
   schemas: [
     {
-      uri: `http${window.location.protocol.includes("https") ? "s" : ""}://${
-        window.env.PUBLIC_API_HOST
-      }/workspace-settings/schemas/prettier`,
+      uri: `${window.env.PUBLIC_API_URL}/workspace-settings/schemas/prettier`,
       fileMatch: ["prettierrc.json"]
     }
   ]

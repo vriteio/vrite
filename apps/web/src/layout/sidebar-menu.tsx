@@ -129,7 +129,7 @@ const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
   };
 };
 const ProfileMenu: Component<{ close(): void }> = (props) => {
-  const { profile } = useAuthenticatedUserData();
+  const { profile, workspace } = useAuthenticatedUserData();
   const { setStorage } = useLocalStorage();
   const menuItems = useMenuItems();
 
@@ -210,7 +210,10 @@ const ProfileMenu: Component<{ close(): void }> = (props) => {
         </For>
       </Card>
       <div class="flex justify-center items-center gap-2">
-        <span class="flex-1 text-sm">Vrite ©2023</span>
+        <div class="flex flex-1">
+          <Icon path={mdiHexagonSlice6} class="h-5 min-w-5 mr-1" />
+          <span class="text-sm clamp-1">{workspace()?.name}</span>
+        </div>
         <Link href="https://discord.gg/4Z5MdEffBn">
           <IconButton path={discordIcon} badge text="soft" class="m-0" variant="text" />
         </Link>

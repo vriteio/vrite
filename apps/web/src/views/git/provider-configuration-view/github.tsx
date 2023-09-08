@@ -1,15 +1,10 @@
-import {
-  mdiFileTree,
-  mdiGithub,
-  mdiRefresh,
-  mdiSourceBranch,
-  mdiSwapHorizontalCircleOutline
-} from "@mdi/js";
+import { mdiFileTree, mdiGithub, mdiRefresh, mdiSourceBranch } from "@mdi/js";
 import { Component, Match, Show, Switch, createMemo, createResource, createSignal } from "solid-js";
 import { Octokit, RestEndpointMethodTypes } from "@octokit/rest";
 import { Button, Heading, IconButton, Input, Tooltip } from "#components/primitives";
 import { App, hasPermission, useClient, useConfirmationModal } from "#context";
 import { InputField, TitledCard, SearchableSelect } from "#components/fragments";
+import { transformer } from "#database";
 
 interface GitHubConfigurationViewProps {
   gitData: App.GitData | null;
@@ -32,9 +27,7 @@ const GitHubConfigurationView: Component<GitHubConfigurationViewProps> = (props)
   const [selectedBranch, setSelectedBranch] = createSignal<Branch | null>(null);
   const [baseDirectory, setBaseDirectory] = createSignal("/");
   const [matchPattern, setMatchPattern] = createSignal("**/*.md");
-  const [inputTransformer, setInputTransformer] = createSignal("markdown");
-  const [outputTransformer, setOutputTransformer] = createSignal("markdown");
-  const [formatOutput, setFormatOutput] = createSignal(true);
+  const [transformer, setTransformer] = createSignal("markdown");
   const [token, setToken] = createSignal("");
   const savedGitHubConfig = (): App.GitHubData | null => props.gitData?.github || null;
   const octokit = createMemo(() => {
@@ -42,13 +35,27 @@ const GitHubConfigurationView: Component<GitHubConfigurationViewProps> = (props)
   });
   const filled = createMemo(() => {
     return Boolean(
-      selectedInstallation() &&
-        selectedRepository() &&
-        selectedBranch() &&
-        baseDirectory() &&
-        inputTransformer() &&
-        outputTransformer()
+      selectedInstallation() && selectedRepository() && selectedBranch() && baseDirectory()
     );
+  });
+  const builtInTransformers = [
+    {
+      id: "markdown",
+      label: "Markdown"
+    }
+  ];
+  const [remoteTransformers] = createResource(
+    () => {
+      return client.transformers.list.query();
+    },
+    { initialValue: [] }
+  );
+  const selectedTransformer = createMemo(() => {
+    const builtIn = builtInTransformers.find((t) => t.id === transformer());
+
+    if (builtIn) return builtIn;
+
+    return remoteTransformers().find((t) => t.id === transformer()) || null;
   });
   const [installations, { refetch: refetchInstallations }] = createResource(
     token,
@@ -95,6 +102,15 @@ const GitHubConfigurationView: Component<GitHubConfigurationViewProps> = (props)
     { initialValue: [] }
   );
   const retrievedToken = new URL(location.href).searchParams.get("token");
+  const getTransformerLabel = (): string => {
+    const builtIn = builtInTransformers.find((t) => t.id === transformer());
+
+    if (builtIn) return builtIn.label;
+
+    const remote = remoteTransformers().find((t) => t.id === transformer());
+
+    return remote?.label || "";
+  };
 
   if (retrievedToken) {
     const path =
@@ -122,9 +138,7 @@ const GitHubConfigurationView: Component<GitHubConfigurationViewProps> = (props)
                 branchName: selectedBranch()!.name,
                 baseDirectory: baseDirectory(),
                 matchPattern: matchPattern(),
-                inputTransformer: inputTransformer(),
-                outputTransformer: outputTransformer(),
-                formatOutput: formatOutput()
+                transformer: transformer()
               });
               setLoading(false);
               props.setOpenedProvider("");
@@ -353,49 +367,43 @@ const GitHubConfigurationView: Component<GitHubConfigurationViewProps> = (props)
           >
             Provide a glob match pattern for the files to sync. (relative to the base directory)
           </InputField>
+
+          <Heading level={3}>Transformer</Heading>
+          <p class="prose text-gray-500 dark:text-gray-400 w-full">
+            Transformer to use for processing the content in and out of Vrite.
+          </p>
+          <Show
+            when={!savedGitHubConfig()}
+            fallback={
+              <Input
+                value={getTransformerLabel()}
+                class="w-full m-0"
+                wrapperClass="w-full"
+                color="contrast"
+                disabled
+              />
+            }
+          >
+            <SearchableSelect
+              options={[...builtInTransformers, ...remoteTransformers()]}
+              selected={selectedTransformer()}
+              placement="top-start"
+              extractId={(transformer) => transformer.id}
+              renderOption={({ label }) => (
+                <div class="text-start w-full clamp-1 px-1">{label}</div>
+              )}
+              filterOption={({ label }, query) => {
+                return label.toLowerCase().includes(query.toLowerCase());
+              }}
+              selectOption={(option) => {
+                setTransformer(option?.id || "markdown");
+              }}
+              loading={remoteTransformers.loading}
+              placeholder="Select Transformer"
+            />
+          </Show>
         </div>
       </TitledCard>
-      <Show when={false}>
-        <TitledCard icon={mdiSwapHorizontalCircleOutline} label="Transformers">
-          <div class="flex flex-col items-start w-full gap-2">
-            <p class="prose text-gray-500 dark:text-gray-400 w-full">
-              Select the transformers to use for your content.
-            </p>
-            <InputField
-              label="Input transformer"
-              color="contrast"
-              type="select"
-              value={savedGitHubConfig()?.inputTransformer || inputTransformer()}
-              disabled={Boolean(savedGitHubConfig())}
-              setValue={setInputTransformer}
-              options={[{ label: "Markdown", value: "markdown" }]}
-              placeholder="Select input transformer"
-            >
-              Transformer to use for parsing the input files.
-            </InputField>
-            <InputField
-              label="Output transformer"
-              color="contrast"
-              type="select"
-              value={savedGitHubConfig()?.outputTransformer || outputTransformer()}
-              disabled={Boolean(savedGitHubConfig())}
-              setValue={setOutputTransformer}
-              options={[{ label: "Markdown", value: "markdown" }]}
-              placeholder="Select output transformer"
-            >
-              Transformer to use for generating the output files.
-            </InputField>
-            <InputField
-              label="Format output"
-              type="checkbox"
-              value={formatOutput()}
-              setValue={setFormatOutput}
-            >
-              Format the output files with Prettier.
-            </InputField>
-          </div>
-        </TitledCard>
-      </Show>
     </>
   );
 };

@@ -29,9 +29,7 @@ const DashboardView: Component = () => {
     "provider",
     new HocuspocusProvider({
       token: "vrite",
-      url: `ws${window.location.protocol.includes("https") ? "s" : ""}://${
-        window.env.PUBLIC_COLLAB_HOST
-      }`,
+      url: window.env.PUBLIC_COLLAB_URL.replace("http", "ws"),
       onDisconnect: handleReload,
       onAuthenticationFailed: handleReload,
       name: `workspace:${workspace()?.id || ""}`,

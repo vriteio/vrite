@@ -5,7 +5,9 @@ import {
   getGitDataCollection,
   docToJSON,
   getContentPiecesCollection,
-  GitData
+  GitData,
+  createGenericOutputContentProcessor,
+  jsonToBuffer
 } from "@vrite/backend";
 import { Server, storePayload } from "@hocuspocus/server";
 import { Database } from "@hocuspocus/extension-database";
@@ -14,7 +16,6 @@ import { ObjectId, Binary } from "mongodb";
 import { SessionData } from "@vrite/backend/src/lib/session";
 import { unauthorized } from "@vrite/backend/src/lib/errors";
 import { createEventPublisher } from "@vrite/backend/src/lib/pub-sub";
-import { gfmOutputTransformer } from "@vrite/sdk/transformers";
 import crypto from "node:crypto";
 
 type GitDataEvent = {
@@ -44,8 +45,21 @@ const writingPlugin = publicPlugin(async (fastify) => {
       _id: new ObjectId(contentPieceId)
     });
     const json = docToJSON(details.document);
-    const md = gfmOutputTransformer(json, contentPiece);
-    const currentHash = crypto.createHash("md5").update(md).digest("hex");
+    const outputContentProcessor = await createGenericOutputContentProcessor(
+      {
+        db: fastify.mongo.db!,
+        auth: {
+          workspaceId: new ObjectId(details.context.workspaceId),
+          userId: new ObjectId(details.context.userId)
+        }
+      },
+      gitData
+    );
+    const output = await outputContentProcessor.process({
+      buffer: jsonToBuffer(json),
+      contentPiece
+    });
+    const currentHash = crypto.createHash("md5").update(output).digest("hex");
 
     await gitDataCollection.updateOne(
       {

@@ -16,7 +16,7 @@ const features = [
   {
     imageDark: editorGraphicDark.src,
     imageLight: editorGraphicLight.src,
-    header: "Modern editing experience",
+    header: "GitHub integration",
     label: "Let it flow",
     imageAlt: "Content editor",
     icon: mdiPencil,
@@ -69,7 +69,7 @@ const secondaryFeatures = [
     text: "Upload and manage images, videos, and other assets alongside your editor."
   }
 ];
-const EditorSection: Component = () => {
+const IntegrationSection: Component = () => {
   return (
     <Section>
       <div class="flex flex-col lg:flex-row gap-12 pb-4">
@@ -82,10 +82,10 @@ const EditorSection: Component = () => {
           />
         </div>
         <div class="flex-[2]">
-          <h2 class="text-3xl md:text-4xl pb-4">Write, and code the way you like</h2>
+          <h2 class="text-3xl md:text-4xl pb-4">Integrates right in</h2>
           <p class="text-xl md:text-2xl">
-            Writing experience as developers like it - with everything from Markdown support to code
-            editor included.
+            With built-in GitHub synchronization and powerful APIs, Vrite integrates right into your
+            workflow. Set it up in minutes and get back to work!
           </p>
         </div>
       </div>
@@ -127,4 +127,4 @@ const EditorSection: Component = () => {
   );
 };
 
-export { EditorSection };
+export { IntegrationSection };

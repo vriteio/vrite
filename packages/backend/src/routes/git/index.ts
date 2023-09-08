@@ -1,6 +1,10 @@
 import { githubRouter } from "./github";
 import { GitDataEvent, publishGitDataEvent } from "./events";
 import { processRecords } from "./process-records";
+import {
+  createGenericInputContentProcessor,
+  createGenericOutputContentProcessor
+} from "./process-content";
 import { z } from "zod";
 import { procedure, router } from "#lib/trpc";
 import { getGitDataCollection, gitData } from "#database";
@@ -59,4 +63,4 @@ const gitRouter = router({
   })
 });
 
-export { gitRouter };
+export { gitRouter, createGenericInputContentProcessor, createGenericOutputContentProcessor };

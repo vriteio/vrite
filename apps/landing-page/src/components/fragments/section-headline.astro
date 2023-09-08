@@ -1,0 +1,25 @@
+---
+import { Image } from "#components/primitives";
+import clsx from "clsx";
+interface Props {
+  imageSrc: string;
+  imageSrcDark: string;
+  imageAlt: string;
+  title: string;
+  reverse?: boolean;
+}
+
+const { reverse, imageAlt, imageSrc, imageSrcDark, title } = Astro.props;
+---
+
+<div class={clsx("flex flex-col gap-12 pb-4", reverse ? "lg:flex-row" : "lg:flex-row-reverse")}>
+  <div class="flex-[2] max-h-[20rem] gradient-image-mask">
+    <Image alt={imageAlt} srcDark={imageSrcDark} srcLight={imageSrc} class="rounded-2xl" />
+  </div>
+  <div class="flex-[2]">
+    <h2 class="text-3xl md:text-4xl pb-4">{title}</h2>
+    <p class="text-xl md:text-2xl">
+      <slot />
+    </p>
+  </div>
+</div>

@@ -84,7 +84,7 @@ const OverviewSection: Component = () => {
                 >
                   <Card
                     class="w-full flex-1 h-full p-4 overflow-hidden m-0 hover:cursor-pointer"
-                    color={index() === activeSlideIndex() ? "primary" : "contrast"}
+                    color={index() === activeSlideIndex() ? "primary" : "base"}
                     onClick={() => moveToSlide(index())}
                   >
                     <h2 class="text-xl">{slide.header}</h2>
@@ -102,11 +102,11 @@ const OverviewSection: Component = () => {
                 <div class={clsx("keen-slider__slide p-1", !loaded() && index() !== 0 && "hidden")}>
                   <Image
                     class="rounded-2xl border-gray-200 dark:border-gray-700 border-2 border-b-0 rounded-b-0 lg:rounded-b-2xl lg:border-b-2"
-                    srcDark={slide.imageDark}
-                    srcLight={slide.imageLight}
+                    srcDark={slide.imageDark.src}
+                    srcLight={slide.imageLight.src}
                     alt="Vrite Kanban dashboard"
                   />
-                  <Card class="w-full p-4 overflow-hidden m-0 rounded-t-0 lg:hidden" color="soft">
+                  <Card class="w-full p-4 overflow-hidden m-0 rounded-t-0 lg:hidden" color="base">
                     <h2 class="text-xl text-gray-700 dark:text-gray-100">{slide.header}</h2>
                     <p class="mt-2 text-gray-600 dark:text-gray-200">{slide.text}</p>
                   </Card>

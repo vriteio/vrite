@@ -1,0 +1,47 @@
+---
+import { Card, IconButton } from "#components/primitives";
+import { Observed } from "#components/fragments";
+import clsx from "clsx";
+import { mdiLoginVariant, mdiBookOpenBlankVariant } from "@mdi/js";
+---
+
+<Observed
+  class="transform transition-all duration-500 ease-out w-full max-w-screen-xl p-4 sm:p-8 md:p-8"
+  outOfViewClass="invisible translate-y-1/3"
+  client:idle
+>
+  <Card
+    class={clsx(
+      "flex flex-col items-start justify-start w-full h-full p-4 m-0 md:p-8 border-0 overflow-hidden md:flex-row"
+    )}
+    color="primary"
+  >
+    <div class={clsx("flex justify-center items-center h-full relative md:p-12 md:flex-1")}>
+      <div class="flex flex-col justify-center items-start z-1">
+        <h2 class="text-2xl md:text-3xl mt-2 font-bold">What you're waiting for?</h2>
+        <div class={clsx("mt-2 md:text-lg max-w-[26rem]")}>
+          <div class="items-center justify-center hidden w-full mt-4 gap-4 md:flex">
+            <IconButton
+              text="soft"
+              class="flex items-center justify-center m-0 whitespace-nowrap bg-gray-50 dark:bg-gray-900"
+              size="large"
+              link="https://app.vrite.io"
+              path={mdiLoginVariant}
+              label="Get started"
+              target="_blank"
+            />
+            <IconButton
+              class="flex items-center justify-center m-0 whitespace-nowrap bg-gray-50 dark:bg-gray-900"
+              link="https://docs.vrite.io"
+              text="soft"
+              size="large"
+              path={mdiBookOpenBlankVariant}
+              label="Documentation"
+              target="_blank"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  </Card>
+</Observed>

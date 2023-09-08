@@ -15,9 +15,13 @@ import { contentGroupsRouter } from "./content-groups";
 import { extensionsRouter } from "./extensions";
 import { commentsRouter } from "./comments";
 import { variantsRouter } from "./variants";
-import { gitRouter } from "./git";
-import { versionsRouter } from "./versions";
+import {
+  createGenericInputContentProcessor,
+  createGenericOutputContentProcessor,
+  gitRouter
+} from "./git";
 import { searchRouter } from "./search";
+import { transformersRouter } from "./transformers";
 import type { TRPCClientError } from "@trpc/client";
 import { Context, createContext } from "#lib/context";
 import { router } from "#lib/trpc";
@@ -41,8 +45,8 @@ const appRouter = router({
   comments: commentsRouter,
   variants: variantsRouter,
   git: gitRouter,
-  versions: versionsRouter,
-  search: searchRouter
+  search: searchRouter,
+  transformers: transformersRouter
 });
 
 type Router = typeof appRouter;
@@ -50,6 +54,11 @@ type ClientError = TRPCClientError<Router> & {
   data: TRPCClientError<Router>["data"] & { cause?: { code: string } & Record<string, string> };
 };
 
-export { appRouter, createContext };
+export {
+  appRouter,
+  createContext,
+  createGenericInputContentProcessor,
+  createGenericOutputContentProcessor
+};
 export type * from "#database";
 export type { ClientError, Router, PreviewData, HostConfig, Context };

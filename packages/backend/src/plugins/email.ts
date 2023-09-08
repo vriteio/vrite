@@ -130,7 +130,7 @@ const mailPlugin = publicPlugin(async (fastify) => {
         to: email,
         template: "verify-email",
         data: {
-          link: `${fastify.config.CALLBACK_DOMAIN}/verify?type=email&code=${details.code}&id=${details.userId}`,
+          link: `${fastify.config.PUBLIC_APP_URL}/verify?type=email&code=${details.code}&id=${details.userId}`,
           user: details.username
         }
       });
@@ -140,7 +140,7 @@ const mailPlugin = publicPlugin(async (fastify) => {
         to: email,
         template: "magic-link",
         data: {
-          link: `${fastify.config.CALLBACK_DOMAIN}/verify?type=magic&code=${details.code}&id=${details.userId}`
+          link: `${fastify.config.PUBLIC_APP_URL}/verify?type=magic&code=${details.code}&id=${details.userId}`
         }
       });
     },
@@ -159,7 +159,7 @@ const mailPlugin = publicPlugin(async (fastify) => {
         to: email,
         template: "workspace-invite",
         data: {
-          link: `${fastify.config.CALLBACK_DOMAIN}/verify?type=workspace-invite&code=${details.code}&id=${details.membershipId}`,
+          link: `${fastify.config.PUBLIC_APP_URL}/verify?type=workspace-invite&code=${details.code}&id=${details.membershipId}`,
           sender: sender.fullName || sender.username || "User",
           workspace: workspace.name || "a workspace",
           user: details.inviteeName
@@ -171,7 +171,7 @@ const mailPlugin = publicPlugin(async (fastify) => {
         to: email,
         template: "verify-password-change",
         data: {
-          link: `${fastify.config.CALLBACK_DOMAIN}/verify?type=password-change&code=${details.code}`
+          link: `${fastify.config.PUBLIC_APP_URL}/verify?type=password-change&code=${details.code}`
         }
       });
     },
@@ -180,7 +180,7 @@ const mailPlugin = publicPlugin(async (fastify) => {
         to: email,
         template: "verify-email-change",
         data: {
-          link: `${fastify.config.CALLBACK_DOMAIN}/verify?type=email-change&code=${details.code}`
+          link: `${fastify.config.PUBLIC_APP_URL}/verify?type=email-change&code=${details.code}`
         }
       });
     }

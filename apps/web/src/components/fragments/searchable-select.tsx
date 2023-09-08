@@ -20,6 +20,7 @@ interface SearchableSelectProps<O extends object> {
   placeholder?: string;
   loading?: boolean;
   buttonProps?: ComponentProps<typeof Button>;
+  placement?: ComponentProps<typeof Dropdown>["placement"];
   extractId(option: O): string;
   renderOption(option: O): JSX.Element;
   filterOption(option: O, query: string): boolean;
@@ -126,11 +127,11 @@ const SearchableSelect = <O extends object>(props: SearchableSelectProps<O>): JS
       autoFocus={false}
       activatorWrapperClass="w-full"
       overflowContainerClass="overflow-hidden flex flex-col"
+      placement={props.placement}
       class="w-full"
       activatorButton={() => {
         return (
           <Button
-            text="soft"
             color="contrast"
             {...props.buttonProps}
             class={clsx(
@@ -144,7 +145,7 @@ const SearchableSelect = <O extends object>(props: SearchableSelectProps<O>): JS
               fallback={
                 <>
                   <Show when={props.placeholder}>
-                    <span class="px-1 flex-1 text-start">{props.placeholder}</span>
+                    <span class="px-1 flex-1 text-start opacity-40">{props.placeholder}</span>
                   </Show>
                   <Icon path={mdiChevronDown} class="h-6 w-6 mr-2" />
                 </>

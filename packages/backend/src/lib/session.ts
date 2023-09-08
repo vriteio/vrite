@@ -106,8 +106,8 @@ const createTokens = async (ctx: Context, sessionId: string): Promise<void> => {
     httpOnly: true,
     sameSite: true,
     signed: true,
-    secure: true,
-    domain: ctx.fastify.config.TOP_DOMAIN
+    secure: new URL(ctx.fastify.config.PUBLIC_API_URL).protocol === "https:",
+    domain: ctx.fastify.config.COOKIE_DOMAIN
   };
 
   await ctx.fastify.redis.set(`refreshToken:${sessionId}`, refreshToken, "EX", 60 * 60 * 24 * 7);
@@ -198,11 +198,11 @@ const deleteSession = async (ctx: Context, sessionId: string): Promise<void> => 
   await ctx.fastify.redis.del(`refreshToken:${sessionId}`);
   ctx.res.clearCookie("refreshToken", {
     path: "/session",
-    domain: ctx.fastify.config.TOP_DOMAIN
+    domain: ctx.fastify.config.COOKIE_DOMAIN
   });
   ctx.res.clearCookie("accessToken", {
     path: "/",
-    domain: ctx.fastify.config.TOP_DOMAIN
+    domain: ctx.fastify.config.COOKIE_DOMAIN
   });
 };
 

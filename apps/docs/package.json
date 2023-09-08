@@ -14,7 +14,7 @@
     "@astrojs/sitemap": "^1.0.0",
     "@astrojs/solid-js": "^2.0.0",
     "@mdi/js": "^7.0.96",
-    "@unocss/reset": "^0.48.5",
+    "@unocss/reset": "^0.55.7",
     "@vrite/components": "workspace:*",
     "astro": "^2.5.1",
     "clsx": "^1.2.1",
@@ -22,7 +22,7 @@
     "shiki": "^0.14.1",
     "solid-js": "^1.4.3",
     "typescript": "^4.9.3",
-    "unocss": "^0.48.5",
+    "unocss": "^0.55.7",
     "vite": "^4.2.1"
   },
   "devDependencies": {

@@ -6,17 +6,28 @@ import { ObjectId } from "mongodb";
 import {
   FullWorkspaceSettings,
   WorkspaceSettings,
+  wrapper,
   getWorkspaceSettingsCollection,
   prettierConfig,
-  workspaceSettings
+  workspaceSettings,
+  Wrapper
 } from "#database/workspace-settings";
 import * as errors from "#lib/errors";
 import { createEventPublisher, createEventSubscription } from "#lib/pub-sub";
 
-type WorkspaceSettingsEvent = {
-  action: "update";
-  data: Partial<Omit<WorkspaceSettings, "id">>;
-};
+type WorkspaceSettingsEvent =
+  | {
+      action: "update";
+      data: Partial<Omit<WorkspaceSettings, "id">>;
+    }
+  | {
+      action: "createWrapper";
+      data: Wrapper;
+    }
+  | {
+      action: "deleteWrapper";
+      data: Pick<Wrapper, "key">;
+    };
 
 const publishEvent = createEventPublisher<WorkspaceSettingsEvent>((workspaceId) => {
   return `workspaceSettings:${workspaceId}`;
@@ -51,6 +62,98 @@ const workspaceSettingsRouter = router({
         wrappers: workspaceSettings.wrappers || []
       };
     }),
+  createWrapper: authenticatedProcedure
+    .meta({
+      openapi: { method: "POST", path: `${basePath}/wrapper`, protect: true },
+      permissions: { session: ["manageWorkspace"], token: ["workspace:write"] }
+    })
+    .input(wrapper)
+    .output(z.object({ key: wrapper.shape.key }))
+    .mutation(async ({ input, ctx }) => {
+      const extensionId = ctx.req.headers["x-vrite-extension-id"] as string | undefined;
+      const workspaceSettingsCollection = getWorkspaceSettingsCollection(ctx.db);
+      const workspaceSettings = await workspaceSettingsCollection.findOne({
+        workspaceId: ctx.auth.workspaceId
+      });
+
+      if (!workspaceSettings) throw errors.notFound("workspaceSettings");
+
+      const sameKeyWrapperIndex =
+        workspaceSettings.wrappers?.findIndex((wrapper) => wrapper.key === input.key) || -1;
+
+      if (sameKeyWrapperIndex >= 0) {
+        await workspaceSettingsCollection.updateOne(
+          {
+            workspaceId: ctx.auth.workspaceId
+          },
+          {
+            $set: {
+              wrappers: (workspaceSettings.wrappers || []).map((item, index) => {
+                if (index === sameKeyWrapperIndex) {
+                  return {
+                    ...item,
+                    ...input,
+                    ...(extensionId && { extension: item.extension || true })
+                  };
+                }
+
+                return item;
+              })
+            }
+          }
+        );
+      } else {
+        await workspaceSettingsCollection.updateOne(
+          {
+            workspaceId: ctx.auth.workspaceId
+          },
+          {
+            $push: {
+              wrappers: {
+                ...input,
+                ...(extensionId && { extension: true })
+              }
+            }
+          }
+        );
+      }
+
+      publishEvent(ctx, `${ctx.auth.workspaceId}`, {
+        action: "createWrapper",
+        data: input
+      });
+
+      return {
+        key: input.key
+      };
+    }),
+  deleteWrapper: authenticatedProcedure
+    .meta({
+      openapi: { method: "DELETE", path: `${basePath}/wrapper`, protect: true },
+      permissions: { session: ["manageWorkspace"], token: ["workspace:write"] }
+    })
+    .input(wrapper.pick({ key: true }))
+    .output(z.void())
+    .mutation(async ({ input, ctx }) => {
+      const workspaceSettingsCollection = getWorkspaceSettingsCollection(ctx.db);
+
+      await workspaceSettingsCollection.updateOne(
+        {
+          workspaceId: ctx.auth.workspaceId
+        },
+        {
+          $pull: {
+            wrappers: {
+              key: input.key
+            }
+          }
+        }
+      );
+      publishEvent(ctx, `${ctx.auth.workspaceId}`, {
+        action: "deleteWrapper",
+        data: input
+      });
+    }),
   changes: authenticatedProcedure.input(z.void()).subscription(({ ctx }) => {
     return createEventSubscription<WorkspaceSettingsEvent>(
       ctx,
@@ -65,7 +168,7 @@ const workspaceSettingsRouter = router({
     .input(
       workspaceSettings
         .partial()
-        .omit({ id: true, prettierConfig: true })
+        .omit({ id: true, prettierConfig: true, wrappers: true })
         .extend({ prettierConfig: z.string().optional() })
     )
     .output(z.void())

@@ -1,7 +1,7 @@
 import clsx from "clsx";
-import { Component, JSX, Show } from "solid-js";
-import { IconButton, Button, Card, Image } from "#components/primitives";
-import { mdiClock } from "@mdi/js";
+import { mdiGithub } from "@mdi/js";
+import type { Component, JSX } from "solid-js";
+import { IconButton, Button, Card, Image, Icon } from "#components/primitives";
 
 interface FeatureCardProps {
   reverse?: boolean;
@@ -20,7 +20,6 @@ interface TextFeatureCardProps {
   label: string;
   header: string;
   text: JSX.Element;
-  comingSoon?: boolean;
   class?: string;
 }
 
@@ -28,44 +27,22 @@ const FeatureCard: Component<FeatureCardProps> = (props) => {
   return (
     <Card
       class={clsx(
-        "flex flex-col items-start justify-start w-full h-full p-4 m-0 md:p-8",
+        "flex flex-col items-start justify-start w-full h-full p-4 m-0 md:p-8 border-0 overflow-hidden",
         !props.vertical && (props.reverse ? "md:flex-row-reverse" : "md:flex-row"),
         props.vertical ? "md:flex-col" : "md:flex-row"
       )}
-      color={props.gradient ? "primary" : "contrast"}
+      color={props.gradient ? "primary" : "base"}
     >
       <div
         class={clsx(
-          "flex justify-center items-center h-full",
+          "flex justify-center items-center h-full relative",
           !props.vertical && "md:p-12 md:flex-1"
         )}
       >
-        <div class="flex flex-col justify-center items-start">
-          {props.icon && (
-            <IconButton
-              path={props.icon || ""}
-              class="m-0 px-1"
-              badge
-              size="small"
-              color={props.gradient ? "contrast" : "primary"}
-              label={props.label}
-              text={props.gradient ? "soft" : "primary"}
-            />
-          )}
-          {!props.icon && (
-            <Button
-              badge
-              class="px-1"
-              color={props.gradient ? "contrast" : "primary"}
-              size="small"
-              text={props.gradient ? "soft" : "primary"}
-            >
-              {props.label}
-            </Button>
-          )}
+        <div class="flex flex-col justify-center items-start z-1">
           <h2
             class={clsx(
-              "text-2xl md:text-3xl mt-2",
+              "text-2xl md:text-3xl mt-2 bg-clip-text text-transparent bg-gradient-to-tr !font-bold",
               props.gradient ? "" : "text-gray-700 dark:text-gray-100"
             )}
           >
@@ -95,26 +72,16 @@ const FeatureCard: Component<FeatureCardProps> = (props) => {
 };
 const TextFeatureCard: Component<TextFeatureCardProps> = (props) => {
   return (
-    <Card class={clsx("h-full p-4 m-0", props.class)} color="contrast">
+    <Card class={clsx("h-full p-4 m-0 border-0", props.class)}>
       <div class="flex flex-col items-start justify-center h-full">
         <div class="flex items-center justify-center w-full">
-          <IconButton
-            path={props.icon}
-            badge
-            size="small"
-            color="primary"
-            class="px-1"
-            label={props.label}
-          />
           <div class="flex-1" />
-          <Show when={props.comingSoon}>
-            <Button size="small" class="px-1 px-1 py-0.5 text-xs m-0" text="soft" badge>
-              Coming soon
-            </Button>
-          </Show>
         </div>
-        <h2 class="mt-2 text-xl text-gray-700 dark:text-gray-100 md:text-2xl">{props.header}</h2>
-        <p class="mt-2 text-gray-600 dark:text-gray-200 md:text-lg">{props.text}</p>
+        <div class="flex justify-center items-center gap-2">
+          <Icon path={props.icon} class="h-6 w-6" />
+          <h2 class="text-xl text-gray-700 dark:text-gray-100 md:text-2xl">{props.header}</h2>
+        </div>
+        <p class="mt-2 flex-1 text-gray-600 dark:text-gray-200 md:text-lg">{props.text}</p>
       </div>
     </Card>
   );

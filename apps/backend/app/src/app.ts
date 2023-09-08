@@ -10,10 +10,10 @@ import path from "path";
 const appService = publicPlugin(async (fastify) => {
   const renderPage = async (reply: FastifyReply): Promise<void> => {
     return reply.view("index.html", {
-      PUBLIC_APP_HOST: fastify.config.PUBLIC_APP_HOST,
-      PUBLIC_API_HOST: fastify.config.PUBLIC_API_HOST,
-      PUBLIC_COLLAB_HOST: fastify.config.PUBLIC_COLLAB_HOST,
-      PUBLIC_ASSETS_HOST: fastify.config.PUBLIC_ASSETS_HOST,
+      PUBLIC_APP_URL: fastify.config.PUBLIC_APP_URL,
+      PUBLIC_API_URL: fastify.config.PUBLIC_API_URL,
+      PUBLIC_COLLAB_URL: fastify.config.PUBLIC_COLLAB_URL,
+      PUBLIC_ASSETS_URL: fastify.config.PUBLIC_ASSETS_URL,
       PUBLIC_APP_TYPE: fastify.config.PUBLIC_APP_TYPE
     });
   };

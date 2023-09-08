@@ -59,8 +59,7 @@ DATABASE=
 # Security
 SECRET=
 # Domains
-TOP_DOMAIN=
-CALLBACK_DOMAIN=
+COOKIE_DOMAIN=
 # Serve
 HOST=
 # Email
@@ -82,9 +81,9 @@ S3_SECRET_KEY=
 GITHUB_CLIENT_ID=
 GITHUB_CLIENT_SECRET=
 # Frontend
-PUBLIC_COLLAB_HOST=
-PUBLIC_APP_HOST=
-PUBLIC_API_HOST=
+PUBLIC_COLLAB_URL=
+PUBLIC_APP_URL=
+PUBLIC_API_URL=
 ```
 
 Right now Vrite depends on [MongoDB](https://www.mongodb.com/), [Redis](https://redis.com/), S3 storage, and [SendGrid](https://sendgrid.com/) to function. We hope to make some of these dependencies, like the mailing service, more flexible in the future.

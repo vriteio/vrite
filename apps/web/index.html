@@ -35,20 +35,17 @@
     <title>Vrite</title>
     <script>
       window.env = {
-        PUBLIC_API_HOST: "{{PUBLIC_API_HOST}}",
-        PUBLIC_APP_HOST: "{{PUBLIC_APP_HOST}}",
-        PUBLIC_ASSETS_HOST: "{{PUBLIC_ASSETS_HOST}}",
-        PUBLIC_COLLAB_HOST: "{{PUBLIC_COLLAB_HOST}}",
+        PUBLIC_API_URL: "{{PUBLIC_API_URL}}",
+        PUBLIC_APP_URL: "{{PUBLIC_APP_URL}}",
+        PUBLIC_ASSETS_URL: "{{PUBLIC_ASSETS_URL}}",
+        PUBLIC_COLLAB_URL: "{{PUBLIC_COLLAB_URL}}",
         PUBLIC_APP_TYPE: "{{PUBLIC_APP_TYPE}}"
       };
     </script>
     <script type="module">
-      const baseUrl = `http${window.location.protocol.includes("https") ? "s" : ""}://${
-        window.env.PUBLIC_API_HOST
-      }`;
       try {
         await fetch("/session/refresh", { method: "POST" });
-        const response = await fetch(`${baseUrl}/user-settings`, {
+        const response = await fetch(`${window.env.PUBLIC_API_URL}/user-settings`, {
           credentials: "include"
         });
         if (!response.ok) throw new Error();

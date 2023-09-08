@@ -96,8 +96,8 @@ const FrameHeadline: Component<FrameHeadlineProps> = (props) => {
       <div class="flex-1 flex justify-center items-center relative h-full">
         <Image
           class="max-h-full min-w-[16rem] md:absolute right-0 hero-image shadow-2xl rounded-2xl border-2 border-gray-200 dark:border-gray-700 gradient-image-mask overflow-hidden w-full z-0"
-          srcDark={editorImageDark}
-          srcLight={editorImageLight}
+          srcDark={editorImageDark.src}
+          srcLight={editorImageLight.src}
           alt="Vrite Kanban dashboard"
         />
       </div>

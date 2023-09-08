@@ -8,7 +8,9 @@ import {
   mdiGithub,
   mdiLoginVariant
 } from "@mdi/js";
-import { Button, IconButton, Input, Loader } from "#components/primitives";
+import dashboardImageDark from "#assets/images/dark/dashboard.png";
+import dashboardImageLight from "#assets/images/light/dashboard.png";
+import { Button, IconButton, Input, Loader, Image } from "#components/primitives";
 import { isEmailCorrect, setEmail, setEmailModal, submitEmailForm, emailContext } from "#lib/email";
 
 const EmailForm: Component = () => {
@@ -63,75 +65,50 @@ const Headline: Component = () => {
   return (
     <Observed
       class="mt-4 transition-all duration-500 ease-out transform md:mt-0"
-      outOfViewClass="invisible translate-x-full"
+      outOfViewClass="invisible translate-y-full"
     >
-      <div>
-        <div class="flex justify-start">
+      <Observed
+        class="delay-100 transition-all hero-image duration-1000 ease-out max-h-full -z-10 md:absolute right-0 -top-16 max-w-[calc(100vw-4rem)] shadow-2xl rounded-2xl border-2 border-gray-200 dark:border-gray-700 gradient-image-mask overflow-hidden"
+        outOfViewClass="invisible hero-image-initial"
+      >
+        <Image
+          // class="max-h-full -z-10 md:absolute right-0 hero-image -top-16 max-w-[calc(100vw-4rem)] shadow-2xl rounded-2xl border-2 border-gray-200 dark:border-gray-700 gradient-image-mask overflow-hidden"
+          class="h-full w-full"
+          srcDark={dashboardImageDark.src}
+          srcLight={dashboardImageLight.src}
+          alt="Vrite Kanban dashboard"
+        ></Image>
+      </Observed>
+      <div class="flex justify-center items-center flex-col bg-opacity-40 bg-gray-100 dark:bg-gray-800 dark:bg-opacity-40 shadow-2xl shadow-gray-100 dark:shadow-gray-800">
+        <div>
           <Button badge text="soft" class="font-semibold text-center">
             Public Beta
           </Button>
         </div>
-        <h1 class="text-6xl md:text-7xl" style={{ perspective: "600px" }}>
-          <div
-            style={{
-              "transform-style": "preserve-3d",
-              "transition": "transform .33s",
-              "transform": `translateZ(-60px) rotateX(${-90 + headline() * 90}deg)`
-            }}
-            class="h-15 md:h-18 w-[250px] relative font-extrabold"
-          >
-            <div
-              class="absolute h-15 md:h-18 w-full"
-              style={{
-                "transform": "rotateX(90deg) translateZ(60px)",
-                "backface-visibility": "hidden"
-              }}
-            >
-              <span class="bg-clip-text text-transparent bg-gradient-to-tr">Create</span>
-            </div>
-            <div
-              class="absolute h-15 md:h-18 w-full"
-              style={{
-                "transform": "rotateY(0deg) translateZ(60px)",
-                "backface-visibility": "hidden"
-              }}
-            >
-              <span class="bg-clip-text text-transparent bg-gradient-to-tr">Manage</span>
-            </div>
-            <div
-              class="absolute h-15 md:h-18 w-full"
-              style={{
-                "transform": "rotateX(-90deg) translateZ(60px)",
-                "backface-visibility": "hidden"
-              }}
-            >
-              <span class="bg-clip-text text-transparent bg-gradient-to-tr">Deliver</span>
-            </div>
-          </div>
-          <span class="font-bold">technical content</span>
+        <h1 class="text-7xl md:text-9xl text-center !font-bold" style={{ perspective: "600px" }}>
+          Developer
+          <br />
+          <span class="bg-clip-text text-transparent bg-gradient-to-tr">Content Platform</span>
         </h1>
-        <p class="max-w-md mt-4 text-lg md:text-xl">
-          Open-source <b>headless Content Management System (CMS)</b> for your programming blogs,
-          documentation, and more.
+        <p class="max-w-2xl mt-4 text-2xl md:text-3xl text-center">
+          Open-source, collaborative space to create, manage and deploy product documentation,
+          technical blogs, and knowledge bases.
         </p>
-        <div class="items-center justify-start hidden w-full mt-4 gap-2 md:flex">
+        <div class="items-center justify-center hidden w-full mt-4 gap-4 md:flex">
           <IconButton
             color="primary"
-            text="base"
-            class="flex items-center justify-center m-0 whitespace-nowrap p-1 px-1.5"
+            class="flex items-center justify-center m-0 whitespace-nowrap"
             size="large"
-            variant="text"
             link="https://app.vrite.io"
             path={mdiLoginVariant}
             label="Get started"
             target="_blank"
           />
           <IconButton
-            class="flex items-center justify-center m-0 whitespace-nowrap p-1 px-1.5"
+            class="flex items-center justify-center m-0 whitespace-nowrap"
             link="https://docs.vrite.io"
             text="soft"
             size="large"
-            variant="text"
             path={mdiBookOpenBlankVariant}
             label="Documentation"
             target="_blank"

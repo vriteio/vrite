@@ -1,40 +1,43 @@
-import { Component, createSignal } from "solid-js";
-import { IconButton, Tooltip } from "@vrite/components";
-import { mdiCursorPointer, mdiSelect, mdiTrashCan, mdiTrashCanOutline } from "@mdi/js";
+import { Component, createEffect, createSignal } from "solid-js";
 import { SearchableSelect } from "#components/fragments";
+import { App, useAuthenticatedUserData } from "#context";
 
 interface WrapperMenuProps {
   state: {
-    deleteNode(): void;
+    key: string;
+    setKey(key: string): void;
   };
 }
 
 const WrapperMenu: Component<WrapperMenuProps> = (props) => {
-  const [options, setOptions] = createSignal([
-    { label: "Testing", value: "test" },
-    { label: "Testing 2", value: "test2" }
-  ]);
-  const [selectedOption, setSelectedOption] = createSignal<{ label: string; value: string } | null>(
-    null
-  );
+  const { workspaceSettings } = useAuthenticatedUserData();
+  const selectedOption = (): App.Wrapper | null => {
+    return (
+      (workspaceSettings()?.wrappers || []).find((wrapper) => wrapper.key === props.state.key) ||
+      null
+    );
+  };
+
+  props.state.setKey(selectedOption()?.key || "");
 
   return (
     <div class="w-full flex items-center justify-start text-base" contentEditable={false}>
       <div>
         <SearchableSelect
-          extractId={(option) => option.value}
+          extractId={(option) => option.key}
           filterOption={(option, query) => option.label.toLowerCase().includes(query.toLowerCase())}
-          options={options()}
+          options={workspaceSettings()?.wrappers || []}
           renderOption={(option) => <div class="text-start">{option.label}</div>}
           selectOption={(option) => {
-            setSelectedOption(option);
+            props.state.setKey(option?.key || "");
           }}
           selected={selectedOption()}
           loading={false}
-          placeholder="Testing"
+          placeholder="Wrapper"
           buttonProps={{
             class: "bg-gray-100",
-            color: "base"
+            color: "base",
+            text: "soft"
           }}
         />
       </div>

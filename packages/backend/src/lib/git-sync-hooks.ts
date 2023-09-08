@@ -14,13 +14,12 @@ import {
   getContentsCollection,
   getGitDataCollection
 } from "#database";
-import { createOutputContentProcessor as createOutputContentProcessorGitHub } from "#routes/git/github/process-content";
+import {
+  OutputContentProcessor,
+  createOutputContentProcessor as createOutputContentProcessorGitHub
+} from "#routes/git/github/process-content";
 import { publishGitDataEvent } from "#routes/git/events";
 
-type GenericOutputContentProcessor = (
-  buffer: Buffer,
-  contentPiece: UnderscoreID<FullContentPiece<ObjectId>>
-) => Promise<string>;
 type GitSyncHookEvent =
   | "contentPieceUpdated"
   | "contentPieceRemoved"
@@ -70,7 +69,7 @@ type GitSyncHookHandler<E extends GitSyncHookEvent> = (
   input: GitSyncHookData & {
     ctx: AuthenticatedContext;
     gitData: UnderscoreID<FullGitData<ObjectId>>;
-    processOutputContent: GenericOutputContentProcessor;
+    outputContentProcessor: OutputContentProcessor;
   },
   data: GitSyncHookEventData[E]
 ) => Promise<GitSyncHookData>;
@@ -78,19 +77,22 @@ type GitSyncHookHandler<E extends GitSyncHookEvent> = (
 const createGenericOutputContentProcessor = async (
   ctx: AuthenticatedContext,
   gitData: UnderscoreID<FullGitData<ObjectId>>
-): Promise<GenericOutputContentProcessor> => {
+): Promise<OutputContentProcessor> => {
   if (gitData.provider === "github") {
-    const processOutputContentGitHub = await createOutputContentProcessorGitHub(ctx);
-
-    return (buffer, contentPiece) => {
-      return processOutputContentGitHub(buffer, contentPiece, gitData.github!);
-    };
+    return await createOutputContentProcessorGitHub(ctx, gitData);
   }
 
-  return () => Promise.resolve("");
+  return {
+    process() {
+      return Promise.resolve("");
+    },
+    processBatch(input) {
+      return Promise.resolve(input.map(() => ""));
+    }
+  };
 };
 const handleContentGroupMoved: GitSyncHookHandler<"contentGroupMoved"> = async (
-  { ctx, directories, records, processOutputContent },
+  { ctx, directories, records, outputContentProcessor },
   data
 ) => {
   const contentGroupsCollection = getContentGroupsCollection(ctx.db);
@@ -160,6 +162,7 @@ const handleContentGroupMoved: GitSyncHookHandler<"contentGroupMoved"> = async (
       contentPieceId: { $in: contentPieces.map((contentPiece) => contentPiece._id) }
     })
     .toArray();
+  const outputContentProcessorBatch = [];
 
   for await (const contentGroup of nestedContentGroups) {
     const ancestorDirectory = newDirectories.find((directory) => {
@@ -187,36 +190,50 @@ const handleContentGroupMoved: GitSyncHookHandler<"contentGroupMoved"> = async (
 
       if (!content) continue;
 
-      const output = await processOutputContent(Buffer.from(content.buffer), contentPiece);
-      const hash = crypto.createHash("md5").update(output).digest("hex");
-
-      newRecords.push({
-        contentPieceId: contentPiece._id,
-        path: ancestorDirectory.path
-          .split("/")
-          .concat(
-            contentGroup.name || `${contentGroup._id}`,
-            contentPiece.filename || `${contentPiece._id}`
-          )
-          .filter(Boolean)
-          .join("/"),
-        currentHash: hash,
-        syncedHash: ""
+      outputContentProcessorBatch.push({
+        content,
+        contentPiece,
+        contentGroup
       });
     }
   }
 
+  const processedOutputContents = await outputContentProcessor.processBatch(
+    outputContentProcessorBatch.map(({ content, contentPiece }) => {
+      return {
+        buffer: Buffer.from(content.buffer),
+        contentPiece
+      };
+    })
+  );
+
+  outputContentProcessorBatch.forEach(({ contentPiece, contentGroup }, index) => {
+    newRecords.push({
+      contentPieceId: contentPiece._id,
+      path: ancestorDirectory.path
+        .split("/")
+        .concat(
+          contentGroup.name || `${contentGroup._id}`,
+          contentPiece.filename || `${contentPiece._id}`
+        )
+        .filter(Boolean)
+        .join("/"),
+      currentHash: crypto.createHash("md5").update(processedOutputContents[index]).digest("hex"),
+      syncedHash: ""
+    });
+  });
+
   return { directories: newDirectories, records: newRecords };
 };
 const handleContentGroupUpdated: GitSyncHookHandler<"contentGroupUpdated"> = async (
-  { ctx, gitData, directories, records, processOutputContent },
+  { ctx, gitData, directories, records, outputContentProcessor },
   data
 ) => {
   if (!data.name && !data.ancestor) return { directories, records };
 
   if (!data.name) {
     return handleContentGroupMoved(
-      { ctx, gitData, directories, records, processOutputContent },
+      { ctx, gitData, directories, records, outputContentProcessor },
       data
     );
   }
@@ -327,7 +344,7 @@ const handleContentGroupRemoved: GitSyncHookHandler<"contentGroupRemoved"> = asy
   };
 };
 const handleContentPieceMoved: GitSyncHookHandler<"contentPieceMoved"> = async (
-  { ctx, gitData, directories, records, processOutputContent },
+  { ctx, directories, records, outputContentProcessor },
   data
 ) => {
   const contentsCollection = getContentsCollection(ctx.db);
@@ -360,7 +377,10 @@ const handleContentPieceMoved: GitSyncHookHandler<"contentPieceMoved"> = async (
 
   if (!content) return { directories, records: newRecords };
 
-  const output = await processOutputContent(Buffer.from(content.buffer), data.contentPiece);
+  const output = await outputContentProcessor.process({
+    buffer: Buffer.from(content.buffer),
+    contentPiece: data.contentPiece
+  });
 
   newRecords.push({
     contentPieceId: data.contentPiece._id,
@@ -379,7 +399,7 @@ const handleContentPieceMoved: GitSyncHookHandler<"contentPieceMoved"> = async (
   };
 };
 const handleContentPieceUpdated: GitSyncHookHandler<"contentPieceUpdated"> = async (
-  { ctx, directories, records, processOutputContent },
+  { ctx, directories, records, outputContentProcessor },
   data
 ) => {
   let newRecords = [...records];
@@ -401,7 +421,10 @@ const handleContentPieceUpdated: GitSyncHookHandler<"contentPieceUpdated"> = asy
 
   if (!content) return { directories, records: newRecords };
 
-  const output = await processOutputContent(Buffer.from(content.buffer), data.contentPiece);
+  const output = await outputContentProcessor.process({
+    buffer: Buffer.from(content.buffer),
+    contentPiece: data.contentPiece
+  });
   const contentHash = crypto.createHash("md5").update(output).digest("hex");
   const newRecordPath = existingDirectory.path
     .split("/")
@@ -440,7 +463,7 @@ const handleContentPieceUpdated: GitSyncHookHandler<"contentPieceUpdated"> = asy
   return { directories, records: newRecords };
 };
 const handleContentPieceCreated: GitSyncHookHandler<"contentPieceCreated"> = async (
-  { gitData, directories, records, processOutputContent },
+  { directories, records, outputContentProcessor },
   data
 ) => {
   const existingDirectory = directories.find((directory) => {
@@ -449,10 +472,10 @@ const handleContentPieceCreated: GitSyncHookHandler<"contentPieceCreated"> = asy
 
   if (!existingDirectory) return { directories, records };
 
-  const output = await processOutputContent(
-    data.contentBuffer || jsonToBuffer({ type: "doc", content: [] }),
-    data.contentPiece
-  );
+  const output = await outputContentProcessor.process({
+    buffer: data.contentBuffer || jsonToBuffer({ type: "doc", content: [] }),
+    contentPiece: data.contentPiece
+  });
   const contentHash = crypto.createHash("md5").update(output).digest("hex");
 
   return {
@@ -551,14 +574,14 @@ const runGitSyncHook = async <E extends GitSyncHookEvent>(
 
         if (!gitData || !handler) return;
 
-        const processOutputContent = await createGenericOutputContentProcessor(ctx, gitData);
+        const outputContentProcessor = await createGenericOutputContentProcessor(ctx, gitData);
         const { directories, records } = await handler(
           {
             ctx,
             gitData,
             directories: gitData.directories,
             records: gitData.records,
-            processOutputContent
+            outputContentProcessor
           },
           data
         );

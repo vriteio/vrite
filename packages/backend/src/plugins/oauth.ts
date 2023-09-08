@@ -28,7 +28,7 @@ const registerGitHubOAuth = (fastify: FastifyInstance): void => {
         auth: fastifyOAuth2.GITHUB_CONFIGURATION
       },
       startRedirectPath: "/login/github",
-      callbackUri: `${fastify.config.CALLBACK_DOMAIN}/login/github/callback`
+      callbackUri: `${fastify.config.PUBLIC_APP_URL}/login/github/callback`
     }
   };
 

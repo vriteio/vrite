@@ -24,12 +24,7 @@ import {
 } from "#context";
 
 const WrapperDetails: Component<{
-  wrapper: {
-    id: string;
-    key: string;
-    label: string;
-    extension?: boolean;
-  };
+  wrapper: App.Wrapper;
   onEdit?(): void;
   onDelete?(): void;
 }> = (props) => {
@@ -40,7 +35,7 @@ const WrapperDetails: Component<{
   return (
     <Card class="flex flex-col gap-0 w-full m-0" color="contrast">
       <div class="flex items-start justify-center gap-2 w-full">
-        <Heading level={3} class="flex-1 flex justify-start items-center min-h-8">
+        <Heading level={3} class="break-anywhere flex-1">
           {props.wrapper.label || "[No name]"}
         </Heading>
         <Show
@@ -52,17 +47,6 @@ const WrapperDetails: Component<{
           }
         >
           <Show when={hasPermission("manageWorkspace")}>
-            <Tooltip text="Edit" class="mt-1">
-              <IconButton
-                path={mdiTune}
-                text="soft"
-                disabled={loading()}
-                class="m-0"
-                onClick={() => {
-                  props.onEdit?.();
-                }}
-              />
-            </Tooltip>
             <Tooltip text="Delete" class="mt-1">
               <IconButton
                 path={mdiTrashCan}
@@ -70,16 +54,24 @@ const WrapperDetails: Component<{
                 class="m-0"
                 loading={loading()}
                 onClick={async () => {
-                  setLoading(true);
-                  await client.tokens.delete.mutate({
-                    id: props.wrapper.key
-                  });
-                  setLoading(false);
-                  props.onDelete?.();
-                  notify({
-                    text: "API Token deleted",
-                    type: "success"
-                  });
+                  try {
+                    setLoading(true);
+                    await client.workspaceSettings.deleteWrapper.mutate({
+                      key: props.wrapper.key
+                    });
+                    setLoading(false);
+                    props.onDelete?.();
+                    notify({
+                      text: "Wrapper deleted",
+                      type: "success"
+                    });
+                  } catch (error) {
+                    setLoading(false);
+                    notify({
+                      text: "Failed to delete wrapper",
+                      type: "error"
+                    });
+                  }
                 }}
               />
             </Tooltip>
@@ -91,7 +83,6 @@ const WrapperDetails: Component<{
 };
 const EditorSection: SettingsSectionComponent = (props) => {
   const { notify } = useNotifications();
-  const [editedWrapper, setEditedWrapper] = createSignal<App.Wrapper | null>(null);
   const [openedSubsection, setOpenedSubsection] = createSignal<"none" | "configure-wrapper">(
     "none"
   );
@@ -128,9 +119,7 @@ const EditorSection: SettingsSectionComponent = (props) => {
   });
   createEffect(
     on(openedSubsection, (openedSubsection) => {
-      if (openedSubsection === "configure-wrapper") {
-        setEditedWrapper(null);
-      } else if (openedSubsection === "none") {
+      if (openedSubsection === "none") {
         setOpenedSubsection("none");
         props.setSubSection(null);
         props.setActionComponent(null);
@@ -274,43 +263,48 @@ const EditorSection: SettingsSectionComponent = (props) => {
             </For>
           </div>
         </TitledCard>
-        <TitledCard
-          label="Wrappers"
-          icon={mdiCube}
-          action={
-            <Button
-              text="soft"
-              class="m-0"
-              onClick={() => {
-                setOpenedSubsection("configure-wrapper");
-                props.setSubSection({
-                  label: "New wrapper",
-                  icon: mdiCube,
-                  goBack() {
-                    setOpenedSubsection("none");
-                  }
-                });
-              }}
-            >
-              New wrapper
-            </Button>
-          }
-        >
-          <div class="grid grid-cols-2 @md:grid-cols-3 gap-2 w-full">
-            <For
-              each={wrappers()}
-              fallback={
-                <p class="px-2 w-full text-start text-gray-500 dark:text-gray-400">
-                  No wrappers found
-                </p>
-              }
-            >
-              {(wrapper) => {
-                return <WrapperDetails wrapper={wrapper} />;
-              }}
-            </For>
-          </div>
-        </TitledCard>
+        <Show when={enabledBlocks().includes("wrapper")}>
+          <TitledCard
+            label="Wrappers"
+            icon={mdiCube}
+            action={
+              <Show when={hasPermission("manageWorkspace")}>
+                <Button
+                  text="soft"
+                  color="contrast"
+                  class="m-0"
+                  onClick={() => {
+                    setOpenedSubsection("configure-wrapper");
+                    props.setSubSection({
+                      label: "New wrapper",
+                      icon: mdiCube,
+                      goBack() {
+                        setOpenedSubsection("none");
+                      }
+                    });
+                  }}
+                >
+                  New wrapper
+                </Button>
+              </Show>
+            }
+          >
+            <div class="flex flex-col gap-2 w-full">
+              <For
+                each={wrappers()}
+                fallback={
+                  <p class="px-2 w-full text-start text-gray-500 dark:text-gray-400">
+                    No wrappers found
+                  </p>
+                }
+              >
+                {(wrapper) => {
+                  return <WrapperDetails wrapper={wrapper} />;
+                }}
+              </For>
+            </div>
+          </TitledCard>
+        </Show>
         <TitledCard label="Prettier config" icon={mdiCodeTagsCheck}>
           <p class="prose text-gray-500 dark:text-gray-400">
             Customize your Prettier config for consistent code formatting for all users of the
@@ -343,7 +337,6 @@ const EditorSection: SettingsSectionComponent = (props) => {
       <Match when={openedSubsection() === "configure-wrapper"}>
         <ConfigureWrapperSubSection
           setActionComponent={props.setActionComponent}
-          editedWrapper={editedWrapper()}
           onWrapperConfigured={() => {
             setOpenedSubsection("none");
           }}

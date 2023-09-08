@@ -108,13 +108,10 @@ const CommandPalette: Component<CommandPaletteProps> = (props) => {
   const [mouseHoverEnabled, setMouseHoverEnabled] = createSignal(false);
   const [selectedIndex, setSelectedIndex] = createSignal(0);
   const [query, setQuery] = createSignal("");
-  const baseUrl = `http${window.location.protocol.includes("https") ? "s" : ""}://${
-    window.env.PUBLIC_API_HOST
-  }`;
   const ask = async (): Promise<void> => {
     let content = "";
 
-    await fetchEventSource(`${baseUrl}/search/ask/?query=${query()}`, {
+    await fetchEventSource(`${window.env.PUBLIC_API_URL}/search/ask/?query=${query()}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",

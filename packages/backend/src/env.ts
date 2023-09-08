@@ -4,12 +4,10 @@ const envSchema = z.object({
   SECRET: z.string(),
   PORT: z.number(),
   HOST: z.string(),
-  CALLBACK_DOMAIN: z.string(),
-  TOP_DOMAIN: z.string(),
   VRITE_CLOUD: z.boolean().optional(),
+  COOKIE_DOMAIN: z.string().optional(),
   // MongoDB (Database)
   MONGO_URL: z.string(),
-  DATABASE: z.string(),
   // Redis (Cache)
   REDIS_URL: z.string(),
   // GitHub OAuth (Authentication)
@@ -44,11 +42,11 @@ const envSchema = z.object({
   WEAVIATE_API_KEY: z.string().optional(),
   WEAVIATE_URL: z.string().optional(),
   // Frontend
-  PUBLIC_API_HOST: z.string(),
-  PUBLIC_COLLAB_HOST: z.string(),
-  PUBLIC_APP_HOST: z.string(),
-  PUBLIC_ASSETS_HOST: z.string(),
-  PUBLIC_APP_TYPE: z.string()
+  PUBLIC_API_URL: z.string(),
+  PUBLIC_COLLAB_URL: z.string(),
+  PUBLIC_APP_URL: z.string(),
+  PUBLIC_ASSETS_URL: z.string(),
+  PUBLIC_APP_TYPE: z.string().optional().default("platform")
 });
 
 declare module "fastify" {
