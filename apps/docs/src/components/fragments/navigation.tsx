@@ -13,7 +13,7 @@ const Navigation: Component<NavigateProps> = (props) => {
       <div class="flex-1">
         <Show when={props.previousEntry}>
           <IconButton
-            label={`"${props.previousEntry!.label}"`}
+            label={props.previousEntry!.label}
             path={mdiChevronLeft}
             iconProps={{ class: "min-w-8" }}
             size="large"
@@ -25,7 +25,7 @@ const Navigation: Component<NavigateProps> = (props) => {
       <div class="flex-1">
         <Show when={props.nextEntry}>
           <IconButton
-            label={<span class="pr-2">"{props.nextEntry!.label}"</span>}
+            label={<span class="pr-2">{props.nextEntry!.label}</span>}
             path={mdiChevronRight}
             iconProps={{ class: "min-w-8" }}
             size="large"

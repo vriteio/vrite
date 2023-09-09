@@ -10,9 +10,17 @@ const description =
   "Open-source headless Content Management System (CMS) for technical content, like programming blogs, documentation, and more.";
 
 const docs = await getCollection("docs");
-const menu = docs
+const usageGuideMenu = docs
   .filter((entry) => {
     return entry.data.category === "Usage Guide";
+  })
+  .map((entry) => ({
+    title: entry.data.title,
+    link: `/${entry.slug}`
+  }));
+const apiDocsMenu = docs
+  .filter((entry) => {
+    return entry.data.category === "API Documentation";
   })
   .map((entry) => ({
     title: entry.data.title,
@@ -52,12 +60,17 @@ if (Astro.props.previousEntry) {
   <body class="overflow-x-hidden overscroll-none">
     <SVGDefs />
     <main
-      class="flex flex-col items-center justify-center gap-8 h-full bg-gray-100 dark:bg-gray-800"
+      class="flex flex-col items-center justify-center gap-8 h-full bg-gray-50 dark:bg-gray-800"
     >
       <div class="min-h-screen w-full flex justify-center items-start h-full">
-        <SideBar menu={menu} currentPath={Astro.url.pathname} client:idle />
+        <SideBar
+          usageGuideMenu={usageGuideMenu}
+          apiDocsMenu={apiDocsMenu}
+          currentPath={Astro.url.pathname}
+          client:idle
+        />
         <div class="flex-1 flex justify-center items-center flex-col overflow-hidden max-h-screen">
-          <Header />
+          <Header client:idle />
           <div class="flex overflow-hidden w-full relative">
             <div
               class="flex-1 flex overflow-y-auto overflow-x-hidden md:max-h-[calc(100vh-3.125rem)] h-screen"

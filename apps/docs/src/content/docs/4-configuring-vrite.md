@@ -1,7 +1,7 @@
 ---
 title: Configuring Vrite
 category: Usage Guide
-slug: settings
+slug: usage-guide/settings
 ---
 
 Everything related to configuring Vrite can be done from the settings side panel. From managing API tokens to customizing the editing experience — all can be managed in the settings.
@@ -107,7 +107,7 @@ interface ContentPieceEventPayload {
   contentGroupId: string;
   customData?: Record<string, any> | null;
   canonicalLink?: string | null;
-  slug: string;
+  slug: usage-guide/string;
   locked?: boolean;
 }
 ```

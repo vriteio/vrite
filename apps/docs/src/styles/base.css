@@ -27,9 +27,7 @@ html {
 h1,
 h2 {
   font-family: "NunitoVariable", sans-serif;
-  @apply !font-extrabold;
 }
-
 .scrollbar-sm {
   scrollbar-color: #e2e8f0 #f8fafc;
   scrollbar-width: thin;
@@ -90,21 +88,6 @@ h2 {
   .hero-image {
     transform: perspective(100rem) rotate3d(1, -1, 0, 30deg);
   }
-  .hero-image-1 {
-    transform: perspective(100rem) rotate3d(1, -1, 0, 30deg) translate3d(0, 4rem, 4rem);
-    mask-image: linear-gradient(to bottom, black, transparent);
-    -webkit-mask-image: linear-gradient(to bottom, black 66%, transparent);
-  }
-  .hero-image-2 {
-    transform: perspective(100rem) rotate3d(1, -1, 0, 30deg);
-    mask-image: linear-gradient(to bottom, black, transparent);
-    -webkit-mask-image: linear-gradient(to bottom, black 66%, transparent);
-  }
-  .hero-image-3 {
-    transform: perspective(100rem) rotate3d(1, -1, 0, 30deg) translate3d(0, -4rem, -4rem);
-    mask-image: linear-gradient(to bottom, black, transparent);
-    -webkit-mask-image: linear-gradient(to bottom, black 66%, transparent);
-  }
 }
 
 @screen md {
@@ -160,7 +143,7 @@ h2 {
   }
 }
 .astro-code {
-  @apply !rounded-2xl !bg-gray-900 !border-gray-700 !border-2;
+  @apply !rounded-2xl !bg-gray-50 !border-gray-200 !border-2 !p-2;
 }
 .astro-code::-webkit-scrollbar {
   @apply w-2 h-2 rounded-lg bg-transparent;
@@ -169,7 +152,14 @@ h2 {
   @apply mx-2;
 }
 .astro-code::-webkit-scrollbar-thumb {
-  @apply rounded-lg bg-gray-800;
+  @apply rounded-lg bg-gray-200;
+}
+.astro-code code {
+  font-family: "Fira Code", monospace !important;
+  font-size: 14px !important;
+  line-height: 21px !important;
+  display: flex;
+  flex-direction: column;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -181,17 +171,37 @@ h2 {
 .prose code::after {
   content: "" !important;
 }
+.prose pre {
+  @apply px-4 py-2 border-none text-base;
+}
 .prose :not(pre) code {
   @apply bg-gray-200 text-gray-700 font-medium dark:bg-gray-900 dark:text-gray-300 py-1 px-2 rounded-lg;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
-    "Courier New", monospace !important;
+
+  font-family: "Fira Code", monospace !important;
 }
 .prose img {
-  @apply rounded-2xl border-2 border-gray-200 dark:border-gray-700;
+  @apply rounded-2xl;
 }
 .prose :where(li > ul, li > ol):not(:where(.not-prose, .not-prose *)) {
   @apply !m-0;
 }
 .prose :where(ul p, ol p):not(:where(.not-prose, .not-prose *)) {
   @apply !m-0;
+}
+.code-block-contrast .astro-code {
+  @apply !bg-gray-100 !m-0 w-full;
+}
+.parameters-section,
+.response-section,
+.body-section {
+  @apply !hidden;
+}
+[data-active-section="parameters"] .parameters-section {
+  @apply !flex;
+}
+[data-active-section="response"] .response-section {
+  @apply !flex;
+}
+[data-active-section="body"] .body-section {
+  @apply !flex;
 }

@@ -1,7 +1,7 @@
 ---
 title: Vrite Extensions
 category: Usage Guide
-slug: vrite-extensions
+slug: usage-guide/vrite-extensions
 ---
 
 Vrite Extensions are meant to make Vrite both more customizable and easier to use. With direct access to Vrite API and the ability to extend Vrite’s UI, they have the ability to vastly improve your experience with Vrite.

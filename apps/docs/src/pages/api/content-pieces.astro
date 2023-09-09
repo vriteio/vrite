@@ -1,6 +1,8 @@
 ---
 import { DefaultLayout } from "#components/layouts";
+import { APIDocs } from "#components/fragments";
 import { getEntry, getCollection } from "astro:content";
+import { marked } from "marked";
 
 let { slug } = Astro.params;
 
@@ -8,21 +10,17 @@ if (slug === undefined) {
   return Astro.redirect("/usage-guide/getting-started");
 }
 
-const { entry } = Astro.props;
-const { Content, headings } = await entry.render();
 const collection = await getCollection("docs");
+const entry = await getEntry("docs", slug);
+
+if (entry === undefined) {
+  return Astro.redirect("/");
+}
+
+const { Content, headings } = await entry.render();
 const entryIndex = collection.findIndex((e) => e.slug === slug);
 const nextEntry = collection[entryIndex + 1];
 const previousEntry = collection[entryIndex - 1];
-
-export const prerender = true;
-export async function getStaticPaths() {
-  const blogEntries = await getCollection("docs");
-  return blogEntries.map((entry) => ({
-    params: { slug: entry.slug },
-    props: { entry }
-  }));
-}
 ---
 
 <DefaultLayout
@@ -31,5 +29,10 @@ export async function getStaticPaths() {
   nextEntry={nextEntry}
   previousEntry={previousEntry}
 >
-  <Content />
+  <p
+    set:html={marked.parseInline(
+      `**Content pieces** are at the heart of Vrite - all content you create, as well as all the related metadata is stored across many content pieces.`
+    )}
+  />
+  <APIDocs />
 </DefaultLayout>

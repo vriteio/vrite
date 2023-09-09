@@ -52,7 +52,7 @@
     "@vrite/extensions": "workspace:*",
     "@vrite/scripts": "workspace:*",
     "@vrite/sdk": "workspace:*",
-    "@vrite/tiptap-solid": "2023.7.25",
+    "@vrite/tiptap-solid": "1.0.0",
     "clsx": "^2.0.0",
     "dayjs": "^1.11.9",
     "dompurify": "^3.0.5",

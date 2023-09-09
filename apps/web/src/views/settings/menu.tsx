@@ -1,7 +1,6 @@
 import clsx from "clsx";
 import { Component, For } from "solid-js";
 import { Button, Icon } from "#components/primitives";
-import { config } from "#config";
 
 interface MenuItem {
   icon: string;
@@ -35,12 +34,6 @@ const MenuSection: Component<MenuSectionProps> = (props) => {
             );
           }}
         </For>
-      </div>
-      <div class="flex-1" />
-      <div class="flex justify-end w-full">
-        <span class="text-sm font-semibold text-gray-500 dark:text-gray-400">
-          Vrite {config.version}
-        </span>
       </div>
     </>
   );
