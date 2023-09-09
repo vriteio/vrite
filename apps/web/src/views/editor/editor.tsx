@@ -131,7 +131,7 @@ const Editor: Component<EditorProps> = (props) => {
       Text,
       HardBreak,
       Typography,
-      Comment,
+      // Comment,
       ...(workspaceSettings() ? createExtensions(workspaceSettings()!, provider) : []),
       TrailingNode,
       CharacterCount,

@@ -256,6 +256,7 @@ kbd {
   --un-prose-hr: #6b7280;
   --un-prose-invert-lists: #9ca3af;
   --un-prose-invert-hr: #9ca3af;
+  --highlighted-thread: "G3JAKWBAsWA1xXnPcJ-Zu";
 
   :where(div[data-wrapper="true"]) {
     .content > :first-child,
@@ -287,6 +288,15 @@ kbd {
     &::after {
       content: "";
       @apply bg-primary opacity-20 absolute w-full h-full top-0 left-0 pointer-events-none;
+    }
+
+    .active {
+      @apply text-secondary relative;
+
+      &::after {
+        content: "";
+        @apply bg-secondary opacity-20 absolute w-full h-full top-0 left-0 pointer-events-none;
+      }
     }
   }
 }

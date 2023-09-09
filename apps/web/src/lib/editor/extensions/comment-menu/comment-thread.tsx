@@ -3,8 +3,8 @@ import { CommentInput } from "./comment-input";
 import { ThreadWithFirstComment, useCommentData } from "./comment-data";
 import { SolidEditor } from "@vrite/tiptap-solid";
 import clsx from "clsx";
-import { Component, createSignal, createEffect, on, onCleanup, Show, For } from "solid-js";
-import { mdiCheckCircleOutline, mdiClose, mdiCloseCircle } from "@mdi/js";
+import { Component, createSignal, createEffect, on, Show, For } from "solid-js";
+import { mdiCheckCircleOutline, mdiCloseCircle } from "@mdi/js";
 import { createRef } from "@vrite/components/src/ref";
 import { Button, Card, Heading, IconButton, Loader } from "#components/primitives";
 import { App, useClient } from "#context";
@@ -23,6 +23,7 @@ const CommentThread: Component<{
   selectedFragmentId: string | null;
   editor: SolidEditor;
   contentPieceId: string;
+  contentOverlap: boolean;
   setFragment(fragment: string): void;
 }> = (props) => {
   const client = useClient();
@@ -39,12 +40,16 @@ const CommentThread: Component<{
   const loadComments = async (): Promise<void> => {
     setLoading(true);
 
-    const comments = await client.comments.listComments.query({
-      fragment: props.fragment.id
-    });
+    try {
+      const comments = await client.comments.listComments.query({
+        fragment: props.fragment.id
+      });
 
-    setComments(comments);
-    setLoading(false);
+      setComments(comments);
+      setLoading(false);
+    } catch (error) {
+      setLoading(false);
+    }
   };
   const thread = (): ThreadWithFirstComment | null => getThreadByFragment(props.fragment.id);
   const firstComment = (): CommentWithMember => comments()[0];
@@ -70,24 +75,26 @@ const CommentThread: Component<{
   return (
     <div
       class={clsx(
-        "absolute rounded-2xl flex flex-col gap-2",
-        props.fragment.overlap !== 0 && "opacity-80",
-        props.selectedFragmentId && !selected() && "!hidden z-0",
+        "absolute rounded-2xl flex flex-col gap-2 transform transition-all",
+        props.selectedFragmentId && !selected() && "opacity-40 scale-90 z-0",
+        props.contentOverlap && props.selectedFragmentId && !selected() && "!hidden",
         props.selectedFragmentId &&
           selected() &&
-          "z-1 hidden md:block not-prose text-base w-86 m-0 transform min-h-[60vh] max-h-[60vh] backdrop-blur-lg bg-gray-100 dark:bg-gray-800 dark:bg-opacity-50 bg-opacity-50 rounded-l-2xl"
+          "z-1 hidden md:block not-prose text-base w-86 m-0 transform min-h-[60vh] max-h-[60vh] bg-gray-100 dark:bg-gray-800 dark:bg-opacity-50 bg-opacity-80 rounded-l-2xl"
       )}
       style={{
-        top: `${props.fragment.computedTop}px`,
+        top: `${
+          props.contentOverlap || selected() ? props.fragment.top : props.fragment.computedTop
+        }px`,
         right: "0px",
         width: "100%"
       }}
       onClick={() => {
-        props.editor.chain().focus().setTextSelection(props.fragment.pos).run();
+        props.setFragment(props.fragment.id);
       }}
     >
       <Show when={selected()}>
-        <div class="flex justify-center items-center absolute w-full px-3 -top-9">
+        <div class="flex justify-center items-center absolute w-full px-3 -top-9 pb-1 bg-gray-100 dark:bg-gray-800 dark:bg-opacity-50 bg-opacity-80">
           <IconButton
             path={mdiCloseCircle}
             class="m-0 mr-1 p-0.5"

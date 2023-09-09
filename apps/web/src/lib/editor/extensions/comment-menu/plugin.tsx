@@ -1,8 +1,11 @@
 import { CommentMenu } from "./component";
-import { Editor, Extension, getAttributes } from "@tiptap/core";
+import { Comment } from "@vrite/editor";
+import { Editor, Extension, getAttributes, getMarkRange, mergeAttributes } from "@tiptap/core";
 import { SolidEditor, SolidRenderer } from "@vrite/tiptap-solid";
 import { debounce } from "@solid-primitives/scheduled";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
+import { DecorationSet, Decoration } from "@tiptap/pm/view";
+import { Mark, ResolvedPos } from "@tiptap/pm/model";
 
 const box = document.createElement("div");
 
@@ -38,11 +41,31 @@ const updatePosition = (editor: Editor): void => {
     contentOverlap: viewWidth - parentPos.width + 24 < 360
   }));
 };
-const CommentMenuPlugin = Extension.create({
-  name: "commentMenu",
+const CommentMenuPluginKey = new PluginKey("commentMenu");
+const CommentMenuPlugin = Comment.extend({
+  // name: "commentMenu",
+  exitable: true,
   addStorage() {
     return {
       resizeHandler: () => {}
+    };
+  },
+  addCommands() {
+    return {
+      setComment: (attributes) => {
+        return ({ commands }) => {
+          component?.state().setFragment(attributes.thread || "");
+
+          return commands.setMark("comment", attributes);
+        };
+      },
+      unsetComment: () => {
+        return ({ commands }) => {
+          component?.state().setFragment("");
+
+          return commands.unsetMark("comment");
+        };
+      }
     };
   },
   onCreate() {
@@ -64,6 +87,9 @@ const CommentMenuPlugin = Extension.create({
             ...state,
             fragment
           }));
+          this.editor.view.dispatch(
+            this.editor.view.state.tr.setMeta(CommentMenuPluginKey, { fragment })
+          );
         }
       }
     });
@@ -92,8 +118,37 @@ const CommentMenuPlugin = Extension.create({
   addProseMirrorPlugins() {
     return [
       new Plugin({
-        key: new PluginKey("handleClickLink"),
+        key: CommentMenuPluginKey,
         props: {
+          decorations(state) {
+            const activeMarks: Array<{ mark: Mark; pos: number; size: number }> = [];
+
+            state.doc.descendants((node, pos) => {
+              const commentMark = node.marks.find((mark) => mark.type.name === "comment");
+
+              if (
+                node.type.name === "text" &&
+                commentMark &&
+                commentMark.attrs.thread === component?.state().fragment
+              ) {
+                activeMarks.push({
+                  mark: commentMark,
+                  pos,
+                  size: node.nodeSize
+                });
+              }
+            });
+
+            const decorations: Decoration[] = [];
+
+            activeMarks.forEach(({ mark, pos, size }) => {
+              decorations.push(
+                Decoration.inline(pos, pos + size, { class: "active" }, { ...mark.attrs })
+              );
+            });
+
+            return DecorationSet.create(state.doc, decorations);
+          },
           handleClick: (view, _pos, event) => {
             if (event.button !== 0) {
               return false;
@@ -101,10 +156,7 @@ const CommentMenuPlugin = Extension.create({
 
             const attrs = getAttributes(view.state, "comment");
 
-            component?.setState((state) => ({
-              ...state,
-              fragment: attrs.thread || ""
-            }));
+            component?.state().setFragment(attrs.thread || "");
 
             if (attrs.thread) {
               return true;

@@ -8,7 +8,6 @@ declare module "@tiptap/core" {
   interface Commands<ReturnType> {
     comment: {
       setComment: (attributes: { thread?: string | null }) => ReturnType;
-      toggleComment: (attributes: { thread?: string | null }) => ReturnType;
       unsetComment: () => ReturnType;
     };
   }
@@ -51,11 +50,6 @@ const Comment = Mark.create<CommentOptions>({
     return {
       setComment: (attributes) => {
         return ({ commands }) => commands.setMark("comment", attributes);
-      },
-      toggleComment: (attributes) => {
-        return ({ commands }) => {
-          return commands.toggleMark("comment", attributes);
-        };
       },
       unsetComment: () => {
         return ({ commands }) => {
