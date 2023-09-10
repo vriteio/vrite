@@ -1,6 +1,7 @@
 import { optional, z } from "zod";
 
 const envSchema = z.object({
+  NODE_ENV: z.string(),
   SECRET: z.string(),
   PORT: z.number(),
   HOST: z.string(),

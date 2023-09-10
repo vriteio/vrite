@@ -1,8 +1,10 @@
 import { errors, publicPlugin, z } from "@vrite/backend";
 import rateLimitPlugin from "@fastify/rate-limit";
-import corsPlugin from "@fastify/cors";
-import { GetObjectCommand } from "@aws-sdk/client-s3";
+import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import sharp from "sharp";
+import { nanoid } from "nanoid";
+import mime from "mime-types";
+import { processAuth } from "@vrite/backend/src/lib/auth";
 
 const imageMimeTypes = {
   jpg: "image/jpeg",
@@ -86,6 +88,41 @@ const assetsService = publicPlugin(async (fastify) => {
         .send(await transformer.toBuffer());
     } catch (e) {
       return sendSource();
+    }
+  });
+  fastify.post<{
+    Body: Buffer;
+  }>("/upload", async (req, res) => {
+    try {
+      const auth = await processAuth({ db: fastify.mongo.db!, fastify, req, res });
+      const data = await req.file();
+      const key = `${auth?.data.workspaceId || "vrite-editor"}/${nanoid()}.${
+        mime.extension(data?.mimetype || "") || ""
+      }`;
+      const buffer = await data?.toBuffer();
+
+      if (!buffer) throw errors.badRequest();
+
+      const sanitizedBuffer = await sharp(buffer).toBuffer();
+      const command = new PutObjectCommand({
+        Bucket: fastify.config.S3_BUCKET,
+        Body: sanitizedBuffer,
+        Key: key,
+        ContentType: data?.mimetype,
+        CacheControl: "public,max-age=31536000,immutable",
+        ACL: "public-read"
+      });
+
+      await fastify.s3.send(command);
+
+      return {
+        key
+      };
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error(error);
+
+      throw errors.serverError();
     }
   });
 });
