@@ -232,7 +232,7 @@ const registerSearch = async (fastify: FastifyInstance): Promise<void> => {
   const url = new URL(fastify.config.WEAVIATE_URL || "");
   const client = weaviate.client({
     scheme: url.protocol.replace(":", "") as "http" | "https",
-    host: url.hostname,
+    host: url.host,
     apiKey: new weaviate.ApiKey(fastify.config.WEAVIATE_API_KEY || ""),
     headers: {
       "X-OpenAI-Api-Key": fastify.config.OPENAI_API_KEY || ""

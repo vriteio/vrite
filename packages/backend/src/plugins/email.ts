@@ -69,7 +69,7 @@ const createEmailSender = (fastify: FastifyInstance): EmailSender => {
         await service.send({
           to: email.to,
           from: {
-            email: fastify.config.EMAIL,
+            email: fastify.config.SENDER_EMAIL,
             name: fastify.config.SENDER_NAME
           },
           subject: getSubject(email.template),

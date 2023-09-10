@@ -28,7 +28,7 @@ FROM base AS runner
 WORKDIR /app
 
 # Install extra dependencies
-RUN npm install saslprep
+RUN npm install saslprep sharp
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 app
 

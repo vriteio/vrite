@@ -20,6 +20,7 @@ const envSchema = z.object({
   S3_REGION: z.string(),
   S3_ACCESS_KEY: z.string(),
   S3_SECRET_KEY: z.string(),
+  S3_FORCE_PATH_STYLE: z.boolean().optional(),
   // Email
   SENDER_EMAIL: z.string(),
   SENDER_NAME: z.string(),

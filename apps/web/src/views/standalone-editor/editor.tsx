@@ -125,7 +125,6 @@ const Editor: Component = () => {
       SlashMenuPlugin.configure({
         menuItems: createBlockMenuOptions()
       }),
-      // BlockActionMenuPlugin,
       TableMenuPlugin
       // CommentMenuPlugin
     ],

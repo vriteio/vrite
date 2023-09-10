@@ -7,7 +7,7 @@ import {
   useContext
 } from "solid-js";
 import { ContextObject, ExtensionGeneralContext, ExtensionSpec } from "@vrite/extensions";
-import { useClient } from "#context";
+import { useClient, useHostConfig } from "#context";
 import { loadSandbox } from "#lib/extensions";
 
 interface ExtensionDetails {
@@ -44,7 +44,10 @@ const isOfficialExtension = (id: string): boolean => {
 const ExtensionsContext = createContext<ExtensionsContextData>();
 const ExtensionsProvider: ParentComponent = (props) => {
   const client = useClient();
+  const hostConfig = useHostConfig();
   const getAvailableExtensions = async (): Promise<ExtensionDetails[]> => {
+    if (!hostConfig.extensions) return [];
+
     const installedExtensions = await client.extensions.list.query();
     const result = [];
     const extensions = Object.entries(officialExtensions);
@@ -65,6 +68,8 @@ const ExtensionsProvider: ParentComponent = (props) => {
   };
   const [installedExtensions, { mutate: setInstalledExtensions }] = createResource(
     async () => {
+      if (!hostConfig.extensions) return [];
+
       const extensions = await client.extensions.list.query();
       const result = [];
 
@@ -83,9 +88,8 @@ const ExtensionsProvider: ParentComponent = (props) => {
             });
           }
         } else {
-          const spec = await officialExtensions[
-            extension.name as keyof typeof officialExtensions
-          ]();
+          const spec =
+            await officialExtensions[extension.name as keyof typeof officialExtensions]();
 
           result.push({
             spec,
@@ -102,33 +106,35 @@ const ExtensionsProvider: ParentComponent = (props) => {
   );
   const { callFunction } = loadSandbox();
 
-  client.extensions.changes.subscribe(undefined, {
-    async onData({ action, data }) {
-      if (action === "create") {
-        const spec = await officialExtensions[data.name as keyof typeof officialExtensions]();
+  if (hostConfig.extensions) {
+    client.extensions.changes.subscribe(undefined, {
+      async onData({ action, data }) {
+        if (action === "create") {
+          const spec = await officialExtensions[data.name as keyof typeof officialExtensions]();
 
-        setInstalledExtensions((extensions) => {
-          return [...extensions, { config: data.config, id: data.id, token: data.token, spec }];
-        });
-      } else if (action === "update") {
-        setInstalledExtensions((extensions) => {
-          return extensions.map((extension) => {
-            if (extension.id === data.id) {
-              return { ...extension, ...data };
-            }
+          setInstalledExtensions((extensions) => {
+            return [...extensions, { config: data.config, id: data.id, token: data.token, spec }];
+          });
+        } else if (action === "update") {
+          setInstalledExtensions((extensions) => {
+            return extensions.map((extension) => {
+              if (extension.id === data.id) {
+                return { ...extension, ...data };
+              }
 
-            return extension;
+              return extension;
+            });
           });
-        });
-      } else if (action === "delete") {
-        setInstalledExtensions((extensions) => {
-          return extensions.filter((extension) => {
-            return extension.id !== data.id;
+        } else if (action === "delete") {
+          setInstalledExtensions((extensions) => {
+            return extensions.filter((extension) => {
+              return extension.id !== data.id;
+            });
           });
-        });
+        }
       }
-    }
-  });
+    });
+  }
 
   return (
     <ExtensionsContext.Provider

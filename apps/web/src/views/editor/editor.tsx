@@ -8,7 +8,7 @@ import {
 } from "@vrite/tiptap-solid";
 import { Component, createEffect, createSignal, on, onCleanup } from "solid-js";
 import { HardBreak, Paragraph, Text, Comment } from "@vrite/editor";
-import { isTextSelection } from "@tiptap/core";
+import { Extension, isTextSelection } from "@tiptap/core";
 import { convert as convertToSlug } from "url-slug";
 import { Gapcursor } from "@tiptap/extension-gapcursor";
 import { Dropcursor } from "@tiptap/extension-dropcursor";
@@ -43,6 +43,7 @@ import {
   App,
   hasPermission,
   useAuthenticatedUserData,
+  useHostConfig,
   useLocalStorage,
   useSharedState
 } from "#context";
@@ -66,6 +67,7 @@ interface EditorProps {
 
 const Editor: Component<EditorProps> = (props) => {
   const { setStorage } = useLocalStorage();
+  const hostConfig = useHostConfig();
   const createSharedSignal = useSharedState();
   const navigate = useNavigate();
   const location = useLocation<{ breadcrumb?: string[] }>();
@@ -131,7 +133,6 @@ const Editor: Component<EditorProps> = (props) => {
       Text,
       HardBreak,
       Typography,
-      // Comment,
       ...(workspaceSettings() ? createExtensions(workspaceSettings()!, provider) : []),
       TrailingNode,
       CharacterCount,
@@ -140,14 +141,14 @@ const Editor: Component<EditorProps> = (props) => {
       SlashMenuPlugin.configure({
         menuItems: workspaceSettings() ? createBlockMenuOptions(workspaceSettings()!) : []
       }),
-      BlockActionMenuPlugin,
+      hostConfig.extensions && BlockActionMenuPlugin,
       TableMenuPlugin,
       CommentMenuPlugin,
       Collab.configure({
         document: ydoc
       }),
       CollabCursor(provider)
-    ],
+    ].filter(Boolean) as Extension[],
     editable: !props.editedContentPiece.locked && hasPermission("editContent"),
     editorProps: { attributes: { class: `outline-none` } },
     onBlur({ event }) {

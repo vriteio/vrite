@@ -71,7 +71,9 @@ const ImageView: Component = () => {
         return;
       }
 
-      const response = await fetch(`/proxy?url=${encodeURIComponent(src)}`);
+      const response = await fetch(
+        src.startsWith(window.env.PUBLIC_ASSETS_URL) ? src : `/proxy?url=${encodeURIComponent(src)}`
+      );
 
       if (!response.ok) {
         setError(true);
