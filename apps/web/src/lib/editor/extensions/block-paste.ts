@@ -6,7 +6,7 @@ import {
   generateJSON
 } from "@tiptap/core";
 import { EditorState, Plugin } from "@tiptap/pm/state";
-import { gfmTransformer } from "@vrite/sdk/transformers";
+import { gfmOutputTransformer } from "@vrite/sdk/transformers";
 import { marked } from "marked";
 import { Accessor } from "solid-js";
 import { App } from "#context";
@@ -172,9 +172,9 @@ const run = (
 
     const resolvedFrom = Math.max(from, pos);
     const resolvedTo = Math.min(to, pos + node.content.size);
-    const jsonContent = node.content?.toJSON();
+    const json = node.content?.toJSON();
     const text = node.textBetween(resolvedFrom - pos, resolvedTo - pos, undefined, "\ufffc");
-    const textToMatch = jsonContent ? gfmTransformer(...jsonContent) : text;
+    const textToMatch = json ? gfmOutputTransformer({ type: "doc", content: json }) : text;
 
     if (activeBlockType) {
       const match = blockPasteRules[activeBlockType].end(textToMatch);

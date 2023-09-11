@@ -1,5 +1,5 @@
 import { ExtensionBlockActionViewContext } from "@vrite/extensions";
-import { gfmTransformer } from "@vrite/sdk/transformers";
+import { gfmOutputTransformer, gfmInputTransformer } from "@vrite/sdk/transformers";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
 import { marked } from "marked";
 
@@ -22,13 +22,13 @@ const generate = async (context: ExtensionBlockActionViewContext): Promise<void>
     context.refreshContent();
   });
   await fetchEventSource("https://extensions.vrite.io/gpt", {
-    method: "GET",
+    method: "POST",
     headers: {
       "Content-Type": "application/json",
       "Accept": "text/event-stream"
     },
     body: JSON.stringify({
-      prompt: includeContext ? `"${gfmTransformer(context.content)}"\n\n${prompt}` : prompt
+      prompt: includeContext ? `"${gfmOutputTransformer(context.content)}"\n\n${prompt}` : prompt
     }),
     signal: window.currentRequestController?.signal,
     async onopen() {
@@ -44,7 +44,7 @@ const generate = async (context: ExtensionBlockActionViewContext): Promise<void>
       const partOfContent = decodeURIComponent(event.data);
 
       content += partOfContent;
-      context.replaceContent(marked.parse(content));
+      context.replaceContent(gfmInputTransformer(content).content);
     },
     onclose() {
       context.setTemp("$loading", false);

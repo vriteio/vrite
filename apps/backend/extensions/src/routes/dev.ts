@@ -26,7 +26,7 @@ const processContent = (content: JSONContent): string => {
 
     return value;
   };
-  const transformEmbed = (attrs: JSONContentAttrs) => {
+  const transformEmbed = (attrs: JSONContentAttrs): string => {
     switch (attrs.embed) {
       case "codepen":
         return `\n{% codepen https://codepen.io/codepen/embed/${getEmbedId(
@@ -83,7 +83,7 @@ const basePath = "/dev";
 const publishToDEV = async (
   contentPiece: ContentPieceWithAdditionalData<Record<string, any>, true>,
   extension: Partial<Extension>
-) => {
+): Promise<{ devId: string }> => {
   const contentType = "application/json";
   const contentPieceData = contentPiece.customData?.__extensions__?.[extension.name || ""] || {};
   const article = {
@@ -121,13 +121,16 @@ const publishToDEV = async (
         })
       });
       const data: { error?: string; id?: string } = await response.json();
+
       if (data.error) {
+        // eslint-disable-next-line no-console
         console.error(data.error);
         throw errors.serverError();
       }
 
       return { devId: `${data.id || ""}` };
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error(error);
       throw errors.serverError();
     }
@@ -145,12 +148,14 @@ const publishToDEV = async (
       const data: { error?: string; id?: string } = await response.json();
 
       if (data.error) {
+        // eslint-disable-next-line no-console
         console.error(data.error);
         throw errors.serverError();
       }
 
       return { devId: `${data.id || ""}` };
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error(error);
       throw errors.serverError();
     }

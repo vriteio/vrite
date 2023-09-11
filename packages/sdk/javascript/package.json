@@ -65,7 +65,9 @@
     "dist"
   ],
   "dependencies": {
+    "@types/eventsource": "^1.1.11",
     "@types/marked": "^5.0.1",
+    "eventsource": "^2.0.2",
     "isomorphic-unfetch": "^3.1.0",
     "marked": "^5.1.2"
   },

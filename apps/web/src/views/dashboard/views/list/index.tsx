@@ -13,7 +13,7 @@ import {
 } from "solid-js";
 import { mdiFilePlus, mdiFolderPlus, mdiPlus } from "@mdi/js";
 import { createRef } from "@vrite/components/src/ref";
-import { Card, Dropdown, IconButton, Loader } from "#components/primitives";
+import { Button, Card, Dropdown, IconButton, Loader } from "#components/primitives";
 import {
   App,
   useCache,
@@ -24,6 +24,7 @@ import {
 } from "#context";
 import { useContentPieces } from "#lib/composables";
 import { breakpoints } from "#lib/utils";
+import { ScrollShadow } from "#components/fragments";
 
 interface DashboardListViewProps {
   ancestor?: App.ContentGroup | null;
@@ -124,7 +125,7 @@ const ContentPieceList: Component<{
   setContentPiecesLoading(loading: boolean): void;
 }> = (props) => {
   const cache = useCache();
-  const { contentPieces, setContentPieces, loading } = cache(
+  const { contentPieces, loadMore, moreToLoad, loading } = cache(
     `contentPieces:${props.ancestor.id}`,
     () => {
       return useContentPieces(props.ancestor.id);
@@ -137,23 +138,35 @@ const ContentPieceList: Component<{
   });
 
   createEffect(() => {
-    props.setContentPiecesLoading(loading());
+    if (!contentPieces().length) {
+      props.setContentPiecesLoading(loading());
+    }
   });
 
   return (
-    <For each={filteredContentPieces()}>
-      {(contentPiece) => {
-        return <ContentPieceRow contentPiece={contentPiece} />;
-      }}
-    </For>
+    <>
+      <For each={filteredContentPieces()}>
+        {(contentPiece) => {
+          return <ContentPieceRow contentPiece={contentPiece} />;
+        }}
+      </For>
+      <Show when={moreToLoad()}>
+        <Button
+          class="border-b-2 bg-gray-50 rounded-none border-gray-200 dark:border-gray-700 m-0"
+          loading={loading()}
+          onClick={loadMore}
+        >
+          Load more
+        </Button>
+      </Show>
+    </>
   );
 };
 const DashboardListView: Component<DashboardListViewProps> = (props) => {
   const client = useClient();
-  const { notify } = useNotifications();
   const [contentPiecesLoading, setContentPiecesLoading] = createSignal(false);
   const [removedContentPieces, setRemovedContentPieces] = createSignal<string[]>([]);
-  const [, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
+  const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
   const [higherAncestor] = createResource(
     () => props.ancestor,
     (ancestor) => {
@@ -187,7 +200,11 @@ const DashboardListView: Component<DashboardListViewProps> = (props) => {
   return (
     <div class="relative overflow-hidden w-full">
       <ContentGroupsContextProvider ancestor={() => props.ancestor} setAncestor={props.setAncestor}>
-        <div class="flex flex-col w-full h-full relative" ref={setScrollableContainerRef}>
+        <div
+          class="flex flex-col w-full h-full overflow-y-auto scrollbar-contrast pb-32"
+          ref={setScrollableContainerRef}
+        >
+          <ScrollShadow color="contrast" scrollableContainerRef={scrollableContainerRef} />
           <Show when={higherAncestor() || props.ancestor?.ancestors} keyed>
             <ContentGroupRow
               contentGroup={higherAncestor()}
@@ -228,12 +245,13 @@ const DashboardListView: Component<DashboardListViewProps> = (props) => {
           when={breakpoints.md()}
           fallback={
             <Dropdown
+              class="z-10"
               activatorButton={() => (
                 <IconButton
                   path={mdiPlus}
                   size="large"
                   text="soft"
-                  class="fixed bottom-18 md:bottom-4 right-4"
+                  class="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom,0px))] md:bottom-4 right-4"
                 />
               )}
             >
@@ -246,7 +264,7 @@ const DashboardListView: Component<DashboardListViewProps> = (props) => {
             </Dropdown>
           }
         >
-          <Card class="flex fixed bottom-18 md:bottom-4 right-4 m-0 gap-2" color="soft">
+          <Card class="flex fixed bottom-18 md:bottom-4 right-4 m-0 gap-2 z-10" color="soft">
             <Show when={props.ancestor} keyed>
               <NewContentPieceButton ancestor={props.ancestor!} />
             </Show>

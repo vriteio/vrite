@@ -148,7 +148,7 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
             disabled: !hasPermission("manageDashboard"),
             ghostClass: "!hidden",
             revertOnSpill: true,
-            filter: ".locked",
+            draggable: ".draggable",
             onAdd(evt) {
               const el = evt.item;
 
@@ -186,7 +186,7 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
         <div
           class={clsx(
             "flex flex-1 justify-center items-center overflow-hidden rounded-lg",
-            props.draggable === false && "locked"
+            props.draggable !== false && "draggable"
           )}
           data-content-group-id={props.contentGroup?.id || ""}
           onDragOver={(event) => event.preventDefault()}
@@ -233,7 +233,12 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
             }
           }}
         >
-          <div class="h-8 w-8 relative group mr-1">
+          <button
+            class="h-8 w-8 relative group mr-1 outline-none focus:outline-none"
+            onClick={() => {
+              setAncestor(props.contentGroup);
+            }}
+          >
             <IconButton
               path={props.contentGroup?.locked ? mdiFolderLock : mdiFolder}
               variant="text"
@@ -241,10 +246,8 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
                 "m-0 absolute top-0 left-0 @hover:group-hover:opacity-0",
                 highlight() && "!opacity-0"
               )}
+              badge
               hover={false}
-              onClick={() => {
-                setAncestor(props.contentGroup);
-              }}
             />
             <IconButton
               path={mdiFolderOpen}
@@ -254,11 +257,9 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
                 highlight() && "!opacity-100"
               )}
               color={highlight() ? "primary" : "base"}
-              onClick={() => {
-                setAncestor(props.contentGroup);
-              }}
+              badge
             />
-          </div>
+          </button>
           <MiniEditor
             class={clsx(
               "!text-base inline-flex text-start flex-1 overflow-x-auto content-group-name scrollbar-hidden @hover:cursor-text",

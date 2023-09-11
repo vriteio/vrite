@@ -87,8 +87,8 @@ const ConfigureWrapperSubSection: Component<ConfigureWrapperSubSectionProps> = (
           inputProps={{ maxLength: 20 }}
           setValue={(value) => setWrapperData("key", value)}
         >
-          Key identifying wrapper in JSON content. Has to be unique, and can only contain letters,
-          numbers and underscores.
+          Key identifying the Wrapper in JSON content. Has to be unique, and can only contain
+          letters, numbers and underscores.
         </InputField>
       </TitledCard>
     </>

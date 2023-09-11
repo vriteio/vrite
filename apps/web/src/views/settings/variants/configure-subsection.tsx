@@ -19,10 +19,10 @@ const ConfigureVariantSubsection: Component<ConfigureVariantSubsectionProps> = (
   const [variantData, setVariantData] = createStore<Omit<App.Variant, "id">>({
     description: "",
     label: "",
-    name: ""
+    key: ""
   });
   const filled = createMemo(() => {
-    return Boolean(variantData.label && variantData.name && validateKey(variantData.name));
+    return Boolean(variantData.label && validateKey(variantData.key));
   });
   const onClick = async (): Promise<void> => {
     setLoading(true);
@@ -96,6 +96,11 @@ const ConfigureVariantSubsection: Component<ConfigureVariantSubsectionProps> = (
       }
     )
   );
+  createEffect(() => {
+    if (!props.editedVariantData) {
+      setVariantData("key", variantData.label.toLowerCase().replace(/\s|-/g, "_").slice(0, 20));
+    }
+  });
 
   return (
     <TitledCard icon={mdiTune} label="Configure">
@@ -108,18 +113,19 @@ const ConfigureVariantSubsection: Component<ConfigureVariantSubsectionProps> = (
         inputProps={{ maxLength: 50 }}
         setValue={(value) => setVariantData("label", value)}
       >
-        Identifiable label for the Variant
+        Descriptive label for the Variant
       </InputField>
       <InputField
-        label="Name"
+        label="Variant Key"
         color="contrast"
-        placeholder="Variant name"
+        placeholder="variant_key"
         type="text"
-        value={variantData.name || ""}
+        value={variantData.key || ""}
         inputProps={{ maxLength: 20 }}
-        setValue={(value) => setVariantData("name", value)}
+        setValue={(value) => setVariantData("key", value)}
       >
-        Unique name for the Variant. Can only contain lowercase letters, numbers, and underscores.
+        Key identifying the Variant in the API calls. Has to be unique, and can only contain
+        letters, numbers and underscores.
       </InputField>
       <InputField
         label="Description"

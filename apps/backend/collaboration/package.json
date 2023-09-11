@@ -14,6 +14,7 @@
     "@hocuspocus/server": "^2.5.0",
     "@vrite/backend": "workspace:*",
     "@vrite/sdk": "workspace:*",
+    "fastify": "^4.20.0",
     "mongodb": "^5.7.0",
     "y-protocols": "^1.0.5",
     "yjs": "^13.6.7"
