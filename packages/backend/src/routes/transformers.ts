@@ -60,10 +60,7 @@ const transformersRouter = router({
         workspaceId: ctx.auth.workspaceId
       });
 
-      if (
-        gitData?.github?.inputTransformer === input.id ||
-        gitData?.github?.outputTransformer === input.id
-      ) {
+      if (gitData?.github?.transformer === input.id) {
         throw errors.badRequest("notAllowed");
       }
 
@@ -100,9 +97,7 @@ const transformersRouter = router({
         return {
           id: `${_id}`,
           workspaceId: `${workspaceId}`,
-          inUse:
-            gitData?.github?.inputTransformer === `${_id}` ||
-            gitData?.github?.outputTransformer === `${_id}`,
+          inUse: gitData?.github?.transformer === `${_id}`,
           ...transformerData
         };
       });
