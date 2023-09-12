@@ -1,0 +1,77 @@
+---
+import { Header, Footer, BaseHead, SVGDefs, Section, FeatureCard } from "#components/fragments";
+import { mdiLoginVariant } from "@mdi/js";
+import { IconButton, Icon } from "#components/primitives";
+import { logoIcon } from "#icons/logo";
+
+const image = "https://vrite.io/meta-image.png";
+const title = "Vrite － headless CMS for technical content";
+const description =
+  "Open-Source headless Content Management System (CMS) for technical content, like programming blogs, documentation, and more.";
+
+export const prerender = true;
+---
+
+<!DOCTYPE html>
+<html lang="en" class="bg-gray-100 dark:bg-gray-800">
+  <head>
+    <BaseHead description={description} title={title} image={image} />
+  </head>
+  <body class="overflow-x-hidden overscroll-none">
+    <SVGDefs />
+    <main class="flex flex-col items-center justify-center gap-8 p-4 pb-0">
+      <div class="w-full flex justify-center items-start max-w-screen-xl">
+        <Header client:idle />
+      </div>
+      <Section>
+        <div class="flex justify-start items-center flex-col">
+          <h2 class="text-4xl md:text-5xl !font-bold text-center py-12">Pricing</h2>
+          <div class="grid max-w-screen-xl grid-cols-1 gap-4 md:gap-4 md:grid-cols-1 w-full">
+            <FeatureCard header="Vrite Cloud">
+              <div class="flex flex-col gap-2 pb-4">
+                <p>Vrite Cloud is <b>free</b> while in <b>Beta</b>.</p>
+                <p>
+                  We plan to introduce paid plans once Vrite becomes more stable, starting at no
+                  more than <br /><b>$5 USD / mo</b>.
+                </p>
+                <p>
+                  We'll notify you at least <b>1 month</b> in advance and provide easy way to
+                  migrate to self-hosted instance if you so choose.
+                </p>
+                <p>
+                  For now, please <b>report</b> all issues and feature requests you might have on <a
+                    href="https://github.com/vriteio/vrite/issues"
+                    class="underline"
+                    target="_blank">GitHub</a
+                  >, as a form of payment. :)
+                </p>
+              </div>
+              <IconButton
+                color="primary"
+                class="flex items-center justify-center m-0 whitespace-nowrap"
+                size="large"
+                link="https://app.vrite.io"
+                path={mdiLoginVariant}
+                label="Get started"
+              />
+              <div
+                slot="visual"
+                class="flex-1 h-full w-full lg:flex justify-center items-center gradient-image-mask hidden"
+              >
+                <div
+                  class="bg-gradient-to-tr from-red-500 to-orange-500 h-96 w-96 max-w-full p-8 rounded-[4rem] text-white"
+                  style={{
+                    "box-shadow": "0 0 50px 5px #f97316"
+                  }}
+                >
+                  <Icon path={logoIcon} />
+                </div>
+              </div>
+            </FeatureCard>
+          </div>
+        </div>
+      </Section>
+      <Footer />
+    </main>
+  </body>
+</html>

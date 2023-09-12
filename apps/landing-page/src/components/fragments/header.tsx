@@ -23,10 +23,10 @@ const Header: Component = () => {
             </span>
           </div>
           <div class="gap-1 hidden md:flex">
-            <Button link="https://docs.vrite.io" variant="text" class="m-0" target="_blank">
+            <Button link="https://docs.vrite.io" variant="text" class="m-0">
               Documentation
             </Button>
-            <Button link="/pricing" variant="text" class="m-0" target="_blank">
+            <Button link="/pricing" variant="text" class="m-0">
               Pricing
             </Button>
             <Button link="/blog" variant="text" class="m-0">
@@ -43,7 +43,7 @@ const Header: Component = () => {
               label="Star on GitHub"
               target="_blank"
             ></IconButton>
-            <Button color="primary" link="https://app.vrite.io" class="m-0" target="_blank">
+            <Button color="primary" link="https://app.vrite.io" class="m-0">
               Sign in
             </Button>
           </div>
@@ -59,11 +59,14 @@ const Header: Component = () => {
         <div
           class={clsx(
             "gap-1 flex flex-col justify-center items-center md:hidden overflow-hidden transition-all duration-300 ease-out",
-            menuOpened() ? "max-h-[6.5rem]" : "max-h-0"
+            menuOpened() ? "max-h-[8.5rem]" : "max-h-0"
           )}
         >
-          <Button link="https://docs.vrite.io" variant="text" class="m-0" target="_blank">
+          <Button link="https://docs.vrite.io" variant="text" class="m-0">
             Documentation
+          </Button>
+          <Button link="/pricing" variant="text" class="m-0">
+            Pricing
           </Button>
           <Button link="/blog" variant="text" class="m-0">
             Blog

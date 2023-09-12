@@ -5,9 +5,10 @@ import clsx from "clsx";
 
 interface Props {
   header: string;
-  imageAlt: string;
-  imageDark: string;
-  imageLight: string;
+  imageAlt?: string;
+  imageDark?: string;
+  imageLight?: string;
+  icon?: string;
   gradient?: boolean;
   reverse?: boolean;
   vertical?: boolean;
@@ -23,7 +24,7 @@ const { props } = Astro;
 >
   <Card
     class={clsx(
-      "flex flex-col items-start justify-start w-full h-full p-4 m-0 md:p-8 border-0 overflow-hidden",
+      "flex flex-col items-start justify-start w-full h-full p-4 m-0 md:p-8 overflow-hidden",
       !props.vertical && (props.reverse ? "md:flex-row-reverse" : "md:flex-row"),
       props.vertical ? "md:flex-col" : "md:flex-row"
     )}
@@ -38,13 +39,13 @@ const { props } = Astro;
       <div class="flex flex-col justify-center items-start z-1">
         <h2
           class={clsx(
-            "text-2xl md:text-3xl mt-2",
-            props.gradient ? "" : "bg-clip-text text-transparent bg-gradient-to-tr !font-bold"
+            "text-2xl md:text-3xl mt-2 !font-bold",
+            props.gradient ? "" : "bg-clip-text text-transparent bg-gradient-to-tr"
           )}
         >
           {props.header}
         </h2>
-        <p
+        <div
           class={clsx(
             "mt-2 md:text-lg",
             props.gradient ? "" : "text-gray-600 dark:text-gray-200",
@@ -52,16 +53,22 @@ const { props } = Astro;
           )}
         >
           <slot />
-        </p>
+        </div>
       </div>
     </div>
-    <div class={clsx(!props.vertical && "md:flex-1")}>
-      <Image
-        alt={props.imageAlt}
-        srcDark={props.imageDark}
-        srcLight={props.imageLight}
-        class="gradient-image-mask"
-      />
-    </div>
+    {
+      props.imageLight && props.imageDark && props.imageAlt ? (
+        <div class={clsx(!props.vertical && "md:flex-1")}>
+          <Image
+            alt={props.imageAlt}
+            srcDark={props.imageDark}
+            srcLight={props.imageLight}
+            class="gradient-image-mask rounded-xl"
+          />
+        </div>
+      ) : (
+        <slot name="visual" />
+      )
+    }
   </Card>
 </Observed>

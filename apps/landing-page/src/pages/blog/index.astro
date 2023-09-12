@@ -9,7 +9,7 @@ import "@fontsource/nunito/900.css";
 import { Button, Card, IconButton } from "#components/primitives";
 import { mdiCalendar } from "@mdi/js";
 import { format } from "date-fns";
-import { FrameHeadline, BaseHead, Header, EmailModal, Footer } from "#components/fragments";
+import { BaseHead, Header, Footer } from "#components/fragments";
 import { getContentPieces } from "virtual:vrite";
 
 const contentPieces = await getContentPieces({ limit: "all" });
@@ -40,11 +40,6 @@ export const prerender = true;
         </header>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 py-4 flex-1">
-          <a href="/" class="md:col-span-2">
-            <Card class="p-8 m-0 cursor-pointer h-full">
-              <FrameHeadline class="h-full" client:idle />
-            </Card></a
-          >
           {
             contentPieces.map((contentPiece) => (
               <Fragment>
@@ -53,7 +48,7 @@ export const prerender = true;
                     <Card color="primary" class="m-0 pb-0 pl-0 pr-2 pt-2 overflow-hidden">
                       <img
                         class="w-full rounded-2xl hover:hero-image transition-transform duration-500 shadow-xl"
-                        src={contentPiece.coverUrl}
+                        src={`${contentPiece.coverUrl}?w=600?format=webp`}
                       />
                     </Card>
                     <div class="px-2">
@@ -96,8 +91,7 @@ export const prerender = true;
           }
         </div>
       </div>
-      <EmailModal client:load />
-      <Footer client:idle />
+      <Footer />
     </main>
   </body>
 </html>
