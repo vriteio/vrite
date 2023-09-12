@@ -63,7 +63,6 @@ const GitHubConfigurationView: Component<GitHubConfigurationViewProps> = (props)
       if (!token()) return [];
 
       const response = await octokit().apps.listInstallationsForAuthenticatedUser({
-        // eslint-disable-next-line camelcase
         per_page: 100
       });
 
@@ -77,9 +76,7 @@ const GitHubConfigurationView: Component<GitHubConfigurationViewProps> = (props)
       if (!token() || !installation) return [];
 
       const response = await octokit().apps.listInstallationReposForAuthenticatedUser({
-        // eslint-disable-next-line camelcase
         installation_id: installation.id,
-        // eslint-disable-next-line camelcase
         per_page: 100
       });
 

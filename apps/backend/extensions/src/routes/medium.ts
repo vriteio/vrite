@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import { procedure, router, zodId, z, errors } from "@vrite/backend";
 import {
   JSONContent,
@@ -73,8 +72,8 @@ const getAuthorId = async (token: string): Promise<string> => {
         "content-type": contentType
       }
     });
-
     const json: { data?: { id: string } } = await response.json();
+
     if (!json.data?.id) throw errors.serverError();
 
     return json.data?.id || "";
@@ -201,6 +200,7 @@ const mediumRouter = router({
       if (extension.config?.requireCanonicalLink && !contentPiece.canonicalLink) return;
 
       const { mediumId } = await publishToMedium(contentPiece, extension);
+
       await client.extension.updateContentPieceData({
         contentPieceId: input.id,
         data: { ...contentPiece.customData?.__extensions__?.[extension.name || ""], mediumId }

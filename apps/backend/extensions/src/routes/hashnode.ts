@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import { procedure, router, zodId, z, errors } from "@vrite/backend";
 import {
   JSONContent,
@@ -238,6 +237,7 @@ const hashnodeRouter = router({
         content: true,
         description: "text"
       });
+
       return await publishToHashnode(contentPiece, extension);
     }),
   webhook: procedure
@@ -257,7 +257,6 @@ const hashnodeRouter = router({
         token: "",
         extensionId
       });
-
       const extension = await client.extension.get();
 
       if (!extension.token) throw errors.unauthorized();

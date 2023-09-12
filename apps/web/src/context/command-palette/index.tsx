@@ -195,44 +195,7 @@ const CommandPalette: Component<CommandPaletteProps> = (props) => {
     navigate("/editor", { state: { breadcrumb } });
     props.setOpened(false);
   };
-
-  createEffect(
-    on(
-      query,
-      (query) => {
-        if (query === ">") {
-          setMode("command");
-          setQuery("");
-
-          return;
-        }
-
-        if (mode() === "search") {
-          search.clear();
-          search();
-        }
-      },
-      { defer: true }
-    )
-  );
-  createEffect(
-    on(mode, () => {
-      setMouseHoverEnabled(false);
-      setSelectedIndex(0);
-      setLoading(false);
-      setAnswer("");
-      setSearchResults([]);
-      setQuery("");
-    })
-  );
-  createEffect(() => {
-    if (inputRef() && props.opened && mode()) {
-      setTimeout(() => {
-        inputRef()?.focus();
-      }, 300);
-    }
-  });
-  tinykeys(window, {
+  const unsubscribeTinykeys = tinykeys(window, {
     "$mod+KeyK": (event) => {
       props.setOpened(!props.opened);
     },
@@ -294,6 +257,46 @@ const CommandPalette: Component<CommandPaletteProps> = (props) => {
         );
       }
     }
+  });
+
+  createEffect(
+    on(
+      query,
+      (query) => {
+        if (query === ">") {
+          setMode("command");
+          setQuery("");
+
+          return;
+        }
+
+        if (mode() === "search") {
+          search.clear();
+          search();
+        }
+      },
+      { defer: true }
+    )
+  );
+  createEffect(
+    on(mode, () => {
+      setMouseHoverEnabled(false);
+      setSelectedIndex(0);
+      setLoading(false);
+      setAnswer("");
+      setSearchResults([]);
+      setQuery("");
+    })
+  );
+  createEffect(() => {
+    if (inputRef() && props.opened && mode()) {
+      setTimeout(() => {
+        inputRef()?.focus();
+      }, 300);
+    }
+  });
+  onCleanup(() => {
+    unsubscribeTinykeys();
   });
 
   const getIcon = (): string => {
@@ -375,7 +378,9 @@ const CommandPalette: Component<CommandPaletteProps> = (props) => {
                     class="m-0"
                     text={mode() === "ask" ? "base" : "soft"}
                     color={mode() === "ask" ? "primary" : "base"}
-                    onClick={() => setMode((mode) => (mode === "ask" ? "search" : "ask"))}
+                    onClick={() => {
+                      setMode((mode) => (mode === "ask" ? "search" : "ask"));
+                    }}
                     variant="text"
                   />
                 </Tooltip>
@@ -566,33 +571,35 @@ const CommandPalette: Component<CommandPaletteProps> = (props) => {
           </div>
         </div>
         <div class="border-t-2 dark:border-gray-700 px-2 py-1 flex gap-2 bg-gray-100 dark:bg-gray-800">
-          <IconButton
-            path={mdiSwapVertical}
-            hover={false}
-            badge
-            label="Select"
-            size="small"
-            variant="text"
-            text="soft"
-          />
-          <IconButton
-            path={mdiKeyboardReturn}
-            hover={false}
-            badge
-            label="Open"
-            size="small"
-            variant="text"
-            text="soft"
-          />
-          <IconButton
-            path={mdiKeyboardEsc}
-            hover={false}
-            badge
-            label="Close"
-            size="small"
-            variant="text"
-            text="soft"
-          />
+          <div class="hidden md:flex gap-2">
+            <IconButton
+              path={mdiSwapVertical}
+              hover={false}
+              badge
+              label="Select"
+              size="small"
+              variant="text"
+              text="soft"
+            />
+            <IconButton
+              path={mdiKeyboardReturn}
+              hover={false}
+              badge
+              label="Open"
+              size="small"
+              variant="text"
+              text="soft"
+            />
+            <IconButton
+              path={mdiKeyboardEsc}
+              hover={false}
+              badge
+              label="Close"
+              size="small"
+              variant="text"
+              text="soft"
+            />
+          </div>
           <div class="flex-1" />
           <Show when={hostConfig.search}>
             <IconButton
@@ -602,7 +609,9 @@ const CommandPalette: Component<CommandPaletteProps> = (props) => {
               variant="text"
               color={mode() === "command" ? "primary" : "base"}
               text={mode() === "command" ? "base" : "soft"}
-              onClick={() => setMode((mode) => (mode === "command" ? "search" : "command"))}
+              onClick={() => {
+                setMode((mode) => (mode === "command" ? "search" : "command"));
+              }}
             />
           </Show>
         </div>

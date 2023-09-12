@@ -7,6 +7,7 @@ import {
   mdiCube,
   mdiFormatText,
   mdiImage,
+  mdiPlus,
   mdiPuzzle,
   mdiTrashCan,
   mdiTune
@@ -109,6 +110,16 @@ const EditorSection: SettingsSectionComponent = (props) => {
       embeds: enabledEmbeds()
     });
   }, 350);
+  const handleNewWrapper = (): void => {
+    setOpenedSubsection("configure-wrapper");
+    props.setSubSection({
+      label: "New wrapper",
+      icon: mdiCube,
+      goBack() {
+        setOpenedSubsection("none");
+      }
+    });
+  };
 
   createEffect(() => {
     setEnabledMarks(workspaceSettings()?.marks || []);
@@ -269,23 +280,19 @@ const EditorSection: SettingsSectionComponent = (props) => {
             icon={mdiCube}
             action={
               <Show when={hasPermission("manageWorkspace")}>
-                <Button
-                  text="soft"
-                  color="contrast"
-                  class="m-0"
-                  onClick={() => {
-                    setOpenedSubsection("configure-wrapper");
-                    props.setSubSection({
-                      label: "New wrapper",
-                      icon: mdiCube,
-                      goBack() {
-                        setOpenedSubsection("none");
-                      }
-                    });
-                  }}
-                >
-                  New wrapper
-                </Button>
+                <>
+                  <Button color="primary" class="m-0 hidden @md:flex" onClick={handleNewWrapper}>
+                    New Wrapper
+                  </Button>
+                  <Tooltip text="New Wrapper" wrapperClass="flex @md:hidden" class="mt-1" fixed>
+                    <IconButton
+                      path={mdiPlus}
+                      class="m-0"
+                      color="primary"
+                      onClick={handleNewWrapper}
+                    />
+                  </Tooltip>
+                </>
               </Show>
             }
           >

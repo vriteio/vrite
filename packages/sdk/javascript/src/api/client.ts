@@ -14,7 +14,7 @@ import {
 } from "./workspace-memberships";
 import { ExtensionEndpoints, createExtensionEndpoints } from "./extension";
 import { VariantsEndpoints, createVariantsEndpoints } from "./variants";
-import EventSource from "eventsource";
+import PolyfilledEventSource from "@sanity/eventsource";
 
 interface ClientConfig extends APIFetcherConfig {}
 interface Client {
@@ -75,7 +75,7 @@ const createClient = (config: ClientConfig): Client => {
     async ask(input) {
       let content = "";
 
-      const source = new EventSource(
+      const source = new PolyfilledEventSource(
         `${getConfig().baseURL}/search/ask?query=${encodeURIComponent(input.query)}`,
         {
           headers: { Authorization: `Bearer ${getConfig().token}` }

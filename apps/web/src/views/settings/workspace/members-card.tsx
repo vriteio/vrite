@@ -1,6 +1,7 @@
 import {
   mdiAccountCircle,
   mdiAccountMultiple,
+  mdiAccountPlusOutline,
   mdiAccountRemove,
   mdiClock,
   mdiLogout
@@ -232,12 +233,18 @@ const MembersCard: Component<MembersCardProps> = (props) => {
       label="Members"
       action={
         <Show when={hasPermission("manageWorkspace")}>
+          <Tooltip text="Invite member" wrapperClass="flex @md:hidden" class="mt-1" fixed>
+            <IconButton
+              path={mdiAccountPlusOutline}
+              class="m-0"
+              color="primary"
+              onClick={props.openInviteMemberSubsection}
+            />
+          </Tooltip>
           <Button
             color="primary"
-            class="m-0"
-            onClick={() => {
-              props.openInviteMemberSubsection();
-            }}
+            class="m-0 hidden @md:flex"
+            onClick={props.openInviteMemberSubsection}
           >
             Invite member
           </Button>

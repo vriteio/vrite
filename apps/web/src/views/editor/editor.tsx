@@ -7,7 +7,7 @@ import {
   useEditor
 } from "@vrite/tiptap-solid";
 import { Component, createEffect, createSignal, on, onCleanup } from "solid-js";
-import { HardBreak, Paragraph, Text, Comment } from "@vrite/editor";
+import { HardBreak, Paragraph, Text } from "@vrite/editor";
 import { Extension, isTextSelection } from "@tiptap/core";
 import { convert as convertToSlug } from "url-slug";
 import { Gapcursor } from "@tiptap/extension-gapcursor";
@@ -44,7 +44,6 @@ import {
   hasPermission,
   useAuthenticatedUserData,
   useHostConfig,
-  useLocalStorage,
   useSharedState
 } from "#context";
 import { breakpoints, createRef } from "#lib/utils";
@@ -66,7 +65,6 @@ interface EditorProps {
 }
 
 const Editor: Component<EditorProps> = (props) => {
-  const { setStorage } = useLocalStorage();
   const hostConfig = useHostConfig();
   const createSharedSignal = useSharedState();
   const navigate = useNavigate();
@@ -236,7 +234,6 @@ const Editor: Component<EditorProps> = (props) => {
     setSharedProvider(undefined);
     setEditedContentPiece(undefined);
   });
-  setStorage((storage) => ({ ...storage, toolbarView: "editor" }));
   createEffect(
     on(
       () => location.state,

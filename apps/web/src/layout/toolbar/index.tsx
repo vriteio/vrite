@@ -12,7 +12,7 @@ import {
   mdiViewDashboard,
   mdiViewList
 } from "@mdi/js";
-import { Component, Show, createEffect, createMemo, createSignal } from "solid-js";
+import { Component, Show, createEffect, createMemo, createSignal, on } from "solid-js";
 import { Dynamic } from "solid-js/web";
 import clsx from "clsx";
 import { JSONContent } from "@vrite/sdk";
@@ -224,14 +224,20 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
     const { setStorage } = useLocalStorage();
     const [menuOpened, setMenuOpened] = createSignal(false);
 
-    registerCommand({
-      name: "Zen mode",
-      category: "editor",
-      icon: mdiFullscreen,
-      action() {
-        setStorage((storage) => ({ ...storage, zenMode: true }));
-      }
-    });
+    createEffect(
+      on(sharedEditedContentPiece, (sharedEditedContentPiece) => {
+        if (sharedEditedContentPiece) {
+          registerCommand({
+            name: "Zen mode",
+            category: "editor",
+            icon: mdiFullscreen,
+            action() {
+              setStorage((storage) => ({ ...storage, zenMode: true }));
+            }
+          });
+        }
+      })
+    );
 
     return (
       <div class="flex-row flex justify-start items-center px-4 w-full gap-2">
@@ -265,18 +271,18 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
                     class="w-full justify-start"
                     wrapperClass="w-full"
                   />
+                  <IconButton
+                    onClick={() => {
+                      setMenuOpened(false);
+                      setStorage((storage) => ({ ...storage, zenMode: true }));
+                    }}
+                    class="m-0 w-full md:w-auto justify-start md:justify-center"
+                    variant="text"
+                    text="soft"
+                    path={mdiFullscreen}
+                    label="Zen mode"
+                  />
                 </Show>
-                <IconButton
-                  onClick={() => {
-                    setMenuOpened(false);
-                    setStorage((storage) => ({ ...storage, zenMode: true }));
-                  }}
-                  class="m-0 w-full md:w-auto justify-start md:justify-center"
-                  variant="text"
-                  text="soft"
-                  path={mdiFullscreen}
-                  label="Zen mode"
-                />
               </div>
             </Dropdown>
           }
@@ -286,17 +292,17 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
           </Show>
           <Show when={sharedEditedContentPiece()}>
             <ExportMenu editedContentPiece={sharedEditedContentPiece()!} />
+            <IconButton
+              onClick={() => {
+                setStorage((storage) => ({ ...storage, zenMode: true }));
+              }}
+              class="m-0 w-full md:w-auto justify-start md:justify-center"
+              variant="text"
+              text="soft"
+              path={mdiFullscreen}
+              label="Zen mode"
+            />
           </Show>
-          <IconButton
-            onClick={() => {
-              setStorage((storage) => ({ ...storage, zenMode: true }));
-            }}
-            class="m-0 w-full md:w-auto justify-start md:justify-center"
-            variant="text"
-            text="soft"
-            path={mdiFullscreen}
-            label="Zen mode"
-          />
         </Show>
       </div>
     );

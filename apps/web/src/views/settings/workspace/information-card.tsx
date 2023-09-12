@@ -1,8 +1,8 @@
 import { SettingsImageUpload } from "../image-upload";
-import { mdiInformation } from "@mdi/js";
+import { mdiCheck, mdiInformation } from "@mdi/js";
 import { Component, Show, createEffect, createSignal } from "solid-js";
 import { createStore } from "solid-js/store";
-import { Button, Loader } from "#components/primitives";
+import { Button, IconButton, Loader, Tooltip } from "#components/primitives";
 import { App, hasPermission, useClient, useNotifications } from "#context";
 import { InputField, TitledCard } from "#components/fragments";
 
@@ -30,6 +30,25 @@ const InformationCard: Component<InformationCardProps> = (props) => {
 
     setWorkspaceData(key, value);
   };
+  const handleUpdateInfo = async (): Promise<void> => {
+    setLoading(true);
+
+    try {
+      await client.workspaces.update.mutate({ ...workspaceData });
+      notify({
+        type: "success",
+        text: "Workspace details updated"
+      });
+      setEdited(false);
+    } catch (e) {
+      notify({
+        type: "error",
+        text: "Failed to update workspace details"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   createEffect(async () => {
     if (props.workspace) {
@@ -43,30 +62,21 @@ const InformationCard: Component<InformationCardProps> = (props) => {
       label="Details"
       action={
         <Show when={!props.workspaceLoading && hasPermission("manageWorkspace")}>
+          <Tooltip text="Update" wrapperClass="flex @md:hidden" class="mt-1" fixed>
+            <IconButton
+              path={mdiCheck}
+              class="m-0"
+              color="primary"
+              disabled={!edited() || !workspaceData.name}
+              onClick={handleUpdateInfo}
+            />
+          </Tooltip>
           <Button
             color="primary"
-            class="m-0 flex justify-center items-center"
+            class="m-0 hidden @md:flex"
             disabled={!edited() || !workspaceData.name}
             loading={loading()}
-            onClick={async () => {
-              setLoading(true);
-
-              try {
-                await client.workspaces.update.mutate({ ...workspaceData });
-                notify({
-                  type: "success",
-                  text: "Workspace details updated"
-                });
-                setEdited(false);
-              } catch (e) {
-                notify({
-                  type: "error",
-                  text: "Failed to update workspace details"
-                });
-              } finally {
-                setLoading(false);
-              }
-            }}
+            onClick={handleUpdateInfo}
           >
             Update
           </Button>

@@ -891,15 +891,12 @@ importers:
 
   packages/sdk/javascript:
     dependencies:
-      '@types/eventsource':
-        specifier: ^1.1.11
-        version: 1.1.11
+      '@sanity/eventsource':
+        specifier: ^5.0.0
+        version: 5.0.0
       '@types/marked':
         specifier: ^5.0.1
         version: 5.0.1
-      eventsource:
-        specifier: ^2.0.2
-        version: 2.0.2
       isomorphic-unfetch:
         specifier: ^3.1.0
         version: 3.1.0
@@ -4569,6 +4566,15 @@ packages:
       picomatch: 2.3.1
       rollup: 3.26.2
 
+  /@sanity/eventsource@5.0.0:
+    resolution: {integrity: sha512-0ewT+BDzfiamHwitUfRcwsl/RREHjWv6VNZvQ8Q4OnnNKXfEEGXbWmqzof0okOTkp4XELgyliht4Qj28o9AU2g==}
+    dependencies:
+      '@types/event-source-polyfill': 1.0.1
+      '@types/eventsource': 1.1.11
+      event-source-polyfill: 1.0.31
+      eventsource: 2.0.2
+    dev: false
+
   /@selderee/plugin-htmlparser2@0.10.0:
     resolution: {integrity: sha512-gW69MEamZ4wk1OsOq1nG1jcyhXIQcnrsX5JwixVw/9xaiav8TCyjESAruu1Rz9yyInhgBXxkNwMeygKnN2uxNA==}
     dependencies:
@@ -5683,6 +5689,10 @@ packages:
 
   /@types/estree@1.0.1:
     resolution: {integrity: sha512-LG4opVs2ANWZ1TJoKc937iMmNstM/d0ae1vNbnBvBhqCSezgVUOzcLCqbI5elV8Vy6WKwKjaqR+zO9VKirBBCA==}
+
+  /@types/event-source-polyfill@1.0.1:
+    resolution: {integrity: sha512-dls8b0lUgJ/miRApF0efboQ9QZnAm7ofTO6P1ILu8bRPxUFKDxVwFf8+TeuuErmNui6blpltyr7+eV72dbQXlQ==}
+    dev: false
 
   /@types/eventsource@1.1.11:
     resolution: {integrity: sha512-L7wLDZlWm5mROzv87W0ofIYeQP5K2UhoFnnUyEWLKM6UBb0ZNRgAqp98qE5DkgfBXdWfc2kYmw9KZm4NLjRbsw==}
@@ -8753,6 +8763,10 @@ packages:
   /etag@1.8.1:
     resolution: {integrity: sha512-aIL5Fx7mawVa300al2BnEE4iNvo1qETxLrPI/o05L7z6go7fCw1J6EQmbK4FmJ2AS7kgVF/KEZWufBfdClMcPg==}
     engines: {node: '>= 0.6'}
+    dev: false
+
+  /event-source-polyfill@1.0.31:
+    resolution: {integrity: sha512-4IJSItgS/41IxN5UVAVuAyczwZF7ZIEsM1XAoUzIHA6A+xzusEZUutdXz2Nr+MQPLxfTiCvqE79/C8HT8fKFvA==}
     dev: false
 
   /event-target-shim@5.0.1:

@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import { procedure, router, zodId, z, errors } from "@vrite/backend";
 import {
   JSONContent,
