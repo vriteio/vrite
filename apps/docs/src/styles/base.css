@@ -59,7 +59,7 @@ h2 {
 }
 
 ::-webkit-scrollbar {
-  @apply w-4 bg-gray-100 dark:bg-gray-800 mt-4;
+  @apply w-3 bg-gray-50 dark:bg-gray-800 mt-4;
 }
 ::-webkit-scrollbar-thumb {
   @apply bg-gray-200 rounded-lg dark:bg-gray-900;
@@ -166,42 +166,4 @@ h2 {
   .astro-code {
     scrollbar-color: #1e293b #0f172a;
   }
-}
-.prose code::before,
-.prose code::after {
-  content: "" !important;
-}
-.prose pre {
-  @apply px-4 py-2 border-none text-base;
-}
-.prose :not(pre) code {
-  @apply bg-gray-200 text-gray-700 font-medium dark:bg-gray-900 dark:text-gray-300 py-1 px-2 rounded-lg;
-
-  font-family: "Fira Code", monospace !important;
-}
-.prose img {
-  @apply rounded-2xl;
-}
-.prose :where(li > ul, li > ol):not(:where(.not-prose, .not-prose *)) {
-  @apply !m-0;
-}
-.prose :where(ul p, ol p):not(:where(.not-prose, .not-prose *)) {
-  @apply !m-0;
-}
-.code-block-contrast .astro-code {
-  @apply !bg-gray-100 !m-0 w-full;
-}
-.parameters-section,
-.response-section,
-.body-section {
-  @apply !hidden;
-}
-[data-active-section="parameters"] .parameters-section {
-  @apply !flex;
-}
-[data-active-section="response"] .response-section {
-  @apply !flex;
-}
-[data-active-section="body"] .body-section {
-  @apply !flex;
 }

@@ -56,7 +56,8 @@ import {
   TableMenuPlugin,
   CodeBlock,
   Image,
-  Embed
+  Embed,
+  AutoDir
 } from "#lib/editor";
 import { useLocalStorage, useSharedState } from "#context";
 import { breakpoints, createRef } from "#lib/utils";
@@ -120,6 +121,7 @@ const Editor: Component = () => {
       TableRow,
       TrailingNode,
       CharacterCount,
+      AutoDir,
       Gapcursor,
       Dropcursor.configure({ class: "ProseMirror-dropcursor" }),
       SlashMenuPlugin.configure({

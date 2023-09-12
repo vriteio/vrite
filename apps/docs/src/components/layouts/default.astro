@@ -59,32 +59,28 @@ if (Astro.props.previousEntry) {
   </head>
   <body class="overflow-x-hidden overscroll-none">
     <SVGDefs />
-    <main
-      class="flex flex-col items-center justify-center gap-8 h-full bg-gray-50 dark:bg-gray-800"
-    >
-      <div class="min-h-screen w-full flex justify-center items-start h-full">
+    <main class="flex flex-col items-center justify-center h-screen bg-gray-50 dark:bg-gray-800">
+      <Header client:idle />
+      <div class="flex-1 flex justify-center items-center overflow-hidden flex-1 w-full">
         <SideBar
           usageGuideMenu={usageGuideMenu}
           apiDocsMenu={apiDocsMenu}
           currentPath={Astro.url.pathname}
           client:idle
         />
-        <div class="flex-1 flex justify-center items-center flex-col overflow-hidden max-h-screen">
-          <Header client:idle />
-          <div class="flex overflow-hidden w-full relative">
+        <div class="flex overflow-hidden w-full relative h-full">
+          <div
+            class="flex-1 flex overflow-y-auto overflow-x-hidden md:max-h-[calc(100vh-3.125rem)]"
+            id="container"
+          >
             <div
-              class="flex-1 flex overflow-y-auto overflow-x-hidden md:max-h-[calc(100vh-3.125rem)] h-screen"
-              id="container"
+              class="flex-1 prose max-w-screen-lg w-full text-lg px-4 pt-4 lg:px-16 pb-24 h-fit xl:w-[calc(100%-15rem)]"
             >
-              <div
-                class="flex-1 prose max-w-screen-lg w-full text-lg px-4 lg:px-16 pb-24 h-fit xl:w-[calc(100%-15rem)]"
-              >
-                <h1>{Astro.props.title}</h1>
-                <slot />
-                <Navigation previousEntry={previousEntry} nextEntry={nextEntry} />
-              </div>
-              <OnThisPage headings={Astro.props.headings} client:load />
+              <h1>{Astro.props.title}</h1>
+              <slot />
+              <Navigation previousEntry={previousEntry} nextEntry={nextEntry} />
             </div>
+            <OnThisPage headings={Astro.props.headings} client:load />
           </div>
         </div>
       </div>

@@ -1,3 +1,4 @@
+import { mediumOutputTransformer } from "./transformer";
 import { procedure, router, zodId, z, errors } from "@vrite/backend";
 import {
   JSONContent,
@@ -5,59 +6,9 @@ import {
   ContentPieceWithAdditionalData,
   Extension
 } from "@vrite/sdk/api";
-import { createContentTransformer, gfmTransformer } from "@vrite/sdk/transformers";
 
 const processContent = (content: JSONContent): string => {
-  const mediumTransformer = createContentTransformer({
-    applyInlineFormatting(type, attrs, content) {
-      switch (type) {
-        case "strike":
-          return content;
-        default:
-          return gfmTransformer({
-            type,
-            attrs,
-            content: [
-              {
-                type: "text",
-                marks: [{ type, attrs }],
-                text: content
-              }
-            ]
-          });
-      }
-    },
-    transformNode(type, attrs, content) {
-      switch (type) {
-        case "heading":
-          const level = `${attrs?.level || 1}`;
-
-          if (["1", "2"].includes(level)) return `\n# ${content}\n`;
-          if (["3", "4"].includes(level)) return `\n## ${content}\n`;
-
-          return `\n**${content}**\n`;
-        case "embed":
-          return `\n${attrs?.src || ""}\n`;
-        case "table":
-        case "taskList":
-          return "";
-        default:
-          return gfmTransformer({
-            type,
-            attrs,
-            content: [
-              {
-                type: "text",
-                attrs: {},
-                text: content
-              }
-            ]
-          });
-      }
-    }
-  });
-
-  return mediumTransformer(content);
+  return mediumOutputTransformer(content);
 };
 const basePath = "/medium";
 const getAuthorId = async (token: string): Promise<string> => {
@@ -78,6 +29,7 @@ const getAuthorId = async (token: string): Promise<string> => {
 
     return json.data?.id || "";
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error(error);
     throw errors.serverError();
   }
@@ -85,7 +37,7 @@ const getAuthorId = async (token: string): Promise<string> => {
 const publishToMedium = async (
   contentPiece: ContentPieceWithAdditionalData<Record<string, any>, true>,
   extension: Partial<Extension>
-) => {
+): Promise<{ mediumId: string }> => {
   const contentType = "application/json";
   const contentPieceData = contentPiece.customData?.__extensions__?.[extension.name || ""] || {};
   const article = {
@@ -130,6 +82,7 @@ const publishToMedium = async (
 
     return { mediumId: `${json.data?.id || ""}` };
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error(error);
     throw errors.serverError();
   }

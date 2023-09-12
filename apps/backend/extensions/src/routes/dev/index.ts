@@ -1,82 +1,14 @@
+import { devOutputTransformer } from "./transformer";
 import { procedure, router, zodId, z, errors } from "@vrite/backend";
 import {
   JSONContent,
   createClient,
   ContentPieceWithAdditionalData,
-  Extension,
-  JSONContentAttrs
+  Extension
 } from "@vrite/sdk/api";
-import { createContentTransformer, gfmTransformer } from "@vrite/sdk/transformers";
 
 const processContent = (content: JSONContent): string => {
-  const matchers = {
-    youtube:
-      /^ *https?:\/\/(?:www\.)?youtu\.?be(?:.com)?\/(?:watch\?v=|embed\/)?(.+?)(?:[ &/?].*)*$/i,
-    codepen: /^ *https?:\/\/(?:www\.)?codepen\.io\/.+?\/(?:embed|pen)?\/(.+?)(?:[ &/?].*)*$/i,
-    codesandbox: /^ *https?:\/\/(?:www\.)?codesandbox\.io\/(?:s|embed)\/(.+?)(?:[ &/?].*)*$/i
-  };
-  const getEmbedId = (value: string, embedType: keyof typeof matchers): string => {
-    const matcher = matchers[embedType];
-    const match = matcher.exec(value);
-
-    if (match) {
-      return match[1];
-    }
-
-    return value;
-  };
-  const transformEmbed = (attrs: JSONContentAttrs): string => {
-    switch (attrs.embed) {
-      case "codepen":
-        return `\n{% codepen https://codepen.io/codepen/embed/${getEmbedId(
-          `${attrs.src}`,
-          "codepen"
-        )} %}\n`;
-      case "codesandbox":
-        return `\n{% codesandbox ${getEmbedId(`${attrs.src}`, "codesandbox")} %}\n`;
-      case "youtube":
-        return `\n{% youtube ${getEmbedId(`${attrs.src}`, "youtube")} %}\n`;
-      default:
-        return "";
-    }
-  };
-  const devTransformer = createContentTransformer({
-    applyInlineFormatting(type, attrs, content) {
-      return gfmTransformer({
-        type,
-        attrs,
-        content: [
-          {
-            type: "text",
-            marks: [{ type, attrs }],
-            text: content
-          }
-        ]
-      });
-    },
-    transformNode(type, attrs, content) {
-      switch (type) {
-        case "embed":
-          return transformEmbed(attrs);
-        case "taskList":
-          return "";
-        default:
-          return gfmTransformer({
-            type,
-            attrs,
-            content: [
-              {
-                type: "text",
-                attrs: {},
-                text: content
-              }
-            ]
-          });
-      }
-    }
-  });
-
-  return devTransformer(content);
+  return devOutputTransformer(content);
 };
 const basePath = "/dev";
 const publishToDEV = async (

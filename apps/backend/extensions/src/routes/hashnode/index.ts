@@ -1,93 +1,20 @@
+import { hashnodeOutputTransformer } from "./transformer";
 import { procedure, router, zodId, z, errors } from "@vrite/backend";
 import {
   JSONContent,
   createClient,
   ContentPieceWithAdditionalData,
-  Extension,
-  JSONContentAttrs
+  Extension
 } from "@vrite/sdk/api";
-import { createContentTransformer, gfmTransformer } from "@vrite/sdk/transformers";
 
 const processContent = (content: JSONContent): string => {
-  const matchers = {
-    youtube:
-      /^ *https?:\/\/(?:www\.)?youtu\.?be(?:.com)?\/(?:watch\?v=|embed\/)?(.+?)(?:[ &/?].*)*$/i,
-    codepen: /^ *https?:\/\/(?:www\.)?codepen\.io\/.+?\/(?:embed|pen)?\/(.+?)(?:[ &/?].*)*$/i,
-    codesandbox: /^ *https?:\/\/(?:www\.)?codesandbox\.io\/(?:s|embed)\/(.+?)(?:[ &/?].*)*$/i
-  };
-  const getEmbedId = (value: string, embedType: keyof typeof matchers): string => {
-    const matcher = matchers[embedType];
-    const match = matcher.exec(value);
-
-    if (match) {
-      return match[1];
-    }
-
-    return value;
-  };
-  const transformEmbed = (attrs: JSONContentAttrs) => {
-    switch (attrs.embed) {
-      case "codepen":
-        return `\n%[https://codepen.io/codepen/embed/${getEmbedId(`${attrs.src}`, "codepen")}]\n`;
-      case "codesandbox":
-        return `\n%[https://codesandbox.io/s/${getEmbedId(`${attrs.src}`, "codesandbox")}]\n`;
-      case "youtube":
-        return `\n%[https://www.youtube.com/watch?v=${getEmbedId(`${attrs.src}`, "youtube")}]\n`;
-      default:
-        return "";
-    }
-  };
-  const hashnodeTransformer = createContentTransformer({
-    applyInlineFormatting(type, attrs, content) {
-      if (type === "strike") {
-        return `<s>${content}</s>`;
-      }
-
-      if (type === "highlight") {
-        return `<mark>${content}</mark>`;
-      }
-
-      return gfmTransformer({
-        type,
-        attrs,
-        content: [
-          {
-            type: "text",
-            marks: [{ type, attrs }],
-            text: content
-          }
-        ]
-      });
-    },
-    transformNode(type, attrs, content) {
-      switch (type) {
-        case "embed":
-          return transformEmbed(attrs);
-        case "taskList":
-          return "";
-        default:
-          return gfmTransformer({
-            type,
-            attrs,
-            content: [
-              {
-                type: "text",
-                attrs: {},
-                text: content
-              }
-            ]
-          });
-      }
-    }
-  });
-
-  return hashnodeTransformer(content);
+  return hashnodeOutputTransformer(content);
 };
 const basePath = "/hashnode";
 const publishToHashnode = async (
   contentPiece: ContentPieceWithAdditionalData<Record<string, any>, true>,
   extension: Partial<Extension>
-) => {
+): Promise<{ hashnodeId: string }> => {
   const contentType = "application/json";
   const contentPieceData = contentPiece.customData?.__extensions__?.[extension.name || ""] || {};
 
@@ -153,12 +80,14 @@ const publishToHashnode = async (
       } = await response.json();
 
       if (json.errors) {
+        // eslint-disable-next-line no-console
         console.error(json.errors);
         throw errors.serverError();
       }
 
       return { hashnodeId: `${json.data?.updateStory.post._id || ""}` };
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error(error);
       throw errors.serverError();
     }
@@ -199,12 +128,14 @@ const publishToHashnode = async (
       } = await response.json();
 
       if (json.errors) {
+        // eslint-disable-next-line no-console
         console.error(json.errors);
         throw errors.serverError();
       }
 
       return { hashnodeId: `${json.data?.createStory.post._id || ""}` };
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error(error);
       throw errors.serverError();
     }

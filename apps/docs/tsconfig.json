@@ -6,6 +6,7 @@
     "module": "ESNext",
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
+    "verbatimModuleSyntax": false,
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "jsx": "preserve",

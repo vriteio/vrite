@@ -118,6 +118,7 @@ const createExtensions = (
     codeBlock: CodeBlock.configure({ provider }),
     horizontalRule: HorizontalRule,
     image: Image,
+    wrapper: Wrapper,
     table: [Table, TableCell, TableHeader, TableRow]
   };
   const getHeadingLevels = (settings: App.WorkspaceSettings): Level[] => {
@@ -167,7 +168,6 @@ const createExtensions = (
     Heading.configure({
       enabledLevels: getHeadingLevels(settings)
     }),
-    Wrapper,
     ...getItemNodes()
   ];
 };
@@ -334,11 +334,7 @@ const createBlockMenuOptions = (settings?: App.WorkspaceSettings): SlashMenuItem
   return blockMenuOptions.filter(({ embed, block }) => {
     if (!settings) return true;
 
-    return (
-      (block && block === "wrapper") ||
-      (block && settings.blocks.includes(block)) ||
-      (embed && settings.embeds.includes(embed))
-    );
+    return (block && settings.blocks.includes(block)) || (embed && settings.embeds.includes(embed));
   }) as SlashMenuItem[];
 };
 

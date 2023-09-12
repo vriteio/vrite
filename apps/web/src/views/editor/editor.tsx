@@ -37,7 +37,8 @@ import {
   createBlockMenuOptions,
   BlockPaste,
   TableMenuPlugin,
-  CommentMenuPlugin
+  CommentMenuPlugin,
+  AutoDir
 } from "#lib/editor";
 import {
   App,
@@ -134,6 +135,7 @@ const Editor: Component<EditorProps> = (props) => {
       ...(workspaceSettings() ? createExtensions(workspaceSettings()!, provider) : []),
       TrailingNode,
       CharacterCount,
+      AutoDir,
       Gapcursor,
       Dropcursor.configure({ class: "ProseMirror-dropcursor" }),
       SlashMenuPlugin.configure({

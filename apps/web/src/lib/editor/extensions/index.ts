@@ -13,3 +13,4 @@ export * from "./comment-menu";
 export * from "./block-paste";
 export * from "./table-menu";
 export * from "./wrapper";
+export * from "./auto-dir";
