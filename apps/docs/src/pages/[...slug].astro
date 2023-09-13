@@ -10,10 +10,6 @@ if (slug === undefined) {
 
 const { entry } = Astro.props;
 const { Content, headings } = await entry.render();
-const collection = await getCollection("docs");
-const entryIndex = collection.findIndex((e) => e.slug === slug);
-const nextEntry = collection[entryIndex + 1];
-const previousEntry = collection[entryIndex - 1];
 
 export const prerender = true;
 export async function getStaticPaths() {
@@ -25,11 +21,6 @@ export async function getStaticPaths() {
 }
 ---
 
-<DefaultLayout
-  headings={headings}
-  title={entry.data.title}
-  nextEntry={nextEntry}
-  previousEntry={previousEntry}
->
+<DefaultLayout headings={headings} title={entry.data.title}>
   <Content />
 </DefaultLayout>

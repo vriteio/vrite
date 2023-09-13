@@ -13,26 +13,7 @@ const description =
 type Props = {
   headings: MarkdownHeading[];
   title: string;
-  nextEntry?: CollectionEntry<"docs">;
-  previousEntry?: CollectionEntry<"docs">;
 };
-
-let nextEntry: { label: string; link: string } | undefined = undefined;
-let previousEntry: { label: string; link: string } | undefined = undefined;
-
-if (Astro.props.nextEntry) {
-  nextEntry = {
-    label: Astro.props.nextEntry.data.title,
-    link: `/${Astro.props.nextEntry.slug}`
-  };
-}
-
-if (Astro.props.previousEntry) {
-  previousEntry = {
-    label: Astro.props.previousEntry.data.title,
-    link: `/${Astro.props.previousEntry.slug}`
-  };
-}
 ---
 
 <!DOCTYPE html>
@@ -56,7 +37,6 @@ if (Astro.props.previousEntry) {
             >
               <h1>{Astro.props.title}</h1>
               <slot />
-              <Navigation previousEntry={previousEntry} nextEntry={nextEntry} />
             </div>
             <OnThisPage headings={Astro.props.headings} client:load />
           </div>
