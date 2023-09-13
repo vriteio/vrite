@@ -302,9 +302,6 @@ importers:
       '@vrite/sdk':
         specifier: workspace:*
         version: link:../../packages/sdk/javascript
-      '@vrite/web':
-        specifier: workspace:*
-        version: link:../web
       astro:
         specifier: ^2.10.15
         version: 2.10.15
