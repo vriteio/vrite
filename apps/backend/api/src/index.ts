@@ -6,6 +6,15 @@ import { createServer, appRouter } from "@vrite/backend";
   const server = await createServer();
 
   await server.register(apiService);
+  server.get("/swagger.json", (req, res) => {
+    res.send(
+      generateOpenApiDocument(appRouter, {
+        baseUrl: `https://${server.config.PUBLIC_API_HOST}`,
+        title: "Vrite API",
+        version: "0.2.0"
+      })
+    );
+  });
 
   return server.listen({ host: server.config.HOST, port: server.config.PORT }, (err) => {
     if (err) {

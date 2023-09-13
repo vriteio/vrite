@@ -4,15 +4,29 @@ category: Self-hosting
 slug: self-hosting
 ---
 
-Vrite aims to provide the best and most accessible technical writing experience of any headless CMS out there. To do so, we want to provide both a ready, [easy-to-use “Vrite Cloud” instance](https://app.vrite.io/), as well as allowing you to **self-host Vrite** on your own servers.
+Vrite aims to provide the best and most accessible technical writing experience. To do so, we provide both a ready, [easy-to-use “Vrite Cloud” instance](https://app.vrite.io/), as well as an option for you to **self-host Vrite** on your own servers.
 
-That said, while in **Public Beta**, Vrite is in active development with updates coming weekly and often even daily. Until we stabilize the core feature set of Vrite, the focus will stay on development, with the latest updates coming to the hosted instance as soon as they’re available. During this phase, Vrite Cloud will remain free for all users.
+The recommended way self-host Vrite is with [Docker](https://docs.docker.com/engine/install/) and [Docker Compose](https://docs.docker.com/compose/install/) - both of which you need to have installed on your machine.
 
-We plan to focus more on providing a better experience for **self-hosting** Vrite and **data migration** between different instances in a few months, right alongside Vrite entering its **first stable release** (planned for late **Q3 2023**)
+Start by cloning the Vrite repository and preparing the `docker.env` file:
 
-With this in mind, self-hosting Vrite right now isn’t the best experience. That said, if you’re really interested to try and self-host Vrite, or want to contribute to Vrite’s development, here’s some information to help you get started with the [Vrite monorepo](https://github.com/vriteio/vrite/).
+```bash
+git clone https://github.com/vriteio/vrite
 
-## Project Structure
+cd vrite
+
+cp .env.example docker.env
+```
+
+Then, open the `docker.env` file and fill in the environment variables. You can refer to the **Configuration** section below for more information on configuration.
+
+When you’re done, you can start Vrite with:
+
+```bash
+docker-compose up
+```
+
+## Configuration
 
 Vrite monorepo is based on [Turborepo](https://turbo.build/repo). Among its most important dependencies are:
 

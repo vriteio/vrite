@@ -20,7 +20,7 @@ const Header: Component = () => {
           class="bg-gradient-to-tr from-red-500 to-orange-500 m-0 mr-1"
         />
         <span class="flex-1 text-2xl font-extrabold text-gray-600 dark:text-gray-200">rite</span>
-        <span class="text-gray-500 dark:text-gray-400 font-semibold border-l-2 pl-2 ml-2 leading-8">
+        <span class="text-gray-500 dark:text-gray-400 font-semibold border-l-2 pl-2 ml-2 leading-8 border-gray-200 dark:border-gray-700">
           Documentation
         </span>
       </div>
@@ -36,7 +36,7 @@ const Header: Component = () => {
           </div>
         }
         text="soft"
-        class="@xl:min-w-48 justify-start m-0 group"
+        class="@xl:min-w-48 justify-start m-0 group !hidden"
       />
     </div>
   );

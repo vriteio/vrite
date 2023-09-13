@@ -32,6 +32,7 @@
     "vite": "^4.4.9"
   },
   "devDependencies": {
+    "@astrojs/node": "^6.0.0",
     "astro-robots-txt": "^1.0.0"
   }
 }

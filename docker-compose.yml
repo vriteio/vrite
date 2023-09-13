@@ -45,7 +45,7 @@ services:
 
   api:
     image: ghcr.io/vriteio/vrite/api:latest
-    env_file: ./.env
+    env_file: ./docker.env
     depends_on:
       - mongodb
       - redis
@@ -56,7 +56,7 @@ services:
 
   assets:
     image: ghcr.io/vriteio/vrite/assets:latest
-    env_file: ./.env
+    env_file: ./docker.env
     depends_on:
       - mongodb
       - minio
@@ -68,7 +68,7 @@ services:
 
   collab:
     image: ghcr.io/vriteio/vrite/collaboration:latest
-    env_file: ./.env
+    env_file: ./docker.env
     depends_on:
       - mongodb
       - redis
@@ -79,7 +79,7 @@ services:
 
   app:
     image: ghcr.io/vriteio/vrite/app:latest
-    env_file: ./.env
+    env_file: ./docker.env
     environment:
       - PORT=3333
     ports:

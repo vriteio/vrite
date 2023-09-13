@@ -4,7 +4,7 @@ category: API Documentation
 slug: api/content-pieces
 ---
 
-import { EndpointCard } from "../../components/fragments/endpoint-card.astro";
+import EndpointCard from "#components/fragments/endpoint-card.astro";
 
 **Content pieces** are at the heart of Vrite - all content you create, as well as all the related metadata is stored across many content pieces.
 
@@ -13,19 +13,19 @@ import { EndpointCard } from "../../components/fragments/endpoint-card.astro";
 Retrieves detailed information on a single, content piece, including detailed tags information and, optionally, its full content - in HTML or JSON format.
 
 <EndpointCard
-  client:only
+  
   method="GET"
   endpoint="/content-pieces"
   parameters={[
     {
       name: "id",
-      type: `string`,
+      schema: {type:`string`},
       description: "Content piece ID",
       required: true
     },
     {
       name: "content",
-      type: `"html" | "json"`,
+      schema: {type:`"html" | "json"`},
       description: "Indicates whether to retrieve the actual content and in what format"
     }
   ]}
@@ -93,31 +93,31 @@ Retrieves detailed information on a single, content piece, including detailed ta
 Retrieves basic information about multiple content pieces with pagination and optional filtering by [content group](/docs#using-api-content-groups) or/and [tag](/docs#using-api-tags).
 
 <EndpointCard
-  client:only
+  
   method="GET"
   endpoint="/content-pieces/list"
   parameters={[
     {
       name: "contentGroupId",
-      type: "string",
+      schema: {type:"string"},
       description: `Content group ID to filter by`
     },
-    {name:"slug",type:"string", description:"Article slug to filter by"},
+    {name:"slug",schema:{type:"string"}, description:"Article slug to filter by"},
     {
       name: "tagId",
-      type: `string`,
+      schema: {type:`string`},
       description: "Tag ID to filter by"
     },
 
     {
       name: "perPage",
-      type: `number`,
+      schema: {type:`number`},
       description: "Limits the number of results in a single request.",
       default:20
     },
     {
       name: "page",
-      type: `number`,
+      schema: {type:`number`},
       description: "Page of the results.",
       default:1
     }
@@ -168,7 +168,7 @@ Provided an ID, updates the matching content piece' metadata with given informat
 no ID is provided, a new content piece is created.
 
 <EndpointCard
-  client:only
+  
   method="PUT"
   endpoint="/content-pieces"
   body={{
@@ -208,7 +208,7 @@ Provided an ID, deletes content and metadata of the matching piece and returns i
 it returns `null`.
 
 <EndpointCard
-  client:only
+  
   method="DELETE"
   endpoint="/content-pieces"
   responseExamples={[{ data: { id: "63efc451cf034ba9ca007e47" }, name: "Success", id: "success" }, {name:"Bad request",id:"bad request",data:{
@@ -229,7 +229,7 @@ it returns `null`.
 
 }]}
 parameters={[
-{ name: "id", type: "string", description: "ID of the content piece to delete", required: true }
+{ name: "id", schema: {type:"string"}, description: "ID of the content piece to delete", required: true }
 ]}
 
 />

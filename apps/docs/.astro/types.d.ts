@@ -179,97 +179,76 @@ declare module 'astro:content' {
 
 	type ContentEntryMap = {
 		"docs": {
-"0-getting-started.md": {
-	id: "0-getting-started.md";
-  slug: "usage-guide/getting-started";
-  body: string;
-  collection: "docs";
-  data: InferEntrySchema<"docs">
-} & { render(): Render[".md"] };
-"1-managing-content-in-kanban-dashboard.md": {
-	id: "1-managing-content-in-kanban-dashboard.md";
-  slug: "usage-guide/kanban-dashboard";
-  body: string;
-  collection: "docs";
-  data: InferEntrySchema<"docs">
-} & { render(): Render[".md"] };
-"10-content-groups.mdx": {
-	id: "10-content-groups.mdx";
-  slug: "api/content-groups";
-  body: string;
-  collection: "docs";
-  data: InferEntrySchema<"docs">
-} & { render(): Render[".mdx"] };
-"11-settings.mdx": {
-	id: "11-settings.mdx";
-  slug: "api/settings";
-  body: string;
-  collection: "docs";
-  data: InferEntrySchema<"docs">
-} & { render(): Render[".mdx"] };
-"12-tags.mdx": {
-	id: "12-tags.mdx";
-  slug: "api/tags";
-  body: string;
-  collection: "docs";
-  data: InferEntrySchema<"docs">
-} & { render(): Render[".mdx"] };
-"2-managing-metadata.md": {
-	id: "2-managing-metadata.md";
-  slug: "usage-guide/metadata";
-  body: string;
-  collection: "docs";
-  data: InferEntrySchema<"docs">
-} & { render(): Render[".md"] };
-"3-writing-in-vrite-editor.md": {
-	id: "3-writing-in-vrite-editor.md";
-  slug: "usage-guide/content-editor";
-  body: string;
-  collection: "docs";
-  data: InferEntrySchema<"docs">
-} & { render(): Render[".md"] };
-"4-configuring-vrite.md": {
-	id: "4-configuring-vrite.md";
-  slug: "usage-guide/settings";
-  body: string;
-  collection: "docs";
-  data: InferEntrySchema<"docs">
-} & { render(): Render[".md"] };
-"5-vrite-extensions.md": {
-	id: "5-vrite-extensions.md";
-  slug: "usage-guide/vrite-extensions";
-  body: string;
-  collection: "docs";
-  data: InferEntrySchema<"docs">
-} & { render(): Render[".md"] };
-"6-publishing-content.md": {
-	id: "6-publishing-content.md";
-  slug: "usage-guide/publishing";
-  body: string;
-  collection: "docs";
-  data: InferEntrySchema<"docs">
-} & { render(): Render[".md"] };
-"7-javascript-sdk.md": {
-	id: "7-javascript-sdk.md";
-  slug: "javascript-sdk";
-  body: string;
-  collection: "docs";
-  data: InferEntrySchema<"docs">
-} & { render(): Render[".md"] };
-"8-self-hosting.md": {
-	id: "8-self-hosting.md";
-  slug: "self-hosting";
-  body: string;
-  collection: "docs";
-  data: InferEntrySchema<"docs">
-} & { render(): Render[".md"] };
-"9-content-pieces.mdx": {
-	id: "9-content-pieces.mdx";
+"api/0-content-pieces.mdx": {
+	id: "api/0-content-pieces.mdx";
   slug: "api/content-pieces";
   body: string;
   collection: "docs";
   data: InferEntrySchema<"docs">
 } & { render(): Render[".mdx"] };
+"javascript-sdk/0-javascript-sdk.md": {
+	id: "javascript-sdk/0-javascript-sdk.md";
+  slug: "javascript-sdk";
+  body: string;
+  collection: "docs";
+  data: InferEntrySchema<"docs">
+} & { render(): Render[".md"] };
+"self-hosting/0-docker.md": {
+	id: "self-hosting/0-docker.md";
+  slug: "self-hosting";
+  body: string;
+  collection: "docs";
+  data: InferEntrySchema<"docs">
+} & { render(): Render[".md"] };
+"usage-guide/0-getting-started.md": {
+	id: "usage-guide/0-getting-started.md";
+  slug: "usage-guide/getting-started";
+  body: string;
+  collection: "docs";
+  data: InferEntrySchema<"docs">
+} & { render(): Render[".md"] };
+"usage-guide/1-managing-content-in-kanban-dashboard.md": {
+	id: "usage-guide/1-managing-content-in-kanban-dashboard.md";
+  slug: "usage-guide/kanban-dashboard";
+  body: string;
+  collection: "docs";
+  data: InferEntrySchema<"docs">
+} & { render(): Render[".md"] };
+"usage-guide/2-managing-metadata.md": {
+	id: "usage-guide/2-managing-metadata.md";
+  slug: "usage-guide/metadata";
+  body: string;
+  collection: "docs";
+  data: InferEntrySchema<"docs">
+} & { render(): Render[".md"] };
+"usage-guide/3-writing-in-vrite-editor.md": {
+	id: "usage-guide/3-writing-in-vrite-editor.md";
+  slug: "usage-guide/content-editor";
+  body: string;
+  collection: "docs";
+  data: InferEntrySchema<"docs">
+} & { render(): Render[".md"] };
+"usage-guide/4-configuring-vrite.md": {
+	id: "usage-guide/4-configuring-vrite.md";
+  slug: "usage-guide/settings";
+  body: string;
+  collection: "docs";
+  data: InferEntrySchema<"docs">
+} & { render(): Render[".md"] };
+"usage-guide/5-vrite-extensions.md": {
+	id: "usage-guide/5-vrite-extensions.md";
+  slug: "usage-guide/vrite-extensions";
+  body: string;
+  collection: "docs";
+  data: InferEntrySchema<"docs">
+} & { render(): Render[".md"] };
+"usage-guide/6-publishing-content.md": {
+	id: "usage-guide/6-publishing-content.md";
+  slug: "usage-guide/publishing";
+  body: string;
+  collection: "docs";
+  data: InferEntrySchema<"docs">
+} & { render(): Render[".md"] };
 };
 
 	};

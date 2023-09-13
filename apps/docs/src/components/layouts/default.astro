@@ -26,6 +26,41 @@ const apiDocsMenu = docs
     title: entry.data.title,
     link: `/${entry.slug}`
   }));
+const menu = [
+  {
+    label: "Usage Guide",
+    menu: docs
+      .filter((entry) => {
+        return entry.id.startsWith("usage-guide");
+      })
+      .map((entry) => ({
+        label: entry.data.title,
+        link: `/${entry.slug}`
+      }))
+  },
+  {
+    label: "JavaScript SDK",
+    menu: docs
+      .filter((entry) => {
+        return entry.id.startsWith("javascript-sdk");
+      })
+      .map((entry) => ({
+        label: entry.data.title,
+        link: `/${entry.slug}`
+      }))
+  },
+  {
+    label: "Self-Hosting",
+    menu: docs
+      .filter((entry) => {
+        return entry.id.startsWith("self-hosting");
+      })
+      .map((entry) => ({
+        label: entry.data.title,
+        link: `/${entry.slug}`
+      }))
+  }
+];
 
 type Props = {
   headings: MarkdownHeading[];
@@ -62,12 +97,7 @@ if (Astro.props.previousEntry) {
     <main class="flex flex-col items-center justify-center h-screen bg-gray-50 dark:bg-gray-800">
       <Header client:idle />
       <div class="flex-1 flex justify-center items-center overflow-hidden flex-1 w-full">
-        <SideBar
-          usageGuideMenu={usageGuideMenu}
-          apiDocsMenu={apiDocsMenu}
-          currentPath={Astro.url.pathname}
-          client:idle
-        />
+        <SideBar menu={menu} currentPath={Astro.url.pathname} client:idle />
         <div class="flex overflow-hidden w-full relative h-full">
           <div
             class="flex-1 flex overflow-y-auto overflow-x-hidden md:max-h-[calc(100vh-3.125rem)]"

@@ -14,6 +14,7 @@ import {
 } from "./workspace-memberships";
 import { ExtensionEndpoints, createExtensionEndpoints } from "./extension";
 import { VariantsEndpoints, createVariantsEndpoints } from "./variants";
+import { TransformersEndpoints, createTransformersEndpoints } from "./transformers";
 import PolyfilledEventSource from "@sanity/eventsource";
 
 interface ClientConfig extends APIFetcherConfig {}
@@ -30,6 +31,7 @@ interface Client {
   workspaceMemberships: WorkspaceMembershipsEndpoints;
   extension: ExtensionEndpoints;
   variants: VariantsEndpoints;
+  transformers: TransformersEndpoints;
   search(input: {
     query: string;
     limit?: number;
@@ -67,6 +69,7 @@ const createClient = (config: ClientConfig): Client => {
     workspaceMemberships: createWorkspaceMembershipsEndpoints(sendRequest),
     extension: createExtensionEndpoints(sendRequest),
     variants: createVariantsEndpoints(sendRequest),
+    transformers: createTransformersEndpoints(sendRequest),
     search(input) {
       return sendRequest("GET", "/search", {
         params: input
