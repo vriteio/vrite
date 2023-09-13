@@ -11,14 +11,13 @@
     "astro": "astro"
   },
   "dependencies": {
-    "@astrojs/mdx": "^1.0.3",
-    "@astrojs/sitemap": "^3.0.0",
-    "@astrojs/solid-js": "^3.0.1",
+    "@astrojs/sitemap": "^2.0.2",
+    "@astrojs/solid-js": "^2.2.1",
     "@mdi/js": "^7.2.96",
     "@types/marked": "^5.0.1",
     "@unocss/reset": "^0.55.7",
     "@vrite/components": "workspace:*",
-    "astro": "^3.0.12",
+    "astro": "^2.10.15",
     "clsx": "^2.0.0",
     "curl-string": "^3.1.0",
     "marked": "^8.0.1",
@@ -32,7 +31,7 @@
     "vite": "^4.4.9"
   },
   "devDependencies": {
-    "@astrojs/node": "^6.0.0",
+    "@astrojs/node": "^5.3.6",
     "astro-robots-txt": "^1.0.0"
   }
 }
