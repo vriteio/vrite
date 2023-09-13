@@ -4,13 +4,7 @@
     "menu": [
       {
         "label": "Getting Started",
-        "link": "/usage-guide/getting-started",
-        "menu": [
-          {
-            "label": "Getting Started",
-            "link": "/usage-guide/getting-started"
-          }
-        ]
+        "link": "/usage-guide/getting-started"
       },
       {
         "label": "Managing Content with Kanban",
