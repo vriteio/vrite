@@ -1,9 +1,3 @@
----
-title: Publishing Content
-category: Usage Guide
-slug: usage-guide/publishing
----
-
 With Vrite’s unique features like Kanban-based content management, the actual publishing flow is quite unique. All you have to do to publish a piece can be just drag and drop.
 
 ## Dedicated Content Group

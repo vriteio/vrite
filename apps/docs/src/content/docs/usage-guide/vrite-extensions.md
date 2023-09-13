@@ -1,9 +1,3 @@
----
-title: Vrite Extensions
-category: Usage Guide
-slug: usage-guide/vrite-extensions
----
-
 Vrite Extensions are meant to make Vrite both more customizable and easier to use. With direct access to Vrite API and the ability to extend Vrite’s UI, they have the ability to vastly improve your experience with Vrite.
 
 The Extensions specification and related APIs are in the early stages and we continue to stabilize and improve them. The goal is to create a platform that all users can build on. However, for now, only first-party extensions are available, which include:

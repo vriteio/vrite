@@ -1,9 +1,3 @@
----
-title: Self-hosting Vrite
-category: Self-hosting
-slug: self-hosting
----
-
 Vrite aims to provide the best and most accessible technical writing experience. To do so, we provide both a ready, [easy-to-use “Vrite Cloud” instance](https://app.vrite.io/), as well as an option for you to **self-host Vrite** on your own servers.
 
 The recommended way self-host Vrite is with [Docker](https://docs.docker.com/engine/install/) and [Docker Compose](https://docs.docker.com/compose/install/) - both of which you need to have installed on your machine.

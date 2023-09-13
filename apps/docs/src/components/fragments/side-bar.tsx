@@ -1,6 +1,6 @@
 import { mdiMenu, mdiClose, mdiGithub, mdiChevronDown, mdiCodeJson } from "@mdi/js";
 import clsx from "clsx";
-import { Component, For, JSX, createSignal } from "solid-js";
+import { Component, For, JSX, createEffect, createSignal } from "solid-js";
 import { menuOpened, setMenuOpened } from "#lib/state";
 import { Card, Button, IconButton } from "#components/primitives";
 import { discordIcon } from "#assets/icons";
@@ -37,13 +37,19 @@ const externalLinks = [
   }
 ];
 const SideBarNestedMenu: Component<{
-  menu: Array<{ label: string; link: string }>;
+  menu: Array<{ label: string; link: string; menu?: Array<{ label: string; link: string }> }>;
   currentPath: string;
   children: JSX.Element;
 }> = (props) => {
-  const [opened, setOpened] = createSignal(
-    props.menu.filter((item) => item.link === props.currentPath).length > 0
-  );
+  const [opened, setOpened] = createSignal(false);
+
+  createEffect(() => {
+    setOpened(
+      props.menu.filter((item) => {
+        return props.currentPath.includes(item.link);
+      }).length > 0
+    );
+  });
 
   return (
     <div class="flex flex-col w-full">
@@ -61,20 +67,39 @@ const SideBarNestedMenu: Component<{
       </div>
       <div
         class={clsx(
-          "flex flex-1 w-full pl-3 mt-2 overflow-hidden",
-          opened() ? "max-h-full" : "max-h-0"
+          "flex flex-1 w-full pl-3 overflow-hidden",
+          opened() ? "max-h-full mt-2" : "max-h-0"
         )}
       >
         <div class="w-0.5 bg-gray-200 dark:bg-gray-700 mr-2 rounded-full"></div>
         <div class="flex-1 flex flex-col gap-2">
           <For each={props.menu}>
             {(item) => {
+              if (item.menu) {
+                return (
+                  <SideBarNestedMenu currentPath={props.currentPath} menu={item.menu}>
+                    <Button
+                      variant="text"
+                      class="justify-start w-full font-bold m-0"
+                      badge
+                      hover={false}
+                    >
+                      {item.label}
+                    </Button>
+                  </SideBarNestedMenu>
+                );
+              }
+
+              const active = (): boolean => {
+                return props.currentPath.includes(item.link);
+              };
+
               return (
                 <Button
-                  variant={item.link === props.currentPath ? "solid" : "text"}
+                  variant={active() ? "solid" : "text"}
                   class="text-start w-full m-0"
-                  text={item.link === props.currentPath ? "primary" : "soft"}
-                  color={item.link === props.currentPath ? "primary" : "base"}
+                  text={active() ? "primary" : "soft"}
+                  color={active() ? "primary" : "base"}
                   link={item.link}
                 >
                   {item.label}

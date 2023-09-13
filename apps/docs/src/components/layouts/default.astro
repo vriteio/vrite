@@ -1,66 +1,14 @@
 ---
 import { Header, BaseHead, SideBar, SVGDefs, OnThisPage, Navigation } from "#components/fragments";
-import { CollectionEntry, getCollection } from "astro:content";
+import type { CollectionEntry } from "astro:content";
 import type { MarkdownHeading } from "astro";
+import menu from "./menu.json";
 import "#styles";
 
 const image = "https://docs.vrite.io/meta-image.png";
 const title = "Vrite － headless CMS for technical content";
 const description =
   "Open-source headless Content Management System (CMS) for technical content, like programming blogs, documentation, and more.";
-
-const docs = await getCollection("docs");
-const usageGuideMenu = docs
-  .filter((entry) => {
-    return entry.data.category === "Usage Guide";
-  })
-  .map((entry) => ({
-    title: entry.data.title,
-    link: `/${entry.slug}`
-  }));
-const apiDocsMenu = docs
-  .filter((entry) => {
-    return entry.data.category === "API Documentation";
-  })
-  .map((entry) => ({
-    title: entry.data.title,
-    link: `/${entry.slug}`
-  }));
-const menu = [
-  {
-    label: "Usage Guide",
-    menu: docs
-      .filter((entry) => {
-        return entry.id.startsWith("usage-guide");
-      })
-      .map((entry) => ({
-        label: entry.data.title,
-        link: `/${entry.slug}`
-      }))
-  },
-  {
-    label: "JavaScript SDK",
-    menu: docs
-      .filter((entry) => {
-        return entry.id.startsWith("javascript-sdk");
-      })
-      .map((entry) => ({
-        label: entry.data.title,
-        link: `/${entry.slug}`
-      }))
-  },
-  {
-    label: "Self-Hosting",
-    menu: docs
-      .filter((entry) => {
-        return entry.id.startsWith("self-hosting");
-      })
-      .map((entry) => ({
-        label: entry.data.title,
-        link: `/${entry.slug}`
-      }))
-  }
-];
 
 type Props = {
   headings: MarkdownHeading[];
@@ -97,7 +45,7 @@ if (Astro.props.previousEntry) {
     <main class="flex flex-col items-center justify-center h-screen bg-gray-50 dark:bg-gray-800">
       <Header client:idle />
       <div class="flex-1 flex justify-center items-center overflow-hidden flex-1 w-full">
-        <SideBar menu={menu} currentPath={Astro.url.pathname} client:idle />
+        <SideBar menu={menu} currentPath={Astro.url.pathname} client:only />
         <div class="flex overflow-hidden w-full relative h-full">
           <div
             class="flex-1 flex overflow-y-auto overflow-x-hidden md:max-h-[calc(100vh-3.125rem)]"

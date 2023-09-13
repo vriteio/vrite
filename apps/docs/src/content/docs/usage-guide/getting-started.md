@@ -1,9 +1,3 @@
----
-title: Getting Started with Vrite
-category: Usage Guide
-slug: usage-guide/getting-started
----
-
 **Vrite** (Public Beta) is a headless CMS, made with technical, programming-related content in mind. Combining great project management frameworks like Kanban with a state-of-the-art WYSIWYG editor and support for real-time collaboration, Vrite is a CMS unlike any other.
 
 ## Vrite’s Features

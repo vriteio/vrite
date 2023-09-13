@@ -188,68 +188,68 @@ declare module 'astro:content' {
 
 	type ContentEntryMap = {
 		"docs": {
-"javascript-sdk/0-javascript-sdk.md": {
-	id: "javascript-sdk/0-javascript-sdk.md";
-  slug: "javascript-sdk";
+"javascript-sdk/javascript-sdk.md": {
+	id: "javascript-sdk/javascript-sdk.md";
+  slug: "javascript-sdk/javascript-sdk";
   body: string;
   collection: "docs";
-  data: InferEntrySchema<"docs">
+  data: any
 } & { render(): Render[".md"] };
-"self-hosting/0-docker.md": {
-	id: "self-hosting/0-docker.md";
-  slug: "self-hosting";
+"self-hosting/docker.md": {
+	id: "self-hosting/docker.md";
+  slug: "self-hosting/docker";
   body: string;
   collection: "docs";
-  data: InferEntrySchema<"docs">
+  data: any
 } & { render(): Render[".md"] };
-"usage-guide/0-getting-started.md": {
-	id: "usage-guide/0-getting-started.md";
-  slug: "usage-guide/getting-started";
+"usage-guide/configuring-vrite.md": {
+	id: "usage-guide/configuring-vrite.md";
+  slug: "usage-guide/configuring-vrite";
   body: string;
   collection: "docs";
-  data: InferEntrySchema<"docs">
+  data: any
 } & { render(): Render[".md"] };
-"usage-guide/1-managing-content-in-kanban-dashboard.md": {
-	id: "usage-guide/1-managing-content-in-kanban-dashboard.md";
-  slug: "usage-guide/kanban-dashboard";
-  body: string;
-  collection: "docs";
-  data: InferEntrySchema<"docs">
-} & { render(): Render[".md"] };
-"usage-guide/2-managing-metadata.md": {
-	id: "usage-guide/2-managing-metadata.md";
-  slug: "usage-guide/metadata";
-  body: string;
-  collection: "docs";
-  data: InferEntrySchema<"docs">
-} & { render(): Render[".md"] };
-"usage-guide/3-writing-in-vrite-editor.md": {
-	id: "usage-guide/3-writing-in-vrite-editor.md";
+"usage-guide/content-editor.md": {
+	id: "usage-guide/content-editor.md";
   slug: "usage-guide/content-editor";
   body: string;
   collection: "docs";
-  data: InferEntrySchema<"docs">
+  data: any
 } & { render(): Render[".md"] };
-"usage-guide/4-configuring-vrite.md": {
-	id: "usage-guide/4-configuring-vrite.md";
-  slug: "usage-guide/settings";
+"usage-guide/getting-started.md": {
+	id: "usage-guide/getting-started.md";
+  slug: "usage-guide/getting-started";
   body: string;
   collection: "docs";
-  data: InferEntrySchema<"docs">
+  data: any
 } & { render(): Render[".md"] };
-"usage-guide/5-vrite-extensions.md": {
-	id: "usage-guide/5-vrite-extensions.md";
-  slug: "usage-guide/vrite-extensions";
+"usage-guide/kanban-dashboard.md": {
+	id: "usage-guide/kanban-dashboard.md";
+  slug: "usage-guide/kanban-dashboard";
   body: string;
   collection: "docs";
-  data: InferEntrySchema<"docs">
+  data: any
 } & { render(): Render[".md"] };
-"usage-guide/6-publishing-content.md": {
-	id: "usage-guide/6-publishing-content.md";
+"usage-guide/metadata.md": {
+	id: "usage-guide/metadata.md";
+  slug: "usage-guide/metadata";
+  body: string;
+  collection: "docs";
+  data: any
+} & { render(): Render[".md"] };
+"usage-guide/publishing.md": {
+	id: "usage-guide/publishing.md";
   slug: "usage-guide/publishing";
   body: string;
   collection: "docs";
-  data: InferEntrySchema<"docs">
+  data: any
+} & { render(): Render[".md"] };
+"usage-guide/vrite-extensions.md": {
+	id: "usage-guide/vrite-extensions.md";
+  slug: "usage-guide/vrite-extensions";
+  body: string;
+  collection: "docs";
+  data: any
 } & { render(): Render[".md"] };
 };
 
