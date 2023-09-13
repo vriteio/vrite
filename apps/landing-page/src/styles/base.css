@@ -12,7 +12,7 @@ html {
 h1,
 h2 {
   font-family: "Nunito", sans-serif;
-  @apply !font-extrabold;
+  @apply !font-semibold;
 }
 
 .scrollbar-sm {
@@ -41,34 +41,16 @@ h2 {
   mask-image: linear-gradient(to bottom, black, transparent);
   -webkit-mask-image: linear-gradient(to bottom, black, transparent);
 }
-
 .hero-image {
-  transform: perspective(100rem) rotate3d(1, 1, 0, 30deg) scale(1.1);
+  transform: perspective(100rem) rotate3d(0.5, 0, 0, 30deg) scale(1.1);
+}
+.hero-image-initial {
+  transform: translate(0, 100%);
 }
 .hero-image-variant {
   transition: clip-path;
   transition-duration: 0.5s;
   transition-timing-function: ease-in-out;
-}
-@screen md {
-  .hero-image {
-    transform: perspective(100rem) rotate3d(1, -1, 0, 30deg);
-  }
-  .hero-image-1 {
-    transform: perspective(100rem) rotate3d(1, -1, 0, 30deg) translate3d(0, 4rem, 4rem);
-    mask-image: linear-gradient(to bottom, black, transparent);
-    -webkit-mask-image: linear-gradient(to bottom, black 66%, transparent);
-  }
-  .hero-image-2 {
-    transform: perspective(100rem) rotate3d(1, -1, 0, 30deg);
-    mask-image: linear-gradient(to bottom, black, transparent);
-    -webkit-mask-image: linear-gradient(to bottom, black 66%, transparent);
-  }
-  .hero-image-3 {
-    transform: perspective(100rem) rotate3d(1, -1, 0, 30deg) translate3d(0, -4rem, -4rem);
-    mask-image: linear-gradient(to bottom, black, transparent);
-    -webkit-mask-image: linear-gradient(to bottom, black 66%, transparent);
-  }
 }
 
 @screen md {

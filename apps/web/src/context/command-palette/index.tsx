@@ -9,7 +9,6 @@ import {
   Switch,
   createEffect,
   createMemo,
-  createResource,
   createSignal,
   on,
   onCleanup,
@@ -17,7 +16,6 @@ import {
 } from "solid-js";
 import {
   mdiChevronRight,
-  mdiCog,
   mdiConsoleLine,
   mdiCreationOutline,
   mdiFileDocumentOutline,
@@ -51,6 +49,7 @@ import {
 import { App, useClient } from "#context/client";
 import { useLocalStorage } from "#context/local-storage";
 import { breakpoints } from "#lib/utils";
+import { useHostConfig } from "#context/host-config";
 
 interface CommandCategory {
   label: string;
@@ -89,12 +88,15 @@ const categories: CommandCategory[] = [
 ];
 const CommandPaletteContext = createContext<CommandPaletteContextData>();
 const CommandPalette: Component<CommandPaletteProps> = (props) => {
+  const hostConfig = useHostConfig();
   const client = useClient();
   const navigate = useNavigate();
   const { setStorage } = useLocalStorage();
   const [inputRef, setInputRef] = createSignal<HTMLInputElement | null>(null);
   const [abortControllerRef, setAbortControllerRef] = createSignal<AbortController | null>(null);
-  const [mode, setMode] = createSignal<"command" | "search" | "ask">("search");
+  const [mode, setMode] = createSignal<"command" | "search" | "ask">(
+    hostConfig.search ? "search" : "command"
+  );
   const [searchResults, setSearchResults] = createSignal<
     Array<{ content: string; breadcrumb: string[]; contentPieceId: string }>
   >([]);
@@ -106,13 +108,10 @@ const CommandPalette: Component<CommandPaletteProps> = (props) => {
   const [mouseHoverEnabled, setMouseHoverEnabled] = createSignal(false);
   const [selectedIndex, setSelectedIndex] = createSignal(0);
   const [query, setQuery] = createSignal("");
-  const baseUrl = `http${window.location.protocol.includes("https") ? "s" : ""}://${
-    import.meta.env.PUBLIC_API_HOST
-  }`;
   const ask = async (): Promise<void> => {
     let content = "";
 
-    await fetchEventSource(`${baseUrl}/search/ask/?query=${query()}`, {
+    await fetchEventSource(`${window.env.PUBLIC_API_URL}/search/ask/?query=${query()}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -128,7 +127,7 @@ const CommandPalette: Component<CommandPaletteProps> = (props) => {
         const partOfContent = decodeURIComponent(event.data);
 
         content += partOfContent;
-        setAnswer(marked.parseInline(content, { gfm: true, headerIds: false, mangle: false }));
+        setAnswer(marked.parse(content, { gfm: true, headerIds: false, mangle: false }));
       },
       onclose() {
         setLoading(false);
@@ -196,44 +195,7 @@ const CommandPalette: Component<CommandPaletteProps> = (props) => {
     navigate("/editor", { state: { breadcrumb } });
     props.setOpened(false);
   };
-
-  createEffect(
-    on(
-      query,
-      (query) => {
-        if (query === ">") {
-          setMode("command");
-          setQuery("");
-
-          return;
-        }
-
-        if (mode() === "search") {
-          search.clear();
-          search();
-        }
-      },
-      { defer: true }
-    )
-  );
-  createEffect(
-    on(mode, () => {
-      setMouseHoverEnabled(false);
-      setSelectedIndex(0);
-      setLoading(false);
-      setAnswer("");
-      setSearchResults([]);
-      setQuery("");
-    })
-  );
-  createEffect(() => {
-    if (inputRef() && props.opened && mode()) {
-      setTimeout(() => {
-        inputRef()?.focus();
-      }, 300);
-    }
-  });
-  tinykeys(window, {
+  const unsubscribeTinykeys = tinykeys(window, {
     "$mod+KeyK": (event) => {
       props.setOpened(!props.opened);
     },
@@ -297,6 +259,46 @@ const CommandPalette: Component<CommandPaletteProps> = (props) => {
     }
   });
 
+  createEffect(
+    on(
+      query,
+      (query) => {
+        if (query === ">") {
+          setMode("command");
+          setQuery("");
+
+          return;
+        }
+
+        if (mode() === "search") {
+          search.clear();
+          search();
+        }
+      },
+      { defer: true }
+    )
+  );
+  createEffect(
+    on(mode, () => {
+      setMouseHoverEnabled(false);
+      setSelectedIndex(0);
+      setLoading(false);
+      setAnswer("");
+      setSearchResults([]);
+      setQuery("");
+    })
+  );
+  createEffect(() => {
+    if (inputRef() && props.opened && mode()) {
+      setTimeout(() => {
+        inputRef()?.focus();
+      }, 300);
+    }
+  });
+  onCleanup(() => {
+    unsubscribeTinykeys();
+  });
+
   const getIcon = (): string => {
     switch (mode()) {
       case "command":
@@ -352,26 +354,33 @@ const CommandPalette: Component<CommandPaletteProps> = (props) => {
             wrapperClass="flex-1 m-0"
             class="m-0 bg-transparent"
             onEnter={() => {
-              if (mode() === "ask") {
+              if (mode() === "ask" && hostConfig.aiSearch) {
                 setLoading(true);
                 setAnswer("");
                 ask();
               }
             }}
             onKeyDown={(event) => {
-              if (event.key === "Backspace" && !query()) {
+              if (
+                mode() === "command" &&
+                event.key === "Backspace" &&
+                !query() &&
+                hostConfig.search
+              ) {
                 setMode("search");
               }
             }}
             adornment={() => (
-              <Show when={mode() === "search" || mode() === "ask"}>
+              <Show when={(mode() === "search" || mode() === "ask") && hostConfig.aiSearch}>
                 <Tooltip text="Ask" side="left" class="-ml-1">
                   <IconButton
                     path={mdiCreationOutline}
                     class="m-0"
                     text={mode() === "ask" ? "base" : "soft"}
                     color={mode() === "ask" ? "primary" : "base"}
-                    onClick={() => setMode((mode) => (mode === "ask" ? "search" : "ask"))}
+                    onClick={() => {
+                      setMode((mode) => (mode === "ask" ? "search" : "ask"));
+                    }}
                     variant="text"
                   />
                 </Tooltip>
@@ -386,7 +395,7 @@ const CommandPalette: Component<CommandPaletteProps> = (props) => {
           >
             <ScrollShadow scrollableContainerRef={scrollableContainerRef} />
             <Switch>
-              <Match when={mode() === "search"}>
+              <Match when={mode() === "search" && hostConfig.search}>
                 <Show
                   when={!loading()}
                   fallback={
@@ -458,7 +467,7 @@ const CommandPalette: Component<CommandPaletteProps> = (props) => {
                   </For>
                 </Show>
               </Match>
-              <Match when={mode() === "ask"}>
+              <Match when={mode() === "ask" && hostConfig.aiSearch}>
                 <Show
                   when={answer()}
                   fallback={
@@ -482,11 +491,10 @@ const CommandPalette: Component<CommandPaletteProps> = (props) => {
                     )}
                     color="base"
                   >
-                    <div class="flex w-full">
-                      <p class="prose flex-1 whitespace-pre-wrap" innerHTML={answer()}>
-                        {answer()}
-                      </p>
-                    </div>
+                    <div
+                      class="flex flex-col w-full prose whitespace-pre-wrap"
+                      innerHTML={answer()}
+                    />
                     <Show when={!loading()}>
                       <IconButton
                         color="contrast"
@@ -563,43 +571,49 @@ const CommandPalette: Component<CommandPaletteProps> = (props) => {
           </div>
         </div>
         <div class="border-t-2 dark:border-gray-700 px-2 py-1 flex gap-2 bg-gray-100 dark:bg-gray-800">
-          <IconButton
-            path={mdiSwapVertical}
-            hover={false}
-            badge
-            label="Select"
-            size="small"
-            variant="text"
-            text="soft"
-          />
-          <IconButton
-            path={mdiKeyboardReturn}
-            hover={false}
-            badge
-            label="Open"
-            size="small"
-            variant="text"
-            text="soft"
-          />
-          <IconButton
-            path={mdiKeyboardEsc}
-            hover={false}
-            badge
-            label="Close"
-            size="small"
-            variant="text"
-            text="soft"
-          />
+          <div class="hidden md:flex gap-2">
+            <IconButton
+              path={mdiSwapVertical}
+              hover={false}
+              badge
+              label="Select"
+              size="small"
+              variant="text"
+              text="soft"
+            />
+            <IconButton
+              path={mdiKeyboardReturn}
+              hover={false}
+              badge
+              label="Open"
+              size="small"
+              variant="text"
+              text="soft"
+            />
+            <IconButton
+              path={mdiKeyboardEsc}
+              hover={false}
+              badge
+              label="Close"
+              size="small"
+              variant="text"
+              text="soft"
+            />
+          </div>
           <div class="flex-1" />
-          <IconButton
-            path={mdiConsoleLine}
-            label="Command"
-            size="small"
-            variant="text"
-            color={mode() === "command" ? "primary" : "base"}
-            text={mode() === "command" ? "base" : "soft"}
-            onClick={() => setMode((mode) => (mode === "command" ? "search" : "command"))}
-          />
+          <Show when={hostConfig.search}>
+            <IconButton
+              path={mdiConsoleLine}
+              label="Command"
+              size="small"
+              variant="text"
+              color={mode() === "command" ? "primary" : "base"}
+              text={mode() === "command" ? "base" : "soft"}
+              onClick={() => {
+                setMode((mode) => (mode === "command" ? "search" : "command"));
+              }}
+            />
+          </Show>
         </div>
       </Card>
     </Overlay>

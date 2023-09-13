@@ -16,9 +16,11 @@ const publish = async (context: ExtensionContentPieceViewContext): Promise<void>
       })
     });
     const data = await response.json();
+
     if (!response.ok || !data.mediumId) {
       throw new Error("Couldn't publish to Medium");
     }
+
     if (context.data.mediumId) {
       context.notify({ text: "Republished to Medium", type: "success" });
     } else {

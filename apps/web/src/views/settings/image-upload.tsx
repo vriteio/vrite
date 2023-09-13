@@ -4,6 +4,7 @@ import { nanoid } from "nanoid";
 import { Accessor, Component, Setter, Show, createEffect, createSignal, on } from "solid-js";
 import { useClient } from "#context";
 import { Button, Loader, Icon } from "#components/primitives";
+import { uploadFile as uploadFileUtil } from "#lib/utils";
 
 interface SettingsImageUploadProps {
   url: string;
@@ -21,28 +22,19 @@ const useFileUpload = (
   setUrl: Setter<string>;
   uploadFile(file?: File | null): Promise<void>;
 } => {
-  const client = useClient();
   const [url, setUrl] = createSignal(initialUrl);
   const [uploading, setUploading] = createSignal(false);
   const uploadFile = async (file?: File | null): Promise<void> => {
     if (file && file.type.includes("image")) {
       setUploading(true);
 
-      const { uploadUrl, key } = await client.utils.getUploadUrl.mutate({
-        contentType: file.type
-      });
+      const uploadedUrl = await uploadFileUtil(file);
 
-      await fetch(uploadUrl, {
-        method: "PUT",
-        body: file,
-        headers: {
-          "Content-Type": file.type,
-          "Cache-Control": "public,max-age=31536000,immutable",
-          "x-amz-acl": "public-read"
-        }
-      });
-      setUrl(`https://assets.vrite.io/${key}`);
-      onUpload?.(url());
+      if (uploadedUrl) {
+        setUrl(uploadedUrl);
+        onUpload?.(url());
+      }
+
       setUploading(false);
     }
   };
@@ -62,7 +54,7 @@ const SettingsImageUpload: Component<SettingsImageUploadProps> = (props) => {
         hidden
         id={inputId}
         name={inputId}
-        accept="image/*"
+        accept=".jpg,.jpeg,.png,.gif,.tiff,.tif,.bmp,.webp"
         disabled={uploading() || props.disabled}
         onChange={(event) => {
           uploadFile(event.currentTarget.files?.item(0));

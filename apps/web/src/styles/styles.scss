@@ -256,14 +256,24 @@ kbd {
   --un-prose-hr: #6b7280;
   --un-prose-invert-lists: #9ca3af;
   --un-prose-invert-hr: #9ca3af;
+  --highlighted-thread: "G3JAKWBAsWA1xXnPcJ-Zu";
 
+  :where(div[data-wrapper="true"]) {
+    .content > :first-child,
+    .content > :first-child [data-node-view-wrapper="true"] {
+      margin-top: 0 !important;
+    }
+    .content > :last-child:not([data-wrapper="true"]) {
+      margin-bottom: 0 !important;
+    }
+  }
   :where(blockquote):not(:where(.not-prose, .not-prose *)) {
-    @apply border-l-3 pl-5.5 border-solid border-gray-200 dark:border-gray-700 not-italic text-gray-500 dark:text-gray-400;
+    @apply border-l-3 pl-5.5 border-solid border-gray-300 dark:border-gray-700 not-italic text-gray-500 dark:text-gray-400;
   }
   :where(pre, code):not(:where(.not-prose, .not-prose *)) {
     &::before,
     &::after {
-      content: "" !important;
+      content: unset !important;
     }
     @apply bg-gray-200 text-gray-700 font-medium dark:bg-gray-900 dark:text-gray-300 py-1 px-2 rounded-lg;
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
@@ -278,6 +288,15 @@ kbd {
     &::after {
       content: "";
       @apply bg-primary opacity-20 absolute w-full h-full top-0 left-0 pointer-events-none;
+    }
+
+    .active {
+      @apply text-secondary relative;
+
+      &::after {
+        content: "";
+        @apply bg-secondary opacity-20 absolute w-full h-full top-0 left-0 pointer-events-none;
+      }
     }
   }
 }

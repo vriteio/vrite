@@ -1,146 +1,148 @@
-import {
-  mdiLinkVariant,
-  mdiMenu,
-  mdiClose,
-  mdiGithub,
-  mdiLogin,
-  mdiLightbulb,
-  mdiTwitter,
-  mdiLanguageJavascript,
-  mdiServer
-} from "@mdi/js";
+import { mdiMenu, mdiClose, mdiGithub, mdiChevronDown, mdiCodeJson } from "@mdi/js";
 import clsx from "clsx";
-import { Component, For } from "solid-js";
+import { Component, For, JSX, createSignal } from "solid-js";
 import { menuOpened, setMenuOpened } from "#lib/state";
 import { Card, Button, IconButton } from "#components/primitives";
-import { discordIcon } from "#icons";
-import { logoIcon } from "#icons/logo";
+import { discordIcon } from "#assets/icons";
+import { logoIcon } from "#assets/icons/logo";
 
 interface SideBarProps {
-  menu: Array<{ title: string; link: string }>;
+  menu: Array<{
+    label: string;
+    menu: Array<{ label: string; link: string }>;
+  }>;
   currentPath: string;
 }
 
-const apiDocsLink = "https://generator.swagger.io/?url=https://api.vrite.io/swagger.json";
-const jsSDKLink = "/javascript-sdk";
-const selfHostingLink = "/self-hosting";
+const externalLinks = [
+  {
+    label: "GitHub",
+    icon: mdiGithub,
+    href: "https://github.com/vriteio/vrite"
+  },
+  {
+    label: "Discord",
+    icon: discordIcon,
+    href: "https://discord.gg/yYqDWyKnqE"
+  },
+  {
+    label: "Vrite Cloud",
+    icon: logoIcon,
+    href: "https://app.vrite.io"
+  },
+  {
+    label: "API Reference",
+    icon: mdiCodeJson,
+    href: "https://generator.swagger.io/?url=https://api.vrite.io/swagger.json#"
+  }
+];
+const SideBarNestedMenu: Component<{
+  menu: Array<{ label: string; link: string }>;
+  currentPath: string;
+  children: JSX.Element;
+}> = (props) => {
+  const [opened, setOpened] = createSignal(
+    props.menu.filter((item) => item.link === props.currentPath).length > 0
+  );
+
+  return (
+    <div class="flex flex-col w-full">
+      <div class="flex justify-center items-center">
+        {props.children}
+        <IconButton
+          path={mdiChevronDown}
+          class="m-0"
+          variant="text"
+          iconProps={{
+            class: clsx("transform transition-transform duration-100", opened() ? "" : "-rotate-90")
+          }}
+          onClick={() => setOpened((opened) => !opened)}
+        />
+      </div>
+      <div
+        class={clsx(
+          "flex flex-1 w-full pl-3 mt-2 overflow-hidden",
+          opened() ? "max-h-full" : "max-h-0"
+        )}
+      >
+        <div class="w-0.5 bg-gray-200 dark:bg-gray-700 mr-2 rounded-full"></div>
+        <div class="flex-1 flex flex-col gap-2">
+          <For each={props.menu}>
+            {(item) => {
+              return (
+                <Button
+                  variant={item.link === props.currentPath ? "solid" : "text"}
+                  class="text-start w-full m-0"
+                  text={item.link === props.currentPath ? "primary" : "soft"}
+                  color={item.link === props.currentPath ? "primary" : "base"}
+                  link={item.link}
+                >
+                  {item.label}
+                </Button>
+              );
+            }}
+          </For>
+        </div>
+      </div>
+    </div>
+  );
+};
 const SideBar: Component<SideBarProps> = (props) => {
   return (
     <>
       <Card
         class={clsx(
-          "top-0 h-screen z-50 min-w-80 w-full md:max-w-80 m-0 max-h-screen scrollbar-sm overflow-auto",
-          "flex-col gap-2 justify-start items-start border-0 md:border-r-2 rounded-none flex fixed md:sticky",
-          "transform md:transition-transform duration-300 ease-in-out",
+          "top-0 h-full z-50 min-w-80 w-full md:max-w-80 m-0 bg-gray-100 dark:bg-gray-900",
+          "flex-col gap-2 justify-start items-start border-0 md:border-r-2 rounded-none flex fixed md:relative",
+          "transform md:transition-transform duration-300 ease-in-out scrollbar-sm-contrast overflow-auto",
           menuOpened() ? "" : "translate-y-full md:translate-y-0"
         )}
       >
-        <div class="flex items-center justify-start pb-4">
-          <IconButton
-            path={logoIcon}
-            color="primary"
-            link="/"
-            class="bg-gradient-to-tr from-red-500 to-orange-500"
-          />
-          <span class="flex-1 text-2xl font-extrabold text-gray-600 dark:text-gray-200">rite</span>
+        <div class="flex flex-col gap-2 pl-1 w-full py-4">
+          <For each={externalLinks}>
+            {(link) => {
+              return (
+                <a
+                  class="flex justify-start items-center group w-full cursor-pointer"
+                  target="_blank"
+                  href={link.href}
+                >
+                  <IconButton
+                    path={link.icon}
+                    class="m-0 group-hover:bg-gray-300 dark:group-hover:bg-gray-700 h-8 w-8"
+                    iconProps={{ class: "h-5 w-5" }}
+                    color="contrast"
+                    text="soft"
+                  />
+                  <span class=" ml-2 text-gray-500 dark:text-gray-400">{link.label}</span>
+                </a>
+              );
+            }}
+          </For>
         </div>
-        <div class="flex flex-col w-full">
-          <IconButton
-            variant="text"
-            class="justify-start w-full font-bold m-0"
-            text="soft"
-            label="Usage Guide"
-            path={mdiLightbulb}
-            badge
-            hover={false}
-          />
-          <div class="flex flex-1 w-full pl-4 mt-2">
-            <div class="w-0.5 bg-gray-200 dark:bg-gray-700 mr-2 rounded-full"></div>
-            <div class="flex-1 flex flex-col gap-2">
-              <For each={props.menu}>
-                {(item) => {
-                  return (
-                    <Button
-                      variant="text"
-                      class="text-start w-full m-0"
-                      text={item.link === props.currentPath ? "base" : "soft"}
-                      color={item.link === props.currentPath ? "primary" : "base"}
-                      link={item.link}
-                    >
-                      {item.title}
-                    </Button>
-                  );
-                }}
-              </For>
-            </div>
-          </div>
-        </div>
-        <IconButton
-          variant="text"
-          class="justify-start w-full font-bold m-0"
-          text={jsSDKLink === props.currentPath ? "base" : "soft"}
-          color={jsSDKLink === props.currentPath ? "primary" : "base"}
-          label="JavaScript SDK"
-          path={mdiLanguageJavascript}
-          link={jsSDKLink}
-        />
-        <IconButton
-          variant="text"
-          class="justify-start w-full font-bold m-0"
-          text={selfHostingLink === props.currentPath ? "base" : "soft"}
-          color={selfHostingLink === props.currentPath ? "primary" : "base"}
-          label="Self-hosting Vrite"
-          path={mdiServer}
-          link={selfHostingLink}
-        />
-        <IconButton
-          variant="text"
-          class="justify-start w-full font-bold m-0"
-          text="soft"
-          label="API Documentation"
-          path={mdiLinkVariant}
-          link={apiDocsLink}
-          target="_blank"
-        />
-        <IconButton
-          link="https://github.com/vriteio/vrite"
-          class="w-full font-bold m-0 justify-start md:hidden"
-          variant="text"
-          path={mdiGithub}
-          label="Star on GitHub"
-          text="soft"
-        ></IconButton>
-        <IconButton
-          link="https://discord.gg/yYqDWyKnqE"
-          class="w-full font-bold m-0 justify-start md:hidden"
-          variant="text"
-          path={discordIcon}
-          label="Join Discord"
-          text="soft"
-        ></IconButton>
-        <IconButton
-          link="https://twitter.com/vriteio"
-          class="w-full font-bold m-0 justify-start md:hidden"
-          variant="text"
-          path={mdiTwitter}
-          label="Follow on Twitter"
-          text="soft"
-        ></IconButton>
-        <IconButton
-          color="primary"
-          link="https://app.vrite.io"
-          path={mdiLogin}
-          variant="text"
-          class="w-full m-0 justify-start fill-[url(#gradient)] md:hidden"
-          label="Sign in"
-        />
+        <For each={props.menu}>
+          {(menuItem) => {
+            return (
+              <SideBarNestedMenu currentPath={props.currentPath} menu={menuItem.menu}>
+                <Button
+                  variant="text"
+                  class="justify-start w-full font-bold m-0"
+                  badge
+                  hover={false}
+                >
+                  {menuItem.label}
+                </Button>
+              </SideBarNestedMenu>
+            );
+          }}
+        </For>
       </Card>
       <IconButton
         path={menuOpened() ? mdiClose : mdiMenu}
         size="large"
         color={menuOpened() ? "contrast" : "base"}
         text="soft"
-        class="fixed bottom-4 right-4 z-50 md:hidden"
+        class="fixed bottom-4 right-4 z-50 md:hidden bg-gray-800 hover:bg-gray-700 text-gray-50 hover:text-gray-50 dark:bg-gray-200 dark:hover:bg-gray-300 dark:text-gray-900 dark:hover:text-gray-900"
         onClick={() => {
           setMenuOpened(!menuOpened());
         }}

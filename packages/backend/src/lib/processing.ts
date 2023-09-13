@@ -29,7 +29,8 @@ import {
   Table,
   TableCell,
   TableHeader,
-  TableRow
+  TableRow,
+  Wrapper
 } from "@vrite/editor";
 
 type Attrs = Record<string, string | number | boolean>;
@@ -41,6 +42,9 @@ interface DocJSON {
   marks?: Array<{ type: string; attrs: Attrs }>;
 }
 
+const docToBuffer = (doc: Y.Doc): Buffer => {
+  return Buffer.from(Y.encodeStateAsUpdate(doc));
+};
 const docToJSON = (doc: Y.Doc): DocJSON => {
   return TiptapTransformer.fromYdoc(doc, "default");
 };
@@ -70,6 +74,7 @@ const htmlToJSON = (html: string): DocJSON => {
     OrderedList,
     TaskList,
     Blockquote,
+    Wrapper,
     CodeBlock,
     HorizontalRule,
     Image,
@@ -102,6 +107,7 @@ const jsonToBuffer = (json: DocJSON): Buffer => {
     OrderedList,
     TaskList,
     Blockquote,
+    Wrapper,
     CodeBlock,
     HorizontalRule,
     Image,
@@ -118,5 +124,5 @@ const jsonToBuffer = (json: DocJSON): Buffer => {
   return Buffer.from(Y.encodeStateAsUpdate(doc));
 };
 
-export { bufferToJSON, htmlToJSON, jsonToBuffer, docToJSON };
+export { bufferToJSON, htmlToJSON, jsonToBuffer, docToJSON, docToBuffer };
 export type { DocJSON };

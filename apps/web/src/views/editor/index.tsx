@@ -1,30 +1,20 @@
 import { Editor } from "./editor";
-import {
-  Component,
-  createEffect,
-  createResource,
-  createSignal,
-  on,
-  onCleanup,
-  Show
-} from "solid-js";
+import { Component, createEffect, createSignal, on, onCleanup, Show } from "solid-js";
 import clsx from "clsx";
 import { Loader } from "#components/primitives";
-import { useAuthenticatedUserData, useCache, useClient, useLocalStorage } from "#context";
+import { useAuthenticatedUserData, useCache, useLocalStorage } from "#context";
 import { createRef } from "#lib/utils";
 import { useOpenedContentPiece } from "#lib/composables";
 
 const EditorView: Component = () => {
   const cache = useCache();
   const { contentPiece, loading } = cache("openedContentPiece", useOpenedContentPiece);
-  const client = useClient();
   const { storage, setStorage } = useLocalStorage();
   const { workspaceSettings } = useAuthenticatedUserData();
   const [syncing, setSyncing] = createSignal(true);
   const [lastScrollTop, setLastScrollTop] = createSignal(0);
   const [reloaded, setReloaded] = createSignal(false);
   const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
-  const editedArticleId = (): string => storage().contentPieceId || "";
 
   createEffect(
     on(
@@ -50,6 +40,7 @@ const EditorView: Component = () => {
       });
     }
   });
+  setStorage((storage) => ({ ...storage, toolbarView: "editor" }));
 
   return (
     <>

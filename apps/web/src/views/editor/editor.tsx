@@ -7,8 +7,8 @@ import {
   useEditor
 } from "@vrite/tiptap-solid";
 import { Component, createEffect, createSignal, on, onCleanup } from "solid-js";
-import { HardBreak, Paragraph, Text, Comment } from "@vrite/editor";
-import { isTextSelection } from "@tiptap/core";
+import { HardBreak, Paragraph, Text } from "@vrite/editor";
+import { Extension, isTextSelection } from "@tiptap/core";
 import { convert as convertToSlug } from "url-slug";
 import { Gapcursor } from "@tiptap/extension-gapcursor";
 import { Dropcursor } from "@tiptap/extension-dropcursor";
@@ -37,13 +37,14 @@ import {
   createBlockMenuOptions,
   BlockPaste,
   TableMenuPlugin,
-  CommentMenuPlugin
+  CommentMenuPlugin,
+  AutoDir
 } from "#lib/editor";
 import {
   App,
   hasPermission,
   useAuthenticatedUserData,
-  useLocalStorage,
+  useHostConfig,
   useSharedState
 } from "#context";
 import { breakpoints, createRef } from "#lib/utils";
@@ -65,7 +66,7 @@ interface EditorProps {
 }
 
 const Editor: Component<EditorProps> = (props) => {
-  const { setStorage } = useLocalStorage();
+  const hostConfig = useHostConfig();
   const createSharedSignal = useSharedState();
   const navigate = useNavigate();
   const location = useLocation<{ breadcrumb?: string[] }>();
@@ -80,7 +81,7 @@ const Editor: Component<EditorProps> = (props) => {
       props.reload?.();
     }
   };
-  const scrollToHeading = () => {
+  const scrollToHeading = (): void => {
     const headingText = location.state?.breadcrumb?.at(-1) || "";
 
     if (headingText) {
@@ -94,9 +95,7 @@ const Editor: Component<EditorProps> = (props) => {
   };
   const provider = new HocuspocusProvider({
     token: "vrite",
-    url: `ws${window.location.protocol.includes("https") ? "s" : ""}://${
-      import.meta.env.PUBLIC_COLLAB_HOST
-    }`,
+    url: window.env.PUBLIC_COLLAB_URL.replace("http", "ws"),
     async onSynced() {
       props.onLoad?.();
       scrollToHeading();
@@ -133,23 +132,23 @@ const Editor: Component<EditorProps> = (props) => {
       Text,
       HardBreak,
       Typography,
-      Comment,
       ...(workspaceSettings() ? createExtensions(workspaceSettings()!, provider) : []),
       TrailingNode,
       CharacterCount,
+      AutoDir,
       Gapcursor,
       Dropcursor.configure({ class: "ProseMirror-dropcursor" }),
       SlashMenuPlugin.configure({
         menuItems: workspaceSettings() ? createBlockMenuOptions(workspaceSettings()!) : []
       }),
-      BlockActionMenuPlugin,
+      hostConfig.extensions && BlockActionMenuPlugin,
       TableMenuPlugin,
       CommentMenuPlugin,
       Collab.configure({
         document: ydoc
       }),
       CollabCursor(provider)
-    ],
+    ].filter(Boolean) as Extension[],
     editable: !props.editedContentPiece.locked && hasPermission("editContent"),
     editorProps: { attributes: { class: `outline-none` } },
     onBlur({ event }) {
@@ -211,7 +210,8 @@ const Editor: Component<EditorProps> = (props) => {
     const { state, view } = editor;
     const { selection } = state;
     const { $anchor, empty } = selection;
-    const isRootDepth = $anchor.depth === 1;
+    const isRootDepth =
+      $anchor.depth === 1 || ($anchor.depth === 2 && $anchor.node(1).type.name === "wrapper");
     const isEmptyTextBlock =
       $anchor.parent.isTextblock &&
       !$anchor.parent.type.spec.code &&
@@ -236,7 +236,6 @@ const Editor: Component<EditorProps> = (props) => {
     setSharedProvider(undefined);
     setEditedContentPiece(undefined);
   });
-  setStorage((storage) => ({ ...storage, toolbarView: "editor" }));
   createEffect(
     on(
       () => location.state,

@@ -1,14 +1,15 @@
 import { z } from "zod";
-import { isAuthenticated } from "#lib/middleware";
+import { isAuthenticated, isEnabled } from "#lib/middleware";
 import { procedure, router } from "#lib/trpc";
-import { zodId } from "#lib";
+import { errors, zodId } from "#lib";
 
-const authenticatedProcedure = procedure.use(isAuthenticated);
+const authenticatedProcedure = procedure.use(isAuthenticated).use(isEnabled);
 const basePath = "/search";
 const searchRouter = router({
   search: authenticatedProcedure
     .meta({
       openapi: { method: "GET", path: `${basePath}`, protect: true },
+      requiredConfig: ["search"],
       permissions: { token: ["contentPieces:read"] }
     })
     .input(
@@ -42,6 +43,7 @@ const searchRouter = router({
   ask: authenticatedProcedure
     .meta({
       openapi: { method: "GET", path: `${basePath}/ask`, protect: true },
+      requiredConfig: ["aiSearch"],
       permissions: { token: ["contentPieces:read"] }
     })
     .input(
@@ -52,29 +54,41 @@ const searchRouter = router({
     )
     .output(z.any())
     .query(async ({ ctx, input }) => {
-      const responseStream = await ctx.fastify.search.ask({
-        question: input.query,
-        workspaceId: ctx.auth.workspaceId,
-        variantId: input.variantId
-      });
+      try {
+        const responseStream = await ctx.fastify.search.ask({
+          question: input.query,
+          workspaceId: ctx.auth.workspaceId,
+          variantId: input.variantId
+        });
 
-      ctx.res.raw.writeHead(200, {
-        ...ctx.res.getHeaders(),
-        "content-type": "text/event-stream",
-        "cache-control": "no-cache",
-        "connection": "keep-alive"
-      });
+        if (!responseStream) throw errors.serverError();
 
-      for await (const part of responseStream) {
-        const content = part.choices[0].delta.content || "";
+        ctx.res.raw.writeHead(200, {
+          ...ctx.res.getHeaders(),
+          "content-type": "text/event-stream",
+          "cache-control": "no-cache",
+          "connection": "keep-alive"
+        });
 
-        if (content) {
-          ctx.res.raw.write(`data: ${encodeURIComponent(content)}`);
-          ctx.res.raw.write("\n\n");
+        for await (const part of responseStream) {
+          const content = part.choices[0].delta.content || "";
+
+          if (content) {
+            ctx.res.raw.write(`data: ${encodeURIComponent(content)}`);
+            ctx.res.raw.write("\n\n");
+          }
         }
-      }
 
-      ctx.res.raw.end();
+        ctx.res.raw.end();
+      } catch (error) {
+        ctx.res.raw.writeHead(500, {
+          ...ctx.res.getHeaders(),
+          "content-type": "application/json",
+          "cache-control": "no-cache",
+          "connection": "keep-alive"
+        });
+        throw errors.serverError();
+      }
     })
 });
 

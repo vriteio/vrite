@@ -26,7 +26,8 @@ import {
   useClient,
   useLocalStorage,
   hasPermission,
-  useCache
+  useCache,
+  useHostConfig
 } from "#context";
 import { MiniEditor } from "#components/fragments";
 import { breakpoints } from "#lib/utils";
@@ -35,12 +36,17 @@ import { useOpenedContentPiece } from "#lib/composables";
 dayjs.extend(CustomParseFormat);
 
 const ContentPieceView: Component = () => {
+  const hostConfig = useHostConfig();
   const sections = [
     { label: "Details", id: "details", icon: mdiInformationOutline },
     { label: "Custom data", id: "custom-data", icon: mdiCodeJson },
-    { label: "Extensions", id: "extensions", icon: mdiPuzzleOutline },
+    hostConfig.extensions && { label: "Extensions", id: "extensions", icon: mdiPuzzleOutline },
     { label: "Variants", id: "variants", icon: mdiCardsOutline }
-  ];
+  ].filter(Boolean) as Array<{
+    label: string;
+    id: string;
+    icon: string;
+  }>;
   const cache = useCache();
   const { contentPiece, setContentPiece, loading, activeVariant, setActiveVariant } = cache(
     "openedContentPiece",

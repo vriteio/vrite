@@ -75,7 +75,7 @@ const CodeBlock = BaseCodeBlock.extend<CodeBlockOptions>({
         });
 
         return (
-          <NodeViewWrapper>
+          <NodeViewWrapper class="my-5">
             <Show when={!loading()}>
               <CodeBlockView
                 monaco={monacoRef()!}

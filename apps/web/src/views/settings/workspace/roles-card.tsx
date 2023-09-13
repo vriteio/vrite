@@ -1,4 +1,4 @@
-import { mdiInformation, mdiTagText, mdiTrashCan, mdiTune } from "@mdi/js";
+import { mdiInformation, mdiPlus, mdiTagText, mdiTrashCan, mdiTune } from "@mdi/js";
 import { Show, For, Component, createSignal } from "solid-js";
 import { TitledCard } from "#components/fragments";
 import { Button, Card, Heading, IconButton, Tooltip } from "#components/primitives";
@@ -116,12 +116,18 @@ const RolesCard: Component<RolesCardProps> = (props) => {
       label="Roles"
       action={
         <Show when={hasPermission("manageWorkspace")}>
+          <Tooltip text="New role" wrapperClass="flex @md:hidden" class="mt-1" fixed>
+            <IconButton
+              path={mdiPlus}
+              class="m-0"
+              color="primary"
+              onClick={props.openConfigureRoleSubsection}
+            />
+          </Tooltip>
           <Button
             color="primary"
-            class="m-0"
-            onClick={() => {
-              props.openConfigureRoleSubsection();
-            }}
+            class="m-0 hidden @md:flex"
+            onClick={props.openConfigureRoleSubsection}
           >
             New role
           </Button>

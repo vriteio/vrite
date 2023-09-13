@@ -7,6 +7,7 @@ interface ObservedProps {
   style?: JSX.CSSProperties;
   inViewClass?: string;
   outOfViewClass?: string;
+  immediate?: boolean;
 }
 
 const Observed: ParentComponent<ObservedProps> = (props) => {
@@ -15,6 +16,12 @@ const Observed: ParentComponent<ObservedProps> = (props) => {
 
   onMount(() => {
     const container = containerRef();
+
+    if (props.immediate) {
+      setShowed(true);
+
+      return;
+    }
 
     if (container) {
       new IntersectionObserver(([entry], observer) => {

@@ -55,27 +55,6 @@ const fastifyTRPCOpenApiPlugin = <TRouter extends AnyRouter>(
   done();
 };
 const extensionsService = publicPlugin(async (fastify) => {
-  await fastify.register(corsPlugin, {
-    credentials: true,
-    methods: ["GET", "DELETE", "PUT", "POST"],
-    origin(origin, callback) {
-      if (!origin || origin === "null") {
-        callback(null, true);
-
-        return;
-      }
-
-      const { hostname } = new URL(origin);
-
-      if (hostname === "localhost" || hostname.endsWith("vrite.io")) {
-        callback(null, true);
-
-        return;
-      }
-
-      callback(new Error("Not allowed"), false);
-    }
-  });
   await fastify.register(fastifyTRPCOpenApiPlugin, {
     basePath: "/",
     router: extensionsRouter,

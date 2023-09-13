@@ -1,0 +1,125 @@
+---
+import { Code } from "astro:components";
+import { Button, Card, IconButton } from "#components/primitives";
+import curlString from "curl-string";
+import { mdiAsterisk } from "@mdi/js";
+import { EndpointCardSections } from "./endpoint-card-sections";
+
+interface Props {
+    method: string;
+    endpoint: string;
+    parameters?: Array<{
+        name: string;
+        required?: boolean;
+        description?: string;
+        example?:string;
+        schema: { type: string; default?:string };
+    }>;
+    example?: Record<string, any>;
+    requestBody?: string;
+    response?: string;
+}
+
+const body = JSON.stringify( {}, null, 2);
+const sections: Array<{ label: string; id: string }> = [];
+
+if (Astro.props.parameters && Astro.props.parameters.length) {
+    sections.push({ label: "Parameters", id: "parameters" });
+}
+
+if (Astro.props.requestBody) {
+    sections.push({ label: "Body", id: "body" });
+}
+
+sections.push({ label: "Response", id: "response" });
+
+const queryString = new URLSearchParams(
+    (Astro.props.parameters||[]).map((parameter) => {
+        return [parameter.name, parameter.example]
+    }) as string[][]
+).toString();
+const url = `https://api.vrite.io${Astro.props.endpoint}${queryString ? `?${queryString}` : ""}`;
+const parsedBody = JSON.parse(body);
+const curl = curlString(
+    `"${url}"`,
+    {
+        method: Astro.props.method,
+        headers: {
+            Authorization: `Bearer ${"<YOUR-TOKEN>"}`,
+            ...(body === "{}"
+                ? {}
+                : {
+                      "Content-Type": "application/json"
+                  }),
+            Accept: "application/json"
+        },
+        ...(body === "{}"
+            ? {}
+            : {
+                  body: parsedBody
+              })
+    },
+    { colorJson: false, jsonIndentWidth: 4 }
+);
+const code = `${curl}\n`;
+---
+
+<Card class="relative p-4 m-0 gap-2 flex flex-col text-gray-700 dark:text-gray-300 my-4 bg-gray-100 dark:bg-gray-900">
+    <div class="flex">
+        <Button badge class="m-0 font-mono font-semibold" size="large" color="contrast">
+            {Astro.props.method}
+            {" "}{Astro.props.endpoint}
+        </Button>
+    </div>
+    <div class="code-block-contrast">
+        <Code code={code} lang="shell" />
+    </div>
+    <EndpointCardSections client:load sections={sections}>
+        {
+            Astro.props.parameters && Astro.props.parameters.length ? (
+                <div class="flex flex-col gap-2 parameters-section">
+                    {(Astro.props.parameters || []).map((parameter) => {
+                        return (
+                            <Card class="m-0 bg-gray-50 dark:bg-gray-800">
+                                <div class="flex items-center">
+                                    <Button badge text="soft" class="m-0 font-mono font-semibold">
+                                        {parameter.name}
+                                    </Button>
+                                    <span class="!bg-transparent text-sm font-mono px-2 flex-1">
+                                        {parameter.schema.type}
+                                    </span>
+                                    {parameter.required && (
+                                        <IconButton
+                                            class="m-0"
+                                            path={mdiAsterisk}
+                                            color="primary"
+                                            badge
+                                            label="Required"
+                                        />
+                                    )}
+                                </div>
+                                {parameter.description && (
+                                    <p class="pl-1 m-0 mt-2">{parameter.description}</p>
+                                )}
+                            </Card>
+                        );
+                    })}
+                </div>
+            ): <></>
+        }
+        {
+            Astro.props.requestBody && (
+                <div class="code-block-contrast body-section">
+                    <Code code={Astro.props.requestBody} lang="typescript"  />
+                </div>
+            )
+        }
+        {
+            Astro.props.response && (
+                <div class="code-block-contrast response-section">
+                    <Code code={Astro.props.response} lang="typescript" />
+                </div>
+            )
+        }
+    </EndpointCardSections>
+</Card>

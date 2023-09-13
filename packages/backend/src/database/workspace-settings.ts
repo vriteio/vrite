@@ -33,6 +33,15 @@ const metadataSettings = z
     enabledFields: z.array(metadataField).optional()
   })
   .partial();
+const wrapper = z.object({
+  label: z.string().min(1).max(50),
+  key: z
+    .string()
+    .min(1)
+    .max(20)
+    .regex(/^[a-z0-9_]*$/),
+  extension: z.boolean().optional()
+});
 const marks = [
   "bold",
   "italic",
@@ -57,7 +66,8 @@ const blocks = [
   "codeBlock",
   "horizontalRule",
   "image",
-  "table"
+  "table",
+  "wrapper"
 ] as const;
 const embeds = ["codepen", "codesandbox", "youtube"] as const;
 const workspaceSettings = z.object({
@@ -66,12 +76,15 @@ const workspaceSettings = z.object({
   metadata: metadataSettings.optional(),
   marks: z.array(z.enum(marks)),
   blocks: z.array(z.enum(blocks)),
-  embeds: z.array(z.enum(embeds))
+  embeds: z.array(z.enum(embeds)),
+  wrappers: z.array(wrapper).optional()
 });
 
+interface Wrapper extends z.infer<typeof wrapper> {}
 interface WorkspaceSettings<ID extends string | ObjectId = string>
-  extends Omit<z.infer<typeof workspaceSettings>, "id"> {
+  extends Omit<z.infer<typeof workspaceSettings>, "id" | "wrappers"> {
   id: ID;
+  wrappers?: Wrapper[];
 }
 interface FullWorkspaceSettings<ID extends string | ObjectId = string>
   extends WorkspaceSettings<ID> {
@@ -94,6 +107,7 @@ export {
   embeds,
   workspaceSettings,
   metadataSettings,
+  wrapper,
   getWorkspaceSettingsCollection
 };
-export type { MetadataField, MetadataSettings, WorkspaceSettings, FullWorkspaceSettings };
+export type { MetadataField, MetadataSettings, WorkspaceSettings, FullWorkspaceSettings, Wrapper };

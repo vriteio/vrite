@@ -6,9 +6,9 @@ interface Variant {
    */
   id: string;
   /**
-   * Variant name
+   * Variant key
    */
-  name: string;
+  key: string;
   /**
    * Variant label
    */

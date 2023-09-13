@@ -13,6 +13,7 @@ const initContentPieceView = async (context: ExtensionContentPieceViewContext): 
   if (typeof context.data.draft !== "boolean") {
     context.setData("draft", context.config.draft || false);
   }
+
   if (typeof context.data.autoPublish !== "boolean") {
     context.setData("autoPublish", true);
   }

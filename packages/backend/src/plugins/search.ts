@@ -6,7 +6,7 @@ import {
   createContentWalker,
   createOutputTransformer
 } from "@vrite/sdk/transformers";
-import { SearchService } from "fastify";
+import { FastifyInstance, SearchService } from "fastify";
 import { OpenAI } from "openai";
 import { Stream } from "openai/streaming";
 import { ChatCompletionChunk } from "openai/resources/chat";
@@ -44,7 +44,7 @@ declare module "fastify" {
       question: string;
       workspaceId: ObjectId | string;
       variantId?: ObjectId | string;
-    }): Promise<Stream<ChatCompletionChunk>>;
+    }): Promise<Stream<ChatCompletionChunk> | null>;
     bulkUpsertContent(
       details: Array<{
         contentPiece: UnderscoreID<FullContentPiece<ObjectId>>;
@@ -228,14 +228,14 @@ const getContentBuffer = async (
     if (content?.content) return Buffer.from(content?.content.buffer);
   }
 };
-const searchPlugin = publicPlugin(async (fastify) => {
-  const url = new URL(fastify.config.WEAVIATE_URL);
+const registerSearch = async (fastify: FastifyInstance): Promise<void> => {
+  const url = new URL(fastify.config.WEAVIATE_URL || "");
   const client = weaviate.client({
     scheme: url.protocol.replace(":", "") as "http" | "https",
-    host: url.hostname,
-    apiKey: new weaviate.ApiKey(fastify.config.WEAVIATE_API_KEY),
+    host: url.host,
+    apiKey: new weaviate.ApiKey(fastify.config.WEAVIATE_API_KEY || ""),
     headers: {
-      "X-OpenAI-Api-Key": fastify.config.OPENAI_API_KEY
+      "X-OpenAI-Api-Key": fastify.config.OPENAI_API_KEY || ""
     }
   });
   const deleteContent: SearchService["deleteContent"] = async (details) => {
@@ -443,6 +443,34 @@ const searchPlugin = publicPlugin(async (fastify) => {
       await deleteContent(details);
     }
   } as SearchService);
+};
+const registerStub = (fastify: FastifyInstance): void => {
+  fastify.decorate("search", {
+    async search() {
+      return {
+        data: {
+          Get: {
+            Content: []
+          }
+        }
+      };
+    },
+    async ask() {
+      return null;
+    },
+    createTenant: () => Promise.resolve(),
+    deleteTenant: () => Promise.resolve(),
+    upsertContent: () => Promise.resolve(),
+    bulkUpsertContent: () => Promise.resolve(),
+    deleteContent: () => Promise.resolve()
+  });
+};
+const searchPlugin = publicPlugin(async (fastify) => {
+  if (fastify.hostConfig.search) {
+    await registerSearch(fastify);
+  } else {
+    registerStub(fastify);
+  }
 });
 
 export { searchPlugin };

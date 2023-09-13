@@ -1,4 +1,3 @@
-
 interface APIFetcherConfig {
   token: string;
   baseURL?: string;
@@ -20,6 +19,7 @@ type PaginationParams = {
 interface APIFetcher {
   sendRequest: SendRequest;
   reconfigure: (config: APIFetcherConfig) => void;
+  getConfig: () => Required<APIFetcherConfig>;
 }
 
 const createAPIFetcher = (config: APIFetcherConfig): APIFetcher => {
@@ -81,8 +81,16 @@ const createAPIFetcher = (config: APIFetcherConfig): APIFetcher => {
     extensionId = config.extensionId || extensionId;
     headers = config.headers || headers;
   };
+  const getConfig = (): Required<APIFetcherConfig> => {
+    return {
+      baseURL,
+      token,
+      extensionId,
+      headers
+    };
+  };
 
-  return { sendRequest, reconfigure };
+  return { sendRequest, reconfigure, getConfig };
 };
 
 export { createAPIFetcher };

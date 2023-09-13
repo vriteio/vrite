@@ -1,7 +1,6 @@
 import { mdiApi, mdiBookOpenBlankVariant, mdiClose, mdiGithub } from "@mdi/js";
 import { Component, For } from "solid-js";
 import { Button, Card, Heading, Icon, IconButton } from "#components/primitives";
-import { config } from "#config";
 import { discordIcon } from "#assets/icons";
 import { useLocalStorage } from "#context";
 
@@ -64,12 +63,6 @@ const GettingStartedView: Component = () => {
                   );
                 }}
               </For>
-            </div>
-            <div class="flex-1" />
-            <div class="flex justify-end w-full">
-              <span class="text-sm font-semibold text-gray-500 dark:text-gray-400">
-                Vrite {config.version}
-              </span>
             </div>
           </div>
         </div>

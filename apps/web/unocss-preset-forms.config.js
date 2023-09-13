@@ -42,8 +42,6 @@ const presetForms = () => {
             {
               base: inputsClasses.map((cssClass) => `${cssClass}:focus`),
               styles: {
-                "outline": "2px solid transparent",
-                "outline-offset": "2px",
                 "--un-ring-inset": "var(--un-empty,/*!*/ /*!*/)",
                 "--un-ring-offset-width": "0px",
                 "--un-ring-offset-color": "#fff",

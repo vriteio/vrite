@@ -1,4 +1,4 @@
-import { createSyncedPiece, createInputContentProcessor } from "./process-content";
+import { createSyncedPieces, createInputContentProcessor } from "./process-content";
 import { LexoRank } from "lexorank";
 import { ObjectId, Binary } from "mongodb";
 import {
@@ -63,7 +63,7 @@ const processPulledRecords = async (
     pulledContent: string;
     pulledHash: string;
   }> = [];
-  const processInputContent = await createInputContentProcessor(ctx);
+  const inputContentProcessor = await createInputContentProcessor(ctx, gitData);
   const createDirectory = async (
     path: string
   ): Promise<UnderscoreID<FullContentGroup<ObjectId>>> => {
@@ -137,6 +137,14 @@ const processPulledRecords = async (
   }
 
   for await (const [directoryPath, changedRecords] of changedRecordsByDirectory.entries()) {
+    const createSyncedPiecesSource: Array<{
+      path: string;
+      content: string;
+      workspaceId: ObjectId;
+      contentGroupId: ObjectId;
+      order: string;
+    }> = [];
+
     for await (const changedRecord of changedRecords) {
       if (changedRecord.status === "removed") {
         const existingRecord = newRecords.find((record) => {
@@ -176,9 +184,8 @@ const processPulledRecords = async (
       if (!contentGroupId) continue;
 
       if (existingRecord) {
-        const { buffer, contentHash, metadata } = await processInputContent(
-          changedRecord.content || "",
-          gitData.github!
+        const { buffer, contentHash, metadata } = await inputContentProcessor.process(
+          changedRecord.content || ""
         );
         const { date, members, tags, ...restMetadata } = metadata;
 
@@ -227,27 +234,29 @@ const processPulledRecords = async (
         order = LexoRank.min().toString();
       }
 
-      const { content, contentHash, contentPiece } = await createSyncedPiece(
-        {
-          content: changedRecord.content || "",
-          path: `${directoryPath}/${changedRecord.fileName}`,
-          workspaceId: ctx.auth.workspaceId,
-          contentGroupId,
-          order
-        },
-        gitData.github!,
-        processInputContent
-      );
+      createSyncedPiecesSource.push({
+        content: changedRecord.content || "",
+        path: `${directoryPath}/${changedRecord.fileName}`,
+        workspaceId: ctx.auth.workspaceId,
+        contentGroupId,
+        order
+      });
+    }
+
+    const syncedPieces = await createSyncedPieces(createSyncedPiecesSource, inputContentProcessor);
+
+    syncedPieces.forEach(({ contentPiece, content, contentHash }, index) => {
+      const { path } = createSyncedPiecesSource[index];
 
       newContentPieces.push(contentPiece);
       newContents.push(content);
       newRecords.push({
         contentPieceId: contentPiece._id,
-        path: `${directoryPath}/${changedRecord.fileName}`,
         currentHash: contentHash,
-        syncedHash: contentHash
+        syncedHash: contentHash,
+        path
       });
-    }
+    });
   }
 
   const applyPull = async (): Promise<void> => {

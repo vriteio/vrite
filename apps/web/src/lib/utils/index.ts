@@ -5,3 +5,4 @@ export * from "./embeds";
 export * from "./tags";
 export * from "./selection";
 export * from "./breakpoints";
+export * from "./upload-file";

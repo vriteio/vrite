@@ -1,11 +1,13 @@
 ---
+import EndpointCard from "#components/fragments/endpoint-card.astro";
 import { DefaultLayout } from "#components/layouts";
+import { Code } from "astro:components";
 import { getEntry, getCollection } from "astro:content";
 
 let { slug } = Astro.params;
 
 if (slug === undefined) {
-  return Astro.redirect("/getting-started");
+  return Astro.redirect("/usage-guide/getting-started");
 }
 
 const { entry } = Astro.props;

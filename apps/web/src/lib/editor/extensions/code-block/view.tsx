@@ -223,7 +223,7 @@ const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
         const newDecorations: monaco.editor.IModelDeltaDecoration[] = [];
 
         options()
-          .provider?.awareness.getStates()
+          .provider?.awareness?.getStates()
           .forEach((state, clientID) => {
             if (clientID === options().provider?.awareness?.clientID) return;
 
@@ -281,7 +281,7 @@ const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
   return (
     <div
       class={clsx(
-        "relative rounded-2xl not-prose text-base leading-4 my-5",
+        "relative rounded-2xl not-prose text-base leading-4",
         selected() && "ring ring-primary ring-2"
       )}
       contentEditable={selected() ? false : undefined}

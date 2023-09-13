@@ -1,0 +1,22 @@
+---
+import { Image } from "#components/primitives";
+interface Props {
+  imageSrc: string;
+  imageSrcDark: string;
+  imageAlt: string;
+  title: string;
+}
+
+const { imageAlt, imageSrc, imageSrcDark, title } = Astro.props;
+---
+
+<div class="flex flex-col gap-8 md:gap-12 pb-4">
+  <div class="flex-[2]">
+    <h2 class="text-4xl md:text-5xl !font-bold">{title}</h2>
+  </div>
+  <div
+    class="flex-[2] max-h-[28rem] gradient-image-mask border-2 rounded-2xl border-gray-200 dark:border-gray-700"
+  >
+    <Image alt={imageAlt} srcDark={imageSrcDark} srcLight={imageSrc} class="rounded-2xl" />
+  </div>
+</div>

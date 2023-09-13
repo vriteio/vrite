@@ -1,6 +1,6 @@
 import { ExtensionBaseContext } from "@vrite/extensions";
 
-const configure = async (context: ExtensionBaseContext) => {
+const configure = async (context: ExtensionBaseContext): Promise<void> => {
   const webhooks = await context.client.webhooks.list({ extensionOnly: true });
   const configComplete =
     context.config.autoPublish && context.config.contentGroupId && context.config.token;

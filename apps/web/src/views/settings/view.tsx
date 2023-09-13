@@ -8,6 +8,7 @@ import { EditorSection } from "./editor";
 import { SecuritySection } from "./security";
 import { MetadataSection } from "./metadata";
 import { VariantsSection } from "./variants";
+import { TransformersSection } from "./transformers";
 import clsx from "clsx";
 import { Dynamic } from "solid-js/web";
 import {
@@ -20,6 +21,7 @@ import {
   mdiPalette,
   mdiPencil,
   mdiShieldLock,
+  mdiSwapHorizontalCircle,
   mdiTransitConnectionVariant,
   mdiWebhook
 } from "@mdi/js";
@@ -65,13 +67,14 @@ const SettingsView: Component = () => {
       section: "workspace"
     },
     {
-      label: "Editing experience",
+      label: "Editor",
       icon: mdiPencil,
       resize: true,
       section: "editor"
     },
     { label: "Metadata", resize: true, icon: mdiDatabase, section: "metadata" },
-    { label: "Variants", icon: mdiCards, section: "variants" }
+    { label: "Variants", icon: mdiCards, section: "variants" },
+    { label: "Transformers", icon: mdiSwapHorizontalCircle, section: "transformers" }
   ];
   const sections: Record<string, SettingsSectionComponent> = {
     menu() {
@@ -90,7 +93,8 @@ const SettingsView: Component = () => {
     editor: EditorSection,
     security: SecuritySection,
     metadata: MetadataSection,
-    variants: VariantsSection
+    variants: VariantsSection,
+    transformers: TransformersSection
   };
   const currentSection = createMemo(() => {
     const sectionMenuItem = sectionMenuItems.find((menuItem) => {

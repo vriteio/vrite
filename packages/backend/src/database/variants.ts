@@ -6,7 +6,7 @@ const variant = z.object({
   id: zodId(),
   label: z.string().min(1).max(50),
   description: z.string().optional(),
-  name: z
+  key: z
     .string()
     .min(1)
     .max(20)

@@ -71,13 +71,13 @@ const apiService = publicPlugin(async (fastify) => {
       }
 
       const { hostname } = new URL(origin);
+      const appHostname = new URL(fastify.config.PUBLIC_APP_URL).hostname;
 
       if (
         hostname === "localhost" ||
-        hostname.endsWith("vrite.io") ||
-        hostname.endsWith("swagger.io")
+        hostname.endsWith(appHostname) ||
+        (fastify.config.VRITE_CLOUD && hostname.endsWith("swagger.io"))
       ) {
-        //  Request from localhost will pass
         callback(null, true);
 
         return;

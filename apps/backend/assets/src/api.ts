@@ -1,6 +1,5 @@
-import { errors, publicPlugin, z } from "@vrite/backend";
+import { publicPlugin, z } from "@vrite/backend";
 import rateLimitPlugin from "@fastify/rate-limit";
-import corsPlugin from "@fastify/cors";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import sharp from "sharp";
 
@@ -24,32 +23,6 @@ const assetsService = publicPlugin(async (fastify) => {
     timeWindow: "1 minute",
     redis: fastify.redis
   });
-  await fastify.register(corsPlugin, {
-    credentials: true,
-    methods: ["GET", "DELETE", "PUT", "POST"],
-    origin(origin, callback) {
-      if (!origin || origin === "null") {
-        callback(null, true);
-
-        return;
-      }
-
-      const { hostname } = new URL(origin);
-
-      if (
-        hostname === "localhost" ||
-        hostname.endsWith("vrite.io") ||
-        hostname.endsWith("swagger.io")
-      ) {
-        //  Request from localhost will pass
-        callback(null, true);
-
-        return;
-      }
-
-      callback(new Error("Not allowed"), false);
-    }
-  });
   fastify.get<{
     Params: {
       workspaceId: string;
@@ -72,6 +45,9 @@ const assetsService = publicPlugin(async (fastify) => {
     const sendSource = async (): Promise<void> => {
       await reply.header("Content-Type", sourceContentType).send(sourceAsset);
     };
+
+    reply.header("Access-Control-Allow-Origin", fastify.config.PUBLIC_APP_URL);
+    reply.header("Access-Control-Allow-Methods", "GET");
 
     if (!sourceAsset) return reply.status(404).send();
 

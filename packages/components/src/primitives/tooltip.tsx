@@ -4,6 +4,7 @@ import clsx from "clsx";
 import { Component, createEffect, createSignal, JSX, onMount, Show, on, onCleanup } from "solid-js";
 import { computePosition, autoUpdate } from "@floating-ui/dom";
 import { Dynamic, Portal } from "solid-js/web";
+import { createMediaQuery } from "@solid-primitives/media";
 
 type TooltipPosition = {
   x: number;
@@ -49,6 +50,7 @@ const Tooltip: Component<TooltipProps> = (props) => {
   const [floatingRef, setFloatingRef] = createRef<HTMLElement | null>(null);
   const [cleanupRef, setCleanupRef] = createRef<() => void>(() => {});
   const [visible, setVisible] = createSignal(false);
+  const md = createMediaQuery("(min-width: 768px)");
   const controller = props.controller || createTooltipController();
   const enabled = (): boolean => {
     return typeof props.enabled === "boolean" ? props.enabled : true;
@@ -66,7 +68,15 @@ const Tooltip: Component<TooltipProps> = (props) => {
       setPosition({ x: x || 0, y: y || 0 });
     }
   };
+  const onPointerMove = (): void => {
+    if (referenceRef()?.matches(":hover") && md()) {
+      setVisible(true);
+    } else {
+      setVisible(false);
+    }
+  };
 
+  document.body.addEventListener("pointermove", onPointerMove);
   controller.onPositionUpdate(updatePosition);
   onMount(() => {
     const referenceElement = referenceRef();
@@ -80,9 +90,6 @@ const Tooltip: Component<TooltipProps> = (props) => {
 
       setCleanupRef(cleanup);
     }
-  });
-  onCleanup(() => {
-    cleanupRef()?.();
   });
   createEffect(
     on([() => props.side, () => props.enabled, () => props.fixed], () => {
@@ -109,13 +116,15 @@ const Tooltip: Component<TooltipProps> = (props) => {
       }
     })
   );
+  onCleanup(() => {
+    cleanupRef()?.();
+    document.body.removeEventListener("pointermove", onPointerMove);
+  });
 
   return (
     <div
       class={clsx(`:base: relative flex flex-col items-center justify-center`, props.wrapperClass)}
       ref={setReferenceRef}
-      onPointerEnter={() => setVisible(true)}
-      onPointerLeave={() => setVisible(false)}
     >
       {props.children}
       <Show when={enabled()}>

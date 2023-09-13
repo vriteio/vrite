@@ -134,7 +134,7 @@ const Input: Component<InputProps> = (props) => {
         component={props.textarea ? "textarea" : "input"}
         {...passedProps}
         class={clsx(
-          `:base: flex items-center justify-start flex-1 p-2 m-1 rounded-lg ring-offset-1 focus:outline-none focus:border-primary placeholder:text-gray-400`,
+          `:base: flex items-center justify-start flex-1 p-2 m-1 rounded-lg ring-offset-1 focus:outline-none focus:border-primary placeholder:opacity-50`,
           props.textarea ? ":base: min-h-16" : ":base: h-8",
           inputColors[props.color || "base"],
           props.class

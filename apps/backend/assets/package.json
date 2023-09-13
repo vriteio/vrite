@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.374.0",
-    "@fastify/cors": "^8.3.0",
     "@fastify/rate-limit": "^8.0.3",
     "@trpc/server": "^10.35.0",
     "@vrite/backend": "workspace:*",

@@ -10,6 +10,7 @@ interface UseContentPieces {
   ): void;
   loading(): boolean;
   loadMore(): void;
+  moreToLoad(): boolean;
 }
 
 const useContentPieces = (contentGroupId: string): UseContentPieces => {
@@ -140,7 +141,8 @@ const useContentPieces = (contentGroupId: string): UseContentPieces => {
     contentPieces: () => state.contentPieces,
     setContentPieces: (contentPieces) => setState("contentPieces", contentPieces),
     loading,
-    loadMore
+    loadMore,
+    moreToLoad
   };
 };
 

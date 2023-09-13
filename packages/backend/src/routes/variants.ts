@@ -120,11 +120,11 @@ const variantsRouter = router({
         .sort("_id", -1)
         .toArray();
 
-      return variants.map(({ _id, label, name, description }) => {
+      return variants.map(({ _id, label, key, description }) => {
         return {
           id: `${_id}`,
           label,
-          name,
+          key,
           description
         };
       });

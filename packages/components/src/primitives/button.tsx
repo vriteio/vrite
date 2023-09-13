@@ -102,6 +102,7 @@ const Button: Component<ButtonProps> = (providedProps) => {
     "text",
     "variant",
     "size",
+    "link",
     "badge",
     "children"
   ]);
@@ -116,7 +117,7 @@ const Button: Component<ButtonProps> = (providedProps) => {
     <Dynamic
       component={component()}
       class={clsx(
-        `:base: transition relative duration-150 focus:outline-none`,
+        `:base: transition relative duration-150 !outline-none !ring-0 focus:!outline-none focus:!ring-0`,
         !props.badge && ":base: cursor-pointer",
         buttonVariants[props.variant],
         buttonSizes[props.size],
@@ -143,7 +144,7 @@ const Button: Component<ButtonProps> = (providedProps) => {
       <div class={clsx("contents", props.loading && "invisible")}>{props.children}</div>
       <Show when={props.loading}>
         <div class="flex justify-center items-center absolute w-full h-full p-1.5 top-0 left-0">
-          <Loader class="h-full" />
+          <Loader class="h-full fill-inherit" />
         </div>
       </Show>
     </Dynamic>

@@ -69,7 +69,7 @@ const ConfigureRoleSubsection: Component<ConfigureRoleSubsectionProps> = (props)
     {
       label: "Manage workspace",
       description:
-        "Manage the workspace settings - including its details, members, roles, and editing experience",
+        "Manage the workspace settings - including its details, members, roles, and editor settings",
       permission: "manageWorkspace"
     },
     {

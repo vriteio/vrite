@@ -8,6 +8,7 @@ import { extractPreviewDataFromOpenGraph } from "#lib/utils";
 import { isAuthenticated } from "#lib/middleware";
 import { procedure, router } from "#lib/trpc";
 import * as errors from "#lib/errors";
+import { hostConfig, HostConfig } from "#plugins/host-config";
 
 const previewData = z
   .object({
@@ -23,6 +24,9 @@ interface PreviewData extends z.infer<typeof previewData> {}
 
 const authenticatedProcedure = procedure.use(isAuthenticated);
 const utilsRouter = router({
+  hostConfig: procedure.output(hostConfig).query(({ ctx }) => {
+    return ctx.fastify.hostConfig;
+  }),
   openGraph: procedure
     .input(z.object({ url: z.string() }))
     .output(previewData)
@@ -44,54 +48,8 @@ const utilsRouter = router({
       } catch (error) {
         throw errors.serverError();
       }
-    }),
-  getUploadUrl: authenticatedProcedure
-    .input(z.object({ contentType: z.string() }))
-    .output(
-      z.object({
-        uploadUrl: z.string(),
-        key: z.string()
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const key = `${ctx.auth.workspaceId}/${nanoid()}.${mime.extension(input.contentType)}`;
-      const uploadUrl = await getSignedUrl(
-        ctx.fastify.s3,
-        new PutObjectCommand({
-          Bucket: ctx.fastify.config.S3_BUCKET,
-          Key: key,
-          ACL: "public-read",
-          ContentType: input.contentType
-        }),
-        { expiresIn: 60 * 60 }
-      );
-
-      return { uploadUrl, key };
-    }),
-  getAnonymousUploadUrl: procedure
-    .input(z.object({ contentType: z.string() }))
-    .output(
-      z.object({
-        uploadUrl: z.string(),
-        key: z.string()
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const key = `vrite-editor/${nanoid()}.${mime.extension(input.contentType)}`;
-      const uploadUrl = await getSignedUrl(
-        ctx.fastify.s3,
-        new PutObjectCommand({
-          Bucket: ctx.fastify.config.S3_BUCKET,
-          Key: key,
-          ACL: "public-read",
-          ContentType: input.contentType
-        }),
-        { expiresIn: 60 * 60 }
-      );
-
-      return { uploadUrl, key };
     })
 });
 
 export { utilsRouter };
-export type { PreviewData };
+export type { PreviewData, HostConfig };

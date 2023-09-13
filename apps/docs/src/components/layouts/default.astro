@@ -10,7 +10,7 @@ const description =
   "Open-source headless Content Management System (CMS) for technical content, like programming blogs, documentation, and more.";
 
 const docs = await getCollection("docs");
-const menu = docs
+const usageGuideMenu = docs
   .filter((entry) => {
     return entry.data.category === "Usage Guide";
   })
@@ -18,6 +18,49 @@ const menu = docs
     title: entry.data.title,
     link: `/${entry.slug}`
   }));
+const apiDocsMenu = docs
+  .filter((entry) => {
+    return entry.data.category === "API Documentation";
+  })
+  .map((entry) => ({
+    title: entry.data.title,
+    link: `/${entry.slug}`
+  }));
+const menu = [
+  {
+    label: "Usage Guide",
+    menu: docs
+      .filter((entry) => {
+        return entry.id.startsWith("usage-guide");
+      })
+      .map((entry) => ({
+        label: entry.data.title,
+        link: `/${entry.slug}`
+      }))
+  },
+  {
+    label: "JavaScript SDK",
+    menu: docs
+      .filter((entry) => {
+        return entry.id.startsWith("javascript-sdk");
+      })
+      .map((entry) => ({
+        label: entry.data.title,
+        link: `/${entry.slug}`
+      }))
+  },
+  {
+    label: "Self-Hosting",
+    menu: docs
+      .filter((entry) => {
+        return entry.id.startsWith("self-hosting");
+      })
+      .map((entry) => ({
+        label: entry.data.title,
+        link: `/${entry.slug}`
+      }))
+  }
+];
 
 type Props = {
   headings: MarkdownHeading[];
@@ -51,27 +94,23 @@ if (Astro.props.previousEntry) {
   </head>
   <body class="overflow-x-hidden overscroll-none">
     <SVGDefs />
-    <main
-      class="flex flex-col items-center justify-center gap-8 h-full bg-gray-100 dark:bg-gray-800"
-    >
-      <div class="min-h-screen w-full flex justify-center items-start h-full">
+    <main class="flex flex-col items-center justify-center h-screen bg-gray-50 dark:bg-gray-800">
+      <Header client:idle />
+      <div class="flex-1 flex justify-center items-center overflow-hidden flex-1 w-full">
         <SideBar menu={menu} currentPath={Astro.url.pathname} client:idle />
-        <div class="flex-1 flex justify-center items-center flex-col overflow-hidden max-h-screen">
-          <Header />
-          <div class="flex overflow-hidden w-full relative">
+        <div class="flex overflow-hidden w-full relative h-full">
+          <div
+            class="flex-1 flex overflow-y-auto overflow-x-hidden md:max-h-[calc(100vh-3.125rem)]"
+            id="container"
+          >
             <div
-              class="flex-1 flex overflow-y-auto overflow-x-hidden md:max-h-[calc(100vh-3.125rem)] h-screen"
-              id="container"
+              class="flex-1 prose max-w-screen-lg w-full text-lg px-4 pt-4 lg:px-16 pb-24 h-fit xl:w-[calc(100%-15rem)]"
             >
-              <div
-                class="flex-1 prose max-w-screen-lg w-full text-lg px-4 lg:px-16 pb-24 h-fit xl:w-[calc(100%-15rem)]"
-              >
-                <h1>{Astro.props.title}</h1>
-                <slot />
-                <Navigation previousEntry={previousEntry} nextEntry={nextEntry} />
-              </div>
-              <OnThisPage headings={Astro.props.headings} client:load />
+              <h1>{Astro.props.title}</h1>
+              <slot />
+              <Navigation previousEntry={previousEntry} nextEntry={nextEntry} />
             </div>
+            <OnThisPage headings={Astro.props.headings} client:load />
           </div>
         </div>
       </div>

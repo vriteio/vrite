@@ -1,11 +1,18 @@
 import { publicPlugin } from "../lib/plugin";
-import { EmailService } from "fastify";
-import { ClientResponse, MailService } from "@sendgrid/mail";
+import { EmailService, FastifyInstance } from "fastify";
+import { MailService } from "@sendgrid/mail";
 import { ObjectId } from "mongodb";
+import { EmailTemplate, getSubject, renderEmail } from "@vrite/emails";
+import * as nodemailer from "nodemailer";
 import { getWorkspacesCollection } from "#database/workspaces";
 import { getUsersCollection } from "#database/users";
 import * as errors from "#lib/errors";
 
+type EmailSender = (email: {
+  to: string;
+  template: EmailTemplate;
+  data: Record<string, string>;
+}) => Promise<void>;
 declare module "fastify" {
   interface EmailService {
     sendEmailVerification(
@@ -51,34 +58,79 @@ declare module "fastify" {
   }
 }
 
-const mailPlugin = publicPlugin(async (fastify) => {
-  const service = new MailService();
-  const sendEmail = async (email: {
-    to: string;
-    templateId: string;
-    data: Record<string, string>;
-  }): Promise<ClientResponse> => {
-    const [response] = await service.send({
-      to: email.to,
-      from: {
-        email: fastify.config.EMAIL,
-        name: fastify.config.SENDER_NAME
-      },
-      templateId: email.templateId,
-      dynamicTemplateData: email.data
+const createEmailSender = (fastify: FastifyInstance): EmailSender => {
+  if (fastify.hostConfig.sendgrid) {
+    const service = new MailService();
+
+    service.setApiKey(fastify.config.SENDGRID_API_KEY || "");
+
+    return async (email) => {
+      try {
+        await service.send({
+          to: email.to,
+          from: {
+            email: fastify.config.SENDER_EMAIL,
+            name: fastify.config.SENDER_NAME
+          },
+          subject: getSubject(email.template),
+          html: renderEmail(email.template, email.data),
+          text: renderEmail(email.template, email.data, true)
+        });
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error(error);
+
+        throw errors.serverError();
+      }
+    };
+  }
+
+  if (fastify.hostConfig.smtp) {
+    const transporter = nodemailer.createTransport({
+      host: fastify.config.SMTP_HOST || "",
+      port: fastify.config.SMTP_PORT || 465,
+      secure: fastify.config.SMTP_SECURE || true,
+      auth: {
+        user: fastify.config.SMTP_USERNAME || "",
+        pass: fastify.config.SMTP_PASSWORD || ""
+      }
     });
 
-    return response;
-  };
+    return async (email) => {
+      try {
+        await transporter.sendMail({
+          from: { address: fastify.config.SENDER_EMAIL, name: fastify.config.SENDER_NAME },
+          to: email.to,
+          subject: getSubject(email.template),
+          html: renderEmail(email.template, email.data),
+          text: renderEmail(email.template, email.data, true)
+        });
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error(error);
 
-  service.setApiKey(fastify.config.SENDGRID_API_KEY);
+        throw errors.serverError();
+      }
+    };
+  }
+
+  return async () => {
+    // eslint-disable-next-line no-console
+    console.error("No email service configured");
+
+    throw errors.serverError();
+  };
+};
+const mailPlugin = publicPlugin(async (fastify) => {
+  const sendEmail = createEmailSender(fastify);
+
   fastify.decorate("email", {
     async sendEmailVerification(email, details) {
       await sendEmail({
         to: email,
-        templateId: fastify.config.SENDGRID_EMAIL_VERIFICATION_TEMPLATE_ID,
+        template: "verify-email",
         data: {
-          link: `${fastify.config.CALLBACK_DOMAIN}/verify?type=email&code=${details.code}&id=${details.userId}`,
+          link: `${fastify.config.PUBLIC_APP_URL}/verify?type=email&code=${details.code}&id=${details.userId}`,
           user: details.username
         }
       });
@@ -86,9 +138,9 @@ const mailPlugin = publicPlugin(async (fastify) => {
     async sendMagicLink(email, details) {
       await sendEmail({
         to: email,
-        templateId: fastify.config.SENDGRID_MAGIC_LINK_TEMPLATE_ID,
+        template: "magic-link",
         data: {
-          link: `${fastify.config.CALLBACK_DOMAIN}/verify?type=magic&code=${details.code}&id=${details.userId}`
+          link: `${fastify.config.PUBLIC_APP_URL}/verify?type=magic&code=${details.code}&id=${details.userId}`
         }
       });
     },
@@ -105,9 +157,9 @@ const mailPlugin = publicPlugin(async (fastify) => {
 
       await sendEmail({
         to: email,
-        templateId: fastify.config.SENDGRID_WORKSPACE_INVITE_TEMPLATE_ID,
+        template: "workspace-invite",
         data: {
-          link: `${fastify.config.CALLBACK_DOMAIN}/verify?type=workspace-invite&code=${details.code}&id=${details.membershipId}`,
+          link: `${fastify.config.PUBLIC_APP_URL}/verify?type=workspace-invite&code=${details.code}&id=${details.membershipId}`,
           sender: sender.fullName || sender.username || "User",
           workspace: workspace.name || "a workspace",
           user: details.inviteeName
@@ -117,18 +169,18 @@ const mailPlugin = publicPlugin(async (fastify) => {
     async sendPasswordChangeVerification(email, details) {
       await sendEmail({
         to: email,
-        templateId: fastify.config.SENDGRID_PASSWORD_CHANGE_VERIFICATION_TEMPLATE_ID,
+        template: "verify-password-change",
         data: {
-          link: `${fastify.config.CALLBACK_DOMAIN}/verify?type=password-change&code=${details.code}`
+          link: `${fastify.config.PUBLIC_APP_URL}/verify?type=password-change&code=${details.code}`
         }
       });
     },
     async sendEmailChangeVerification(email, details) {
       await sendEmail({
         to: email,
-        templateId: fastify.config.SENDGRID_EMAIL_CHANGE_VERIFICATION_TEMPLATE_ID,
+        template: "verify-email-change",
         data: {
-          link: `${fastify.config.CALLBACK_DOMAIN}/verify?type=email-change&code=${details.code}`
+          link: `${fastify.config.PUBLIC_APP_URL}/verify?type=email-change&code=${details.code}`
         }
       });
     }

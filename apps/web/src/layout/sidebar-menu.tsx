@@ -13,12 +13,16 @@ import {
 } from "@mdi/js";
 import { Accessor, Component, For, Show, createEffect, createSignal, on } from "solid-js";
 import { Link, useLocation, useNavigate } from "@solidjs/router";
-import { Dynamic } from "solid-js/web";
 import clsx from "clsx";
 import { createMediaQuery } from "@solid-primitives/media";
 import { createActiveElement } from "@solid-primitives/active-element";
 import { breakpoints, navigateAndReload } from "#lib/utils";
-import { useLocalStorage, useAuthenticatedUserData, useCommandPalette } from "#context";
+import {
+  useLocalStorage,
+  useAuthenticatedUserData,
+  useCommandPalette,
+  useHostConfig
+} from "#context";
 import {
   Button,
   IconButton,
@@ -41,10 +45,11 @@ interface MenuItem {
 }
 
 const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
+  const { storage, setStorage } = useLocalStorage();
+  const hostConfig = useHostConfig();
   const navigate = useNavigate();
   const location = useLocation();
   const md = createMediaQuery("(min-width: 768px)");
-  const { storage, setStorage } = useLocalStorage();
   const setSidePanelView = (view: string): void => {
     setStorage((storage) => ({
       ...storage,
@@ -53,77 +58,79 @@ const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
     }));
   };
 
-  return (): Array<MenuItem | null> => [
-    {
-      icon: mdiViewDashboard,
-      label: "Dashboard",
-      active: () => {
-        return (
-          location.pathname === "/" &&
-          (md() || !(storage().sidePanelView && storage().sidePanelWidth))
-        );
+  return () => {
+    return [
+      {
+        icon: mdiViewDashboard,
+        label: "Dashboard",
+        active: () => {
+          return (
+            location.pathname === "/" &&
+            (md() || !(storage().sidePanelView && storage().sidePanelWidth))
+          );
+        },
+        onClick: () => {
+          navigate("/");
+          if (storage().contentPieceId && md()) setSidePanelView("contentPiece");
+          if (!md()) setStorage((storage) => ({ ...storage, sidePanelWidth: 0 }));
+        }
       },
-      onClick: () => {
-        navigate("/");
-        if (storage().contentPieceId && md()) setSidePanelView("contentPiece");
-        if (!md()) setStorage((storage) => ({ ...storage, sidePanelWidth: 0 }));
-      }
-    },
-    {
-      icon: mdiPencil,
-      label: "Editor",
-      active: () => {
-        return (
-          location.pathname === "/editor" &&
-          (md() || !(storage().sidePanelView && storage().sidePanelWidth))
-        );
+      {
+        icon: mdiPencil,
+        label: "Editor",
+        active: () => {
+          return (
+            location.pathname === "/editor" &&
+            (md() || !(storage().sidePanelView && storage().sidePanelWidth))
+          );
+        },
+        onClick: () => {
+          navigate("/editor");
+          if (storage().contentPieceId && md()) setSidePanelView("contentPiece");
+          if (!md()) setStorage((storage) => ({ ...storage, sidePanelWidth: 0 }));
+        }
       },
-      onClick: () => {
-        navigate("/editor");
-        if (storage().contentPieceId && md()) setSidePanelView("contentPiece");
-        if (!md()) setStorage((storage) => ({ ...storage, sidePanelWidth: 0 }));
+      null,
+      hostConfig.githubApp && {
+        icon: mdiGit,
+        label: "Source control",
+        inMenu: true,
+        active: () => storage().sidePanelView === "git",
+        onClick: () => {
+          setSidePanelView("git");
+        }
+      },
+      {
+        icon: mdiCog,
+        label: "Settings",
+        inMenu: true,
+        active: () => storage().sidePanelView === "settings",
+        onClick: () => {
+          setSidePanelView("settings");
+        }
+      },
+      hostConfig.extensions && {
+        icon: mdiPuzzle,
+        label: "Extensions",
+        inMenu: true,
+        active: () => storage().sidePanelView === "extensions",
+        onClick: async () => {
+          setSidePanelView("extensions");
+        }
+      },
+      {
+        icon: mdiHexagonSlice6,
+        label: "Workspace",
+        onClick: () => {
+          navigate("/workspaces");
+        }
       }
-    },
-    null,
-    {
-      icon: mdiGit,
-      label: "Source control",
-      inMenu: true,
-      active: () => storage().sidePanelView === "git",
-      onClick: () => {
-        setSidePanelView("git");
-      }
-    },
-    {
-      icon: mdiCog,
-      label: "Settings",
-      inMenu: true,
-      active: () => storage().sidePanelView === "settings",
-      onClick: () => {
-        setSidePanelView("settings");
-      }
-    },
-    {
-      icon: mdiPuzzle,
-      label: "Extensions",
-      inMenu: true,
-      active: () => storage().sidePanelView === "extensions",
-      onClick: async () => {
-        setSidePanelView("extensions");
-      }
-    },
-    {
-      icon: mdiHexagonSlice6,
-      label: "Workspace",
-      onClick: () => {
-        navigate("/workspaces");
-      }
-    }
-  ];
+    ].filter((value) => value !== false) as Array<MenuItem | null>;
+  };
 };
 const ProfileMenu: Component<{ close(): void }> = (props) => {
-  const { profile } = useAuthenticatedUserData();
-  const { storage, setStorage } = useLocalStorage();
+  const { profile, workspace } = useAuthenticatedUserData();
+  const { setStorage } = useLocalStorage();
   const menuItems = useMenuItems();
 
   return (
@@ -173,7 +180,7 @@ const ProfileMenu: Component<{ close(): void }> = (props) => {
             class="m-0"
             variant="text"
             onClick={async () => {
-              await fetch("/session/logout");
+              await fetch("/session/logout", { method: "POST" });
               setStorage({});
               navigateAndReload("/auth");
             }}
@@ -203,7 +210,10 @@ const ProfileMenu: Component<{ close(): void }> = (props) => {
         </For>
       </Card>
       <div class="flex justify-center items-center gap-2">
-        <span class="flex-1 text-sm">Vrite ©2023</span>
+        <div class="flex flex-1">
+          <Icon path={mdiHexagonSlice6} class="h-5 min-w-5 mr-1" />
+          <span class="text-sm clamp-1">{workspace()?.name}</span>
+        </div>
         <Link href="https://discord.gg/4Z5MdEffBn">
           <IconButton path={discordIcon} badge text="soft" class="m-0" variant="text" />
         </Link>

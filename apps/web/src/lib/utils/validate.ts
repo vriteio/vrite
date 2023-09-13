@@ -5,16 +5,12 @@ const validateEmail = (input: string): boolean => {
 
   return emailRegex.test(input);
 };
-const validateUsername = (input: string): boolean => {
-  const usernameRegex = /^[a-z0-9_]*$/;
-
-  return usernameRegex.test(input);
-};
-const validateVariantName = (input: string): boolean => {
+const validateKey = (input: string): boolean => {
   const variantRegex = /^[a-z0-9_]*$/;
 
-  return variantRegex.test(input);
+  return input.length > 0 && input.length < 20 && variantRegex.test(input);
 };
+const validateUsername = validateKey;
 const validateURL = (input: string): boolean => {
   let url: URL | null = null;
 
@@ -32,4 +28,4 @@ const validatePassword = (input: string): boolean => {
   return passwordRegex.test(input);
 };
 
-export { validateEmail, validateUsername, validateVariantName, validateURL, validatePassword };
+export { validateEmail, validateUsername, validateKey, validateURL, validatePassword };

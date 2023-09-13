@@ -1,10 +1,10 @@
 import { ImageAttributes, ImageOptions } from "./node";
 import { SolidNodeViewProps } from "@vrite/tiptap-solid";
-import { mdiDotsGrid, mdiLinkVariant, mdiText, mdiUpload } from "@mdi/js";
-import { Component, createEffect, createSignal, on, Show } from "solid-js";
+import { mdiLinkVariant, mdiText, mdiUpload } from "@mdi/js";
+import { Component, createSignal, Show } from "solid-js";
 import { nanoid } from "nanoid";
 import { debounce } from "@solid-primitives/scheduled";
-import { useAuthenticatedUserData, useClient } from "#context";
+import { uploadFile as uploadFileUtil } from "#lib/utils";
 import { Button, IconButton, Input, Loader, Tooltip } from "#components/primitives";
 
 interface ImageMenuProps {
@@ -12,11 +12,9 @@ interface ImageMenuProps {
 }
 
 const ImageMenu: Component<ImageMenuProps> = (props) => {
-  const { currentWorkspaceId = () => null } = useAuthenticatedUserData() || {};
   const { storage } = props.state.extension;
   const [inputMode, setInputMode] = createSignal<"alt" | "src">("src");
   const [uploading, setUploading] = createSignal(false);
-  const client = useClient();
   const attrs = (): ImageAttributes => props.state.node.attrs;
   const options = (): ImageOptions => props.state.extension.options;
   const updateAttribute = debounce((attribute: "src" | "alt", value: string) => {
@@ -27,35 +25,12 @@ const ImageMenu: Component<ImageMenuProps> = (props) => {
     if (file && file.type.includes("image")) {
       setUploading(true);
 
-      let uploadUrl = "";
-      let key = "";
+      const uploadedUrl = await uploadFileUtil(file);
 
-      if (currentWorkspaceId()) {
-        const result = await client.utils.getUploadUrl.mutate({
-          contentType: file.type
-        });
-
-        uploadUrl = result.uploadUrl || "";
-        key = result.key || "";
-      } else {
-        const result = await client.utils.getAnonymousUploadUrl.mutate({
-          contentType: file.type
-        });
-
-        uploadUrl = result.uploadUrl || "";
-        key = result.key || "";
+      if (uploadedUrl) {
+        props.state.updateAttributes({ src: uploadedUrl });
       }
 
-      await fetch(uploadUrl, {
-        method: "PUT",
-        body: file,
-        headers: {
-          "Content-Type": file.type,
-          "Cache-Control": "public,max-age=31536000,immutable",
-          "x-amz-acl": "public-read"
-        }
-      });
-      props.state.updateAttributes({ src: `https://assets.vrite.io/${key}` });
       setUploading(false);
     }
   };
@@ -113,7 +88,7 @@ const ImageMenu: Component<ImageMenuProps> = (props) => {
           disabled={uploading()}
           id={inputId}
           name={inputId}
-          accept="image/*"
+          accept=".jpg,.jpeg,.png,.gif,.tiff,.tif,.bmp,.webp"
           onChange={(event) => {
             uploadFile(event.currentTarget.files?.item(0));
             event.currentTarget.value = "";

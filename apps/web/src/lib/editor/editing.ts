@@ -1,4 +1,4 @@
-import { CodeBlock, Embed, Image } from "./extensions";
+import { CodeBlock, Embed, Image, Wrapper } from "./extensions";
 import { SlashMenuItem } from "./extensions/slash-menu/component";
 import { Editor, Node as NodeExtension, Mark as MarkExtension } from "@tiptap/core";
 import { DOMOutputSpec, DOMSerializer, Mark, Node } from "@tiptap/pm/model";
@@ -42,7 +42,8 @@ import {
   mdiMinus,
   mdiCodepen,
   mdiYoutube,
-  mdiTable
+  mdiTable,
+  mdiCubeOutline
 } from "@mdi/js";
 import { createRef } from "#lib/utils";
 import { App } from "#context";
@@ -117,6 +118,7 @@ const createExtensions = (
     codeBlock: CodeBlock.configure({ provider }),
     horizontalRule: HorizontalRule,
     image: Image,
+    wrapper: Wrapper,
     table: [Table, TableCell, TableHeader, TableRow]
   };
   const getHeadingLevels = (settings: App.WorkspaceSettings): Level[] => {
@@ -280,6 +282,16 @@ const createBlockMenuOptions = (settings?: App.WorkspaceSettings): SlashMenuItem
       ref: createRef<HTMLElement | null>(null),
       command({ editor, range }) {
         return editor.chain().focus().deleteRange(range).setHorizontalRule().run();
+      }
+    },
+    {
+      label: "Wrapper",
+      group: "Blocks",
+      block: "wrapper",
+      icon: mdiCubeOutline,
+      ref: createRef<HTMLElement | null>(null),
+      command({ editor, range }) {
+        return editor.chain().focus().deleteRange(range).setWrapper().run();
       }
     },
     {

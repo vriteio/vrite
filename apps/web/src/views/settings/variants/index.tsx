@@ -82,7 +82,7 @@ const VariantDetails: Component<VariantDetailsProps> = (props) => {
     <Card color="contrast" class="relative flex flex-col m-0 w-full">
       <div class="flex gap-1 justify-center items-center">
         <Button badge size="small" class="m-0" hover={false}>
-          {props.variant.name}
+          {props.variant.key}
         </Button>
         <div class="flex-1" />
         <Show when={hasPermission("manageVariants")}>

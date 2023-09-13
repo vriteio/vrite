@@ -13,7 +13,7 @@ const FloatingMenu: Component<BubbleMenuProps> = (props) => {
 
   return (
     <Tooltip
-      wrapperClass="absolute m-0 transform -translate-y-1/2 top-1/2 right-4"
+      wrapperClass="absolute m-0 transform -translate-y-1/2 top-1/2 right-3.5"
       visible={visible()}
       setVisible={setVisible}
       side="right"
@@ -24,6 +24,7 @@ const FloatingMenu: Component<BubbleMenuProps> = (props) => {
           setVisible(false);
           props.editor.chain().insertContent("/").focus().run();
         }}
+        class="h-8 w-8 bg-gray-50 border-2 border-gray-200 hover:border-gray-300 dark:border-gray-900 hover:dark:border-gray-700"
         path={mdiSlashForward}
         text="soft"
       />

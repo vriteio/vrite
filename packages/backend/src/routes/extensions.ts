@@ -1,7 +1,7 @@
 import { createToken } from "./tokens";
 import { z } from "zod";
 import { ObjectId } from "mongodb";
-import { isAuthenticated } from "#lib/middleware";
+import { isAuthenticated, isEnabled } from "#lib/middleware";
 import { procedure, router } from "#lib/trpc";
 import {
   Extension,
@@ -33,10 +33,13 @@ const publishContentPieceEvent = createEventPublisher<{
 }>((contentGroupId) => {
   return `contentPieces:${contentGroupId}`;
 });
-const authenticatedProcedure = procedure.use(isAuthenticated);
+const authenticatedProcedure = procedure.use(isAuthenticated).use(isEnabled);
 const basePath = "/extension";
 const extensionsRouter = router({
   get: authenticatedProcedure
+    .meta({
+      requiredConfig: ["extensions"]
+    })
     .input(z.object({ name: z.string() }))
     .output(extension)
     .query(async ({ ctx, input }) => {
@@ -54,7 +57,7 @@ const extensionsRouter = router({
       };
     }),
   getExtension: procedure
-    .meta({ openapi: { method: "GET", path: `${basePath}` } })
+    .meta({ openapi: { method: "GET", path: `${basePath}` }, requiredConfig: ["extensions"] })
     .input(z.void())
     .output(extension.partial())
     .query(async ({ ctx }) => {
@@ -79,7 +82,8 @@ const extensionsRouter = router({
       openapi: {
         method: "PUT",
         path: `${basePath}/content-piece-data`
-      }
+      },
+      requiredConfig: ["extensions"]
     })
     .input(
       z.object({
@@ -136,6 +140,9 @@ const extensionsRouter = router({
       });
     }),
   list: authenticatedProcedure
+    .meta({
+      requiredConfig: ["extensions"]
+    })
     .input(
       z
         .object({
@@ -166,7 +173,8 @@ const extensionsRouter = router({
   }),
   install: authenticatedProcedure
     .meta({
-      permissions: { session: ["manageExtensions"] }
+      permissions: { session: ["manageExtensions"] },
+      requiredConfig: ["extensions"]
     })
     .input(
       z.object({
@@ -226,7 +234,8 @@ const extensionsRouter = router({
     }),
   configure: authenticatedProcedure
     .meta({
-      permissions: { session: ["manageExtensions"] }
+      permissions: { session: ["manageExtensions"] },
+      requiredConfig: ["extensions"]
     })
     .input(
       z.object({
@@ -260,7 +269,8 @@ const extensionsRouter = router({
     }),
   uninstall: authenticatedProcedure
     .meta({
-      permissions: { session: ["manageExtensions"] }
+      permissions: { session: ["manageExtensions"] },
+      requiredConfig: ["extensions"]
     })
     .input(z.object({ id: zodId() }))
     .output(z.void())

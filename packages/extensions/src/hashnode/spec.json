@@ -35,13 +35,12 @@
       },
       "slot:true": [
         {
-          "component": "Field[type=select][color=contrast]",
+          "component": "Field[type=text][color=contrast]",
           "props": {
             "label": "Content group",
-            "bind:options": "temp.lockedContentGroups",
             "bind:value": "config.contentGroupId"
           },
-          "slot:": "Select a content group to auto-publish from, when content pieces are moved to it. Only **locked** content groups are allowed."
+          "slot:": "Provide ID of a content group to auto-publish from, when content pieces are moved to it. You can copy the ID from the dashboard."
         },
         {
           "component": "Field[type=checkbox][color=contrast]",

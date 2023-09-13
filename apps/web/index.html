@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en" data-accent-color="energy">
   <head>
     <meta charset="utf-8" />
@@ -33,13 +33,20 @@
       type="font/woff2"
     />
     <title>Vrite</title>
+    <script>
+      window.env = {
+        PUBLIC_API_URL: "{{PUBLIC_API_URL}}",
+        PUBLIC_APP_URL: "{{PUBLIC_APP_URL}}",
+        PUBLIC_ASSETS_URL: "{{PUBLIC_ASSETS_URL}}",
+        PUBLIC_COLLAB_URL: "{{PUBLIC_COLLAB_URL}}",
+        PUBLIC_APP_TYPE: "{{PUBLIC_APP_TYPE}}",
+        PUBLIC_DISABLE_ANALYTICS: "{{PUBLIC_DISABLE_ANALYTICS}}"
+      };
+    </script>
     <script type="module">
-      const baseUrl = `http${window.location.protocol.includes("https") ? "s" : ""}://${
-        import.meta.env.PUBLIC_API_HOST
-      }`;
       try {
         await fetch("/session/refresh", { method: "POST" });
-        const response = await fetch(`${baseUrl}/user-settings`, {
+        const response = await fetch(`${window.env.PUBLIC_API_URL}/user-settings`, {
           credentials: "include"
         });
         if (!response.ok) throw new Error();

@@ -9,9 +9,7 @@ const githubData = z.object({
   branchName: z.string(),
   baseDirectory: z.string(),
   matchPattern: z.string(),
-  inputTransformer: z.string(),
-  outputTransformer: z.string(),
-  formatOutput: z.boolean()
+  transformer: z.string()
 });
 const gitRecord = z.object({
   contentPieceId: zodId(),

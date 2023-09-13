@@ -1,0 +1,99 @@
+version: "3.9"
+services:
+  mongodb:
+    image: mongo
+    volumes:
+      - mongodb:/data/db
+    ports:
+      - 27017:27017
+
+  minio:
+    image: minio/minio
+    environment:
+      - MINIO_ROOT_USER=user
+      - MINIO_ROOT_PASSWORD=password
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    command: server --console-address ":9001" /data
+    volumes:
+      - minio:/data
+
+  redis:
+    image: redis
+    volumes:
+      - redis:/data
+    ports:
+      - "6379:6379"
+
+  weaviate:
+    image: semitechnologies/weaviate:1.21.2
+    ports:
+      - 8080:8080
+    volumes:
+      - weaviate:/var/lib/weaviate
+    environment:
+      - PORT=8080
+      - QUERY_DEFAULTS_LIMIT=25
+      - AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED=true
+      - PERSISTENCE_DATA_PATH=/var/lib/weaviate
+      - DEFAULT_VECTORIZER_MODULE=text2vec-openai
+      - ENABLE_MODULES=text2vec-openai
+      - AUTHENTICATION_APIKEY_ENABLED=true
+      - AUTHENTICATION_APIKEY_ALLOWED_KEYS=password
+      - AUTHENTICATION_APIKEY_USERS=vrite
+
+  api:
+    image: ghcr.io/vriteio/vrite/api:latest
+    env_file: ./docker.env
+    depends_on:
+      - mongodb
+      - redis
+    environment:
+      - PORT=4444
+    ports:
+      - "4444:4444"
+
+  assets:
+    image: ghcr.io/vriteio/vrite/assets:latest
+    env_file: ./docker.env
+    depends_on:
+      - mongodb
+      - minio
+      - redis
+    environment:
+      - PORT=8888
+    ports:
+      - "8888:8888"
+
+  collab:
+    image: ghcr.io/vriteio/vrite/collaboration:latest
+    env_file: ./docker.env
+    depends_on:
+      - mongodb
+      - redis
+    environment:
+      - PORT=5555
+    ports:
+      - "5555:5555"
+
+  app:
+    image: ghcr.io/vriteio/vrite/app:latest
+    env_file: ./docker.env
+    environment:
+      - PORT=3333
+    ports:
+      - "3333:3333"
+    depends_on:
+      - api
+      - assets
+      - collab
+      - mongodb
+      - minio
+      - redis
+
+volumes:
+  mongodb: ~
+  redis: ~
+  minio: ~
+  weaviate: ~

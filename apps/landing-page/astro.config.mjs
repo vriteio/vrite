@@ -15,29 +15,25 @@ const { VRITE_ACCESS_TOKEN, VRITE_CONTENT_GROUP_ID } = loadEnv(
 
 export default defineConfig({
   integrations: [
-    unocss(),
+    unocss({ injectReset: true }),
     solidJs(),
     sitemap(),
     robotsTxt({
       policy: [
         {
           userAgent: "*",
-          disallow: ["/frame/"],
-        },
-      ],
+          disallow: ["/frame/"]
+        }
+      ]
     }),
     vritePlugin({
       accessToken: VRITE_ACCESS_TOKEN,
-      contentGroupId: VRITE_CONTENT_GROUP_ID,
-    }),
+      contentGroupId: VRITE_CONTENT_GROUP_ID
+    })
   ],
-  output: "server",
-  adapter: node({
-    mode: "standalone",
-  }),
   site: "https://vrite.io",
   server: {
     port: 3000,
-    host: true,
-  },
+    host: true
+  }
 });
