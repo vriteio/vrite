@@ -216,16 +216,6 @@ kbd {
     @apply border-l-3 pl-5.5 border-solid border-gray-200 dark:border-gray-700 not-italic text-gray-500 dark:text-gray-400;
   }
 
-  :where(:not(pre) > code):not(:where(.not-prose, .not-prose *)) {
-    &::before,
-    &::after {
-      content: unset !important;
-    }
-    @apply !bg-gray-200 !text-gray-700 !font-medium !dark:bg-gray-900 !dark:text-gray-300 !py-1 !px-2 !rounded-lg;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
-      "Courier New", monospace !important;
-  }
-
   :where(mark) {
     @apply text-gray-700;
   }
