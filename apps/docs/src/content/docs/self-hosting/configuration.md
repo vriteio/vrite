@@ -29,8 +29,8 @@ Then, depending on the option you choose, configure the following:
 # Email (SMTP)
 SMTP_HOST=
 SMTP_PORT=
-SMTP_USER=
-SMTP_PASS=
+SMTP_USERNAME=
+SMTP_PASSWORD=
 SMTP_SECURE=
 
 # Email (SendGrid)
