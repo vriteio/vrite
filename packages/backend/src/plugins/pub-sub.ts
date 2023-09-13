@@ -1,5 +1,4 @@
 import { publicPlugin } from "../lib/plugin";
-import { MailService } from "@sendgrid/mail";
 import type { PubSubMessage, PubSubPlugin } from "fastify";
 
 declare module "fastify" {
@@ -19,10 +18,8 @@ declare module "fastify" {
 }
 
 const pubSubPlugin = publicPlugin(async (fastify) => {
-  const service = new MailService();
   const listeners = new Map<string, Set<(message: PubSubMessage) => void>>();
 
-  service.setApiKey(fastify.config.SENDGRID_API_KEY);
   fastify.redis.sub.on("message", (channel, message) => {
     const messageListeners = listeners.get(channel);
 
