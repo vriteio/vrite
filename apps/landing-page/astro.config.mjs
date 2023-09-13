@@ -32,6 +32,10 @@ export default defineConfig({
     })
   ],
   site: "https://vrite.io",
+  output: "server",
+  adapter: node({
+    mode: "standalone"
+  }),
   server: {
     port: 3000,
     host: true
