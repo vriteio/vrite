@@ -44,7 +44,7 @@ services:
       - AUTHENTICATION_APIKEY_USERS=vrite
 
   api:
-    image: vrite/api:latest
+    image: ghcr.io/vriteio/vrite/api:latest
     env_file: ./.env
     depends_on:
       - mongodb
@@ -55,7 +55,7 @@ services:
       - "4444:4444"
 
   assets:
-    image: vrite/assets:latest
+    image: ghcr.io/vriteio/vrite/assets:latest
     env_file: ./.env
     depends_on:
       - mongodb
@@ -67,7 +67,7 @@ services:
       - "8888:8888"
 
   collab:
-    image: vrite/collaboration:latest
+    image: ghcr.io/vriteio/vrite/collaboration:latest
     env_file: ./.env
     depends_on:
       - mongodb
@@ -78,7 +78,7 @@ services:
       - "5555:5555"
 
   app:
-    image: vrite/app:latest
+    image: ghcr.io/vriteio/vrite/app:latest
     env_file: ./.env
     environment:
       - PORT=3333

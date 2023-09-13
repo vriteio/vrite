@@ -1,7 +1,7 @@
 name: Build & publish
 on:
-  push:
-    branches: ['feature/self-hosting']
+  release:
+    types: [published]
 
 env:
   REGISTRY: ghcr.io
