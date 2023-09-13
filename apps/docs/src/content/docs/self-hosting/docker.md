@@ -18,7 +18,7 @@ Then, open the `docker.env` file and fill in the environment variables. You can 
 When you’re done, you can start Vrite with:
 
 ```bash
-docker-compose up
+docker compose up
 
 ```
 
