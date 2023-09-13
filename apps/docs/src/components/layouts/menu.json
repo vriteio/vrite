@@ -43,6 +43,10 @@
       {
         "label": "Docker",
         "link": "/self-hosting/docker"
+      },
+      {
+        "label": "Configuration",
+        "link": "/self-hosting/configuration"
       }
     ]
   }
