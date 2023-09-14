@@ -1,9 +1,6 @@
 <p align="center">
     <a href="https://vrite.io">
-        <picture>
-            <source media="(prefers-color-scheme: dark)" srcset=".github/assets/dark/logo.svg">
-            <img src=".github/assets/light/logo.svg" width="196" alt="Logo"/>
-        </picture>
+        <img src=".github/assets/cover.png"/>
     </a>
     <h1 align="center">Open-source, collaborative developer content platform</h1>
 </p>
@@ -23,8 +20,6 @@
     <img src="https://img.shields.io/twitter/follow/vriteio.svg?label=Follow%20@vriteio" alt="Follow @vriteio" />
   </a>
 </p>
-
-<img src=".github/assets/cover.png"/>
 
 Vrite is an open-source, collaborative space to create, manage and deploy product documentation, technical blogs, and knowledge bases. It aims to provide a high-quality, integrated user and developer experience, with features like:
 
