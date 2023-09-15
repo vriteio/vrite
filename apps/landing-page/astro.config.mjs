@@ -1,6 +1,5 @@
 import { defineConfig } from "astro/config";
 import solidJs from "@astrojs/solid-js";
-import node from "@astrojs/node";
 import sitemap from "@astrojs/sitemap";
 import unocss from "unocss/astro";
 import { vritePlugin } from "@vrite/sdk/astro";
@@ -32,10 +31,6 @@ export default defineConfig({
     })
   ],
   site: "https://vrite.io",
-  output: "server",
-  adapter: node({
-    mode: "standalone"
-  }),
   server: {
     port: 3000,
     host: true
