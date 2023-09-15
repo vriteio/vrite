@@ -9,7 +9,7 @@ import { createServer, appRouter } from "@vrite/backend";
   server.get("/swagger.json", (req, res) => {
     res.send(
       generateOpenApiDocument(appRouter, {
-        baseUrl: `https://${server.config.PUBLIC_API_HOST}`,
+        baseUrl: server.config.PUBLIC_API_URL,
         title: "Vrite API",
         version: "0.2.0"
       })
