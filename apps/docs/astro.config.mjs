@@ -11,7 +11,7 @@ export default defineConfig({
     }
   },
   integrations: [
-    unocss(),
+    unocss({ injectReset: true }),
     solidJs(),
     robotsTxt({
       policy: [

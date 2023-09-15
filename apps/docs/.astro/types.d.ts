@@ -195,6 +195,13 @@ declare module 'astro:content' {
   collection: "docs";
   data: any
 } & { render(): Render[".md"] };
+"self-hosting/configuration.md": {
+	id: "self-hosting/configuration.md";
+  slug: "self-hosting/configuration";
+  body: string;
+  collection: "docs";
+  data: any
+} & { render(): Render[".md"] };
 "self-hosting/docker.md": {
 	id: "self-hosting/docker.md";
   slug: "self-hosting/docker";
