@@ -32,6 +32,7 @@
   },
   "devDependencies": {
     "@astrojs/node": "^5.3.6",
-    "astro-robots-txt": "^1.0.0"
+    "astro-robots-txt": "^1.0.0",
+    "sass": "^1.64.1"
   }
 }
