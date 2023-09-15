@@ -2,7 +2,6 @@ import { defineConfig } from "astro/config";
 import solidJs from "@astrojs/solid-js";
 import unocss from "unocss/astro";
 import robotsTxt from "astro-robots-txt";
-import node from "@astrojs/node";
 
 export default defineConfig({
   markdown: {
@@ -22,10 +21,6 @@ export default defineConfig({
     })
   ],
   site: "https://docs.vrite.io",
-  output: "server",
-  adapter: node({
-    mode: "standalone"
-  }),
   server: {
     port: 3000,
     host: true

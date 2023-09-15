@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "dev": "astro dev",
-    "start": "node ./dist/server/entry.mjs",
+    "start": "astro preview",
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro"
@@ -31,7 +31,6 @@
     "vite": "^4.4.9"
   },
   "devDependencies": {
-    "@astrojs/node": "^5.3.6",
     "astro-robots-txt": "^1.0.0",
     "sass": "^1.64.1"
   }
