@@ -143,7 +143,7 @@ h2 {
   }
 }
 .astro-code {
-  @apply !rounded-2xl !bg-gray-800 dark:border-2 dark:border-gray-700 !py-4 !px-6;
+  @apply !rounded-2xl !bg-gray-800 dark:border-2 dark:border-gray-700 !dark:bg-gray-900 !py-4 !px-6;
 }
 .astro-code::-webkit-scrollbar {
   @apply w-2 h-2 rounded-lg bg-transparent;

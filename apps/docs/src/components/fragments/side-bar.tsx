@@ -1,6 +1,6 @@
 import { mdiMenu, mdiClose, mdiGithub, mdiChevronDown, mdiCodeJson } from "@mdi/js";
 import clsx from "clsx";
-import { Component, For, JSX, createEffect, createSignal } from "solid-js";
+import { Component, For, JSX, createSignal } from "solid-js";
 import { menuOpened, setMenuOpened } from "#lib/state";
 import { Card, Button, IconButton } from "#components/primitives";
 import { discordIcon } from "#assets/icons";
@@ -41,15 +41,11 @@ const SideBarNestedMenu: Component<{
   currentPath: string;
   children: JSX.Element;
 }> = (props) => {
-  const [opened, setOpened] = createSignal(false);
-
-  createEffect(() => {
-    setOpened(
-      props.menu.filter((item) => {
-        return props.currentPath.includes(item.link);
-      }).length > 0
-    );
-  });
+  const [opened, setOpened] = createSignal(
+    props.menu.filter((item) => {
+      return props.currentPath.includes(item.link);
+    }).length > 0
+  );
 
   return (
     <div class="flex flex-col w-full">

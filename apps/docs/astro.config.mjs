@@ -20,6 +20,9 @@ export default defineConfig({
       ]
     })
   ],
+  build: {
+    redirects: false
+  },
   site: "https://docs.vrite.io",
   server: {
     port: 3000,
