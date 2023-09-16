@@ -37,7 +37,7 @@ kbd {
   }
 
   img {
-    @apply rounded-2xl;
+    @apply rounded-2xl dark:border-gray-700 dark:border-2;
   }
   table {
     overflow: visible;

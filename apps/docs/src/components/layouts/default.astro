@@ -21,17 +21,13 @@ type Props = {
   </head>
   <body class="overflow-x-hidden overscroll-none">
     <SVGDefs />
-    <main class="flex flex-col items-center justify-center h-screen bg-gray-50 dark:bg-gray-800">
-      <Header />
-      <div class="flex-1 flex justify-center items-center overflow-hidden flex-1 w-full">
+    <main class="flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-800">
+      <div class="flex-1 flex justify-center items-center flex-1 w-full max-w-screen-2xl relative">
         <SideBar menu={menu} currentPath={Astro.url.pathname} client:load />
         <div class="flex overflow-hidden w-full relative h-full">
-          <div
-            class="flex-1 flex overflow-y-auto overflow-x-hidden md:max-h-[calc(100vh-3.125rem)]"
-            id="container"
-          >
+          <div class="flex-1 flex overflow-y-auto overflow-x-hidden justify-center" id="container">
             <div
-              class="flex-1 prose max-w-screen-lg w-full text-lg px-4 pt-4 lg:px-36 pb-24 h-fit xl:w-[calc(100%-15rem)]"
+              class="flex-1 prose max-w-screen-md w-full text-lg px-4 pt-4 pb-24 h-fit xl:w-[calc(100%-15rem)]"
             >
               <slot />
             </div>

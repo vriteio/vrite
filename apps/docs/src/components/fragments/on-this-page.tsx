@@ -1,5 +1,6 @@
 import { Component, For, onMount, onCleanup, createSignal, createMemo } from "solid-js";
 import { mdiListBox } from "@mdi/js";
+import clsx from "clsx";
 import type { MarkdownHeading } from "astro";
 import { Button, IconButton } from "#components/primitives";
 
@@ -29,9 +30,8 @@ const OnThisPage: Component<OnThisPageProps> = (props) => {
         }
       }
     };
-    const container = document.getElementById("container");
+    const container = document.body;
     const observerOptions: IntersectionObserverInit = {
-      root: container,
       rootMargin: "-100px 0% -66%",
       threshold: 0
     };
@@ -66,38 +66,46 @@ const OnThisPage: Component<OnThisPageProps> = (props) => {
   });
 
   return (
-    <div class="w-56 flex-col justify-start top-0 pt-16 sticky hidden xl:flex gap-2">
-      <IconButton
-        text="soft"
-        class="font-bold justify-start m-0"
-        variant="text"
-        badge
-        hover={false}
-        path={mdiListBox}
-        label="On This Page"
-      />
-      <For each={headings()}>
-        {(heading) => {
-          return (
-            <Button
-              variant="text"
-              text={activeHeading() === heading.slug ? "base" : "soft"}
-              color={activeHeading() === heading.slug ? "primary" : "base"}
-              class="text-start m-0"
-              onClick={() => {
-                document.getElementById(heading.slug)?.scrollIntoView({
-                  block: "start",
-                  inline: "nearest"
-                });
-                setActiveHeading(heading.slug);
-              }}
-            >
-              {heading.text}
-            </Button>
-          );
-        }}
-      </For>
-    </div>
+    <>
+      <div
+        class={clsx(
+          "w-56 flex-col justify-start top-0 pt-16 fixed right-0 hidden xl:flex gap-2",
+          "mr-[max(0px,calc((100%-(1536px))/2))]"
+        )}
+      >
+        <IconButton
+          text="soft"
+          class="font-bold justify-start m-0"
+          variant="text"
+          badge
+          hover={false}
+          path={mdiListBox}
+          label="On This Page"
+        />
+        <For each={headings()}>
+          {(heading) => {
+            return (
+              <Button
+                variant="text"
+                text={activeHeading() === heading.slug ? "base" : "soft"}
+                color={activeHeading() === heading.slug ? "primary" : "base"}
+                class="text-start m-0"
+                onClick={() => {
+                  document.getElementById(heading.slug)?.scrollIntoView({
+                    block: "start",
+                    inline: "nearest"
+                  });
+                  setActiveHeading(heading.slug);
+                }}
+              >
+                {heading.text}
+              </Button>
+            );
+          }}
+        </For>
+      </div>
+      <div class="min-w-56 hidden xl:flex" />
+    </>
   );
 };
 
