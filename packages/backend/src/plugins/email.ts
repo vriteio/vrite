@@ -90,10 +90,13 @@ const createEmailSender = (fastify: FastifyInstance): EmailSender => {
       host: fastify.config.SMTP_HOST || "",
       port: fastify.config.SMTP_PORT || 465,
       secure: fastify.config.SMTP_SECURE || true,
-      auth: {
-        user: fastify.config.SMTP_USERNAME || "",
-        pass: fastify.config.SMTP_PASSWORD || ""
-      }
+      ...(fastify.config.SMTP_USERNAME &&
+        fastify.config.SMTP_PASSWORD && {
+          auth: {
+            user: fastify.config.SMTP_USERNAME || "",
+            pass: fastify.config.SMTP_PASSWORD || ""
+          }
+        })
     });
 
     return async (email) => {

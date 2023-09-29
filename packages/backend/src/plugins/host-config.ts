@@ -29,12 +29,7 @@ const hostConfigPlugin = publicPlugin(async (fastify) => {
         fastify.config.GITHUB_APP_CLIENT_SECRET
     ),
     sendgrid: Boolean(fastify.config.SENDGRID_API_KEY),
-    smtp: Boolean(
-      fastify.config.SMTP_HOST &&
-        fastify.config.SMTP_PORT &&
-        fastify.config.SMTP_USERNAME &&
-        fastify.config.SMTP_PASSWORD
-    ),
+    smtp: Boolean(fastify.config.SMTP_HOST && fastify.config.SMTP_PORT),
     search: Boolean(fastify.config.WEAVIATE_API_KEY && fastify.config.WEAVIATE_URL),
     aiSearch: Boolean(
       fastify.config.OPENAI_API_KEY &&

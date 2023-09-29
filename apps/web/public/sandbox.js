@@ -201,7 +201,7 @@
         if (TextDecoder == void 0 || TextEncoder == void 0 || !supportsStreamOption()) {
           TextDecoder = TextDecoderPolyfill;
         }
-        var k = function() {
+        var k2 = function() {
         };
         function XHRWrapper(xhr) {
           this.withCredentials = false;
@@ -209,14 +209,14 @@
           this.status = 0;
           this.statusText = "";
           this.responseText = "";
-          this.onprogress = k;
-          this.onload = k;
-          this.onerror = k;
-          this.onreadystatechange = k;
+          this.onprogress = k2;
+          this.onload = k2;
+          this.onerror = k2;
+          this.onreadystatechange = k2;
           this._contentType = "";
           this._xhr = xhr;
           this._sendTimeout = 0;
-          this._abort = k;
+          this._abort = k2;
         }
         XHRWrapper.prototype.open = function(method, url) {
           this._abort(true);
@@ -231,11 +231,11 @@
             }
             if (state === 1 || state === 2 || state === 3) {
               state = 4;
-              xhr.onload = k;
-              xhr.onerror = k;
-              xhr.onabort = k;
-              xhr.onprogress = k;
-              xhr.onreadystatechange = k;
+              xhr.onload = k2;
+              xhr.onerror = k2;
+              xhr.onabort = k2;
+              xhr.onprogress = k2;
+              xhr.onreadystatechange = k2;
               xhr.abort();
               if (timeout !== 0) {
                 clearTimeout(timeout);
@@ -296,7 +296,7 @@
           var onFinish = function(type, event) {
             if (event == null || event.preventDefault == null) {
               event = {
-                preventDefault: k
+                preventDefault: k2
               };
             }
             onProgress();
@@ -957,7 +957,7 @@
     "../../node_modules/.pnpm/unfetch@4.2.0/node_modules/unfetch/dist/unfetch.js"(exports, module) {
       module.exports = function(e, n) {
         return n = n || {}, new Promise(function(t, r) {
-          var s = new XMLHttpRequest(), o = [], u = [], i2 = {}, a = function() {
+          var s = new XMLHttpRequest(), o = [], u2 = [], i2 = {}, a = function() {
             return { ok: 2 == (s.status / 100 | 0), statusText: s.statusText, status: s.status, url: s.responseURL, text: function() {
               return Promise.resolve(s.responseText);
             }, json: function() {
@@ -967,7 +967,7 @@
             }, clone: a, headers: { keys: function() {
               return o;
             }, entries: function() {
-              return u;
+              return u2;
             }, get: function(e2) {
               return i2[e2.toLowerCase()];
             }, has: function(e2) {
@@ -976,7 +976,7 @@
           };
           for (var l2 in s.open(n.method || "get", e, true), s.onload = function() {
             s.getAllResponseHeaders().replace(/^(.*?):[^\S\n]*([\s\S]*?)$/gm, function(e2, n2, t2) {
-              o.push(n2 = n2.toLowerCase()), u.push([n2, t2]), i2[n2] = i2[n2] ? i2[n2] + "," + t2 : t2;
+              o.push(n2 = n2.toLowerCase()), u2.push([n2, t2]), i2[n2] = i2[n2] ? i2[n2] + "," + t2 : t2;
             }), t(a());
           }, s.onerror = r, s.withCredentials = "include" == n.credentials, n.headers)
             s.setRequestHeader(l2, n.headers[l2]);
@@ -996,29 +996,29 @@
   // ../../packages/sdk/javascript/dist/api.mjs
   var api_exports = {};
   __export(api_exports, {
-    createClient: () => A
+    createClient: () => B
   });
-  var import_eventsource, i, w, d, P, U, g, f, $, L, S, D, m, O, R, C, E, x, y, I, v, h, j, l, q, A;
+  var import_eventsource, i, w, $, U, f, g, L, d, S, D, O, E, R, C, x, m, I, h, j, v, k, q, l, A, u, z, B;
   var init_api = __esm({
     "../../packages/sdk/javascript/dist/api.mjs"() {
       import_eventsource = __toESM(require_browser(), 1);
       i = "/content-groups";
       w = (t) => ({ get: (e) => t("GET", `${i}`, { params: e }), list: (e) => t("GET", `${i}/list`, { params: e }), create: (e) => t("POST", `${i}`, { body: e }), update: (e) => t("PUT", `${i}`, { body: e }), delete: (e) => t("DELETE", `${i}`, { params: e }) });
-      d = "/content-pieces";
-      P = (t) => ({ get: (e) => t("GET", `${d}`, { params: e }), create: (e) => t("POST", `${d}`, { body: e }), update: (e) => t("PUT", `${d}`, { body: e }), delete: (e) => t("DELETE", `${d}`, { params: e }), list: (e) => t("GET", `${d}/list`, { params: e }) });
-      U = (t) => {
+      $ = "/content-pieces";
+      U = (t) => ({ get: (e) => t("GET", `${$}`, { params: e }), create: (e) => t("POST", `${$}`, { body: e }), update: (e) => t("PUT", `${$}`, { body: e }), delete: (e) => t("DELETE", `${$}`, { params: e }), list: (e) => t("GET", `${$}/list`, { params: e }) });
+      f = (t) => {
         let e = t.baseURL || "https://api.vrite.io", n = t.extensionId || "", c = t.headers || {}, { token: s } = t;
         return { sendRequest: async (a, p, r) => {
           try {
-            const { default: o } = await Promise.resolve().then(() => __toESM(require_browser2(), 1)), u = await o(`${e}${p}/?${encodeURI(Object.entries(r?.params || {}).filter(([, b]) => b).map(([b, k]) => `${b}=${k}`).join("&"))}`, { headers: { Authorization: `Bearer ${s}`, Accept: "application/json", ...r?.body ? { "Content-Type": "application/json" } : {}, ...n ? { "X-Vrite-Extension-ID": n } : {}, ...c }, body: r?.body ? JSON.stringify(r.body) : null, method: a });
+            const { default: o } = await Promise.resolve().then(() => __toESM(require_browser2(), 1)), y = await o(`${e}${p}/?${encodeURI(Object.entries(r?.params || {}).filter(([, b]) => b).map(([b, G]) => `${b}=${G}`).join("&"))}`, { headers: { Authorization: `Bearer ${s}`, Accept: "application/json", ...r?.body ? { "Content-Type": "application/json" } : {}, ...n ? { "X-Vrite-Extension-ID": n } : {}, ...c }, body: r?.body ? JSON.stringify(r.body) : null, method: a });
             let T = null;
             try {
-              if (T = await u.json(), !T)
+              if (T = await y.json(), !T)
                 return;
             } catch {
               return;
             }
-            if (!u.ok)
+            if (!y.ok)
               throw T;
             return T;
           } catch (o) {
@@ -1029,27 +1029,29 @@
         }, getConfig: () => ({ baseURL: e, token: s, extensionId: n, headers: c }) };
       };
       g = "/user-settings";
-      f = (t) => ({ get: () => t("GET", `${g}`), update: (e) => t("PUT", `${g}`, { body: e }) });
-      $ = "/tags";
-      L = (t) => ({ get: (e) => t("GET", `${$}`, { params: e }), update: (e) => t("PUT", `${$}`, { body: e }), create: (e) => t("PUT", `${$}`, { body: e }), delete: (e) => t("DELETE", `${$}`, { params: e }), list: (e) => t("GET", `${$}/list`, { params: e }) });
-      S = "/profile";
-      D = (t) => ({ get: () => t("GET", `${S}`) });
-      m = "/webhooks";
-      O = (t) => ({ get: (e) => t("GET", `${m}`, { params: e }), create: (e) => t("POST", `${m}`, { body: e }), update: (e) => t("PUT", `${m}`, { body: e }), delete: (e) => t("DELETE", `${m}`, { params: e }), list: (e) => t("GET", `${m}/list`, { params: e }) });
-      R = "/workspace";
-      C = (t) => ({ get: () => t("GET", `${R}`) });
-      E = "/roles";
-      x = (t) => ({ get: (e) => t("GET", `${E}`, { params: e }), create: (e) => t("POST", `${E}`, { body: e }), update: (e) => t("PUT", `${E}`, { body: e }), delete: (e) => t("DELETE", `${E}`, { params: e }), list: (e) => t("GET", `${E}/list`, { params: e }) });
-      y = "/workspace-settings";
-      I = (t) => ({ get: () => t("GET", `${y}`), update: (e) => t("PUT", `${y}`, { body: e }) });
+      L = (t) => ({ get: () => t("GET", `${g}`), update: (e) => t("PUT", `${g}`, { body: e }) });
+      d = "/tags";
+      S = (t) => ({ get: (e) => t("GET", `${d}`, { params: e }), update: (e) => t("PUT", `${d}`, { body: e }), create: (e) => t("PUT", `${d}`, { body: e }), delete: (e) => t("DELETE", `${d}`, { params: e }), list: (e) => t("GET", `${d}/list`, { params: e }) });
+      D = "/profile";
+      O = (t) => ({ get: () => t("GET", `${D}`) });
+      E = "/webhooks";
+      R = (t) => ({ get: (e) => t("GET", `${E}`, { params: e }), create: (e) => t("POST", `${E}`, { body: e }), update: (e) => t("PUT", `${E}`, { body: e }), delete: (e) => t("DELETE", `${E}`, { params: e }), list: (e) => t("GET", `${E}/list`, { params: e }) });
+      C = "/workspace";
+      x = (t) => ({ get: () => t("GET", `${C}`) });
+      m = "/roles";
+      I = (t) => ({ get: (e) => t("GET", `${m}`, { params: e }), create: (e) => t("POST", `${m}`, { body: e }), update: (e) => t("PUT", `${m}`, { body: e }), delete: (e) => t("DELETE", `${m}`, { params: e }), list: (e) => t("GET", `${m}/list`, { params: e }) });
+      h = "/workspace-settings";
+      j = (t) => ({ get: () => t("GET", `${h}`), update: (e) => t("PUT", `${h}`, { body: e }) });
       v = (t) => ({ listMembers: (e) => t("GET", "/workspace-memberships/list-members", { params: e }), listWorkspaces: (e) => t("GET", "/workspace-memberships/list-workspaces", { params: e }), create: (e) => t("POST", "/workspace-memberships", { body: e }), update: (e) => t("PUT", "/workspace-memberships", { body: e }), delete: (e) => t("DELETE", "/workspace-memberships", { params: e }) });
-      h = "/extension";
-      j = (t) => ({ get: () => t("GET", `${h}`), updateContentPieceData: (e) => t("POST", `${h}/content-piece-data`, { body: e }) });
+      k = "/extension";
+      q = (t) => ({ get: () => t("GET", `${k}`), updateContentPieceData: (e) => t("POST", `${k}/content-piece-data`, { body: e }) });
       l = "/variants";
-      q = (t) => ({ create: (e) => t("POST", `${l}`, { body: e }), update: (e) => t("PUT", `${l}`, { body: e }), delete: (e) => t("DELETE", `${l}`, { params: e }), list: () => t("GET", `${l}/list`) });
-      A = (t) => {
-        const { sendRequest: e, reconfigure: n, getConfig: c } = U(t);
-        return { contentGroups: w(e), contentPieces: P(e), tags: L(e), profile: D(e), userSettings: f(e), webhooks: O(e), workspace: C(e), roles: x(e), workspaceSettings: I(e), workspaceMemberships: v(e), extension: j(e), variants: q(e), search(s) {
+      A = (t) => ({ create: (e) => t("POST", `${l}`, { body: e }), update: (e) => t("PUT", `${l}`, { body: e }), delete: (e) => t("DELETE", `${l}`, { params: e }), list: () => t("GET", `${l}/list`) });
+      u = "/transformers";
+      z = (t) => ({ create: (e) => t("POST", `${u}`, { body: e }), delete: (e) => t("DELETE", `${u}`, { params: e }), list: () => t("GET", `${u}/list`) });
+      B = (t) => {
+        const { sendRequest: e, reconfigure: n, getConfig: c } = f(t);
+        return { contentGroups: w(e), contentPieces: U(e), tags: S(e), profile: O(e), userSettings: L(e), webhooks: R(e), workspace: x(e), roles: I(e), workspaceSettings: j(e), workspaceMemberships: v(e), extension: q(e), variants: A(e), transformers: z(e), search(s) {
           return e("GET", "/search", { params: s });
         }, async ask(s) {
           let a = "";
