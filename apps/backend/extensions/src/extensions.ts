@@ -55,6 +55,11 @@ const fastifyTRPCOpenApiPlugin = <TRouter extends AnyRouter>(
   done();
 };
 const extensionsService = publicPlugin(async (fastify) => {
+  await fastify.register(corsPlugin, {
+    credentials: true,
+    methods: ["GET", "DELETE", "PUT", "POST"],
+    origin: true
+  });
   await fastify.register(fastifyTRPCOpenApiPlugin, {
     basePath: "/",
     router: extensionsRouter,
