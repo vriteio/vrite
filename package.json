@@ -32,5 +32,6 @@
   },
   "dependencies": {
     "dotenv-cli": "^7.2.1"
-  }
+  },
+  "packageManager": "pnpm@8.8.0"
 }
