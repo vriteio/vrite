@@ -111,7 +111,7 @@ const gfmOutputTransformer = createOutputTransformer<string>((contentNode) => {
   };
   const transformContentNode = (
     nodeWalker: JSONContentNodeWalker<
-      JSONContentNode["listItem" | "taskItem" | "blockquote" | "doc" | "wrapper"]
+      JSONContentNode["listItem" | "taskItem" | "blockquote" | "doc" | "element"]
     >
   ): string => {
     return nodeWalker.children
@@ -151,9 +151,9 @@ const gfmOutputTransformer = createOutputTransformer<string>((contentNode) => {
             return `\n\`\`\`${child.node.attrs?.lang || ""}\n${transformTextNode(
               child as JSONContentNodeWalker<JSONContentNode["codeBlock"]>
             )}\n\`\`\`\n`;
-          case "wrapper":
+          case "element":
             return `\n${transformContentNode(
-              child as JSONContentNodeWalker<JSONContentNode["wrapper"]>
+              child as JSONContentNodeWalker<JSONContentNode["element"]>
             )}\n`;
           case "blockquote":
             return `\n${transformContentNode(
@@ -325,10 +325,10 @@ const htmlOutputTransformer = createOutputTransformer<string>((contentNode) => {
         })} />${(nodeWalker as JSONContentNodeWalker<JSONContentNode["taskItem"]>).children
           .map(transformContentNode)
           .join("")}</label></li>`;
-      case "wrapper":
+      case "element":
         return `<div ${stringifyAttributes({
-          "data-key": nodeWalker.node.attrs?.key
-        })}>${(nodeWalker as JSONContentNodeWalker<JSONContentNode["wrapper"]>).children
+          "data-type": nodeWalker.node.attrs?.type
+        })}>${(nodeWalker as JSONContentNodeWalker<JSONContentNode["element"]>).children
           .map(transformContentNode)
           .join("")}</div>`;
       case "blockquote":

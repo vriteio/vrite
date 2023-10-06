@@ -61,7 +61,7 @@ const refreshTokenLink = (closeConnection: () => void): TRPCLink<App.Router> => 
                 return;
               }
 
-              if (error.data?.code === "UNAUTHORIZED") {
+              if (error.data?.code === "UNAUTHORIZED" && window.location.pathname !== "/auth") {
                 attempt();
               } else {
                 observer.error(error);

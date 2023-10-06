@@ -6,14 +6,14 @@ import clsx from "clsx";
 import { mdiAlertCircle, mdiImage } from "@mdi/js";
 import { debounce } from "@solid-primitives/scheduled";
 import { createRef, validateURL } from "#lib/utils";
-import { Card, Icon, Loader } from "#components/primitives";
+import { Icon, Loader } from "#components/primitives";
 
 const ImageView: Component = () => {
   const { state } = useSolidNodeView<ImageAttributes>();
   const [error, setError] = createSignal(false);
   const [loading, setLoading] = createSignal(false);
   const [objectURL, setObjectURL] = createSignal("");
-  const [currentSrc, setCurrentSrc] = createRef("");
+  const [currentSrc, setCurrentSrc] = createSignal("");
   const [imageContainerRef, setImageContainerRef] = createRef<HTMLElement | null>(null);
   const updateWidth = debounce((width: string) => state().updateAttributes({ width }), 250);
   const updateAspectRatio = debounce(
@@ -38,7 +38,7 @@ const ImageView: Component = () => {
     }
   });
   const removeImage = (): void => {
-    if (objectURL()) {
+    if (currentSrc()) {
       URL.revokeObjectURL(objectURL());
       setCurrentSrc("");
       setObjectURL("");
@@ -56,42 +56,21 @@ const ImageView: Component = () => {
 
     removeImage();
 
-    try {
-      if (!src) {
-        setError(false);
-        setLoading(false);
-
-        return;
-      }
-
-      if (!validateURL(src)) {
-        setError(true);
-        setLoading(false);
-
-        return;
-      }
-
-      const response = await fetch(
-        src.startsWith(window.env.PUBLIC_ASSETS_URL) ? src : `/proxy?url=${encodeURIComponent(src)}`
-      );
-
-      if (!response.ok) {
-        setError(true);
-        setLoading(false);
-
-        return;
-      }
-
-      const blob = await response.blob();
-      const objectURL = URL.createObjectURL(blob);
-
-      setCurrentSrc(src);
-      setObjectURL(objectURL);
-    } catch (error) {
-      setError(true);
-    } finally {
+    if (!src) {
+      setError(false);
       setLoading(false);
+
+      return;
     }
+
+    if (!validateURL(src)) {
+      setError(true);
+      setLoading(false);
+
+      return;
+    }
+
+    setCurrentSrc(src);
   }, 350);
   const handleNewImageContainer = (element: HTMLElement): void => {
     const imageContainer = imageContainerRef();
@@ -133,7 +112,7 @@ const ImageView: Component = () => {
   );
 
   return (
-    <NodeViewWrapper class={clsx(!options().cover && "my-5")}>
+    <NodeViewWrapper>
       <div
         class={clsx(
           "relative rounded-2xl",
@@ -143,84 +122,88 @@ const ImageView: Component = () => {
         <div
           class={clsx(
             "border-gray-200 dark:border-gray-700",
-            options().cover ? "border-b-2" : "border-2 rounded-t-2xl"
+            options().cover ? "border-b-2" : "border-2 rounded-2xl"
           )}
         >
-          <Show
-            when={objectURL()}
-            fallback={
-              <div
-                class={clsx(
-                  "w-full bg-gradient-to-tr flex justify-center items-center relative",
-                  options().cover ? "min-h-48" : "rounded-t-2xl"
-                )}
-                style={{
-                  "padding-top": getPaddingTop()
-                }}
-              >
-                <div class="absolute flex flex-col items-center justify-center font-bold text-white transform -translate-y-1/2 top-1/2">
-                  <Show when={!loading()} fallback={<Loader class="w-8 h-8" />}>
-                    <Show
-                      when={!error()}
-                      fallback={
-                        <>
-                          <Icon path={mdiAlertCircle} class="w-16 h-16" />
-                          <span class="absolute top-full">Error</span>
-                        </>
-                      }
-                    >
-                      <Icon path={mdiImage} class="w-16 h-16" />
-                    </Show>
-                  </Show>
-                </div>
-              </div>
-            }
+          <div
+            class={clsx(
+              "w-full border-gray-200 dark:border-gray-700 flex justify-center items-center overflow-hidden bg-gray-100 dark:bg-gray-800 relative",
+              !error() && !loading() && currentSrc() ? "" : "opacity-0 !absolute",
+              !options().cover && "rounded-2xl"
+            )}
           >
             <div
               class={clsx(
-                "w-full border-gray-200 dark:border-gray-700 flex justify-center items-center overflow-hidden bg-gray-100 dark:bg-gray-800 relative",
-                !options().cover && "rounded-t-2xl"
+                "overflow-hidden min-w-40 !h-full",
+                state().editor.isEditable && "resize"
               )}
+              ref={handleNewImageContainer}
+              style={{ width: attrs().width }}
             >
-              <div
-                class={clsx(
-                  "overflow-hidden min-w-40 !h-full",
-                  state().editor.isEditable && "resize"
-                )}
-                ref={handleNewImageContainer}
-                style={{ width: attrs().width }}
-              >
-                <img
-                  alt={attrs().alt}
-                  src={objectURL()}
-                  data-src={currentSrc()}
-                  class={clsx("object-contain w-full m-0 transition-opacity duration-300")}
-                  onLoad={(event) => {
-                    const image = event.currentTarget;
-                    const w = image.naturalWidth;
-                    const h = image.naturalHeight;
-                    const aspectRatio = w / h;
+              <img
+                alt={attrs().alt}
+                src={currentSrc()}
+                class={clsx("object-contain w-full m-0 transition-opacity duration-300")}
+                onLoad={(event) => {
+                  setError(false);
+                  setLoading(false);
 
-                    updateAspectRatio.clear();
-                    updateAspectRatio(`${aspectRatio}`);
-                  }}
-                  onError={() => {
-                    removeImage();
-                    setError(true);
-                  }}
-                />
+                  const image = event.currentTarget;
+                  const w = image.naturalWidth;
+                  const h = image.naturalHeight;
+                  const aspectRatio = w / h;
+
+                  updateAspectRatio.clear();
+                  updateAspectRatio(`${aspectRatio}`);
+                }}
+                onError={() => {
+                  if (!currentSrc()) return;
+
+                  setLoading(false);
+                  removeImage();
+                  setError(true);
+                }}
+              />
+            </div>
+          </div>
+          <Show when={loading() || !currentSrc()}>
+            <div
+              class={clsx(
+                "w-full bg-gradient-to-tr flex justify-center items-center relative",
+                options().cover ? "min-h-48" : "rounded-2xl"
+              )}
+              style={{
+                "padding-top": getPaddingTop()
+              }}
+            >
+              <div class="absolute flex flex-col items-center justify-center font-bold text-white transform -translate-y-1/2 top-1/2">
+                <Show when={!loading()} fallback={<Loader class="w-8 h-8" />}>
+                  <Show
+                    when={!error()}
+                    fallback={
+                      <>
+                        <Icon path={mdiAlertCircle} class="w-16 h-16" />
+                        <span class="absolute top-full">Error</span>
+                      </>
+                    }
+                  >
+                    <Icon path={mdiImage} class="w-16 h-16" />
+                  </Show>
+                </Show>
               </div>
             </div>
           </Show>
         </div>
-        <Card
+        <div
           class={clsx(
-            "m-0 border-0 border-b-2 rounded-t-none",
-            options().cover ? "rounded-none" : "border-x-2"
+            "w-full justify-center items-center z-1 pointer-events-none",
+            selected() ? "grid" : "hidden",
+            options().cover ? "!flex relative" : "absolute -bottom-14"
           )}
         >
           <ImageMenu state={state()} />
-        </Card>
+        </div>
+        <div data-type="draggable-item" />
       </div>
     </NodeViewWrapper>
   );

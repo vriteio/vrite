@@ -27,6 +27,7 @@ interface InputProps extends JSX.InputHTMLAttributes<HTMLInputElement> {
   suggestions?: string[];
   textarea?: boolean;
   autoResize?: boolean;
+  suggestionsBoxClass?: string;
   ref?: Ref<HTMLInputElement>[1];
   color?: keyof typeof inputColors;
   adornment?(): JSX.Element;
@@ -205,7 +206,8 @@ const Input: Component<InputProps> = (props) => {
       <Show when={suggestions().length > 0 && focused()}>
         <Card
           class={clsx(
-            `:base-2: absolute z-50 flex flex-col p-1 overflow-hidden transition-all duration-300 transform shadow-2xl w-full`
+            `:base-2: absolute z-50 flex flex-col p-1 overflow-hidden transition-all duration-300 transform shadow-2xl w-full`,
+            props.suggestionsBoxClass
           )}
           ref={setBoxRef}
         >

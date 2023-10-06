@@ -18,7 +18,7 @@ import { CharacterCount } from "@tiptap/extension-character-count";
 import * as Y from "yjs";
 import { useLocation, useNavigate } from "@solidjs/router";
 import { CellSelection } from "@tiptap/pm/tables";
-import { AllSelection } from "@tiptap/pm/state";
+import { AllSelection, NodeSelection } from "@tiptap/pm/state";
 import clsx from "clsx";
 import { Instance } from "tippy.js";
 import { scrollIntoView } from "seamless-scroll-polyfill";
@@ -37,6 +37,7 @@ import {
   createBlockMenuOptions,
   BlockPaste,
   TableMenuPlugin,
+  ElementMenuPlugin,
   CommentMenuPlugin,
   AutoDir
 } from "#lib/editor";
@@ -143,6 +144,7 @@ const Editor: Component<EditorProps> = (props) => {
       }),
       hostConfig.extensions && BlockActionMenuPlugin,
       TableMenuPlugin,
+      ElementMenuPlugin,
       CommentMenuPlugin,
       Collab.configure({
         document: ydoc
@@ -172,9 +174,10 @@ const Editor: Component<EditorProps> = (props) => {
     const { empty } = selection;
     const isAllSelection = selection instanceof AllSelection;
     const isCellSelection = selection instanceof CellSelection;
+    const isNodeSelection = selection instanceof NodeSelection;
     const isEmptyTextBlock = !doc.textBetween(from, to).length && isTextSelection(state.selection);
 
-    if (!view.hasFocus() || isAllSelection) {
+    if ((!view.hasFocus() && !isNodeSelection) || isAllSelection) {
       setBubbleMenuOpened(false);
 
       return false;
@@ -187,7 +190,8 @@ const Editor: Component<EditorProps> = (props) => {
     }
 
     if (
-      ["image", "codeBlock", "embed", "horizontalRule"].some((name) => {
+      isNodeSelection &&
+      ["horizontalRule", "image", "codeBlock", "embed", "element"].some((name) => {
         return editor.isActive(name);
       })
     ) {
@@ -211,7 +215,7 @@ const Editor: Component<EditorProps> = (props) => {
     const { selection } = state;
     const { $anchor, empty } = selection;
     const isRootDepth =
-      $anchor.depth === 1 || ($anchor.depth === 2 && $anchor.node(1).type.name === "wrapper");
+      $anchor.depth === 1 || ($anchor.depth === 2 && $anchor.node(1).type.name === "element");
     const isEmptyTextBlock =
       $anchor.parent.isTextblock &&
       !$anchor.parent.type.spec.code &&
@@ -274,6 +278,8 @@ const Editor: Component<EditorProps> = (props) => {
               zIndex: 30,
               hideOnClick: false,
               interactive: true,
+              placement: "bottom",
+              popperOptions: { modifiers: [{ name: "flip", enabled: false }] },
               animation: breakpoints.md() ? "scale-subtle" : "shift-away-subtle",
               onHide() {
                 if (containerRef()?.contains(el)) return false;

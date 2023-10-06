@@ -46,7 +46,10 @@ const assetsService = publicPlugin(async (fastify) => {
       await reply.header("Content-Type", sourceContentType).send(sourceAsset);
     };
 
-    reply.header("Access-Control-Allow-Origin", fastify.config.PUBLIC_APP_URL);
+    reply.header(
+      "Access-Control-Allow-Origin",
+      fastify.config.NODE_ENV === "development" ? "*" : fastify.config.PUBLIC_APP_URL
+    );
     reply.header("Access-Control-Allow-Methods", "GET");
 
     if (!sourceAsset) return reply.status(404).send();

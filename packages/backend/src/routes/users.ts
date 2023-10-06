@@ -1,33 +1,15 @@
 import { z } from "zod";
 import { ObjectId } from "mongodb";
 import { nanoid } from "nanoid";
-import { hashValue } from "#lib/hash";
-import { isAuthenticated } from "#lib/middleware";
-import { UnderscoreID } from "#lib/mongo";
-import { procedure, router } from "#lib/trpc";
-import {
-  FullUser,
-  Profile,
-  VerificationDetails,
-  getUsersCollection,
-  profile,
-  verificationDetails
-} from "#database/users";
-import * as errors from "#lib/errors";
-import { createEventPublisher, createEventSubscription } from "#lib/pub-sub";
-import { stringToRegex } from "#lib/utils";
+import { procedure, router, errors, UnderscoreID, isAuthenticated, hashValue } from "#lib";
+import { FullUser, getUsersCollection, profile, verificationDetails } from "#database/users";
+import { publishUserEvent, subscribeToUserEvents } from "#events";
 
-type UserEvent = {
-  action: "update";
-  data: Partial<Profile> & { id: string } & Partial<VerificationDetails>;
-};
-
-const publishEvent = createEventPublisher<UserEvent>((userId: string) => `user:${userId}`);
 const authenticatedProcedure = procedure.use(isAuthenticated);
 const basePath = "/profile";
 const usersRouter = router({
   changes: authenticatedProcedure.input(z.void()).subscription(async ({ ctx }) => {
-    return createEventSubscription<UserEvent>(ctx, `user:${ctx.auth.userId}`);
+    return subscribeToUserEvents(ctx, `${ctx.auth.userId}`);
   }),
   get: authenticatedProcedure
     .meta({
@@ -118,7 +100,7 @@ const usersRouter = router({
           $set: update
         }
       );
-      publishEvent(ctx, `${ctx.auth.userId}`, {
+      publishUserEvent(ctx, `${ctx.auth.userId}`, {
         action: "update",
         data: {
           id: `${user._id}`,

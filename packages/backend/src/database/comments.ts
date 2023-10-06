@@ -1,7 +1,7 @@
-import { Collection, Db, ObjectId } from "mongodb";
-import { UnderscoreID, zodId } from "#lib/mongo";
 import { Profile, profile } from "./users";
+import { Collection, Db, ObjectId } from "mongodb";
 import { z } from "zod";
+import { UnderscoreID, zodId } from "#lib/mongo";
 
 const comment = z.object({
   id: zodId(),

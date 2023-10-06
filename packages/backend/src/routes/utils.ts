@@ -1,14 +1,13 @@
 import { z } from "zod";
 import ogs from "open-graph-scraper";
-import { PutObjectCommand } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { nanoid } from "nanoid";
-import mime from "mime-types";
-import { extractPreviewDataFromOpenGraph } from "#lib/utils";
-import { isAuthenticated } from "#lib/middleware";
-import { procedure, router } from "#lib/trpc";
-import * as errors from "#lib/errors";
-import { hostConfig, HostConfig } from "#plugins/host-config";
+import {
+  procedure,
+  router,
+  errors,
+  extractPreviewDataFromOpenGraph,
+  hostConfig,
+  HostConfig
+} from "#lib";
 
 const previewData = z
   .object({
@@ -22,7 +21,6 @@ const previewData = z
 
 interface PreviewData extends z.infer<typeof previewData> {}
 
-const authenticatedProcedure = procedure.use(isAuthenticated);
 const utilsRouter = router({
   hostConfig: procedure.output(hostConfig).query(({ ctx }) => {
     return ctx.fastify.hostConfig;

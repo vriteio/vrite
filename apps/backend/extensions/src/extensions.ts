@@ -4,10 +4,10 @@ import {
   createOpenApiNodeHttpHandler,
   CreateOpenApiNodeHttpHandlerOptions
 } from "trpc-openapi/dist/adapters/node-http/core";
-import corsPlugin from "@fastify/cors";
 import { OpenApiRouter } from "trpc-openapi";
 import { AnyRouter } from "@trpc/server";
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import corsPlugin from "@fastify/cors";
 
 type CreateOpenApiFastifyPluginOptions<TRouter extends OpenApiRouter> =
   CreateOpenApiNodeHttpHandlerOptions<TRouter, any, any> & {

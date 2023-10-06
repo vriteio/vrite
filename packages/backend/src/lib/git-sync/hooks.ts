@@ -1,7 +1,10 @@
 /* eslint-disable sonarjs/no-identical-functions */
-import { AuthenticatedContext } from "./middleware";
-import { ObjectId, UnderscoreID } from "./mongo";
-import { jsonToBuffer } from "./processing";
+import { createGenericOutputContentProcessor } from "./process-content";
+import { OutputContentProcessor } from "./types";
+import { AuthenticatedContext } from "../middleware";
+import { UnderscoreID } from "../mongo";
+import { jsonToBuffer } from "../processing";
+import { ObjectId } from "mongodb";
 import crypto from "node:crypto";
 import {
   FullContentGroup,
@@ -14,11 +17,7 @@ import {
   getContentsCollection,
   getGitDataCollection
 } from "#database";
-import {
-  OutputContentProcessor,
-  createOutputContentProcessor as createOutputContentProcessorGitHub
-} from "#routes/git/github/process-content";
-import { publishGitDataEvent } from "#routes/git/events";
+import { publishGitDataEvent } from "#events";
 
 type GitSyncHookEvent =
   | "contentPieceUpdated"
@@ -74,23 +73,6 @@ type GitSyncHookHandler<E extends GitSyncHookEvent> = (
   data: GitSyncHookEventData[E]
 ) => Promise<GitSyncHookData>;
 
-const createGenericOutputContentProcessor = async (
-  ctx: AuthenticatedContext,
-  gitData: UnderscoreID<FullGitData<ObjectId>>
-): Promise<OutputContentProcessor> => {
-  if (gitData.provider === "github") {
-    return await createOutputContentProcessorGitHub(ctx, gitData);
-  }
-
-  return {
-    process() {
-      return Promise.resolve("");
-    },
-    processBatch(input) {
-      return Promise.resolve(input.map(() => ""));
-    }
-  };
-};
 const handleContentGroupMoved: GitSyncHookHandler<"contentGroupMoved"> = async (
   { ctx, directories, records, outputContentProcessor },
   data

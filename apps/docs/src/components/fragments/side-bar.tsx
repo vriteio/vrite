@@ -1,9 +1,15 @@
-import { mdiMenu, mdiClose, mdiGithub, mdiChevronDown, mdiCodeJson } from "@mdi/js";
+import {
+  mdiMenu,
+  mdiClose,
+  mdiChevronDown,
+  mdiConsoleLine,
+  mdiTextBoxMultiple,
+  mdiBookOpenBlankVariant
+} from "@mdi/js";
 import clsx from "clsx";
 import { Component, For, JSX, createSignal } from "solid-js";
 import { menuOpened, setMenuOpened } from "#lib/state";
 import { Card, Button, IconButton } from "#components/primitives";
-import { discordIcon } from "#assets/icons";
 import { logoIcon } from "#assets/icons/logo";
 
 interface SideBarProps {
@@ -16,35 +22,33 @@ interface SideBarProps {
 
 const externalLinks = [
   {
-    label: "GitHub",
-    icon: mdiGithub,
-    href: "https://github.com/vriteio/vrite"
+    label: "Documentation",
+    icon: mdiBookOpenBlankVariant,
+    href: "https://github.com/vriteio/vrite",
+    active: true
   },
   {
-    label: "Discord",
-    icon: discordIcon,
+    label: "API reference",
+    icon: mdiConsoleLine,
     href: "https://discord.gg/yYqDWyKnqE"
   },
   {
-    label: "Vrite Cloud",
-    icon: logoIcon,
+    label: "Recipes",
+    icon: mdiTextBoxMultiple,
     href: "https://app.vrite.io"
-  },
-  {
-    label: "API Reference",
-    icon: mdiCodeJson,
-    href: "https://generator.swagger.io/?url=https://api.vrite.io/swagger.json#"
   }
 ];
 const SideBarNestedMenu: Component<{
   menu: Array<{ label: string; link: string; menu?: Array<{ label: string; link: string }> }>;
   currentPath: string;
   children: JSX.Element;
+  openedByDefault?: boolean;
 }> = (props) => {
   const [opened, setOpened] = createSignal(
-    props.menu.filter((item) => {
-      return props.currentPath.includes(item.link);
-    }).length > 0
+    props.openedByDefault ||
+      props.menu.filter((item) => {
+        return props.currentPath.includes(item.link);
+      }).length > 0
   );
 
   return (
@@ -147,8 +151,8 @@ const SideBar: Component<SideBarProps> = (props) => {
                       path={link.icon}
                       class="m-0 group-hover:bg-gray-300 dark:group-hover:bg-gray-700 h-8 w-8"
                       iconProps={{ class: "h-5 w-5" }}
-                      color="contrast"
-                      text="soft"
+                      color={link.active ? "primary" : "contrast"}
+                      text={link.active ? "primary" : "soft"}
                     />
                     <span class=" ml-2 text-gray-500 dark:text-gray-400">{link.label}</span>
                   </a>
@@ -159,7 +163,11 @@ const SideBar: Component<SideBarProps> = (props) => {
           <For each={props.menu}>
             {(menuItem) => {
               return (
-                <SideBarNestedMenu currentPath={props.currentPath} menu={menuItem.menu}>
+                <SideBarNestedMenu
+                  currentPath={props.currentPath}
+                  menu={menuItem.menu}
+                  openedByDefault
+                >
                   <Button
                     variant="text"
                     class="justify-start w-full font-bold m-0"

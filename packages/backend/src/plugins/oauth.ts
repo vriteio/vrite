@@ -2,12 +2,8 @@ import axios from "axios";
 import fastifyOAuth2, { FastifyOAuth2Options, OAuth2Namespace } from "@fastify/oauth2";
 import { ObjectId } from "mongodb";
 import { FastifyInstance } from "fastify";
-import { publicPlugin } from "#lib/plugin";
-import { generateSalt } from "#lib/hash";
-import { createSession } from "#lib/session";
-import { createWorkspace } from "#lib/workspace";
-import { getUsersCollection } from "#database/users";
-import { getUserSettingsCollection } from "#database";
+import { publicPlugin, generateSalt, createSession, createWorkspace } from "#lib";
+import { getUserSettingsCollection, getUsersCollection } from "#database";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -82,7 +78,7 @@ const registerGitHubOAuth = (fastify: FastifyInstance): void => {
         await userSettingsCollection.insertOne({
           _id: new ObjectId(),
           userId: newUser._id,
-          codeEditorTheme: "dark",
+          codeEditorTheme: "auto",
           uiTheme: "auto",
           accentColor: "energy",
           currentWorkspaceId: workspaceId
@@ -92,8 +88,7 @@ const registerGitHubOAuth = (fastify: FastifyInstance): void => {
 
       return res.redirect("/");
     } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error(error);
+      fastify.log.error(error);
 
       return res.redirect("/auth");
     }

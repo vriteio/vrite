@@ -1,8 +1,7 @@
 import { EmbedAttributes } from "./node";
 import { SolidNodeViewProps, Attrs } from "@vrite/tiptap-solid";
 import { Component } from "solid-js";
-import { mdiDotsGrid } from "@mdi/js";
-import { IconButton, Input, Tooltip } from "#components/primitives";
+import { Card, Input } from "#components/primitives";
 import { EmbedType, getEmbedId, getEmbedSrc } from "#lib/utils";
 
 interface ImageMenuProps {
@@ -31,17 +30,19 @@ const EmbedMenu: Component<ImageMenuProps> = (props) => {
   };
 
   return (
-    <div class="flex p-0 transition-shadow duration-200 border-0 rounded-xl">
-      <Input
-        wrapperClass="flex-1 max-w-full"
-        color="contrast"
-        placeholder={getInputPlaceholder(attrs().embed as EmbedType)}
-        value={attrs().input || ""}
-        disabled={!props.state.editor.isEditable}
-        setValue={(value) => {
-          props.state.updateAttributes({ input: value, src: getSrc(value) });
-        }}
-      />
+    <div class="pointer-events-auto flex bg-gray-50 dark:bg-gray-900 !md:bg-transparent border-gray-200 dark:border-gray-700 border-y-2 md:border-0 backdrop-blur-sm md:gap-2 w-screen md:w-auto left-[5px] !md:left-unset relative md:rounded-2xl">
+      <Card class="flex m-0 border-0 md:border-2 p-1">
+        <Input
+          wrapperClass="max-w-full min-w-unset md:w-96 flex-1"
+          class="w-full bg-transparent m-0 flex-1 text-lg"
+          placeholder={getInputPlaceholder(attrs().embed as EmbedType)}
+          value={attrs().input || ""}
+          disabled={!props.state.editor.isEditable}
+          setValue={(value) => {
+            props.state.updateAttributes({ input: value, src: getSrc(value) });
+          }}
+        />
+      </Card>
     </div>
   );
 };

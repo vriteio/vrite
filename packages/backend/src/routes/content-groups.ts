@@ -1,11 +1,5 @@
 import { ObjectId } from "mongodb";
 import { z } from "zod";
-import { procedure, router } from "#lib/trpc";
-import { isAuthenticated } from "#lib/middleware";
-import { UnderscoreID, zodId } from "#lib/mongo";
-import * as errors from "#lib/errors";
-import { createEventPublisher, createEventSubscription } from "#lib/pub-sub";
-import { runWebhooks } from "#lib/webhooks";
 import {
   ContentGroup,
   contentGroup,
@@ -17,24 +11,18 @@ import {
   getWorkspacesCollection,
   FullContentGroup
 } from "#database";
-import { runGitSyncHook } from "#lib";
+import {
+  runGitSyncHook,
+  runWebhooks,
+  errors,
+  UnderscoreID,
+  zodId,
+  isAuthenticated,
+  procedure,
+  router
+} from "#lib";
+import { subscribeToContentGroupEvents, publishContentGroupEvent } from "#events";
 
-type ContentGroupEvent =
-  | {
-      action: "create";
-      data: ContentGroup;
-    }
-  | {
-      action: "update";
-      data: Partial<ContentGroup> & { id: string };
-    }
-  | { action: "delete"; data: { id: string } }
-  | { action: "move"; data: ContentGroup }
-  | { action: "reorder"; data: { id: string; index: number } };
-
-const publishEvent = createEventPublisher<ContentGroupEvent>(
-  (workspaceId) => `contentGroups:${workspaceId}`
-);
 const basePath = "/content-groups";
 const authenticatedProcedure = procedure.use(isAuthenticated);
 const rearrangeContentGroups = (
@@ -179,7 +167,10 @@ const contentGroupsRouter = router({
         ancestor: "ancestor" in input ? input.ancestor : undefined,
         name: "name" in input ? input.name : undefined
       });
-      publishEvent(ctx, `${ctx.auth.workspaceId}`, { action: "update", data: { id, ...update } });
+      publishContentGroupEvent(ctx, `${ctx.auth.workspaceId}`, {
+        action: "update",
+        data: { id, ...update }
+      });
     }),
   create: authenticatedProcedure
     .meta({
@@ -231,7 +222,7 @@ const contentGroupsRouter = router({
       }
 
       await contentGroupsCollection.insertOne(contentGroup);
-      publishEvent(ctx, `${ctx.auth.workspaceId}`, {
+      publishContentGroupEvent(ctx, `${ctx.auth.workspaceId}`, {
         action: "create",
         data: {
           id: `${contentGroup._id}`,
@@ -328,7 +319,7 @@ const contentGroupsRouter = router({
         descendants: contentGroup.descendants.map((id) => `${id}`),
         id: `${contentGroup._id}`
       });
-      publishEvent(ctx, `${ctx.auth.workspaceId}`, {
+      publishContentGroupEvent(ctx, `${ctx.auth.workspaceId}`, {
         action: "delete",
         data: input
       });
@@ -504,7 +495,7 @@ const contentGroupsRouter = router({
         ancestor: input.ancestor,
         contentGroup
       });
-      publishEvent(ctx, `${ctx.auth.workspaceId}`, {
+      publishContentGroupEvent(ctx, `${ctx.auth.workspaceId}`, {
         action: "move",
         data: {
           id: input.id,
@@ -583,14 +574,14 @@ const contentGroupsRouter = router({
         );
       }
 
-      publishEvent(ctx, `${ctx.auth.workspaceId}`, {
+      publishContentGroupEvent(ctx, `${ctx.auth.workspaceId}`, {
         action: "reorder",
         data: input
       });
     }),
   changes: authenticatedProcedure.subscription(async ({ ctx }) => {
-    return createEventSubscription<ContentGroupEvent>(ctx, `contentGroups:${ctx.auth.workspaceId}`);
+    return subscribeToContentGroupEvents(ctx, `${ctx.auth.workspaceId}`);
   })
 });
 
-export { contentGroupsRouter, publishEvent as publishContentGroupEvent };
+export { contentGroupsRouter };

@@ -1,26 +1,20 @@
 import { Extension, onChangePayload, onDisconnectPayload } from "@hocuspocus/server";
 import {
-  GitData,
-  ObjectId,
   createGenericOutputContentProcessor,
   docToJSON,
   getContentPiecesCollection,
   getGitDataCollection,
-  jsonToBuffer
+  jsonToBuffer,
+  publishGitDataEvent
 } from "@vrite/backend";
-import { createEventPublisher } from "@vrite/backend/src/lib/pub-sub";
 import { FastifyInstance } from "fastify";
+import { ObjectId } from "mongodb";
 import crypto from "node:crypto";
 
 interface Configuration {
   debounce: number | false | null;
   debounceMaxWait: number;
 }
-
-type GitDataEvent = {
-  action: "update";
-  data: Partial<GitData>;
-};
 
 class GitSync implements Extension {
   private configuration: Configuration = {
@@ -35,10 +29,6 @@ class GitSync implements Extension {
   private contentPiecesCollection: ReturnType<typeof getContentPiecesCollection>;
 
   private debounced: Map<string, { timeout: NodeJS.Timeout; start: number }> = new Map();
-
-  private publishGitDataEvent = createEventPublisher<GitDataEvent>((workspaceId) => {
-    return `gitData:${workspaceId}`;
-  });
 
   public constructor(fastify: FastifyInstance, configuration?: Partial<Configuration>) {
     this.fastify = fastify;
@@ -121,7 +111,7 @@ class GitSync implements Extension {
         }
       }
     );
-    this.publishGitDataEvent({ fastify: this.fastify }, `${details.context.workspaceId}`, {
+    publishGitDataEvent({ fastify: this.fastify }, `${details.context.workspaceId}`, {
       action: "update",
       data: {
         records: gitData.records.map((record: any) => {

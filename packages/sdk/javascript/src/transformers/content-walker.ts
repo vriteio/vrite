@@ -85,7 +85,7 @@ type BlockquoteNode = {
     | ParagraphNode
     | HeadingNode
     | BlockquoteNode
-    | WrapperNode
+    | ElementNode
     | ImageNode
     | CodeBlockNode
     | EmbedNode
@@ -96,16 +96,17 @@ type BlockquoteNode = {
     | TableNode
   >;
 };
-type WrapperNode = {
-  type: "wrapper";
-  attrs?: {
-    key?: string;
+type ElementNode = {
+  type: "element";
+  attrs: {
+    type: string;
+    props: Record<string, any>;
   };
   content?: Array<
     | ParagraphNode
     | HeadingNode
     | BlockquoteNode
-    | WrapperNode
+    | ElementNode
     | ImageNode
     | CodeBlockNode
     | EmbedNode
@@ -219,7 +220,7 @@ type DocNode = {
     | ParagraphNode
     | HeadingNode
     | BlockquoteNode
-    | WrapperNode
+    | ElementNode
     | ImageNode
     | CodeBlockNode
     | EmbedNode
@@ -237,7 +238,7 @@ type JSONContentNode = {
   paragraph: ParagraphNode;
   heading: HeadingNode;
   blockquote: BlockquoteNode;
-  wrapper: WrapperNode;
+  element: ElementNode;
   image: ImageNode;
   codeBlock: CodeBlockNode;
   embed: EmbedNode;

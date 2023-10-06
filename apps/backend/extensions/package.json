@@ -11,11 +11,16 @@
   "dependencies": {
     "@fastify/cors": "^8.3.0",
     "@trpc/server": "^10.35.0",
+    "@types/mdast": "^4.0.1",
     "@vrite/backend": "workspace:*",
     "@vrite/sdk": "workspace:*",
     "fastify": "^4.20.0",
     "openai": "^4.0.0",
-    "trpc-openapi": "^1.2.0"
+    "remark": "^15.0.1",
+    "remark-mdx": "^2.3.0",
+    "remark-parse": "^11.0.0",
+    "trpc-openapi": "^1.2.0",
+    "unist-util-visit": "^5.0.0"
   },
   "devDependencies": {
     "@vrite/scripts": "workspace:*"

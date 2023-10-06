@@ -1,24 +1,11 @@
 import { ObjectId } from "mongodb";
 import { z } from "zod";
-import { zodId } from "#lib/mongo";
-import { stringToRegex } from "#lib/utils";
-import { isAuthenticated } from "#lib/middleware";
-import { procedure, router } from "#lib/trpc";
-import * as errors from "#lib/errors";
-import { createEventPublisher, createEventSubscription } from "#lib/pub-sub";
-import { ExtendedTag, Tag, getTagsCollection, tag, getContentPiecesCollection } from "#database";
-
-type TagEvent =
-  | { action: "create"; data: Tag }
-  | { action: "update"; data: Partial<Tag> & { id: string } }
-  | {
-      action: "delete";
-      data: { id: string };
-    };
+import { stringToRegex, isAuthenticated, procedure, router, errors, zodId } from "#lib";
+import { ExtendedTag, getTagsCollection, tag, getContentPiecesCollection } from "#database";
+import { publishTagEvent, subscribeToTagEvents } from "#events";
 
 const authenticatedProcedure = procedure.use(isAuthenticated);
 const basePath = "/tags";
-const publishEvent = createEventPublisher<TagEvent>((workspaceId) => `tags:${workspaceId}`);
 const tagsRouter = router({
   get: authenticatedProcedure
     .meta({
@@ -72,7 +59,7 @@ const tagsRouter = router({
 
       if (!matchedCount) throw errors.notFound("tag");
 
-      publishEvent(ctx, `${ctx.auth.workspaceId}`, {
+      publishTagEvent(ctx, `${ctx.auth.workspaceId}`, {
         action: "update",
         data: input
       });
@@ -94,7 +81,7 @@ const tagsRouter = router({
       };
 
       await tagsCollection.insertOne(tag);
-      publishEvent(ctx, `${ctx.auth.workspaceId}`, {
+      publishTagEvent(ctx, `${ctx.auth.workspaceId}`, {
         action: "create",
         data: {
           ...input,
@@ -160,7 +147,7 @@ const tagsRouter = router({
           }
         }
       );
-      publishEvent(ctx, `${ctx.auth.workspaceId}`, {
+      publishTagEvent(ctx, `${ctx.auth.workspaceId}`, {
         action: "delete",
         data: { id: input.id }
       });
@@ -188,7 +175,7 @@ const tagsRouter = router({
       });
     }),
   changes: authenticatedProcedure.input(z.void()).subscription(({ ctx }) => {
-    return createEventSubscription<TagEvent>(ctx, `tags:${ctx.auth.workspaceId}`);
+    return subscribeToTagEvents(ctx, `${ctx.auth.workspaceId}`);
   })
 });
 

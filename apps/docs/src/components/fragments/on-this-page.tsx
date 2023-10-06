@@ -1,6 +1,7 @@
 import { Component, For, onMount, onCleanup, createSignal, createMemo } from "solid-js";
 import { mdiListBox } from "@mdi/js";
 import clsx from "clsx";
+import { scroll } from "seamless-scroll-polyfill";
 import type { MarkdownHeading } from "astro";
 import { Button, IconButton } from "#components/primitives";
 
@@ -12,7 +13,7 @@ const OnThisPage: Component<OnThisPageProps> = (props) => {
   const [activeHeading, setActiveHeading] = createSignal(props.headings[0]?.slug || "");
   const headings = createMemo(() => {
     return props.headings.filter((heading) => {
-      return heading.depth === 2;
+      return heading.depth === 2 || heading.depth === 3;
     });
   });
 
@@ -69,7 +70,7 @@ const OnThisPage: Component<OnThisPageProps> = (props) => {
     <>
       <div
         class={clsx(
-          "w-56 flex-col justify-start top-0 pt-16 fixed right-0 hidden xl:flex gap-2",
+          "w-56 flex-col justify-start top-0 pt-24 xl:fixed right-0 hidden xl:flex gap-2",
           "mr-[max(0px,calc((100%-(1536px))/2))]"
         )}
       >
@@ -89,11 +90,19 @@ const OnThisPage: Component<OnThisPageProps> = (props) => {
                 variant="text"
                 text={activeHeading() === heading.slug ? "base" : "soft"}
                 color={activeHeading() === heading.slug ? "primary" : "base"}
-                class="text-start m-0"
+                class={clsx("text-start m-0", heading.depth === 3 && "ml-6")}
+                size={heading.depth === 2 ? "medium" : "small"}
                 onClick={() => {
-                  document.getElementById(heading.slug)?.scrollIntoView({
-                    block: "start",
-                    inline: "nearest"
+                  const element = document.getElementById(heading.slug);
+
+                  if (!element) return;
+
+                  const rect = element.getBoundingClientRect();
+                  const y = rect.top + window.scrollY - 60;
+
+                  scroll(window, {
+                    top: y,
+                    behavior: "smooth"
                   });
                   setActiveHeading(heading.slug);
                 }}

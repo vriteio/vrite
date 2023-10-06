@@ -1,44 +1,22 @@
 import { z } from "zod";
 import { ObjectId } from "mongodb";
-import { VerificationDetails, getUsersCollection } from "#database/users";
-import { procedure, router } from "#lib/trpc";
-import { createWorkspace } from "#lib/workspace";
-import * as errors from "#lib/errors";
-import { createSession } from "#lib/session";
-import { isAuthenticatedUser } from "#lib/middleware";
-import { verifyValue } from "#lib";
 import {
-  WorkspaceMembership,
+  getUsersCollection,
+  getUserSettingsCollection,
   getWorkspaceMembershipsCollection
-} from "#database/workspace-memberships";
-import { runWebhooks } from "#lib/webhooks";
-import { createEventPublisher } from "#lib/pub-sub";
-import { getUserSettingsCollection } from "#database";
+} from "#database";
+import {
+  runWebhooks,
+  verifyValue,
+  isAuthenticatedUser,
+  createSession,
+  errors,
+  createWorkspace,
+  procedure,
+  router
+} from "#lib";
+import { publishUserEvent, publishWorkspaceMembershipEvent } from "#events";
 
-type VerifyUserEvent = {
-  action: "update";
-  data: { id: string } & Partial<VerificationDetails & { email: string }>;
-};
-type VerifyWorkspaceInviteEvent = {
-  action: "update";
-  data: {
-    id: string;
-    userId: string;
-    pendingInvite?: boolean;
-    profile?: {
-      fullName?: string;
-      username?: string;
-      avatar?: string;
-    };
-  } & Partial<WorkspaceMembership>;
-};
-
-const publishUserEvent = createEventPublisher<VerifyUserEvent>(
-  (userId: string) => `user:${userId}`
-);
-const publishWorkspaceMembershipEvent = createEventPublisher<VerifyWorkspaceInviteEvent>(
-  (workspaceId: string) => `workspaceMemberships:${workspaceId}`
-);
 const authenticatedUserProcedure = procedure.use(isAuthenticatedUser);
 const verificationRouter = router({
   verifyMagicLink: procedure
@@ -108,7 +86,7 @@ const verificationRouter = router({
         await userSettingsCollection.insertOne({
           _id: new ObjectId(),
           userId: user._id,
-          codeEditorTheme: "dark",
+          codeEditorTheme: "auto",
           uiTheme: "auto",
           accentColor: "energy",
           currentWorkspaceId: workspaceId
@@ -116,7 +94,7 @@ const verificationRouter = router({
         await createSession(ctx, `${user._id}`);
       } catch (error) {
         // eslint-disable-next-line no-console
-        console.error(error);
+        ctx.fastify.log.error(error);
       }
 
       return "/";

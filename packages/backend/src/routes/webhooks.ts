@@ -1,29 +1,9 @@
 import { ObjectId } from "mongodb";
 import { z } from "zod";
-import { procedure, router } from "#lib/trpc";
-import { isAuthenticated } from "#lib/middleware";
-import { UnderscoreID, zodId } from "#lib/mongo";
-import { FullWebhook, Webhook, getWebhooksCollection, webhook } from "#database/webhooks";
-import * as errors from "#lib/errors";
-import { createEventPublisher, createEventSubscription } from "#lib/pub-sub";
+import { FullWebhook, Webhook, getWebhooksCollection, webhook } from "#database";
+import { errors, isAuthenticated, UnderscoreID, zodId, procedure, router } from "#lib";
+import { publishWebhookEvent, subscribeToWebhookEvents } from "#events";
 
-type WebhookEvent =
-  | {
-      action: "create";
-      data: Webhook & { id: string };
-    }
-  | {
-      action: "update";
-      data: Partial<Webhook> & { id: string };
-    }
-  | {
-      action: "delete";
-      data: { id: string };
-    };
-
-const publishEvent = createEventPublisher<WebhookEvent>((workspaceId) => {
-  return `webhooks:${workspaceId}`;
-});
 const authenticatedProcedure = procedure.use(isAuthenticated);
 const basePath = "/webhooks";
 const webhooksRouter = router({
@@ -143,7 +123,7 @@ const webhooksRouter = router({
       } else if (webhook.event.startsWith("contentPiece")) throw errors.serverError();
 
       await webhooksCollection.insertOne(webhook);
-      publishEvent(ctx, `${ctx.auth.workspaceId}`, {
+      publishWebhookEvent(ctx, `${ctx.auth.workspaceId}`, {
         action: "create",
         data: { ...input, id: `${webhook._id}` }
       });
@@ -151,7 +131,7 @@ const webhooksRouter = router({
       return { id: `${webhook._id}` };
     }),
   changes: authenticatedProcedure.input(z.void()).subscription(({ ctx }) => {
-    return createEventSubscription<WebhookEvent>(ctx, `webhooks:${ctx.auth.workspaceId}`);
+    return subscribeToWebhookEvents(ctx, `${ctx.auth.workspaceId}`);
   }),
   update: authenticatedProcedure
     .meta({
@@ -189,7 +169,7 @@ const webhooksRouter = router({
 
       if (!matchedCount) throw errors.notFound("webhook");
 
-      publishEvent(ctx, `${ctx.auth.workspaceId}`, {
+      publishWebhookEvent(ctx, `${ctx.auth.workspaceId}`, {
         action: "update",
         data: input
       });
@@ -210,7 +190,7 @@ const webhooksRouter = router({
 
       if (!deletedCount) throw errors.notFound("webhook");
 
-      publishEvent(ctx, `${ctx.auth.workspaceId}`, {
+      publishWebhookEvent(ctx, `${ctx.auth.workspaceId}`, {
         action: "delete",
         data: input
       });

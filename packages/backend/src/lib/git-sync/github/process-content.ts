@@ -1,3 +1,11 @@
+import { AuthenticatedContext } from "../../middleware";
+import { UnderscoreID } from "../../mongo";
+import { jsonToBuffer, htmlToJSON, bufferToJSON } from "../../processing";
+import {
+  InputContentProcessor,
+  OutputContentProcessor,
+  OutputContentProcessorInput
+} from "../types";
 import {
   GenericJSONContentNode,
   gfmInputTransformer,
@@ -5,44 +13,18 @@ import {
   InputTransformer,
   OutputTransformer
 } from "@vrite/sdk/transformers";
-import { ObjectId, Binary } from "mongodb";
-import { convert as convertToSlug } from "url-slug";
+import { ObjectId } from "mongodb";
 import * as prettier from "prettier/standalone";
 import markdownPlugin from "prettier/plugins/markdown";
 import htmlPlugin from "prettier/plugins/html";
 import axios from "axios";
 import crypto from "node:crypto";
 import {
-  FullContentPiece,
-  FullContents,
   FullGitData,
   getTransformersCollection,
   getWorkspaceSettingsCollection,
   Transformer
 } from "#database";
-import { UnderscoreID, jsonToBuffer, htmlToJSON, bufferToJSON, AuthenticatedContext } from "#lib";
-
-interface ProcessInputResult {
-  buffer: Buffer;
-  contentHash: string;
-  metadata: Partial<
-    Pick<FullContentPiece, keyof NonNullable<ReturnType<InputTransformer>["contentPiece"]>>
-  >;
-}
-interface OutputContentProcessorInput {
-  buffer: Buffer;
-  contentPiece: UnderscoreID<FullContentPiece<ObjectId>>;
-}
-
-interface InputContentProcessor {
-  process(inputContent: string): Promise<ProcessInputResult>;
-  processBatch(inputContent: string[]): Promise<ProcessInputResult[]>;
-}
-
-interface OutputContentProcessor {
-  process(input: OutputContentProcessorInput): Promise<string>;
-  processBatch(input: OutputContentProcessorInput[]): Promise<string[]>;
-}
 
 const extensionParserMap = {
   mdx: "mdx",
@@ -256,58 +238,5 @@ const createOutputContentProcessor = async (
     }
   };
 };
-const createSyncedPieces = async (
-  inputs: Array<{
-    path: string;
-    content: string;
-    workspaceId: ObjectId;
-    contentGroupId: ObjectId;
-    order: string;
-  }>,
-  inputContentProcessor: InputContentProcessor
-): Promise<
-  Array<{
-    contentPiece: UnderscoreID<FullContentPiece<ObjectId>>;
-    content: UnderscoreID<FullContents<ObjectId>>;
-    contentHash: string;
-  }>
-> => {
-  const inputContentProcessorOutput = await inputContentProcessor.processBatch(
-    inputs.map((input) => input.content)
-  );
 
-  return inputs.map((input, index) => {
-    const filename = input.path.split("/").pop() || "";
-    const { buffer, contentHash, metadata } = inputContentProcessorOutput[index];
-    const { members, tags, date, ...inputMetadata } = metadata;
-    const contentPiece: UnderscoreID<FullContentPiece<ObjectId>> = {
-      _id: new ObjectId(),
-      workspaceId: input.workspaceId,
-      contentGroupId: input.contentGroupId,
-      order: input.order,
-      members: [],
-      slug: convertToSlug(filename),
-      tags: [],
-      title: filename,
-      filename,
-      ...inputMetadata,
-      ...(date && { date: new Date(date) }),
-      ...(members && { members: members.map((memberId) => new ObjectId(memberId)) }),
-      ...(tags && { tags: tags.map((tagId) => new ObjectId(tagId)) })
-    };
-    const content = {
-      _id: new ObjectId(),
-      contentPieceId: contentPiece._id,
-      content: new Binary(buffer)
-    };
-
-    return {
-      contentPiece,
-      contentHash,
-      content
-    };
-  });
-};
-
-export { createSyncedPieces, createInputContentProcessor, createOutputContentProcessor };
-export type { OutputContentProcessorInput, OutputContentProcessor, InputContentProcessor };
+export { createInputContentProcessor, createOutputContentProcessor };

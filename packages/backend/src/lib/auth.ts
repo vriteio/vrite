@@ -1,7 +1,7 @@
 import { Context } from "./context";
 import { SessionData, getSessionId } from "./session";
 import { verifyValue } from "./hash";
-import { TokenPermission, getTokensCollection } from "#database/tokens";
+import { TokenPermission, getTokensCollection } from "#database";
 
 interface TokenData {
   permissions: TokenPermission[];

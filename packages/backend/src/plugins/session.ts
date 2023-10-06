@@ -1,7 +1,6 @@
-import { appRouter } from "../routes";
 import { getHTTPStatusCodeFromError } from "@trpc/server/http";
-import { publicPlugin } from "#lib/plugin";
-import { CustomError } from "#lib/errors";
+import { appRouter } from "#routes";
+import { publicPlugin, errors } from "#lib";
 
 const sessionPlugin = publicPlugin(async (fastify) => {
   fastify.post("/session/refresh", async (req, res) => {
@@ -10,7 +9,7 @@ const sessionPlugin = publicPlugin(async (fastify) => {
     try {
       await caller.auth.refreshToken();
     } catch (e) {
-      const error = e as CustomError;
+      const error = e as errors.CustomError;
       const httpStatusCode = getHTTPStatusCodeFromError(error);
 
       res
@@ -26,7 +25,7 @@ const sessionPlugin = publicPlugin(async (fastify) => {
     try {
       await caller.auth.logout();
     } catch (e) {
-      const error = e as CustomError;
+      const error = e as errors.CustomError;
       const httpStatusCode = getHTTPStatusCodeFromError(error);
 
       res

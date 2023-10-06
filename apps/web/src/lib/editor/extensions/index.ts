@@ -12,5 +12,6 @@ export * from "./block-action-menu";
 export * from "./comment-menu";
 export * from "./block-paste";
 export * from "./table-menu";
-export * from "./wrapper";
+export * from "./element";
 export * from "./auto-dir";
+export * from "./element-menu";

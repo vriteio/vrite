@@ -5,7 +5,7 @@ import { UnderscoreID, zodId } from "#lib/mongo";
 const user = z.object({
   id: zodId(),
   username: z.string().min(1).max(20),
-  email: z.string().email(),
+  email: z.string().email().max(320),
   external: z
     .object({
       github: z

@@ -1,9 +1,5 @@
-import {
-  OutputContentProcessor,
-  InputContentProcessor,
-  createOutputContentProcessor as createOutputContentProcessorGitHub,
-  createInputContentProcessor as createInputContentProcessorGitHub
-} from "./github";
+import { createOutputContentProcessorGitHub, createInputContentProcessorGitHub } from "./github";
+import { InputContentProcessor, OutputContentProcessor } from "./types";
 import { ObjectId } from "mongodb";
 import { FullGitData } from "#database";
 import { AuthenticatedContext, UnderscoreID } from "#lib";

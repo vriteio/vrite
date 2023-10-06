@@ -4,7 +4,7 @@ import { NodeViewWrapper, useSolidNodeView } from "@vrite/tiptap-solid";
 import { Component, createSignal, Show } from "solid-js";
 import clsx from "clsx";
 import { mdiCodepen, mdiYoutube } from "@mdi/js";
-import { Card, Icon } from "#components/primitives";
+import { Icon } from "#components/primitives";
 import { codeSandboxIcon } from "#assets/icons";
 import { EmbedType } from "#lib/utils";
 
@@ -31,14 +31,14 @@ const EmbedView: Component = () => {
   };
 
   return (
-    <NodeViewWrapper class="my-5">
+    <NodeViewWrapper>
       <div class={clsx("relative rounded-2xl", selected() && "ring ring-primary ring-2")}>
         <Show
           when={attrs().src}
           fallback={
             <div
               class={clsx(
-                "pt-[35%] w-full rounded-t-2xl bg-gradient-to-tr flex justify-center items-center relative"
+                "pt-[35%] w-full rounded-2xl bg-gradient-to-tr flex justify-center items-center relative border-2 border-gray-300 dark:border-gray-700"
               )}
             >
               <div class="absolute flex flex-col items-center justify-center font-bold text-white transform -translate-y-1/2 top-1/2">
@@ -55,13 +55,18 @@ const EmbedView: Component = () => {
         >
           <iframe
             src={attrs().src || ""}
-            class="object-contain w-full m-0 transition-opacity duration-300 border-2 border-gray-200 dark:border-gray-700 aspect-video min-h-96 rounded-t-2xl"
+            class="object-contain w-full m-0 transition-opacity duration-300 border-2 border-gray-300 dark:border-gray-700 aspect-video min-h-96 rounded-2xl"
           />
         </Show>
-
-        <Card class="m-0 border-t-0 rounded-t-none">
+        <div
+          class={clsx(
+            "absolute w-full justify-center items-center -bottom-14 z-1 pointer-events-none",
+            selected() ? "grid" : "hidden"
+          )}
+        >
           <EmbedMenu state={state()} />
-        </Card>
+        </div>
+        <div data-type="draggable-item" />
       </div>
     </NodeViewWrapper>
   );

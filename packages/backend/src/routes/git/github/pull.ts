@@ -1,6 +1,7 @@
-import { createSyncedPieces, createInputContentProcessor } from "./process-content";
+import { createSyncedPieces } from "./synced-pieces";
 import { LexoRank } from "lexorank";
 import { ObjectId, Binary } from "mongodb";
+import { createInputContentProcessorGitHub } from "#lib";
 import {
   FullGitData,
   getContentGroupsCollection,
@@ -63,7 +64,7 @@ const processPulledRecords = async (
     pulledContent: string;
     pulledHash: string;
   }> = [];
-  const inputContentProcessor = await createInputContentProcessor(ctx, gitData);
+  const inputContentProcessor = await createInputContentProcessorGitHub(ctx, gitData);
   const createDirectory = async (
     path: string
   ): Promise<UnderscoreID<FullContentGroup<ObjectId>>> => {

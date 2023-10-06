@@ -1,53 +1,33 @@
-import { procedure, router } from "../lib/trpc";
-import { AuthenticatedContext, isAuthenticated, isAuthenticatedUser } from "../lib/middleware";
-import { UnderscoreID, generateSalt, hashValue, stringToRegex, zodId } from "../lib";
 import { ObjectId } from "mongodb";
 import { z } from "zod";
 import { nanoid } from "nanoid";
 import {
-  FullWorkspaceMembership,
-  WorkspaceMembership,
-  getWorkspaceMembershipsCollection,
-  workspaceMembership
-} from "#database/workspace-memberships";
-import * as errors from "#lib/errors";
-import { getWorkspacesCollection, workspace } from "#database/workspaces";
-import { createEventPublisher, createEventSubscription } from "#lib/pub-sub";
-import { runWebhooks } from "#lib/webhooks";
-import {
-  Role,
   contentPieceMember,
+  FullWorkspaceMembership,
+  getWorkspaceMembershipsCollection,
+  workspaceMembership,
   getRolesCollection,
   getUsersCollection,
-  profile,
-  role
+  getWorkspacesCollection,
+  workspace
 } from "#database";
-import { updateSessionUser } from "#lib/session";
+import {
+  AuthenticatedContext,
+  isAuthenticated,
+  procedure,
+  router,
+  isAuthenticatedUser,
+  updateSessionUser,
+  runWebhooks,
+  errors,
+  UnderscoreID,
+  generateSalt,
+  hashValue,
+  stringToRegex,
+  zodId
+} from "#lib";
+import { publishWorkspaceMembershipEvent, subscribeToWorkspaceMembershipEvents } from "#events";
 
-type WorkspaceMembershipEvent =
-  | { action: "create"; data: { id: string; pendingInvite: boolean } & WorkspaceMembership }
-  | {
-      action: "update";
-      data: {
-        id: string;
-        userId: string;
-        role?: Role;
-        pendingInvite?: boolean;
-        profile?: {
-          fullName?: string;
-          username?: string;
-          avatar?: string;
-        };
-      } & Partial<WorkspaceMembership>;
-    }
-  | {
-      action: "delete";
-      data: { id: string; userId: string };
-    };
-
-const publishEvent = createEventPublisher<WorkspaceMembershipEvent>(
-  (workspaceId) => `workspaceMemberships:${workspaceId}`
-);
 const authenticatedProcedure = procedure.use(isAuthenticated);
 const authenticatedUserProcedure = procedure.use(isAuthenticatedUser);
 const basePath = "/workspace-memberships";
@@ -83,7 +63,7 @@ const removeMemberFromWorkspace = async (ctx: AuthenticatedContext, id?: string)
     _id: workspaceMembership._id
   });
   await updateSessionUser(ctx, `${workspaceMembership.userId}`);
-  publishEvent(ctx, `${ctx.auth.workspaceId}`, {
+  publishWorkspaceMembershipEvent(ctx, `${ctx.auth.workspaceId}`, {
     action: "delete",
     data: { id: `${workspaceMembership._id}`, userId: `${workspaceMembership.userId}` }
   });
@@ -150,7 +130,7 @@ const workspaceMembershipsRouter = router({
         }
       );
       await updateSessionUser(ctx, `${membership.userId}`);
-      publishEvent(ctx, `${ctx.auth.workspaceId}`, {
+      publishWorkspaceMembershipEvent(ctx, `${ctx.auth.workspaceId}`, {
         action: "update",
         data: {
           id: input.id,
@@ -332,7 +312,7 @@ const workspaceMembershipsRouter = router({
     })
     .input(
       z.object({
-        email: z.string().email(),
+        email: z.string().email().max(320),
         name: z.string(),
         roleId: zodId()
       })
@@ -368,7 +348,7 @@ const workspaceMembershipsRouter = router({
         inviteeName: input.name,
         membershipId: `${workspaceMembership._id}`
       });
-      publishEvent(ctx, `${ctx.auth.workspaceId}`, {
+      publishWorkspaceMembershipEvent(ctx, `${ctx.auth.workspaceId}`, {
         action: "create",
         data: {
           ...input,
@@ -379,10 +359,7 @@ const workspaceMembershipsRouter = router({
       runWebhooks(ctx, "memberInvited", { ...input, id: `${workspaceMembership._id}` });
     }),
   changes: authenticatedProcedure.subscription(({ ctx }) => {
-    return createEventSubscription<WorkspaceMembershipEvent>(
-      ctx,
-      `workspaceMemberships:${ctx.auth.workspaceId}`
-    );
+    return subscribeToWorkspaceMembershipEvents(ctx, `${ctx.auth.workspaceId}`);
   }),
   delete: authenticatedProcedure
     .meta({

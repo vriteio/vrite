@@ -6,8 +6,6 @@ import { WorkspaceInvite } from "../emails/workspace-invite";
 import { render } from "@react-email/render";
 import * as React from "react";
 
-type RenderEmail = typeof renderEmail;
-
 const templateMap = {
   "magic-link": MagicLink,
   "verify-email-change": VerifyEmailChange,
@@ -15,7 +13,7 @@ const templateMap = {
   "verify-password-change": VerifyPasswordChange,
   "workspace-invite": WorkspaceInvite
 };
-const renderEmail = (<T extends keyof typeof templateMap>(
+const renderEmail = <T extends keyof typeof templateMap>(
   template: T,
   props: Record<string, string>,
   plainText?: boolean
@@ -23,7 +21,9 @@ const renderEmail = (<T extends keyof typeof templateMap>(
   const Template = templateMap[template] as React.FC<Record<string, string>>;
 
   return render(<Template {...props} />, { plainText });
-}) as (test: string) => string;
+};
+
+type RenderEmail = typeof renderEmail;
 
 export { renderEmail };
 export type { RenderEmail };

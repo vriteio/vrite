@@ -43,12 +43,8 @@ kbd {
   cursor: col-resize;
 }
 .prose-editor {
-  .ProseMirror:not(:where(.not-prose, .not-prose *)) {
-    > * + div:not(.tableWrapper) {
-      @apply mb-5;
-    }
-
-    padding-bottom: 8rem;
+  .ProseMirror {
+    @apply pb-48;
   }
   .tableWrapper {
     @apply overflow-auto pb-2 mb-3;
@@ -72,11 +68,11 @@ kbd {
     }
 
     tr {
-      @apply border-2 border-gray-200 dark:border-gray-700;
+      @apply border-2 border-gray-300 dark:border-gray-700;
     }
     td,
     th {
-      @apply text-left font-500 border-2 border-gray-200 dark:border-gray-700 relative p-2 vertical-top;
+      @apply text-left font-500 border-2 border-gray-300 dark:border-gray-700 relative p-2 vertical-top;
       min-width: 100px;
       border-style: none solid solid none;
       word-break: break-all;
@@ -210,10 +206,10 @@ kbd {
   :where(ul:not([data-type="taskList"]) li > * + *, ol li > * + *):not(
       :where(.not-prose, .not-prose *)
     ) {
-    @apply my-5;
+    // @apply my-5;
   }
   :where(li > ul, li > ol, li > div > ul, li > div > ol):not(:where(.not-prose, .not-prose *)) {
-    @apply m-0;
+    //@apply m-0;
   }
   :where(ul[data-type="taskList"]):not(:where(.not-prose, .not-prose *)) {
     padding-left: 0rem;
@@ -256,14 +252,37 @@ kbd {
   --un-prose-hr: #6b7280;
   --un-prose-invert-lists: #9ca3af;
   --un-prose-invert-hr: #9ca3af;
-  --highlighted-thread: "G3JAKWBAsWA1xXnPcJ-Zu";
+  --highlighted-thread: "";
+  :where([aria-expanded="false"] > .ProseMirror, .content, blockquote, li) {
+    &
+      > :where(div, ul, ol, p, blockquote, hr):not(.ProseMirror-gapcursor)
+      + :where(div, ul, ol, p, blockquote, hr, h1, h2, h3, h4, h5, h6):not([data-element="true"]),
+    &
+      > :where(div, ul, ol, p, blockquote, hr):not([data-element="true"], .ProseMirror-gapcursor)
+      + :where(div, ul, ol, p, blockquote, hr, h1, h2, h3, h4, h5, h6),
+    &
+      > :where(div, ul, ol, p, blockquote, hr):not(.ProseMirror-gapcursor)
+      + .ProseMirror-gapcursor
+      + :where(div, ul, ol, p, blockquote, hr, h1, h2, h3, h4, h5, h6):not([data-element="true"]),
+    &
+      > :where(div, ul, ol, p, blockquote, hr):not([data-element="true"], .ProseMirror-gapcursor)
+      + .ProseMirror-gapcursor
+      + :where(div, ul, ol, p, blockquote, hr, h1, h2, h3, h4, h5, h6) {
+      @apply mt-5;
+    }
+  }
 
-  :where(div[data-wrapper="true"]) {
+  :where(div[data-element="true"]) {
     .content > :first-child,
-    .content > :first-child [data-node-view-wrapper="true"] {
+    .content > .ProseMirror-gapcursor:first-child + *,
+    .content > :first-child > div > [data-node-view-wrapper="true"],
+    .content > .ProseMirror-gapcursor:first-child + * > div > [data-node-view-wrapper="true"] {
       margin-top: 0 !important;
     }
-    .content > :last-child:not([data-wrapper="true"]) {
+    .content > :last-child,
+    .content > .ProseMirror-gapcursor:last-child + *,
+    .content > :last-child > div > [data-node-view-wrapper="true"],
+    .content > .ProseMirror-gapcursor:last-child + * > div > [data-node-view-wrapper="true"] {
       margin-bottom: 0 !important;
     }
   }
@@ -276,8 +295,7 @@ kbd {
       content: unset !important;
     }
     @apply bg-gray-200 text-gray-700 font-medium dark:bg-gray-900 dark:text-gray-300 py-1 px-2 rounded-lg;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
-      "Courier New", monospace !important;
+    font-family: "JetBrainsMonoVariable", monospace !important;
   }
   :where(mark) {
     @apply text-gray-700;
@@ -353,21 +371,8 @@ kbd {
     margin: 0;
   }
 }
-.rounded {
-  .monaco-editor,
-  .monaco-editor > *:first-child {
-    @apply rounded-2xl;
-  }
-  .monaco-editor .editor-widget {
-    @apply overflow-hidden rounded-lg;
-  }
-  .monaco-editor .monaco-hover {
-    @apply rounded-lg;
-  }
-}
-
-.ProseMirror .rounded .monaco-editor,
-.ProseMirror .rounded .monaco-editor > *:first-child {
+.ProseMirror .monaco-editor,
+.ProseMirror .monaco-editor > *:first-child {
   @apply rounded-b-none;
 }
 .split-view[data-code-editor-theme="dark"] .monaco-diff-editor {
@@ -385,5 +390,87 @@ kbd {
   }
   .modified .overflow-guard {
     @apply md:(border-l-1 border-gray-200);
+  }
+}
+
+.monaco-editor .editor-widget {
+  @apply overflow-hidden;
+  border-radius: 0.5rem !important;
+}
+.monaco-editor .monaco-hover {
+  border-radius: 0.5rem !important;
+}
+.rounded-editor-2xl {
+  .monaco-editor,
+  .monaco-editor > *:first-child {
+    @apply rounded-2xl;
+  }
+}
+.rounded-editor-t-2xl {
+  .monaco-editor,
+  .monaco-editor > *:first-child {
+    border-top-left-radius: calc(1rem - 2px);
+    border-top-right-radius: calc(1rem - 2px);
+  }
+}
+
+.rounded-editor-lg {
+  .monaco-editor,
+  .monaco-editor > *:first-child {
+    @apply rounded-lg;
+  }
+}
+.customized-editor-show-keyboard-hidden {
+  [widgetid="editor.contrib.ShowKeyboardWidget"] {
+    display: none !important;
+  }
+}
+.customized-editor {
+  --customized-editor-background: #f9fafb;
+  --customized-editor-widget-background: #f3f4f6;
+  .mtk2 {
+    color: var(--customized-editor-background);
+  }
+  .monaco-editor {
+    .inputarea.ime-input {
+      background-color: var(--customized-editor-background);
+    }
+    .view-overlays .current-line {
+      background-color: var(--customized-editor-widget-background) !important;
+      @apply border-gray-300 border-0;
+    }
+    .view-overlays > *:last-child:first-child .current-line {
+      background-color: transparent !important;
+    }
+    --vscode-editor-background: var(--customized-editor-background);
+    --vscode-editorStickyScroll-background: var(--customized-editor-background);
+    --vscode-breadcrumb-background: var(--customized-editor-background);
+    --vscode-editorGutter-background: var(--customized-editor-background);
+    --vscode-editorMarkerNavigation-background: var(--customized-editor-background);
+
+    // Editor Widget
+    .find-widget {
+      background-color: var(--customized-editor-widget-background);
+    }
+    --vscode-editorWidget-background: var(--customized-editor-widget-background);
+    --vscode-quickInput-background: var(--customized-editor-widget-background);
+    --vscode-editorHoverWidget-background: var(--customized-editor-widget-background);
+    --vscode-listFilterWidget-background: var(--customized-editor-widget-background);
+    --vscode-checkbox-selectBackground: var(--customized-editor-widget-background);
+    --vscode-breadcrumbPicker-background: var(--customized-editor-widget-background);
+  }
+}
+.customized-editor-contrast {
+  --customized-editor-background: #f3f4f6;
+  --customized-editor-widget-background: #f9fafb;
+}
+.dark {
+  .customized-editor {
+    --customized-editor-background: #111827;
+    --customized-editor-widget-background: #1f2937;
+  }
+  .customized-editor-contrast {
+    --customized-editor-background: #1f2937;
+    --customized-editor-widget-background: #111827;
   }
 }

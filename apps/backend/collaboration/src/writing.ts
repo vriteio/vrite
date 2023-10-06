@@ -1,10 +1,14 @@
-import { publicPlugin, getContentsCollection, getContentVariantsCollection } from "@vrite/backend";
+import {
+  publicPlugin,
+  getContentsCollection,
+  getContentVariantsCollection,
+  errors,
+  SessionData
+} from "@vrite/backend";
 import { Server } from "@hocuspocus/server";
 import { Database } from "@hocuspocus/extension-database";
 import { Redis } from "@hocuspocus/extension-redis";
 import { ObjectId, Binary } from "mongodb";
-import { SessionData } from "@vrite/backend/src/lib/session";
-import { unauthorized } from "@vrite/backend/src/lib/errors";
 import { SearchIndexing } from "#extensions/search-indexing";
 import { GitSync } from "#extensions/git-sync";
 
@@ -18,13 +22,13 @@ const writingPlugin = publicPlugin(async (fastify) => {
       const cookies = fastify.parseCookie(data.requestHeaders.cookie || "");
 
       if (!cookies.accessToken) {
-        throw unauthorized();
+        throw errors.unauthorized();
       }
 
       const token = fastify.unsignCookie(cookies.accessToken || "")?.value || "";
 
       if (!token) {
-        throw unauthorized();
+        throw errors.unauthorized();
       }
 
       const { sessionId } = fastify.jwt.verify<{ sessionId: string }>(token);

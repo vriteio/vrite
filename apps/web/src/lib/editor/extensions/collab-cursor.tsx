@@ -66,16 +66,28 @@ const CollabCursor = (provider: HocuspocusProvider): Extension => {
         }>(null);
 
         onMount(() => {
-          if (container.parentElement?.classList.contains("ProseMirror")) {
+          if (
+            container.parentElement?.classList.contains("ProseMirror") ||
+            container.parentElement?.classList.contains("content") ||
+            container.parentElement?.tagName === "TH" ||
+            container.parentElement?.tagName === "TD" ||
+            container.parentElement?.tagName === "LI" ||
+            container.parentElement?.tagName === "BLOCKQUOTE"
+          ) {
             const rect = container.previousElementSibling?.getBoundingClientRect();
-            const parentPos = document.getElementById("pm-container")?.getBoundingClientRect();
+
+            let parentPos = document.getElementById("pm-container")?.getBoundingClientRect();
+
+            if (container.parentElement?.classList.contains("content")) {
+              parentPos = container.parentElement?.getBoundingClientRect();
+            }
 
             if (!parentPos || !rect) return;
 
             setBlockSelection({
               h: rect.height,
               w: rect.width,
-              top: rect.top - parentPos.top - 20
+              top: rect.top - parentPos.top
             });
           }
         });

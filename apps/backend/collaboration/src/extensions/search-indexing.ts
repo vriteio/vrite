@@ -1,6 +1,7 @@
 import { Extension, onChangePayload, onDisconnectPayload } from "@hocuspocus/server";
-import { ObjectId, docToBuffer, getContentPiecesCollection } from "@vrite/backend";
+import { docToBuffer, getContentPiecesCollection } from "@vrite/backend";
 import { FastifyInstance } from "fastify";
+import { ObjectId } from "mongodb";
 
 interface Configuration {
   debounce: number | false | null;

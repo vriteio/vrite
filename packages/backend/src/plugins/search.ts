@@ -10,7 +10,8 @@ import { FastifyInstance, SearchService } from "fastify";
 import { OpenAI } from "openai";
 import { Stream } from "openai/streaming";
 import { ChatCompletionChunk } from "openai/resources/chat";
-import { Db, ObjectId, UnderscoreID, bufferToJSON, publicPlugin } from "#lib";
+import { Db, ObjectId } from "mongodb";
+import { UnderscoreID, bufferToJSON, publicPlugin } from "#lib";
 import { FullContentPiece, getContentVariantsCollection, getContentsCollection } from "#database";
 
 interface RawSearchResult {

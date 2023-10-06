@@ -111,7 +111,7 @@ const hashnodeOutputTransformer = createOutputTransformer<string>((contentNode) 
   };
   const transformContentNode = (
     nodeWalker: JSONContentNodeWalker<
-      JSONContentNode["listItem" | "blockquote" | "doc" | "wrapper"]
+      JSONContentNode["listItem" | "blockquote" | "doc" | "element"]
     >
   ): string => {
     return nodeWalker.children
@@ -150,9 +150,9 @@ const hashnodeOutputTransformer = createOutputTransformer<string>((contentNode) 
             return `\n\`\`\`${child.node.attrs?.lang || ""}\n${transformTextNode(
               child as JSONContentNodeWalker<JSONContentNode["codeBlock"]>
             )}\n\`\`\`\n`;
-          case "wrapper":
+          case "element":
             return `\n${transformContentNode(
-              child as JSONContentNodeWalker<JSONContentNode["wrapper"]>
+              child as JSONContentNodeWalker<JSONContentNode["element"]>
             )}\n`;
           case "blockquote":
             return `\n${transformContentNode(

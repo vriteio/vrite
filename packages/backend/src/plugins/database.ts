@@ -1,16 +1,16 @@
-import { publicPlugin } from "#lib/plugin";
-import { getContentPiecesCollection } from "#database/content-pieces";
-import { getRolesCollection } from "#database/roles";
-import { getTagsCollection } from "#database/tags";
-import { getTokensCollection } from "#database/tokens";
-import { getUserSettingsCollection } from "#database/user-settings";
-import { getWebhooksCollection } from "#database/webhooks";
-import { getWorkspaceSettingsCollection } from "#database/workspace-settings";
-import { getContentsCollection } from "#database/contents";
-import { getUsersCollection } from "#database/users";
-import { getCommentThreadsCollection } from "#database/comment-threads";
-import { getCommentsCollection } from "#database/comments";
+import { publicPlugin } from "#lib";
 import {
+  getUserSettingsCollection,
+  getWebhooksCollection,
+  getWorkspaceSettingsCollection,
+  getContentsCollection,
+  getUsersCollection,
+  getCommentThreadsCollection,
+  getCommentsCollection,
+  getContentPiecesCollection,
+  getRolesCollection,
+  getTagsCollection,
+  getTokensCollection,
   getContentGroupsCollection,
   getContentPieceVariantsCollection,
   getContentVariantsCollection,

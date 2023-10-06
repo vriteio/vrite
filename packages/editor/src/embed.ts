@@ -22,6 +22,7 @@ const Embed = Node.create({
   selectable: true,
   inline: false,
   group: "block",
+  draggable: true,
   addAttributes() {
     return {
       embed: {

@@ -1,12 +1,4 @@
 import {
-  createSyncedPieces,
-  createInputContentProcessor,
-  createOutputContentProcessor,
-  OutputContentProcessorInput,
-  OutputContentProcessor,
-  InputContentProcessor
-} from "./process-content";
-import {
   commitChanges,
   getCommitsSince,
   getFilesChangedInCommit,
@@ -14,15 +6,23 @@ import {
   getDirectory
 } from "./requests";
 import { processPulledRecords } from "./pull";
-import { publishGitDataEvent } from "../events";
+import { createSyncedPieces } from "./synced-pieces";
 import { z } from "zod";
 import { LexoRank } from "lexorank";
-import { Binary } from "mongodb";
+import { Binary, ObjectId } from "mongodb";
 import { minimatch } from "minimatch";
 import crypto from "node:crypto";
-import { AuthenticatedContext, isAuthenticated, isEnabled } from "#lib/middleware";
-import { procedure, router } from "#lib/trpc";
-import * as errors from "#lib/errors";
+import {
+  createInputContentProcessorGitHub,
+  createOutputContentProcessorGitHub,
+  OutputContentProcessorInput,
+  AuthenticatedContext,
+  isAuthenticated,
+  isEnabled,
+  procedure,
+  router,
+  errors
+} from "#lib";
 import {
   FullContentGroup,
   FullContentPiece,
@@ -39,9 +39,12 @@ import {
   getWorkspacesCollection,
   githubData
 } from "#database";
-import { ObjectId, UnderscoreID, zodId } from "#lib";
-import { publishContentGroupEvent } from "#routes/content-groups";
-import { publishWorkspaceSettingsEvent } from "#routes/workspace-settings";
+import { UnderscoreID, zodId } from "#lib";
+import {
+  publishContentGroupEvent,
+  publishGitDataEvent,
+  publishWorkspaceSettingsEvent
+} from "#events";
 
 const authenticatedProcedure = procedure.use(isAuthenticated).use(isEnabled);
 const enableFilenameMetadata = async (ctx: AuthenticatedContext): Promise<void> => {
@@ -138,7 +141,7 @@ const githubRouter = router({
       );
       const { baseDirectory } = gitData.github;
       const basePath = baseDirectory.startsWith("/") ? baseDirectory.slice(1) : baseDirectory;
-      const inputContentProcessor = await createInputContentProcessor(ctx, gitData);
+      const inputContentProcessor = await createInputContentProcessorGitHub(ctx, gitData);
       const syncDirectory = async (
         path: string,
         ancestors: ObjectId[]
@@ -415,7 +418,7 @@ const githubRouter = router({
       );
 
       if (conflicts.length && !input.force) {
-        const outputContentProcessor = await createOutputContentProcessor(ctx, gitData);
+        const outputContentProcessor = await createOutputContentProcessorGitHub(ctx, gitData);
         const contentPieceIds = conflicts.map((conflict) => conflict.contentPieceId);
         const contentPieces = await contentPiecesCollection
           .find({ _id: { $in: contentPieceIds } })
@@ -497,7 +500,7 @@ const githubRouter = router({
 
       if (!gitData?.github) throw errors.notFound("githubData");
 
-      const outputContentProcessor = await createOutputContentProcessor(ctx, gitData);
+      const outputContentProcessor = await createOutputContentProcessorGitHub(ctx, gitData);
       const changedRecords = gitData.records.filter((record) => {
         return record.currentHash !== record.syncedHash;
       });
@@ -620,7 +623,7 @@ const githubRouter = router({
 
       if (!gitData?.github) throw errors.notFound("githubData");
 
-      const outputContentProcessor = await createOutputContentProcessor(ctx, gitData);
+      const outputContentProcessor = await createOutputContentProcessorGitHub(ctx, gitData);
       const contentPiece = await contentPiecesCollection.findOne({
         _id: new ObjectId(input.contentPieceId)
       });
@@ -663,7 +666,7 @@ const githubRouter = router({
 
       if (!gitData?.github) throw errors.notFound("githubData");
 
-      const inputContentProcessor = await createInputContentProcessor(ctx, gitData);
+      const inputContentProcessor = await createInputContentProcessorGitHub(ctx, gitData);
       const { buffer, metadata, contentHash } = await inputContentProcessor.process(input.content);
       const { date, members, tags, ...restMetadata } = metadata;
 
@@ -722,5 +725,4 @@ const githubRouter = router({
     })
 });
 
-export { githubRouter, createInputContentProcessor, createOutputContentProcessor };
-export type { OutputContentProcessor, InputContentProcessor };
+export { githubRouter };

@@ -76,7 +76,10 @@ const Tooltip: Component<TooltipProps> = (props) => {
     }
   };
 
-  document.body.addEventListener("pointermove", onPointerMove);
+  if (typeof document !== "undefined") {
+    document.body.addEventListener("pointermove", onPointerMove);
+  }
+
   controller.onPositionUpdate(updatePosition);
   onMount(() => {
     const referenceElement = referenceRef();
@@ -118,7 +121,10 @@ const Tooltip: Component<TooltipProps> = (props) => {
   );
   onCleanup(() => {
     cleanupRef()?.();
-    document.body.removeEventListener("pointermove", onPointerMove);
+
+    if (typeof document !== "undefined") {
+      document.body.removeEventListener("pointermove", onPointerMove);
+    }
   });
 
   return (

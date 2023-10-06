@@ -1,38 +1,18 @@
 import { createToken } from "./tokens";
 import { z } from "zod";
 import { ObjectId } from "mongodb";
-import { isAuthenticated, isEnabled } from "#lib/middleware";
-import { procedure, router } from "#lib/trpc";
 import {
-  Extension,
   extension,
   contextObject,
   getExtensionsCollection,
-  ContextObject,
   tokenPermission,
   getTokensCollection,
-  getContentPiecesCollection,
-  FullContentPieceWithAdditionalData
+  getContentPiecesCollection
 } from "#database";
-import { createEventPublisher, createEventSubscription } from "#lib/pub-sub";
-import * as errors from "#lib/errors";
-import { zodId } from "#lib";
+import { zodId, errors, procedure, router, isAuthenticated, isEnabled } from "#lib";
+import { publishExtensionEvent, subscribeToExtensionEvents } from "#events/extension";
+import { publishContentPieceEvent } from "#events";
 
-type ExtensionEvent =
-  | { action: "delete"; data: { id: string } }
-  | { action: "create"; data: Extension & { id: string } }
-  | { action: "update"; data: { id: string; config: ContextObject } };
-
-const publishEvent = createEventPublisher<ExtensionEvent>((workspaceId) => {
-  return `extensions:${workspaceId}`;
-});
-const publishContentPieceEvent = createEventPublisher<{
-  action: "update";
-  userId: string;
-  data: Partial<FullContentPieceWithAdditionalData> & { id: string };
-}>((contentGroupId) => {
-  return `contentPieces:${contentGroupId}`;
-});
 const authenticatedProcedure = procedure.use(isAuthenticated).use(isEnabled);
 const basePath = "/extension";
 const extensionsRouter = router({
@@ -169,7 +149,7 @@ const extensionsRouter = router({
       }));
     }),
   changes: authenticatedProcedure.input(z.void()).subscription(({ ctx }) => {
-    return createEventSubscription<ExtensionEvent>(ctx, `extensions:${ctx.auth.workspaceId}`);
+    return subscribeToExtensionEvents(ctx, `${ctx.auth.workspaceId}`);
   }),
   install: authenticatedProcedure
     .meta({
@@ -220,7 +200,7 @@ const extensionsRouter = router({
         workspaceId: ctx.auth.workspaceId,
         token: value
       });
-      publishEvent(ctx, `${ctx.auth.workspaceId}`, {
+      publishExtensionEvent(ctx, `${ctx.auth.workspaceId}`, {
         action: "create",
         data: {
           config: {},
@@ -259,7 +239,7 @@ const extensionsRouter = router({
         throw errors.notFound("extension");
       }
 
-      publishEvent(ctx, `${ctx.auth.workspaceId}`, {
+      publishExtensionEvent(ctx, `${ctx.auth.workspaceId}`, {
         action: "update",
         data: {
           id: input.id,
@@ -288,7 +268,7 @@ const extensionsRouter = router({
       await tokensCollection.deleteOne({
         extensionId: new ObjectId(input.id)
       });
-      publishEvent(ctx, `${ctx.auth.workspaceId}`, {
+      publishExtensionEvent(ctx, `${ctx.auth.workspaceId}`, {
         action: "delete",
         data: { id: input.id }
       });

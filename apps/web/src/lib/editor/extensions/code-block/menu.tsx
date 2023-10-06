@@ -1,57 +1,93 @@
 import { CodeBlockAttributes } from "./node";
-import { useSolidNodeView } from "@vrite/tiptap-solid";
-import { mdiCodeTagsCheck } from "@mdi/js";
+import { SolidNodeViewProps } from "@vrite/tiptap-solid";
+import { mdiCodeTags, mdiCodeTagsCheck, mdiFileOutline } from "@mdi/js";
 import { Component, createEffect, createMemo, createSignal, on, Show } from "solid-js";
-import type { monaco } from "#lib/monaco";
-import { IconButton, Input, Tooltip } from "#components/primitives";
+import { debounce } from "@solid-primitives/scheduled";
+import { Card, IconButton, Input, Tooltip } from "#components/primitives";
 import { useSuggestLanguage, isFormattable } from "#lib/code-editor";
 
 interface CodeBlockMenuProps {
-  monaco: typeof monaco;
+  state: SolidNodeViewProps<CodeBlockAttributes>;
+  changeLanguage(lang: string | null): void;
   format(): void;
-  changeLanguage(languageId: string | null): void;
 }
 
 const CodeBlockMenu: Component<CodeBlockMenuProps> = (props) => {
-  const { state } = useSolidNodeView();
-  const attrs = (): CodeBlockAttributes => state().node.attrs;
+  const [mode, setMode] = createSignal<"title" | "lang">("lang");
   const [suggestions, setSuggestions] = createSignal<string[]>([]);
-  const suggestLanguage = useSuggestLanguage(props.monaco.languages.getLanguages());
-  const formattingAvailable = createMemo(() => {
-    return isFormattable(attrs().lang || "");
-  });
+  const attrs = (): CodeBlockAttributes => props.state.node.attrs;
+  const suggestLanguage = useSuggestLanguage();
+  const formattingAvailable = createMemo(() => isFormattable(attrs().lang?.split(" ")?.[0] || ""));
+  const updateAttribute = debounce((attribute: "title" | "lang", value: string) => {
+    return props.state.updateAttributes({ [attribute]: value });
+  }, 200);
 
   createEffect(
-    on(attrs, () => {
-      setSuggestions(suggestLanguage(attrs().lang || ""));
-      props.changeLanguage(attrs().lang || null);
+    on(attrs, (attrs) => {
+      setSuggestions(suggestLanguage(attrs.lang || ""));
+      props.changeLanguage(attrs.lang?.split(" ")?.[0] || null);
     })
   );
 
   return (
-    <div class="flex p-0 transition-shadow duration-200 border-0 rounded-xl">
-      <Input
-        wrapperClass="flex-1 max-w-full"
-        placeholder="Language"
-        value={attrs().lang || ""}
-        suggestions={suggestions()}
-        color="contrast"
-        disabled={!state().editor.isEditable}
-        setValue={(value) => {
-          state().updateAttributes({ lang: value });
-        }}
-      />
-      <Show when={state().editor.isEditable}>
-        <Tooltip text={formattingAvailable() ? "Format" : "Formatting unavailable"}>
+    <div class="pointer-events-auto flex bg-gray-50 dark:bg-gray-900 !md:bg-transparent border-gray-200 dark:border-gray-700 border-y-2 md:border-0 backdrop-blur-sm md:gap-2 w-screen md:w-auto left-[5px] !md:left-unset relative md:rounded-2xl">
+      <Card class="flex py-0 m-0 border-0 md:border-2 px-1 gap-1">
+        <Tooltip text="Title">
           <IconButton
-            path={mdiCodeTagsCheck}
-            color="contrast"
-            text="soft"
-            disabled={!formattingAvailable()}
-            onClick={props.format}
+            path={mdiFileOutline}
+            color={mode() === "title" ? "primary" : "contrast"}
+            text={mode() === "title" ? "primary" : "soft"}
+            variant={mode() === "title" ? "solid" : "text"}
+            class="m-0"
+            onClick={() => {
+              setMode("title");
+            }}
           ></IconButton>
         </Tooltip>
-      </Show>
+        <Tooltip text="Language">
+          <IconButton
+            path={mdiCodeTags}
+            color={mode() === "lang" ? "primary" : "contrast"}
+            text={mode() === "lang" ? "primary" : "soft"}
+            variant={mode() === "lang" ? "solid" : "text"}
+            class="m-0"
+            onClick={() => {
+              setMode("lang");
+            }}
+          ></IconButton>
+        </Tooltip>
+      </Card>
+      <Card class="flex m-0 border-0 md:border-2 p-1 gap-1 flex-1">
+        <Input
+          wrapperClass="flex-1 max-w-full md:w-72"
+          placeholder={mode() === "title" ? "Snippet title" : "Language meta"}
+          value={attrs()[mode()] || ""}
+          suggestions={mode() === "lang" ? suggestions() : []}
+          suggestionsBoxClass="mt-3 mx-0 mb-0"
+          class="m-0 !bg-transparent text-lg"
+          color="contrast"
+          disabled={!props.state.editor.isEditable}
+          setValue={(value) => {
+            updateAttribute.clear();
+            updateAttribute(mode(), value);
+          }}
+        />
+      </Card>
+      <Card class="flex m-0 border-0 md:border-2 p-1">
+        <Show when={props.state.editor.isEditable}>
+          <Tooltip text={formattingAvailable() ? "Format" : "Formatting unavailable"} class="mt-1">
+            <IconButton
+              path={mdiCodeTagsCheck}
+              color="contrast"
+              text="soft"
+              variant="text"
+              class="m-0"
+              disabled={!formattingAvailable()}
+              onClick={props.format}
+            ></IconButton>
+          </Tooltip>
+        </Show>
+      </Card>
     </div>
   );
 };
