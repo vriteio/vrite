@@ -1,12 +1,12 @@
-import { docusaurusInputTransformer } from "./input-transformer";
+import { mdxInputTransformer } from "./input-transformer";
 import { procedure, router, z } from "@vrite/backend";
 import { OpenAI } from "openai";
 
 // test
-docusaurusInputTransformer("");
+mdxInputTransformer("");
 
 const basePath = "/docusaurus";
-const docusaurusRouter = router({
+const mdxRouter = router({
   prompt: procedure
     .meta({
       openapi: {
@@ -47,4 +47,4 @@ const docusaurusRouter = router({
     })
 });
 
-export { docusaurusRouter };
+export { mdxRouter };

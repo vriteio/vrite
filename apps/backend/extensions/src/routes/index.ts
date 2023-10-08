@@ -2,7 +2,7 @@ import { devRouter } from "./dev";
 import { hashnodeRouter } from "./hashnode";
 import { gptRouter } from "./gpt";
 import { mediumRouter } from "./medium";
-import { docusaurusRouter } from "./docusaurus";
+import { mdxRouter } from "./mdx";
 import { router } from "@vrite/backend";
 
 const extensionsRouter = router({
@@ -10,7 +10,7 @@ const extensionsRouter = router({
   hashnode: hashnodeRouter,
   medium: mediumRouter,
   gpt: gptRouter,
-  docusaurus: docusaurusRouter
+  mdx: mdxRouter
 });
 
 type Router = typeof extensionsRouter;
