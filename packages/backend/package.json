@@ -36,7 +36,6 @@
     "@vrite/sdk": "workspace:*",
     "axios": "^1.4.0",
     "fastify": "^4.20.0",
-    "graphql": "^16.8.1",
     "html-to-text": "^9.0.5",
     "lexorank": "^1.0.5",
     "marked": "^5.1.2",
