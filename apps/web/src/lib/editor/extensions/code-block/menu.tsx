@@ -18,9 +18,16 @@ const CodeBlockMenu: Component<CodeBlockMenuProps> = (props) => {
   const attrs = (): CodeBlockAttributes => props.state.node.attrs;
   const suggestLanguage = useSuggestLanguage();
   const formattingAvailable = createMemo(() => isFormattable(attrs().lang?.split(" ")?.[0] || ""));
-  const updateAttribute = debounce((attribute: "title" | "lang", value: string) => {
-    return props.state.updateAttributes({ [attribute]: value });
+  const updateAttribute = debounce((attributes: CodeBlockAttributes) => {
+    return props.state.updateAttributes(attributes);
   }, 200);
+  const currentValue = (): string => {
+    if (mode() === "lang") {
+      return [attrs().lang, attrs().meta].filter(Boolean).join(" ");
+    }
+
+    return attrs().title || "";
+  };
 
   createEffect(
     on(attrs, (attrs) => {
@@ -61,7 +68,7 @@ const CodeBlockMenu: Component<CodeBlockMenuProps> = (props) => {
         <Input
           wrapperClass="flex-1 max-w-full md:w-72"
           placeholder={mode() === "title" ? "Snippet title" : "Language meta"}
-          value={attrs()[mode()] || ""}
+          value={currentValue()}
           suggestions={mode() === "lang" ? suggestions() : []}
           suggestionsBoxClass="mt-3 mx-0 mb-0"
           class="m-0 !bg-transparent text-lg"
@@ -69,7 +76,14 @@ const CodeBlockMenu: Component<CodeBlockMenuProps> = (props) => {
           disabled={!props.state.editor.isEditable}
           setValue={(value) => {
             updateAttribute.clear();
-            updateAttribute(mode(), value);
+
+            if (mode() === "lang") {
+              const [lang, ...meta] = value.split(" ");
+
+              updateAttribute({ meta: meta.join(" "), lang });
+            } else {
+              updateAttribute({ title: value });
+            }
           }}
         />
       </Card>

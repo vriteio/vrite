@@ -4,6 +4,7 @@ import { Node, mergeAttributes } from "@tiptap/core";
 interface CodeBlockAttributes {
   lang?: string;
   title?: string;
+  meta?: string;
 }
 interface CodeBlockOptions {
   inline: boolean;
@@ -64,9 +65,13 @@ const CodeBlock = Node.create<CodeBlockOptions>({
       title: {
         default: null,
         parseHTML: (element) => {
-          return {
-            title: element.getAttribute("data-title")
-          };
+          return element.getAttribute("data-title");
+        }
+      },
+      meta: {
+        default: null,
+        parseHTML: (element) => {
+          return element.getAttribute("data-meta");
         }
       }
     };
@@ -87,7 +92,8 @@ const CodeBlock = Node.create<CodeBlockOptions>({
         "code",
         {
           "class": node.attrs.lang ? `language-${node.attrs.lang}` : null,
-          "data-title": node.attrs.title
+          "data-title": node.attrs.title,
+          "data-meta": node.attrs.meta
         },
         0
       ]

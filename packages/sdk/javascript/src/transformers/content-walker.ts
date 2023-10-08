@@ -127,7 +127,9 @@ type ImageNode = {
 type CodeBlockNode = {
   type: "codeBlock";
   attrs?: {
-    lang: string;
+    lang?: string;
+    meta?: string;
+    title?: string;
   };
   content: TextNode[];
 };

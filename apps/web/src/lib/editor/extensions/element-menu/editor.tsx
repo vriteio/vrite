@@ -119,16 +119,21 @@ const ElementMenuEditor = lazy(async () => {
           const [, key] = match;
           const value = (match[2] || match[3] || match[4] || "true").trim();
 
-          let processedValue = value;
-
           try {
-            processedValue = await formatCode(processedValue, "json", { trailingComma: "none" });
+            const processedValue = await formatCode(value, "json", {
+              trailingComma: "none"
+            });
+
             attributes[key] = JSON.parse(processedValue);
           } catch (e) {
-            if (!props.state.props[key] || typeof props.state.props[key] === "string") {
-              attributes[key] = value;
-            } else {
-              attributes[key] = props.state.props[key];
+            try {
+              attributes[key] = JSON.parse(value);
+            } catch (e) {
+              if (!props.state.props[key] || typeof props.state.props[key] === "string") {
+                attributes[key] = value;
+              } else {
+                attributes[key] = props.state.props[key];
+              }
             }
           }
 

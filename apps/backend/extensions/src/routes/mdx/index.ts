@@ -1,49 +1,64 @@
-import { mdxInputTransformer } from "./input-transformer";
+import { mdxAsyncInputTransformer } from "./input-transformer";
+import { mdxAsyncOutputTransformer } from "./output-transformer";
 import { procedure, router, z } from "@vrite/backend";
+import { InputTransformer } from "@vrite/sdk/transformers";
 import { OpenAI } from "openai";
 
 // test
-mdxInputTransformer("");
 
-const basePath = "/docusaurus";
+const basePath = "/mdx";
 const mdxRouter = router({
-  prompt: procedure
+  input: procedure
     .meta({
       openapi: {
         method: "POST",
-        path: `${basePath}`
+        path: `${basePath}/input`
       }
     })
-    .input(z.object({ prompt: z.string() }))
-    .output(z.void())
+    .input(z.object({ data: z.array(z.string()) }))
+    .output(
+      z.array(
+        z.object({
+          content: z.string(),
+          contentPiece: z.any()
+        })
+      )
+    )
     .mutation(async ({ ctx, input }) => {
-      const openai = new OpenAI({
-        apiKey: ctx.fastify.config.OPENAI_API_KEY,
-        organization: ctx.fastify.config.OPENAI_ORGANIZATION
-      });
-      const responseStream = await openai.chat.completions.create({
-        model: "gpt-3.5-turbo",
-        stream: true,
-        messages: [{ role: "user", content: input.prompt }]
-      });
+      const output: Array<ReturnType<InputTransformer>> = [];
 
-      ctx.res.raw.writeHead(200, {
-        ...ctx.res.getHeaders(),
-        "content-type": "text/event-stream",
-        "cache-control": "no-cache",
-        "connection": "keep-alive"
-      });
-
-      for await (const part of responseStream) {
-        const content = part.choices[0].delta.content || "";
-
-        if (content) {
-          ctx.res.raw.write(`data: ${encodeURIComponent(content)}`);
-          ctx.res.raw.write("\n\n");
-        }
+      for await (const content of input.data) {
+        output.push(await mdxAsyncInputTransformer(content));
       }
 
-      ctx.res.raw.end();
+      return output;
+    }),
+  output: procedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: `${basePath}/output`
+      }
+    })
+    .input(
+      z.object({
+        data: z.array(
+          z.object({
+            content: z.any(),
+            metadata: z.any()
+          })
+        )
+      })
+    )
+    .output(z.array(z.string()))
+    .mutation(async ({ ctx, input }) => {
+      const output: string[] = [];
+
+      for await (const { content, metadata } of input.data) {
+        output.push(await mdxAsyncOutputTransformer(content, metadata));
+      }
+
+      return output;
     })
 });
 
