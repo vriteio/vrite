@@ -70,7 +70,9 @@ const mdxAsyncInputTransformer = async (input: string): Promise<ReturnType<Input
             "data-element": "true",
             "data-type": "Import"
           },
-          children: [defaultHandlers.code(state, { type: "code", lang: "mdx", value: node.value })]
+          children: [
+            defaultHandlers.code(state, { type: "code", lang: "mdx", value: node.value.trim() })
+          ]
         };
 
         state.patch(node, result);
@@ -92,7 +94,11 @@ const mdxAsyncInputTransformer = async (input: string): Promise<ReturnType<Input
 
         (node.meta || "").split(" ").forEach((item) => {
           if (item.startsWith("title=")) {
-            title = item.replace("title=", "");
+            const match = item.match(/title="(.+?)"/);
+
+            if (match) {
+              title = match[1] || title;
+            }
           } else {
             meta.push(item);
           }
@@ -114,6 +120,15 @@ const mdxAsyncInputTransformer = async (input: string): Promise<ReturnType<Input
         }
 
         return result;
+      },
+      mdxFlowExpression() {
+        return undefined;
+      },
+      mdxJsxTextElement() {
+        return undefined;
+      },
+      mdxTextExpression() {
+        return undefined;
       },
       mdxJsxFlowElement(state, node: RootContentMap["mdxJsxFlowElement"]) {
         const result: Element = {

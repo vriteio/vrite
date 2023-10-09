@@ -108,7 +108,7 @@ const ElementMenuEditor = lazy(async () => {
       const onSave = async (code: string): Promise<void> => {
         const tagRegex = /^<(\w+?)(?:\s|\n|\/|>)/;
         const attributeRegex =
-          /\s(\w+?)(?:=(?:(?:{((?:.|\n|\s)+?)})|(?:"((?:.|\n|\s)+?)")|(?:'((?:.|\n|\s)+?)')))?(?=(?:(?:\s|\n)+\w+=)|(?:(?:\s|\n)+\/?>))/g;
+          /\s(\w+?)(?:=(?:(?:{((?:.|\n|\s)+?)})|(?:"((?:.|\n|\s)+?)")|(?:'((?:.|\n|\s)+?)')))?(?=(?:(?:\s|\n)+\w+=?)|(?:(?:\s|\n)*\/?>))/g;
         const [, tag] = tagRegex.exec(code.trim()) || [];
         const attributes: Record<string, any> = {};
         const processAttributes = async (): Promise<void> => {
@@ -187,7 +187,6 @@ const ElementMenuEditor = lazy(async () => {
           }
 
           await onSave(codeEditor.getValue());
-          codeEditor.setValue(await processCode(editorCode()));
         });
         codeEditor.onKeyDown((event) => {
           if (event.code === "Escape") {

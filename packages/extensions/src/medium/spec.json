@@ -4,7 +4,6 @@
   "description": "Automatically publish articles to Medium",
   "permissions": ["contentGroups:read", "contentPieces:read", "webhooks:read", "webhooks:write"],
   "lifecycle": {
-    "on:install": "install",
     "on:uninstall": "uninstall",
     "on:configure": "configure",
     "on:initConfigurationView": "initConfigurationView",

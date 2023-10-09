@@ -1,0 +1,10 @@
+{
+  "name": "mdx",
+  "displayName": "MDX",
+  "description": "Adds MDX transformers to Git sync",
+  "permissions": ["workspace:write", "workspace:read"],
+  "lifecycle": {
+    "on:uninstall": "uninstall",
+    "on:configure": "configure"
+  }
+}

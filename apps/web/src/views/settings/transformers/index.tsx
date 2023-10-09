@@ -10,26 +10,26 @@ import {
   on,
   onCleanup
 } from "solid-js";
-import { mdiFormatListBulleted, mdiPlusCircle, mdiTrashCan, mdiTune } from "@mdi/js";
+import { mdiFormatListBulleted, mdiPlusCircle, mdiPuzzle, mdiTrashCan, mdiTune } from "@mdi/js";
 import { createStore } from "solid-js/store";
 import { TitledCard } from "#components/fragments";
 import { App, hasPermission, useClient, useNotifications } from "#context";
 import { Button, Card, Heading, IconButton, Loader, Tooltip } from "#components/primitives";
 
 interface TransformerDetailsProps {
-  transformer: App.Transformer & { inUse?: boolean };
+  transformer: App.Transformer & { inUse?: boolean; extension?: boolean };
   onEdit?(): void;
   onDelete?(): void;
 }
 
 const useTransformers = (): {
   loading: Accessor<boolean>;
-  transformers(): Array<App.Transformer & { inUse?: boolean }>;
+  transformers(): Array<App.Transformer & { inUse?: boolean; extension?: boolean }>;
 } => {
   const client = useClient();
   const [loading, setLoading] = createSignal(false);
   const [state, setState] = createStore<{
-    transformers: Array<App.Transformer>;
+    transformers: Array<App.Transformer & { inUse?: boolean; extension?: boolean }>;
   }>({
     transformers: []
   });
@@ -72,25 +72,34 @@ const TransformerDetails: Component<TransformerDetailsProps> = (props) => {
       <Heading level={2} class="break-anywhere flex-1">
         {props.transformer.label}
       </Heading>
-      <Show when={hasPermission("manageWorkspace")}>
-        <div class="flex gap-2">
-          <Tooltip text="Delete" class="mt-1" enabled={!props.transformer.inUse}>
-            <IconButton
-              path={mdiTrashCan}
-              loading={loading()}
-              disabled={props.transformer.inUse}
-              class="m-0"
-              text="soft"
-              onClick={async () => {
-                setLoading(true);
-                await client.transformers.delete.mutate({ id: props.transformer.id });
-                setLoading(false);
-                props.onDelete?.();
-                notify({ text: "Transformer deleted", type: "success" });
-              }}
-            />
+      <Show
+        when={!props.transformer.extension}
+        fallback={
+          <Tooltip text="Extension" class="mt-1">
+            <IconButton path={mdiPuzzle} text="soft" class="m-0" badge />
           </Tooltip>
-        </div>
+        }
+      >
+        <Show when={hasPermission("manageWorkspace")}>
+          <div class="flex gap-2">
+            <Tooltip text="Delete" class="mt-1" enabled={!props.transformer.inUse}>
+              <IconButton
+                path={mdiTrashCan}
+                loading={loading()}
+                disabled={props.transformer.inUse}
+                class="m-0"
+                text="soft"
+                onClick={async () => {
+                  setLoading(true);
+                  await client.transformers.delete.mutate({ id: props.transformer.id });
+                  setLoading(false);
+                  props.onDelete?.();
+                  notify({ text: "Transformer deleted", type: "success" });
+                }}
+              />
+            </Tooltip>
+          </div>
+        </Show>
       </Show>
     </Card>
   );

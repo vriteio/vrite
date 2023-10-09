@@ -8,6 +8,7 @@ import {
 import { format } from "prettier/standalone";
 import babelPlugin from "prettier/plugins/babel";
 import estreePlugin from "prettier/plugins/estree";
+import markdownPlugin from "prettier/plugins/markdown";
 import { ContentPiece } from "@vrite/sdk/api";
 import { convert as convertToText } from "html-to-text";
 import { dump } from "js-yaml";
@@ -140,7 +141,7 @@ const mdxAsyncOutputTransformer = async (
     if (attrs.type === "Import" && elementWalker.children[0]?.node?.type === "codeBlock") {
       return `${transformTextNode(
         elementWalker.children[0] as JSONContentNodeWalker<JSONContentNode["codeBlock"]>
-      )}`;
+      ).trim()}`;
     }
 
     const keyValueProps = Object.entries(attrs.props).map(([key, value]) => {
@@ -156,7 +157,14 @@ const mdxAsyncOutputTransformer = async (
     );
 
     if (elementWalker.children.length > 0) {
-      return `${openingTag}\n${transformContentNode(elementWalker)}\n</${attrs.type}>`;
+      return `${openingTag}\n${(
+        await transformContentNode(
+          elementWalker as JSONContentNodeWalker<JSONContentNode["element"]>
+        )
+      )
+        .split("\n")
+        .map((line) => `  ${line}`)
+        .join("\n")}\n</${attrs.type}>`;
     }
 
     return openingTag;
@@ -184,7 +192,7 @@ const mdxAsyncOutputTransformer = async (
           case "bulletList":
           case "orderedList":
           case "taskList":
-            return `${isPreviousSiblingList ? "\n" : ""}${transformList(
+            return `${isPreviousSiblingList ? "\n" : ""}${await transformList(
               child as JSONContentNodeWalker<
                 JSONContentNode["bulletList" | "orderedList" | "taskList"]
               >
@@ -283,18 +291,25 @@ const mdxAsyncOutputTransformer = async (
     {
       ...(contentPiece?.canonicalLink && { canonicalLink: contentPiece.canonicalLink }),
       ...(contentPiece?.coverUrl && { coverUrl: contentPiece.coverUrl }),
-      ...(contentPiece?.description && { description: convertToText(contentPiece.description) }),
+      ...(contentPiece?.description && {
+        description: convertToText(contentPiece.description, { wordwrap: false })
+      }),
       ...(contentPiece?.date && { date: dayjs(contentPiece.date).format("YYYY-MM-DD") }),
       ...(contentPiece?.slug && { slug: contentPiece.slug }),
       ...(contentPiece?.title && { title: contentPiece.title }),
       ...(contentPiece?.customData || {})
     },
-    { skipInvalid: true }
+    { skipInvalid: true, forceQuotes: true, quotingType: '"' }
   );
 
-  return `${frontmatter ? "---" : ""}\n${frontmatter}\n${
-    frontmatter ? "---" : ""
-  }\n\n${content.trim()}`;
+  return (
+    await format(
+      `${frontmatter ? "---" : ""}\n${frontmatter.trim()}\n${
+        frontmatter ? "---" : ""
+      }\n\n${content.trim()}`,
+      { plugins: [markdownPlugin], parser: "mdx" }
+    )
+  ).trim();
 };
 
 export { mdxAsyncOutputTransformer };

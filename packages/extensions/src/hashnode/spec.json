@@ -4,7 +4,6 @@
   "description": "Automatically publish and update articles on Hashnode",
   "permissions": ["contentGroups:read", "contentPieces:read", "webhooks:read", "webhooks:write"],
   "lifecycle": {
-    "on:install": "install",
     "on:uninstall": "uninstall",
     "on:configure": "configure",
     "on:initConfigurationView": "initConfigurationView",

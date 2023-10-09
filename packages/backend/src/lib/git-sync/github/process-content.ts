@@ -1,11 +1,7 @@
 import { AuthenticatedContext } from "../../middleware";
 import { UnderscoreID } from "../../mongo";
 import { jsonToBuffer, htmlToJSON, bufferToJSON } from "../../processing";
-import {
-  InputContentProcessor,
-  OutputContentProcessor,
-  OutputContentProcessorInput
-} from "../types";
+import { InputContentProcessor, OutputContentProcessor } from "../types";
 import {
   GenericJSONContentNode,
   gfmInputTransformer,

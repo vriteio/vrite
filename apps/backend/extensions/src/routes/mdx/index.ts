@@ -2,9 +2,6 @@ import { mdxAsyncInputTransformer } from "./input-transformer";
 import { mdxAsyncOutputTransformer } from "./output-transformer";
 import { procedure, router, z } from "@vrite/backend";
 import { InputTransformer } from "@vrite/sdk/transformers";
-import { OpenAI } from "openai";
-
-// test
 
 const basePath = "/mdx";
 const mdxRouter = router({
@@ -24,7 +21,7 @@ const mdxRouter = router({
         })
       )
     )
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ input }) => {
       const output: Array<ReturnType<InputTransformer>> = [];
 
       for await (const content of input.data) {

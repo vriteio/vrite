@@ -15,10 +15,12 @@ const transformersRouter = router({
     .input(transformer.omit({ id: true }))
     .output(z.object({ id: zodId() }))
     .mutation(async ({ ctx, input }) => {
+      const extensionId = ctx.req.headers["x-vrite-extension-id"] as string | undefined;
       const transformersCollection = getTransformersCollection(ctx.db);
       const transformer = {
         _id: new ObjectId(),
         workspaceId: ctx.auth.workspaceId,
+        ...(extensionId && { extensionId: new ObjectId(extensionId) }),
         ...input
       };
 
@@ -63,7 +65,14 @@ const transformersRouter = router({
       permissions: { token: ["workspace:read"] }
     })
     .input(z.void())
-    .output(z.array(transformer.extend({ inUse: z.boolean().optional() })))
+    .output(
+      z.array(
+        transformer.extend({
+          inUse: z.boolean().optional(),
+          extension: z.boolean().optional()
+        })
+      )
+    )
     .query(async ({ ctx }) => {
       const gitDataCollection = getGitDataCollection(ctx.db);
       const transformersCollection = getTransformersCollection(ctx.db);
@@ -77,11 +86,12 @@ const transformersRouter = router({
         .sort("_id", -1)
         .toArray();
 
-      return transformers.map(({ _id, workspaceId, ...transformerData }) => {
+      return transformers.map(({ _id, workspaceId, extensionId, ...transformerData }) => {
         return {
           id: `${_id}`,
           workspaceId: `${workspaceId}`,
           inUse: gitData?.github?.transformer === `${_id}`,
+          ...(extensionId && { extension: true }),
           ...transformerData
         };
       });

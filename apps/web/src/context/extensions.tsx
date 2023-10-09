@@ -36,7 +36,8 @@ const officialExtensions = {
   "dev": () => import("@vrite/extensions/dev.json"),
   "hashnode": () => import("@vrite/extensions/hashnode.json"),
   "medium": () => import("@vrite/extensions/medium.json"),
-  "gpt-3.5": () => import("@vrite/extensions/gpt-3.5.json")
+  "gpt-3.5": () => import("@vrite/extensions/gpt-3.5.json"),
+  "mdx": () => import("@vrite/extensions/mdx.json")
 };
 const isOfficialExtension = (id: string): boolean => {
   return id in officialExtensions;

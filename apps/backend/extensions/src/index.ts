@@ -1,5 +1,5 @@
 import { extensionsService } from "./extensions";
-import { createServer, z } from "@vrite/backend";
+import { createServer } from "@vrite/backend";
 
 (async () => {
   const server = await createServer({});
