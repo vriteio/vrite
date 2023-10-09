@@ -1,6 +1,6 @@
 import { SearchPaletteProvider, useSearchPalette } from "./search-palette";
 import { mdiAppleKeyboardCommand, mdiGithub, mdiMagnify } from "@mdi/js";
-import { For, type Component } from "solid-js";
+import { For, type Component, Show } from "solid-js";
 import clsx from "clsx";
 import { Button, Icon, IconButton, Tooltip } from "#components/primitives";
 import { discordIcon } from "#assets/icons";
@@ -59,16 +59,23 @@ const Header: Component = () => {
         label={
           <div class="hidden md:flex w-full items-center">
             <span class="pl-1 flex-1 text-start">Search</span>
-            <kbd class="bg-gray-300 dark:bg-gray-700 group-hover:bg-gray-200 dark:group-hover:bg-gray-800 flex justify-center items-center rounded-md px-1 h-5 text-sm">
-              {isAppleDevice() ? <Icon path={mdiAppleKeyboardCommand} class="h-3 w-3" /> : "Ctrl "}K
-            </kbd>
+            <Show when={typeof window === "object"}>
+              <kbd class="bg-gray-300 dark:bg-gray-700 group-hover:bg-gray-200 dark:group-hover:bg-gray-800 flex justify-center items-center rounded-md px-1 h-5 text-sm">
+                {isAppleDevice() ? (
+                  <Icon path={mdiAppleKeyboardCommand} class="h-3 w-3" />
+                ) : (
+                  "Ctrl "
+                )}
+                K
+              </kbd>
+            </Show>
           </div>
         }
         text="soft"
         class="lg:min-w-48 justify-start m-0 group"
         onClick={() => setOpened(!opened())}
       />
-      <Button color="primary" class="m-0">
+      <Button color="primary" class="m-0" link="https://app.vrite.io">
         Sign in
       </Button>
     </div>

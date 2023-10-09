@@ -19,13 +19,16 @@ type PaginationParams = {
 interface APIFetcher {
   sendRequest: SendRequest;
   reconfigure: (config: APIFetcherConfig) => void;
+  useSignal: (signal: AbortSignal | null) => void;
   getConfig: () => Required<APIFetcherConfig>;
+  getSignal: () => AbortSignal | null;
 }
 
 const createAPIFetcher = (config: APIFetcherConfig): APIFetcher => {
   let baseURL = config.baseURL || "https://api.vrite.io";
   let extensionId = config.extensionId || "";
   let headers = config.headers || {};
+  let signal: AbortSignal | null = null;
   let { token } = config;
 
   const sendRequest: SendRequest = async (method, path, options) => {
@@ -49,9 +52,12 @@ const createAPIFetcher = (config: APIFetcherConfig): APIFetcher => {
             ...headers
           },
           body: options?.body ? JSON.stringify(options.body) : null,
+          signal,
           method
         }
       );
+
+      signal = null;
 
       let json = null;
 
@@ -81,6 +87,9 @@ const createAPIFetcher = (config: APIFetcherConfig): APIFetcher => {
     extensionId = config.extensionId || extensionId;
     headers = config.headers || headers;
   };
+  const useSignal = (newSignal: AbortSignal | null): void => {
+    signal = newSignal;
+  };
   const getConfig = (): Required<APIFetcherConfig> => {
     return {
       baseURL,
@@ -89,8 +98,11 @@ const createAPIFetcher = (config: APIFetcherConfig): APIFetcher => {
       headers
     };
   };
+  const getSignal = (): AbortSignal | null => {
+    return signal;
+  };
 
-  return { sendRequest, reconfigure, getConfig };
+  return { sendRequest, reconfigure, useSignal, getConfig, getSignal };
 };
 
 export { createAPIFetcher };

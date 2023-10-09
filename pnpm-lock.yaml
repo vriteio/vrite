@@ -283,9 +283,6 @@ importers:
       '@mdi/js':
         specifier: ^7.2.96
         version: 7.2.96
-      '@microsoft/fetch-event-source':
-        specifier: ^2.0.1
-        version: 2.0.1
       '@solid-primitives/scheduled':
         specifier: ^1.4.0
         version: 1.4.0(solid-js@1.7.11)
@@ -298,6 +295,9 @@ importers:
       '@vrite/components':
         specifier: workspace:*
         version: link:../../packages/components
+      '@vrite/sdk':
+        specifier: workspace:*
+        version: link:../../packages/sdk/javascript
       astro:
         specifier: ^3.1.0
         version: 3.1.0(sass@1.64.1)
@@ -337,6 +337,9 @@ importers:
       unocss:
         specifier: ^0.55.7
         version: 0.55.7(postcss@8.4.31)(vite@4.4.9)
+      url-slug:
+        specifier: ^4.0.1
+        version: 4.0.1
       vite:
         specifier: ^4.4.9
         version: 4.4.9(@types/node@20.4.4)(sass@1.64.1)(terser@5.19.2)

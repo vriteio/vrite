@@ -1,4 +1,12 @@
-import { Component, For, onMount, onCleanup, createSignal, createMemo } from "solid-js";
+import {
+  Component,
+  For,
+  onMount,
+  onCleanup,
+  createSignal,
+  createMemo,
+  createEffect
+} from "solid-js";
 import { mdiListBox } from "@mdi/js";
 import clsx from "clsx";
 import { scroll } from "seamless-scroll-polyfill";
@@ -16,11 +24,39 @@ const OnThisPage: Component<OnThisPageProps> = (props) => {
       return heading.depth === 2 || heading.depth === 3;
     });
   });
+  const scrollToActiveHeading = (smooth?: boolean): void => {
+    const heading = activeHeading();
+    const element = document.getElementById(heading);
+
+    if (!element) return;
+
+    const rect = element.getBoundingClientRect();
+    const y = rect.top + window.scrollY - 60;
+
+    scroll(window, {
+      top: y,
+      behavior: smooth === false ? "instant" : "smooth"
+    });
+  };
+  const handleClick = (event: MouseEvent): void => {
+    const target = event.target as HTMLElement;
+
+    if (target.matches("h1, h2, h3, h4, h5, h6")) {
+      const { id } = target;
+
+      if (id) {
+        setActiveHeading(id);
+        scrollToActiveHeading();
+        history.replaceState(null, "", `#${id}`);
+        navigator.clipboard.writeText(window.location.href);
+      }
+    }
+  };
 
   onMount(() => {
     if (!headings().length) return;
 
-    const observedElements: HTMLElement[] = [];
+    const hash = location.hash.slice(1);
     const setCurrent: IntersectionObserverCallback = (entries) => {
       for (const entry of entries) {
         if (entry.isIntersecting) {
@@ -60,10 +96,17 @@ const OnThisPage: Component<OnThisPageProps> = (props) => {
       )
       .forEach((h) => headingsObserver.observe(h));
     container?.addEventListener("scroll", handleScroll);
+    document.body.addEventListener("click", handleClick);
     onCleanup(() => {
       headingsObserver.disconnect();
       container?.removeEventListener("scroll", handleScroll);
+      document.body.removeEventListener("click", handleClick);
     });
+
+    if (hash) {
+      setActiveHeading(hash);
+      scrollToActiveHeading(false);
+    }
   });
 
   return (
@@ -93,18 +136,8 @@ const OnThisPage: Component<OnThisPageProps> = (props) => {
                 class={clsx("text-start m-0", heading.depth === 3 && "ml-6")}
                 size={heading.depth === 2 ? "medium" : "small"}
                 onClick={() => {
-                  const element = document.getElementById(heading.slug);
-
-                  if (!element) return;
-
-                  const rect = element.getBoundingClientRect();
-                  const y = rect.top + window.scrollY - 60;
-
-                  scroll(window, {
-                    top: y,
-                    behavior: "smooth"
-                  });
                   setActiveHeading(heading.slug);
+                  scrollToActiveHeading();
                 }}
               >
                 {heading.text}

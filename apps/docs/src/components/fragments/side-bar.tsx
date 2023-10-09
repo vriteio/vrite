@@ -1,11 +1,4 @@
-import {
-  mdiMenu,
-  mdiClose,
-  mdiChevronDown,
-  mdiConsoleLine,
-  mdiTextBoxMultiple,
-  mdiBookOpenBlankVariant
-} from "@mdi/js";
+import { mdiMenu, mdiClose, mdiChevronDown } from "@mdi/js";
 import clsx from "clsx";
 import { Component, For, JSX, createSignal } from "solid-js";
 import { menuOpened, setMenuOpened } from "#lib/state";
@@ -13,41 +6,34 @@ import { Card, Button, IconButton } from "#components/primitives";
 import { logoIcon } from "#assets/icons/logo";
 
 interface SideBarProps {
-  menu: Array<{
+  currentSection: string;
+  sections: Array<{
     label: string;
-    menu: Array<{ label: string; link: string }>;
+    icon: string;
+    link: string;
+    id: string;
   }>;
+  menu: Record<
+    string,
+    Array<{
+      label: string;
+      menu: Array<{ label: string; link?: string; menu?: Array<{ label: string; link: string }> }>;
+    }>
+  >;
   currentPath: string;
 }
-
-const externalLinks = [
-  {
-    label: "Documentation",
-    icon: mdiBookOpenBlankVariant,
-    href: "https://github.com/vriteio/vrite",
-    active: true
-  },
-  {
-    label: "API reference",
-    icon: mdiConsoleLine,
-    href: "https://discord.gg/yYqDWyKnqE"
-  },
-  {
-    label: "Recipes",
-    icon: mdiTextBoxMultiple,
-    href: "https://app.vrite.io"
-  }
-];
-const SideBarNestedMenu: Component<{
-  menu: Array<{ label: string; link: string; menu?: Array<{ label: string; link: string }> }>;
+interface SideBarNestedMenuProps {
+  menu: Array<{ label: string; link?: string; menu?: Array<{ label: string; link: string }> }>;
   currentPath: string;
   children: JSX.Element;
   openedByDefault?: boolean;
-}> = (props) => {
+}
+
+const SideBarNestedMenu: Component<SideBarNestedMenuProps> = (props) => {
   const [opened, setOpened] = createSignal(
     props.openedByDefault ||
       props.menu.filter((item) => {
-        return props.currentPath.includes(item.link);
+        return item.link && props.currentPath.includes(item.link);
       }).length > 0
   );
 
@@ -91,7 +77,7 @@ const SideBarNestedMenu: Component<{
               }
 
               const active = (): boolean => {
-                return props.currentPath.includes(item.link);
+                return Boolean(item.link && props.currentPath.includes(item.link));
               };
 
               return (
@@ -139,28 +125,27 @@ const SideBar: Component<SideBarProps> = (props) => {
             </span>
           </div>
           <div class="flex flex-col gap-2 pl-1 w-full py-4">
-            <For each={externalLinks}>
-              {(link) => {
+            <For each={props.sections}>
+              {(section) => {
                 return (
                   <a
                     class="flex justify-start items-center group w-full cursor-pointer"
-                    target="_blank"
-                    href={link.href}
+                    href={section.link}
                   >
                     <IconButton
-                      path={link.icon}
+                      path={section.icon}
                       class="m-0 group-hover:bg-gray-300 dark:group-hover:bg-gray-700 h-8 w-8"
                       iconProps={{ class: "h-5 w-5" }}
-                      color={link.active ? "primary" : "contrast"}
-                      text={link.active ? "primary" : "soft"}
+                      color={section.id === props.currentSection ? "primary" : "contrast"}
+                      text={section.id === props.currentSection ? "primary" : "soft"}
                     />
-                    <span class=" ml-2 text-gray-500 dark:text-gray-400">{link.label}</span>
+                    <span class=" ml-2 text-gray-500 dark:text-gray-400">{section.label}</span>
                   </a>
                 );
               }}
             </For>
           </div>
-          <For each={props.menu}>
+          <For each={props.menu[props.currentSection]}>
             {(menuItem) => {
               return (
                 <SideBarNestedMenu

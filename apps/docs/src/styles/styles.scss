@@ -103,64 +103,16 @@ kbd {
 
   font-kerning: none;
   :where(h1, h2, h3, h4, h5, h6):not(:where(.not-prose, .not-prose *)) {
-    &::before,
-    &::before,
-    &::before,
-    &::before,
-    &::before,
-    &::before,
-    .open-slash-menu > button {
-      @apply font-bold dark:bg-gray-900 dark:border-gray-700;
-      position: absolute;
-      left: -2.5rem;
-      background: #f9fafb;
-      height: 2rem;
-      width: 2rem;
-      justify-content: center;
-      display: flex;
-      align-items: center;
-      color: #6b7280;
-      border-radius: 25%;
-      font-size: 1rem;
-      line-height: 1rem;
-      text-align: center;
-      top: 50%;
-      transform: translateY(-50%);
-      //border: 2px solid #e5e7eb;
-      @apply border-2;
-      opacity: 1;
+    @apply m-0 relative hover:cursor-pointer;
+    &::before {
+      @apply hidden md:block absolute pr-6 -left-6 transform scale-90 text-gray-500 dark:text-gray-400 opacity-0;
+      content: "#";
+    }
+    &:hover::before {
+      @apply opacity-100;
     }
   }
 
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6,
-  .open-slash-menu {
-    @apply m-0 relative;
-    & > button {
-      @apply mt-4;
-    }
-  }
-  .open-slash-menu {
-    button {
-      font-size: 1.25em;
-      line-height: 1.25em;
-      font-weight: 600;
-    }
-  }
-  :where(h4):not(:where(.not-prose, .not-prose *)) {
-    line-height: 2.1rem;
-  }
-  :where(h5):not(:where(.not-prose, .not-prose *)) {
-    line-height: 2.1rem;
-  }
-  :where(h6):not(:where(.not-prose, .not-prose *)) {
-    font-size: 0.875em;
-    line-height: 2.1rem;
-  }
   :where(ul p, ol p):not(:where(.not-prose, .not-prose *)) {
     @apply m-0;
   }

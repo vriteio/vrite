@@ -8,7 +8,6 @@ import {
   Show,
   Switch,
   createEffect,
-  createMemo,
   createSignal,
   on,
   onCleanup,
@@ -16,7 +15,6 @@ import {
 } from "solid-js";
 import {
   mdiChevronRight,
-  mdiConsoleLine,
   mdiCreationOutline,
   mdiFileDocumentOutline,
   mdiHeadSnowflakeOutline,
@@ -30,8 +28,9 @@ import clsx from "clsx";
 import { scrollIntoView } from "seamless-scroll-polyfill";
 import { createContext } from "solid-js";
 import { debounce } from "@solid-primitives/scheduled";
-import { fetchEventSource } from "@microsoft/fetch-event-source";
+import { convert as convertToSlug } from "url-slug";
 import { marked } from "marked";
+import { createClient, SearchResult } from "@vrite/sdk/api";
 import {
   Button,
   Card,
@@ -54,12 +53,14 @@ interface SearchPaletteContextData {
 
 const SearchPaletteContext = createContext<SearchPaletteContextData>();
 const SearchPalette: Component<SearchPaletteProps> = (props) => {
+  const client = createClient({
+    token: import.meta.env.PUBLIC_VRITE_SEARCH_TOKEN,
+    baseURL: "http://localhost:4444"
+  });
   const [inputRef, setInputRef] = createSignal<HTMLInputElement | null>(null);
   const [abortControllerRef, setAbortControllerRef] = createSignal<AbortController | null>(null);
   const [mode, setMode] = createSignal<"search" | "ask">("search");
-  const [searchResults, setSearchResults] = createSignal<
-    Array<{ content: string; breadcrumb: string[]; contentPieceId: string }>
-  >([]);
+  const [searchResults, setSearchResults] = createSignal<SearchResult[]>([]);
   const [answer, setAnswer] = createSignal<string>("");
   const [loading, setLoading] = createSignal(false);
   const [scrollableContainerRef, setScrollableContainerRef] = createSignal<HTMLDivElement | null>(
@@ -71,25 +72,17 @@ const SearchPalette: Component<SearchPaletteProps> = (props) => {
   const ask = async (): Promise<void> => {
     let content = "";
 
-    await fetchEventSource(`http://localhost:4444/search/ask/?query=${query()}`, {
-      method: "GET",
-      headers: {
-        "Authorization": `Bearer Fq0U5T6vebJHtIqCPmyAt:jihNYSVwqNVgS9v8RqccR`,
-        "Content-Type": "application/json",
-        "Accept": "text/event-stream"
-      },
-      signal: abortControllerRef()?.signal,
-      onerror(error) {
+    client.useSignal(abortControllerRef()?.signal || null).ask({
+      query: query(),
+      onError(error) {
         setLoading(false);
         throw error;
       },
-      onmessage(event) {
-        const partOfContent = decodeURIComponent(event.data);
-
-        content += partOfContent;
+      onChunk(chunk) {
+        content += chunk;
         setAnswer(marked.parse(content, { gfm: true }));
       },
-      onclose() {
+      onEnd() {
         setLoading(false);
       }
     });
@@ -98,29 +91,23 @@ const SearchPalette: Component<SearchPaletteProps> = (props) => {
   const search = debounce(async () => {
     setSearchResults([]);
 
+    if (abortControllerRef()) abortControllerRef()?.abort();
+
     if (!query()) {
       setLoading(false);
+      setSearchResults([]);
 
       return;
     }
 
-    if (abortControllerRef()) abortControllerRef()?.abort();
-
     setAbortControllerRef(new AbortController());
 
     try {
-      const response = await fetch(`http://localhost:4444/search/?query=${query()}`, {
-        signal: abortControllerRef()?.signal,
-        credentials: "include",
-        headers: {
-          "Authorization": `Bearer Fq0U5T6vebJHtIqCPmyAt:jihNYSVwqNVgS9v8RqccR`,
-          "Content-Type": "application/json",
-          "Accept": "application/json"
-        }
-      });
-      const results = await response.json();
+      const search = await client
+        .useSignal(abortControllerRef()?.signal || null)
+        .search({ query: query() });
 
-      setSearchResults(results);
+      setSearchResults(search);
       setLoading(false);
 
       return;
@@ -128,7 +115,7 @@ const SearchPalette: Component<SearchPaletteProps> = (props) => {
       const trpcError = error as any;
       const causeErrorName = trpcError.cause?.name?.toLowerCase() || "";
 
-      if (!causeErrorName.includes("aborterror")) {
+      if (!causeErrorName.includes("aborterror") && abortControllerRef()?.signal.aborted) {
         setLoading(false);
       }
     }
@@ -143,10 +130,16 @@ const SearchPalette: Component<SearchPaletteProps> = (props) => {
       });
     }
   };
-  const goToContentPiece = (contentPieceId: string, breadcrumb?: string[]): void => {
+  const goToContentPiece = (searchResult: SearchResult): void => {
     // eslint-disable-next-line no-console
-    console.log(contentPieceId, breadcrumb);
     props.setOpened(false);
+
+    const { slug } = searchResult.contentPiece;
+    const [title, subHeading1, subHeading2] = searchResult.breadcrumb;
+
+    window.location.href = `/${slug.startsWith("/") ? slug.slice(1) : slug}#${convertToSlug(
+      subHeading2 || subHeading1
+    )}`;
   };
 
   createEffect(
@@ -223,10 +216,7 @@ const SearchPalette: Component<SearchPaletteProps> = (props) => {
           if (!props.opened) return;
 
           if (mode() === "search") {
-            goToContentPiece(
-              searchResults()[selectedIndex()].contentPieceId,
-              searchResults()[selectedIndex()].breadcrumb
-            );
+            goToContentPiece(searchResults()[selectedIndex()]);
           }
         }
       });
@@ -354,7 +344,7 @@ const SearchPalette: Component<SearchPaletteProps> = (props) => {
                           )}
                           color="base"
                           onClick={() => {
-                            goToContentPiece(result.contentPieceId, result.breadcrumb);
+                            goToContentPiece(result);
                           }}
                           onPointerEnter={() => {
                             if (!mouseHoverEnabled()) return;
