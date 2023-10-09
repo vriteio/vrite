@@ -31,7 +31,12 @@ const SlugInput: Component<SlugInputProps> = (props) => {
           onChange={(event) => {
             const { value } = event.currentTarget;
 
-            props.setSlug(convertToSlug(value));
+            props.setSlug(
+              value
+                .split("/")
+                .map((slugPart) => convertToSlug(slugPart))
+                .join("/")
+            );
           }}
         />
       </Show>

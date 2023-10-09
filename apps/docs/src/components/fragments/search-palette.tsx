@@ -32,48 +32,31 @@ import { createContext } from "solid-js";
 import { debounce } from "@solid-primitives/scheduled";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
 import { marked } from "marked";
-import { Card, Icon, IconButton, Input, Loader, Overlay, Tooltip } from "#components/primitives";
+import {
+  Button,
+  Card,
+  Icon,
+  IconButton,
+  Input,
+  Loader,
+  Overlay,
+  Tooltip
+} from "#components/primitives";
 
-interface CommandCategory {
-  label: string;
-  id: string;
-}
-interface Command {
-  name: string;
-  category: string;
-  icon: string;
-  action(): void;
-}
-interface CommandPaletteProps {
+interface SearchPaletteProps {
   opened: boolean;
-  commands: Command[];
   setOpened(opened: boolean): void;
 }
-interface CommandPaletteContextData {
+interface SearchPaletteContextData {
   opened: Accessor<boolean>;
   setOpened: Setter<boolean>;
-  registerCommand(command: Command | Command[]): void;
 }
 
-const categories: CommandCategory[] = [
-  {
-    label: "Navigate",
-    id: "navigate"
-  },
-  {
-    label: "Dashboard",
-    id: "dashboard"
-  },
-  {
-    label: "Editor",
-    id: "editor"
-  }
-];
-const CommandPaletteContext = createContext<CommandPaletteContextData>();
-const CommandPalette: Component<CommandPaletteProps> = (props) => {
+const SearchPaletteContext = createContext<SearchPaletteContextData>();
+const SearchPalette: Component<SearchPaletteProps> = (props) => {
   const [inputRef, setInputRef] = createSignal<HTMLInputElement | null>(null);
   const [abortControllerRef, setAbortControllerRef] = createSignal<AbortController | null>(null);
-  const [mode, setMode] = createSignal<"command" | "search" | "ask">("search");
+  const [mode, setMode] = createSignal<"search" | "ask">("search");
   const [searchResults, setSearchResults] = createSignal<
     Array<{ content: string; breadcrumb: string[]; contentPieceId: string }>
   >([]);
@@ -150,19 +133,11 @@ const CommandPalette: Component<CommandPaletteProps> = (props) => {
       }
     }
   }, 150);
-  const filteredCommands = createMemo(() => {
-    return props.commands.filter(({ name }) => {
-      return name.toLowerCase().includes(query().toLowerCase());
-    });
-  });
-  const selectedCommand = (): Command | null => {
-    return filteredCommands()[selectedIndex()] || null;
-  };
-  const scrollToSelectedCommand = (smooth?: boolean): void => {
-    const selectedCommandElement = document.querySelector("[data-selected=true]");
+  const scrollToSelectedResult = (smooth?: boolean): void => {
+    const selectedResultElement = document.querySelector("[data-selected=true]");
 
-    if (selectedCommandElement) {
-      scrollIntoView(selectedCommandElement, {
+    if (selectedResultElement) {
+      scrollIntoView(selectedResultElement, {
         behavior: smooth ? "smooth" : "instant",
         block: "center"
       });
@@ -170,20 +145,14 @@ const CommandPalette: Component<CommandPaletteProps> = (props) => {
   };
   const goToContentPiece = (contentPieceId: string, breadcrumb?: string[]): void => {
     // eslint-disable-next-line no-console
+    console.log(contentPieceId, breadcrumb);
     props.setOpened(false);
   };
 
   createEffect(
     on(
       query,
-      (query) => {
-        if (query === ">") {
-          setMode("command");
-          setQuery("");
-
-          return;
-        }
-
+      () => {
         if (mode() === "search") {
           search.clear();
           search();
@@ -229,13 +198,10 @@ const CommandPalette: Component<CommandPaletteProps> = (props) => {
 
           if (selectedIndex() > 0) {
             setSelectedIndex(selectedIndex() - 1);
-            scrollToSelectedCommand();
-          } else if (mode() === "command") {
-            setSelectedIndex(filteredCommands().length - 1);
-            scrollToSelectedCommand(true);
+            scrollToSelectedResult();
           } else if (mode() === "search") {
             setSelectedIndex(searchResults().length - 1);
-            scrollToSelectedCommand(true);
+            scrollToSelectedResult(true);
           }
         },
         "ArrowDown": (event) => {
@@ -245,28 +211,18 @@ const CommandPalette: Component<CommandPaletteProps> = (props) => {
           event.preventDefault();
           event.stopPropagation();
 
-          if (
-            (mode() === "command" && selectedIndex() < filteredCommands().length - 1) ||
-            (mode() === "search" && selectedIndex() < searchResults().length - 1)
-          ) {
+          if (mode() === "search" && selectedIndex() < searchResults().length - 1) {
             setSelectedIndex(selectedIndex() + 1);
-            scrollToSelectedCommand();
+            scrollToSelectedResult();
           } else {
             setSelectedIndex(0);
-            scrollToSelectedCommand(true);
+            scrollToSelectedResult(true);
           }
         },
         "Enter": (event) => {
           if (!props.opened) return;
 
-          if (mode() === "command") {
-            const selectedCommand = filteredCommands()[selectedIndex()];
-
-            if (selectedCommand) {
-              selectedCommand.action();
-              props.setOpened(false);
-            }
-          } else if (mode() === "search") {
+          if (mode() === "search") {
             goToContentPiece(
               searchResults()[selectedIndex()].contentPieceId,
               searchResults()[selectedIndex()].breadcrumb
@@ -284,8 +240,6 @@ const CommandPalette: Component<CommandPaletteProps> = (props) => {
 
   const getIcon = (): string => {
     switch (mode()) {
-      case "command":
-        return mdiConsoleLine;
       case "search":
         return mdiMagnify;
       case "ask":
@@ -294,8 +248,6 @@ const CommandPalette: Component<CommandPaletteProps> = (props) => {
   };
   const getLabel = (): string => {
     switch (mode()) {
-      case "command":
-        return "Command";
       case "ask":
         return "Just ask";
       case "search":
@@ -344,7 +296,7 @@ const CommandPalette: Component<CommandPaletteProps> = (props) => {
               }
             }}
             onKeyDown={(event) => {
-              if (mode() === "command" && event.key === "Backspace" && !query()) {
+              if (event.key === "Backspace" && !query()) {
                 setMode("search");
               }
             }}
@@ -486,64 +438,6 @@ const CommandPalette: Component<CommandPaletteProps> = (props) => {
                   </Card>
                 </Show>
               </Match>
-              <Match when={mode() === "command"}>
-                <Show when={!filteredCommands().length}>
-                  <span class="p-4 text-center text-gray-500 dark:text-gray-400">No results</span>
-                </Show>
-                <For each={categories}>
-                  {({ id, label }) => {
-                    const commands = (): Command[] => {
-                      return filteredCommands().filter((command) => {
-                        return (
-                          command.category === id &&
-                          command.name.toLowerCase().includes(query().toLowerCase())
-                        );
-                      });
-                    };
-
-                    return (
-                      <>
-                        <Show when={commands().length}>
-                          <span class="px-3 pb-0.5 pt-2 text-gray-500 dark:text-gray-400 text-sm">
-                            {label}
-                          </span>
-                        </Show>
-                        <For each={commands()}>
-                          {(command) => {
-                            return (
-                              <Card
-                                class={clsx(
-                                  "flex justify-start items-center py-2 px-3 m-0 rounded-none border-none",
-                                  command === selectedCommand() &&
-                                    "bg-gray-300 dark:bg-gray-700 cursor-pointer",
-                                  command !== selectedCommand() && "bg-transparent"
-                                )}
-                                onClick={() => {
-                                  command.action();
-                                  props.setOpened(false);
-                                }}
-                                onPointerEnter={() => {
-                                  if (!mouseHoverEnabled()) return;
-
-                                  setSelectedIndex(filteredCommands().indexOf(command));
-                                }}
-                                color="base"
-                                data-selected={command === selectedCommand()}
-                              >
-                                <Icon
-                                  path={command.icon}
-                                  class="h-5 w-5 mr-2 fill-gray-500 dark:fill-gray-400"
-                                />
-                                <span>{command.name}</span>
-                              </Card>
-                            );
-                          }}
-                        </For>
-                      </>
-                    );
-                  }}
-                </For>
-              </Match>
             </Switch>
           </div>
         </div>
@@ -578,60 +472,39 @@ const CommandPalette: Component<CommandPaletteProps> = (props) => {
             />
           </div>
           <div class="flex-1" />
-          <IconButton
-            path={mdiConsoleLine}
-            label="Command"
+          <Button
             size="small"
             variant="text"
-            color={mode() === "command" ? "primary" : "base"}
-            text={mode() === "command" ? "base" : "soft"}
+            color={mode() === "ask" ? "primary" : "base"}
+            text={mode() === "ask" ? "base" : "soft"}
             onClick={() => {
-              setMode((mode) => (mode === "command" ? "search" : "command"));
+              setMode((mode) => (mode === "search" ? "ask" : "search"));
             }}
-          />
+          >
+            Ask a question
+          </Button>
         </div>
       </Card>
     </Overlay>
   );
 };
-const CommandPaletteProvider: ParentComponent = (props) => {
+const SearchPaletteProvider: ParentComponent = (props) => {
   const [opened, setOpened] = createSignal(false);
-  const [commands, setCommands] = createSignal<Command[]>([]);
-  const registerCommand = (command: Command | Command[]): void => {
-    if (Array.isArray(command)) {
-      setCommands((commands) => [...commands, ...command]);
-    } else {
-      setCommands((commands) => [...commands, command]);
-    }
-
-    onCleanup(() => {
-      setCommands((commands) => {
-        return commands.filter((filteredCommand) => {
-          if (Array.isArray(command)) {
-            return !command.includes(filteredCommand);
-          }
-
-          return filteredCommand !== command;
-        });
-      });
-    });
-  };
 
   return (
-    <CommandPaletteContext.Provider
+    <SearchPaletteContext.Provider
       value={{
         opened,
-        setOpened,
-        registerCommand
+        setOpened
       }}
     >
       {props.children}
-      <CommandPalette opened={opened()} setOpened={setOpened} commands={commands()} />
-    </CommandPaletteContext.Provider>
+      <SearchPalette opened={opened()} setOpened={setOpened} />
+    </SearchPaletteContext.Provider>
   );
 };
-const useCommandPalette = (): CommandPaletteContextData => {
-  return useContext(CommandPaletteContext)!;
+const useSearchPalette = (): SearchPaletteContextData => {
+  return useContext(SearchPaletteContext)!;
 };
 
-export { CommandPaletteProvider, useCommandPalette };
+export { SearchPaletteProvider, useSearchPalette };

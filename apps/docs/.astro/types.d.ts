@@ -173,77 +173,81 @@ declare module 'astro:content' {
 	>;
 
 	type ContentEntryMap = {
-		"docs": {
+		"api": {
+};
+"docs": {
 "javascript-sdk/javascript-sdk.md": {
 	id: "javascript-sdk/javascript-sdk.md";
-  slug: "javascript-sdk/javascript-sdk";
+  slug: "javascript-sdk/introduction";
   body: string;
   collection: "docs";
-  data: any
+  data: InferEntrySchema<"docs">
 } & { render(): Render[".md"] };
 "self-hosting/configuration.md": {
 	id: "self-hosting/configuration.md";
   slug: "self-hosting/configuration";
   body: string;
   collection: "docs";
-  data: any
+  data: InferEntrySchema<"docs">
 } & { render(): Render[".md"] };
 "self-hosting/docker.md": {
 	id: "self-hosting/docker.md";
   slug: "self-hosting/docker";
   body: string;
   collection: "docs";
-  data: any
+  data: InferEntrySchema<"docs">
 } & { render(): Render[".md"] };
 "usage-guide/configuring-vrite.md": {
 	id: "usage-guide/configuring-vrite.md";
   slug: "usage-guide/configuring-vrite";
   body: string;
   collection: "docs";
-  data: any
+  data: InferEntrySchema<"docs">
 } & { render(): Render[".md"] };
 "usage-guide/content-editor.md": {
 	id: "usage-guide/content-editor.md";
   slug: "usage-guide/content-editor";
   body: string;
   collection: "docs";
-  data: any
+  data: InferEntrySchema<"docs">
 } & { render(): Render[".md"] };
 "usage-guide/getting-started.md": {
 	id: "usage-guide/getting-started.md";
   slug: "usage-guide/getting-started";
   body: string;
   collection: "docs";
-  data: any
+  data: InferEntrySchema<"docs">
 } & { render(): Render[".md"] };
 "usage-guide/kanban-dashboard.md": {
 	id: "usage-guide/kanban-dashboard.md";
   slug: "usage-guide/kanban-dashboard";
   body: string;
   collection: "docs";
-  data: any
+  data: InferEntrySchema<"docs">
 } & { render(): Render[".md"] };
 "usage-guide/metadata.md": {
 	id: "usage-guide/metadata.md";
   slug: "usage-guide/metadata";
   body: string;
   collection: "docs";
-  data: any
+  data: InferEntrySchema<"docs">
 } & { render(): Render[".md"] };
 "usage-guide/publishing.md": {
 	id: "usage-guide/publishing.md";
   slug: "usage-guide/publishing";
   body: string;
   collection: "docs";
-  data: any
+  data: InferEntrySchema<"docs">
 } & { render(): Render[".md"] };
 "usage-guide/vrite-extensions.md": {
 	id: "usage-guide/vrite-extensions.md";
   slug: "usage-guide/vrite-extensions";
   body: string;
   collection: "docs";
-  data: any
+  data: InferEntrySchema<"docs">
 } & { render(): Render[".md"] };
+};
+"recipes": {
 };
 
 	};

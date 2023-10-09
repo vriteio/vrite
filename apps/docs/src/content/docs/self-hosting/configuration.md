@@ -1,3 +1,8 @@
+---
+title: "Configuring Self-Hosted Vrite"
+slug: "self-hosting/configuration"
+---
+
 To properly host Vrite, you first have to configure a couple of environment variables. This guide aims to give you an overview of the available options.
 
 ## Security

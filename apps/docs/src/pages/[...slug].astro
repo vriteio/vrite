@@ -21,6 +21,6 @@ export async function getStaticPaths() {
 }
 ---
 
-<DefaultLayout headings={headings} title={entry.data.title}>
+<DefaultLayout headings={headings} title={entry.data.title} description={entry.data.description}>
   <Content />
 </DefaultLayout>

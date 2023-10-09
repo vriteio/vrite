@@ -6,7 +6,9 @@
     @apply border-transparent dark:border-transparent;
   }
 }
-
+.font-jetbrains {
+  font-family: "JetBrainsMonoVariable", monospace;
+}
 kbd {
   font-family: "JetBrainsMonoVariable", monospace;
 }

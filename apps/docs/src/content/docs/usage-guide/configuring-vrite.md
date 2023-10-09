@@ -1,3 +1,8 @@
+---
+title: "Configuring Vrite Settings"
+slug: "usage-guide/configuring-vrite"
+---
+
 Everything related to configuring Vrite can be done from the settings side panel. From managing API tokens to customizing the editing experience — all can be managed in the settings.
 
 It’s worth noting that there are 2 categories of settings in Vrite:

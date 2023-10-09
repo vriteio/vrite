@@ -5,4 +5,4 @@ export * from "./side-bar";
 export * from "./on-this-page";
 export * from "./svg-defs";
 export * from "./navigation";
-export * from "./command-palette";
+export * from "./search-palette";

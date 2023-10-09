@@ -595,7 +595,14 @@ const contentPiecesRouter = router({
       };
 
       if (typeof update.slug !== "undefined") {
-        contentPieceUpdates.slug = convertToSlug(update.slug || update.title || contentPiece.title);
+        if (update.slug) {
+          contentPieceUpdates.slug = update.slug
+            .split("/")
+            .map((slugPart) => convertToSlug(slugPart))
+            .join("/");
+        } else {
+          contentPieceUpdates.slug = convertToSlug(update.title || contentPiece.title);
+        }
       } else if (convertToSlug(contentPiece.title) === contentPiece.slug) {
         contentPieceUpdates.slug = convertToSlug(update.title || contentPiece.title);
       }

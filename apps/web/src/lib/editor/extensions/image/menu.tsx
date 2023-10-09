@@ -67,10 +67,10 @@ const ImageMenu: Component<ImageMenuProps> = (props) => {
   return (
     <div
       class={clsx(
-        "pointer-events-auto flex bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 border-y-2 backdrop-blur-sm relative",
+        "pointer-events-auto flex bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 border-y-2 backdrop-blur-sm relative !md:left-unset",
         options().cover && "w-full border-t-0",
         !options().cover &&
-          "md:gap-2 w-screen md:w-auto md:border-0 md:rounded-2xl !md:bg-transparent !md:left-unset"
+          "md:gap-2 w-screen md:w-auto md:border-0 md:rounded-2xl !md:bg-transparent"
       )}
       style={{ left: `${left()}px` }}
       ref={setMenuRef}

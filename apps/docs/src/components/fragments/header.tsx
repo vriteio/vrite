@@ -1,4 +1,4 @@
-import { CommandPaletteProvider, useCommandPalette } from "./command-palette";
+import { SearchPaletteProvider, useSearchPalette } from "./search-palette";
 import { mdiAppleKeyboardCommand, mdiGithub, mdiMagnify } from "@mdi/js";
 import { For, type Component } from "solid-js";
 import clsx from "clsx";
@@ -24,7 +24,7 @@ const externalLinks = [
   }
 ];
 const Header: Component = () => {
-  const { opened, setOpened } = useCommandPalette();
+  const { opened, setOpened } = useSearchPalette();
 
   return (
     <div
@@ -76,9 +76,9 @@ const Header: Component = () => {
 };
 const HeaderWrapper: Component = () => {
   return (
-    <CommandPaletteProvider>
+    <SearchPaletteProvider>
       <Header />
-    </CommandPaletteProvider>
+    </SearchPaletteProvider>
   );
 };
 
