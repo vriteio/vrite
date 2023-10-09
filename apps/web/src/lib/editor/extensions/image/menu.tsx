@@ -1,11 +1,11 @@
 import { ImageAttributes, ImageOptions } from "./node";
 import { SolidNodeViewProps } from "@vrite/tiptap-solid";
 import { mdiLinkVariant, mdiText, mdiUpload } from "@mdi/js";
-import { Component, createSignal } from "solid-js";
+import { Component, createEffect, createSignal, on, onMount } from "solid-js";
 import { nanoid } from "nanoid";
 import { debounce } from "@solid-primitives/scheduled";
 import clsx from "clsx";
-import { uploadFile as uploadFileUtil } from "#lib/utils";
+import { createRef, uploadFile as uploadFileUtil } from "#lib/utils";
 import { Card, IconButton, Input, Tooltip } from "#components/primitives";
 
 interface ImageMenuProps {
@@ -14,8 +14,10 @@ interface ImageMenuProps {
 
 const ImageMenu: Component<ImageMenuProps> = (props) => {
   const { storage } = props.state.extension;
+  const [menuRef, setMenuRef] = createRef<HTMLElement | null>(null);
   const [inputMode, setInputMode] = createSignal<"alt" | "src">("src");
   const [uploading, setUploading] = createSignal(false);
+  const [left, setLeft] = createSignal(0);
   const attrs = (): ImageAttributes => props.state.node.attrs;
   const options = (): ImageOptions => props.state.extension.options;
   const placeholder = (): string => {
@@ -46,14 +48,32 @@ const ImageMenu: Component<ImageMenuProps> = (props) => {
     storage.setDroppedFile(null);
   }
 
+  createEffect(
+    on(
+      () => props.state.selected,
+      () => {
+        const element = menuRef();
+
+        if (!element || !element.parentElement) return;
+
+        const { left, width } = element.parentElement.getBoundingClientRect();
+        const right = window.innerWidth - left - width;
+
+        setLeft(-Math.abs((right - left) / 2));
+      }
+    )
+  );
+
   return (
     <div
       class={clsx(
         "pointer-events-auto flex bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 border-y-2 backdrop-blur-sm relative",
         options().cover && "w-full border-t-0",
         !options().cover &&
-          "md:gap-2 w-screen md:w-auto md:border-0 md:rounded-2xl !md:bg-transparent left-0 !md:left-unset"
+          "md:gap-2 w-screen md:w-auto md:border-0 md:rounded-2xl !md:bg-transparent !md:left-unset"
       )}
+      style={{ left: `${left()}px` }}
+      ref={setMenuRef}
     >
       <Card class={clsx("flex py-0 m-0 border-0  px-1 gap-1", !options().cover && "md:border-2")}>
         <Tooltip text="Alt">

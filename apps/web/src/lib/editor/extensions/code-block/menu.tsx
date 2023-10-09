@@ -5,6 +5,7 @@ import { Component, createEffect, createMemo, createSignal, on, Show } from "sol
 import { debounce } from "@solid-primitives/scheduled";
 import { Card, IconButton, Input, Tooltip } from "#components/primitives";
 import { useSuggestLanguage, isFormattable } from "#lib/code-editor";
+import { createRef } from "#lib/utils";
 
 interface CodeBlockMenuProps {
   state: SolidNodeViewProps<CodeBlockAttributes>;
@@ -14,6 +15,8 @@ interface CodeBlockMenuProps {
 
 const CodeBlockMenu: Component<CodeBlockMenuProps> = (props) => {
   const [mode, setMode] = createSignal<"title" | "lang">("lang");
+  const [menuRef, setMenuRef] = createRef<HTMLElement | null>(null);
+  const [left, setLeft] = createSignal(0);
   const [suggestions, setSuggestions] = createSignal<string[]>([]);
   const attrs = (): CodeBlockAttributes => props.state.node.attrs;
   const suggestLanguage = useSuggestLanguage();
@@ -35,9 +38,28 @@ const CodeBlockMenu: Component<CodeBlockMenuProps> = (props) => {
       props.changeLanguage(attrs.lang?.split(" ")?.[0] || null);
     })
   );
+  createEffect(
+    on(
+      () => props.state.selected,
+      () => {
+        const element = menuRef();
+
+        if (!element || !element.parentElement) return;
+
+        const { left, width } = element.parentElement.getBoundingClientRect();
+        const right = window.innerWidth - left - width;
+
+        setLeft(-Math.abs((right - left) / 2));
+      }
+    )
+  );
 
   return (
-    <div class="pointer-events-auto flex bg-gray-50 dark:bg-gray-900 !md:bg-transparent border-gray-200 dark:border-gray-700 border-y-2 md:border-0 backdrop-blur-sm md:gap-2 w-screen md:w-auto left-0 !md:left-unset relative md:rounded-2xl">
+    <div
+      class="pointer-events-auto flex bg-gray-50 dark:bg-gray-900 !md:bg-transparent border-gray-200 dark:border-gray-700 border-y-2 md:border-0 backdrop-blur-sm md:gap-2 w-screen md:w-auto !md:left-unset relative md:rounded-2xl"
+      style={{ left: `${left()}px` }}
+      ref={setMenuRef}
+    >
       <Card class="flex py-0 m-0 border-0 md:border-2 px-1 gap-1">
         <Tooltip text="Title">
           <IconButton
