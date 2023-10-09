@@ -60,6 +60,8 @@ const BubbleMenu: Component<BubbleMenuProps> = (props) => {
           mode={mode()}
           opened={props.opened}
           setMode={setMode}
+          setBlockMenuOpened={props.setBlockMenuOpened}
+          blur={props.blur}
           class={props.class}
         />
       </Match>

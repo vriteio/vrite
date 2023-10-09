@@ -52,7 +52,7 @@ const ImageMenu: Component<ImageMenuProps> = (props) => {
         "pointer-events-auto flex bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 border-y-2 backdrop-blur-sm relative",
         options().cover && "w-full border-t-0",
         !options().cover &&
-          "md:gap-2 w-screen md:w-auto md:border-0 md:rounded-2xl !md:bg-transparent left-[5px] !md:left-unset"
+          "md:gap-2 w-screen md:w-auto md:border-0 md:rounded-2xl !md:bg-transparent left-0 !md:left-unset"
       )}
     >
       <Card class={clsx("flex py-0 m-0 border-0  px-1 gap-1", !options().cover && "md:border-2")}>

@@ -7,8 +7,8 @@ const uninstall = async (context: ExtensionGeneralContext): Promise<void> => {
     const mdxTransformer = transformers.find((transformer) => {
       return (
         transformer.label === "MDX" &&
-        transformer.input === "http://localhost:7777/mdx/input" &&
-        transformer.output === "http://localhost:7777/mdx/output"
+        transformer.input === "https://extensions.vrite.io/mdx/input" &&
+        transformer.output === "https://extensions.vrite.io/mdx/output"
       );
     });
 

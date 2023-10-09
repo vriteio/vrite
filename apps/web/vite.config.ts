@@ -6,6 +6,7 @@ import unocss from "unocss/vite";
 export default defineConfig(async ({ mode }) => {
   const plugins: PluginOption[] = [tsconfigPaths(), unocss(), solidPlugin()];
   const env = loadEnv(mode, process.cwd(), "PUBLIC_");
+  const proxyTarget = env.PUBLIC_APP_URL;
 
   if (mode === "development") {
     // Only transform index.html in dev mode - in production Handlebars will do this
@@ -25,13 +26,13 @@ export default defineConfig(async ({ mode }) => {
     server: {
       proxy: {
         "/api": {
-          target: "http://localhost:3333",
+          target: proxyTarget,
           ws: true
         },
-        "/session": { target: "http://localhost:3333", ws: true },
-        "/login": { target: "http://localhost:3333", ws: true },
-        "/github": { target: "http://localhost:3333", ws: true },
-        "/upload": { target: "http://localhost:3333", ws: true }
+        "/session": { target: proxyTarget, ws: true },
+        "/login": { target: proxyTarget, ws: true },
+        "/github": { target: proxyTarget, ws: true },
+        "/upload": { target: proxyTarget, ws: true }
       }
     },
     build: {

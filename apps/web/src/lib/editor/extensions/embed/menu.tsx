@@ -30,7 +30,7 @@ const EmbedMenu: Component<ImageMenuProps> = (props) => {
   };
 
   return (
-    <div class="pointer-events-auto flex bg-gray-50 dark:bg-gray-900 !md:bg-transparent border-gray-200 dark:border-gray-700 border-y-2 md:border-0 backdrop-blur-sm md:gap-2 w-screen md:w-auto left-[5px] !md:left-unset relative md:rounded-2xl">
+    <div class="pointer-events-auto flex bg-gray-50 dark:bg-gray-900 !md:bg-transparent border-gray-200 dark:border-gray-700 border-y-2 md:border-0 backdrop-blur-sm md:gap-2 w-screen md:w-auto left-0 !md:left-unset relative md:rounded-2xl">
       <Card class="flex m-0 border-0 md:border-2 p-1">
         <Input
           wrapperClass="max-w-full min-w-unset md:w-96 flex-1"

@@ -23,19 +23,12 @@ declare module "@tiptap/core" {
 
 const CodeBlock = Node.create<CodeBlockOptions>({
   name: "codeBlock",
-
   content: "text*",
-
   marks: "",
-
   group: "block",
-
   code: true,
-
   atom: true,
-
   isolating: true,
-
   addOptions() {
     return {
       inline: false,

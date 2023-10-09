@@ -5,15 +5,15 @@ const configure = async (context: ExtensionBaseContext): Promise<void> => {
   const mdxTransformer = transformers.find((transformer) => {
     return (
       transformer.label === "MDX" &&
-      transformer.input === "http://localhost:7777/mdx/input" &&
-      transformer.output === "http://localhost:7777/mdx/output"
+      transformer.input === "https://extensions.vrite.io/mdx/input" &&
+      transformer.output === "https://extensions.vrite.io/mdx/output"
     );
   });
 
   if (!mdxTransformer) {
     await context.client.transformers.create({
-      input: "http://localhost:7777/mdx/input",
-      output: "http://localhost:7777/mdx/output",
+      input: "https://extensions.vrite.io/mdx/input",
+      output: "https://extensions.vrite.io/mdx/output",
       maxBatchSize: 100,
       label: "MDX"
     });

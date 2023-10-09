@@ -215,7 +215,10 @@ const Editor: Component<EditorProps> = (props) => {
     const { selection } = state;
     const { $anchor, empty } = selection;
     const isRootDepth =
-      $anchor.depth === 1 || ($anchor.depth === 2 && $anchor.node(1).type.name === "element");
+      $anchor.depth === 1 ||
+      ["element", "blockquote", "listItem", "taskItem"].includes(
+        $anchor.node($anchor.depth - 1)?.type?.name
+      );
     const isEmptyTextBlock =
       $anchor.parent.isTextblock &&
       !$anchor.parent.type.spec.code &&
