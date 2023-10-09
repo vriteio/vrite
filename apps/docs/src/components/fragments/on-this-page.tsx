@@ -41,7 +41,7 @@ const OnThisPage: Component<OnThisPageProps> = (props) => {
   const handleClick = (event: MouseEvent): void => {
     const target = event.target as HTMLElement;
 
-    if (target.matches("h1, h2, h3, h4, h5, h6")) {
+    if (target.matches("h2, h3")) {
       const { id } = target;
 
       if (id) {
