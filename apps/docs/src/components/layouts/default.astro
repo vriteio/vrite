@@ -15,14 +15,15 @@ const flattenMenu = (
     link?: string;
     menu?: Array<{ label: string; link: string }>;
   }>,
-  section: string
-): Array<{ label: string; link: string; section: string }> => {
+  section: string,
+  labels: string[]
+): Array<{ label: string; link: string; section: string; labels: string[] }> => {
   return menu.flatMap((item) => {
     if (item.link) {
-      return [{ label: item.label, link: item.link, section }];
+      return [{ label: item.label, link: item.link, section, labels: [...labels, item.label] }];
     }
     if (item.menu) {
-      return flattenMenu(item.menu, section);
+      return flattenMenu(item.menu, section, [...labels, item.label]);
     }
     return [];
   });
@@ -48,9 +49,9 @@ const sections = [
   }
 ];
 const flatMenu = [
-  ...flattenMenu(menu.docs, "docs"),
-  ...flattenMenu(menu.api, "api"),
-  ...flattenMenu(menu.recipes, "recipes")
+  ...flattenMenu(menu.docs, "docs", []),
+  ...flattenMenu(menu.api, "api", []),
+  ...flattenMenu(menu.recipes, "recipes", [])
 ];
 const currentEntry = flatMenu.find((item) => item.link === Astro.url.pathname);
 const nextEntry = currentEntry ? flatMenu[flatMenu.indexOf(currentEntry) + 1] : null;
@@ -88,9 +89,13 @@ type Props = {
             <div
               class="flex-1 prose max-w-screen-md w-full text-lg px-4 pt-4 pb-24 h-fit xl:w-[calc(100%-15rem)]"
             >
-              <Button badge color="primary" variant="text" class="m-0 pl-1 py-0" hover={false}>
-                JavaScript SDK
-              </Button>
+              {
+                (currentEntry?.labels.length || 0) > 1 && (
+                  <Button badge color="primary" variant="text" class="m-0 pl-1 py-0" hover={false}>
+                    {currentEntry?.labels.at(-2)}
+                  </Button>
+                )
+              }
               <h1>{Astro.props.title}</h1>
               <slot />
               <Footer nextEntry={nextEntry} previousEntry={prevEntry} />
