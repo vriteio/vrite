@@ -1,10 +1,16 @@
 import { AuthenticatedContext } from "./middleware";
+import { zodId } from "./mongo";
 import axios from "axios";
 import { z } from "zod";
-import { ObjectId, zodId } from "#lib/mongo";
-import { WebhookEvent, getWebhooksCollection } from "#database/webhooks";
-import { contentGroup, contentPiece, getContentGroupsCollection } from "#database";
-import { workspaceMembership } from "#database/workspace-memberships";
+import { ObjectId } from "mongodb";
+import {
+  WebhookEvent,
+  getWebhooksCollection,
+  contentGroup,
+  contentPiece,
+  getContentGroupsCollection,
+  workspaceMembership
+} from "#database";
 
 const webhookPayload = z.union([
   contentPiece.extend({ slug: z.string(), locked: z.boolean().optional() }),
@@ -56,8 +62,7 @@ const runWebhooks = async (
         })
       });
     } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error("Failed to run webhook", error);
+      ctx.fastify.log.error("Failed to run webhook", error);
     }
   }
 };

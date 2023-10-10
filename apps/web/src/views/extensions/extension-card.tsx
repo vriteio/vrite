@@ -1,7 +1,7 @@
 import { ExtensionIcon } from "./extension-icon";
 import { mdiTune, mdiDownloadOutline } from "@mdi/js";
 import { Component, Show } from "solid-js";
-import { ExtensionDetails, hasPermission, useClient } from "#context";
+import { ExtensionDetails, hasPermission, useClient, useExtensions } from "#context";
 import { Card, Heading, IconButton } from "#components/primitives";
 
 interface ExtensionCardProps {
@@ -12,6 +12,7 @@ interface ExtensionCardProps {
 
 const ExtensionCard: Component<ExtensionCardProps> = (props) => {
   const client = useClient();
+  const { callFunction } = useExtensions();
 
   return (
     <Card class="m-0 gap-1 flex flex-col justify-center items-center" color="contrast">
@@ -41,6 +42,18 @@ const ExtensionCard: Component<ExtensionCardProps> = (props) => {
                     permissions: props.extension.spec.permissions || []
                   }
                 });
+                const onConfigureCallback = props.extension.spec.lifecycle?.["on:configure"];
+
+                if (onConfigureCallback) {
+                  await callFunction(props.extension.spec, onConfigureCallback, {
+                    extensionId: id,
+                    token,
+                    context: () => ({
+                      config: {},
+                      spec: props.extension.spec
+                    })
+                  });
+                }
 
                 props.setOpenedExtension({ ...props.extension, config: {}, id, token });
               }

@@ -1,34 +1,14 @@
 import { z } from "zod";
-import { isAuthenticated } from "#lib/middleware";
-import { procedure, router } from "#lib/trpc";
-import * as errors from "#lib/errors";
-import { createEventPublisher, createEventSubscription } from "#lib/pub-sub";
+import { ObjectId } from "mongodb";
 import {
-  Variant,
   getContentPieceVariantsCollection,
   getContentVariantsCollection,
   getVariantsCollection,
   variant
 } from "#database";
-import { ObjectId, zodId } from "#lib/mongo";
+import { zodId, errors, procedure, router, isAuthenticated } from "#lib";
+import { publishVariantEvent, subscribeToVariantEvents } from "#events";
 
-type VariantsEvent =
-  | {
-      action: "create";
-      data: Variant & { id: string };
-    }
-  | {
-      action: "update";
-      data: Partial<Variant> & { id: string };
-    }
-  | {
-      action: "delete";
-      data: { id: string };
-    };
-
-const publishEvent = createEventPublisher<VariantsEvent>(
-  (workspaceId) => `variants:${workspaceId}`
-);
 const authenticatedProcedure = procedure.use(isAuthenticated);
 const basePath = "/variants";
 const variantsRouter = router({
@@ -48,7 +28,7 @@ const variantsRouter = router({
       };
 
       await variantsCollection.insertOne(variant);
-      publishEvent(ctx, `${ctx.auth.workspaceId}`, {
+      publishVariantEvent(ctx, `${ctx.auth.workspaceId}`, {
         action: "create",
         data: { ...input, id: `${variant._id}` }
       });
@@ -72,7 +52,7 @@ const variantsRouter = router({
 
       if (!matchedCount) throw errors.notFound("variant");
 
-      publishEvent(ctx, `${ctx.auth.workspaceId}`, { action: "update", data: input });
+      publishVariantEvent(ctx, `${ctx.auth.workspaceId}`, { action: "update", data: input });
     }),
   delete: authenticatedProcedure
     .meta({
@@ -101,7 +81,7 @@ const variantsRouter = router({
 
       if (!deletedCount) throw errors.notFound("variant");
 
-      publishEvent(ctx, `${ctx.auth.workspaceId}`, { action: "delete", data: input });
+      publishVariantEvent(ctx, `${ctx.auth.workspaceId}`, { action: "delete", data: input });
       ctx.fastify.search.deleteContent({ variantId, workspaceId: ctx.auth.workspaceId });
     }),
   list: authenticatedProcedure
@@ -131,9 +111,8 @@ const variantsRouter = router({
     }),
 
   changes: authenticatedProcedure.input(z.void()).subscription(async ({ ctx }) => {
-    return createEventSubscription<VariantsEvent>(ctx, `variants:${ctx.auth.workspaceId}`);
+    return subscribeToVariantEvents(ctx, `${ctx.auth.workspaceId}`);
   })
 });
 
 export { variantsRouter };
-export type { VariantsEvent };

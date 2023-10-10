@@ -1,5 +1,5 @@
 export * from "./code-block";
-export * from "./wrapper";
+export * from "./element";
 export * from "./task-item";
 export * from "./list-item";
 export * from "./embed";

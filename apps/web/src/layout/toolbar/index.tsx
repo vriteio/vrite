@@ -435,7 +435,7 @@ const Toolbar: Component<{ class?: string }> = (props) => {
   return (
     <div
       class={clsx(
-        ":base-2: p-1 w-full flex items-center border-b-2 absolute h-12 border-gray-200 dark:border-gray-700 justify-end @container z-1",
+        ":base-2: p-1 w-full flex items-center border-b-2 absolute h-12 border-gray-200 dark:border-gray-700 justify-end @container z-10",
         props.class
       )}
     >

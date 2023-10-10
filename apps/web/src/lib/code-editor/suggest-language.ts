@@ -14,10 +14,7 @@ const getLanguageIds = (
       return { id: language.id };
     });
 };
-const useSuggestLanguage = (
-  languages: monaco.languages.ILanguageExtensionPoint[]
-): ((query: string) => string[]) => {
-  const languageIds = getLanguageIds(languages);
+const useSuggestLanguage = (): ((query: string) => string[]) => {
   const engine =
     searchEngine() ||
     new MiniSearch({
@@ -28,7 +25,11 @@ const useSuggestLanguage = (
     });
 
   if (!searchEngine()) {
-    engine.addAll(languageIds);
+    import("#lib/monaco").then(({ monaco }) => {
+      const languageIds = getLanguageIds(monaco.languages.getLanguages());
+
+      engine.addAll(languageIds);
+    });
     setSearchEngine(engine);
   }
 

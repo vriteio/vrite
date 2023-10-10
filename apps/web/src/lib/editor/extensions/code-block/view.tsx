@@ -2,18 +2,12 @@ import { CodeBlockAttributes, CodeBlockOptions } from "./node";
 import { CodeBlockMenu } from "./menu";
 import { useSolidNodeView } from "@vrite/tiptap-solid";
 import clsx from "clsx";
-import { Component, createEffect, createSignal, onMount } from "solid-js";
+import { Component, createEffect, createSignal, on, onMount } from "solid-js";
 import { nanoid } from "nanoid";
 import type { monaco } from "#lib/monaco";
 import { formatCode } from "#lib/code-editor";
-import { Card } from "#components/primitives";
 import { createRef, selectionClasses } from "#lib/utils";
-import {
-  useAppearance,
-  useAuthenticatedUserData,
-  useNotifications,
-  useLocalStorage
-} from "#context";
+import { useAppearance, useAuthenticatedUserData, useNotifications } from "#context";
 
 interface CodeBlockViewProps {
   monaco: typeof monaco;
@@ -51,6 +45,7 @@ const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
   const [codeEditor, setCodeEditor] = createSignal<monaco.editor.IStandaloneCodeEditor | null>(
     null
   );
+  const [codeEditorActive, setCodeEditorActive] = createSignal(false);
   const [currentModelValue, setCurrentModelValue] = createRef("");
   const selected = (): boolean => {
     return state().selected;
@@ -65,7 +60,7 @@ const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
 
       notify({ text: "Formatting code", type: "loading", promise: formattingCode });
 
-      const formattedCode = await formattingCode;
+      const formattedCode = (await formattingCode).trim();
 
       props.setUpdatingRef(true);
 
@@ -106,7 +101,7 @@ const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
   };
   const updateEditorHeight = (monacoEditor: monaco.editor.IStandaloneCodeEditor): void => {
     const container = monacoEditor.getContainerDomNode();
-    const contentHeight = Math.max(200, monacoEditor.getContentHeight());
+    const contentHeight = Math.max(20, monacoEditor.getContentHeight());
     const editorContainer = editorContainerRef();
 
     if (editorContainer) {
@@ -129,7 +124,6 @@ const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
         model: null,
         fontSize: 13,
         fontFamily: "JetBrainsMonoVariable",
-        theme: "dark",
         tabSize: 2,
         insertSpaces: true,
         readOnly: !state().editor.isEditable,
@@ -193,6 +187,10 @@ const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
       codeEditor.onDidContentSizeChange(() => updateEditorHeight(codeEditor));
       codeEditor.onDidBlurEditorText(() => {
         options().provider?.awareness?.setLocalStateField("vscSelection", null);
+        setCodeEditorActive(false);
+      });
+      codeEditor.onDidFocusEditorText(() => {
+        setCodeEditorActive(true);
       });
       codeEditor.onDidChangeCursorSelection(() => {
         const model = codeEditor.getModel();
@@ -277,11 +275,18 @@ const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
       });
     }
   });
+  createEffect(
+    on(codeEditorActive, (active) => {
+      if (active) {
+        state().editor.commands.setNodeSelection(state().getPos());
+      }
+    })
+  );
 
   return (
     <div
       class={clsx(
-        "relative rounded-2xl not-prose text-base leading-4",
+        "relative rounded-2xl text-base leading-4 not-prose",
         selected() && "ring ring-primary ring-2"
       )}
       contentEditable={selected() ? false : undefined}
@@ -291,20 +296,18 @@ const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
         ref={setEditorContainerRef}
         spellcheck={false}
         class={clsx(
-          "w-full bg-gray-50 dark:bg-gray-900 h-72 not-prose rounded-t-2xl rounded",
-          codeEditorTheme() === "light" && "border-2 border-b-0 dark:border-0"
+          "bg-gray-50 dark:bg-gray-900 h-72 rounded-2xl rounded-editor-2xl border-2 border-gray-300 dark:border-gray-700 box-content customized-editor"
         )}
       />
-      <Card
+      <div
         class={clsx(
-          "m-0 rounded-t-none",
-          codeEditorTheme() === "dark" && "border-t-0 dark:border-0 dark:border-t-2",
-          codeEditorTheme() === "light" && "dark:border-t-0"
+          "absolute w-full justify-center items-center -bottom-14 z-1 pointer-events-none",
+          selected() ? "grid" : "hidden"
         )}
-        contentEditable={false}
       >
-        <CodeBlockMenu monaco={props.monaco} format={format} changeLanguage={changeLanguage} />
-      </Card>
+        <CodeBlockMenu changeLanguage={changeLanguage} format={format} state={state()} />
+      </div>
+      <div data-type="draggable-item" />
     </div>
   );
 };

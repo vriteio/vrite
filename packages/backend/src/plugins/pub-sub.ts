@@ -1,5 +1,5 @@
-import { publicPlugin } from "../lib/plugin";
 import type { PubSubMessage, PubSubPlugin } from "fastify";
+import { publicPlugin } from "#lib";
 
 declare module "fastify" {
   interface PubSubMessage {

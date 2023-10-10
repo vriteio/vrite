@@ -81,7 +81,6 @@ const MiniCodeEditor: Component<MiniCodeEditorProps> = (props) => {
         model: null,
         wordWrap: props.wrap ? "on" : "off",
         readOnly: typeof props.readOnly === "boolean" ? props.readOnly : false,
-        theme: "dark-contrast",
         scrollbar: {
           alwaysConsumeMouseWheel: false
         }
@@ -140,11 +139,6 @@ const MiniCodeEditor: Component<MiniCodeEditorProps> = (props) => {
           }
         )
       );
-      createEffect(() => {
-        props.monaco.editor.setTheme(
-          `${codeEditorTheme()}${props.color === "contrast" ? "-contrast" : ""}`
-        );
-      });
       onCleanup(() => {
         codeEditor.getModel()?.dispose();
         codeEditor.dispose();
@@ -157,7 +151,8 @@ const MiniCodeEditor: Component<MiniCodeEditorProps> = (props) => {
       <div
         ref={setEditorContainerRef}
         class={clsx(
-          "w-full bg-gray-100 border-2 not-prose dark:bg-gray-900 rounded-2xl dark:border-gray-700 rounded",
+          "w-full bg-gray-100 border-2 not-prose dark:bg-gray-900 rounded-2xl dark:border-gray-700 rounded-editor-2xl customized-editor box-content",
+          props.color === "contrast" && "customized-editor-contrast",
           props.class
         )}
       ></div>

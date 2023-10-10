@@ -129,7 +129,7 @@ const ConflictView: Component<{ monaco: typeof monaco }> = (props) => {
         data-code-editor-theme={codeEditorTheme()}
       />
       <Show when={!conflictData() || currentContent.loading}>
-        <div class="h-full w-full absolute top-0 left-0 bg-gray-100 dark:bg-gray-800 flex justify-center items-center">
+        <div class="h-full w-full absolute top-0 left-0 bg-gray-100 dark:bg-gray-800 flex justify-center items-center z-12">
           <Show when={!conflictData()} fallback={<Loader />}>
             <span class="text-2xl font-semibold text-gray-500 dark:text-gray-400">
               Select a conflict to resolve

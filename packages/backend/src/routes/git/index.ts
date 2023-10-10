@@ -1,15 +1,9 @@
 import { githubRouter } from "./github";
-import { GitDataEvent, publishGitDataEvent } from "./events";
 import { processRecords } from "./process-records";
-import {
-  createGenericInputContentProcessor,
-  createGenericOutputContentProcessor
-} from "./process-content";
 import { z } from "zod";
-import { procedure, router } from "#lib/trpc";
+import { publishGitDataEvent, subscribeToGitDataEvents } from "#events";
+import { procedure, router, errors, isAuthenticated } from "#lib";
 import { getGitDataCollection, gitData } from "#database";
-import { errors, isAuthenticated } from "#lib";
-import { createEventSubscription } from "#lib/pub-sub";
 
 const authenticatedProcedure = procedure.use(isAuthenticated);
 const gitRouter = router({
@@ -59,8 +53,8 @@ const gitRouter = router({
       publishGitDataEvent(ctx, `${ctx.auth.workspaceId}`, { action: "reset", data: {} });
     }),
   changes: authenticatedProcedure.input(z.void()).subscription(async ({ ctx }) => {
-    return createEventSubscription<GitDataEvent>(ctx, `gitData:${ctx.auth.workspaceId}`);
+    return subscribeToGitDataEvents(ctx, `${ctx.auth.workspaceId}`);
   })
 });
 
-export { gitRouter, createGenericInputContentProcessor, createGenericOutputContentProcessor };
+export { gitRouter };

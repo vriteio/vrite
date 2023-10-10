@@ -1,3 +1,8 @@
+---
+title: "Introduction"
+slug: "javascript-sdk/introduction"
+---
+
 [Vrite JavaScript SDK](https://github.com/vriteio/vrite/tree/main/packages/sdk/javascript) is a one-stop-shop when building any kind of Vrite-powered website or web app.
 
 Currently it includes the following parts:

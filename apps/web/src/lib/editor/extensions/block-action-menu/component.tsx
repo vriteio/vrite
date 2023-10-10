@@ -125,7 +125,7 @@ const BlockActionMenu: Component<BlockActionMenuProps> = (props) => {
               class={clsx(
                 blockAction.blocks.length !== 0 &&
                   !blockAction.blocks.some((block) => {
-                    return node()?.hasMarkup(props.state.editor.schema.nodes[block]);
+                    return node()?.type.name === props.state.editor.schema.nodes[block].name;
                   }) &&
                   "hidden"
               )}

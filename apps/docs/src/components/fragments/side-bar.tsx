@@ -1,50 +1,40 @@
-import { mdiMenu, mdiClose, mdiGithub, mdiChevronDown, mdiCodeJson } from "@mdi/js";
+import { mdiMenu, mdiClose, mdiChevronDown } from "@mdi/js";
 import clsx from "clsx";
-import { Component, For, JSX, createSignal } from "solid-js";
+import { Component, For, JSX, createEffect, createSignal } from "solid-js";
 import { menuOpened, setMenuOpened } from "#lib/state";
 import { Card, Button, IconButton } from "#components/primitives";
-import { discordIcon } from "#assets/icons";
 import { logoIcon } from "#assets/icons/logo";
 
 interface SideBarProps {
-  menu: Array<{
+  currentSection: string;
+  sections: Array<{
     label: string;
-    menu: Array<{ label: string; link: string }>;
+    icon: string;
+    link: string;
+    id: string;
   }>;
+  menu: Record<
+    string,
+    Array<{
+      label: string;
+      menu: Array<{ label: string; link?: string; menu?: Array<{ label: string; link: string }> }>;
+    }>
+  >;
   currentPath: string;
 }
-
-const externalLinks = [
-  {
-    label: "GitHub",
-    icon: mdiGithub,
-    href: "https://github.com/vriteio/vrite"
-  },
-  {
-    label: "Discord",
-    icon: discordIcon,
-    href: "https://discord.gg/yYqDWyKnqE"
-  },
-  {
-    label: "Vrite Cloud",
-    icon: logoIcon,
-    href: "https://app.vrite.io"
-  },
-  {
-    label: "API Reference",
-    icon: mdiCodeJson,
-    href: "https://generator.swagger.io/?url=https://api.vrite.io/swagger.json#"
-  }
-];
-const SideBarNestedMenu: Component<{
-  menu: Array<{ label: string; link: string; menu?: Array<{ label: string; link: string }> }>;
+interface SideBarNestedMenuProps {
+  menu: Array<{ label: string; link?: string; menu?: Array<{ label: string; link: string }> }>;
   currentPath: string;
   children: JSX.Element;
-}> = (props) => {
+  openedByDefault?: boolean;
+}
+
+const SideBarNestedMenu: Component<SideBarNestedMenuProps> = (props) => {
   const [opened, setOpened] = createSignal(
-    props.menu.filter((item) => {
-      return props.currentPath.includes(item.link);
-    }).length > 0
+    props.openedByDefault ||
+      props.menu.filter((item) => {
+        return item.link && props.currentPath.includes(item.link);
+      }).length > 0
   );
 
   return (
@@ -87,7 +77,7 @@ const SideBarNestedMenu: Component<{
               }
 
               const active = (): boolean => {
-                return props.currentPath.includes(item.link);
+                return Boolean(item.link && props.currentPath.includes(item.link));
               };
 
               return (
@@ -109,6 +99,14 @@ const SideBarNestedMenu: Component<{
   );
 };
 const SideBar: Component<SideBarProps> = (props) => {
+  createEffect(() => {
+    if (menuOpened()) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+    }
+  });
+
   return (
     <>
       <div class={clsx("h-full fixed top-0 left-0 z-1", "pl-[max(0px,calc((100%-1536px)/2))]")}>
@@ -117,7 +115,7 @@ const SideBar: Component<SideBarProps> = (props) => {
             "top-0 h-full z-50 min-w-80 w-full md:max-w-80 m-0 bg-gray-100 dark:bg-gray-900",
             "flex-col gap-2 justify-start items-start border-0 md:border-r-2 rounded-none flex fixed md:relative",
             "transform md:transition-transform duration-300 ease-in-out scrollbar-sm-contrast overflow-auto",
-            menuOpened() ? "" : "translate-y-full md:translate-y-0"
+            menuOpened() ? "" : "translate-y-[100vh] md:translate-y-0"
           )}
         >
           <div class="flex items-center justify-start px-1 pb-4 pt-2">
@@ -135,31 +133,35 @@ const SideBar: Component<SideBarProps> = (props) => {
             </span>
           </div>
           <div class="flex flex-col gap-2 pl-1 w-full py-4">
-            <For each={externalLinks}>
-              {(link) => {
+            <For each={props.sections}>
+              {(section) => {
                 return (
                   <a
                     class="flex justify-start items-center group w-full cursor-pointer"
-                    target="_blank"
-                    href={link.href}
+                    target={section.link.startsWith("http") ? "_blank" : "_self"}
+                    href={section.link}
                   >
                     <IconButton
-                      path={link.icon}
+                      path={section.icon}
                       class="m-0 group-hover:bg-gray-300 dark:group-hover:bg-gray-700 h-8 w-8"
                       iconProps={{ class: "h-5 w-5" }}
-                      color="contrast"
-                      text="soft"
+                      color={section.id === props.currentSection ? "primary" : "contrast"}
+                      text={section.id === props.currentSection ? "primary" : "soft"}
                     />
-                    <span class=" ml-2 text-gray-500 dark:text-gray-400">{link.label}</span>
+                    <span class=" ml-2 text-gray-500 dark:text-gray-400">{section.label}</span>
                   </a>
                 );
               }}
             </For>
           </div>
-          <For each={props.menu}>
+          <For each={props.menu[props.currentSection]}>
             {(menuItem) => {
               return (
-                <SideBarNestedMenu currentPath={props.currentPath} menu={menuItem.menu}>
+                <SideBarNestedMenu
+                  currentPath={props.currentPath}
+                  menu={menuItem.menu}
+                  openedByDefault
+                >
                   <Button
                     variant="text"
                     class="justify-start w-full font-bold m-0"

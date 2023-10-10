@@ -2,6 +2,8 @@ import { defineConfig } from "astro/config";
 import solidJs from "@astrojs/solid-js";
 import unocss from "unocss/astro";
 import robotsTxt from "astro-robots-txt";
+import mdx from "@astrojs/mdx";
+import autoImport from "astro-auto-import";
 
 export default defineConfig({
   markdown: {
@@ -10,6 +12,9 @@ export default defineConfig({
     }
   },
   integrations: [
+    autoImport({
+      imports: [{ "#components/content": ["Card", "CardGrid", "Warning", "Info"] }]
+    }),
     unocss({ injectReset: true }),
     solidJs(),
     robotsTxt({
@@ -18,7 +23,8 @@ export default defineConfig({
           userAgent: "*"
         }
       ]
-    })
+    }),
+    mdx()
   ],
   build: {
     redirects: false

@@ -1,23 +1,20 @@
 import { z } from "zod";
 import { ObjectId } from "mongodb";
 import { nanoid } from "nanoid";
-import { procedure, router } from "#lib/trpc";
-import { AuthenticatedContext, isAuthenticated } from "#lib/middleware";
-import { generateSalt, hashValue } from "#lib/hash";
-import { UnderscoreID, zodId } from "#lib/mongo";
-import { Token, FullToken, getTokensCollection, token } from "#database/tokens";
-import * as errors from "#lib/errors";
-import { createEventPublisher, createEventSubscription } from "#lib/pub-sub";
+import {
+  AuthenticatedContext,
+  isAuthenticated,
+  procedure,
+  router,
+  UnderscoreID,
+  zodId,
+  errors,
+  generateSalt,
+  hashValue
+} from "#lib";
+import { Token, FullToken, getTokensCollection, token } from "#database";
+import { publishTokenEvent, subscribeToTokenEvents } from "#events";
 
-type TokenEvent =
-  | {
-      action: "create";
-      data: Token;
-    }
-  | { action: "update"; data: Partial<Token> & { id: string } }
-  | { action: "delete"; data: { id: string } };
-
-const publishEvent = createEventPublisher<TokenEvent>((workspaceId) => `tokens:${workspaceId}`);
 const authenticatedProcedure = procedure.use(isAuthenticated);
 const createToken = async (
   input: Omit<Token, "id">,
@@ -75,7 +72,7 @@ const tokensRouter = router({
 
       if (deletedCount === 0) throw errors.notFound("token");
 
-      publishEvent(ctx, `${ctx.auth.workspaceId}`, {
+      publishTokenEvent(ctx, `${ctx.auth.workspaceId}`, {
         action: "delete",
         data: {
           id: input.id
@@ -125,7 +122,7 @@ const tokensRouter = router({
     .mutation(async ({ ctx, input }) => {
       const { token, value } = await createToken(input, ctx);
 
-      publishEvent(ctx, `${ctx.auth.workspaceId}`, {
+      publishTokenEvent(ctx, `${ctx.auth.workspaceId}`, {
         action: "create",
         data: {
           id: `${token._id}`,
@@ -161,7 +158,7 @@ const tokensRouter = router({
 
       if (matchedCount === 0) throw errors.notFound("token");
 
-      publishEvent(ctx, `${ctx.auth.workspaceId}`, {
+      publishTokenEvent(ctx, `${ctx.auth.workspaceId}`, {
         action: "update",
         data: {
           id,
@@ -170,7 +167,7 @@ const tokensRouter = router({
       });
     }),
   changes: authenticatedProcedure.input(z.void()).subscription(({ ctx }) => {
-    return createEventSubscription<TokenEvent>(ctx, `tokens:${ctx.auth.workspaceId}`);
+    return subscribeToTokenEvents(ctx, `${ctx.auth.workspaceId}`);
   }),
   regenerate: authenticatedProcedure
     .meta({

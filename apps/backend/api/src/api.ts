@@ -4,7 +4,7 @@ import {
   createOpenApiNodeHttpHandler,
   CreateOpenApiNodeHttpHandlerOptions
 } from "trpc-openapi/dist/adapters/node-http/core";
-import corsPlugin from "@fastify/cors";
+import corsPlugin, { OriginFunction } from "@fastify/cors";
 import { OpenApiRouter } from "trpc-openapi";
 import { AnyRouter } from "@trpc/server";
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
@@ -55,36 +55,38 @@ const fastifyTRPCOpenApiPlugin = <TRouter extends AnyRouter>(
   done();
 };
 const apiService = publicPlugin(async (fastify) => {
+  const originCallback: OriginFunction = (origin, callback) => {
+    if (!origin || origin === "null") {
+      callback(null, true);
+
+      return;
+    }
+
+    const { hostname } = new URL(origin);
+    const appHostname = new URL(fastify.config.PUBLIC_APP_URL).hostname;
+
+    if (
+      hostname === "localhost" ||
+      hostname.endsWith(appHostname) ||
+      (fastify.config.VRITE_CLOUD && hostname.endsWith("swagger.io"))
+    ) {
+      callback(null, true);
+
+      return;
+    }
+
+    callback(new Error("Not allowed"), false);
+  };
+
   await fastify.register(rateLimitPlugin, {
     max: 500,
     timeWindow: "1 minute",
     redis: fastify.redis
   });
   await fastify.register(corsPlugin, {
+    origin: true,
     credentials: true,
-    methods: ["GET", "DELETE", "PUT", "POST"],
-    origin(origin, callback) {
-      if (!origin || origin === "null") {
-        callback(null, true);
-
-        return;
-      }
-
-      const { hostname } = new URL(origin);
-      const appHostname = new URL(fastify.config.PUBLIC_APP_URL).hostname;
-
-      if (
-        hostname === "localhost" ||
-        hostname.endsWith(appHostname) ||
-        (fastify.config.VRITE_CLOUD && hostname.endsWith("swagger.io"))
-      ) {
-        callback(null, true);
-
-        return;
-      }
-
-      callback(new Error("Not allowed"), false);
-    }
+    methods: ["GET", "DELETE", "PUT", "POST"]
   });
   await fastify.register(fastifyTRPCOpenApiPlugin, {
     basePath: "/",

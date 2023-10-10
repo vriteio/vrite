@@ -1,12 +1,10 @@
-import { publicPlugin } from "../lib/plugin";
 import { EmailService, FastifyInstance } from "fastify";
 import { MailService } from "@sendgrid/mail";
 import { ObjectId } from "mongodb";
 import { EmailTemplate, getSubject, renderEmail } from "@vrite/emails";
 import * as nodemailer from "nodemailer";
-import { getWorkspacesCollection } from "#database/workspaces";
-import { getUsersCollection } from "#database/users";
-import * as errors from "#lib/errors";
+import { getWorkspacesCollection, getUsersCollection } from "#database";
+import { errors, publicPlugin } from "#lib";
 
 type EmailSender = (email: {
   to: string;
@@ -77,8 +75,7 @@ const createEmailSender = (fastify: FastifyInstance): EmailSender => {
           text: renderEmail(email.template, email.data, true)
         });
       } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error(error);
+        fastify.log.error(error);
 
         throw errors.serverError();
       }
@@ -109,8 +106,7 @@ const createEmailSender = (fastify: FastifyInstance): EmailSender => {
           text: renderEmail(email.template, email.data, true)
         });
       } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error(error);
+        fastify.log.error(error);
 
         throw errors.serverError();
       }
@@ -119,7 +115,7 @@ const createEmailSender = (fastify: FastifyInstance): EmailSender => {
 
   return async () => {
     // eslint-disable-next-line no-console
-    console.error("No email service configured");
+    fastify.log.error("No email service configured");
 
     throw errors.serverError();
   };

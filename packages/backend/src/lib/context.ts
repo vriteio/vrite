@@ -2,13 +2,21 @@ import { CreateFastifyContextOptions } from "@trpc/server/adapters/fastify";
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { Db } from "mongodb";
 
-interface Context {
+interface FastifyContext {
   fastify: FastifyInstance;
   req: FastifyRequest;
   res: FastifyReply;
+}
+interface Context extends FastifyContext {
   db: Db;
 }
 
+const createFastifyContext = (
+  { req, res }: CreateFastifyContextOptions,
+  fastify: FastifyInstance
+): FastifyContext => {
+  return { req, res, fastify };
+};
 const createContext = (
   { req, res }: CreateFastifyContextOptions,
   fastify: FastifyInstance
@@ -19,8 +27,11 @@ const createContext = (
     throw new Error("Database not connected");
   }
 
-  return { req, res, db, fastify };
+  return {
+    ...createFastifyContext({ req, res }, fastify),
+    db
+  };
 };
 
-export { createContext };
-export type { Context };
+export { createContext, createFastifyContext };
+export type { FastifyContext, Context };

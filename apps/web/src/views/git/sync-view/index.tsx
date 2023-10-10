@@ -47,6 +47,7 @@ const extractFileName = (path: string): { fileName: string; directory: string } 
   return { fileName, directory };
 };
 const InitialSyncCard: Component = () => {
+  const { notify } = useNotifications();
   const [loading, setLoading] = createSignal(false);
   const client = useClient();
 
@@ -70,7 +71,14 @@ const InitialSyncCard: Component = () => {
           loading={loading()}
           onClick={async () => {
             setLoading(true);
-            await client.git.github.initialSync.mutate();
+
+            try {
+              await client.git.github.initialSync.mutate();
+              notify({ text: "Latest content pulled", type: "success" });
+            } catch (error) {
+              notify({ text: "Couldn't pull content", type: "error" });
+            }
+
             setLoading(false);
           }}
         >
@@ -108,6 +116,7 @@ const CommitCard: Component<{ changedRecords: App.GitRecord[] }> = (props) => {
 
                 if (status === "committed") {
                   notify({ text: "Changes committed", type: "success" });
+                  setMessage("");
                 } else {
                   notify({
                     text: "Pull required before committing changes",

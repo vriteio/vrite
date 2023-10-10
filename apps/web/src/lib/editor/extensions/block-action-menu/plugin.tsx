@@ -111,7 +111,7 @@ const BlockActionMenuPlugin = Extension.create({
 
         rangeFrom = p.start - 1;
         rangeTo = p.start + p.node.nodeSize - 1;
-      } catch (e) {
+      } catch (error) {
         box.style.display = "none";
       }
     }

@@ -15,16 +15,12 @@ import { contentGroupsRouter } from "./content-groups";
 import { extensionsRouter } from "./extensions";
 import { commentsRouter } from "./comments";
 import { variantsRouter } from "./variants";
-import {
-  createGenericInputContentProcessor,
-  createGenericOutputContentProcessor,
-  gitRouter
-} from "./git";
+import { gitRouter } from "./git";
 import { searchRouter } from "./search";
 import { transformersRouter } from "./transformers";
 import type { TRPCClientError } from "@trpc/client";
-import { Context, createContext } from "#lib/context";
-import { router } from "#lib/trpc";
+import { Context, createContext } from "#lib";
+import { router } from "#lib";
 
 const appRouter = router({
   auth: authRouter,
@@ -54,11 +50,6 @@ type ClientError = TRPCClientError<Router> & {
   data: TRPCClientError<Router>["data"] & { cause?: { code: string } & Record<string, string> };
 };
 
-export {
-  appRouter,
-  createContext,
-  createGenericInputContentProcessor,
-  createGenericOutputContentProcessor
-};
+export { appRouter, createContext };
 export type * from "#database";
 export type { ClientError, Router, PreviewData, HostConfig, Context };

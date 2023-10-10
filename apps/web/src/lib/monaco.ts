@@ -14,28 +14,13 @@ declare global {
 }
 
 monaco.editor.defineTheme("dark", { ...darkTheme, base: "vs-dark" });
-monaco.editor.defineTheme("light", { ...lightTheme, base: "vs-dark" });
-monaco.editor.defineTheme("dark-contrast", {
-  ...darkTheme,
-  colors: {
-    ...darkTheme.colors,
-    "editor.background": "#1f2937",
-    "editorWidget.background": "#111827"
-  },
-  base: "vs-dark"
-});
-monaco.editor.defineTheme("light-contrast", {
-  ...lightTheme,
-  colors: {
-    ...lightTheme.colors,
-    "editor.background": "#f3f4f6",
-    "editorWidget.background": "#f9fafb"
-  },
-  base: "vs-dark"
-});
+monaco.editor.defineTheme("light", { ...lightTheme, base: "vs" });
 monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
   noSemanticValidation: true,
   noSyntaxValidation: true
+});
+monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
+  diagnosticCodesToIgnore: [17008, 1005]
 });
 monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
   noUnusedLocals: false

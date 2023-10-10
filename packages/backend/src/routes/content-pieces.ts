@@ -3,25 +3,33 @@ import { z } from "zod";
 import { LexoRank } from "lexorank";
 import { convert as convertToSlug } from "url-slug";
 import { convert as convertToText } from "html-to-text";
-import { stringToRegex } from "#lib/utils";
-import { UnderscoreID, zodId } from "#lib/mongo";
-import { bufferToJSON, DocJSON, htmlToJSON, jsonToBuffer } from "#lib/processing";
-import { isAuthenticated } from "#lib/middleware";
-import { procedure, router } from "#lib/trpc";
 import {
   contentPiece,
   ContentPiece,
   ContentPieceMember,
   contentPieceMember,
   FullContentPiece,
-  FullContentPieceWithAdditionalData,
-  getContentPiecesCollection
-} from "#database/content-pieces";
-import { Tag, getTagsCollection, tag } from "#database/tags";
-import * as errors from "#lib/errors";
-import { getContentsCollection } from "#database/contents";
-import { runWebhooks } from "#lib/webhooks";
-import { createEventPublisher, createEventSubscription } from "#lib/pub-sub";
+  getContentPiecesCollection,
+  Tag,
+  getTagsCollection,
+  tag,
+  getContentsCollection
+} from "#database";
+import {
+  runWebhooks,
+  errors,
+  runGitSyncHook,
+  procedure,
+  router,
+  isAuthenticated,
+  bufferToJSON,
+  DocJSON,
+  htmlToJSON,
+  jsonToBuffer,
+  UnderscoreID,
+  zodId,
+  stringToRegex
+} from "#lib";
 import {
   FullContentPieceVariant,
   getContentGroupsCollection,
@@ -32,30 +40,8 @@ import {
   getWorkspaceMembershipsCollection,
   getWorkspaceSettingsCollection
 } from "#database";
-import { runGitSyncHook } from "#lib";
+import { publishContentPieceEvent, subscribeToContentPieceEvents } from "#events";
 
-type ContentPieceEvent =
-  | { action: "delete"; userId: string; data: { id: string } }
-  | { action: "create"; userId: string; data: FullContentPieceWithAdditionalData }
-  | {
-      action: "update";
-      userId: string;
-      variantId?: string;
-      data: Partial<FullContentPieceWithAdditionalData> & { id: string };
-    }
-  | {
-      action: "move";
-      userId: string;
-      data: {
-        contentPiece: FullContentPieceWithAdditionalData;
-        nextReferenceId?: string;
-        previousReferenceId?: string;
-      };
-    };
-
-const publishEvent = createEventPublisher<ContentPieceEvent>((contentGroupId) => {
-  return `contentPieces:${contentGroupId}`;
-});
 const webhookPayload = (
   contentPiece: UnderscoreID<FullContentPiece<ObjectId>>
 ): ContentPiece & { id: string; locked?: boolean } => {
@@ -151,21 +137,21 @@ const mergeVariantData = (
 };
 const getVariantDetails = async (
   db: Db,
-  variantIdOrName?: string
-): Promise<{ variantId: ObjectId | null; variantName: string | null }> => {
+  variantIdOrKey?: string
+): Promise<{ variantId: ObjectId | null; variantKey: string | null }> => {
   const variantsCollection = getVariantsCollection(db);
 
-  if (!variantIdOrName) return { variantId: null, variantName: null };
+  if (!variantIdOrKey) return { variantId: null, variantKey: null };
 
-  const isId = ObjectId.isValid(variantIdOrName);
+  const isId = ObjectId.isValid(variantIdOrKey);
   const variant = await variantsCollection.findOne({
-    ...(isId && { _id: new ObjectId(variantIdOrName) }),
-    ...(!isId && { name: variantIdOrName })
+    ...(isId && { _id: new ObjectId(variantIdOrKey) }),
+    ...(!isId && { key: variantIdOrKey })
   });
 
   if (!variant) throw errors.notFound("variant");
 
-  return { variantId: variant._id || null, variantName: variant.name || null };
+  return { variantId: variant._id || null, variantKey: variant.key || null };
 };
 const getCanonicalLinkFromPattern = (
   pattern: string,
@@ -229,7 +215,7 @@ const contentPiecesRouter = router({
       const workspaceSettings = await workspaceSettingsCollection.findOne({
         workspaceId: ctx.auth.workspaceId
       });
-      const { variantId, variantName } = await getVariantDetails(ctx.db, input.variant);
+      const { variantId, variantKey } = await getVariantDetails(ctx.db, input.variant);
       const baseContentPiece = await contentPiecesCollection.findOne({
         _id: new ObjectId(input.id)
       });
@@ -296,7 +282,7 @@ const contentPiecesRouter = router({
           typeof contentPiece.canonicalLink !== "string" && {
             canonicalLink: getCanonicalLinkFromPattern(
               workspaceSettings.metadata.canonicalLinkPattern,
-              { slug: contentPiece.slug, variant: variantName }
+              { slug: contentPiece.slug, variant: variantKey }
             )
           }),
         id: `${contentPiece._id}`,
@@ -353,7 +339,7 @@ const contentPiecesRouter = router({
         workspaceId: ctx.auth.workspaceId
       });
       const contentGroupId = new ObjectId(input.contentGroupId);
-      const { variantId, variantName } = await getVariantDetails(ctx.db, input.variant);
+      const { variantId, variantKey } = await getVariantDetails(ctx.db, input.variant);
       const cursor = contentPiecesCollection
         .find({
           workspaceId: ctx.auth.workspaceId,
@@ -405,7 +391,7 @@ const contentPiecesRouter = router({
               typeof contentPiece.canonicalLink !== "string" && {
                 canonicalLink: getCanonicalLinkFromPattern(
                   workspaceSettings.metadata.canonicalLinkPattern,
-                  { slug: contentPiece.slug, variant: variantName }
+                  { slug: contentPiece.slug, variant: variantKey }
                 )
               }),
             id: `${contentPiece._id}`,
@@ -500,7 +486,7 @@ const contentPiecesRouter = router({
       const tags = await fetchContentPieceTags(ctx.db, contentPiece);
       const members = await fetchContentPieceMembers(ctx.db, contentPiece);
 
-      publishEvent(ctx, `${contentPiece.contentGroupId}`, {
+      publishContentPieceEvent(ctx, `${contentPiece.contentGroupId}`, {
         action: "create",
         userId: `${ctx.auth.userId}`,
         data: {
@@ -573,7 +559,7 @@ const contentPiecesRouter = router({
       const workspaceSettings = await workspaceSettingsCollection.findOne({
         workspaceId: ctx.auth.workspaceId
       });
-      const { variantId, variantName } = await getVariantDetails(ctx.db, variant);
+      const { variantId, variantKey } = await getVariantDetails(ctx.db, variant);
       const baseContentPiece = await contentPiecesCollection.findOne({
         _id: new ObjectId(id)
       });
@@ -609,7 +595,14 @@ const contentPiecesRouter = router({
       };
 
       if (typeof update.slug !== "undefined") {
-        contentPieceUpdates.slug = convertToSlug(update.slug || update.title || contentPiece.title);
+        if (update.slug) {
+          contentPieceUpdates.slug = update.slug
+            .split("/")
+            .map((slugPart) => convertToSlug(slugPart))
+            .join("/");
+        } else {
+          contentPieceUpdates.slug = convertToSlug(update.title || contentPiece.title);
+        }
       } else if (convertToSlug(contentPiece.title) === contentPiece.slug) {
         contentPieceUpdates.slug = convertToSlug(update.title || contentPiece.title);
       }
@@ -701,7 +694,7 @@ const contentPiecesRouter = router({
       const tags = await fetchContentPieceTags(ctx.db, newContentPiece);
       const members = await fetchContentPieceMembers(ctx.db, newContentPiece);
 
-      publishEvent(ctx, `${newContentPiece.contentGroupId}`, {
+      publishContentPieceEvent(ctx, `${newContentPiece.contentGroupId}`, {
         action: "update",
         userId: `${ctx.auth.userId}`,
         data: {
@@ -710,7 +703,7 @@ const contentPiecesRouter = router({
             typeof newContentPiece.canonicalLink !== "string" && {
               canonicalLink: getCanonicalLinkFromPattern(
                 workspaceSettings.metadata.canonicalLinkPattern,
-                { slug: newContentPiece.slug, variant: variantName }
+                { slug: newContentPiece.slug, variant: variantKey }
               )
             }),
           id: `${newContentPiece._id}`,
@@ -758,7 +751,7 @@ const contentPiecesRouter = router({
       });
       runGitSyncHook(ctx, "contentPieceRemoved", { contentPiece });
       runWebhooks(ctx, "contentPieceRemoved", webhookPayload(contentPiece));
-      publishEvent(ctx, `${contentPiece.contentGroupId}`, {
+      publishContentPieceEvent(ctx, `${contentPiece.contentGroupId}`, {
         action: "delete",
         userId: `${ctx.auth.userId}`,
         data: { id: input.id }
@@ -862,7 +855,7 @@ const contentPiecesRouter = router({
         contentPiece,
         contentGroupId: input.contentGroupId
       });
-      publishEvent(
+      publishContentPieceEvent(
         ctx,
         [
           `${contentPiece.contentGroupId}`,
@@ -915,12 +908,8 @@ const contentPiecesRouter = router({
   changes: authenticatedProcedure
     .input(z.object({ contentGroupId: zodId() }))
     .subscription(async ({ ctx, input }) => {
-      return createEventSubscription<ContentPieceEvent>(
-        ctx,
-        `contentPieces:${input.contentGroupId}`
-      );
+      return subscribeToContentPieceEvents(ctx, input.contentGroupId);
     })
 });
 
 export { contentPiecesRouter, fetchContentPieceTags };
-export type { ContentPieceEvent };

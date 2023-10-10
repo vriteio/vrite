@@ -12,7 +12,7 @@ interface SlashMenuItem {
   icon: string;
   label: string;
   group: string;
-  block?: App.WorkspaceSettings["blocks"][number] | "wrapper";
+  block?: App.WorkspaceSettings["blocks"][number];
   embed?: App.WorkspaceSettings["embeds"][number];
   ref: Ref<HTMLElement | null>;
   command(params: { editor: SolidEditor; range: Range }): void;

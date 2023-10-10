@@ -4,7 +4,7 @@ import type { Options, Plugin } from "prettier";
 const languageParserMap = {
   javascript: "babel",
   typescript: "babel-ts",
-  json: "yaml",
+  json: "json-stringify",
   graphql: "graphql",
   html: "html",
   vue: "vue",
@@ -12,7 +12,8 @@ const languageParserMap = {
   yaml: "yaml",
   css: "css",
   less: "less",
-  scss: "scss"
+  scss: "scss",
+  mdx: "mdx"
 } as const;
 
 type SupportedLanguages = keyof typeof languageParserMap;
@@ -24,6 +25,7 @@ const loadParserPlugins = async (language: string): Promise<Plugin[] | null> => 
   switch (language as SupportedLanguages) {
     case "javascript":
     case "typescript":
+    case "json":
       return [
         await import("prettier/plugins/babel"),
         (await import("prettier/plugins/estree")) as Plugin
@@ -34,9 +36,9 @@ const loadParserPlugins = async (language: string): Promise<Plugin[] | null> => 
     case "vue":
       return [await import("prettier/plugins/html")];
     case "markdown":
+    case "mdx":
       return [await import("prettier/plugins/markdown")];
     case "yaml":
-    case "json":
       return [await import("prettier/plugins/yaml")];
     case "css":
     case "less":
@@ -54,11 +56,7 @@ const formatCode = async (code: string, language: string, options?: Options): Pr
     return format(code, {
       ...(options || {}),
       parser,
-      plugins: parserPlugins,
-      ...(language === "json" && {
-        trailingComma: "none",
-        singleQuote: false
-      })
+      plugins: parserPlugins
     });
   }
 

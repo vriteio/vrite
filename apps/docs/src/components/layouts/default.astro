@@ -1,35 +1,107 @@
 ---
-import { Header, BaseHead, SideBar, SVGDefs, OnThisPage } from "#components/fragments";
+import { Header, BaseHead, SideBar, SVGDefs, OnThisPage, Footer } from "#components/fragments";
 import type { MarkdownHeading } from "astro";
 import menu from "./menu.json";
+import { Button } from "#components/primitives";
+import { mdiBookOpenBlankVariant, mdiConsoleLine, mdiTextBoxMultiple } from "@mdi/js";
 
 const image = "https://docs.vrite.io/meta-image.png";
 const title = "Vrite － developer content platform";
 const description =
   "Open-Source, collaborative developer content platform for documentation, technical blogs, and more.";
+const flattenMenu = (
+  menu: Array<{
+    label: string;
+    link?: string;
+    menu?: Array<{ label: string; link: string }>;
+  }>,
+  section: string,
+  labels: string[]
+): Array<{ label: string; link: string; section: string; labels: string[] }> => {
+  return menu.flatMap((item) => {
+    if (item.link) {
+      return [{ label: item.label, link: item.link, section, labels: [...labels, item.label] }];
+    }
+    if (item.menu) {
+      return flattenMenu(item.menu, section, [...labels, item.label]);
+    }
+    return [];
+  });
+};
+const sections = [
+  {
+    label: "Documentation",
+    link: "/usage-guide/getting-started",
+    icon: mdiBookOpenBlankVariant,
+    id: "docs"
+  },
+  {
+    label: "API reference",
+    link: "https://generator.swagger.io/?url=https://api.vrite.io/swagger.json",
+    icon: mdiConsoleLine,
+    id: "api"
+  }
+  /*{
+    label: "Recipes",
+    link: "/self-hosting/docker",
+    icon: mdiTextBoxMultiple,
+    id: "recipes"
+  }*/
+];
+const flatMenu = [
+  ...flattenMenu(menu.docs, "docs", []),
+  ...flattenMenu(menu.recipes, "recipes", [])
+];
+const currentEntry = flatMenu.find((item) => item.link === Astro.url.pathname);
+const nextEntry = currentEntry ? flatMenu[flatMenu.indexOf(currentEntry) + 1] : null;
+const prevEntry = currentEntry ? flatMenu[flatMenu.indexOf(currentEntry) - 1] : null;
 
 type Props = {
   headings: MarkdownHeading[];
   title: string;
+  description?: string;
 };
 ---
 
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <BaseHead description={description} title={title} image={image} />
+    <BaseHead
+      description={Astro.props.description || description}
+      title={Astro.props.title ? `${Astro.props.title} | Vrite Documentation` : title}
+      image={image}
+    />
   </head>
   <body class="overflow-x-hidden overscroll-none">
     <SVGDefs />
     <main class="flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-800">
       <div class="flex-1 flex justify-center items-center flex-1 w-full max-w-screen-2xl relative">
-        <SideBar menu={menu} currentPath={Astro.url.pathname} client:load />
-        <div class="flex overflow-hidden w-full relative h-full">
-          <div class="flex-1 flex overflow-y-auto overflow-x-hidden justify-center" id="container">
+        <Header client:load />
+        <SideBar
+          menu={menu}
+          sections={sections}
+          currentSection={currentEntry?.section || "docs"}
+          currentPath={Astro.url.pathname}
+          client:load
+        />
+        <div class="flex overflow-hidden w-full relative h-full pt-12">
+          <div
+            class="flex-1 flex overflow-y-auto overflow-x-hidden justify-center min-h-[calc(100vh-3rem)]"
+            id="container"
+          >
             <div
-              class="flex-1 prose max-w-screen-md w-full text-lg px-4 pt-4 pb-24 h-fit xl:w-[calc(100%-15rem)]"
+              class="flex-1 prose max-w-screen-md w-full text-lg px-4 md:px-8 pt-4 pb-24 h-fit xl:w-[calc(100%-15rem)]"
             >
+              {
+                (currentEntry?.labels.length || 0) > 1 && (
+                  <Button badge color="primary" variant="text" class="m-0 pl-1 py-0" hover={false}>
+                    {currentEntry?.labels.at(-2)}
+                  </Button>
+                )
+              }
+              <h1>{Astro.props.title}</h1>
               <slot />
+              <Footer nextEntry={nextEntry} previousEntry={prevEntry} />
             </div>
             <OnThisPage headings={Astro.props.headings} client:load />
           </div>

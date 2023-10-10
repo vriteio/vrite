@@ -1,13 +1,13 @@
 import { extensionsRouter } from "./routes";
-import { publicPlugin, createContext } from "@vrite/backend";
+import { publicPlugin, createFastifyContext } from "@vrite/backend";
 import {
   createOpenApiNodeHttpHandler,
   CreateOpenApiNodeHttpHandlerOptions
 } from "trpc-openapi/dist/adapters/node-http/core";
-import corsPlugin from "@fastify/cors";
 import { OpenApiRouter } from "trpc-openapi";
 import { AnyRouter } from "@trpc/server";
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import corsPlugin from "@fastify/cors";
 
 type CreateOpenApiFastifyPluginOptions<TRouter extends OpenApiRouter> =
   CreateOpenApiNodeHttpHandlerOptions<TRouter, any, any> & {
@@ -56,15 +56,15 @@ const fastifyTRPCOpenApiPlugin = <TRouter extends AnyRouter>(
 };
 const extensionsService = publicPlugin(async (fastify) => {
   await fastify.register(corsPlugin, {
-    credentials: true,
     methods: ["GET", "DELETE", "PUT", "POST"],
+    credentials: true,
     origin: true
   });
   await fastify.register(fastifyTRPCOpenApiPlugin, {
     basePath: "/",
     router: extensionsRouter,
     createContext({ req, res }: { req: FastifyRequest; res: FastifyReply }) {
-      return createContext({ req, res }, fastify);
+      return createFastifyContext({ req, res }, fastify);
     }
   });
 });

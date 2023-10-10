@@ -1,11 +1,16 @@
 import { Context } from "./context";
 import { UnderscoreID } from "./mongo";
+import * as errors from "./errors";
 import { nanoid } from "nanoid";
 import { ObjectId } from "mongodb";
-import { getUserSettingsCollection } from "#database/user-settings";
-import { getWorkspaceMembershipsCollection } from "#database/workspace-memberships";
-import { BaseRoleType, FullRole, Permission, getRolesCollection } from "#database/roles";
-import * as errors from "#lib/errors";
+import {
+  BaseRoleType,
+  FullRole,
+  Permission,
+  getRolesCollection,
+  getUserSettingsCollection,
+  getWorkspaceMembershipsCollection
+} from "#database";
 
 declare module "node:net" {
   interface Socket {

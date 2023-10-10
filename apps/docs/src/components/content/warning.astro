@@ -1,0 +1,9 @@
+---
+import { Card, Icon } from "#components/primitives";
+import { mdiAlertCircleOutline } from "@mdi/js";
+---
+
+<Card class="flex items-center justify-start m-0 my-4" color="primary">
+  <Icon path={mdiAlertCircleOutline} class="w-6 h-6 mr-2" />
+  <div class="flex-1 not-prose"><slot /></div>
+</Card>

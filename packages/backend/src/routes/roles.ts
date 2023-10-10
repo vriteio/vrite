@@ -1,29 +1,15 @@
 import { z } from "zod";
 import { ObjectId } from "mongodb";
-import { procedure, router } from "#lib/trpc";
-import { isAuthenticated } from "#lib/middleware";
-import { zodId } from "#lib/mongo";
 import {
-  Role,
   baseRoleType,
   getRolesCollection,
   role,
   getWorkspaceMembershipsCollection,
   getUsersCollection
 } from "#database";
-import * as errors from "#lib/errors";
-import { createEventPublisher, createEventSubscription } from "#lib/pub-sub";
-import { updateSessionRole } from "#lib/session";
+import { zodId, isAuthenticated, procedure, router, updateSessionRole, errors } from "#lib";
+import { publishRoleEvent, subscribeToRoleEvents } from "#events";
 
-type RoleEvent =
-  | {
-      action: "create";
-      data: Role;
-    }
-  | { action: "update"; data: Partial<Role> & { id: string } }
-  | { action: "delete"; data: { id: string; newRole: Role } };
-
-const publishEvent = createEventPublisher((workspaceId) => `roles:${workspaceId}`);
 const basePath = "/roles";
 const authenticatedProcedure = procedure.use(isAuthenticated);
 const rolesRouter = router({
@@ -63,7 +49,7 @@ const rolesRouter = router({
       }));
     }),
   changes: authenticatedProcedure.input(z.void()).subscription(({ ctx }) => {
-    return createEventSubscription<RoleEvent>(ctx, `roles:${ctx.auth.workspaceId}`);
+    return subscribeToRoleEvents(ctx, `${ctx.auth.workspaceId}`);
   }),
   get: authenticatedProcedure
     .meta({
@@ -136,7 +122,7 @@ const rolesRouter = router({
         }
       );
       updateSessionRole(ctx, input.id);
-      publishEvent(ctx, `${ctx.auth.workspaceId}`, {
+      publishRoleEvent(ctx, `${ctx.auth.workspaceId}`, {
         action: "update",
         data: {
           ...input
@@ -161,7 +147,7 @@ const rolesRouter = router({
       };
 
       await rolesCollection.insertOne(role);
-      publishEvent(ctx, `${ctx.auth.workspaceId}`, {
+      publishRoleEvent(ctx, `${ctx.auth.workspaceId}`, {
         action: "create",
         data: {
           ...input,
@@ -211,7 +197,7 @@ const rolesRouter = router({
           }
         }
       );
-      publishEvent(ctx, `${ctx.auth.workspaceId}`, {
+      publishRoleEvent(ctx, `${ctx.auth.workspaceId}`, {
         action: "delete",
         data: {
           id: input.id,

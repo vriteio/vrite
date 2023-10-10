@@ -30,7 +30,7 @@ import {
   TableCell,
   TableHeader,
   TableRow,
-  Wrapper
+  Element
 } from "@vrite/editor";
 
 type Attrs = Record<string, string | number | boolean>;
@@ -74,7 +74,7 @@ const htmlToJSON = (html: string): DocJSON => {
     OrderedList,
     TaskList,
     Blockquote,
-    Wrapper,
+    Element,
     CodeBlock,
     HorizontalRule,
     Image,
@@ -107,7 +107,7 @@ const jsonToBuffer = (json: DocJSON): Buffer => {
     OrderedList,
     TaskList,
     Blockquote,
-    Wrapper,
+    Element,
     CodeBlock,
     HorizontalRule,
     Image,

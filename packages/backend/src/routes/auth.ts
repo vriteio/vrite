@@ -2,21 +2,24 @@ import { ObjectId } from "mongodb";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import * as OTPAuth from "otpauth";
-import { FullUser, getUsersCollection } from "#database/users";
-import { UnderscoreID } from "#lib/mongo";
-import { generateSalt, hashValue, verifyValue } from "#lib/hash";
-import { procedure, router } from "#lib/trpc";
+import { FullUser, getUsersCollection, getUserSettingsCollection } from "#database";
 import {
+  UnderscoreID,
+  generateSalt,
+  processAuth,
+  errors,
+  isAuthenticated,
+  isAuthenticatedUser,
+  hashValue,
+  verifyValue,
   createSession,
   deleteSession,
   getSessionId,
   refreshSession,
-  updateSession
-} from "#lib/session";
-import { processAuth } from "#lib/auth";
-import * as errors from "#lib/errors";
-import { isAuthenticated, isAuthenticatedUser } from "#lib/middleware";
-import { getUserSettingsCollection } from "#database";
+  updateSession,
+  procedure,
+  router
+} from "#lib";
 
 const totpConfig = {
   issuer: "Vrite",
@@ -52,9 +55,13 @@ const authRouter = router({
   register: procedure
     .input(
       z.object({
-        email: z.string().email(),
+        email: z.string().email().max(320),
         username: z.string().regex(/^[a-z0-9_]*$/),
-        password: z.string().regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/),
+        password: z
+          .string()
+          .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/)
+          .min(8)
+          .max(128),
         redirect: z.string().optional()
       })
     )
@@ -94,7 +101,7 @@ const authRouter = router({
   sendMagicLink: procedure
     .input(
       z.object({
-        email: z.string().email(),
+        email: z.string().email().max(320),
         totpToken: z.string().optional(),
         redirect: z.string().optional()
       })
@@ -108,6 +115,12 @@ const authRouter = router({
 
       if (user.emailVerificationCode) {
         throw errors.unauthorized("emailNotVerified");
+      }
+
+      const magicLinkSent = await ctx.fastify.redis.get(`user:${user._id}:magicLinkSent`);
+
+      if (magicLinkSent === "true") {
+        throw errors.unauthorized("magicLinkAlreadySent");
       }
 
       if (user.totpSecret) {
@@ -128,6 +141,7 @@ const authRouter = router({
         "EX",
         60 * 30
       );
+      await ctx.fastify.redis.set(`user:${user._id}:magicLinkSent`, "true", "EX", 60);
       await ctx.fastify.email.sendMagicLink(user.email, {
         code: magicLinkCode,
         userId: `${user._id}`
@@ -136,8 +150,8 @@ const authRouter = router({
   login: procedure
     .input(
       z.object({
-        email: z.string().email(),
-        password: z.string(),
+        email: z.string().email().max(320),
+        password: z.string().min(8).max(128),
         totpToken: z.string().optional()
       })
     )

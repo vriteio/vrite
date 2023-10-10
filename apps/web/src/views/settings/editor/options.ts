@@ -96,7 +96,7 @@ const blocks: Record<
     { label: "Image", icon: mdiImage, value: "image" },
     { label: "Table", icon: mdiTable, value: "table" },
     { label: "Horizontal Rule", icon: mdiMinus, value: "horizontalRule" },
-    { label: "Wrapper", icon: mdiCubeOutline, value: "wrapper" }
+    { label: "Element", icon: mdiCubeOutline, value: "element" }
   ]
 };
 const embeds: Array<{

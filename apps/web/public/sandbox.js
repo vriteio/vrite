@@ -143,8 +143,8 @@
           var string = "";
           var bitsNeeded = this.bitsNeeded;
           var codePoint = this.codePoint;
-          for (var i2 = 0; i2 < octets.length; i2 += 1) {
-            var octet = octets[i2];
+          for (var i = 0; i < octets.length; i += 1) {
+            var octet = octets[i];
             if (bitsNeeded !== 0) {
               if (octet < 128 || octet > 191 || !valid(codePoint << 6 | octet & 63, bitsNeeded - 6, octetsCount(bitsNeeded, codePoint))) {
                 bitsNeeded = 0;
@@ -417,8 +417,8 @@
         function HeadersPolyfill(all) {
           var map = /* @__PURE__ */ Object.create(null);
           var array = all.split("\r\n");
-          for (var i2 = 0; i2 < array.length; i2 += 1) {
-            var line = array[i2];
+          for (var i = 0; i < array.length; i += 1) {
+            var line = array[i];
             var parts = line.split(": ");
             var name = parts.shift();
             var value = parts.join(": ");
@@ -539,8 +539,8 @@
           var typeListeners = this._listeners[event.type];
           if (typeListeners != void 0) {
             var length = typeListeners.length;
-            for (var i2 = 0; i2 < length; i2 += 1) {
-              var listener = typeListeners[i2];
+            for (var i = 0; i < length; i += 1) {
+              var listener = typeListeners[i];
               try {
                 if (typeof listener.handleEvent === "function") {
                   listener.handleEvent(event);
@@ -562,8 +562,8 @@
             listeners[type] = typeListeners;
           }
           var found = false;
-          for (var i2 = 0; i2 < typeListeners.length; i2 += 1) {
-            if (typeListeners[i2] === listener) {
+          for (var i = 0; i < typeListeners.length; i += 1) {
+            if (typeListeners[i] === listener) {
               found = true;
             }
           }
@@ -577,9 +577,9 @@
           var typeListeners = listeners[type];
           if (typeListeners != void 0) {
             var filtered = [];
-            for (var i2 = 0; i2 < typeListeners.length; i2 += 1) {
-              if (typeListeners[i2] !== listener) {
-                filtered.push(typeListeners[i2]);
+            for (var i = 0; i < typeListeners.length; i += 1) {
+              if (typeListeners[i] !== listener) {
+                filtered.push(typeListeners[i]);
               }
             }
             if (filtered.length === 0) {
@@ -722,10 +722,10 @@
           var onProgress = function(textChunk) {
             if (currentState === OPEN) {
               var n = -1;
-              for (var i2 = 0; i2 < textChunk.length; i2 += 1) {
-                var c = textChunk.charCodeAt(i2);
+              for (var i = 0; i < textChunk.length; i += 1) {
+                var c = textChunk.charCodeAt(i);
                 if (c === "\n".charCodeAt(0) || c === "\r".charCodeAt(0)) {
-                  n = i2;
+                  n = i;
                 }
               }
               var chunk = (n !== -1 ? textBuffer : "") + textChunk.slice(0, n + 1);
@@ -879,8 +879,8 @@
             var requestURL = url;
             if (url.slice(0, 5) !== "data:" && url.slice(0, 5) !== "blob:") {
               if (lastEventId !== "") {
-                var i2 = url.indexOf("?");
-                requestURL = i2 === -1 ? url : url.slice(0, i2 + 1) + url.slice(i2 + 1).replace(/(?:^|&)([^=&]*)(?:=[^&]*)?/g, function(p, paramName) {
+                var i = url.indexOf("?");
+                requestURL = i === -1 ? url : url.slice(0, i + 1) + url.slice(i + 1).replace(/(?:^|&)([^=&]*)(?:=[^&]*)?/g, function(p, paramName) {
                   return paramName === lastEventIdQueryParameterName ? "" : p;
                 });
                 requestURL += (url.indexOf("?") === -1 ? "?" : "&") + lastEventIdQueryParameterName + "=" + encodeURIComponent(lastEventId);
@@ -957,7 +957,7 @@
     "../../node_modules/.pnpm/unfetch@4.2.0/node_modules/unfetch/dist/unfetch.js"(exports, module) {
       module.exports = function(e, n) {
         return n = n || {}, new Promise(function(t, r) {
-          var s = new XMLHttpRequest(), o = [], u2 = [], i2 = {}, a = function() {
+          var s = new XMLHttpRequest(), o = [], u2 = [], i = {}, a = function() {
             return { ok: 2 == (s.status / 100 | 0), statusText: s.statusText, status: s.status, url: s.responseURL, text: function() {
               return Promise.resolve(s.responseText);
             }, json: function() {
@@ -969,14 +969,14 @@
             }, entries: function() {
               return u2;
             }, get: function(e2) {
-              return i2[e2.toLowerCase()];
+              return i[e2.toLowerCase()];
             }, has: function(e2) {
-              return e2.toLowerCase() in i2;
+              return e2.toLowerCase() in i;
             } } };
           };
           for (var l2 in s.open(n.method || "get", e, true), s.onload = function() {
             s.getAllResponseHeaders().replace(/^(.*?):[^\S\n]*([\s\S]*?)$/gm, function(e2, n2, t2) {
-              o.push(n2 = n2.toLowerCase()), u2.push([n2, t2]), i2[n2] = i2[n2] ? i2[n2] + "," + t2 : t2;
+              o.push(n2 = n2.toLowerCase()), u2.push([n2, t2]), i[n2] = i[n2] ? i[n2] + "," + t2 : t2;
             }), t(a());
           }, s.onerror = r, s.withCredentials = "include" == n.credentials, n.headers)
             s.setRequestHeader(l2, n.headers[l2]);
@@ -996,74 +996,83 @@
   // ../../packages/sdk/javascript/dist/api.mjs
   var api_exports = {};
   __export(api_exports, {
-    createClient: () => B
+    createClient: () => M
   });
-  var import_eventsource, i, w, $, U, f, g, L, d, S, D, O, E, R, C, x, m, I, h, j, v, k, q, l, A, u, z, B;
+  var import_eventsource, l, U, E, S, f, h, L, m, D, O, R, T, x, C, I, u, v, k, j, q, G, A, b, z, y, B, M;
   var init_api = __esm({
     "../../packages/sdk/javascript/dist/api.mjs"() {
       import_eventsource = __toESM(require_browser(), 1);
-      i = "/content-groups";
-      w = (t) => ({ get: (e) => t("GET", `${i}`, { params: e }), list: (e) => t("GET", `${i}/list`, { params: e }), create: (e) => t("POST", `${i}`, { body: e }), update: (e) => t("PUT", `${i}`, { body: e }), delete: (e) => t("DELETE", `${i}`, { params: e }) });
-      $ = "/content-pieces";
-      U = (t) => ({ get: (e) => t("GET", `${$}`, { params: e }), create: (e) => t("POST", `${$}`, { body: e }), update: (e) => t("PUT", `${$}`, { body: e }), delete: (e) => t("DELETE", `${$}`, { params: e }), list: (e) => t("GET", `${$}/list`, { params: e }) });
+      l = "/content-groups";
+      U = (t) => ({ get: (e) => t("GET", `${l}`, { params: e }), list: (e) => t("GET", `${l}/list`, { params: e }), create: (e) => t("POST", `${l}`, { body: e }), update: (e) => t("PUT", `${l}`, { body: e }), delete: (e) => t("DELETE", `${l}`, { params: e }) });
+      E = "/content-pieces";
+      S = (t) => ({ get: (e) => t("GET", `${E}`, { params: e }), create: (e) => t("POST", `${E}`, { body: e }), update: (e) => t("PUT", `${E}`, { body: e }), delete: (e) => t("DELETE", `${E}`, { params: e }), list: (e) => t("GET", `${E}/list`, { params: e }) });
       f = (t) => {
-        let e = t.baseURL || "https://api.vrite.io", n = t.extensionId || "", c = t.headers || {}, { token: s } = t;
-        return { sendRequest: async (a, p, r) => {
+        let e = t.baseURL || "https://api.vrite.io", c = t.extensionId || "", i = t.headers || {}, $ = null, { token: p } = t;
+        return { sendRequest: async (s, a, n) => {
           try {
-            const { default: o } = await Promise.resolve().then(() => __toESM(require_browser2(), 1)), y = await o(`${e}${p}/?${encodeURI(Object.entries(r?.params || {}).filter(([, b]) => b).map(([b, G]) => `${b}=${G}`).join("&"))}`, { headers: { Authorization: `Bearer ${s}`, Accept: "application/json", ...r?.body ? { "Content-Type": "application/json" } : {}, ...n ? { "X-Vrite-Extension-ID": n } : {}, ...c }, body: r?.body ? JSON.stringify(r.body) : null, method: a });
-            let T = null;
+            const { default: o } = await Promise.resolve().then(() => __toESM(require_browser2(), 1)), d = await o(`${e}${a}/?${encodeURI(Object.entries(n?.params || {}).filter(([, g]) => g).map(([g, w]) => `${g}=${w}`).join("&"))}`, { headers: { Authorization: `Bearer ${p}`, Accept: "application/json", ...n?.body ? { "Content-Type": "application/json" } : {}, ...c ? { "X-Vrite-Extension-ID": c } : {}, ...i }, body: n?.body ? JSON.stringify(n.body) : null, signal: $, method: s });
+            $ = null;
+            let r = null;
             try {
-              if (T = await y.json(), !T)
+              if (r = await d.json(), !r)
                 return;
             } catch {
               return;
             }
-            if (!y.ok)
-              throw T;
-            return T;
+            if (!d.ok)
+              throw r;
+            return r;
           } catch (o) {
             throw console.error(o), o;
           }
-        }, reconfigure: (a) => {
-          e = a.baseURL || e, s = a.token || s, n = a.extensionId || n, c = a.headers || c;
-        }, getConfig: () => ({ baseURL: e, token: s, extensionId: n, headers: c }) };
+        }, reconfigure: (s) => {
+          e = s.baseURL || e, p = s.token || p, c = s.extensionId || c, i = s.headers || i;
+        }, useSignal: (s) => {
+          $ = s;
+        }, getConfig: () => ({ baseURL: e, token: p, extensionId: c, headers: i }), getSignal: () => $ };
       };
-      g = "/user-settings";
-      L = (t) => ({ get: () => t("GET", `${g}`), update: (e) => t("PUT", `${g}`, { body: e }) });
-      d = "/tags";
-      S = (t) => ({ get: (e) => t("GET", `${d}`, { params: e }), update: (e) => t("PUT", `${d}`, { body: e }), create: (e) => t("PUT", `${d}`, { body: e }), delete: (e) => t("DELETE", `${d}`, { params: e }), list: (e) => t("GET", `${d}/list`, { params: e }) });
-      D = "/profile";
-      O = (t) => ({ get: () => t("GET", `${D}`) });
-      E = "/webhooks";
-      R = (t) => ({ get: (e) => t("GET", `${E}`, { params: e }), create: (e) => t("POST", `${E}`, { body: e }), update: (e) => t("PUT", `${E}`, { body: e }), delete: (e) => t("DELETE", `${E}`, { params: e }), list: (e) => t("GET", `${E}/list`, { params: e }) });
+      h = "/user-settings";
+      L = (t) => ({ get: () => t("GET", `${h}`), update: (e) => t("PUT", `${h}`, { body: e }) });
+      m = "/tags";
+      D = (t) => ({ get: (e) => t("GET", `${m}`, { params: e }), update: (e) => t("PUT", `${m}`, { body: e }), create: (e) => t("PUT", `${m}`, { body: e }), delete: (e) => t("DELETE", `${m}`, { params: e }), list: (e) => t("GET", `${m}/list`, { params: e }) });
+      O = "/profile";
+      R = (t) => ({ get: () => t("GET", `${O}`) });
+      T = "/webhooks";
+      x = (t) => ({ get: (e) => t("GET", `${T}`, { params: e }), create: (e) => t("POST", `${T}`, { body: e }), update: (e) => t("PUT", `${T}`, { body: e }), delete: (e) => t("DELETE", `${T}`, { params: e }), list: (e) => t("GET", `${T}/list`, { params: e }) });
       C = "/workspace";
-      x = (t) => ({ get: () => t("GET", `${C}`) });
-      m = "/roles";
-      I = (t) => ({ get: (e) => t("GET", `${m}`, { params: e }), create: (e) => t("POST", `${m}`, { body: e }), update: (e) => t("PUT", `${m}`, { body: e }), delete: (e) => t("DELETE", `${m}`, { params: e }), list: (e) => t("GET", `${m}/list`, { params: e }) });
-      h = "/workspace-settings";
-      j = (t) => ({ get: () => t("GET", `${h}`), update: (e) => t("PUT", `${h}`, { body: e }) });
-      v = (t) => ({ listMembers: (e) => t("GET", "/workspace-memberships/list-members", { params: e }), listWorkspaces: (e) => t("GET", "/workspace-memberships/list-workspaces", { params: e }), create: (e) => t("POST", "/workspace-memberships", { body: e }), update: (e) => t("PUT", "/workspace-memberships", { body: e }), delete: (e) => t("DELETE", "/workspace-memberships", { params: e }) });
-      k = "/extension";
-      q = (t) => ({ get: () => t("GET", `${k}`), updateContentPieceData: (e) => t("POST", `${k}/content-piece-data`, { body: e }) });
-      l = "/variants";
-      A = (t) => ({ create: (e) => t("POST", `${l}`, { body: e }), update: (e) => t("PUT", `${l}`, { body: e }), delete: (e) => t("DELETE", `${l}`, { params: e }), list: () => t("GET", `${l}/list`) });
-      u = "/transformers";
-      z = (t) => ({ create: (e) => t("POST", `${u}`, { body: e }), delete: (e) => t("DELETE", `${u}`, { params: e }), list: () => t("GET", `${u}/list`) });
-      B = (t) => {
-        const { sendRequest: e, reconfigure: n, getConfig: c } = f(t);
-        return { contentGroups: w(e), contentPieces: U(e), tags: S(e), profile: O(e), userSettings: L(e), webhooks: R(e), workspace: x(e), roles: I(e), workspaceSettings: j(e), workspaceMemberships: v(e), extension: q(e), variants: A(e), transformers: z(e), search(s) {
-          return e("GET", "/search", { params: s });
-        }, async ask(s) {
-          let a = "";
-          const p = new import_eventsource.default(`${c().baseURL}/search/ask?query=${encodeURIComponent(s.query)}`, { headers: { Authorization: `Bearer ${c().token}` } });
-          p.addEventListener("error", (r) => {
-            const o = r;
-            return o.message ? s.onError?.(o.message) : (p.close(), s.onEnd?.(a));
-          }), p.addEventListener("message", (r) => {
-            const o = decodeURIComponent(r.data);
-            a += o, s.onChunk?.(o, a);
-          });
-        }, reconfigure: n };
+      I = (t) => ({ get: () => t("GET", `${C}`) });
+      u = "/roles";
+      v = (t) => ({ get: (e) => t("GET", `${u}`, { params: e }), create: (e) => t("POST", `${u}`, { body: e }), update: (e) => t("PUT", `${u}`, { body: e }), delete: (e) => t("DELETE", `${u}`, { params: e }), list: (e) => t("GET", `${u}/list`, { params: e }) });
+      k = "/workspace-settings";
+      j = (t) => ({ get: () => t("GET", `${k}`), update: (e) => t("PUT", `${k}`, { body: e }) });
+      q = (t) => ({ listMembers: (e) => t("GET", "/workspace-memberships/list-members", { params: e }), listWorkspaces: (e) => t("GET", "/workspace-memberships/list-workspaces", { params: e }), create: (e) => t("POST", "/workspace-memberships", { body: e }), update: (e) => t("PUT", "/workspace-memberships", { body: e }), delete: (e) => t("DELETE", "/workspace-memberships", { params: e }) });
+      G = "/extension";
+      A = (t) => ({ get: () => t("GET", `${G}`), updateContentPieceData: (e) => t("POST", `${G}/content-piece-data`, { body: e }) });
+      b = "/variants";
+      z = (t) => ({ create: (e) => t("POST", `${b}`, { body: e }), update: (e) => t("PUT", `${b}`, { body: e }), delete: (e) => t("DELETE", `${b}`, { params: e }), list: () => t("GET", `${b}/list`) });
+      y = "/transformers";
+      B = (t) => ({ create: (e) => t("POST", `${y}`, { body: e }), delete: (e) => t("DELETE", `${y}`, { params: e }), list: () => t("GET", `${y}/list`) });
+      M = (t) => {
+        const { sendRequest: e, reconfigure: c, getConfig: i, getSignal: $, useSignal: p } = f(t), s = { contentGroups: U(e), contentPieces: S(e), tags: D(e), profile: R(e), userSettings: L(e), webhooks: x(e), workspace: I(e), roles: v(e), workspaceSettings: j(e), workspaceMemberships: q(e), extension: A(e), variants: z(e), transformers: B(e), search(a) {
+          return e("GET", "/search", { params: a });
+        }, async ask(a) {
+          let n = "";
+          const o = new import_eventsource.default(`${i().baseURL}/search/ask?query=${encodeURIComponent(a.query)}`, { headers: { Authorization: `Bearer ${i().token}` } });
+          o.addEventListener("error", (d) => {
+            const r = d;
+            return r.message ? a.onError?.(r.message) : (o.close(), a.onEnd?.(n));
+          }), o.addEventListener("message", (d) => {
+            const r = decodeURIComponent(d.data);
+            n += r, a.onChunk?.(r, n);
+          }), $()?.addEventListener("abort", () => {
+            o.close();
+          }), p(null);
+        }, useSignal(a) {
+          return p(a), s;
+        }, reconfigure(a) {
+          return c(a), s;
+        } };
+        return s;
       };
     }
   });

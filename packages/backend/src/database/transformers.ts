@@ -16,6 +16,7 @@ interface Transformer<ID extends string | ObjectId = string>
 }
 interface FullTransformer<ID extends string | ObjectId = string> extends Transformer<ID> {
   workspaceId: ID;
+  extensionId?: ID;
 }
 
 const getTransformersCollection = (db: Db): Collection<UnderscoreID<FullTransformer<ObjectId>>> => {

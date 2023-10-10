@@ -1,3 +1,8 @@
+---
+title: "Managing Metadata"
+slug: "/usage-guide/metadata"
+---
+
 After the actual content, **metadata** is probably some of the most important information you have to manage in your CMS. In Vrite, metadata — part of a content piece — can be managed from the **metadata side panel**.
 
 ## Metadata Side Panel

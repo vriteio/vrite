@@ -1,3 +1,8 @@
+---
+title: "Managing Content in Kanban"
+slug: "/usage-guide/kanban-dashboard"
+---
+
 Managing content using traditional CMS tools is hard. Basic lists or tables just don’t cut it. It's especially difficult when working in teams or depending on a complex content production pipeline. You end up using many different tools, switching and copy-pasting between them, experiencing degraded UX, and losing time.
 
 That's why Vrite approaches content management differently — by implementing a **Kanban dashboard** many developers and project managers are familiar with and enjoy using.

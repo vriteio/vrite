@@ -1,3 +1,8 @@
+---
+title: "Writing in Vrite Editor"
+slug: "/usage-guide/content-editor"
+---
+
 The content editor is the core part of Vrite — this is where you can create your next technical masterpiece. And, thanks to all the features, formatting options, and content blocks Vrite supports - it should be a breeze!
 
 ## Editing Menus

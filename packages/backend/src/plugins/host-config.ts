@@ -1,17 +1,4 @@
-import { publicPlugin } from "../lib/plugin";
-import { z } from "zod";
-
-const hostConfig = z.object({
-  githubOAuth: z.boolean(),
-  githubApp: z.boolean(),
-  sendgrid: z.boolean(),
-  smtp: z.boolean(),
-  search: z.boolean(),
-  aiSearch: z.boolean(),
-  extensions: z.boolean()
-});
-
-interface HostConfig extends z.infer<typeof hostConfig> {}
+import { HostConfig, publicPlugin } from "#lib";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -44,5 +31,4 @@ const hostConfigPlugin = publicPlugin(async (fastify) => {
   fastify.decorate("hostConfig", hostConfig);
 });
 
-export { hostConfigPlugin, hostConfig };
-export type { HostConfig };
+export { hostConfigPlugin };

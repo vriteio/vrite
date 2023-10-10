@@ -6,7 +6,7 @@ const workspaceMembership = z.object({
   id: zodId(),
   userId: zodId().optional(),
   roleId: zodId(),
-  email: z.string().email().optional(),
+  email: z.string().email().max(320).optional(),
   name: z.string().max(50).optional()
 });
 const workspaceInviteCodeDetails = z.object({

@@ -19,7 +19,7 @@ const ConfigureWebhookSubsection: Component<ConfigureWebhookSubsectionProps> = (
   const [loading, setLoading] = createSignal(false);
   const [webhookData, setWebhookData] = createStore<Omit<App.Webhook, "id">>({
     description: "",
-    event: "" as App.WebhookEvent,
+    event: "" as App.WebhookEventName,
     name: "",
     url: ""
   });
@@ -149,7 +149,7 @@ const ConfigureWebhookSubsection: Component<ConfigureWebhookSubsectionProps> = (
           options={webhookEvents}
           value={webhookData.event || ""}
           setValue={(value) => {
-            setWebhookData("event", value as App.WebhookEvent);
+            setWebhookData("event", value as App.WebhookEventName);
           }}
         >
           Event for which the Webhook should be called

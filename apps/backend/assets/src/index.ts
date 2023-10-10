@@ -1,8 +1,10 @@
-import { assetsService } from "./api";
+import { assetsService } from "./assets";
 import { createServer } from "@vrite/backend";
 
 (async () => {
-  const server = await createServer();
+  const server = await createServer({
+    storage: true
+  });
 
   await server.register(assetsService);
 

@@ -18,12 +18,14 @@
 }
 
 .ProseMirror-gapcursor {
-  width: 100%;
+  @apply !w-full !m-0;
 }
 .ProseMirror-gapcursor::after {
-  width: 100% !important;
-  top: -19px !important;
-  @apply !border-primary my-2;
+  @apply !border-primary !w-full !z-1 !my-0 !top-0;
+}
+div:not([data-element="true"]) + .ProseMirror-gapcursor:has(+ div)::after,
+div + .ProseMirror-gapcursor:has(+ div:not([data-element="true"]))::after {
+  @apply !my-2.5;
 }
 .ProseMirror-dropcursor {
   @apply text-primary;

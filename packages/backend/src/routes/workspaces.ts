@@ -1,20 +1,16 @@
-import { procedure, router } from "../lib/trpc";
-import { isAuthenticated, isAuthenticatedUser } from "../lib/middleware";
-import { zodId } from "../lib";
 import { z } from "zod";
-import * as errors from "#lib/errors";
-import { Workspace, getWorkspacesCollection, workspace } from "#database/workspaces";
-import { createEventPublisher, createEventSubscription } from "#lib/pub-sub";
-import { createWorkspace, deleteWorkspace } from "#lib/workspace";
-import { getUsersCollection } from "#database";
+import {
+  errors,
+  createWorkspace,
+  deleteWorkspace,
+  isAuthenticated,
+  isAuthenticatedUser,
+  procedure,
+  router
+} from "#lib";
+import { getWorkspacesCollection, workspace, getUsersCollection } from "#database";
+import { subscribeToWorkspaceEvents, publishWorkspaceEvent } from "#events";
 
-type WorkspaceEvent =
-  | { action: "update"; data: Partial<Workspace> & { id: string } }
-  | { action: "delete"; data: { id: string } };
-
-const publishEvent = createEventPublisher<WorkspaceEvent>((workspaceId) => {
-  return `workspace:${workspaceId}`;
-});
 const authenticatedProcedure = procedure.use(isAuthenticated);
 const authenticatedUserProcedure = procedure.use(isAuthenticatedUser);
 const basePath = "/workspace";
@@ -42,7 +38,7 @@ const workspacesRouter = router({
       };
     }),
   changes: authenticatedProcedure.subscription(({ ctx }) => {
-    return createEventSubscription<WorkspaceEvent>(ctx, `workspace:${ctx.auth.workspaceId}`);
+    return subscribeToWorkspaceEvents(ctx, `${ctx.auth.workspaceId}`);
   }),
   update: authenticatedProcedure
     .meta({
@@ -61,7 +57,7 @@ const workspacesRouter = router({
 
       if (!matchedCount) throw errors.notFound("workspace");
 
-      publishEvent(ctx, `${ctx.auth.workspaceId}`, {
+      publishWorkspaceEvent(ctx, `${ctx.auth.workspaceId}`, {
         action: "update",
         data: input
       });
@@ -94,7 +90,7 @@ const workspacesRouter = router({
     .output(z.void())
     .mutation(async ({ ctx }) => {
       await deleteWorkspace(ctx.auth.workspaceId, ctx.fastify);
-      publishEvent(ctx, `${ctx.auth.workspaceId}`, {
+      publishWorkspaceEvent(ctx, `${ctx.auth.workspaceId}`, {
         action: "delete",
         data: {
           id: `${ctx.auth.workspaceId}`

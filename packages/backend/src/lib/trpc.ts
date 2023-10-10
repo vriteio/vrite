@@ -1,9 +1,9 @@
 import { Context } from "./context";
 import { CustomError } from "./errors";
+import { HostConfig } from "./host-config";
 import { initTRPC } from "@trpc/server";
 import { OpenApiMeta } from "trpc-openapi";
 import { TokenPermission, Permission } from "#database";
-import { HostConfig } from "#plugins/host-config";
 
 type Meta = OpenApiMeta & {
   permissions?: { session?: Permission[]; token?: TokenPermission[] };

@@ -1,6 +1,6 @@
 import { App } from "#context";
 
-const webhookEvents: Array<{ label: string; value: App.WebhookEvent }> = [
+const webhookEvents: Array<{ label: string; value: App.WebhookEventName }> = [
   { label: "Content piece updated", value: "contentPieceUpdated" },
   { label: "New content piece added", value: "contentPieceAdded" },
   { label: "Content piece removed", value: "contentPieceRemoved" },

@@ -184,32 +184,6 @@ const AuthenticatedUserDataProvider: ParentComponent = (props) => {
               ...workspaceSettings!,
               ...data
             }));
-          } else if (action === "createWrapper") {
-            setWorkspaceSettings((workspaceSettings) => ({
-              ...workspaceSettings!,
-              wrappers: [...(workspaceSettings?.wrappers || []), data]
-            }));
-          } else if (action === "deleteWrapper") {
-            setWorkspaceSettings((workspaceSettings) => ({
-              ...workspaceSettings!,
-              wrappers: (workspaceSettings?.wrappers || []).filter(
-                (wrapper) => wrapper.key !== data.key
-              )
-            }));
-          } else if (action === "updateWrapper") {
-            setWorkspaceSettings((workspaceSettings) => ({
-              ...workspaceSettings!,
-              wrappers: (workspaceSettings?.wrappers || []).map((wrapper) => {
-                if (wrapper.key === data.key) {
-                  return {
-                    ...wrapper,
-                    ...data
-                  };
-                }
-
-                return wrapper;
-              })
-            }));
           }
         }
       });

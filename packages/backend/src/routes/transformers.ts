@@ -1,25 +1,9 @@
 import { z } from "zod";
-import { isAuthenticated } from "#lib/middleware";
-import { procedure, router } from "#lib/trpc";
-import * as errors from "#lib/errors";
-import { createEventPublisher, createEventSubscription } from "#lib/pub-sub";
-import { Transformer, getGitDataCollection, transformer } from "#database";
-import { ObjectId, zodId } from "#lib/mongo";
-import { getTransformersCollection } from "#database/transformers";
+import { ObjectId } from "mongodb";
+import { getGitDataCollection, transformer, getTransformersCollection } from "#database";
+import { zodId, errors, procedure, router, isAuthenticated } from "#lib";
+import { publishTransformerEvent, subscribeToTransformerEvents } from "#events";
 
-type TransformersEvent =
-  | {
-      action: "create";
-      data: Transformer & { id: string };
-    }
-  | {
-      action: "delete";
-      data: { id: string };
-    };
-
-const publishEvent = createEventPublisher<TransformersEvent>(
-  (workspaceId) => `transformers:${workspaceId}`
-);
 const authenticatedProcedure = procedure.use(isAuthenticated);
 const basePath = "/transformers";
 const transformersRouter = router({
@@ -31,15 +15,17 @@ const transformersRouter = router({
     .input(transformer.omit({ id: true }))
     .output(z.object({ id: zodId() }))
     .mutation(async ({ ctx, input }) => {
+      const extensionId = ctx.req.headers["x-vrite-extension-id"] as string | undefined;
       const transformersCollection = getTransformersCollection(ctx.db);
       const transformer = {
         _id: new ObjectId(),
         workspaceId: ctx.auth.workspaceId,
+        ...(extensionId && { extensionId: new ObjectId(extensionId) }),
         ...input
       };
 
       await transformersCollection.insertOne(transformer);
-      publishEvent(ctx, `${ctx.auth.workspaceId}`, {
+      publishTransformerEvent(ctx, `${ctx.auth.workspaceId}`, {
         action: "create",
         data: { ...input, id: `${transformer._id}` }
       });
@@ -71,7 +57,7 @@ const transformersRouter = router({
 
       if (!deletedCount) throw errors.notFound("transformer");
 
-      publishEvent(ctx, `${ctx.auth.workspaceId}`, { action: "delete", data: input });
+      publishTransformerEvent(ctx, `${ctx.auth.workspaceId}`, { action: "delete", data: input });
     }),
   list: authenticatedProcedure
     .meta({
@@ -79,7 +65,14 @@ const transformersRouter = router({
       permissions: { token: ["workspace:read"] }
     })
     .input(z.void())
-    .output(z.array(transformer.extend({ inUse: z.boolean().optional() })))
+    .output(
+      z.array(
+        transformer.extend({
+          inUse: z.boolean().optional(),
+          extension: z.boolean().optional()
+        })
+      )
+    )
     .query(async ({ ctx }) => {
       const gitDataCollection = getGitDataCollection(ctx.db);
       const transformersCollection = getTransformersCollection(ctx.db);
@@ -93,20 +86,20 @@ const transformersRouter = router({
         .sort("_id", -1)
         .toArray();
 
-      return transformers.map(({ _id, workspaceId, ...transformerData }) => {
+      return transformers.map(({ _id, workspaceId, extensionId, ...transformerData }) => {
         return {
           id: `${_id}`,
           workspaceId: `${workspaceId}`,
           inUse: gitData?.github?.transformer === `${_id}`,
+          ...(extensionId && { extension: true }),
           ...transformerData
         };
       });
     }),
 
   changes: authenticatedProcedure.input(z.void()).subscription(async ({ ctx }) => {
-    return createEventSubscription<TransformersEvent>(ctx, `transformers:${ctx.auth.workspaceId}`);
+    return subscribeToTransformerEvents(ctx, `${ctx.auth.workspaceId}`);
   })
 });
 
 export { transformersRouter };
-export type { TransformersEvent };

@@ -1,10 +1,6 @@
 import { Db, ObjectId } from "mongodb";
 import { z } from "zod";
-import { UnderscoreID, zodId } from "#lib/mongo";
-import { isAuthenticated } from "#lib/middleware";
-import { procedure, router } from "#lib/trpc";
-import * as errors from "#lib/errors";
-import { createEventPublisher, createEventSubscription } from "#lib/pub-sub";
+import { UnderscoreID, zodId, isAuthenticated, procedure, router, errors } from "#lib";
 import {
   CommentThread,
   commentThread,
@@ -15,26 +11,9 @@ import {
   commentMember,
   CommentWithAdditionalData,
   getWorkspaceMembershipsCollection,
-  getUsersCollection,
-  CommentMember
+  getUsersCollection
 } from "#database";
-
-type CommentEvent =
-  | { action: "createThread"; data: CommentThread }
-  | { action: "resolveThread"; data: Pick<CommentThread, "id" | "fragment" | "resolved"> }
-  | { action: "deleteThread"; data: Pick<CommentThread, "id" | "fragment"> }
-  | {
-      action: "createComment";
-      data: Omit<Comment, "memberId"> & { member: CommentMember | null };
-    }
-  | {
-      action: "updateComment";
-      data: Pick<Comment, "id" | "content">;
-    }
-  | {
-      action: "deleteComment";
-      data: Pick<Comment, "id">;
-    };
+import { publishCommentEvent, subscribeToCommentEvents } from "#events";
 
 const fetchCommentsMembers = async (
   db: Db,
@@ -99,9 +78,6 @@ const fetchThreadsFirstComments = async (
   return fetchCommentsMembers(db, comments);
 };
 const authenticatedProcedure = procedure.use(isAuthenticated);
-const publishEvent = createEventPublisher<CommentEvent>((contentPieceId) => {
-  return `comments:${contentPieceId}`;
-});
 const commentsRouter = router({
   getThread: authenticatedProcedure
     .input(z.object({ fragment: z.string() }))
@@ -216,7 +192,7 @@ const commentsRouter = router({
       };
 
       await commentThreadsCollection.insertOne(thread);
-      publishEvent(ctx, `${input.contentPieceId}`, {
+      publishCommentEvent(ctx, `${input.contentPieceId}`, {
         action: "createThread",
         data: {
           ...thread,
@@ -249,7 +225,7 @@ const commentsRouter = router({
           $set: { resolved: true }
         }
       );
-      publishEvent(ctx, `${existingThread.contentPieceId}`, {
+      publishCommentEvent(ctx, `${existingThread.contentPieceId}`, {
         action: "resolveThread",
         data: {
           id: `${existingThread._id}`,
@@ -289,7 +265,7 @@ const commentsRouter = router({
           $push: { comments: comment._id }
         }
       );
-      publishEvent(ctx, `${existingThread.contentPieceId}`, {
+      publishCommentEvent(ctx, `${existingThread.contentPieceId}`, {
         action: "createComment",
         data: (await fetchCommentsMembers(ctx.db, [comment]))[0]
       });
@@ -320,7 +296,7 @@ const commentsRouter = router({
         { _id: existingComment._id },
         { $set: { content: input.content } }
       );
-      publishEvent(ctx, `${existingThread.contentPieceId}`, {
+      publishCommentEvent(ctx, `${existingThread.contentPieceId}`, {
         action: "updateComment",
         data: {
           content: input.content,
@@ -353,7 +329,7 @@ const commentsRouter = router({
         { _id: existingThread._id },
         { $pull: { comments: existingComment._id } }
       );
-      publishEvent(ctx, `${existingThread.contentPieceId}`, {
+      publishCommentEvent(ctx, `${existingThread.contentPieceId}`, {
         action: "deleteComment",
         data: {
           id: `${existingComment._id}`
@@ -375,7 +351,7 @@ const commentsRouter = router({
 
       await commentThreadsCollection.deleteOne({ _id: existingThread._id });
       await commentsCollection.deleteMany({ threadId: existingThread._id });
-      publishEvent(ctx, `${existingThread.contentPieceId}`, {
+      publishCommentEvent(ctx, `${existingThread.contentPieceId}`, {
         action: "deleteThread",
         data: {
           id: `${existingThread._id}`,
@@ -386,7 +362,7 @@ const commentsRouter = router({
   changes: authenticatedProcedure
     .input(z.object({ contentPieceId: zodId() }))
     .subscription(({ ctx, input }) => {
-      return createEventSubscription<CommentEvent>(ctx, `comments:${input.contentPieceId}`);
+      return subscribeToCommentEvents(ctx, input.contentPieceId);
     })
 });
 

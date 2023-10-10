@@ -1,6 +1,7 @@
 import { minimatch } from "minimatch";
+import { ObjectId } from "mongodb";
 import { FullGitData, GitRecord } from "#database";
-import { ObjectId, UnderscoreID } from "#lib";
+import { UnderscoreID } from "#lib";
 
 type RecordsProcessor = (gitData: UnderscoreID<FullGitData<ObjectId>>) => GitRecord<ObjectId>[];
 

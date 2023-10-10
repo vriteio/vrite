@@ -50,19 +50,11 @@ const AppearanceSection: Component = () => {
 
   return (
     <div class="flex justify-center flex-col items-start w-full gap-5">
-      <TitledCard icon={mdiThemeLightDark} label="UI theme">
+      <TitledCard icon={mdiThemeLightDark} label="Theme">
         <ThemePicker
           theme={userSettings()?.uiTheme || "auto"}
           setTheme={async (theme) => {
             await client.userSettings.update.mutate({ uiTheme: theme });
-          }}
-        />
-      </TitledCard>
-      <TitledCard label="Code editor theme" icon={mdiCodeTags}>
-        <ThemePicker
-          theme={userSettings()?.codeEditorTheme || "dark"}
-          setTheme={async (theme) => {
-            await client.userSettings.update.mutate({ codeEditorTheme: theme });
           }}
         />
       </TitledCard>

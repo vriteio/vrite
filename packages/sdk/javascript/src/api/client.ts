@@ -1,5 +1,9 @@
 import { createContentGroupsEndpoints, ContentGroupsEndpoints } from "./content-groups";
-import { ContentPiecesEndpoints, createContentPiecesEndpoints } from "./content-pieces";
+import {
+  ContentPiece,
+  ContentPiecesEndpoints,
+  createContentPiecesEndpoints
+} from "./content-pieces";
 import { APIFetcherConfig, createAPIFetcher } from "./request";
 import { UserSettingsEndpoints, createUserSettingsEndpoints } from "./user-settings";
 import { TagsEndpoints, createTagsEndpoints } from "./tags";
@@ -17,6 +21,12 @@ import { VariantsEndpoints, createVariantsEndpoints } from "./variants";
 import { TransformersEndpoints, createTransformersEndpoints } from "./transformers";
 import PolyfilledEventSource from "@sanity/eventsource";
 
+interface SearchResult {
+  contentPieceId: string;
+  contentPiece: Omit<ContentPiece, "locked" | "content" | "coverWidth">;
+  breadcrumb: string[];
+  content: string;
+}
 interface ClientConfig extends APIFetcherConfig {}
 interface Client {
   contentGroups: ContentGroupsEndpoints;
@@ -36,27 +46,21 @@ interface Client {
     query: string;
     limit?: number;
     variantId?: string;
-    contentPieceID?: string;
-  }): Promise<
-    Array<{
-      contentPieceId: string;
-      breadcrumb: string[];
-      content: string;
-    }>
-  >;
+    contentPieceId?: string;
+  }): Promise<SearchResult[]>;
   ask(input: {
     query: string;
     onChunk?(chunk: string, content: string): void;
     onEnd?(content: string): void;
     onError?(error: string): void;
   }): void;
-  reconfigure(config: ClientConfig): void;
+  useSignal(signal: AbortSignal | null): Client;
+  reconfigure(config: ClientConfig): Client;
 }
 
 const createClient = (config: ClientConfig): Client => {
-  const { sendRequest, reconfigure, getConfig } = createAPIFetcher(config);
-
-  return {
+  const { sendRequest, reconfigure, getConfig, getSignal, useSignal } = createAPIFetcher(config);
+  const client: Client = {
     contentGroups: createContentGroupsEndpoints(sendRequest),
     contentPieces: createContentPiecesEndpoints(sendRequest),
     tags: createTagsEndpoints(sendRequest),
@@ -102,10 +106,25 @@ const createClient = (config: ClientConfig): Client => {
         content += chunk;
         input.onChunk?.(chunk, content);
       });
+      getSignal()?.addEventListener("abort", () => {
+        source.close();
+      });
+      useSignal(null);
     },
-    reconfigure
+    useSignal(signal) {
+      useSignal(signal);
+
+      return client;
+    },
+    reconfigure(config) {
+      reconfigure(config);
+
+      return client;
+    }
   };
+
+  return client;
 };
 
 export { createClient };
-export type { Client };
+export type { Client, SearchResult };

@@ -13,7 +13,7 @@ const contentGroupEvents = [
   "contentGroupMoved"
 ] as const;
 const memberEvents = ["memberInvited", "memberAdded", "memberRemoved"] as const;
-const webhookEvent = z.enum([...contentPieceEvents, ...contentGroupEvents, ...memberEvents]);
+const webhookEventName = z.enum([...contentPieceEvents, ...contentGroupEvents, ...memberEvents]);
 const webhookMetadata = z.object({
   contentGroupId: zodId()
 });
@@ -23,10 +23,10 @@ const webhook = z.object({
   name: z.string().min(1).max(50),
   description: z.string().optional(),
   metadata: webhookMetadata.optional(),
-  event: webhookEvent
+  event: webhookEventName
 });
 
-type WebhookEvent = z.infer<typeof webhookEvent>;
+type WebhookEventName = z.infer<typeof webhookEventName>;
 type WebhookMetadata<ID extends string | ObjectId = string> = {
   contentGroupId: ID;
 };
@@ -47,10 +47,10 @@ const getWebhooksCollection = (db: Db): Collection<UnderscoreID<FullWebhook<Obje
 
 export {
   webhook,
-  webhookEvent,
+  webhookEventName,
   getWebhooksCollection,
   contentPieceEvents,
   contentGroupEvents,
   memberEvents
 };
-export type { WebhookEvent, Webhook, FullWebhook };
+export type { WebhookEventName, Webhook, FullWebhook };

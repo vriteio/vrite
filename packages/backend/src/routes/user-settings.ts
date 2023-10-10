@@ -1,20 +1,13 @@
 import { z } from "zod";
-import { isAuthenticated, isAuthenticatedUser } from "#lib/middleware";
-import { procedure, router } from "#lib/trpc";
-import * as errors from "#lib/errors";
-import { createEventPublisher, createEventSubscription } from "#lib/pub-sub";
 import {
   getWorkspacesCollection,
   getWorkspaceMembershipsCollection,
-  AppearanceSettings,
   appearanceSettings,
   getUserSettingsCollection
 } from "#database";
-import { zodId } from "#lib";
+import { zodId, errors, procedure, router, isAuthenticated, isAuthenticatedUser } from "#lib";
+import { publishUserSettingsEvent, subscribeToUserSettingsEvents } from "#events";
 
-type UserSettingsEvent = { action: "update"; data: Partial<AppearanceSettings> };
-
-const publishEvent = createEventPublisher<UserSettingsEvent>((userId) => `userSettings:${userId}`);
 const authenticatedUserProcedure = procedure.use(isAuthenticatedUser);
 const authenticatedProcedure = procedure.use(isAuthenticated);
 const basePath = "/user-settings";
@@ -24,7 +17,7 @@ const userSettingsRouter = router({
       openapi: { method: "PUT", path: basePath, protect: true },
       permissions: { token: ["userSettings:write"] }
     })
-    .input(appearanceSettings.partial())
+    .input(appearanceSettings.omit({ codeEditorTheme: true }).partial())
     .output(z.void())
     .mutation(async ({ ctx, input }) => {
       const userSettingsCollection = getUserSettingsCollection(ctx.db);
@@ -35,7 +28,10 @@ const userSettingsRouter = router({
 
       if (!matchedCount) throw errors.notFound("userSettings");
 
-      publishEvent(ctx, `${ctx.auth.userId}`, { action: "update", data: input });
+      publishUserSettingsEvent(ctx, `${ctx.auth.userId}`, {
+        action: "update",
+        data: { ...input, ...(input.uiTheme ? { codeEditorTheme: input.uiTheme } : {}) }
+      });
     }),
   get: authenticatedUserProcedure
     .meta({
@@ -53,7 +49,7 @@ const userSettingsRouter = router({
       if (!userSettings) throw errors.notFound("userSettings");
 
       return {
-        codeEditorTheme: userSettings.codeEditorTheme,
+        codeEditorTheme: userSettings.uiTheme,
         uiTheme: userSettings.uiTheme,
         accentColor: userSettings.accentColor
       };
@@ -81,9 +77,8 @@ const userSettingsRouter = router({
       return `${ctx.auth.workspaceId}`;
     }),
   changes: authenticatedUserProcedure.input(z.void()).subscription(async ({ ctx }) => {
-    return createEventSubscription<UserSettingsEvent>(ctx, `userSettings:${ctx.auth.userId}`);
+    return subscribeToUserSettingsEvents(ctx, `${ctx.auth.userId}`);
   })
 });
 
 export { userSettingsRouter };
-export type { UserSettingsEvent };

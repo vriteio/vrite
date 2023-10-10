@@ -1,53 +1,60 @@
-[
-  {
-    "label": "Usage Guide",
-    "menu": [
-      {
-        "label": "Getting Started",
-        "link": "/usage-guide/getting-started"
-      },
-      {
-        "label": "Managing Content with Kanban",
-        "link": "/usage-guide/kanban-dashboard"
-      },
-      {
-        "label": "Managing metadata",
-        "link": "/usage-guide/metadata"
-      },
-      {
-        "label": "Writing in the Vrite Editor",
-        "link": "/usage-guide/content-editor"
-      },
-      {
-        "label": "Configuring Vrite",
-        "link": "/usage-guide/configuring-vrite"
-      },
-      {
-        "label": "Publishing content",
-        "link": "/usage-guide/publishing"
-      }
-    ]
-  },
-  {
-    "label": "JavaScript SDK",
-    "menu": [
-      {
-        "label": "Introduction",
-        "link": "/javascript-sdk/javascript-sdk"
-      }
-    ]
-  },
-  {
-    "label": "Self-Hosting",
-    "menu": [
-      {
-        "label": "Docker",
-        "link": "/self-hosting/docker"
-      },
-      {
-        "label": "Configuration",
-        "link": "/self-hosting/configuration"
-      }
-    ]
-  }
-]
+{
+  "docs": [
+    {
+      "label": "Usage Guide",
+      "menu": [
+        {
+          "label": "Getting Started",
+          "link": "/usage-guide/getting-started"
+        },
+        {
+          "label": "Managing Content with Kanban",
+          "link": "/usage-guide/kanban-dashboard"
+        },
+        {
+          "label": "Managing metadata",
+          "link": "/usage-guide/metadata"
+        },
+        {
+          "label": "Writing in the Vrite Editor",
+          "link": "/usage-guide/content-editor"
+        },
+        {
+          "label": "Configuring Vrite",
+          "link": "/usage-guide/configuring-vrite"
+        },
+        {
+          "label": "Publishing content",
+          "link": "/usage-guide/publishing"
+        },
+        {
+          "label": "Vrite Extensions",
+          "link": "/usage-guide/vrite-extensions"
+        }
+      ]
+    },
+    {
+      "label": "JavaScript SDK",
+      "menu": [
+        {
+          "label": "Introduction",
+          "link": "/javascript-sdk/introduction"
+        }
+      ]
+    },
+    {
+      "label": "Self-Hosting",
+      "menu": [
+        {
+          "label": "Docker",
+          "link": "/self-hosting/docker"
+        },
+        {
+          "label": "Configuration",
+          "link": "/self-hosting/configuration"
+        }
+      ]
+    }
+  ],
+  "recipes": []
+}
