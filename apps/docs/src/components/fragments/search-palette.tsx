@@ -63,9 +63,6 @@ const SearchPalette: Component<SearchPaletteProps> = (props) => {
   const [searchResults, setSearchResults] = createSignal<SearchResult[]>([]);
   const [answer, setAnswer] = createSignal<string>("");
   const [loading, setLoading] = createSignal(false);
-  const [scrollableContainerRef, setScrollableContainerRef] = createSignal<HTMLDivElement | null>(
-    null
-  );
   const [mouseHoverEnabled, setMouseHoverEnabled] = createSignal(false);
   const [selectedIndex, setSelectedIndex] = createSignal(0);
   const [query, setQuery] = createSignal("");
@@ -309,10 +306,7 @@ const SearchPalette: Component<SearchPaletteProps> = (props) => {
           />
         </div>
         <div class="relative overflow-hidden">
-          <div
-            class="flex-1 flex flex-col overflow-auto  max-h-[calc(100vh-21.5rem)] scrollbar-sm"
-            ref={setScrollableContainerRef}
-          >
+          <div class="flex-1 flex flex-col overflow-auto  max-h-[calc(100vh-21.5rem)] scrollbar-sm">
             <Switch>
               <Match when={mode() === "search"}>
                 <Show
@@ -480,6 +474,14 @@ const SearchPalette: Component<SearchPaletteProps> = (props) => {
 };
 const SearchPaletteProvider: ParentComponent = (props) => {
   const [opened, setOpened] = createSignal(false);
+
+  createEffect(() => {
+    if (opened()) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+    }
+  });
 
   return (
     <SearchPaletteContext.Provider

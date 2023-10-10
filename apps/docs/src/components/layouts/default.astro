@@ -67,7 +67,11 @@ type Props = {
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <BaseHead description={Astro.props.description || description} title={title} image={image} />
+    <BaseHead
+      description={Astro.props.description || description}
+      title={Astro.props.title ? `${Astro.props.title} | Vrite Documentation` : title}
+      image={image}
+    />
   </head>
   <body class="overflow-x-hidden overscroll-none">
     <SVGDefs />
@@ -87,7 +91,7 @@ type Props = {
             id="container"
           >
             <div
-              class="flex-1 prose max-w-screen-md w-full text-lg px-4 pt-4 pb-24 h-fit xl:w-[calc(100%-15rem)]"
+              class="flex-1 prose max-w-screen-md w-full text-lg px-4 md:px-8 pt-4 pb-24 h-fit xl:w-[calc(100%-15rem)]"
             >
               {
                 (currentEntry?.labels.length || 0) > 1 && (
