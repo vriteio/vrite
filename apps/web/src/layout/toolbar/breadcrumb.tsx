@@ -93,11 +93,15 @@ const Breadcrumb: Component<{
       () => props.ancestor,
       async (ancestor) => {
         if (ancestor) {
-          const ancestors = await client.contentGroups.listAncestors.query({
-            contentGroupId: ancestor.id || ""
-          });
+          try {
+            const ancestors = await client.contentGroups.listAncestors.query({
+              contentGroupId: ancestor.id || ""
+            });
 
-          setAncestors([...ancestors, ancestor]);
+            setAncestors([...ancestors, ancestor]);
+          } catch (e) {
+            setAncestors([]);
+          }
         } else {
           setAncestors([]);
         }

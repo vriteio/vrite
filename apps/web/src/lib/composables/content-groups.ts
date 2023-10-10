@@ -49,11 +49,15 @@ const useContentGroups = (initialAncestorId?: string): UseContentGroups => {
   const refetch = async (ancestor?: string): Promise<void> => {
     setLoading(true);
 
-    const contentGroups = await client.contentGroups.list.query({ ancestor });
+    try {
+      const contentGroups = await client.contentGroups.list.query({ ancestor });
 
-    setAncestorId(ancestor);
-    setState("contentGroups", contentGroups);
-    setLoading(false);
+      setAncestorId(ancestor);
+      setState("contentGroups", contentGroups);
+      setLoading(false);
+    } catch (error) {
+      setAncestorId(ancestor);
+    }
   };
   const contentGroupsChanges = client.contentGroups.changes.subscribe(undefined, {
     onData({ action, data }) {

@@ -3,7 +3,6 @@ import { DashboardListView } from "./views/list";
 import { Component, Match, Switch, createEffect, on, onCleanup } from "solid-js";
 import { HocuspocusProvider } from "@hocuspocus/provider";
 import * as Y from "yjs";
-import { useNavigate } from "@solidjs/router";
 import { App, useAuthenticatedUserData, useLocalStorage, useCache, useSharedState } from "#context";
 import { getSelectionColor } from "#lib/utils";
 import { useContentGroups } from "#lib/composables";
@@ -11,7 +10,6 @@ import { useContentGroups } from "#lib/composables";
 const DashboardView: Component = () => {
   const createSharedSignal = useSharedState();
   const cache = useCache();
-  const navigate = useNavigate();
   const { workspace, profile } = useAuthenticatedUserData();
   const { storage, setStorage } = useLocalStorage();
   const ancestor = (): App.ContentGroup | null => {
