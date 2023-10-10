@@ -14,6 +14,7 @@ let generalMenu: SolidRenderer<{
   pos: number;
   node: PMNode | null;
   container: HTMLElement | null;
+  active: boolean;
 }> | null = null;
 
 const handleUpdate = (editor: SolidEditor): void => {
@@ -23,7 +24,7 @@ const handleUpdate = (editor: SolidEditor): void => {
 
   if (!isNodeSelection || !selectedNode || selectedNode.type.name !== "element") {
     generalMenuContainer.style.display = "none";
-    generalMenu?.setState((state) => ({ ...state }));
+    generalMenu?.setState((state) => ({ ...state, active: false }));
 
     return;
   }
@@ -57,7 +58,8 @@ const handleUpdate = (editor: SolidEditor): void => {
     pos: selection.$from.pos,
     node: selectedNode,
     container: blockParent,
-    editor
+    editor,
+    active: true
   }));
 };
 const ElementMenuPlugin = Extension.create({
@@ -69,7 +71,8 @@ const ElementMenuPlugin = Extension.create({
         pos: 0,
         node: null as PMNode | null,
         container: null as HTMLElement | null,
-        editor: this.editor as SolidEditor
+        editor: this.editor as SolidEditor,
+        active: false as boolean
       }
     });
     generalMenuContainer.appendChild(generalMenu.element);
@@ -78,13 +81,17 @@ const ElementMenuPlugin = Extension.create({
   onBlur() {
     const menuActive = document.activeElement?.contains(generalMenuContainer);
 
-    if (!menuActive) generalMenuContainer.style.display = "none";
+    if (!menuActive) {
+      generalMenuContainer.style.display = "none";
+      generalMenu?.setState((state) => ({ ...state, active: false }));
+    }
   },
   onFocus() {
     const isCellSelection = this.editor.state.selection instanceof CellSelection;
 
     if (this.editor.isActive("element") && !isCellSelection) {
       generalMenuContainer.style.display = "block";
+      generalMenu?.setState((state) => ({ ...state, active: true }));
     }
   },
   onUpdate() {

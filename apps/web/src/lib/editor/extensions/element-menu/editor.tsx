@@ -20,6 +20,7 @@ import { formatCode } from "#lib/code-editor";
 interface ElementMenuEditorProps {
   state: {
     type: string;
+    active: boolean;
     props: Record<string, any>;
     editor: SolidEditor;
     contentSize: number;
@@ -173,14 +174,15 @@ const ElementMenuEditor = lazy(async () => {
 
         codeEditor.onDidContentSizeChange(updateEditorHeight);
         codeEditor.onDidChangeModelContent(() => {
-          const element = document.querySelector(".selected-element-tag");
+          const element = document.querySelector(".selected-element-tag") as HTMLElement;
 
           if (element) {
             element.textContent = codeEditor.getValue() || "";
+            element.style.height = `${codeEditor.getContentHeight()}px`;
           }
         });
         codeEditor.onDidBlurEditorText(async () => {
-          const element = document.querySelector(".selected-element-tag");
+          const element = document.querySelector(".selected-element-tag") as HTMLElement;
 
           if (element) {
             element.textContent = await processCode(editorCode());
@@ -205,6 +207,32 @@ const ElementMenuEditor = lazy(async () => {
         createEffect(() => {
           monaco.editor.setTheme(codeEditorTheme());
         });
+        createEffect(
+          on(
+            () => props.state.active,
+            (active, _, prevElement) => {
+              const element: HTMLElement | null =
+                (prevElement as HTMLElement) ||
+                (document.querySelector(".selected-element-tag") as HTMLElement);
+
+              if (element) {
+                setTimeout(() => {
+                  if (active) {
+                    element.style.height = `${codeEditor.getContentHeight()}px`;
+
+                    return element;
+                  } else {
+                    element.style.height = "unset";
+
+                    return null;
+                  }
+                }, 0);
+              }
+
+              return element || null;
+            }
+          )
+        );
         createEffect(
           on(editorCode, async (code) => {
             if (code === "<>") return codeEditor.setValue("");

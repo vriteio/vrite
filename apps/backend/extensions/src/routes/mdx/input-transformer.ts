@@ -15,7 +15,7 @@ import { load } from "js-yaml";
 import dayjs from "dayjs";
 import type { Plugin } from "prettier";
 import type { RootContentMap } from "mdast";
-import type { Element } from "hast";
+import type { Element, Text } from "hast";
 
 const attributeProcessingPromises: Array<Promise<any>> = [];
 const processAttribute = async (value: string): Promise<any> => {
@@ -70,9 +70,10 @@ const mdxAsyncInputTransformer = async (input: string): Promise<ReturnType<Input
             "data-element": "true",
             "data-type": "Import"
           },
-          children: [
-            defaultHandlers.code(state, { type: "code", lang: "mdx", value: node.value.trim() })
-          ]
+          children: state.all({
+            children: [{ type: "code", lang: "mdx", value: node.value.trim() }],
+            type: "root"
+          })
         };
 
         state.patch(node, result);
@@ -87,7 +88,7 @@ const mdxAsyncInputTransformer = async (input: string): Promise<ReturnType<Input
         return defaultHandlers.paragraph(state, node);
       },
       code(state, node: RootContentMap["code"]) {
-        const result = defaultHandlers.code(state, node);
+        const result = defaultHandlers.code(state, { ...node, value: node.value.trim() });
         const meta: string[] = [];
 
         let title = "";
@@ -103,8 +104,13 @@ const mdxAsyncInputTransformer = async (input: string): Promise<ReturnType<Input
             meta.push(item);
           }
         });
+
+        const codeElement = result.children[0] as Element;
+        const textElement = codeElement.children[0] as Text;
+
         result.properties["data-title"] = title;
         result.properties["data-meta"] = meta.join(" ");
+        textElement.value = textElement.value.trim();
 
         return result;
       },

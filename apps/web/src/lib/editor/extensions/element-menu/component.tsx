@@ -9,6 +9,7 @@ interface ElementMenuProps {
     node: PMNode | null;
     container: HTMLElement | null;
     editor: SolidEditor;
+    active: boolean;
   };
 }
 
@@ -42,7 +43,9 @@ const ElementMenu: Component<ElementMenuProps> = (props) => {
             editor: props.state.editor,
             type: attributes()?.type || "",
             props: attributes()?.props || {},
+            active: props.state.active,
             contentSize: props.state.node?.content.size || 0,
+
             removeElement() {
               props.state.editor.commands.command(({ tr, dispatch }) => {
                 if (!dispatch) return false;
