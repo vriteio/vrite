@@ -26,11 +26,13 @@
         {
           "label": "Publishing content",
           "link": "/usage-guide/publishing"
+        },
+        {
+          "label": "Vrite Extensions",
+          "link": "/usage-guide/vrite-extensions"
         }
       ]
-    }
-  ],
-  "api": [
+    },
     {
       "label": "JavaScript SDK",
       "menu": [
@@ -39,9 +41,7 @@
           "link": "/javascript-sdk/introduction"
         }
       ]
-    }
-  ],
-  "recipes": [
+    },
     {
       "label": "Self-Hosting",
       "menu": [
@@ -55,5 +55,6 @@
         }
       ]
     }
-  ]
+  ],
+  "recipes": []
 }

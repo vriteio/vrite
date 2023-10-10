@@ -8,15 +8,15 @@ const docsCollection = defineCollection({
   })
 });
 const recipesCollection = defineCollection({
-  type: "content"
-});
-const apiCollection = defineCollection({
-  type: "content"
+  type: "content",
+  schema: z.object({
+    title: z.string().optional(),
+    description: z.string().optional()
+  })
 });
 const collections = {
   docs: docsCollection,
-  recipes: recipesCollection,
-  api: apiCollection
+  recipes: recipesCollection
 };
 
 export { collections };

@@ -83,6 +83,8 @@ const mdxAsyncInputTransformer = async (input: string): Promise<ReturnType<Input
       paragraph(state, node: RootContentMap["paragraph"]) {
         if (node.children.length === 1 && node.children[0].type === "image") {
           return defaultHandlers.image(state, node.children[0]);
+        } else if (node.children.length === 1 && node.children[0].type === "mdxJsxTextElement") {
+          return state.all({ type: "root", children: [node.children[0]] })[0];
         }
 
         return defaultHandlers.paragraph(state, node);
@@ -130,7 +132,22 @@ const mdxAsyncInputTransformer = async (input: string): Promise<ReturnType<Input
       mdxFlowExpression() {
         return undefined;
       },
-      mdxJsxTextElement() {
+      mdxJsxTextElement(state, node: RootContentMap["mdxJsxTextElement"], parent) {
+        // console.log(Math.random(), state, node);
+        if (parent?.children.length === 1) {
+          return state.all({
+            type: "root",
+            children: [
+              {
+                type: "mdxJsxFlowElement",
+                name: node.name,
+                attributes: node.attributes,
+                children: [{ type: "paragraph", children: node.children }]
+              }
+            ]
+          })[0];
+        }
+
         return undefined;
       },
       mdxTextExpression() {

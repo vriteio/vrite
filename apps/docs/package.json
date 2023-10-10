@@ -11,6 +11,7 @@
     "astro": "astro"
   },
   "dependencies": {
+    "@astrojs/mdx": "^1.1.1",
     "@astrojs/sitemap": "^3.0.0",
     "@astrojs/solid-js": "^3.0.1",
     "@mdi/js": "^7.2.96",
@@ -20,6 +21,8 @@
     "@vrite/components": "workspace:*",
     "@vrite/sdk": "workspace:*",
     "astro": "^3.1.0",
+    "astro-auto-import": "^0.3.1",
+    "astro-icon": "^0.8.1",
     "clsx": "^2.0.0",
     "curl-string": "^3.1.0",
     "marked": "^9.0.0",

@@ -1,0 +1,44 @@
+---
+import { Card as BaseCard, Heading, IconButton } from "#components/primitives";
+import { Icon } from "astro-icon";
+import clsx from "clsx";
+
+interface Props {
+  icon: string;
+  label: string;
+  gradient?: boolean;
+  link: string;
+}
+
+const { props } = Astro;
+---
+
+<a href={props.link} class="not-prose cursor-pointer block my-4"
+  ><BaseCard
+    class={clsx(
+      "w-full flex flex-col m-0 p-0 gap-2 items-start h-full",
+      props.gradient ? "hover:bg-gradient-to-bl" : "!hover:bg-gray-200"
+    )}
+    color={props.gradient ? "primary" : "contrast"}
+  >
+    <div class="flex justify-center items-center pl-3 pr-4 pt-3 w-full">
+      <div class="pr-1 py-1">
+        <Icon
+          name={props.icon}
+          class={clsx("h-6 w-6", props.gradient ? "fill-current" : "fill-[url(#gradient)]")}
+        />
+      </div>
+      <Heading level={2} class="pl-1 flex-1">
+        {props.label}
+      </Heading>
+    </div>
+    <div
+      class={clsx(
+        "flex flex-col justify-center items-start gap-2 w-full px-4 pb-4",
+        props.gradient ? "" : "text-gray-500 dark:text-gray-400"
+      )}
+    >
+      <slot />
+    </div>
+  </BaseCard></a
+>

@@ -15,7 +15,14 @@ kbd {
 #side-panel > div {
   height: 100%;
 }
-
+svg > path {
+  fill: inherit;
+}
+.grid-reset-margin {
+  & > * {
+    margin: 0;
+  }
+}
 .resize-cursor {
   cursor: ew-resize;
   cursor: col-resize;
@@ -103,7 +110,8 @@ kbd {
 
   font-kerning: none;
   :where(h1, h2, h3, h4, h5, h6):not(:where(.not-prose, .not-prose *)) {
-    @apply m-0 relative;
+    @apply relative;
+    margin: 0 !important;
   }
   :where(h2, h3):not(:where(.not-prose, .not-prose *)) {
     @apply hover:cursor-pointer;

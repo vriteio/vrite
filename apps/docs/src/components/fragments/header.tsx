@@ -3,7 +3,7 @@ import { mdiAppleKeyboardCommand, mdiGithub, mdiMagnify } from "@mdi/js";
 import { For, type Component, Show } from "solid-js";
 import clsx from "clsx";
 import { Button, Icon, IconButton, Tooltip } from "#components/primitives";
-import { discordIcon } from "#assets/icons";
+import { discordIcon, logoIcon } from "#assets/icons";
 
 const isAppleDevice = (): boolean => {
   const platform = typeof navigator === "object" ? navigator.platform : "";
@@ -33,6 +33,15 @@ const Header: Component = () => {
         "!pr-[max(1rem,calc((100%-(1536px))/2))]"
       )}
     >
+      <div class="flex md:hidden items-center justify-start px-1">
+        <IconButton
+          path={logoIcon}
+          color="primary"
+          link="/"
+          class="bg-gradient-to-tr from-red-500 to-orange-500 m-0 mr-1"
+        />
+        <span class="flex-1 text-2xl font-extrabold text-gray-600 dark:text-gray-200">rite</span>
+      </div>
       <div class="flex-1" />
       <For each={externalLinks}>
         {(link) => {
@@ -58,7 +67,7 @@ const Header: Component = () => {
         path={mdiMagnify}
         label={
           <div class="hidden md:flex w-full items-center">
-            <span class="pl-1 flex-1 text-start">Search</span>
+            <span class="pl-1 flex-1 text-start pr-3">Search</span>
             <Show when={typeof window === "object"}>
               <kbd class="bg-gray-300 dark:bg-gray-700 group-hover:bg-gray-200 dark:group-hover:bg-gray-800 flex justify-center items-center rounded-md px-1 h-5 text-sm">
                 {isAppleDevice() ? (
@@ -73,7 +82,9 @@ const Header: Component = () => {
         }
         text="soft"
         class="lg:min-w-48 justify-start m-0 group"
-        onClick={() => setOpened(!opened())}
+        onClick={() => {
+          setOpened(!opened());
+        }}
       />
       <Button color="primary" class="m-0" link="https://app.vrite.io">
         Sign in

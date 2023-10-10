@@ -1,5 +1,5 @@
 ---
-title: "Configuring Vrite Settings"
+title: "Configuring Vrite"
 slug: "usage-guide/configuring-vrite"
 ---
 

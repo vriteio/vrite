@@ -54,8 +54,7 @@ interface SearchPaletteContextData {
 const SearchPaletteContext = createContext<SearchPaletteContextData>();
 const SearchPalette: Component<SearchPaletteProps> = (props) => {
   const client = createClient({
-    token: import.meta.env.PUBLIC_VRITE_SEARCH_TOKEN,
-    baseURL: "http://localhost:4444"
+    token: import.meta.env.PUBLIC_VRITE_SEARCH_TOKEN
   });
   const [inputRef, setInputRef] = createSignal<HTMLInputElement | null>(null);
   const [abortControllerRef, setAbortControllerRef] = createSignal<AbortController | null>(null);
@@ -272,6 +271,7 @@ const SearchPalette: Component<SearchPaletteProps> = (props) => {
               setQuery(value);
             }}
             ref={setInputRef}
+            tabIndex={0}
             placeholder={getLabel()}
             wrapperClass="flex-1 m-0"
             class="m-0 bg-transparent"

@@ -1,6 +1,6 @@
 import { mdiMenu, mdiClose, mdiChevronDown } from "@mdi/js";
 import clsx from "clsx";
-import { Component, For, JSX, createSignal } from "solid-js";
+import { Component, For, JSX, createEffect, createSignal } from "solid-js";
 import { menuOpened, setMenuOpened } from "#lib/state";
 import { Card, Button, IconButton } from "#components/primitives";
 import { logoIcon } from "#assets/icons/logo";
@@ -99,6 +99,14 @@ const SideBarNestedMenu: Component<SideBarNestedMenuProps> = (props) => {
   );
 };
 const SideBar: Component<SideBarProps> = (props) => {
+  createEffect(() => {
+    if (menuOpened()) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+    }
+  });
+
   return (
     <>
       <div class={clsx("h-full fixed top-0 left-0 z-1", "pl-[max(0px,calc((100%-1536px)/2))]")}>
@@ -107,7 +115,7 @@ const SideBar: Component<SideBarProps> = (props) => {
             "top-0 h-full z-50 min-w-80 w-full md:max-w-80 m-0 bg-gray-100 dark:bg-gray-900",
             "flex-col gap-2 justify-start items-start border-0 md:border-r-2 rounded-none flex fixed md:relative",
             "transform md:transition-transform duration-300 ease-in-out scrollbar-sm-contrast overflow-auto",
-            menuOpened() ? "" : "translate-y-full md:translate-y-0"
+            menuOpened() ? "" : "translate-y-[100vh] md:translate-y-0"
           )}
         >
           <div class="flex items-center justify-start px-1 pb-4 pt-2">
@@ -130,6 +138,7 @@ const SideBar: Component<SideBarProps> = (props) => {
                 return (
                   <a
                     class="flex justify-start items-center group w-full cursor-pointer"
+                    target={section.link.startsWith("http") ? "_blank" : "_self"}
                     href={section.link}
                   >
                     <IconButton

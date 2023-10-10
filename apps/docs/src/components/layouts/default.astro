@@ -37,20 +37,19 @@ const sections = [
   },
   {
     label: "API reference",
-    link: "/javascript-sdk/introduction",
+    link: "https://generator.swagger.io/?url=https://api.vrite.io/swagger.json",
     icon: mdiConsoleLine,
     id: "api"
-  },
-  {
+  }
+  /*{
     label: "Recipes",
     link: "/self-hosting/docker",
     icon: mdiTextBoxMultiple,
     id: "recipes"
-  }
+  }*/
 ];
 const flatMenu = [
   ...flattenMenu(menu.docs, "docs", []),
-  ...flattenMenu(menu.api, "api", []),
   ...flattenMenu(menu.recipes, "recipes", [])
 ];
 const currentEntry = flatMenu.find((item) => item.link === Astro.url.pathname);
