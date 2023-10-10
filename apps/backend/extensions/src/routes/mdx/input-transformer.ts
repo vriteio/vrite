@@ -133,7 +133,6 @@ const mdxAsyncInputTransformer = async (input: string): Promise<ReturnType<Input
         return undefined;
       },
       mdxJsxTextElement(state, node: RootContentMap["mdxJsxTextElement"], parent) {
-        // console.log(Math.random(), state, node);
         if (parent?.children.length === 1) {
           return state.all({
             type: "root",
