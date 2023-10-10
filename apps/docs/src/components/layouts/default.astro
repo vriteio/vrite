@@ -52,7 +52,7 @@ const flatMenu = [
   ...flattenMenu(menu.docs, "docs", []),
   ...flattenMenu(menu.recipes, "recipes", [])
 ];
-const currentEntry = flatMenu.find((item) => item.link === Astro.url.pathname);
+const currentEntry = flatMenu.find((item) => Astro.url.pathname.includes(item.link));
 const nextEntry = currentEntry ? flatMenu[flatMenu.indexOf(currentEntry) + 1] : null;
 const prevEntry = currentEntry ? flatMenu[flatMenu.indexOf(currentEntry) - 1] : null;
 
