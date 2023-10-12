@@ -43,7 +43,7 @@ kbd {
   cursor: col-resize;
 }
 .prose-editor {
-  .ProseMirror {
+  > * > .ProseMirror {
     @apply pb-48;
   }
   .tableWrapper {
@@ -253,7 +253,7 @@ kbd {
   --un-prose-invert-lists: #9ca3af;
   --un-prose-invert-hr: #9ca3af;
   --highlighted-thread: "";
-  :where([aria-expanded="false"] > .ProseMirror, .content, blockquote, li) {
+  :where([aria-expanded] > .ProseMirror, .content, blockquote, li) {
     &
       > :where(div, ul, ol, p, blockquote, hr):not(.ProseMirror-gapcursor)
       + :where(div, ul, ol, p, blockquote, hr, h1, h2, h3, h4, h5, h6):not([data-element="true"]),

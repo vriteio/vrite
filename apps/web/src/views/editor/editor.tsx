@@ -281,8 +281,6 @@ const Editor: Component<EditorProps> = (props) => {
               zIndex: 30,
               hideOnClick: false,
               interactive: true,
-              placement: "bottom",
-              popperOptions: { modifiers: [{ name: "flip", enabled: false }] },
               animation: breakpoints.md() ? "scale-subtle" : "shift-away-subtle",
               onHide() {
                 if (containerRef()?.contains(el)) return false;
