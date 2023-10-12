@@ -178,7 +178,7 @@ const ElementMenuEditor = lazy(async () => {
 
           if (element) {
             element.textContent = codeEditor.getValue() || "";
-            element.style.height = `${codeEditor.getContentHeight()}px`;
+            element.style.minHeight = `${codeEditor.getContentHeight()}px`;
           }
         });
         codeEditor.onDidBlurEditorText(async () => {
@@ -210,26 +210,20 @@ const ElementMenuEditor = lazy(async () => {
         createEffect(
           on(
             () => props.state.active,
-            (active, _, prevElement) => {
-              const element: HTMLElement | null =
-                (prevElement as HTMLElement) ||
-                (document.querySelector(".selected-element-tag") as HTMLElement);
+            (active) => {
+              setTimeout(() => {
+                const element: HTMLElement | null = document.querySelector(
+                  ".selected-element-tag"
+                ) as HTMLElement;
 
-              if (element) {
-                setTimeout(() => {
-                  if (active) {
-                    element.style.height = `${codeEditor.getContentHeight()}px`;
+                if (!element) return;
 
-                    return element;
-                  } else {
-                    element.style.height = "unset";
-
-                    return null;
-                  }
-                }, 0);
-              }
-
-              return element || null;
+                if (active) {
+                  element.style.minHeight = `${codeEditor.getContentHeight()}px`;
+                } else {
+                  element.style.minHeight = "unset";
+                }
+              }, 200);
             }
           )
         );
