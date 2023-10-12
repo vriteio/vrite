@@ -120,3 +120,11 @@ h2 {
 .prose :where(img, video):not(:where(.not-prose, .not-prose *)) {
   @apply rounded-2xl;
 }
+.headline-overlay {
+  background: linear-gradient(0deg, rgba(243, 244, 246, 0.4) 80%, transparent);
+}
+@media (prefers-color-scheme: dark) {
+  .headline-overlay {
+    background: linear-gradient(0deg, rgba(31, 41, 55, 0.4) 80%, transparent);
+  }
+}
