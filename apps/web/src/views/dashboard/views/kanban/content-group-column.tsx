@@ -28,7 +28,7 @@ import {
   useSharedState,
   useCommandPalette
 } from "#context";
-import { createRef } from "#lib/utils";
+import { breakpoints, createRef } from "#lib/utils";
 import { useContentPieces } from "#lib/composables";
 
 interface ContentGroupColumnProps {
@@ -224,7 +224,8 @@ const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
                 },
                 delayOnTouchOnly: true,
                 delay: 500,
-                disabled: !hasPermission("manageDashboard"),
+                fallbackOnBody: true,
+                disabled: !hasPermission("manageDashboard") || !breakpoints.md(),
                 ghostClass: "!hidden",
                 revertOnSpill: true,
                 onAdd(evt) {
@@ -406,6 +407,7 @@ const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
                   ghostClass: `:base: border-4 border-gray-200 opacity-50 dark:border-gray-700 children:invisible`,
                   group: "card",
                   disabled: !hasPermission("manageDashboard"),
+                  fallbackOnBody: true,
                   onStart(event) {
                     props.onDragStart?.();
                     setActiveDraggablePiece(

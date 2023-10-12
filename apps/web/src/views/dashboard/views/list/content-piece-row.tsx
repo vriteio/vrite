@@ -48,7 +48,7 @@ const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
               },
               delayOnTouchOnly: true,
               delay: 500,
-              disabled: !hasPermission("manageDashboard"),
+              disabled: !hasPermission("manageDashboard") || !breakpoints.md(),
               ghostClass: "!hidden",
               revertOnSpill: true,
               filter: ".locked",

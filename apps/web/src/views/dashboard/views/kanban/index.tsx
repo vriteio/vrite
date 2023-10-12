@@ -49,6 +49,7 @@ const DashboardKanbanView: Component<DashboardKanbanViewProps> = (props) => {
             ghostClass: `:base: border-4 border-gray-200 opacity-50 dark:border-gray-700 children:invisible !p-0 !m-2 !mt-0 !h-unset rounded-2xl`,
             filter: ".locked",
             disabled: !hasPermission("manageDashboard"),
+            fallbackOnBody: true,
             onMove(event) {
               return !event.related.classList.contains("locked");
             },

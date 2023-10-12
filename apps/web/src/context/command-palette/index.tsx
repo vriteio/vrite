@@ -292,6 +292,7 @@ const CommandPalette: Component<CommandPaletteProps> = (props) => {
     if (inputRef() && props.opened && mode()) {
       setTimeout(() => {
         inputRef()?.focus();
+        document.getElementById("ghost-input")?.remove();
       }, 300);
     }
   });
@@ -326,7 +327,7 @@ const CommandPalette: Component<CommandPaletteProps> = (props) => {
       opened={props.opened}
       class="items-start"
       shadeClass="bg-opacity-50"
-      wrapperClass="mt-32"
+      wrapperClass="mt-3 md:mt-32"
       onOverlayClick={() => {
         props.setOpened(false);
       }}

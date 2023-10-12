@@ -22,6 +22,7 @@ import {
   useSharedState
 } from "#context";
 import { MiniEditor } from "#components/fragments";
+import { breakpoints } from "#lib/utils";
 
 interface ContentGroupRowProps {
   contentGroup?: App.ContentGroup | null;
@@ -146,7 +147,8 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
             },
             delayOnTouchOnly: true,
             delay: 500,
-            disabled: !hasPermission("manageDashboard"),
+            fallbackOnBody: true,
+            disabled: !hasPermission("manageDashboard") || !breakpoints.md(),
             ghostClass: "!hidden",
             revertOnSpill: true,
             draggable: ".draggable",

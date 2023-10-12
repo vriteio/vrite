@@ -83,6 +83,13 @@ const Header: Component = () => {
         text="soft"
         class="lg:min-w-48 justify-start m-0 group"
         onClick={() => {
+          // Force mobile keyboard to open (first focus must be in user-triggered event handler)
+          const ghostInput = document.createElement("input");
+
+          ghostInput.classList.add("absolute", "opacity-0", "pointer-events-none");
+          ghostInput.id = "ghost-input";
+          document.body.appendChild(ghostInput);
+          ghostInput.focus();
           setOpened(!opened());
         }}
       />

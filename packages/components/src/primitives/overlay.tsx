@@ -20,7 +20,8 @@ const Overlay: Component<OverlayProps> = (props) => {
     "class",
     "shadeClass",
     "portal",
-    "onOverlayClick"
+    "onOverlayClick",
+    "wrapperClass"
   ]);
 
   return (
