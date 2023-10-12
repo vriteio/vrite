@@ -1,5 +1,13 @@
 ---
-import { Header, BaseHead, SideBar, SVGDefs, OnThisPage, Footer } from "#components/fragments";
+import {
+  Header,
+  BaseHead,
+  SideBar,
+  SVGDefs,
+  OnThisPage,
+  Footer,
+  SearchPalette
+} from "#components/fragments";
 import type { MarkdownHeading } from "astro";
 import menu from "./menu.json";
 import { Button } from "#components/primitives";
@@ -84,6 +92,7 @@ type Props = {
           currentPath={Astro.url.pathname}
           client:load
         />
+        <SearchPalette client:load />
         <div class="flex overflow-hidden w-full relative h-full pt-12">
           <div
             class="flex-1 flex overflow-y-auto overflow-x-hidden justify-center min-h-[calc(100vh-3rem)]"

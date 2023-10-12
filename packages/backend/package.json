@@ -23,7 +23,7 @@
     "@octokit/types": "^11.1.0",
     "@qdrant/qdrant-js": "^1.4.0",
     "@sendgrid/mail": "^7.7.0",
-    "@tiptap/html": "^2.1.11",
+    "@tiptap/html": "^2.1.12",
     "@trpc/client": "^10.35.0",
     "@trpc/server": "^10.35.0",
     "@types/html-to-text": "^9.0.1",

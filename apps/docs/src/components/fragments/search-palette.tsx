@@ -52,7 +52,8 @@ interface SearchPaletteContextData {
 }
 
 const SearchPaletteContext = createContext<SearchPaletteContextData>();
-const SearchPalette: Component<SearchPaletteProps> = (props) => {
+const [searchPaletteOpened, setSearchPaletteOpened] = createSignal(false);
+const SearchPalette: Component = () => {
   const client = createClient({
     token: import.meta.env.PUBLIC_VRITE_SEARCH_TOKEN
   });
@@ -128,7 +129,7 @@ const SearchPalette: Component<SearchPaletteProps> = (props) => {
   };
   const goToContentPiece = (searchResult: SearchResult): void => {
     // eslint-disable-next-line no-console
-    props.setOpened(false);
+    setSearchPaletteOpened(false);
 
     const { slug } = searchResult.contentPiece;
     const [title, subHeading1, subHeading2] = searchResult.breadcrumb;
@@ -161,10 +162,9 @@ const SearchPalette: Component<SearchPaletteProps> = (props) => {
     })
   );
   createEffect(() => {
-    if (inputRef() && props.opened && mode()) {
+    if (inputRef() && searchPaletteOpened() && mode()) {
       setTimeout(() => {
         inputRef()?.focus();
-        document.getElementById("ghost-input")?.remove();
       }, 300);
     }
   });
@@ -172,15 +172,15 @@ const SearchPalette: Component<SearchPaletteProps> = (props) => {
     import("tinykeys").then(({ createKeybindingsHandler }) => {
       const keyShortcutHandler = createKeybindingsHandler({
         "$mod+KeyK": (event) => {
-          props.setOpened(!props.opened);
+          setSearchPaletteOpened(!searchPaletteOpened());
         },
         "escape": (event) => {
-          if (!props.opened) return;
+          if (!searchPaletteOpened()) return;
 
-          props.setOpened(false);
+          setSearchPaletteOpened(false);
         },
         "ArrowUp": (event) => {
-          if (!props.opened) return;
+          if (!searchPaletteOpened()) return;
 
           setMouseHoverEnabled(false);
           event.preventDefault();
@@ -195,7 +195,7 @@ const SearchPalette: Component<SearchPaletteProps> = (props) => {
           }
         },
         "ArrowDown": (event) => {
-          if (!props.opened) return;
+          if (!searchPaletteOpened()) return;
 
           setMouseHoverEnabled(false);
           event.preventDefault();
@@ -210,7 +210,7 @@ const SearchPalette: Component<SearchPaletteProps> = (props) => {
           }
         },
         "Enter": (event) => {
-          if (!props.opened) return;
+          if (!searchPaletteOpened()) return;
 
           if (mode() === "search") {
             goToContentPiece(searchResults()[selectedIndex()]);
@@ -223,6 +223,13 @@ const SearchPalette: Component<SearchPaletteProps> = (props) => {
         window.removeEventListener("keydown", keyShortcutHandler);
       });
     });
+  });
+  createEffect(() => {
+    if (searchPaletteOpened()) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+    }
   });
 
   const getIcon = (): string => {
@@ -245,12 +252,13 @@ const SearchPalette: Component<SearchPaletteProps> = (props) => {
 
   return (
     <Overlay
-      opened={props.opened}
+      opened={searchPaletteOpened()}
       class="items-start"
       shadeClass="bg-opacity-50"
       wrapperClass="mt-3 md:mt-32"
+      hiddenClass="opacity-0 pointer-events-none"
       onOverlayClick={() => {
-        props.setOpened(false);
+        setSearchPaletteOpened(false);
       }}
     >
       <Card
@@ -264,6 +272,7 @@ const SearchPalette: Component<SearchPaletteProps> = (props) => {
           <IconButton path={getIcon()} text="soft" variant="text" badge hover={false} class="m-0" />
           <Input
             value={query()}
+            id="search-palette-input"
             setValue={(value) => {
               if (mode() === "search") {
                 setLoading(true);
@@ -272,7 +281,6 @@ const SearchPalette: Component<SearchPaletteProps> = (props) => {
               setQuery(value);
             }}
             ref={setInputRef}
-            tabIndex={0}
             placeholder={getLabel()}
             wrapperClass="flex-1 m-0"
             class="m-0 bg-transparent"
@@ -473,31 +481,5 @@ const SearchPalette: Component<SearchPaletteProps> = (props) => {
     </Overlay>
   );
 };
-const SearchPaletteProvider: ParentComponent = (props) => {
-  const [opened, setOpened] = createSignal(false);
 
-  createEffect(() => {
-    if (opened()) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "auto";
-    }
-  });
-
-  return (
-    <SearchPaletteContext.Provider
-      value={{
-        opened,
-        setOpened
-      }}
-    >
-      {props.children}
-      <SearchPalette opened={opened()} setOpened={setOpened} />
-    </SearchPaletteContext.Provider>
-  );
-};
-const useSearchPalette = (): SearchPaletteContextData => {
-  return useContext(SearchPaletteContext)!;
-};
-
-export { SearchPaletteProvider, useSearchPalette };
+export { SearchPalette, searchPaletteOpened, setSearchPaletteOpened };

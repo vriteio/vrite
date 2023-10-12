@@ -10,6 +10,7 @@ interface OverlayProps extends JSX.HTMLAttributes<HTMLDivElement> {
   shadeClass?: string;
   portal?: boolean;
   wrapperClass?: string;
+  hiddenClass?: string;
   onOverlayClick?(): void;
 }
 
@@ -29,7 +30,7 @@ const Overlay: Component<OverlayProps> = (props) => {
       <div
         class={clsx(
           `:base: fixed top-0 left-0 z-50 flex items-center justify-center w-[100dvw] h-[100dvh] transition-all duration-300 transform`,
-          props.opened ? "opacity-100 visible" : "opacity-0 invisible",
+          props.opened ? "opacity-100 visible" : props.hiddenClass || "opacity-0 invisible",
           props.class
         )}
       >

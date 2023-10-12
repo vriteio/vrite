@@ -12,6 +12,7 @@ const DashboardView: Component = () => {
   const cache = useCache();
   const { workspace, profile } = useAuthenticatedUserData();
   const { storage, setStorage } = useLocalStorage();
+  const [provider, setProvider] = createSharedSignal("provider");
   const ancestor = (): App.ContentGroup | null => {
     return storage().dashboardViewAncestor || null;
   };
@@ -21,19 +22,8 @@ const DashboardView: Component = () => {
   const ydoc = new Y.Doc();
   const handleReload = async (): Promise<void> => {
     await fetch("/session/refresh", { method: "POST" });
-    window.location.reload();
+    provider()?.connect();
   };
-  const [provider, setProvider] = createSharedSignal(
-    "provider",
-    new HocuspocusProvider({
-      token: "vrite",
-      url: window.env.PUBLIC_COLLAB_URL.replace("http", "ws"),
-      onDisconnect: handleReload,
-      onAuthenticationFailed: handleReload,
-      name: `workspace:${workspace()?.id || ""}`,
-      document: ydoc
-    })
-  );
   const setAncestor = (ancestor: App.ContentGroup | null): void => {
     setStorage((storage) => ({
       ...storage,
@@ -68,6 +58,17 @@ const DashboardView: Component = () => {
       }
     })
   );
+
+  if (!provider()) {
+    new HocuspocusProvider({
+      token: "vrite",
+      url: window.env.PUBLIC_COLLAB_URL.replace("http", "ws"),
+      onDisconnect: handleReload,
+      onAuthenticationFailed: handleReload,
+      name: `workspace:${workspace()?.id || ""}`,
+      document: ydoc
+    });
+  }
 
   return (
     <div class="relative flex-1 overflow-hidden flex flex-row h-full">

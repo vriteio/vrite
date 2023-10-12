@@ -34,18 +34,8 @@ import { debounce } from "@solid-primitives/scheduled";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
 import { marked } from "marked";
 import { useNavigate } from "@solidjs/router";
-import { InputField, ScrollShadow } from "#components/fragments";
-import {
-  Card,
-  Dropdown,
-  Icon,
-  IconButton,
-  Input,
-  Loader,
-  Overlay,
-  Select,
-  Tooltip
-} from "#components/primitives";
+import { ScrollShadow } from "#components/fragments";
+import { Card, Icon, IconButton, Input, Loader, Overlay, Tooltip } from "#components/primitives";
 import { App, useClient } from "#context/client";
 import { useLocalStorage } from "#context/local-storage";
 import { breakpoints } from "#lib/utils";
@@ -292,7 +282,6 @@ const CommandPalette: Component<CommandPaletteProps> = (props) => {
     if (inputRef() && props.opened && mode()) {
       setTimeout(() => {
         inputRef()?.focus();
-        document.getElementById("ghost-input")?.remove();
       }, 300);
     }
   });
@@ -328,6 +317,7 @@ const CommandPalette: Component<CommandPaletteProps> = (props) => {
       class="items-start"
       shadeClass="bg-opacity-50"
       wrapperClass="mt-3 md:mt-32"
+      hiddenClass="opacity-0 pointer-events-none"
       onOverlayClick={() => {
         props.setOpened(false);
       }}
@@ -353,6 +343,7 @@ const CommandPalette: Component<CommandPaletteProps> = (props) => {
             ref={setInputRef}
             placeholder={getLabel()}
             wrapperClass="flex-1 m-0"
+            id="command-palette-input"
             class="m-0 bg-transparent"
             onEnter={() => {
               if (mode() === "ask" && hostConfig.aiSearch) {

@@ -1,4 +1,4 @@
-import { SearchPaletteProvider, useSearchPalette } from "./search-palette";
+import { setSearchPaletteOpened } from "./search-palette";
 import { mdiAppleKeyboardCommand, mdiGithub, mdiMagnify } from "@mdi/js";
 import { For, type Component, Show } from "solid-js";
 import clsx from "clsx";
@@ -24,14 +24,13 @@ const externalLinks = [
   }
 ];
 const Header: Component = () => {
-  const { opened, setOpened } = useSearchPalette();
-
   return (
     <div
       class={clsx(
         "top-0 gap-2 h-12 fixed bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 border-b-2 right-0 z-1 items-center justify-center w-full flex py-2 px-4 md:px-8",
         "!pr-[max(1rem,calc((100%-(1536px))/2))]"
       )}
+      id="header"
     >
       <div class="flex md:hidden items-center justify-start px-1">
         <IconButton
@@ -83,14 +82,9 @@ const Header: Component = () => {
         text="soft"
         class="lg:min-w-48 justify-start m-0 group"
         onClick={() => {
-          // Force mobile keyboard to open (first focus must be in user-triggered event handler)
-          const ghostInput = document.createElement("input");
-
-          ghostInput.classList.add("absolute", "opacity-0", "pointer-events-none");
-          ghostInput.id = "ghost-input";
-          document.body.appendChild(ghostInput);
-          ghostInput.focus();
-          setOpened(!opened());
+          // Force mobile keyboard to open (focus must be in user-triggered event handler)
+          document.getElementById("search-palette-input")?.focus({ preventScroll: true });
+          setSearchPaletteOpened((opened) => !opened);
         }}
       />
       <Button color="primary" class="m-0" link="https://app.vrite.io">
@@ -100,11 +94,7 @@ const Header: Component = () => {
   );
 };
 const HeaderWrapper: Component = () => {
-  return (
-    <SearchPaletteProvider>
-      <Header />
-    </SearchPaletteProvider>
-  );
+  return <Header />;
 };
 
 export { HeaderWrapper as Header };
