@@ -9,7 +9,7 @@ import { Component, createSignal, createEffect, on, Show, For, createMemo, JSX }
 import Sortable from "sortablejs";
 import { IconButton } from "#components/primitives";
 import { useContentGroups } from "#lib/composables";
-import { App, useClient, useCache } from "#context";
+import { App, useClient, useCache, useLocalStorage } from "#context";
 
 const Breadcrumb: Component<{
   ancestor?: App.ContentGroup | null;
@@ -19,11 +19,18 @@ const Breadcrumb: Component<{
 }> = (props) => {
   const client = useClient();
   const cache = useCache();
-  const { contentGroups, setContentGroups } = cache("contentGroups", () => useContentGroups());
+  const { storage } = useLocalStorage();
+  const ancestor = (): App.ContentGroup | null => {
+    return storage().dashboardViewAncestor || null;
+  };
+  const { contentGroups, setContentGroups } = cache("contentGroups", () => {
+    return useContentGroups(ancestor()?.id);
+  });
   const [highlightedAncestor, setHighlightedAncestor] = createSignal("");
   const [ancestors, setAncestors] = createSignal<App.ContentGroup[]>([]);
   const highlightDropzoneHandlers = (
-    ancestorId: string
+    ancestorId: string,
+    acceptContentPieces?: boolean
   ): JSX.CustomEventHandlersCamelCase<HTMLElement> => {
     const draggableActive = (): boolean => {
       const groupActive =
@@ -31,7 +38,7 @@ const Breadcrumb: Component<{
       const pieceActive =
         props.activeDraggablePiece && props.activeDraggablePiece.contentGroupId !== ancestorId;
 
-      return Boolean(groupActive || pieceActive);
+      return Boolean(groupActive || (acceptContentPieces ? pieceActive : false));
     };
 
     return {
@@ -115,7 +122,12 @@ const Breadcrumb: Component<{
         <div
           ref={(el) => {
             Sortable.create(el, {
-              group: "shared",
+              group: {
+                name: "shared",
+                put: (_to, _from, dragEl) => {
+                  return Boolean(dragEl.dataset.contentGroupId);
+                }
+              },
               ghostClass: "!hidden",
               filter: ".locked",
               delayOnTouchOnly: true,

@@ -216,7 +216,7 @@ const DashboardListView: Component<DashboardListViewProps> = (props) => {
             />
           </Show>
           <For each={props.contentGroups}>
-            {(contentGroup, index) => {
+            {(contentGroup) => {
               return (
                 <ContentGroupRow
                   contentGroup={contentGroup}

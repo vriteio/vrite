@@ -138,8 +138,9 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
               name: "shared",
               put: (_to, _from, dragEl) => {
                 return (
-                  Boolean(dragEl.dataset.contentGroupId) &&
-                  dragEl.dataset.contentGroupId !== props.contentGroup?.id
+                  (Boolean(dragEl.dataset.contentGroupId) &&
+                    dragEl.dataset.contentGroupId !== props.contentGroup?.id) ||
+                  Boolean(dragEl.dataset.contentPieceId && props.contentGroup)
                 );
               }
             },
@@ -192,6 +193,7 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
           onDragOver={(event) => event.preventDefault()}
           onDragEnter={(event) => {
             if (
+              ((activeDraggablePiece() && props.contentGroup) || activeDraggableGroup()) &&
               event.relatedTarget instanceof HTMLElement &&
               !event.target.contains(event.relatedTarget)
             ) {
@@ -200,6 +202,7 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
           }}
           onDragLeave={(event) => {
             if (
+              ((activeDraggablePiece() && props.contentGroup) || activeDraggableGroup()) &&
               event.relatedTarget instanceof HTMLElement &&
               !event.target.contains(event.relatedTarget)
             ) {
@@ -207,17 +210,17 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
             }
           }}
           onMouseEnter={() => {
-            if (activeDraggableGroup()) {
+            if ((activeDraggablePiece() && props.contentGroup) || activeDraggableGroup()) {
               setHighlight(true);
             }
           }}
           onMouseLeave={() => {
-            if (activeDraggableGroup()) {
+            if ((activeDraggablePiece() && props.contentGroup) || activeDraggableGroup()) {
               setHighlight(false);
             }
           }}
           onTouchMove={(event) => {
-            if (activeDraggableGroup()) {
+            if ((activeDraggablePiece() && props.contentGroup) || activeDraggableGroup()) {
               const x = event.touches[0].clientX;
               const y = event.touches[0].clientY;
               const elementAtTouchPoint = document.elementFromPoint(x, y);

@@ -16,7 +16,7 @@ const DashboardView: Component = () => {
     return storage().dashboardViewAncestor || null;
   };
   const { contentGroups, setContentGroups, refetch, loading } = cache("contentGroups", () => {
-    return useContentGroups();
+    return useContentGroups(ancestor()?.id);
   });
   const ydoc = new Y.Doc();
   const handleReload = async (): Promise<void> => {
