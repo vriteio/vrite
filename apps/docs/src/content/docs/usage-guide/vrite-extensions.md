@@ -1,6 +1,6 @@
 ---
-title: "Vrite Extensions"
 slug: "/usage-guide/vrite-extensions"
+title: "Vrite Extensions"
 ---
 
 Vrite Extensions are meant to make Vrite both more customizable and easier to use. With direct access to Vrite API and the ability to extend Vrite’s UI, they have the ability to vastly improve your experience with Vrite.
@@ -11,6 +11,7 @@ The Extensions specification and related APIs are in the early stages and we con
 - **Dev.to** — automatically publishes and updates articles on [Dev.to](https://dev.to/);
 - **Medium** — automatically publishes articles to Medium;
 - **GPT-3.5** — integrates OpenAI's GPT-3.5 into the Vrite Editor;
+- **MDX** — provides a remote transformer for using `.mdx` files in Git sync;
 
 ## Installing Extensions
 

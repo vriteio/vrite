@@ -1,6 +1,6 @@
 ---
-title: "Configuring Self-Hosted Vrite"
 slug: "self-hosting/configuration"
+title: "Configuring Self-Hosted Vrite"
 ---
 
 To properly host Vrite, you first have to configure a couple of environment variables. This guide aims to give you an overview of the available options.
@@ -50,13 +50,13 @@ For production, make sure to either secure and properly configure your MinIO ins
 
 ## GitHub OAuth2
 
-If you want to add _Sign in with GitHub_ option to your authentication page, make sure to provide the `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` variables. Follow [the official guide](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/creating-an-oauth-app) to acquire the values.
+If you want to add _Sign in with GitHub_ option to your authentication page, make sure to provide the `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` variables. Follow [the official guide](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/creating-an-oauth-app) to acquire the values. Use `{{PUBLIC_APP_URL}}/login/github/callback` for your **Authorization callback URL**.
 
 When the variables are not provided, the GitHub sign-in will be disabled.
 
 ## GitHub App
 
-To enable Git sync and synchronize your content from your GitHub repo, you’ll have to provide credentials for your GitHub App. To obtain them, follow [the official guide](https://docs.github.com/en/apps/creating-github-apps/registering-a-github-app/registering-a-github-app) and then fill out the variables:
+To enable Git sync and synchronize your content from your GitHub repo, you’ll have to provide credentials for your GitHub App. To obtain them, follow [the official guide](https://docs.github.com/en/apps/creating-github-apps/registering-a-github-app/registering-a-github-app) (use `{{PUBLIC_APP_URL}}/github/callback` for your **Callback URL**) and then fill out the variables:
 
 ```
 # GitHub App (optional - GitHub Git sync)

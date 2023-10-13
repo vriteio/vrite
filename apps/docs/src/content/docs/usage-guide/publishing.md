@@ -1,6 +1,6 @@
 ---
-title: "Publishing Content"
 slug: "/usage-guide/publishing"
+title: "Publishing Content"
 ---
 
 With Vrite’s unique features like Kanban-based content management, the actual publishing flow is quite unique. All you have to do to publish a piece can be just drag and drop.
@@ -17,9 +17,14 @@ You can then access all the content pieces from this group using either [the API
 
 Vrite Extensions simplify the setup process you have to go through to publish your content pieces to popular platforms like [Dev.to](https://dev.to/), [Hashnode](https://hashnode.com/), or [Medium](https://medium.com/). All you have to do is install the Extension and a custom Webhook handling auto-publishing will be added for you. Additionally, you’ll also be able to publish manually from the Extension’s Content Piece View. You can learn more about Vrite Extensions [here](/vrite-extensions).
 
+## Syncing with GitHub Repo
+
+Instead of publishing through the API or to existing blogging platforms, you can choose to sync your content with a GitHub repo, and thus — your existing publishing workflows. This means you can use Vrite as a powerful WYSIWYG editor for your Markdown or MDX content (through the MDX extension). You can learn more about Vrite’s Git sync
+
 ## More Resources
 
 Given that Vrite is in Public Beta, it’s constantly evolving and new content delivery methods, alongside more resources on how to implement them, are on the way. Below you can check out related articles from the Vrite blog:
 
 - **[Better blogging on Dev.to with Vrite - headless CMS for technical content](https://vrite.io/blog/better-blogging-on-dev-to-with-vrite-headless-cms-for-technical-content/)** - a guide on implementing a custom Webhook for auto-publishing your content to [the DEV platform](https://dev.to/), using Vrite API and **Content Transformers**.
-- [**Start programming blog in minutes with Astro and Vrite**](https://vrite.io/blog/start-programming-blog-in-minutes-with-astro-and-vrite/) - a guide on using Vrite’s dedicated [Astro](https://astro.build/) integration to build a static blog really fast;
+- **[Start programming blog in minutes with Astro and Vrite](https://vrite.io/blog/start-programming-blog-in-minutes-with-astro-and-vrite/)** - a guide on using Vrite’s dedicated [Astro](https://astro.build/) integration to build a static blog really fast;
+- **[Notion-like Experience for Your GitHub Content](https://vrite.io/blog/notion-like-experience-for-your-git-hub-content/)** — a guide to using syncing a GitHub repo with Vrite;
