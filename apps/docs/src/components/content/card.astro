@@ -20,9 +20,9 @@ const { props } = Astro;
   ><BaseCard
     class={clsx(
       "w-full flex flex-col m-0 p-0 gap-2 items-start h-full",
-      props.gradient ? "hover:bg-gradient-to-bl" : "!hover:bg-gray-200"
+      props.gradient ? "hover:bg-gradient-to-bl" : "!hover:bg-gray-200 !dark:hover:bg-gray-700"
     )}
-    color={props.gradient ? "primary" : "contrast"}
+    color={props.gradient ? "primary" : "base"}
   >
     <div class="flex justify-center items-center pl-3 pr-4 pt-3 w-full">
       <div class="pr-1 py-1">
