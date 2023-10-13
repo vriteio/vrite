@@ -102,10 +102,10 @@ const loadSessionData = async (ctx: Context, userId: string): Promise<SessionDat
   };
 };
 const createTokens = async (ctx: Context, sessionId: string): Promise<void> => {
-  const accessToken = await ctx.res.jwtSign({ sessionId }, { sign: { expiresIn: 60 * 30 } });
+  const accessToken = await ctx.res.jwtSign({ sessionId }, { sign: { expiresIn: 60 * 60 * 24 } });
   const refreshToken = await ctx.res.jwtSign(
     { sessionId },
-    { sign: { expiresIn: 60 * 60 * 24 * 7 } }
+    { sign: { expiresIn: 60 * 60 * 24 * 60 } }
   );
   const cookieOptions = {
     httpOnly: true,
@@ -115,16 +115,16 @@ const createTokens = async (ctx: Context, sessionId: string): Promise<void> => {
     domain: ctx.fastify.config.COOKIE_DOMAIN
   };
 
-  await ctx.fastify.redis.set(`refreshToken:${sessionId}`, refreshToken, "EX", 60 * 60 * 24 * 7);
+  await ctx.fastify.redis.set(`refreshToken:${sessionId}`, refreshToken, "EX", 60 * 60 * 24 * 60);
   ctx.res.setCookie("refreshToken", refreshToken, {
     ...cookieOptions,
     path: "/session",
-    maxAge: 60 * 60 * 24 * 7
+    maxAge: 60 * 60 * 24 * 60
   });
   ctx.res.setCookie("accessToken", accessToken, {
     ...cookieOptions,
     path: "/",
-    maxAge: 60 * 30
+    maxAge: 60 * 60 * 24
   });
 };
 const setSession = async (
@@ -136,7 +136,7 @@ const setSession = async (
     `session:${sessionId}`,
     JSON.stringify(sessionData),
     "EX",
-    60 * 60 * 24 * 7
+    60 * 60 * 24 * 60
   );
   await ctx.fastify.redis.sadd(`role:${sessionData.roleId}:sessions`, sessionId);
   await ctx.fastify.redis.sadd(`user:${sessionData.userId}:sessions`, sessionId);
@@ -156,7 +156,7 @@ const refreshSession = async (ctx: Context, sessionId: string): Promise<void> =>
   await ctx.fastify.redis.del(`refreshToken:${sessionId}`);
 
   if (sessionCache) {
-    await ctx.fastify.redis.expire(`session:${sessionId}`, 60 * 60 * 24 * 7);
+    await ctx.fastify.redis.expire(`session:${sessionId}`, 60 * 60 * 24 * 60);
     await createTokens(ctx, sessionId);
   }
 };
