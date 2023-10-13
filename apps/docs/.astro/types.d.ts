@@ -205,20 +205,20 @@ declare module 'astro:content' {
   collection: "docs";
   data: InferEntrySchema<"docs">
 } & { render(): Render[".md"] };
-"self-hosting/configuration.md": {
-	id: "self-hosting/configuration.md";
+"self-hosting/configuration.mdx": {
+	id: "self-hosting/configuration.mdx";
   slug: "self-hosting/configuration";
   body: string;
   collection: "docs";
   data: InferEntrySchema<"docs">
-} & { render(): Render[".md"] };
-"self-hosting/docker.md": {
-	id: "self-hosting/docker.md";
+} & { render(): Render[".mdx"] };
+"self-hosting/docker.mdx": {
+	id: "self-hosting/docker.mdx";
   slug: "self-hosting/docker";
   body: string;
   collection: "docs";
   data: InferEntrySchema<"docs">
-} & { render(): Render[".md"] };
+} & { render(): Render[".mdx"] };
 "usage-guide/configuring-vrite.md": {
 	id: "usage-guide/configuring-vrite.md";
   slug: "usage-guide/configuring-vrite";
