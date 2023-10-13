@@ -13,7 +13,10 @@ interface Props {
 const { props } = Astro;
 ---
 
-<a href={props.link} class="not-prose cursor-pointer block my-4"
+<a
+  href={props.link}
+  class="not-prose cursor-pointer block my-4"
+  target={props.link.startsWith("http") ? "_blank" : "_self"}
   ><BaseCard
     class={clsx(
       "w-full flex flex-col m-0 p-0 gap-2 items-start h-full",

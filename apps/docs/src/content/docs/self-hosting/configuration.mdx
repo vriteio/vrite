@@ -80,7 +80,9 @@ Your Weaviate instance has to be properly configured to work with Vrite:
 
 You can use the `weaviate` service from `docker-compose.yml` as a reference for basic setup with OpenAI vectorizer.
 
-> **Important!** Currently, you have to configure Weaviate before you create your first Vrite Workspace, as each Workspace creates a [new tenant](https://weaviate.io/developers/weaviate/manage-data/multi-tenancy) in Weaviate. This means you can’t retroactively add Weaviate to your Vrite instance, for the time being.
+<Important>
+  Currently, you have to configure Weaviate before you create your first Vrite Workspace, as each Workspace creates a [new tenant](https://weaviate.io/developers/weaviate/manage-data/multi-tenancy) in Weaviate. This means you can’t retroactively add Weaviate to your Vrite instance, for the time being.
+</Important>
 
 When the variables are not provided, the search and AI question-answering features will be disabled.
 

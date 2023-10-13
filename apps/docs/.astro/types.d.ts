@@ -184,6 +184,20 @@ declare module 'astro:content' {
 
 	type ContentEntryMap = {
 		"docs": {
+"getting-started/concepts.mdx": {
+	id: "getting-started/concepts.mdx";
+  slug: "/getting-started/concepts";
+  body: string;
+  collection: "docs";
+  data: InferEntrySchema<"docs">
+} & { render(): Render[".mdx"] };
+"getting-started/introduction.mdx": {
+	id: "getting-started/introduction.mdx";
+  slug: "/getting-started/introduction";
+  body: string;
+  collection: "docs";
+  data: InferEntrySchema<"docs">
+} & { render(): Render[".mdx"] };
 "javascript-sdk/javascript-sdk.md": {
 	id: "javascript-sdk/javascript-sdk.md";
   slug: "javascript-sdk/introduction";
@@ -219,20 +233,6 @@ declare module 'astro:content' {
   collection: "docs";
   data: InferEntrySchema<"docs">
 } & { render(): Render[".md"] };
-"usage-guide/getting-started.md": {
-	id: "usage-guide/getting-started.md";
-  slug: "/usage-guide/getting-started";
-  body: string;
-  collection: "docs";
-  data: InferEntrySchema<"docs">
-} & { render(): Render[".md"] };
-"usage-guide/kanban-dashboard.md": {
-	id: "usage-guide/kanban-dashboard.md";
-  slug: "/usage-guide/kanban-dashboard";
-  body: string;
-  collection: "docs";
-  data: InferEntrySchema<"docs">
-} & { render(): Render[".md"] };
 "usage-guide/metadata.md": {
 	id: "usage-guide/metadata.md";
   slug: "/usage-guide/metadata";
@@ -240,6 +240,27 @@ declare module 'astro:content' {
   collection: "docs";
   data: InferEntrySchema<"docs">
 } & { render(): Render[".md"] };
+"usage-guide/navigation/command-palette.md": {
+	id: "usage-guide/navigation/command-palette.md";
+  slug: "/usage-guide/navigation/command-palette";
+  body: string;
+  collection: "docs";
+  data: InferEntrySchema<"docs">
+} & { render(): Render[".md"] };
+"usage-guide/navigation/dashboard.md": {
+	id: "usage-guide/navigation/dashboard.md";
+  slug: "/usage-guide/navigation/dashboard";
+  body: string;
+  collection: "docs";
+  data: InferEntrySchema<"docs">
+} & { render(): Render[".md"] };
+"usage-guide/navigation/navigation.mdx": {
+	id: "usage-guide/navigation/navigation.mdx";
+  slug: "/usage-guide/navigation/introduction";
+  body: string;
+  collection: "docs";
+  data: InferEntrySchema<"docs">
+} & { render(): Render[".mdx"] };
 "usage-guide/publishing.md": {
 	id: "usage-guide/publishing.md";
   slug: "/usage-guide/publishing";
@@ -254,15 +275,6 @@ declare module 'astro:content' {
   collection: "docs";
   data: InferEntrySchema<"docs">
 } & { render(): Render[".md"] };
-};
-"recipes": {
-"test.mdx": {
-	id: "test.mdx";
-  slug: "/recipes/content-pieces";
-  body: string;
-  collection: "recipes";
-  data: InferEntrySchema<"recipes">
-} & { render(): Render[".mdx"] };
 };
 
 	};

@@ -13,7 +13,7 @@ export default defineConfig({
   },
   integrations: [
     autoImport({
-      imports: [{ "#components/content": ["Card", "CardGrid", "Warning", "Info"] }]
+      imports: [{ "#components/content": ["Card", "CardGrid", "Important", "Info"] }]
     }),
     unocss({ injectReset: true }),
     solidJs(),

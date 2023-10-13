@@ -5,7 +5,7 @@ import { getCollection } from "astro:content";
 let { slug } = Astro.params;
 
 if (slug === undefined) {
-  return Astro.redirect("/usage-guide/getting-started");
+  return Astro.redirect("/getting-started/introduction");
 }
 
 const { entry } = Astro.props;
@@ -14,13 +14,9 @@ const { Content, headings } = await entry.render();
 export const prerender = true;
 export async function getStaticPaths() {
   const docsEntries = await getCollection("docs");
-  const recipesEntries = await getCollection("recipes");
+  // const recipesEntries = await getCollection("recipes");
   return [
     ...docsEntries.map((entry) => ({
-      params: { slug: entry.slug },
-      props: { entry }
-    })),
-    ...recipesEntries.map((entry) => ({
       params: { slug: entry.slug },
       props: { entry }
     }))
