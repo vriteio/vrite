@@ -7,7 +7,7 @@ import {
   SolidEditorContent,
   useEditor
 } from "@vrite/tiptap-solid";
-import { Component, createEffect, createSignal, on, onCleanup } from "solid-js";
+import { Component, createSignal, onCleanup } from "solid-js";
 import { isTextSelection } from "@tiptap/core";
 import { Gapcursor } from "@tiptap/extension-gapcursor";
 import { Dropcursor } from "@tiptap/extension-dropcursor";
@@ -41,7 +41,7 @@ import {
   TableRow
 } from "@vrite/editor";
 import { CellSelection } from "@tiptap/pm/tables";
-import { AllSelection } from "@tiptap/pm/state";
+import { AllSelection, NodeSelection } from "@tiptap/pm/state";
 import { Instance } from "tippy.js";
 import clsx from "clsx";
 import { Dropdown } from "#components/primitives";
@@ -57,7 +57,10 @@ import {
   CodeBlock,
   Image,
   Embed,
-  AutoDir
+  AutoDir,
+  ElementMenuPlugin,
+  Element,
+  CommentMenuPlugin
 } from "#lib/editor";
 import { useLocalStorage, useSharedState } from "#context";
 import { breakpoints, createRef } from "#lib/utils";
@@ -113,6 +116,7 @@ const Editor: Component = () => {
       HorizontalRule,
       Image,
       Embed,
+      Element,
       ListItem,
       TaskItem,
       Table,
@@ -127,8 +131,8 @@ const Editor: Component = () => {
       SlashMenuPlugin.configure({
         menuItems: createBlockMenuOptions()
       }),
-      TableMenuPlugin
-      // CommentMenuPlugin
+      TableMenuPlugin,
+      ElementMenuPlugin
     ],
     editorProps: { attributes: { class: `outline-none` } },
     content: storage().html,
@@ -151,9 +155,10 @@ const Editor: Component = () => {
     const { empty } = selection;
     const isAllSelection = selection instanceof AllSelection;
     const isCellSelection = selection instanceof CellSelection;
+    const isNodeSelection = selection instanceof NodeSelection;
     const isEmptyTextBlock = !doc.textBetween(from, to).length && isTextSelection(state.selection);
 
-    if (!view.hasFocus() || isAllSelection) {
+    if ((!view.hasFocus() && !isNodeSelection) || isAllSelection) {
       setBubbleMenuOpened(false);
 
       return false;
@@ -166,7 +171,7 @@ const Editor: Component = () => {
     }
 
     if (
-      ["image", "codeBlock", "embed", "horizontalRule"].some((name) => {
+      ["element", "image", "codeBlock", "embed", "horizontalRule"].some((name) => {
         return editor.isActive(name);
       })
     ) {
@@ -189,7 +194,9 @@ const Editor: Component = () => {
     const { state, view } = editor;
     const { selection } = state;
     const { $anchor, empty } = selection;
-    const isRootDepth = $anchor.depth === 1;
+    const isRootDepth =
+      $anchor.depth === 1 ||
+      ["element", "blockquote"].includes($anchor.node($anchor.depth - 1)?.type?.name);
     const isEmptyTextBlock =
       $anchor.parent.isTextblock &&
       !$anchor.parent.type.spec.code &&
@@ -212,6 +219,7 @@ const Editor: Component = () => {
     setSharedEditor(undefined);
   });
   setStorage((storage) => ({ ...storage, toolbarView: "editorStandalone" }));
+  setSharedEditor(editor());
 
   return (
     <>

@@ -34,7 +34,7 @@ interface ExportMenuProps {
 
 const ExportMenu: Component<ExportMenuProps> = (props) => {
   const client = useClient();
-  const { registerCommand } = useCommandPalette();
+  const { registerCommand = () => {} } = useCommandPalette() || {};
   const { workspaceSettings = () => null } = useAuthenticatedUserData() || {};
   const { notify } = useNotifications();
   const [loading, setLoading] = createSignal(false);

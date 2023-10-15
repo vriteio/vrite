@@ -13,7 +13,7 @@ interface StatsMenuProps {
 }
 
 const StatsMenu: Component<StatsMenuProps> = (props) => {
-  const { registerCommand } = useCommandPalette();
+  const { registerCommand = () => {} } = useCommandPalette() || {};
   const [opened, setOpened] = createSignal(false);
   const [stats, setStats] = createSignal({
     words: 0,

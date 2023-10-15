@@ -157,9 +157,9 @@ const Editor: Component<EditorProps> = (props) => {
       el = event?.relatedTarget as HTMLElement | null;
     }
   });
-  const [sharedEditor, setSharedEditor] = createSharedSignal("editor", editor());
-  const [sharedProvider, setSharedProvider] = createSharedSignal("provider", provider);
-  const [editedContentPiece, setEditedContentPiece] = createSharedSignal(
+  const [, setSharedEditor] = createSharedSignal("editor", editor());
+  const [, setSharedProvider] = createSharedSignal("provider", provider);
+  const [, setEditedContentPiece] = createSharedSignal(
     "editedContentPiece",
     props.editedContentPiece
   );
@@ -216,9 +216,7 @@ const Editor: Component<EditorProps> = (props) => {
     const { $anchor, empty } = selection;
     const isRootDepth =
       $anchor.depth === 1 ||
-      ["element", "blockquote", "listItem", "taskItem"].includes(
-        $anchor.node($anchor.depth - 1)?.type?.name
-      );
+      ["element", "blockquote"].includes($anchor.node($anchor.depth - 1)?.type?.name);
     const isEmptyTextBlock =
       $anchor.parent.isTextblock &&
       !$anchor.parent.type.spec.code &&

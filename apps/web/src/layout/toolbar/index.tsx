@@ -26,7 +26,7 @@ import {
   useSharedState
 } from "#context";
 import { ExportMenu, StatsMenu } from "#views/editor/menus";
-import { Button, Dropdown, Heading, Icon, IconButton, Tooltip } from "#components/primitives";
+import { Button, Dropdown, Icon, IconButton, Tooltip } from "#components/primitives";
 import { logoIcon } from "#assets/icons";
 import { breakpoints, isAppleDevice } from "#lib/utils";
 
