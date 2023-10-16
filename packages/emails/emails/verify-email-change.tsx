@@ -43,13 +43,14 @@ const VerifyEmailChange: React.FC<VerifyEmailChangeProps> = ({ link = "" }) => {
             </Text>
             <Button
               className="bg-gray-200 px-[18px] py-[12px] text-gray-500 rounded-[8px] text-[14px]"
+              clicktracking="off"
               href={link}
             >
               Verify email address change
             </Button>
             <Section className="text-start text-[14px] leading-[22px]">
               <Text className="mb-0 leading-[14px]">or follow this link:</Text>
-              <Link href={link} className="text-blue-600 no-underline">
+              <Link href={link} className="text-blue-600 no-underline" clicktracking="off">
                 {link}
               </Link>
               <Text>
@@ -64,6 +65,7 @@ const VerifyEmailChange: React.FC<VerifyEmailChangeProps> = ({ link = "" }) => {
     </Html>
   );
 };
+
 export { VerifyEmailChange };
 export type { VerifyEmailChangeProps };
 export default VerifyEmailChange;

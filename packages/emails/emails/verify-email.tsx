@@ -48,13 +48,14 @@ const VerifyEmail: React.FC<VerifyEmailProps> = ({ link = "", user = "" }) => {
             </Text>
             <Button
               className="bg-gray-200 px-[18px] py-[12px] text-gray-500 rounded-[8px] text-[14px]"
+              clicktracking="off"
               href={link}
             >
               Verify email address{" "}
             </Button>
             <Section className="text-start text-[14px] leading-[22px]">
               <Text className="mb-0 leading-[14px]">or follow this link:</Text>
-              <Link href={link} className="text-blue-600 no-underline">
+              <Link href={link} className="text-blue-600 no-underline" clicktracking="off">
                 {link}
               </Link>
               <Text>If you didn't sign up for Vrite, you can ignore this email.</Text>

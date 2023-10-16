@@ -51,13 +51,14 @@ const WorkspaceInvite: React.FC<WorkspaceInviteProps> = ({
             </Text>
             <Button
               className="bg-gray-200 px-[18px] py-[12px] text-gray-500 rounded-[8px] text-[14px]"
+              clicktracking="off"
               href={link}
             >
               Accept invite
             </Button>
             <Section className="text-start text-[14px] leading-[22px]">
               <Text className="mb-0 leading-[14px]">or follow this link:</Text>
-              <Link href={link} className="text-blue-600 no-underline">
+              <Link href={link} className="text-blue-600 no-underline" clicktracking="off">
                 {link}
               </Link>
               <Text>If you don't recognize this invite, you can ignore this email.</Text>

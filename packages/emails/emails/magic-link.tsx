@@ -43,13 +43,14 @@ const MagicLink: React.FC<MagicLinkProps> = ({ link = "" }) => {
             </Text>
             <Button
               className="bg-gray-200 px-[18px] py-[12px] text-gray-500 rounded-[8px] text-[14px]"
+              clicktracking="off"
               href={link}
             >
               Sign in to Vrite
             </Button>
             <Section className="text-start text-[14px] leading-[22px]">
               <Text className="mb-0 leading-[14px]">or follow this link:</Text>
-              <Link href={link} className="text-blue-600 no-underline">
+              <Link clicktracking="off" href={link} className="text-blue-600 no-underline">
                 {link}
               </Link>
               <Text>If you didn't request a sign-in link, you can ignore this email. </Text>
@@ -61,6 +62,7 @@ const MagicLink: React.FC<MagicLinkProps> = ({ link = "" }) => {
     </Html>
   );
 };
+
 export { MagicLink };
 export type { MagicLinkProps };
 export default MagicLink;

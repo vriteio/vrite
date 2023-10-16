@@ -6,6 +6,14 @@ import { WorkspaceInvite } from "../emails/workspace-invite";
 import { render } from "@react-email/render";
 import * as React from "react";
 
+declare global {
+  namespace JSX {
+    interface IntrinsicAttributes {
+      clicktracking?: string;
+    }
+  }
+}
+
 const templateMap = {
   "magic-link": MagicLink,
   "verify-email-change": VerifyEmailChange,
