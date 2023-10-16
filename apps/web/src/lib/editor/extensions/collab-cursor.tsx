@@ -63,6 +63,7 @@ const CollabCursor = (provider: HocuspocusProvider): Extension => {
           h: number;
           w: number;
           top: number;
+          display: string;
         }>(null);
 
         onMount(() => {
@@ -75,6 +76,7 @@ const CollabCursor = (provider: HocuspocusProvider): Extension => {
             container.parentElement?.tagName === "BLOCKQUOTE"
           ) {
             const rect = container.previousElementSibling?.getBoundingClientRect();
+            const isElement = container.previousElementSibling?.getAttribute("data-element");
 
             let parentPos = document.getElementById("pm-container")?.getBoundingClientRect();
 
@@ -87,7 +89,11 @@ const CollabCursor = (provider: HocuspocusProvider): Extension => {
             setBlockSelection({
               h: rect.height,
               w: rect.width,
-              top: rect.top - parentPos.top
+              display: isElement ? "none" : "block",
+              top:
+                rect.top -
+                parentPos.top -
+                parseFloat(window.getComputedStyle(container.previousElementSibling!).marginTop)
             });
           }
         });
@@ -127,10 +133,11 @@ const CollabCursor = (provider: HocuspocusProvider): Extension => {
                   style={{
                     height: `${blockSelection.h}px`,
                     width: `${blockSelection.w}px`,
-                    top: `${blockSelection.top}px`
+                    top: `${blockSelection.top}px`,
+                    display: blockSelection.display
                   }}
                   class={clsx(
-                    "absolute border-2 rounded-2xl pointer-events-none",
+                    "absolute border-2 rounded-[18px] pointer-events-none",
                     selectionClasses[color].outline
                   )}
                 >
