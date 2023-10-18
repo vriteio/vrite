@@ -171,7 +171,8 @@ const Editor: Component = () => {
     }
 
     if (
-      ["element", "image", "codeBlock", "embed", "horizontalRule"].some((name) => {
+      isNodeSelection &&
+      ["horizontalRule", "image", "codeBlock", "embed", "element"].some((name) => {
         return editor.isActive(name);
       })
     ) {

@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { Component, For, createSignal } from "solid-js";
+import { Component, For, createEffect, createSignal } from "solid-js";
 import { SolidEditor } from "@vrite/tiptap-solid";
 import {
   mdiFormatBold,

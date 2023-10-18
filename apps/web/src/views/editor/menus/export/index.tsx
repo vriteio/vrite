@@ -19,10 +19,12 @@ import {
   useAuthenticatedUserData,
   useClient,
   useCommandPalette,
-  useNotifications
+  useNotifications,
+  useSharedState
 } from "#context";
 import { formatCode } from "#lib/code-editor";
 import { escapeHTML } from "#lib/utils";
+import { mdxIcon } from "#assets/icons";
 
 interface ExportMenuProps {
   editedContentPiece?: App.ContentPieceWithAdditionalData;
@@ -32,8 +34,12 @@ interface ExportMenuProps {
   onClick?(): void;
 }
 
+type ExportType = "html" | "json" | "md" | "mdx";
+
 const ExportMenu: Component<ExportMenuProps> = (props) => {
+  const createSharedSignal = useSharedState();
   const client = useClient();
+  const [editor] = createSharedSignal("editor");
   const { registerCommand = () => {} } = useCommandPalette() || {};
   const { workspaceSettings = () => null } = useAuthenticatedUserData() || {};
   const { notify } = useNotifications();
@@ -41,25 +47,20 @@ const ExportMenu: Component<ExportMenuProps> = (props) => {
   const [exportMenuOpened, setExportMenuOpened] = createSignal(false);
   const [exportDropdownOpened, setExportDropdownOpened] = createSignal(false);
   const [code, setCode] = createSignal("");
-  const [exportType, setExportType] = createSignal<"html" | "json" | "md">("html");
-  const loadContent = async (type: "html" | "json" | "md"): Promise<string | undefined> => {
+  const [exportType, setExportType] = createSignal<ExportType>("html");
+  const loadContent = async (type: ExportType): Promise<string | undefined> => {
     try {
       let { content } = props;
 
       if (!content && props.editedContentPiece) {
-        const contentPiece = await client.contentPieces.get.query({
-          content: true,
-          id: props.editedContentPiece.id
-        });
-
-        content = contentPiece.content as JSONContent;
+        content = (editor()?.getJSON() as JSONContent) || { type: "doc", content: [] };
       }
 
       const prettierConfig = JSON.parse(workspaceSettings()?.prettierConfig || "{}");
 
-      if (type === "html") {
-        if (!content) return;
+      if (!content) return;
 
+      if (type === "html") {
         return formatCode(
           htmlOutputTransformer(content).replace(/<code>((?:.|\n)+?)<\/code>/g, (_, code) => {
             return `<code>${escapeHTML(code)}</code>`;
@@ -70,9 +71,31 @@ const ExportMenu: Component<ExportMenuProps> = (props) => {
       }
 
       if (type === "md") {
-        if (!content) return;
-
         return formatCode(gfmOutputTransformer(content), "markdown", prettierConfig);
+      }
+
+      if (type === "mdx") {
+        try {
+          const response = await fetch("https://extensions.vrite.io/mdx/output", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              data: [
+                {
+                  content,
+                  metadata: props.editedContentPiece || {}
+                }
+              ]
+            })
+          });
+          const [result] = await response.json();
+
+          return result;
+        } catch (error) {
+          return;
+        }
       }
 
       return formatCode(JSON.stringify(content), "json", prettierConfig);
@@ -81,7 +104,7 @@ const ExportMenu: Component<ExportMenuProps> = (props) => {
       setLoading(false);
     }
   };
-  const exportContent = async (type: "html" | "json" | "md"): Promise<void> => {
+  const exportContent = async (type: ExportType): Promise<void> => {
     setExportDropdownOpened(false);
     setLoading(true);
 
@@ -124,6 +147,14 @@ const ExportMenu: Component<ExportMenuProps> = (props) => {
       name: "Export GFM",
       action() {
         exportContent("md");
+      }
+    },
+    {
+      category: "editor",
+      icon: mdxIcon,
+      name: "Export MDX",
+      action() {
+        exportContent("mdx");
       }
     }
   ]);
@@ -177,6 +208,15 @@ const ExportMenu: Component<ExportMenuProps> = (props) => {
             disabled={loading()}
             class="justify-start w-full m-0"
             onClick={() => exportContent("md")}
+          />
+          <IconButton
+            path={mdxIcon}
+            text="soft"
+            variant="text"
+            label="MDX"
+            disabled={loading()}
+            class="justify-start w-full m-0"
+            onClick={() => exportContent("mdx")}
           />
         </div>
       </Dropdown>

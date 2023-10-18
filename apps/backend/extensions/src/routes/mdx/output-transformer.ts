@@ -287,7 +287,9 @@ const mdxAsyncOutputTransformer = async (
   const content = await transformContentNode(
     contentWalker as JSONContentNodeWalker<JSONContentNode["doc"]>
   );
-  const frontmatter = dump(
+  const { __extensions__, ...customData } = contentPiece?.customData || {};
+
+  let frontmatter = dump(
     {
       ...(contentPiece?.canonicalLink && { canonicalLink: contentPiece.canonicalLink }),
       ...(contentPiece?.coverUrl && { coverUrl: contentPiece.coverUrl }),
@@ -297,10 +299,14 @@ const mdxAsyncOutputTransformer = async (
       ...(contentPiece?.date && { date: dayjs(contentPiece.date).format("YYYY-MM-DD") }),
       ...(contentPiece?.slug && { slug: contentPiece.slug }),
       ...(contentPiece?.title && { title: contentPiece.title }),
-      ...(contentPiece?.customData || {})
+      ...customData
     },
     { skipInvalid: true, forceQuotes: true, quotingType: '"' }
   );
+
+  if (frontmatter.trim() === "{}") {
+    frontmatter = "";
+  }
 
   return (
     await format(

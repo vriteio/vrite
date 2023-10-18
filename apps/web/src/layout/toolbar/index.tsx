@@ -94,7 +94,7 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
                     variant="text"
                     text="soft"
                     label="Usage guide"
-                    link="https://docs.vrite.io/content-editor"
+                    link="https://docs.vrite.io/usage-guide/content-editor"
                     target="_blank"
                   />
                   <IconButton
@@ -132,7 +132,7 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
                 class="m-0"
                 variant="text"
                 text="soft"
-                link="https://docs.vrite.io/content-editor"
+                link="https://docs.vrite.io/usage-guide/content-editor"
                 target="_blank"
               />
             </Tooltip>

@@ -22,9 +22,7 @@ interface BubbleMenuProps {
 const BubbleMenu: Component<BubbleMenuProps> = (props) => {
   const [mode, setMode] = createSignal<BubbleMenuMode>("format");
 
-  props.editor.on("selectionUpdate", ({ editor }) => {
-    const { selection } = editor.state;
-
+  props.editor.on("selectionUpdate", () => {
     if (props.editor.state.selection instanceof CellSelection) {
       setMode("table");
     } else if (!props.editor.state.selection.empty) {

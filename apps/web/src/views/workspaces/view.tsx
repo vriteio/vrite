@@ -124,7 +124,7 @@ const WorkspacesView: Component = () => {
 
   return (
     <div class="relative">
-      <Card class="flex flex-col m-0 p-0 gap-2 items-start w-96 max-h-xl overflow-hidden">
+      <Card class="flex flex-col m-0 p-0 gap-2 items-start w-96 max-h-xl h-full overflow-hidden">
         <div class="flex flex-col justify-center items-start pl-3 pr-4 pt-3 w-full">
           <Show when={createWorkspaceSectionOpened()}>
             <IconButton
@@ -165,7 +165,7 @@ const WorkspacesView: Component = () => {
           }
         >
           <div class="flex flex-col justify-center items-center gap-2 w-full pl-4 pr-2 pb-4 overflow-hidden h-full">
-            <div class="relative overflow-hidden grid w-full">
+            <div class="relative overflow-hidden grid w-full h-full">
               <ScrollShadow
                 scrollableContainerRef={scrollableContainerRef}
                 onScrollEnd={loadMore}
