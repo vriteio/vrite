@@ -9,7 +9,8 @@ import {
   mdiHelpCircle,
   mdiPuzzle,
   mdiMicrosoftXboxControllerMenu,
-  mdiGit
+  mdiGit,
+  mdiFileMultiple
 } from "@mdi/js";
 import { Accessor, Component, For, Show, createEffect, createSignal, on } from "solid-js";
 import { Link, useLocation, useNavigate } from "@solidjs/router";
@@ -91,6 +92,15 @@ const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
         }
       },
       null,
+      {
+        icon: mdiFileMultiple,
+        label: "Explorer",
+        inMenu: true,
+        active: () => storage().sidePanelView === "explorer",
+        onClick: () => {
+          setSidePanelView("explorer");
+        }
+      },
       hostConfig.githubApp && {
         icon: mdiGit,
         label: "Source control",

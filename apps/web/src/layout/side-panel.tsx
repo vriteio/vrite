@@ -9,6 +9,7 @@ import { SettingsView } from "#views/settings";
 import { ExtensionsView } from "#views/extensions";
 import { GettingStartedView } from "#views/getting-started";
 import { GitView } from "#views/git";
+import { ExplorerView } from "#views/explorer";
 
 const sidePanelViews: Record<string, Component<Record<string, any>>> = {
   contentPiece: ContentPieceView,
@@ -31,7 +32,8 @@ const sidePanelViews: Record<string, Component<Record<string, any>>> = {
       </Show>
     );
   },
-  default: GettingStartedView
+  default: GettingStartedView,
+  explorer: ExplorerView
 };
 const SidePanel: Component = () => {
   const { storage, setStorage } = useLocalStorage();

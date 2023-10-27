@@ -6,8 +6,6 @@ import {
   mdiFilePlus,
   mdiFileLock,
   mdiFileLockOpen,
-  mdiFolder,
-  mdiFolderLock,
   mdiFolderOpen,
   mdiFolderPlus,
   mdiIdentifier,
@@ -249,7 +247,7 @@ const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
             }}
           >
             <div
-              class="flex flex-1 justify-center items-center overflow-hidden rounded-lg"
+              class="flex flex-1 justify-center items-center overflow-hidden"
               data-content-group-id={props.contentGroup.id}
               onDragOver={(event) => event.preventDefault()}
               onDragEnter={(event) => {
@@ -297,32 +295,6 @@ const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
                 }
               }}
             >
-              <div class="h-8 w-8 relative group mr-1">
-                <IconButton
-                  path={props.contentGroup.locked ? mdiFolderLock : mdiFolder}
-                  variant="text"
-                  class={clsx(
-                    "m-0 absolute top-0 left-0 @hover:group-hover:opacity-0",
-                    highlight() && "!opacity-0"
-                  )}
-                  hover={false}
-                  onClick={() => {
-                    setAncestor(props.contentGroup);
-                  }}
-                />
-                <IconButton
-                  path={mdiFolderOpen}
-                  variant="text"
-                  class={clsx(
-                    "m-0 absolute top-0 left-0 opacity-0 @hover:group-hover:opacity-100",
-                    highlight() && "!opacity-100"
-                  )}
-                  color={highlight() ? "primary" : "base"}
-                  onClick={() => {
-                    setAncestor(props.contentGroup);
-                  }}
-                />
-              </div>
               <MiniEditor
                 class={clsx(
                   "inline-flex flex-1 overflow-x-auto content-group-name scrollbar-hidden hover:cursor-text whitespace-nowrap-children",

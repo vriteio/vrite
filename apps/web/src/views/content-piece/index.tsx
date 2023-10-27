@@ -264,14 +264,6 @@ const ContentPieceView: Component = () => {
             activeSection={activeSection()}
             setActiveSection={setActiveSection}
           />
-          <ContentPieceDescription
-            descriptionExists={typeof contentPiece()?.description === "string"}
-            initialDescription={descriptionInitialValue()}
-            editable={editable()}
-            setDescription={(description) => {
-              handleChange({ description });
-            }}
-          />
         </div>
       </Card>
     </Show>

@@ -1,5 +1,4 @@
 import { UserList } from "./user-list";
-import { Breadcrumb } from "./breadcrumb";
 import {
   mdiAppleKeyboardCommand,
   mdiBookOpenBlankVariant,
@@ -313,21 +312,10 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
     const { storage, setStorage } = useLocalStorage();
     const { setOpened, registerCommand } = useCommandPalette();
     const [provider] = createSharedSignal("provider");
-    const [activeDraggableGroup] = createSharedSignal("activeDraggableGroup");
-    const [activeDraggablePiece] = createSharedSignal("activeDraggablePiece");
     const [viewSelectorOpened, setViewSelectorOpened] = createSignal(false);
     const view = (): string => storage().dashboardView || "kanban";
     const setView = (view: string): void => {
       setStorage((storage) => ({ ...storage, dashboardView: view }));
-    };
-    const ancestor = (): App.ContentGroup | null => {
-      return storage().dashboardViewAncestor || null;
-    };
-    const setAncestor = (ancestor: App.ContentGroup | null): void => {
-      setStorage((storage) => ({
-        ...storage,
-        dashboardViewAncestor: ancestor || undefined
-      }));
     };
 
     createEffect(() => {
@@ -391,12 +379,6 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
             />
           </div>
         </Dropdown>
-        <Breadcrumb
-          ancestor={ancestor()}
-          activeDraggableGroup={activeDraggableGroup()}
-          activeDraggablePiece={activeDraggablePiece()}
-          setAncestor={setAncestor}
-        />
         <div class="flex-1" />
         <Show when={provider()}>
           <UserList provider={provider()!} />
