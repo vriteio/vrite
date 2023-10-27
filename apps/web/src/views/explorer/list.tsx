@@ -32,6 +32,7 @@ const LevelTree: Component<{
   removeContentPiece(id: string): void;
   setOpenedLevels(openedLevels: string[]): void;
 }> = (props) => {
+  const { storage, setStorage } = useLocalStorage();
   const createSharedSignal = useSharedState();
   const [activeDraggableGroup, setActiveDraggableGroup] = createSharedSignal(
     "activeDraggableGroup",
@@ -39,82 +40,101 @@ const LevelTree: Component<{
   );
 
   return (
-    <div class={clsx(props.parentId && "ml-[0.8rem] border-l-2 dark:border-gray-700")}>
-      <Show
-        when={
-          props.parentId &&
-          props.openedLevels.includes(props.parentId || "") &&
-          !props.levels[props.parentId]
-        }
-      >
-        {" "}
-        <div class="ml-6 flex flex-col">
-          <For each={[0, 1, 2]}>
-            {(index) => {
-              return (
-                <div
-                  class="animate-pulse h-5 w-full flex justify-start items-center gap-1"
-                  style={{ "animation-delay": `${index * 500}ms` }}
-                >
-                  <div class="bg-black dark:bg-white !bg-opacity-5 h-4 m-0.25 w-4 rounded-lg"></div>
-                  <div class="bg-black dark:bg-white !bg-opacity-5 h-3 flex-1 max-w-[10rem] rounded-lg"></div>
-                </div>
-              );
-            }}
-          </For>
-        </div>
+    <div class={clsx(props.parentId && "ml-[0.8rem] relative")}>
+      <Show when={props.parentId}>
+        <div
+          class={clsx(
+            "h-full w-3px -left-[0.5px] left-0 absolute rounded-full",
+            storage().dashboardViewAncestor?.id === props.parentId && "bg-gradient-to-tr",
+            storage().dashboardViewAncestor?.id !== props.parentId && "bg-gray-200 dark:bg-gray-700"
+          )}
+        />
       </Show>
-      <For each={props.levels[props.parentId || ""]?.groups || []}>
-        {(group) => {
-          return (
-            <>
-              <ContentGroupRow
-                contentGroup={group}
-                removeContentGroup={props.removeContentGroup}
-                removeContentPiece={props.removeContentPiece}
-                loading={props.openedLevels.includes(group.id || "") && !props.levels[group.id]}
-                opened={props.openedLevels.includes(group.id || "")}
-                onClick={() => {
-                  props.loadLevel(group.id, true);
-
-                  if (props.openedLevels.includes(group.id)) {
-                    props.setOpenedLevels(props.openedLevels.filter((id) => id !== group.id));
-                  } else {
-                    props.setOpenedLevels([...props.openedLevels, group.id]);
-                  }
-                }}
-              />
-              <Show
-                when={
-                  props.openedLevels.includes(group.id || "") &&
-                  activeDraggableGroup()?.id !== group.id
-                }
-              >
-                <LevelTree
-                  levels={props.levels}
-                  loadLevel={props.loadLevel}
-                  openedLevels={props.openedLevels}
+      <div>
+        <Show
+          when={
+            props.parentId &&
+            props.openedLevels.includes(props.parentId || "") &&
+            !props.levels[props.parentId]
+          }
+        >
+          <div class="ml-6 flex flex-col">
+            <For each={[0, 1, 2]}>
+              {(index) => {
+                return (
+                  <div
+                    class="animate-pulse h-5 w-full flex justify-start items-center gap-1"
+                    style={{ "animation-delay": `${index * 500}ms` }}
+                  >
+                    <div class="bg-black dark:bg-white !bg-opacity-5 h-4 m-0.25 w-4 rounded-lg"></div>
+                    <div class="bg-black dark:bg-white !bg-opacity-5 h-3 flex-1 max-w-[10rem] rounded-lg"></div>
+                  </div>
+                );
+              }}
+            </For>
+          </div>
+        </Show>
+        <For each={props.levels[props.parentId || ""]?.groups || []}>
+          {(group) => {
+            return (
+              <>
+                <ContentGroupRow
+                  contentGroup={group}
                   removeContentGroup={props.removeContentGroup}
                   removeContentPiece={props.removeContentPiece}
-                  parentId={group.id}
-                  setOpenedLevels={props.setOpenedLevels}
+                  loading={props.openedLevels.includes(group.id || "") && !props.levels[group.id]}
+                  opened={props.openedLevels.includes(group.id || "")}
+                  active={storage().dashboardViewAncestor?.id === group.id}
+                  onClick={() => {
+                    props.loadLevel(group.id, true);
+
+                    if (
+                      props.openedLevels.includes(group.id) &&
+                      group.id === storage().dashboardViewAncestor?.id
+                    ) {
+                      props.setOpenedLevels(props.openedLevels.filter((id) => id !== group.id));
+                    } else {
+                      props.setOpenedLevels([...props.openedLevels, group.id]);
+                    }
+
+                    setStorage((storage) => ({
+                      ...storage,
+                      dashboardViewAncestor: group
+                    }));
+                  }}
                 />
-              </Show>
-            </>
-          );
-        }}
-      </For>
-      <For each={props.levels[props.parentId || ""]?.pieces || []}>
-        {(piece) => {
-          return <ContentPieceRow contentPiece={piece} />;
-        }}
-      </For>
+                <Show
+                  when={
+                    props.openedLevels.includes(group.id || "") &&
+                    activeDraggableGroup()?.id !== group.id
+                  }
+                >
+                  <LevelTree
+                    levels={props.levels}
+                    loadLevel={props.loadLevel}
+                    openedLevels={props.openedLevels}
+                    removeContentGroup={props.removeContentGroup}
+                    removeContentPiece={props.removeContentPiece}
+                    parentId={group.id}
+                    setOpenedLevels={props.setOpenedLevels}
+                  />
+                </Show>
+              </>
+            );
+          }}
+        </For>
+        <For each={props.levels[props.parentId || ""]?.pieces || []}>
+          {(piece) => {
+            return <ContentPieceRow contentPiece={piece} />;
+          }}
+        </For>
+      </div>
     </div>
   );
 };
 const DashboardListView: Component<DashboardListViewProps> = (props) => {
   const client = useClient();
-  const { setStorage } = useLocalStorage();
+  const { storage, setStorage } = useLocalStorage();
   const [contentPiecesLoading, setContentPiecesLoading] = createSignal(false);
   const [removedContentPieces, setRemovedContentPieces] = createSignal<string[]>([]);
   const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
@@ -125,7 +145,15 @@ const DashboardListView: Component<DashboardListViewProps> = (props) => {
     setRemovedContentPieces([...removedContentPieces(), id]);
   };
   const [levels, setLevels] = createStore<Record<string, Level>>({});
-  const [openedLevels, setOpenedLevels] = createSignal<string[]>([""]);
+  const openedLevels = (): string[] => {
+    return storage().explorerOpenedLevels || [];
+  };
+  const setOpenedLevels = (openedLevels: string[]): void => {
+    setStorage((storage) => ({
+      ...storage,
+      explorerOpenedLevels: openedLevels
+    }));
+  };
   const loadLevel = async (parentId?: string, preload?: boolean): Promise<void> => {
     if (levels[parentId || ""]) return;
 
@@ -150,6 +178,7 @@ const DashboardListView: Component<DashboardListViewProps> = (props) => {
   };
 
   loadLevel("", true);
+  openedLevels().forEach((id) => loadLevel(id, true));
 
   return (
     <div class="relative overflow-hidden w-full pl-3">

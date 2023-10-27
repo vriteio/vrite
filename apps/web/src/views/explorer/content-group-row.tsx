@@ -31,6 +31,7 @@ interface ContentGroupRowProps {
   draggable?: boolean;
   loading?: boolean;
   opened?: boolean;
+  active?: boolean;
   removeContentGroup(id: string): void;
   removeContentPiece(id: string): void;
   onClick?(): void;
@@ -185,14 +186,15 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
         <Icon
           class={clsx(
             "h-5 w-5 mr-1 text-gray-500 dark:text-gray-400",
-            highlight() && "fill-[url(#gradient)]"
+            (highlight() || (props.active && !highlight())) && "fill-[url(#gradient)]"
           )}
           path={props.opened ? mdiFolderOpen : mdiFolder}
         />
         <span
           class={clsx(
             "!text-base inline-flex text-start flex-1 overflow-x-auto content-group-name scrollbar-hidden select-none",
-            highlight() && "text-transparent bg-clip-text bg-gradient-to-tr"
+            (highlight() || (props.active && !highlight())) &&
+              "text-transparent bg-clip-text bg-gradient-to-tr"
           )}
         >
           {props.customLabel || props.contentGroup?.name || ""}

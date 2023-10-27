@@ -20,6 +20,7 @@ interface StorageData {
   settingsSection: string;
   zenMode: boolean;
   html: string;
+  explorerOpenedLevels: string[];
 }
 interface LocalStorageContextData {
   storage: Accessor<Partial<StorageData>>;
