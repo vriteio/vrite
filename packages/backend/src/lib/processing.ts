@@ -4,6 +4,7 @@ import { TiptapTransformer } from "@hocuspocus/transformer";
 import {
   Blockquote,
   Bold,
+  Underline,
   BulletList,
   Code,
   CodeBlock,
@@ -62,6 +63,7 @@ const htmlToJSON = (html: string): DocJSON => {
     Text,
     HardBreak,
     Bold,
+    Underline,
     Italic,
     Strike,
     Code,
@@ -95,6 +97,7 @@ const jsonToBuffer = (json: DocJSON): Buffer => {
     Text,
     HardBreak,
     Bold,
+    Underline,
     Italic,
     Strike,
     Code,

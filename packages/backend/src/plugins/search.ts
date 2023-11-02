@@ -335,7 +335,7 @@ const registerSearch = async (fastify: FastifyInstance): Promise<void> => {
     return batchCreator;
   };
 
-  await createSchema(client);
+  createSchema(client);
   fastify.decorate("search", {
     async createTenant(workspaceId: ObjectId) {
       await client.schema.tenantsCreator("Content", [{ name: `${workspaceId}` }]).do();

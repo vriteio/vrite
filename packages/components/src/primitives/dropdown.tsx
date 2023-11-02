@@ -220,8 +220,10 @@ const Dropdown: Component<DropdownProps> = (props) => {
       </Show>
       <div
         ref={setButtonRef}
-        onClick={() => {
+        onClick={(event) => {
           if (props.attachActivatorHandler !== false) {
+            event.stopPropagation();
+            event.preventDefault();
             setOpened(!opened());
           }
         }}

@@ -37,7 +37,7 @@ const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
     >
       <Card
         color="contrast"
-        class="m-0 border-0 rounded-none justify-start items-center @hover:bg-gray-200 dark:@hover:bg-gray-700 @hover:cursor-pointer p-1 flex !bg-transparent"
+        class="m-0 border-0 rounded-none justify-start items-center @hover:bg-gray-200 dark:@hover:bg-gray-700 @hover:cursor-pointer flex !bg-transparent p-0"
       >
         <div
           class="flex flex-1 justify-center items-center cursor-pointer overflow-hidden rounded-lg"
@@ -69,10 +69,8 @@ const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
           >
             <IconButton
               path={mdiFileDocumentOutline}
-              class="m-0 ml-5 mr-1 p-0"
-              iconProps={{ class: "h-5 w-5" }}
+              class="m-0 ml-5 mr-1"
               variant="text"
-              size="small"
               text="soft"
               hover={false}
               badge

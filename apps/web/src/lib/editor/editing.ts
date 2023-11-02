@@ -6,6 +6,7 @@ import {
   Heading,
   Link,
   Bold,
+  Underline,
   Code,
   Italic,
   HorizontalRule,
@@ -99,6 +100,7 @@ const createExtensions = (
   };
   const marks: Record<App.WorkspaceSettings["marks"][number], MarkExtension> = {
     bold: Bold,
+    underline: Underline,
     italic: Italic,
     strike: Strike,
     code: Code,

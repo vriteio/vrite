@@ -242,6 +242,9 @@ kbd {
       @apply border border-primary;
     }
   }
+  :where(u) {
+    text-decoration: underline wavy;
+  }
 }
 
 .form-checkbox {

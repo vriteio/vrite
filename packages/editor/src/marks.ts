@@ -7,6 +7,7 @@ import { Link as BaseLink } from "@tiptap/extension-link";
 import { Highlight as BaseHighlight } from "@tiptap/extension-highlight";
 import { Subscript as BaseSubscript } from "@tiptap/extension-subscript";
 import { Superscript as BaseSuperscript } from "@tiptap/extension-superscript";
+import { Underline as BaseUnderline } from "@tiptap/extension-underline";
 
 const Bold = BaseBold.extend({
   exitable: true,
@@ -203,5 +204,8 @@ const Subscript = BaseSubscript.extend({
 const Superscript = BaseSuperscript.extend({
   exitable: true
 });
+const Underline = BaseUnderline.extend({
+  exitable: true
+});
 
-export { Bold, Italic, Strike, Code, Link, Highlight, Subscript, Superscript };
+export { Bold, Italic, Strike, Code, Link, Highlight, Subscript, Superscript, Underline };

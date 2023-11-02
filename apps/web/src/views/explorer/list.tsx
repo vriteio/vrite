@@ -6,6 +6,7 @@ import { mdiClose } from "@mdi/js";
 import { createRef } from "@vrite/components/src/ref";
 import { createStore } from "solid-js/store";
 import clsx from "clsx";
+import { group } from "console";
 import { Heading, IconButton, Loader } from "#components/primitives";
 import { App, useClient, useLocalStorage, useSharedState } from "#context";
 import { ScrollShadow } from "#components/fragments";
@@ -40,7 +41,7 @@ const LevelTree: Component<{
   );
 
   return (
-    <div class={clsx(props.parentId && "ml-[0.8rem] relative")}>
+    <div class={clsx(props.parentId && "ml-4 relative")}>
       <Show when={props.parentId}>
         <div
           class={clsx(
@@ -77,7 +78,7 @@ const LevelTree: Component<{
         <For each={props.levels[props.parentId || ""]?.groups || []}>
           {(group) => {
             return (
-              <>
+              <div class="relative">
                 <ContentGroupRow
                   contentGroup={group}
                   removeContentGroup={props.removeContentGroup}
@@ -86,21 +87,18 @@ const LevelTree: Component<{
                   opened={props.openedLevels.includes(group.id || "")}
                   active={storage().dashboardViewAncestor?.id === group.id}
                   onClick={() => {
-                    props.loadLevel(group.id, true);
-
-                    if (
-                      props.openedLevels.includes(group.id) &&
-                      group.id === storage().dashboardViewAncestor?.id
-                    ) {
-                      props.setOpenedLevels(props.openedLevels.filter((id) => id !== group.id));
-                    } else {
-                      props.setOpenedLevels([...props.openedLevels, group.id]);
-                    }
-
                     setStorage((storage) => ({
                       ...storage,
                       dashboardViewAncestor: group
                     }));
+                  }}
+                  onExpand={(forceOpen) => {
+                    if (props.openedLevels.includes(group.id) && !forceOpen) {
+                      props.setOpenedLevels(props.openedLevels.filter((id) => id !== group.id));
+                    } else {
+                      props.loadLevel(group.id, true);
+                      props.setOpenedLevels([...props.openedLevels, group.id]);
+                    }
                   }}
                 />
                 <Show
@@ -119,7 +117,7 @@ const LevelTree: Component<{
                     setOpenedLevels={props.setOpenedLevels}
                   />
                 </Show>
-              </>
+              </div>
             );
           }}
         </For>
@@ -178,7 +176,24 @@ const DashboardListView: Component<DashboardListViewProps> = (props) => {
   };
 
   loadLevel("", true);
-  openedLevels().forEach((id) => loadLevel(id, true));
+  openedLevels().forEach((id) => loadLevel(id));
+  client.contentGroups.changes.subscribe(undefined, {
+    onData({ action, data }) {
+      if (action === "move") {
+        const [currentParentId] = Object.entries(levels).find(([id, level]) => {
+          return level.groups.find((group) => group.id === data.id);
+        })!;
+
+        setLevels(currentParentId, "groups", (groups) => {
+          return groups.filter((group) => group.id !== data.id);
+        });
+        setLevels(data.ancestors[data.ancestors.length - 1] || "", "groups", (groups) => [
+          ...groups,
+          data
+        ]);
+      }
+    }
+  });
 
   return (
     <div class="relative overflow-hidden w-full pl-3">

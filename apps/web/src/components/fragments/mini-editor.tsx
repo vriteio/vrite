@@ -4,6 +4,7 @@ import {
   Paragraph,
   Text,
   Bold,
+  Underline,
   Code,
   Italic,
   Blockquote,
@@ -68,6 +69,7 @@ const getExtensions = (options: ExtensionOptions): Extensions => {
   if (options.inline) {
     extensions.push(
       Bold,
+      Underline,
       Code,
       Italic,
       Strike,

@@ -35,6 +35,7 @@ const metadataSettings = z
   .partial();
 const marks = [
   "bold",
+  "underline",
   "italic",
   "strike",
   "code",

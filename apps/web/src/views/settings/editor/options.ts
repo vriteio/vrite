@@ -22,7 +22,8 @@ import {
   mdiCodepen,
   mdiYoutube,
   mdiTable,
-  mdiCubeOutline
+  mdiCubeOutline,
+  mdiFormatUnderlineWavy
 } from "@mdi/js";
 import { codeSandboxIcon } from "#assets/icons";
 import { App } from "#context";
@@ -46,6 +47,11 @@ const marks: Array<{
     icon: mdiFormatStrikethrough,
     value: "strike",
     label: "Strike"
+  },
+  {
+    icon: mdiFormatUnderlineWavy,
+    value: "underline",
+    label: "Underline"
   },
   {
     icon: mdiCodeTags,
