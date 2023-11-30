@@ -806,6 +806,9 @@ importers:
       '@floating-ui/dom':
         specifier: ^1.4.5
         version: 1.4.5
+      '@mdi/js':
+        specifier: ^7.2.96
+        version: 7.2.96
       '@tiptap/core':
         specifier: 2.1.12
         version: 2.1.12(@tiptap/pm@2.1.12)

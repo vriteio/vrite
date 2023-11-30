@@ -191,7 +191,7 @@ const Editor: Component<EditorProps> = (props) => {
 
     if (
       isNodeSelection &&
-      ["horizontalRule", "image", "codeBlock", "embed", "element"].some((name) => {
+      ["horizontalRule", "image", "codeBlock", "embed", "element", "paragraph"].some((name) => {
         return editor.isActive(name);
       })
     ) {

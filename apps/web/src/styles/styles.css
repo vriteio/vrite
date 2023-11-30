@@ -161,3 +161,7 @@ button:focus {
 .highlight-text * {
   @apply bg-gradient-to-tr font-semibold text-transparent bg-clip-text dark:text-transparent dark:bg-clip-text;
 }
+
+p:hover .drag-handle {
+  opacity: 1;
+}

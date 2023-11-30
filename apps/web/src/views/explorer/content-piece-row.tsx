@@ -1,5 +1,5 @@
 import { Component, Show } from "solid-js";
-import { mdiEye, mdiFileDocumentOutline, mdiFileOutline, mdiPencil } from "@mdi/js";
+import { mdiEye, mdiFileDocumentOutline, mdiPencil } from "@mdi/js";
 import { useNavigate } from "@solidjs/router";
 import SortableLib from "sortablejs";
 import { Card, IconButton, Tooltip } from "#components/primitives";
@@ -8,6 +8,7 @@ import { breakpoints } from "#lib/utils";
 
 interface ContentPieceRowProps {
   contentPiece: App.ExtendedContentPieceWithAdditionalData<"locked" | "order">;
+  onDragEnd?(event: SortableLib.SortableEvent): void;
 }
 
 declare module "#context" {
@@ -24,17 +25,7 @@ const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
   const editedArticleId = (): string => storage().contentPieceId || "";
 
   return (
-    <button
-      class="w-full"
-      onClick={() => {
-        /* setStorage((storage) => ({
-          ...storage,
-          sidePanelView: "contentPiece",
-          sidePanelWidth: storage.sidePanelWidth || 375,
-          contentPieceId: props.contentPiece.id
-        }));*/
-      }}
-    >
+    <button class="w-full">
       <Card
         color="contrast"
         class="m-0 border-0 rounded-none justify-start items-center @hover:bg-gray-200 dark:@hover:bg-gray-700 @hover:cursor-pointer flex !bg-transparent p-0"
@@ -45,19 +36,21 @@ const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
             SortableLib.create(el, {
               group: {
                 name: "shared",
-                put: () => false
+                pull: false,
+                put: false
               },
               delayOnTouchOnly: true,
-              delay: 500,
+              delay: 250,
               disabled: !hasPermission("manageDashboard"),
-              ghostClass: "!hidden",
               revertOnSpill: true,
-              filter: ".locked",
+              sort: false,
 
               onStart() {
                 setActiveDraggablePiece(props.contentPiece);
               },
-              onEnd() {
+              onEnd(event) {
+                event.preventDefault();
+                props.onDragEnd?.(event);
                 setActiveDraggablePiece(null);
               }
             });
@@ -69,7 +62,7 @@ const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
           >
             <IconButton
               path={mdiFileDocumentOutline}
-              class="m-0 ml-5 mr-1"
+              class="m-0 ml-6.5 mr-1"
               variant="text"
               text="soft"
               hover={false}
