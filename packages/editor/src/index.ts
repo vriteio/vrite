@@ -106,6 +106,7 @@ export * from "./comment";
 export * from "./horizontal-rule";
 export * from "./node-input-rule";
 export * from "./node-paste-rule";
+export * from "./inline-element";
 export { HardBreak } from "@tiptap/extension-hard-break";
 export { Text } from "@tiptap/extension-text";
 export { Blockquote } from "@tiptap/extension-blockquote";

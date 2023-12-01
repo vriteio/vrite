@@ -44,7 +44,7 @@ const registeredComponent: Record<string, Component> = {
     console.log("render");
 
     return (
-      <Card class="flex items-center justify-start m-0 my-4" color="primary">
+      <Card class="flex items-center justify-start m-0 my-4" color="primary" bind:test="test">
         <Icon path={mdiAlertCircleOutline} class="w-6 h-6 mr-2" />
         <div class="flex-1 not-prose" data-content="true"></div>
       </Card>
