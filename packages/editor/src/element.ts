@@ -46,10 +46,10 @@ const Element = Node.create({
       }
     ];
   },
-  renderHTML({ node, HTMLAttributes }) {
+  renderHTML({ node }) {
     return [
       "div",
-      mergeAttributes(HTMLAttributes, {
+      mergeAttributes({
         "data-element": "true",
         "data-type": node.attrs.type,
         "data-props": JSON.stringify(node.attrs.props)
@@ -68,7 +68,6 @@ const Element = Node.create({
               props: {},
               ...attrs
             }
-            // content: [{ type: "paragraph" }]
           });
         };
       },
@@ -83,8 +82,8 @@ const Element = Node.create({
         };
       }
     };
-  },
-  addInputRules() {
+  }
+  /*addInputRules() {
     const getAttributes = (input: ExtendedRegExpMatchArray): Record<string, any> => {
       const [code] = input;
       const tagRegex = /^<(\w+?)(?:\s|\n|\/|>)/;
@@ -110,7 +109,7 @@ const Element = Node.create({
         getAttributes
       })
     ];
-  }
+  }*/
 });
 
 export { Element };

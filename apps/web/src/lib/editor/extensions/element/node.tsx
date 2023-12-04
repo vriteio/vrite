@@ -1,11 +1,5 @@
 import { Element as BaseElement, ElementAttributes } from "@vrite/editor";
-import {
-  NodeViewContent,
-  NodeViewWrapper,
-  SolidEditor,
-  SolidNodeViewRenderer,
-  SolidRenderer
-} from "@vrite/tiptap-solid";
+import { SolidEditor, SolidRenderer } from "@vrite/tiptap-solid";
 import { NodeView } from "@tiptap/core";
 import { keymap } from "@tiptap/pm/keymap";
 import { Node } from "@tiptap/pm/model";
@@ -44,7 +38,7 @@ const registeredComponent: Record<string, Component> = {
     console.log("render");
 
     return (
-      <Card class="flex items-center justify-start m-0 my-4" color="primary" bind:test="test">
+      <Card class="flex items-center justify-start m-0 my-4" color="primary">
         <Icon path={mdiAlertCircleOutline} class="w-6 h-6 mr-2" />
         <div class="flex-1 not-prose" data-content="true"></div>
       </Card>
