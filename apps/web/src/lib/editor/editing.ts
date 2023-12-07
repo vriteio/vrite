@@ -24,8 +24,7 @@ import {
   Table,
   TableCell,
   TableHeader,
-  TableRow,
-  InlineElement
+  TableRow
 } from "@vrite/editor";
 import { HocuspocusProvider } from "@hocuspocus/provider";
 import {
@@ -156,7 +155,6 @@ const createExtensions = (
 
       return extension.extend(resetExtensionConfig);
     }),
-    InlineElement,
     ...Object.entries(blocks).flatMap(([name, extension]) => {
       if (settings.blocks.includes(name as App.WorkspaceSettings["blocks"][number])) {
         return Array.isArray(extension) ? extension : [extension];

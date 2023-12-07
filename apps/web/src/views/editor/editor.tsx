@@ -124,7 +124,6 @@ const Editor: Component<EditorProps> = (props) => {
           clipboardSerializer: createClipboardSerializer(editor, workspaceSettings()!)
         });
       }
-      window.editor = editor;
     },
     extensions: [
       BlockPaste.configure({ workspaceSettings }),

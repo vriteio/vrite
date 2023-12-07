@@ -1,5 +1,10 @@
-import { ExtendedRegExpMatchArray, Node, mergeAttributes, wrappingInputRule } from "@tiptap/core";
-import { nodeInputRule } from "#node-input-rule";
+import {
+  ExtendedRegExpMatchArray,
+  Node,
+  mergeAttributes,
+  nodeInputRule,
+  wrappingInputRule
+} from "@tiptap/core";
 
 interface ElementAttributes {
   type?: string;
@@ -82,8 +87,8 @@ const Element = Node.create({
         };
       }
     };
-  }
-  /*addInputRules() {
+  },
+  addInputRules() {
     const getAttributes = (input: ExtendedRegExpMatchArray): Record<string, any> => {
       const [code] = input;
       const tagRegex = /^<(\w+?)(?:\s|\n|\/|>)/;
@@ -109,7 +114,7 @@ const Element = Node.create({
         getAttributes
       })
     ];
-  }*/
+  }
 });
 
 export { Element };

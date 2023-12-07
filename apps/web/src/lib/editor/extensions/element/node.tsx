@@ -8,7 +8,7 @@ import { Node as PMNode } from "@tiptap/pm/model";
 import { Component } from "solid-js";
 import { mdiAlertCircleOutline } from "@mdi/js";
 import { formatCode } from "#lib/code-editor";
-import { Button, Card, Icon } from "#components/primitives";
+import { Card, Icon } from "#components/primitives";
 import { useExtensions } from "#context";
 
 const getOpeningTag = async (node: PMNode): Promise<string> => {
@@ -33,9 +33,6 @@ const getClosingTag = (node: PMNode): string => node.attrs.type;
 const registeredComponent: Record<string, Component> = {
   Important: () => {
     const { installedExtensions } = useExtensions();
-
-    console.log(installedExtensions());
-    console.log("render");
 
     return (
       <Card class="flex items-center justify-start m-0 my-4" color="primary">
