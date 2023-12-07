@@ -58,7 +58,7 @@ const FormatMenu: Component<{
     icon: mdiKeyboardCloseOutline,
     label: "Close keyboard",
     async onClick() {
-      props.editor.commands.blur?.();
+      props.blur?.();
     }
   };
   const menus = (

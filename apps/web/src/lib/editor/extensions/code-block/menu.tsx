@@ -40,7 +40,7 @@ const CodeBlockMenu: Component<CodeBlockMenuProps> = (props) => {
   return (
     <div class="pointer-events-auto flex bg-gray-50 dark:bg-gray-900 !md:bg-transparent border-gray-200 dark:border-gray-700 border-y-2 md:border-0 backdrop-blur-sm md:gap-2 w-screen md:flex-1 !md:left-unset relative md:rounded-2xl">
       <Card class="flex m-0 border-0 md:border-2 p-1 md:p-0 rounded-xl overflow-hidden gap-1 md:gap-0">
-        <Tooltip text="Title" fixed>
+        <Tooltip text="Title" class="mt-1" fixed>
           <IconButton
             path={mdiFileOutline}
             color={mode() === "title" ? "primary" : "contrast"}
@@ -52,7 +52,7 @@ const CodeBlockMenu: Component<CodeBlockMenuProps> = (props) => {
             }}
           ></IconButton>
         </Tooltip>
-        <Tooltip text="Language" fixed>
+        <Tooltip text="Language" class="mt-1" fixed>
           <IconButton
             path={mdiCodeTags}
             color={mode() === "lang" ? "primary" : "contrast"}

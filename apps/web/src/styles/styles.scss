@@ -49,6 +49,19 @@ kbd {
   blockquote {
     @apply relative;
   }
+  :where(p, ul, ol, blockquote):hover > .ProseMirror-widget[data-widget="draggableText"] {
+    @apply opacity-100;
+  }
+  // Drag handle
+  .ProseMirror-widget[data-widget="draggableText"] {
+    @apply absolute h-full flex justify-center items-start w-10 top-0 -left-10 opacity-0;
+    padding-top: 5px;
+
+    > svg {
+      @apply w-full cursor-pointer rounded-full text-gray-500 dark:text-gray-400 h-6 fill-current;
+    }
+  }
+
   > * > .ProseMirror {
     @apply pb-48;
   }
@@ -228,7 +241,7 @@ kbd {
   }
   :where(ul[data-type="taskList"]):not(:where(.not-prose, .not-prose *)) {
     padding-left: 0rem;
-    li {
+    > li {
       padding-left: 0.5rem;
       display: flex !important;
       justify-content: start;
@@ -505,4 +518,7 @@ kbd {
     --customized-editor-background: #1f2937;
     --customized-editor-widget-background: #111827;
   }
+}
+.iPadShowKeyboard {
+  @apply hidden;
 }

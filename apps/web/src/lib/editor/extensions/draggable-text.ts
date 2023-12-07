@@ -6,6 +6,14 @@ import { Decoration, DecorationSet, EditorView } from "@tiptap/pm/view";
 import { breakpoints } from "#lib/utils";
 import { dragVerticalIcon } from "#assets/icons/drag-vertical";
 
+const draggableBlocks = [
+  "heading",
+  "paragraph",
+  "blockquote",
+  "bulletList",
+  "orderedList",
+  "taskList"
+];
 const DraggableText = Extension.create({
   name: "draggableText",
   addProseMirrorPlugins() {
@@ -28,15 +36,11 @@ const DraggableText = Extension.create({
           decorations(state) {
             if (!breakpoints.md()) return DecorationSet.empty;
 
-            const paragraphs: Array<{ pos: number; node: Node }> = [];
+            const blocks: Array<{ pos: number; node: Node }> = [];
 
             state.doc.descendants((node, pos) => {
-              if (
-                ["paragraph", "blockquote", "bulletList", "orderedList", "taskList"].includes(
-                  node.type.name
-                )
-              ) {
-                paragraphs.push({ pos, node });
+              if (draggableBlocks.includes(node.type.name)) {
+                blocks.push({ pos, node });
               }
 
               return false;
@@ -44,7 +48,7 @@ const DraggableText = Extension.create({
 
             return DecorationSet.create(
               state.doc,
-              paragraphs.flatMap(({ pos, node }) => {
+              blocks.flatMap(({ pos, node }) => {
                 const container = document.createElement("div");
                 const handle = document.createElementNS("http://www.w3.org/2000/svg", "svg");
                 const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
@@ -57,23 +61,7 @@ const DraggableText = Extension.create({
                   return [];
                 }
 
-                container.className = "absolute h-full flex justify-center items-start";
-                handle.classList.add(
-                  "opacity-0",
-                  "h-full",
-                  "w-full",
-                  "cursor-pointer",
-                  "rounded-full",
-                  "text-gray-500",
-                  "dark:text-gray-400",
-                  "drag-handle"
-                );
-                handle.style.height = "1.5rem";
-                container.style.width = "1.5rem";
-                container.style.top = "0";
-                container.style.paddingTop = "5px";
-                container.style.left = "-1.5rem";
-                handle.style.fill = "currentColor";
+                container.setAttribute("data-widget", "draggableText");
                 handle.setAttribute("viewBox", "0 0 24 24");
                 path.setAttribute("stroke", "currentColor");
                 path.setAttribute("stroke-linecap", "round");
@@ -82,7 +70,7 @@ const DraggableText = Extension.create({
                 path.setAttribute("d", dragVerticalIcon);
                 handle.appendChild(path);
                 container.appendChild(handle);
-                handle.addEventListener("mousedown", () => {
+                container.addEventListener("mousedown", () => {
                   editor.commands.setNodeSelection(pos);
                 });
 

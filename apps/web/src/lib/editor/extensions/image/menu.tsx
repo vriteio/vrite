@@ -57,8 +57,8 @@ const ImageMenu: Component<ImageMenuProps> = (props) => {
     >
       <Card
         class={clsx(
-          "p-1 flex m-0 border-0 md:p-0 overflow-hidden rounded-none gap-1 md:gap-0",
-          !options().cover && "md:border-2 md:rounded-xl"
+          "p-1 flex m-0 border-0 overflow-hidden rounded-none gap-1",
+          !options().cover && "md:gap-0 md:p-0 md:border-2 md:rounded-xl"
         )}
       >
         <Tooltip text="Alt" fixed class="mt-1">
@@ -88,8 +88,8 @@ const ImageMenu: Component<ImageMenuProps> = (props) => {
       </Card>
       <Card
         class={clsx(
-          "px-1 py-1 md:py-0 m-0 border-0 flex-1 overflow-hidden rounded-none",
-          !options().cover && "md:border-2 md:rounded-xl"
+          "px-1 py-1 m-0 border-0 flex-1 overflow-hidden rounded-none",
+          !options().cover && "md:py-0 md:border-2 md:rounded-xl"
         )}
       >
         <Input
@@ -106,8 +106,8 @@ const ImageMenu: Component<ImageMenuProps> = (props) => {
       </Card>
       <Card
         class={clsx(
-          "p-1 md:p-0 m-0 border-0 overflow-hidden rounded-none",
-          !options().cover && "md:border-2 md:rounded-xl"
+          "p-1 m-0 border-0 overflow-hidden rounded-none",
+          !options().cover && "md:p-0 md:border-2 md:rounded-xl"
         )}
       >
         <input
