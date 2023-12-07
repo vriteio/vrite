@@ -43,11 +43,17 @@ kbd {
   cursor: col-resize;
 }
 .prose-editor {
+  p,
+  ul,
+  ol,
+  blockquote {
+    @apply relative;
+  }
   > * > .ProseMirror {
     @apply pb-48;
   }
   .tableWrapper {
-    @apply overflow-auto pb-2 mb-3;
+    @apply overflow-x-scroll pb-2 mb-3;
     &::-webkit-scrollbar {
       @apply w-2 h-2 rounded-lg bg-gray-100 dark:bg-gray-800;
     }
@@ -95,7 +101,7 @@ kbd {
       }
     }
     p {
-      @apply px-2 m-0;
+      @apply p-0 m-0;
     }
     .selectedCell:after {
       @apply bg-primary;
@@ -113,6 +119,14 @@ kbd {
     .column-resize-handle {
       @apply bg-primary absolute w-1 -bottom-0.5 -top-0.5 -right-0.75 z-10 pointer-events-none;
     }
+    &.resizing {
+      .code-block-editor {
+        @apply hidden;
+      }
+      .code-block-placeholder {
+        @apply flex;
+      }
+    }
   }
 
   font-kerning: none;
@@ -125,6 +139,7 @@ kbd {
     &::before,
     .open-slash-menu > button {
       @apply font-bold dark:bg-gray-900 dark:border-gray-700;
+      font-family: "JetBrainsMonoVariable", monospace;
       position: absolute;
       left: -2.5rem;
       background: #f9fafb;
@@ -256,21 +271,35 @@ kbd {
   --un-prose-invert-lists: #9ca3af;
   --un-prose-invert-hr: #9ca3af;
   --highlighted-thread: "";
-  :where([aria-expanded] > .ProseMirror, .content, blockquote, li) {
+  :where([aria-expanded] > .ProseMirror, .content, blockquote, li, td, th) {
     &
-      > :where(div, ul, ol, p, blockquote, hr):not(.ProseMirror-gapcursor)
-      + :where(div, ul, ol, p, blockquote, hr, h1, h2, h3, h4, h5, h6):not([data-element="true"]),
+      > :where(div, ul, ol, p, blockquote, hr):not(.ProseMirror-gapcursor, .ProseMirror-widget)
+      + :where(div, ul, ol, p, blockquote, hr, h1, h2, h3, h4, h5, h6):not(
+        [data-element="true"],
+        .ProseMirror-widget
+      ),
     &
-      > :where(div, ul, ol, p, blockquote, hr):not([data-element="true"], .ProseMirror-gapcursor)
-      + :where(div, ul, ol, p, blockquote, hr, h1, h2, h3, h4, h5, h6),
+      > :where(div, ul, ol, p, blockquote, hr):not(
+        [data-element="true"],
+        .ProseMirror-gapcursor,
+        .ProseMirror-widget
+      )
+      + :where(div, ul, ol, p, blockquote, hr, h1, h2, h3, h4, h5, h6):not(.ProseMirror-widget),
     &
       > :where(div, ul, ol, p, blockquote, hr):not(.ProseMirror-gapcursor)
       + .ProseMirror-gapcursor
-      + :where(div, ul, ol, p, blockquote, hr, h1, h2, h3, h4, h5, h6):not([data-element="true"]),
+      + :where(div, ul, ol, p, blockquote, hr, h1, h2, h3, h4, h5, h6):not(
+        [data-element="true"],
+        .ProseMirror-widget
+      ),
     &
-      > :where(div, ul, ol, p, blockquote, hr):not([data-element="true"], .ProseMirror-gapcursor)
+      > :where(div, ul, ol, p, blockquote, hr):not(
+        [data-element="true"],
+        .ProseMirror-gapcursor,
+        .ProseMirror-widget
+      )
       + .ProseMirror-gapcursor
-      + :where(div, ul, ol, p, blockquote, hr, h1, h2, h3, h4, h5, h6) {
+      + :where(div, ul, ol, p, blockquote, hr, h1, h2, h3, h4, h5, h6):not(.ProseMirror-widget) {
       @apply mt-5;
     }
   }

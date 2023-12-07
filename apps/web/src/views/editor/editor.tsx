@@ -22,11 +22,13 @@ import { AllSelection, NodeSelection } from "@tiptap/pm/state";
 import clsx from "clsx";
 import { Instance } from "tippy.js";
 import { scrollIntoView } from "seamless-scroll-polyfill";
+import { debounce } from "@solid-primitives/scheduled";
 import { Dropdown } from "#components/primitives";
 import {
   Document,
   Placeholder,
   TrailingNode,
+  DraggableText,
   LinkPreviewWrapper,
   SlashMenuPlugin,
   BlockActionMenuPlugin,
@@ -113,7 +115,11 @@ const Editor: Component<EditorProps> = (props) => {
   const [floatingMenuOpened, setFloatingMenuOpened] = createSignal(true);
   const [blockMenuOpened, setBlockMenuOpened] = createSignal(false);
   const [showBlockBubbleMenu, setShowBlockBubbleMenu] = createSignal(false);
+  const [isNodeSelection, setIsNodeSelection] = createSignal(false);
   const { workspaceSettings } = useAuthenticatedUserData();
+  const updateBubbleMenuPlacement = debounce(() => {
+    bubbleMenuInstance()?.setProps({ placement: isNodeSelection() ? "top-start" : "top" });
+  }, 250);
 
   let el: HTMLElement | null = null;
 
@@ -135,6 +141,7 @@ const Editor: Component<EditorProps> = (props) => {
       Typography,
       ...(workspaceSettings() ? createExtensions(workspaceSettings()!, provider) : []),
       TrailingNode,
+      DraggableText,
       CharacterCount,
       AutoDir,
       Gapcursor,
@@ -153,6 +160,9 @@ const Editor: Component<EditorProps> = (props) => {
     ].filter(Boolean) as Extension[],
     editable: !props.editedContentPiece.locked && hasPermission("editContent"),
     editorProps: { attributes: { class: `outline-none` } },
+    onSelectionUpdate({ editor }) {
+      setIsNodeSelection(editor.state.selection instanceof NodeSelection);
+    },
     onBlur({ event }) {
       el = event?.relatedTarget as HTMLElement | null;
     }
@@ -256,11 +266,16 @@ const Editor: Component<EditorProps> = (props) => {
       setSharedProvider(provider);
     })
   );
+  createEffect(
+    on(isNodeSelection, () => {
+      updateBubbleMenuPlacement();
+    })
+  );
 
   return (
     <>
       <div
-        class="w-full max-w-[70ch] prose prose-editor text-xl dark:prose-invert h-full relative"
+        class="w-full max-w-[70ch] prose prose-editor text-xl dark:prose-invert h-full relative transform"
         ref={setContainerRef}
         id="pm-container"
       >
@@ -296,6 +311,12 @@ const Editor: Component<EditorProps> = (props) => {
               }
 
               setShowBlockBubbleMenu(false);
+
+              if (isNodeSelection()) {
+                bubbleMenuInstance()?.setProps({
+                  placement: isNodeSelection() ? "top-start" : "top"
+                });
+              }
 
               return shouldShow(editor as SolidEditor);
             }}

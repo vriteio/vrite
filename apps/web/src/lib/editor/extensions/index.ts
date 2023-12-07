@@ -8,6 +8,7 @@ export * from "./collaboration";
 export * from "./document";
 export * from "./placeholder";
 export * from "./trailing-node";
+export * from "./draggable-text";
 export * from "./block-action-menu";
 export * from "./comment-menu";
 export * from "./block-paste";

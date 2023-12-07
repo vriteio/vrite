@@ -28,6 +28,9 @@ svg > path {
   cursor: col-resize;
 }
 .prose {
+  p {
+    @apply relative;
+  }
   .ProseMirror:not(:where(.not-prose, .not-prose *)) {
     > * + div:not(.tableWrapper) {
       @apply mb-5;
@@ -36,7 +39,7 @@ svg > path {
     padding-bottom: 8rem;
   }
   .tableWrapper {
-    @apply overflow-auto pb-2 mb-3;
+    @apply overflow-x-scroll pb-2 mb-3;
     &::-webkit-scrollbar {
       @apply w-2 h-2 rounded-lg bg-gray-100 dark:bg-gray-800;
     }
@@ -88,7 +91,7 @@ svg > path {
       }
     }
     p {
-      @apply px-2 m-0;
+      @apply p-0 m-0;
     }
     .selectedCell:after {
       @apply bg-primary;

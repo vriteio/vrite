@@ -945,9 +945,9 @@
     }
   });
 
-  // ../../node_modules/.pnpm/@sanity+eventsource@5.0.0/node_modules/@sanity/eventsource/browser.js
+  // ../../node_modules/.pnpm/@sanity+eventsource@5.0.1/node_modules/@sanity/eventsource/browser.js
   var require_browser = __commonJS({
-    "../../node_modules/.pnpm/@sanity+eventsource@5.0.0/node_modules/@sanity/eventsource/browser.js"(exports, module) {
+    "../../node_modules/.pnpm/@sanity+eventsource@5.0.1/node_modules/@sanity/eventsource/browser.js"(exports, module) {
       module.exports = require_eventsource().EventSourcePolyfill;
     }
   });
@@ -1001,6 +1001,7 @@
   var import_eventsource, l, U, E, S, f, h, L, m, D, O, R, T, x, C, I, u, v, k, j, q, G, A, b, z, y, B, M;
   var init_api = __esm({
     "../../packages/sdk/javascript/dist/api.mjs"() {
+      "use strict";
       import_eventsource = __toESM(require_browser(), 1);
       l = "/content-groups";
       U = (t) => ({ get: (e) => t("GET", `${l}`, { params: e }), list: (e) => t("GET", `${l}/list`, { params: e }), create: (e) => t("POST", `${l}`, { body: e }), update: (e) => t("PUT", `${l}`, { body: e }), delete: (e) => t("DELETE", `${l}`, { params: e }) });

@@ -6,11 +6,12 @@ const nodeEqualsType = (node: ProsemirrorNode, types: NodeType | NodeType[]): bo
   return Array.isArray(types) ? types.includes(node.type) : node.type === types;
 };
 
-export interface TrailingNodeOptions {
+interface TrailingNodeOptions {
   node: string;
   notAfter: string[];
 }
-export const TrailingNode = Extension.create<TrailingNodeOptions>({
+
+const TrailingNode = Extension.create<TrailingNodeOptions>({
   name: "trailingNode",
 
   addOptions() {
@@ -61,3 +62,6 @@ export const TrailingNode = Extension.create<TrailingNodeOptions>({
     ];
   }
 });
+
+export { TrailingNode };
+export type { TrailingNodeOptions };

@@ -77,8 +77,11 @@ const CollabCursor = (provider: HocuspocusProvider): Extension => {
           ) {
             const rect = container.previousElementSibling?.getBoundingClientRect();
             const isElement = container.previousElementSibling?.getAttribute("data-element");
+            const relativeParent =
+              container.previousElementSibling?.closest("th,td") ||
+              document.getElementById("pm-container");
 
-            let parentPos = document.getElementById("pm-container")?.getBoundingClientRect();
+            let parentPos = relativeParent?.getBoundingClientRect();
 
             if (container.parentElement?.classList.contains("content")) {
               parentPos = container.parentElement?.getBoundingClientRect();
@@ -90,10 +93,8 @@ const CollabCursor = (provider: HocuspocusProvider): Extension => {
               h: rect.height,
               w: rect.width,
               display: isElement ? "none" : "block",
-              top:
-                rect.top -
-                parentPos.top -
-                parseFloat(window.getComputedStyle(container.previousElementSibling!).marginTop)
+              top: rect.top - parentPos.top
+              //  - parseFloat(window.getComputedStyle(container.previousElementSibling!).marginTop)
             });
           }
         });

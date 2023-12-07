@@ -151,7 +151,6 @@ const SlashMenu: Component<SlashMenuProps> = (props) => {
       <Card
         class={clsx(
           "shadow-2xl md:shadow-none rounded-none border-x-0 md:border-x-2 md:rounded-2xl -translate-x-2 md:translate-x-0 w-screen md:w-56 m-0 max-h-72 overflow-hidden transition duration-200 transform origin-top-left p-1"
-          // "w-screen -left-2 z-60 top-0 h-[calc(100vh-3.625rem-env(safe-area-inset-bottom,0px))] rounded-none border-x-0 border-y-2 fixed md:w-56 m-0 md:max-h-72 overflow-hidden transition duration-200 transform origin-top-left p-1"
         )}
       >
         <div

@@ -14,10 +14,11 @@
     "@trpc/server": "^10.35.0",
     "@vrite/backend": "workspace:*",
     "fastify": "^4.20.0",
-    "sharp": "^0.32.5",
+    "sharp": "^0.33.0",
     "trpc-openapi": "^1.2.0"
   },
   "devDependencies": {
+    "@img/sharp-darwin-arm64": "^0.33.0",
     "@vrite/scripts": "workspace:*"
   }
 }

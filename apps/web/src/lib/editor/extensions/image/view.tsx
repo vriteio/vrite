@@ -1,12 +1,25 @@
 import { ImageAttributes, ImageOptions } from "./node";
 import { ImageMenu } from "./menu";
 import { NodeViewWrapper, useSolidNodeView } from "@vrite/tiptap-solid";
-import { Component, createEffect, createSignal, Show, on, onCleanup } from "solid-js";
+import {
+  Component,
+  createEffect,
+  createSignal,
+  Show,
+  on,
+  onCleanup,
+  onMount,
+  Match,
+  Switch
+} from "solid-js";
 import clsx from "clsx";
 import { mdiAlertCircle, mdiImage } from "@mdi/js";
 import { debounce } from "@solid-primitives/scheduled";
-import { createRef, validateURL } from "#lib/utils";
+import { computePosition, size } from "@floating-ui/dom";
+import { Portal } from "solid-js/web";
+import { breakpoints, createRef, validateURL } from "#lib/utils";
 import { Icon, Loader } from "#components/primitives";
+import { dragVerticalIcon } from "#assets/icons/drag-vertical";
 
 const ImageView: Component = () => {
   const { state } = useSolidNodeView<ImageAttributes>();
@@ -15,6 +28,8 @@ const ImageView: Component = () => {
   const [objectURL, setObjectURL] = createSignal("");
   const [currentSrc, setCurrentSrc] = createSignal("");
   const [imageContainerRef, setImageContainerRef] = createRef<HTMLElement | null>(null);
+  const [referenceContainerRef, setReferenceContainerRef] = createRef<HTMLElement | null>(null);
+  const [menuContainerRef, setMenuContainerRef] = createRef<HTMLElement | null>(null);
   const updateWidth = debounce((width: string) => state().updateAttributes({ width }), 250);
   const updateAspectRatio = debounce(
     (aspectRatio: string) => state().updateAttributes({ aspectRatio }),
@@ -24,10 +39,48 @@ const ImageView: Component = () => {
   const selected = (): boolean => {
     return state().selected;
   };
+  const isTopLevel = (): boolean => {
+    return state().editor.state.doc.resolve(state().getPos()).parent.type.name === "doc";
+  };
   const attrs = (): ImageAttributes => {
     return state().node.attrs;
   };
-  const resizeObserver = new ResizeObserver(([entry]) => {
+  const repositionMenu = (): void => {
+    if (!selected()) return;
+    if (options().cover) return;
+
+    const referenceContainer = referenceContainerRef();
+    const menuContainer = menuContainerRef();
+
+    if (!referenceContainer || !menuContainer) return;
+
+    computePosition(referenceContainer, menuContainer, {
+      strategy: "fixed",
+      middleware: [
+        size({
+          apply({ availableWidth, elements }) {
+            const md = breakpoints.md();
+            const width = Math.min(availableWidth, 448);
+
+            Object.assign(elements.floating.style, {
+              maxWidth: md ? `${width}px` : "100vw",
+              display: md && width < 160 ? "none" : ""
+            });
+          }
+        })
+      ]
+    }).then(({ x, y }) => {
+      menuContainer.style.top = `${y + 8}px`;
+
+      if (breakpoints.md()) {
+        menuContainer.style.left = `${x}px`;
+      } else {
+        menuContainer.style.left = `${-8}px`;
+      }
+    });
+  };
+  const debouncedRepositionMenu = debounce(repositionMenu, 250);
+  const imageResizeObserver = new ResizeObserver(([entry]) => {
     const containerWidth = entry.target.parentElement?.clientWidth || entry.target.clientWidth;
     const newWidth = `${Math.round((entry.target.clientWidth / containerWidth) * 1000) / 10}%`;
 
@@ -36,6 +89,9 @@ const ImageView: Component = () => {
     if (newWidth !== attrs().width && state().editor.isEditable) {
       updateWidth(newWidth);
     }
+  });
+  const containerResizeObserver = new ResizeObserver(() => {
+    debouncedRepositionMenu();
   });
   const removeImage = (): void => {
     if (currentSrc()) {
@@ -76,10 +132,10 @@ const ImageView: Component = () => {
     const imageContainer = imageContainerRef();
 
     if (imageContainer) {
-      resizeObserver.unobserve(imageContainer);
+      imageResizeObserver.unobserve(imageContainer);
     }
 
-    resizeObserver.observe(element);
+    imageResizeObserver.observe(element);
     setImageContainerRef(element);
   };
   const getPaddingTop = (): string => {
@@ -94,9 +150,6 @@ const ImageView: Component = () => {
     return "35%";
   };
 
-  onCleanup(() => {
-    resizeObserver.disconnect();
-  });
   createEffect(
     on(
       () => attrs().src,
@@ -110,21 +163,57 @@ const ImageView: Component = () => {
       }
     )
   );
+  createEffect(on(selected, repositionMenu));
+  state().editor.on("update", repositionMenu);
+  onMount(() => {
+    const container = referenceContainerRef();
+
+    if (!container) return;
+
+    containerResizeObserver.observe(container);
+    window.addEventListener("resize", debouncedRepositionMenu);
+  });
+  onCleanup(() => {
+    imageResizeObserver.disconnect();
+    containerResizeObserver.disconnect();
+    window.removeEventListener("resize", debouncedRepositionMenu);
+    state().editor.off("update", repositionMenu);
+  });
 
   return (
     <NodeViewWrapper>
       <div
         class={clsx(
-          "relative rounded-2xl",
+          "rounded-2xl select-none min-w-64",
           !options().cover && selected() && "ring ring-primary ring-2"
         )}
       >
         <div
           class={clsx(
-            "border-gray-200 dark:border-gray-700",
+            "border-gray-200 dark:border-gray-700 relative group",
             options().cover ? "border-b-2" : "border-2 rounded-2xl"
           )}
+          ref={setReferenceContainerRef}
         >
+          <div
+            class={clsx(
+              "text-gray-500 dark:text-gray-400 absolute left-[calc(-1.5rem-2px)] z-10 opacity-0 group-hover:opacity-100",
+              (!isTopLevel() || !breakpoints.md()) && "hidden"
+            )}
+            data-drag-handle
+          >
+            <Icon
+              path={dragVerticalIcon}
+              class="h-6 w-6"
+              stroke="currentColor"
+              stroke-stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width={2}
+              onMouseDown={() => {
+                state().editor.commands.setNodeSelection(state().getPos());
+              }}
+            />
+          </div>
           <div
             class={clsx(
               "w-full border-gray-200 dark:border-gray-700 flex justify-center items-center overflow-hidden bg-gray-100 dark:bg-gray-800 relative",
@@ -183,7 +272,6 @@ const ImageView: Component = () => {
                     fallback={
                       <>
                         <Icon path={mdiAlertCircle} class="w-16 h-16" />
-                        <span class="absolute top-full">Error</span>
                       </>
                     }
                   >
@@ -194,16 +282,29 @@ const ImageView: Component = () => {
             </div>
           </Show>
         </div>
-        <div
-          class={clsx(
-            "w-full justify-center items-center z-1 pointer-events-none",
-            selected() ? "grid" : "hidden",
-            options().cover ? "!flex relative" : "absolute -bottom-14"
-          )}
-        >
-          <ImageMenu state={state()} />
-        </div>
-        <div data-type="draggable-item" />
+        <Switch>
+          <Match when={options().cover}>
+            <div
+              ref={setMenuContainerRef}
+              class="w-screen md:w-full justify-center items-center z-60 pointer-events-none flex relative"
+            >
+              <ImageMenu state={state()} />
+            </div>
+          </Match>
+          <Match when={!options().cover}>
+            <Portal mount={document.getElementById("pm-container") || document.body}>
+              <div
+                ref={setMenuContainerRef}
+                class={clsx(
+                  "w-screen md:w-full justify-center items-center z-1 pointer-events-none fixed",
+                  selected() ? "flex" : "hidden"
+                )}
+              >
+                <ImageMenu state={state()} />
+              </div>
+            </Portal>
+          </Match>
+        </Switch>
       </div>
     </NodeViewWrapper>
   );

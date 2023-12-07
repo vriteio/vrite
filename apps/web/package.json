@@ -17,6 +17,7 @@
     "vite-tsconfig-paths": "^4.2.0"
   },
   "dependencies": {
+    "@floating-ui/dom": "^1.5.3",
     "@hocuspocus/provider": "^2.6.1",
     "@jetbrains/websandbox": "^1.0.7",
     "@mdi/js": "^7.2.96",

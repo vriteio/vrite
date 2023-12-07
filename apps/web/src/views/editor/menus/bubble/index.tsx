@@ -2,12 +2,14 @@ import { LinkMenu } from "./link";
 import { FormatMenu } from "./format";
 import { TableMenu } from "./table";
 import { BlockMenu } from "./block";
+import { SelectMenu } from "./select";
 import { SolidEditor } from "@vrite/tiptap-solid";
 import { CellSelection } from "@tiptap/pm/tables";
 import { Component, createEffect, createSignal, Match, on, Switch } from "solid-js";
+import { NodeSelection } from "@tiptap/pm/state";
 import { Ref } from "#lib/utils";
 
-type BubbleMenuMode = "format" | "link" | "table" | "block";
+type BubbleMenuMode = "format" | "link" | "table" | "block" | "select";
 interface BubbleMenuProps {
   editor: SolidEditor;
   opened: boolean;
@@ -25,6 +27,8 @@ const BubbleMenu: Component<BubbleMenuProps> = (props) => {
   props.editor.on("selectionUpdate", () => {
     if (props.editor.state.selection instanceof CellSelection) {
       setMode("table");
+    } else if (props.editor.state.selection instanceof NodeSelection) {
+      setMode("select");
     } else if (!props.editor.state.selection.empty) {
       setMode("format");
     }
@@ -85,6 +89,15 @@ const BubbleMenu: Component<BubbleMenuProps> = (props) => {
       </Match>
       <Match when={mode() === "link"}>
         <LinkMenu
+          editor={props.editor}
+          mode={mode()}
+          opened={props.opened}
+          setMode={setMode}
+          class={props.class}
+        />
+      </Match>
+      <Match when={mode() === "select"}>
+        <SelectMenu
           editor={props.editor}
           mode={mode()}
           opened={props.opened}

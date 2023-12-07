@@ -23,6 +23,9 @@
 .ProseMirror-gapcursor::after {
   @apply !border-primary !w-full !z-1 !my-0 !top-0;
 }
+:where(td, th) .ProseMirror-gapcursor::after {
+  @apply !w-[calc(100%-1rem)];
+}
 div:not([data-element="true"]) + .ProseMirror-gapcursor:has(+ div)::after,
 div + .ProseMirror-gapcursor:has(+ div:not([data-element="true"]))::after {
   @apply !my-2.5;
@@ -163,5 +166,17 @@ button:focus {
 }
 
 p:hover .drag-handle {
+  opacity: 1;
+}
+ul:hover .drag-handle {
+  opacity: 1;
+}
+ol:hover .drag-handle {
+  opacity: 1;
+}
+blockquote:hover .drag-handle {
+  opacity: 1;
+}
+table:hover .drag-handle {
   opacity: 1;
 }

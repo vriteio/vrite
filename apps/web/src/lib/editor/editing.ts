@@ -72,13 +72,13 @@ const createClipboardSerializer = (
         nodes;
       } else if (name === "taskList") {
         nodes.taskItem = base.nodes.taskItem;
-      } else if (name.startsWith("heading")) {
-        nodes.heading = base.nodes.heading;
-
-        return;
       }
 
       nodes[name] = node;
+    } else if (name.startsWith("heading")) {
+      nodes.heading = base.nodes.heading;
+
+      return;
     }
   });
   Object.entries(base.marks).forEach(([name, mark]) => {

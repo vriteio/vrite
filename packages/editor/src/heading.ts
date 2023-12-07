@@ -57,7 +57,8 @@ const Heading = Node.create<HeadingOptions>({
     return [
       `h${level}`,
       mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, {
-        "data-slug": convertToSlug(node.textContent)
+        "data-slug": convertToSlug(node.textContent),
+        "class": "relative group"
       }),
       0
     ];
