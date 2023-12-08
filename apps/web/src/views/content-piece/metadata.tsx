@@ -13,16 +13,14 @@ interface ContentPieceMetadataSection {
 }
 
 interface ContentPieceMetadataProps {
-  contentPiece: App.ExtendedContentPieceWithAdditionalData<"locked" | "coverWidth">;
+  contentPiece: App.ExtendedContentPieceWithAdditionalData<"coverWidth">;
   editable?: boolean;
   activeSection: ContentPieceMetadataSection;
   sections: ContentPieceMetadataSection[];
   activeVariant: App.Variant | null;
   setActiveVariant(variant: App.Variant | null): void;
   setActiveSection(activeSection: ContentPieceMetadataSection): void;
-  setContentPiece(
-    value: Partial<App.ExtendedContentPieceWithAdditionalData<"locked" | "coverWidth">>
-  ): void;
+  setContentPiece(value: Partial<App.ExtendedContentPieceWithAdditionalData<"coverWidth">>): void;
 }
 
 const ContentPieceMetadata: Component<ContentPieceMetadataProps> = (props) => {

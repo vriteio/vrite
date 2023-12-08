@@ -63,7 +63,7 @@ const ContentPieceView: Component = () => {
   const [descriptionInitialValue, setDescriptionInitialValue] = createSignal("");
   const [activeSection, setActiveSection] = createSignal(sections[0]);
   const editable = createMemo(() => {
-    return !contentPiece()?.locked && hasPermission("editMetadata");
+    return hasPermission("editMetadata");
   });
   const handleChange = async (
     value: Partial<App.ExtendedContentPieceWithAdditionalData<"coverWidth">>

@@ -7,12 +7,12 @@ import { App, hasPermission, useLocalStorage, useSharedState } from "#context";
 import { breakpoints } from "#lib/utils";
 
 interface ContentPieceRowProps {
-  contentPiece: App.ExtendedContentPieceWithAdditionalData<"locked" | "order">;
+  contentPiece: App.ExtendedContentPieceWithAdditionalData<"order">;
 }
 
 declare module "#context" {
   interface SharedState {
-    activeDraggablePiece: App.ExtendedContentPieceWithAdditionalData<"locked" | "order"> | null;
+    activeDraggablePiece: App.ExtendedContentPieceWithAdditionalData<"order"> | null;
   }
 }
 
@@ -79,7 +79,7 @@ const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
         </div>
         <Tooltip text="Open in editor" side="left" wrapperClass="mr-4" class="-ml-1">
           <IconButton
-            path={props.contentPiece.locked || !hasPermission("editMetadata") ? mdiEye : mdiPencil}
+            path={hasPermission("editMetadata") ? mdiPencil : mdiEye}
             text={editedArticleId() === props.contentPiece.id ? "base" : "soft"}
             color={editedArticleId() === props.contentPiece.id ? "primary" : "base"}
             variant="text"

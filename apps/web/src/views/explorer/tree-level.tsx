@@ -1,16 +1,17 @@
 import { ContentGroupRow } from "./content-group-row";
 import { ContentPieceRow } from "./content-piece-row";
 import clsx from "clsx";
-import { Component, createEffect, Show, For, Setter } from "solid-js";
+import { Component, createEffect, Show, For, Setter, onCleanup } from "solid-js";
 import { SetStoreFunction } from "solid-js/store";
 import SortableLib from "sortablejs";
 import { Button, Icon } from "@vrite/components";
 import { mdiDotsHorizontalCircleOutline } from "@mdi/js";
-import { App, useLocalStorage, useSharedState } from "#context";
+import { useLocation, useNavigate } from "@solidjs/router";
+import { App, useClient, useLocalStorage, useSharedState } from "#context";
 
 type Level = {
-  groups: App.ContentGroup[];
-  pieces: Array<App.ExtendedContentPieceWithAdditionalData<"locked" | "order">>;
+  groups: string[];
+  pieces: string[];
 };
 
 const TreeLevel: Component<{
@@ -27,6 +28,9 @@ const TreeLevel: Component<{
 }> = (props) => {
   const { storage, setStorage } = useLocalStorage();
   const createSharedSignal = useSharedState();
+  const client = useClient();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [activeDraggableGroup] = createSharedSignal("activeDraggableGroup", null);
   const [activeDraggablePiece] = createSharedSignal("activeDraggablePiece", null);
   const handleHighlight = (
@@ -60,6 +64,25 @@ const TreeLevel: Component<{
   };
   const selected = (): boolean => storage().dashboardViewAncestor?.id === props.parentId;
 
+  if (props.parentId) {
+    const contentPiecesSubscription = client.contentPieces.changes.subscribe(
+      { contentGroupId: props.parentId },
+      {
+        onData({ action, data }) {
+          if (action === "update") {
+            props.setLevels(data.contentGroupId || "", "pieces", (pieces) => {
+              return pieces.map((piece) => (piece.id === data.id ? { ...piece, ...data } : piece));
+            });
+          }
+        }
+      }
+    );
+
+    onCleanup(() => {
+      contentPiecesSubscription.unsubscribe();
+    });
+  }
+
   createEffect(() => {
     if (!activeDraggableGroup() && !activeDraggablePiece()) {
       props.setHighlight("");
@@ -78,7 +101,10 @@ const TreeLevel: Component<{
         <div
           class={clsx(
             "h-full w-0.5 -left-[0.5px] left-0 absolute rounded-full bg-black bg-opacity-5 dark:bg-white dark:bg-opacity-10",
-            ((selected() && !activeDraggableGroup() && !activeDraggablePiece()) ||
+            ((selected() &&
+              !activeDraggableGroup() &&
+              !activeDraggablePiece() &&
+              location.pathname === "/") ||
               props.highlight === props.parentId) &&
               "!bg-gradient-to-tr"
           )}
@@ -201,6 +227,7 @@ const TreeLevel: Component<{
                     });
                   }}
                   onClick={() => {
+                    navigate("/");
                     setStorage((storage) => ({
                       ...storage,
                       dashboardViewAncestor: group
@@ -238,6 +265,14 @@ const TreeLevel: Component<{
             return (
               <ContentPieceRow
                 contentPiece={piece}
+                active={storage().contentPieceId === piece.id}
+                onClick={() => {
+                  navigate("/editor");
+                  setStorage((storage) => ({
+                    ...storage,
+                    contentPieceId: piece.id
+                  }));
+                }}
                 onDragEnd={() => {
                   const newParentId = props.highlight || "";
                   const oldParentId = piece.contentGroupId;

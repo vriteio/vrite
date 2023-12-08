@@ -10,13 +10,15 @@ import {
   mdiPuzzle,
   mdiMicrosoftXboxControllerMenu,
   mdiGit,
-  mdiFileMultiple
+  mdiFileMultiple,
+  mdiFile
 } from "@mdi/js";
 import { Accessor, Component, For, Show, createEffect, createSignal, on } from "solid-js";
 import { Link, useLocation, useNavigate } from "@solidjs/router";
 import clsx from "clsx";
 import { createMediaQuery } from "@solid-primitives/media";
 import { createActiveElement } from "@solid-primitives/active-element";
+import { Dynamic } from "solid-js/web";
 import { breakpoints, navigateAndReload } from "#lib/utils";
 import {
   useLocalStorage,
@@ -42,6 +44,7 @@ interface MenuItem {
   props?: Record<string, string>;
   inMenu?: boolean;
   active?: () => boolean;
+  ui?: Component;
   onClick(): void;
 }
 
@@ -72,8 +75,25 @@ const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
         },
         onClick: () => {
           navigate("/");
-          if (storage().contentPieceId && md()) setSidePanelView("contentPiece");
+
+          if (storage().contentPieceId && md() && location.pathname === "/") {
+            setSidePanelView("contentPiece");
+          }
+
           if (!md()) setStorage((storage) => ({ ...storage, sidePanelWidth: 0 }));
+        },
+        ui: () => {
+          return (
+            <Show when={location.pathname === "/"}>
+              <Icon
+                path={mdiFile}
+                class={clsx(
+                  "hidden md:flex absolute bottom-0 right-0 h-3.5 w-3.5 text-gray-500 dark:text-gray-400 !group-hover:fill-white group-hover:opacity-90 pointer-events-none",
+                  storage().sidePanelView === "contentPiece" && "fill-[url(#gradient)]"
+                )}
+              />
+            </Show>
+          );
         }
       },
       {
@@ -87,8 +107,25 @@ const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
         },
         onClick: () => {
           navigate("/editor");
-          if (storage().contentPieceId && md()) setSidePanelView("contentPiece");
+
+          if (storage().contentPieceId && md() && location.pathname === "/editor") {
+            setSidePanelView("contentPiece");
+          }
+
           if (!md()) setStorage((storage) => ({ ...storage, sidePanelWidth: 0 }));
+        },
+        ui: () => {
+          return (
+            <Show when={location.pathname === "/editor"}>
+              <Icon
+                path={mdiFile}
+                class={clsx(
+                  "hidden md:flex absolute bottom-0 right-0 h-3.5 w-3.5 text-gray-500 dark:text-gray-400 !group-hover:fill-white group-hover:opacity-90 pointer-events-none",
+                  storage().sidePanelView === "contentPiece" && "fill-[url(#gradient)]"
+                )}
+              />
+            </Show>
+          );
         }
       },
       null,
@@ -320,16 +357,17 @@ const SidebarMenu: Component = () => {
                           menuItem().inMenu && "hidden md:flex"
                         )}
                       >
-                        <div class="w-full h-full md:h-auto md:w-auto">
+                        <button
+                          class="w-full h-full md:h-auto md:w-auto relative group overflow-hidden m-0 md:m-1"
+                          onClick={menuItem()?.onClick}
+                        >
                           <IconButton
                             path={menuItem().icon}
                             variant="text"
+                            badge
                             color={menuItem().active?.() ? "primary" : "base"}
                             text={menuItem().active?.() ? "base" : "soft"}
-                            onClick={menuItem()?.onClick}
-                            class={clsx(
-                              "rounded-none md:rounded-lg w-full m-0 md:m-1 flex-col h-full pb-[calc(env(safe-area-inset-bottom,0)+0.25rem)] md:pb-1 md:h-auto md:w-auto"
-                            )}
+                            class="rounded-none md:rounded-lg w-full m-0 flex-col h-full pb-[calc(env(safe-area-inset-bottom,0)+0.25rem)] md:pb-1 md:h-auto md:w-auto"
                             label={
                               <span class="md:hidden text-xs mt-1 font-semibold">
                                 {menuItem().label}
@@ -337,7 +375,10 @@ const SidebarMenu: Component = () => {
                             }
                             {...(menuItem().props || {})}
                           />
-                        </div>
+                          <Show when={menuItem().ui}>
+                            <Dynamic component={menuItem().ui} />
+                          </Show>
+                        </button>
                       </Tooltip>
                     );
                   }}

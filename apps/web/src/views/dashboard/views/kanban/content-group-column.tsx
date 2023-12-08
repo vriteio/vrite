@@ -1,16 +1,7 @@
 import { ContentPieceCard } from "./content-piece-card";
 import { useContentGroupsContext } from "../../content-groups-context";
 import { Component, createEffect, createMemo, createSignal, For, on, Show } from "solid-js";
-import {
-  mdiDotsVertical,
-  mdiFilePlus,
-  mdiFileLock,
-  mdiFileLockOpen,
-  mdiFolderOpen,
-  mdiFolderPlus,
-  mdiIdentifier,
-  mdiTrashCan
-} from "@mdi/js";
+import { mdiDotsVertical, mdiFilePlus, mdiFolderPlus, mdiIdentifier, mdiTrashCan } from "@mdi/js";
 import clsx from "clsx";
 import SortableLib from "sortablejs";
 import { Card, IconButton, Sortable, Dropdown, Loader, Icon } from "#components/primitives";
@@ -133,28 +124,6 @@ const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
     ];
 
     if (hasPermission("manageDashboard")) {
-      menuOptions.push({
-        icon: props.contentGroup.locked ? mdiFileLockOpen : mdiFileLock,
-        label: props.contentGroup.locked ? "Unlock" : "Lock",
-        async onClick() {
-          await client.contentGroups.update.mutate({
-            id: props.contentGroup.id,
-            locked: !props.contentGroup.locked
-          });
-          setContentPieces(
-            contentPieces().map((contentPiece) => {
-              return {
-                ...contentPiece,
-                locked: !props.contentGroup.locked
-              };
-            })
-          );
-          setDropdownOpened(false);
-        }
-      });
-    }
-
-    if (!props.contentGroup.locked && hasPermission("manageDashboard")) {
       menuOptions.push({
         icon: mdiTrashCan,
         label: "Delete",
@@ -302,11 +271,7 @@ const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
                 )}
                 content="paragraph"
                 initialValue={props.contentGroup.name}
-                readOnly={Boolean(
-                  activeDraggableGroup() ||
-                    props.contentGroup.locked ||
-                    !hasPermission("manageDashboard")
-                )}
+                readOnly={Boolean(activeDraggableGroup() || !hasPermission("manageDashboard"))}
                 placeholder="Group name"
                 onBlur={(editor) => {
                   client.contentGroups.update.mutate({
@@ -419,7 +384,6 @@ const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
                     setContentPieces(
                       newItems.map((item) => ({
                         ...item,
-                        locked: props.contentGroup.locked,
                         contentGroupId: props.contentGroup.id
                       })) as App.FullContentPieceWithAdditionalData[]
                     );
@@ -489,7 +453,7 @@ const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
             </Show>
           </div>
         </div>
-        <Show when={!props.contentGroup.locked && hasPermission("manageDashboard")}>
+        <Show when={hasPermission("manageDashboard")}>
           <div class="w-full h-16" />
           <Card
             color="soft"

@@ -9,7 +9,7 @@ import { Button, Card, Heading, Icon, IconButton, Tooltip } from "#components/pr
 import { breakpoints, tagColorClasses } from "#lib/utils";
 
 interface ContentPieceProps {
-  contentPiece: App.ExtendedContentPieceWithAdditionalData<"locked">;
+  contentPiece: App.ContentPieceWithAdditionalData;
   index: number;
 }
 
@@ -129,7 +129,7 @@ const ContentPieceCard: Component<ContentPieceProps> = (props) => {
         </div>
         <Tooltip text="Open in editor" side="left">
           <IconButton
-            path={props.contentPiece.locked || !hasPermission("editMetadata") ? mdiEye : mdiPencil}
+            path={hasPermission("editMetadata") ? mdiPencil : mdiEye}
             text={editedArticleId() === props.contentPiece.id ? "primary" : "soft"}
             color={editedArticleId() === props.contentPiece.id ? "primary" : "contrast"}
             class="whitespace-nowrap contentPiece-card-edit"

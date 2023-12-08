@@ -4,15 +4,13 @@ import { useAuthenticatedUserData, useClient, useLocalStorage, App } from "#cont
 
 interface UseOpenedContentPiece {
   activeVariant: Accessor<App.Variant | null>;
-  setContentPiece<
-    K extends keyof App.ExtendedContentPieceWithAdditionalData<"locked" | "coverWidth">
-  >(
-    keyOrObject: K | Partial<App.ExtendedContentPieceWithAdditionalData<"locked" | "coverWidth">>,
-    value?: App.ExtendedContentPieceWithAdditionalData<"locked" | "coverWidth">[K]
+  setContentPiece<K extends keyof App.ExtendedContentPieceWithAdditionalData<"coverWidth">>(
+    keyOrObject: K | Partial<App.ExtendedContentPieceWithAdditionalData<"coverWidth">>,
+    value?: App.ExtendedContentPieceWithAdditionalData<"coverWidth">[K]
   ): void;
   loading(): boolean;
   setActiveVariant(variant: App.Variant | null): void;
-  contentPiece(): App.ExtendedContentPieceWithAdditionalData<"locked" | "coverWidth"> | null;
+  contentPiece(): App.ExtendedContentPieceWithAdditionalData<"coverWidth"> | null;
 }
 
 const useOpenedContentPiece = (): UseOpenedContentPiece => {
@@ -23,7 +21,7 @@ const useOpenedContentPiece = (): UseOpenedContentPiece => {
   const client = useClient();
   const [loading, setLoading] = createSignal(true);
   const [state, setState] = createStore<{
-    contentPiece: App.ExtendedContentPieceWithAdditionalData<"locked" | "coverWidth"> | null;
+    contentPiece: App.ExtendedContentPieceWithAdditionalData<"coverWidth"> | null;
   }>({ contentPiece: null });
   const fetchContentPiece = async (): Promise<void> => {
     setLoading(true);
@@ -79,9 +77,8 @@ const useOpenedContentPiece = (): UseOpenedContentPiece => {
               if (action === "update") {
                 if (!("variantId" in value) || value.variantId === activeVariant()?.id) {
                   const { tags, members, ...updateData } = data;
-                  const update: Partial<
-                    App.ExtendedContentPieceWithAdditionalData<"locked" | "coverWidth">
-                  > = { ...updateData };
+                  const update: Partial<App.ExtendedContentPieceWithAdditionalData<"coverWidth">> =
+                    { ...updateData };
 
                   if (data.members && userId !== profile()?.id) {
                     update.members = data.members.filter((member) => member.id !== profile()?.id);

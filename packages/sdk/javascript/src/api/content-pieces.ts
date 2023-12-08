@@ -68,10 +68,6 @@ type ContentPiece<
    */
   filename?: string;
   /**
-   * Whether content piece assigned to a locked content group
-   */
-  locked: boolean;
-  /**
    * Cover image width - percentage value string (only meant for resizing image inside Vrite editor)
    */
   coverWidth: string;

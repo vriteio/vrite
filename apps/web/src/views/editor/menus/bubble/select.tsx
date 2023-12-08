@@ -132,6 +132,7 @@ const SelectMenu: Component<{
                 .insertContentAt(props.editor.state.selection.$from.pos, json)
                 .setNodeSelection(props.editor.state.selection.$from.pos)
                 .run();
+              handleSelectionUpdate();
             }}
             placeholder="Select Type"
             class="!bg-transparent m-0"
@@ -159,6 +160,7 @@ const SelectMenu: Component<{
                 .insertContentAt(props.editor.state.selection.$from.pos, json)
                 .setNodeSelection(props.editor.state.selection.$from.pos)
                 .run();
+              handleSelectionUpdate();
             }}
             placeholder="Select Type"
             class="!bg-transparent m-0"

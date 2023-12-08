@@ -44,7 +44,7 @@ import { publishContentPieceEvent, subscribeToContentPieceEvents } from "#events
 
 const webhookPayload = (
   contentPiece: UnderscoreID<FullContentPiece<ObjectId>>
-): ContentPiece & { id: string; locked?: boolean } => {
+): ContentPiece & { id: string } => {
   return {
     ...contentPiece,
     id: `${contentPiece._id}`,
@@ -164,16 +164,6 @@ const getCanonicalLinkFromPattern = (
       return match.replace(/\/{1,}/g, "/");
     });
 };
-const isLocked = async (db: Db, contentGroupId: string): Promise<boolean> => {
-  const contentGroupsCollection = getContentGroupsCollection(db);
-  const contentGroup = await contentGroupsCollection.findOne({
-    _id: new ObjectId(contentGroupId)
-  });
-
-  if (!contentGroup) throw errors.incomplete("contentPiece");
-
-  return Boolean(contentGroup.locked);
-};
 const basePath = "/content-pieces";
 const authenticatedProcedure = procedure.use(isAuthenticated);
 const contentPiecesRouter = router({
@@ -203,7 +193,6 @@ const contentPiecesRouter = router({
         tags: z.array(tag),
         members: z.array(contentPieceMember),
         slug: z.string(),
-        locked: z.boolean(),
         coverWidth: z.string().optional(),
         content: z.record(z.string(), z.any()).optional()
       })
@@ -288,7 +277,6 @@ const contentPiecesRouter = router({
         id: `${contentPiece._id}`,
         description: getDescription(),
         contentGroupId: `${contentPiece.contentGroupId}`,
-        locked: await isLocked(ctx.db, `${contentPiece.contentGroupId}`),
         workspaceId: `${contentPiece.workspaceId}`,
         date: contentPiece.date?.toISOString(),
         tags,
@@ -326,7 +314,6 @@ const contentPiecesRouter = router({
           slug: z.string(),
           tags: z.array(tag),
           members: z.array(contentPieceMember),
-          locked: z.boolean(),
           order: z.string()
         })
       )
@@ -378,8 +365,6 @@ const contentPiecesRouter = router({
         });
       }
 
-      const locked = await isLocked(ctx.db, `${input.contentGroupId}`);
-
       return Promise.all(
         contentPieces.map(async (contentPiece) => {
           const tags = await fetchContentPieceTags(ctx.db, contentPiece);
@@ -397,7 +382,6 @@ const contentPiecesRouter = router({
             id: `${contentPiece._id}`,
             contentGroupId: `${contentPiece.contentGroupId}`,
             workspaceId: `${contentPiece.workspaceId}`,
-            locked,
             date: contentPiece.date?.toISOString(),
             tags,
             members
@@ -578,16 +562,6 @@ const contentPiecesRouter = router({
         if (contentPieceVariant) {
           contentPiece = mergeVariantData(contentPiece, contentPieceVariant);
         }
-      }
-
-      const { contentGroupId } = contentPiece;
-
-      if (
-        (await isLocked(ctx.db, `${contentGroupId}`)) &&
-        (Object.keys(input).length > 1 || !input.contentGroupId) &&
-        !extensionId
-      ) {
-        throw errors.locked("contentGroup");
       }
 
       const contentPieceUpdates: Partial<UnderscoreID<FullContentPiece<ObjectId>>> = {
@@ -876,11 +850,6 @@ const contentPiecesRouter = router({
                 }),
               id: `${contentPiece._id}`,
               contentGroupId: `${update.contentGroupId || contentPiece.contentGroupId}`,
-              locked:
-                (await isLocked(
-                  ctx.db,
-                  `${update.contentGroupId || contentPiece.contentGroupId}`
-                )) || false,
               workspaceId: `${contentPiece.workspaceId}`,
               date: contentPiece.date?.toISOString(),
               tags,

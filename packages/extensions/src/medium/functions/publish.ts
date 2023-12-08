@@ -27,7 +27,7 @@ const publish = async (context: ExtensionContentPieceViewContext): Promise<void>
       context.notify({ text: "Published to Medium", type: "success" });
     }
 
-    if (!context.contentPiece.locked && data.mediumId && data.mediumId !== context.data.mediumId) {
+    if (data.mediumId && data.mediumId !== context.data.mediumId) {
       context.setData("mediumId", data.mediumId);
     }
 

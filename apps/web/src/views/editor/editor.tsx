@@ -57,13 +57,13 @@ declare module "#context" {
   interface SharedState {
     editor: SolidEditor;
     provider: HocuspocusProvider;
-    editedContentPiece: App.ExtendedContentPieceWithAdditionalData<"locked">;
+    editedContentPiece: App.ContentPieceWithAdditionalData;
   }
 }
 
 interface EditorProps {
   reloaded?: boolean;
-  editedContentPiece: App.ExtendedContentPieceWithAdditionalData<"locked">;
+  editedContentPiece: App.ContentPieceWithAdditionalData;
   onLoad?(): void;
   reload?(): void;
 }
@@ -158,7 +158,7 @@ const Editor: Component<EditorProps> = (props) => {
       }),
       CollabCursor(provider)
     ].filter(Boolean) as Extension[],
-    editable: !props.editedContentPiece.locked && hasPermission("editContent"),
+    editable: hasPermission("editContent"),
     editorProps: { attributes: { class: `outline-none` } },
     onSelectionUpdate({ editor }) {
       setIsNodeSelection(editor.state.selection instanceof NodeSelection);

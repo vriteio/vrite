@@ -12,7 +12,7 @@ import { App, ExtensionDetails, useClient, useExtensions } from "#context";
 import { ViewContextProvider, ViewRenderer } from "#lib/extensions";
 
 interface ExtensionsSectionProps {
-  contentPiece: App.ExtendedContentPieceWithAdditionalData<"locked" | "coverWidth">;
+  contentPiece: App.ExtendedContentPieceWithAdditionalData<"coverWidth">;
   setCustomData(customData: Record<string, any>): void;
 }
 interface ExtensionIconProps {

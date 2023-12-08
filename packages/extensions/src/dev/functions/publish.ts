@@ -27,7 +27,7 @@ const publish = async (context: ExtensionContentPieceViewContext): Promise<void>
       context.notify({ text: "Published to Dev.to", type: "success" });
     }
 
-    if (!context.contentPiece.locked && data.devId && data.devId !== context.data.devId) {
+    if (data.devId && data.devId !== context.data.devId) {
       context.setData("devId", data.devId);
     }
 

@@ -6,10 +6,7 @@ import { Node } from "@tiptap/pm/model";
 import { EditorState } from "@tiptap/pm/state";
 import { Node as PMNode } from "@tiptap/pm/model";
 import { Component } from "solid-js";
-import { mdiAlertCircleOutline } from "@mdi/js";
 import { formatCode } from "#lib/code-editor";
-import { Card, Icon } from "#components/primitives";
-import { useExtensions } from "#context";
 
 const getOpeningTag = async (node: PMNode): Promise<string> => {
   const keyValueProps = Object.entries(node.attrs.props).map(([key, value]) => {
@@ -31,16 +28,14 @@ const getOpeningTag = async (node: PMNode): Promise<string> => {
 };
 const getClosingTag = (node: PMNode): string => node.attrs.type;
 const registeredComponent: Record<string, Component> = {
-  Important: () => {
-    const { installedExtensions } = useExtensions();
-
+  /* Important: () => {
     return (
       <Card class="flex items-center justify-start m-0 my-4" color="primary">
         <Icon path={mdiAlertCircleOutline} class="w-6 h-6 mr-2" />
         <div class="flex-1 not-prose" data-content="true"></div>
       </Card>
     );
-  }
+  }*/
 };
 const Element = BaseElement.extend({
   addProseMirrorPlugins() {

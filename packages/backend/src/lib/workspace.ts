@@ -53,8 +53,7 @@ const createWorkspace = async (
       name: "Published",
       ancestors: [],
       descendants: [],
-      workspaceId,
-      locked: true
+      workspaceId
     }
   ];
 
@@ -124,7 +123,7 @@ const createWorkspace = async (
     await contentsCollection.insertOne({
       _id: new ObjectId(),
       contentPieceId,
-      content: new Binary(jsonToBuffer(initialContent as DocJSON))
+      content: new Binary(jsonToBuffer(initialContent as unknown as DocJSON))
     });
   }
 

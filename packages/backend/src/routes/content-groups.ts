@@ -41,8 +41,7 @@ const rearrangeContentGroups = (
         id: `${contentGroup!._id}`,
         descendants: contentGroup.descendants.map((id) => `${id}`),
         ancestors: contentGroup.ancestors.map((id) => `${id}`),
-        name: contentGroup.name,
-        locked: contentGroup.locked
+        name: contentGroup.name
       };
     })
     .filter(Boolean) as ContentGroup[];
@@ -72,8 +71,7 @@ const contentGroupsRouter = router({
         id: `${contentGroup._id}`,
         ancestors: contentGroup.ancestors.map((id) => `${id}`),
         descendants: contentGroup.descendants.map((id) => `${id}`),
-        name: contentGroup.name,
-        locked: contentGroup.locked
+        name: contentGroup.name
       };
     }),
   update: authenticatedProcedure
@@ -197,7 +195,6 @@ const contentGroupsRouter = router({
 
       const contentGroup: UnderscoreID<FullContentGroup<ObjectId>> = {
         name: input.name,
-        locked: false,
         descendants: [],
         workspaceId: ctx.auth.workspaceId,
         _id: new ObjectId(),
@@ -501,16 +498,14 @@ const contentGroupsRouter = router({
           id: input.id,
           ancestors: ancestors.map((id) => `${id}`),
           descendants: contentGroup.descendants.map((id) => `${id}`),
-          name: contentGroup.name,
-          locked: contentGroup.locked
+          name: contentGroup.name
         }
       });
       runWebhooks(ctx, "contentGroupMoved", {
         id: input.id,
         ancestors: ancestors.map((id) => `${id}`),
         descendants: contentGroup.descendants.map((id) => `${id}`),
-        name: contentGroup.name,
-        locked: contentGroup.locked
+        name: contentGroup.name
       });
     }),
   reorder: authenticatedProcedure

@@ -1,10 +1,10 @@
 import { Level, TreeLevel } from "./tree-level";
-import { Component, createSignal } from "solid-js";
-import { mdiClose } from "@mdi/js";
+import { Component, Show, createSignal } from "solid-js";
+import { mdiClose, mdiFolder, mdiHexagonSlice6 } from "@mdi/js";
 import { createRef } from "@vrite/components/src/ref";
 import { createStore } from "solid-js/store";
 import { Heading, IconButton } from "#components/primitives";
-import { App, useClient, useLocalStorage } from "#context";
+import { App, useAuthenticatedUserData, useClient, useLocalStorage } from "#context";
 import { ScrollShadow } from "#components/fragments";
 
 interface DashboardListViewProps {
@@ -16,9 +16,15 @@ const [highlight, setHighlight] = createSignal("");
 const DashboardListView: Component<DashboardListViewProps> = (props) => {
   const client = useClient();
   const { storage, setStorage } = useLocalStorage();
+  const { workspace } = useAuthenticatedUserData();
   const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
   const [levels, setLevels] = createStore<Record<string, Level>>({});
-  const [contentGroups, setContentGroups] = createStore<Record<string, App.ContentGroup>>({});
+  const [contentGroups, setContentGroups] = createStore<
+    Record<string, App.ContentGroup | undefined>
+  >({});
+  const [contentPieces, setContentPieces] = createStore<
+    Record<string, App.ExtendedContentPieceWithAdditionalData<"order">>
+  >({});
   const openedLevels = (): string[] => {
     return storage().explorerOpenedLevels || [];
   };
@@ -69,14 +75,37 @@ const DashboardListView: Component<DashboardListViewProps> = (props) => {
           ...groups,
           data
         ]);
+      } else if (action === "create") {
+        setContentGroups(data.id, data);
+        setLevels(data.ancestors[data.ancestors.length - 1] || "", "groups", (groups) => [
+          ...groups,
+          data
+        ]);
+      } else if (action === "delete") {
+        const parentId = contentGroups[data.id]?.ancestors.at(-1);
+
+        setContentGroups(data.id, undefined);
+        setLevels(parentId || "", "groups", (groups) => {
+          return groups.filter((group) => group.id !== data.id);
+        });
+      } else if (action === "update") {
+        const parentId = contentGroups[data.id]?.ancestors.at(-1);
+
+        setContentGroups(data.id, data);
+        setLevels(parentId || "", "groups", (groups) => {
+          return groups.map((group) => (group.id === data.id ? { ...group, ...data } : group));
+        });
+        // update
+      } else if (action === "reorder") {
+        // reorder
       }
     }
   });
 
   return (
     <div class="relative overflow-hidden w-full pl-3">
-      <div class={"flex justify-start items-start mb-4 pl-2 flex-col pt-5"}>
-        <div class="flex justify-center items-center">
+      <div class={"flex justify-start items-start mb-4 px-2 pr-5 flex-col pt-5"}>
+        <div class="flex justify-center items-center w-full">
           <IconButton
             path={mdiClose}
             text="soft"
@@ -89,10 +118,20 @@ const DashboardListView: Component<DashboardListViewProps> = (props) => {
               }));
             }}
           />
-          <Heading level={1} class="py-1">
+          <Heading level={1} class="py-1 flex-1">
             Explorer
           </Heading>
         </div>
+        <IconButton
+          class="m-0 p-0"
+          path={mdiHexagonSlice6}
+          variant="text"
+          text="soft"
+          badge
+          hover={false}
+          size="small"
+          label={workspace()?.name}
+        />
       </div>
       <div class="relative overflow-hidden h-[calc(100%-4.5rem)]">
         <div

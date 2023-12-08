@@ -4,7 +4,7 @@ import axios from "axios";
 import { z } from "zod";
 import { ObjectId } from "mongodb";
 import {
-  WebhookEvent,
+  WebhookEventName,
   getWebhooksCollection,
   contentGroup,
   contentPiece,
@@ -13,13 +13,13 @@ import {
 } from "#database";
 
 const webhookPayload = z.union([
-  contentPiece.extend({ slug: z.string(), locked: z.boolean().optional() }),
+  contentPiece.extend({ slug: z.string() }),
   contentGroup,
   workspaceMembership.extend({ id: zodId() })
 ]);
 const runWebhooks = async (
   ctx: AuthenticatedContext,
-  event: WebhookEvent,
+  event: WebhookEventName,
   payload: z.infer<typeof webhookPayload>
 ): Promise<void> => {
   const webhooksCollection = getWebhooksCollection(ctx.db);

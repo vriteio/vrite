@@ -4,10 +4,8 @@ import { App, useClient } from "#context/client";
 import { useNotifications } from "#context/notifications";
 
 interface UseContentPieces {
-  contentPieces(): Array<App.ExtendedContentPieceWithAdditionalData<"locked" | "order">>;
-  setContentPieces(
-    contentPieces: Array<App.ExtendedContentPieceWithAdditionalData<"locked" | "order">>
-  ): void;
+  contentPieces(): Array<App.ExtendedContentPieceWithAdditionalData<"order">>;
+  setContentPieces(contentPieces: Array<App.ExtendedContentPieceWithAdditionalData<"order">>): void;
   loading(): boolean;
   loadMore(): void;
   moreToLoad(): boolean;
@@ -19,7 +17,7 @@ const useContentPieces = (contentGroupId: string): UseContentPieces => {
   const [loading, setLoading] = createSignal(false);
   const [moreToLoad, setMoreToLoad] = createSignal(true);
   const [state, setState] = createStore<{
-    contentPieces: Array<App.ExtendedContentPieceWithAdditionalData<"locked" | "order">>;
+    contentPieces: Array<App.ExtendedContentPieceWithAdditionalData<"order">>;
   }>({
     contentPieces: []
   });

@@ -5,7 +5,6 @@ import { UnderscoreID, zodId } from "#lib/mongo";
 const contentGroup = z.object({
   id: zodId(),
   name: z.string().describe("Content group name"),
-  locked: z.boolean().optional(),
   ancestors: z.array(zodId()).describe("Ancestor content group ID"),
   descendants: z.array(zodId()).describe("Array of descendant content group IDs")
 });

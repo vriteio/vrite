@@ -51,7 +51,6 @@ interface ContentPieceWithAdditionalData<ID extends string | ObjectId = string>
 interface FullContentPiece<ID extends string | ObjectId = string> extends ContentPiece<ID> {
   workspaceId: ID;
   order: string;
-  locked?: boolean;
   coverWidth?: string;
 }
 interface FullContentPieceWithAdditionalData<ID extends string | ObjectId = string>

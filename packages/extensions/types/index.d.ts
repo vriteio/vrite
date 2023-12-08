@@ -59,7 +59,7 @@ declare module "@vrite/extensions" {
     setConfig(config: ContextObject): void;
   }
   interface ExtensionContentPieceViewContext extends ExtensionBaseViewContext {
-    contentPiece: ExtendedContentPieceWithAdditionalData<"slug" | "locked" | "coverWidth">;
+    contentPiece: ExtendedContentPieceWithAdditionalData<"slug" | "coverWidth">;
     data: ContextObject;
     setData(key: string, value: ContextValue): void;
     setData(data: ContextObject): void;

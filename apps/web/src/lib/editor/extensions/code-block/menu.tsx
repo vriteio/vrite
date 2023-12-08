@@ -5,7 +5,6 @@ import { Component, createEffect, createMemo, createSignal, on, Show } from "sol
 import { debounce } from "@solid-primitives/scheduled";
 import { Card, IconButton, Input, Tooltip } from "#components/primitives";
 import { useSuggestLanguage, isFormattable } from "#lib/code-editor";
-import { createRef } from "#lib/utils";
 
 interface CodeBlockMenuProps {
   state: SolidNodeViewProps<CodeBlockAttributes>;

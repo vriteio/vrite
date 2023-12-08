@@ -27,11 +27,7 @@ const publish = async (context: ExtensionContentPieceViewContext): Promise<void>
       context.notify({ text: "Published to Hashnode", type: "success" });
     }
 
-    if (
-      !context.contentPiece.locked &&
-      data.hashnodeId &&
-      data.hashnodeId !== context.data.hashnodeId
-    ) {
+    if (data.hashnodeId && data.hashnodeId !== context.data.hashnodeId) {
       context.setData("hashnodeId", data.hashnodeId);
     }
 

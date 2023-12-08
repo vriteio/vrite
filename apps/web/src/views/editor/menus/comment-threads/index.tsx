@@ -8,7 +8,7 @@ import { createRef } from "#lib/utils";
 import { ScrollShadow } from "#components/fragments";
 
 interface CommentThreadsMenuProps {
-  editedContentPiece: App.ExtendedContentPieceWithAdditionalData<"locked">;
+  editedContentPiece: App.ContentPieceWithAdditionalData;
   editor: Editor;
 }
 
@@ -73,7 +73,7 @@ const CommentThreadsMenu: Component<CommentThreadsMenuProps> = (props) => {
           </div>
           <For each={activeThreads()}>
             {(thread) => {
-              return <CommentCard comment={thread.firstComment} contrast />;
+              return <CommentCard comment={thread.firstComment} />;
             }}
           </For>
         </div>

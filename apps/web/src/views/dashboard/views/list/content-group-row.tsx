@@ -1,15 +1,6 @@
 import { useContentGroupsContext } from "../../content-groups-context";
 import { Component, For, Show, createMemo, createSignal } from "solid-js";
-import {
-  mdiDotsVertical,
-  mdiFileLock,
-  mdiFileLockOpen,
-  mdiFolder,
-  mdiFolderLock,
-  mdiFolderOpen,
-  mdiIdentifier,
-  mdiTrashCan
-} from "@mdi/js";
+import { mdiDotsVertical, mdiFolder, mdiFolderOpen, mdiIdentifier, mdiTrashCan } from "@mdi/js";
 import clsx from "clsx";
 import SortableLib from "sortablejs";
 import { Card, Dropdown, IconButton } from "#components/primitives";
@@ -80,22 +71,6 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
     ];
 
     if (hasPermission("manageDashboard")) {
-      menuOptions.push({
-        icon: props.contentGroup?.locked ? mdiFileLockOpen : mdiFileLock,
-        label: props.contentGroup?.locked ? "Unlock" : "Lock",
-        async onClick() {
-          if (!props.contentGroup) return;
-
-          await client.contentGroups.update.mutate({
-            id: props.contentGroup.id,
-            locked: !props.contentGroup.locked
-          });
-          setDropdownOpened(false);
-        }
-      });
-    }
-
-    if (!props.contentGroup?.locked && hasPermission("manageDashboard")) {
       menuOptions.push({
         icon: mdiTrashCan,
         label: "Delete",
@@ -245,7 +220,7 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
             }}
           >
             <IconButton
-              path={props.contentGroup?.locked ? mdiFolderLock : mdiFolder}
+              path={mdiFolder}
               variant="text"
               class={clsx(
                 "m-0 absolute top-0 left-0 @hover:group-hover:opacity-0",
@@ -276,7 +251,6 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
               props.customLabel ||
                 activeDraggableGroup() ||
                 activeDraggablePiece() ||
-                props.contentGroup?.locked ||
                 !hasPermission("manageDashboard")
             )}
             placeholder="Group name"

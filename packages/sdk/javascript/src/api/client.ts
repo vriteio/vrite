@@ -23,7 +23,7 @@ import PolyfilledEventSource from "@sanity/eventsource";
 
 interface SearchResult {
   contentPieceId: string;
-  contentPiece: Omit<ContentPiece, "locked" | "content" | "coverWidth">;
+  contentPiece: Omit<ContentPiece, "content" | "coverWidth">;
   breadcrumb: string[];
   content: string;
 }
