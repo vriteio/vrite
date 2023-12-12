@@ -1,4 +1,5 @@
 import { DashboardListView } from "./list";
+import { ExplorerDataProvider } from "./explorer-context";
 import { Component } from "solid-js";
 import { App, useLocalStorage } from "#context";
 
@@ -16,7 +17,9 @@ const ExplorerView: Component = () => {
 
   return (
     <div class="relative flex-1 overflow-hidden flex flex-row h-full">
-      <DashboardListView ancestor={ancestor()} setAncestor={setAncestor} />
+      <ExplorerDataProvider>
+        <DashboardListView ancestor={ancestor()} setAncestor={setAncestor} />
+      </ExplorerDataProvider>
     </div>
   );
 };

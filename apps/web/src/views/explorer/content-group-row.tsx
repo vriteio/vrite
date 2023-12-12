@@ -1,5 +1,7 @@
-import { Component, For, createMemo, createSignal } from "solid-js";
+import { useExplorerData } from "./explorer-context";
+import { Component, For, Match, Show, Switch, createMemo, createSignal } from "solid-js";
 import {
+  mdiCheck,
   mdiChevronRight,
   mdiDotsVertical,
   mdiFileDocumentPlusOutline,
@@ -13,7 +15,7 @@ import {
 import clsx from "clsx";
 import SortableLib from "sortablejs";
 import { useLocation } from "@solidjs/router";
-import { Dropdown, Icon, IconButton } from "#components/primitives";
+import { Dropdown, Icon, IconButton, Input, Loader } from "#components/primitives";
 import {
   App,
   hasPermission,
@@ -46,11 +48,13 @@ declare module "#context" {
 }
 
 const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
+  const { loading, renaming, setLoading, setRenaming } = useExplorerData();
   const createSharedSignal = useSharedState();
   const client = useClient();
   const location = useLocation();
   const { notify } = useNotifications();
   const { confirmDelete } = useConfirmationModal();
+  const { setLevels, setContentGroups } = useExplorerData();
   const [activeDraggablePiece] = createSharedSignal("activeDraggablePiece", null);
   const [activeDraggableGroup, setActiveDraggableGroup] = createSharedSignal(
     "activeDraggableGroup",
@@ -86,39 +90,66 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
         {
           icon: mdiRename,
           label: "Rename group",
-          class: "justify-start",
-          onClick() {}
+
+          onClick() {
+            setDropdownOpened(false);
+            setRenaming(props.contentGroup.id);
+          }
         },
         null,
         {
           icon: mdiFileDocumentPlusOutline,
           label: "New content piece",
-          class: "justify-start",
-          onClick() {
-            client.contentPieces.create.mutate({
-              contentGroupId: props.contentGroup.id,
-              tags: [],
-              members: [],
-              title: ""
-            });
+
+          async onClick() {
+            setLoading(props.contentGroup.id);
+
+            try {
+              const newContentPiece = await client.contentPieces.create.mutate({
+                contentGroupId: props.contentGroup.id,
+                tags: [],
+                members: [],
+                title: ""
+              });
+
+              setDropdownOpened(false);
+              setRenaming(newContentPiece.id);
+              setLoading("");
+              notify({ text: "Content piece created", type: "success" });
+            } catch (error) {
+              notify({ text: "Couldn't create the content piece", type: "error" });
+              setLoading("");
+            }
           }
         },
         {
           icon: mdiFolderPlus,
           label: "New group",
-          class: "justify-start",
-          onClick() {
-            client.contentGroups.create.mutate({
-              ancestor: props.contentGroup.id,
-              name: ""
-            });
+
+          async onClick() {
+            setLoading(props.contentGroup.id);
+
+            try {
+              const newContentPiece = await client.contentGroups.create.mutate({
+                ancestor: props.contentGroup.id,
+                name: ""
+              });
+
+              setDropdownOpened(false);
+              setRenaming(newContentPiece.id);
+              setLoading("");
+              notify({ text: "Content group created", type: "success" });
+            } catch (error) {
+              notify({ text: "Couldn't create the content group", type: "error" });
+              setLoading("");
+            }
           }
         },
         null,
         {
           icon: mdiTrashCan,
           label: "Delete",
-          class: "justify-start",
+
           color: "danger",
           onClick() {
             setDropdownOpened(false);
@@ -134,10 +165,17 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
                 if (!props.contentGroup) return;
 
                 try {
+                  setLoading(props.contentGroup.id);
                   await client.contentGroups.delete.mutate({ id: props.contentGroup.id });
+                  setLevels(props.contentGroup.ancestors.at(-1) || "", "groups", (groups) => {
+                    return groups.filter((groupId) => groupId !== props.contentGroup?.id);
+                  });
+                  setContentGroups(props.contentGroup.id, undefined);
+                  setLoading("");
                   notify({ text: "Content group deleted", type: "success" });
                 } catch (error) {
-                  notify({ text: "Couldn't delete the content group", type: "success" });
+                  notify({ text: "Couldn't delete the content group", type: "error" });
+                  setLoading("");
                 }
               }
             });
@@ -188,7 +226,7 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
         data-content-group-id={props.contentGroup?.id || ""}
       >
         <IconButton
-          class={clsx("transform transition m-0 p-0.25", props.opened && "rotate-90")}
+          class={clsx("transform transition m-0 p-0 ml-0.25", props.opened && "rotate-90")}
           path={mdiChevronRight}
           variant="text"
           onClick={() => {
@@ -198,6 +236,8 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
         <button
           class="flex flex-1"
           onClick={() => {
+            if (renaming()) return;
+
             props.onExpand?.(true);
             props.onClick?.();
           }}
@@ -214,65 +254,123 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
             )}
             path={props.opened ? mdiFolderOpen : mdiFolder}
           />
-          <span
-            class={clsx(
-              "!text-base inline-flex text-start flex-1 overflow-x-auto content-group-name scrollbar-hidden select-none clamp-1",
-              (props.highlight ||
-                (props.active &&
-                  !activeDraggableGroup() &&
-                  !activeDraggablePiece() &&
-                  location.pathname === "/")) &&
-                "text-transparent bg-clip-text bg-gradient-to-tr"
-            )}
-            title={props.customLabel || props.contentGroup?.name || ""}
+          <Show
+            when={renaming() !== props.contentGroup.id}
+            fallback={
+              <Input
+                wrapperClass="flex-1"
+                class="m-0 p-0 !bg-transparent h-6 rounded-none pointer-events-auto"
+                value={props.contentGroup.name}
+                ref={(el) => {
+                  setTimeout(() => {
+                    el?.select();
+                  }, 0);
+                }}
+                onEnter={(event) => {
+                  const target = event.currentTarget as HTMLInputElement;
+                  const name = target.value || "";
+
+                  client.contentGroups.update.mutate({
+                    id: props.contentGroup.id,
+                    name
+                  });
+                  setContentGroups(props.contentGroup.id, { ...props.contentGroup, name });
+                  setRenaming("");
+                }}
+                onChange={(event) => {
+                  const name = event.currentTarget.value || "";
+
+                  client.contentGroups.update.mutate({
+                    id: props.contentGroup.id,
+                    name
+                  });
+                  setContentGroups(props.contentGroup.id, { ...props.contentGroup, name });
+                  setRenaming("");
+                }}
+              />
+            }
           >
-            {props.customLabel || props.contentGroup?.name || ""}
-          </span>
+            <span
+              class={clsx(
+                "!text-base inline-flex text-start flex-1 overflow-x-auto content-group-name scrollbar-hidden select-none clamp-1",
+                (props.highlight ||
+                  (props.active &&
+                    !activeDraggableGroup() &&
+                    !activeDraggablePiece() &&
+                    location.pathname === "/")) &&
+                  "text-transparent bg-clip-text bg-gradient-to-tr"
+              )}
+              title={props.customLabel || props.contentGroup?.name || ""}
+            >
+              {props.customLabel || props.contentGroup?.name || ""}
+            </span>
+          </Show>
         </button>
-        <Dropdown
-          placement="bottom-end"
-          opened={dropdownOpened()}
-          fixed
-          class="ml-1 mr-4"
-          setOpened={setDropdownOpened}
-          activatorButton={() => (
+        <Switch>
+          <Match when={loading() === props.contentGroup.id}>
+            <div class="m-0 p-1 mr-4 ml-1 flex justify-center items-center">
+              <Loader class="h-4 w-4" />
+            </div>
+          </Match>
+          <Match when={renaming() === props.contentGroup.id}>
             <IconButton
-              path={mdiDotsVertical}
-              class={clsx("m-0 p-0.25 group-hover:opacity-100", !dropdownOpened() && "opacity-0")}
+              path={mdiCheck}
+              class="m-0 p-0 mr-4 ml-1"
               variant="text"
               color="contrast"
               text="soft"
-              onClick={(event) => {
-                event.stopPropagation();
-                setDropdownOpened(true);
+              onClick={() => {
+                setRenaming("");
               }}
             />
-          )}
-        >
-          <div class="w-full flex flex-col">
-            <For each={menuOptions()}>
-              {(item) => {
-                if (!item) {
-                  return (
-                    <div class="hidden md:block w-full h-2px my-1 bg-gray-200 dark:bg-gray-700 rounded-full" />
-                  );
-                }
+          </Match>
+          <Match when={true}>
+            <Dropdown
+              placement="bottom-end"
+              opened={dropdownOpened()}
+              fixed
+              class="ml-1 mr-4"
+              setOpened={setDropdownOpened}
+              activatorButton={() => (
+                <IconButton
+                  path={mdiDotsVertical}
+                  class={clsx("m-0 p-0 group-hover:opacity-100", !dropdownOpened() && "opacity-0")}
+                  variant="text"
+                  color="contrast"
+                  text="soft"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setDropdownOpened(true);
+                  }}
+                />
+              )}
+            >
+              <div class="w-full flex flex-col">
+                <For each={menuOptions()}>
+                  {(item) => {
+                    if (!item) {
+                      return (
+                        <div class="hidden md:block w-full h-2px my-1 bg-gray-200 dark:bg-gray-700 rounded-full" />
+                      );
+                    }
 
-                return (
-                  <IconButton
-                    path={item.icon}
-                    label={item.label}
-                    variant="text"
-                    text="soft"
-                    color={item.color}
-                    class={clsx("justify-start whitespace-nowrap w-full m-0", item.class)}
-                    onClick={item.onClick}
-                  />
-                );
-              }}
-            </For>
-          </div>
-        </Dropdown>
+                    return (
+                      <IconButton
+                        path={item.icon}
+                        label={item.label}
+                        variant="text"
+                        text="soft"
+                        color={item.color}
+                        class="justify-start whitespace-nowrap w-full m-0 justify-start"
+                        onClick={item.onClick}
+                      />
+                    );
+                  }}
+                </For>
+              </div>
+            </Dropdown>
+          </Match>
+        </Switch>
       </div>
     </div>
   );

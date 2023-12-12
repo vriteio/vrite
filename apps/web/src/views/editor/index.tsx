@@ -40,6 +40,15 @@ const EditorView: Component = () => {
       });
     }
   });
+  createEffect(
+    on(
+      contentPiece,
+      () => {
+        setSyncing(true);
+      },
+      { defer: true }
+    )
+  );
   setStorage((storage) => ({ ...storage, toolbarView: "editor" }));
 
   return (

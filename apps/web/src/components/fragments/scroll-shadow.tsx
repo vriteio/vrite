@@ -14,7 +14,7 @@ interface ScrollShadowProps {
   controller?: ScrollShadowController;
   direction?: "horizontal" | "vertical";
   color?: "contrast" | "base";
-  offset?: string;
+  offset?: string | { top?: string; right?: string; bottom?: string; left?: string };
   onScrollEnd?(): void;
 }
 
@@ -75,6 +75,18 @@ const ScrollShadow: Component<ScrollShadowProps> = (props) => {
     debouncedScrollStateUpdate.clear();
     debouncedScrollStateUpdate();
   };
+  const firstAnchor = (): "left" | "top" => {
+    return props.direction === "horizontal" ? "left" : "top";
+  };
+  const secondAnchor = (): "right" | "bottom" => {
+    return props.direction === "horizontal" ? "right" : "bottom";
+  };
+  const firstOffset = (): string => {
+    return typeof props.offset === "string" ? props.offset : props.offset?.[firstAnchor()] || "0";
+  };
+  const secondOffset = (): string => {
+    return typeof props.offset === "string" ? props.offset : props.offset?.[secondAnchor()] || "0";
+  };
 
   controller.onProcessScrollState(() => {
     const scrollableContainer = props.scrollableContainerRef();
@@ -112,7 +124,7 @@ const ScrollShadow: Component<ScrollShadowProps> = (props) => {
           ["start", "none"].includes(scrollState()) && "opacity-0"
         )}
         style={{
-          [props.direction === "horizontal" ? "left" : "top"]: props.offset || "0"
+          [firstAnchor()]: firstOffset()
         }}
       />
       <div
@@ -125,7 +137,7 @@ const ScrollShadow: Component<ScrollShadowProps> = (props) => {
           ["end", "none"].includes(scrollState()) && "opacity-0"
         )}
         style={{
-          [props.direction === "horizontal" ? "right" : "bottom"]: props.offset || "0"
+          [secondAnchor()]: secondOffset()
         }}
       />
     </>

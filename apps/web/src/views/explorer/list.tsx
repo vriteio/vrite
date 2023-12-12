@@ -1,8 +1,8 @@
-import { Level, TreeLevel } from "./tree-level";
-import { Component, Show, createSignal } from "solid-js";
-import { mdiClose, mdiFolder, mdiHexagonSlice6 } from "@mdi/js";
+import { TreeLevel } from "./tree-level";
+import { Level, useExplorerData } from "./explorer-context";
+import { Component, createSignal } from "solid-js";
+import { mdiClose, mdiHexagonSlice6 } from "@mdi/js";
 import { createRef } from "@vrite/components/src/ref";
-import { createStore } from "solid-js/store";
 import { Heading, IconButton } from "#components/primitives";
 import { App, useAuthenticatedUserData, useClient, useLocalStorage } from "#context";
 import { ScrollShadow } from "#components/fragments";
@@ -14,33 +14,88 @@ interface DashboardListViewProps {
 
 const [highlight, setHighlight] = createSignal("");
 const DashboardListView: Component<DashboardListViewProps> = (props) => {
+  const { levels, contentGroups, contentPieces, setContentGroups, setContentPieces, setLevels } =
+    useExplorerData();
   const client = useClient();
   const { storage, setStorage } = useLocalStorage();
   const { workspace } = useAuthenticatedUserData();
   const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
-  const [levels, setLevels] = createStore<Record<string, Level>>({});
-  const [contentGroups, setContentGroups] = createStore<
-    Record<string, App.ContentGroup | undefined>
-  >({});
-  const [contentPieces, setContentPieces] = createStore<
-    Record<string, App.ExtendedContentPieceWithAdditionalData<"order">>
-  >({});
   const openedLevels = (): string[] => {
     return storage().explorerOpenedLevels || [];
   };
-  const setOpenedLevels = (openedLevels: string[]): void => {
+  const openLevel = (parentId: string): void => {
     setStorage((storage) => ({
       ...storage,
-      explorerOpenedLevels: openedLevels
+      explorerOpenedLevels: [...new Set([...openedLevels(), parentId])]
+    }));
+  };
+  const closeLevel = (parentId: string): void => {
+    const levelsToClose = [parentId];
+    const addLevelsToClose = (parentId: string): void => {
+      const level = levels[parentId];
+
+      if (!level) {
+        return;
+      }
+
+      levelsToClose.push(...level.groups);
+      level.groups.forEach((groupId) => addLevelsToClose(groupId));
+    };
+
+    addLevelsToClose(parentId);
+    setStorage((storage) => ({
+      ...storage,
+      explorerOpenedLevels:
+        storage.explorerOpenedLevels?.filter((id) => !levelsToClose.includes(id)) || []
     }));
   };
   const loadLevel = async (parentId?: string, preload?: boolean): Promise<void> => {
-    if (levels[parentId || ""]) return;
+    const existingLevel = levels[parentId || ""];
+
+    if (existingLevel && existingLevel.moreToLoad) {
+      if (parentId) {
+        const level = {
+          groups: [...existingLevel.groups],
+          pieces: [...existingLevel.pieces],
+          moreToLoad: false
+        };
+        const lastPieceId = existingLevel.pieces.at(-1);
+        const lastPiece = contentPieces[lastPieceId || ""];
+
+        if (!lastPiece) {
+          setLevels(parentId, level);
+
+          return;
+        }
+
+        const newContentPieces = await client.contentPieces.list.query({
+          contentGroupId: parentId,
+          lastOrder: lastPiece.order
+        });
+
+        level.pieces.push(...newContentPieces.map((contentPiece) => contentPiece.id));
+        newContentPieces.forEach((contentPiece) => {
+          setContentPieces(contentPiece.id, contentPiece);
+        });
+
+        if (newContentPieces.length === 20) {
+          level.moreToLoad = true;
+        }
+
+        setLevels(parentId, level);
+      }
+
+      return;
+    }
 
     const contentGroups = await client.contentGroups.list.query({
       ancestor: parentId || undefined
     });
-    const level: Level = { groups: contentGroups, pieces: [] };
+    const level: Level = {
+      groups: contentGroups.map((contentGroup) => contentGroup.id),
+      pieces: [],
+      moreToLoad: false
+    };
 
     contentGroups.forEach((contentGroup) => {
       if (preload) {
@@ -51,9 +106,18 @@ const DashboardListView: Component<DashboardListViewProps> = (props) => {
     });
 
     if (parentId) {
-      const contentPieces = await client.contentPieces.list.query({ contentGroupId: parentId });
+      const contentPieces = await client.contentPieces.list.query({
+        contentGroupId: parentId
+      });
 
-      level.pieces = contentPieces;
+      level.pieces = contentPieces.map((contentPiece) => contentPiece.id);
+      contentPieces.forEach((contentPiece) => {
+        setContentPieces(contentPiece.id, contentPiece);
+      });
+
+      if (contentPieces.length === 20) {
+        level.moreToLoad = true;
+      }
     }
 
     setLevels(parentId || "", level);
@@ -64,37 +128,35 @@ const DashboardListView: Component<DashboardListViewProps> = (props) => {
   client.contentGroups.changes.subscribe(undefined, {
     onData({ action, data }) {
       if (action === "move") {
-        const [currentParentId] = Object.entries(levels).find(([id, level]) => {
-          return level.groups.find((group) => group.id === data.id);
+        const [currentParentId] = Object.entries(levels).find(([, level]) => {
+          return level?.groups.find((groupId) => groupId === data.id);
         })!;
 
         setLevels(currentParentId, "groups", (groups) => {
-          return groups.filter((group) => group.id !== data.id);
+          return groups.filter((groupId) => groupId !== data.id);
         });
         setLevels(data.ancestors[data.ancestors.length - 1] || "", "groups", (groups) => [
           ...groups,
-          data
+          data.id
         ]);
       } else if (action === "create") {
         setContentGroups(data.id, data);
+        // eslint-disable-next-line sonarjs/no-identical-functions
         setLevels(data.ancestors[data.ancestors.length - 1] || "", "groups", (groups) => [
           ...groups,
-          data
+          data.id
         ]);
       } else if (action === "delete") {
         const parentId = contentGroups[data.id]?.ancestors.at(-1);
 
         setContentGroups(data.id, undefined);
         setLevels(parentId || "", "groups", (groups) => {
-          return groups.filter((group) => group.id !== data.id);
+          return groups.filter((groupId) => groupId !== data.id);
         });
       } else if (action === "update") {
         const parentId = contentGroups[data.id]?.ancestors.at(-1);
 
         setContentGroups(data.id, data);
-        setLevels(parentId || "", "groups", (groups) => {
-          return groups.map((group) => (group.id === data.id ? { ...group, ...data } : group));
-        });
         // update
       } else if (action === "reorder") {
         // reorder
@@ -103,8 +165,8 @@ const DashboardListView: Component<DashboardListViewProps> = (props) => {
   });
 
   return (
-    <div class="relative overflow-hidden w-full pl-3">
-      <div class={"flex justify-start items-start mb-4 px-2 pr-5 flex-col pt-5"}>
+    <div class="relative overflow-hidden w-full pl-3 flex flex-col">
+      <div class={"flex justify-start items-start mb-2 px-2 pr-5 flex-col pt-5"}>
         <div class="flex justify-center items-center w-full">
           <IconButton
             path={mdiClose}
@@ -123,17 +185,22 @@ const DashboardListView: Component<DashboardListViewProps> = (props) => {
           </Heading>
         </div>
         <IconButton
-          class="m-0 p-0"
+          class="m-0 py-0 !font-normal"
           path={mdiHexagonSlice6}
           variant="text"
           text="soft"
-          badge
-          hover={false}
+          color={storage().dashboardViewAncestor ? "base" : "primary"}
           size="small"
-          label={workspace()?.name}
+          onClick={() => {
+            setStorage((storage) => ({
+              ...storage,
+              dashboardViewAncestor: undefined
+            }));
+          }}
+          label={<span class="flex-1 clamp-1 ml-1">{workspace()?.name}</span>}
         />
       </div>
-      <div class="relative overflow-hidden h-[calc(100%-4.5rem)]">
+      <div class="relative overflow-hidden flex-1">
         <div
           class="flex flex-col w-full h-full overflow-y-auto scrollbar-sm-contrast pb-5"
           ref={setScrollableContainerRef}
@@ -142,14 +209,11 @@ const DashboardListView: Component<DashboardListViewProps> = (props) => {
           <div>
             <TreeLevel
               loadLevel={loadLevel}
-              levels={levels}
               openedLevels={openedLevels()}
-              contentGroups={contentGroups}
-              setOpenedLevels={setOpenedLevels}
+              openLevel={openLevel}
+              closeLevel={closeLevel}
               highlight={highlight()}
               setHighlight={setHighlight}
-              setContentGroups={setContentGroups}
-              setLevels={setLevels}
             />
           </div>
         </div>

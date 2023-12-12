@@ -1,15 +1,24 @@
-import { Component, For, Show, createEffect, createMemo, createSignal } from "solid-js";
+import { useExplorerData } from "./explorer-context";
+import {
+  Component,
+  For,
+  Match,
+  Show,
+  Switch,
+  createEffect,
+  createMemo,
+  createSignal
+} from "solid-js";
 import { mdiCheck, mdiDotsVertical, mdiFileDocumentOutline, mdiRename, mdiTrashCan } from "@mdi/js";
-import { useLocation, useNavigate } from "@solidjs/router";
+import { useLocation } from "@solidjs/router";
 import SortableLib from "sortablejs";
 import clsx from "clsx";
-import { Card, Dropdown, Icon, IconButton, Input } from "#components/primitives";
+import { Dropdown, Icon, IconButton, Input, Loader } from "#components/primitives";
 import {
   App,
   hasPermission,
   useClient,
   useConfirmationModal,
-  useLocalStorage,
   useNotifications,
   useSharedState
 } from "#context";
@@ -23,13 +32,14 @@ interface ContentPieceRowProps {
 }
 
 const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
+  const { renaming, loading, setContentPieces, setLevels, setRenaming, setLoading } =
+    useExplorerData();
   const createSharedSignal = useSharedState();
   const { confirmDelete } = useConfirmationModal();
   const { notify } = useNotifications();
   const client = useClient();
   const location = useLocation();
   const [sortableInstanceRef, setSortableInstanceRef] = createRef<SortableLib | null>(null);
-  const [renaming, setRenaming] = createSignal(false);
   const [activeDraggablePiece, setActiveDraggablePiece] = createSharedSignal(
     "activeDraggablePiece",
     null
@@ -53,7 +63,7 @@ const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
           class: "justify-start",
           onClick() {
             setDropdownOpened(false);
-            setRenaming(true);
+            setRenaming(props.contentPiece.id);
           }
         },
         null,
@@ -76,10 +86,17 @@ const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
                 if (!props.contentPiece) return;
 
                 try {
-                  await client.contentGroups.delete.mutate({ id: props.contentPiece.id });
+                  setLoading(props.contentPiece.id);
+                  await client.contentPieces.delete.mutate({ id: props.contentPiece.id });
+                  setLevels(props.contentPiece.contentGroupId, "pieces", (pieces) => {
+                    return pieces.filter((pieceId) => pieceId !== props.contentPiece.id);
+                  });
+                  setContentPieces(props.contentPiece.id, undefined);
+                  setLoading("");
                   notify({ text: "Content piece deleted", type: "success" });
                 } catch (error) {
-                  notify({ text: "Couldn't delete the content piece", type: "success" });
+                  notify({ text: "Couldn't delete the content piece", type: "error" });
+                  setLoading("");
                 }
               }
             });
@@ -96,13 +113,16 @@ const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
 
     if (!sortableInstance) return;
 
-    sortableInstance.option("disabled", renaming() || !hasPermission("manageDashboard"));
+    sortableInstance.option(
+      "disabled",
+      renaming() === props.contentPiece.id || !hasPermission("manageDashboard")
+    );
   });
 
   return (
     <div
       class={clsx(
-        "flex flex-1 justify-center items-center cursor-pointer overflow-hidden ml-0.5 py-1 group",
+        "flex flex-1 justify-center items-center cursor-pointer overflow-hidden ml-0.5 group",
         !dropdownOpened() &&
           (location.pathname !== "/editor" || !props.active) &&
           "@hover-bg-gray-200 dark:@hover-bg-gray-700"
@@ -133,9 +153,11 @@ const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
       }}
     >
       <button
-        class="flex-1 flex justify-start items-center"
+        class="flex-1 flex justify-start items-center h-7"
         data-content-piece-id={props.contentPiece.id}
         onClick={() => {
+          if (renaming()) return;
+
           props.onClick?.();
         }}
       >
@@ -151,7 +173,7 @@ const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
           path={mdiFileDocumentOutline}
         />
         <Show
-          when={!renaming()}
+          when={renaming() !== props.contentPiece.id}
           fallback={
             <Input
               wrapperClass="flex-1"
@@ -162,6 +184,17 @@ const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
                   el?.select();
                 }, 0);
               }}
+              onEnter={(event) => {
+                const target = event.currentTarget as HTMLInputElement;
+                const title = target.value || "";
+
+                client.contentPieces.update.mutate({
+                  id: props.contentPiece.id,
+                  title
+                });
+                setContentPieces(props.contentPiece.id, { ...props.contentPiece, title });
+                setRenaming("");
+              }}
               onChange={(event) => {
                 const title = event.currentTarget.value || "";
 
@@ -169,7 +202,8 @@ const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
                   id: props.contentPiece.id,
                   title
                 });
-                setRenaming(false);
+                setContentPieces(props.contentPiece.id, { ...props.contentPiece, title });
+                setRenaming("");
               }}
             />
           }
@@ -188,66 +222,71 @@ const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
           </span>
         </Show>
       </button>
-      <Show
-        when={!renaming()}
-        fallback={
+      <Switch>
+        <Match when={loading() === props.contentPiece.id}>
+          <div class="m-0 p-1 mr-4 ml-1 flex justify-center items-center">
+            <Loader class="h-4 w-4" />
+          </div>
+        </Match>
+        <Match when={renaming() === props.contentPiece.id}>
           <IconButton
             path={mdiCheck}
-            class="m-0 p-0.25 mr-4 ml-1"
+            class="m-0 p-0 mr-4 ml-1"
             variant="text"
             color="contrast"
             text="soft"
             onClick={() => {
-              setRenaming(false);
+              setRenaming("");
             }}
           />
-        }
-      >
-        <Dropdown
-          placement="bottom-end"
-          class="ml-1 mr-4"
-          opened={dropdownOpened()}
-          setOpened={setDropdownOpened}
-          fixed
-          activatorButton={() => (
-            <IconButton
-              path={mdiDotsVertical}
-              class={clsx("m-0 p-0.25 group-hover:opacity-100", !dropdownOpened() && "opacity-0")}
-              variant="text"
-              color="contrast"
-              text="soft"
-              onClick={(event) => {
-                event.stopPropagation();
-                setDropdownOpened(true);
-              }}
-            />
-          )}
-        >
-          <div class="w-full flex flex-col">
-            <For each={menuOptions()}>
-              {(item) => {
-                if (!item) {
-                  return (
-                    <div class="hidden md:block w-full h-2px my-1 bg-gray-200 dark:bg-gray-700 rounded-full" />
-                  );
-                }
+        </Match>
+        <Match when={true}>
+          <Dropdown
+            placement="bottom-end"
+            class="ml-1 mr-4"
+            opened={dropdownOpened()}
+            setOpened={setDropdownOpened}
+            fixed
+            activatorButton={() => (
+              <IconButton
+                path={mdiDotsVertical}
+                class={clsx("m-0 p-0 group-hover:opacity-100", !dropdownOpened() && "opacity-0")}
+                variant="text"
+                color="contrast"
+                text="soft"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setDropdownOpened(true);
+                }}
+              />
+            )}
+          >
+            <div class="w-full flex flex-col">
+              <For each={menuOptions()}>
+                {(item) => {
+                  if (!item) {
+                    return (
+                      <div class="hidden md:block w-full h-2px my-1 bg-gray-200 dark:bg-gray-700 rounded-full" />
+                    );
+                  }
 
-                return (
-                  <IconButton
-                    path={item.icon}
-                    label={item.label}
-                    variant="text"
-                    text="soft"
-                    color={item.color}
-                    class={clsx("justify-start whitespace-nowrap w-full m-0", item.class)}
-                    onClick={item.onClick}
-                  />
-                );
-              }}
-            </For>
-          </div>
-        </Dropdown>
-      </Show>
+                  return (
+                    <IconButton
+                      path={item.icon}
+                      label={item.label}
+                      variant="text"
+                      text="soft"
+                      color={item.color}
+                      class={clsx("justify-start whitespace-nowrap w-full m-0", item.class)}
+                      onClick={item.onClick}
+                    />
+                  );
+                }}
+              </For>
+            </div>
+          </Dropdown>
+        </Match>
+      </Switch>
     </div>
   );
 };
