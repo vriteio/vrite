@@ -319,7 +319,7 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
     };
 
     createEffect(() => {
-      if (view() === "list") {
+      if (view() === "table") {
         registerCommand({
           action: () => setView("kanban"),
           category: "dashboard",
@@ -328,10 +328,10 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
         });
       } else {
         registerCommand({
-          action: () => setView("list"),
+          action: () => setView("table"),
           category: "dashboard",
           icon: mdiViewList,
-          name: "Switch to List view"
+          name: "Switch to Table view"
         });
       }
     });
@@ -346,7 +346,7 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
               <IconButton
                 path={view() === "kanban" ? mdiViewDashboard : mdiViewList}
                 class="m-0"
-                label={view() === "kanban" ? "Kanban" : "List"}
+                label={view() === "kanban" ? "Kanban" : "Table"}
                 text="soft"
               />
             );
@@ -367,12 +367,12 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
             />
             <IconButton
               onClick={() => {
-                setView("list");
+                setView("table");
                 setViewSelectorOpened(false);
               }}
               path={mdiViewList}
               class="w-full m-0 justify-start"
-              label="List"
+              label="Table"
               variant={view() === "list" ? "solid" : "text"}
               text={view() === "list" ? "primary" : "soft"}
               color={view() === "list" ? "primary" : "base"}

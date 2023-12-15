@@ -59,14 +59,13 @@ const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
       menuOptions.push(
         {
           icon: mdiRename,
-          label: "Rename group",
+          label: "Rename piece",
           class: "justify-start",
           onClick() {
             setDropdownOpened(false);
             setRenaming(props.contentPiece.id);
           }
         },
-        null,
         {
           icon: mdiTrashCan,
           label: "Delete",

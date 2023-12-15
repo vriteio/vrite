@@ -65,6 +65,11 @@ const embeds = ["codepen", "codesandbox", "youtube"] as const;
 const workspaceSettings = z.object({
   id: zodId(),
   prettierConfig: z.string(),
+  dashboardViews: z
+    .object({
+      table: z.record(z.string(), z.boolean())
+    })
+    .optional(),
   metadata: metadataSettings.optional(),
   marks: z.array(z.enum(marks)),
   blocks: z.array(z.enum(blocks)),

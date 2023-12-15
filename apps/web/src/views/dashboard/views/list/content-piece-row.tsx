@@ -1,104 +1,66 @@
-import { Component } from "solid-js";
-import { mdiEye, mdiFileOutline, mdiPencil } from "@mdi/js";
-import { useNavigate } from "@solidjs/router";
-import SortableLib from "sortablejs";
-import { Card, IconButton, Tooltip } from "#components/primitives";
-import { App, hasPermission, useLocalStorage, useSharedState } from "#context";
-import { breakpoints } from "#lib/utils";
+import { useDashboardListViewData } from "./list-view-context";
+import { Component, For, Show } from "solid-js";
+import clsx from "clsx";
+import { Dynamic } from "solid-js/web";
+import { mdiFileDocumentOutline } from "@mdi/js";
+import { App } from "#context";
 
 interface ContentPieceRowProps {
-  contentPiece: App.ExtendedContentPieceWithAdditionalData<"order">;
-}
-
-declare module "#context" {
-  interface SharedState {
-    activeDraggablePiece: App.ExtendedContentPieceWithAdditionalData<"order"> | null;
-  }
+  contentPiece: App.ContentPieceWithAdditionalData;
 }
 
 const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
-  const { setStorage, storage } = useLocalStorage();
-  const navigate = useNavigate();
-  const createSharedSignal = useSharedState();
-  const [, setActiveDraggablePiece] = createSharedSignal("activeDraggablePiece", null);
-  const editedArticleId = (): string => storage().contentPieceId || "";
+  const { columns } = useDashboardListViewData();
 
   return (
-    <button
-      onClick={() => {
-        setStorage((storage) => ({
-          ...storage,
-          sidePanelView: "contentPiece",
-          sidePanelWidth: storage.sidePanelWidth || 375,
-          contentPieceId: props.contentPiece.id
-        }));
+    <div
+      class="flex justify-center items-center border-b-2 text-left font-500 border-gray-200 dark:border-gray-700 relative w-full hover:bg-gray-200 hover:bg-opacity-40 dark:hover:bg-gray-700 dark:hover:bg-opacity-40"
+      onDragStart={(event) => {
+        const element = document.createElement("div");
+
+        element.setAttribute(
+          "class",
+          "fixed left-[9999px] top-[9999px] flex justify-center items-center bg-gray-100 dark:bg-gray-800 h-9 px-2 py-1"
+        );
+        element.insertAdjacentHTML(
+          "afterbegin",
+          `<svg viewBox="0 0 24 24" clip-rule="evenodd" fill-rule="evenodd" class="fill-current h-6 w-6"><path d="${mdiFileDocumentOutline}"/></svg><span class="pl-1">${props.contentPiece.title}</span>`
+        );
+        document.body.appendChild(element);
+
+        const rect = element.getBoundingClientRect();
+
+        event.dataTransfer?.setDragImage(element, rect.width / 2, rect.height / 2);
+        setTimeout(() => {
+          document.body.removeChild(element);
+        });
       }}
     >
-      <Card
-        color="contrast"
-        class="m-0 border-x-0 border-t-0 rounded-none justify-start items-center @hover:bg-gray-200 dark:@hover:bg-gray-700 @hover:cursor-pointer pl-4 flex bg-transparent"
-      >
-        <div
-          class="flex flex-1 justify-center items-center cursor-pointer overflow-hidden rounded-lg"
-          ref={(el) => {
-            SortableLib.create(el, {
-              group: {
-                name: "shared",
-                put: () => false
-              },
-              delayOnTouchOnly: true,
-              delay: 500,
-              disabled: !hasPermission("manageDashboard") || !breakpoints.md(),
-              ghostClass: "!hidden",
-              revertOnSpill: true,
-              filter: ".locked",
-
-              onStart() {
-                setActiveDraggablePiece(props.contentPiece);
-              },
-              onEnd() {
-                setActiveDraggablePiece(null);
-              }
-            });
-          }}
-        >
-          <div
-            class="flex-1 flex justify-start items-center"
-            data-content-piece-id={props.contentPiece.id}
-          >
-            <IconButton
-              path={mdiFileOutline}
-              class="m-0 mr-1"
-              variant="text"
-              text="soft"
-              hover={false}
-              badge
-            />
-            <span class="clamp-1 text-start">{props.contentPiece.title}</span>
-          </div>
-        </div>
-        <Tooltip text="Open in editor" side="left" wrapperClass="mr-4" class="-ml-1">
-          <IconButton
-            path={hasPermission("editMetadata") ? mdiPencil : mdiEye}
-            text={editedArticleId() === props.contentPiece.id ? "base" : "soft"}
-            color={editedArticleId() === props.contentPiece.id ? "primary" : "base"}
-            variant="text"
-            class="whitespace-nowrap contentPiece-card-edit m-0 @hover-dark:bg-gray-800"
-            onClick={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              setStorage((storage) => ({
-                ...storage,
-                sidePanelWidth: breakpoints.md() ? storage.sidePanelWidth || 375 : 0,
-                sidePanelView: "contentPiece",
-                contentPieceId: props.contentPiece.id
-              }));
-              navigate("/editor");
-            }}
-          />
-        </Tooltip>
-      </Card>
-    </button>
+      <For each={columns}>
+        {(column) => {
+          return (
+            <div
+              class={clsx(
+                "border-r-2 border-gray-200 dark:border-gray-700 h-9",
+                !column && "flex-1"
+              )}
+              style={{
+                "min-width": column ? `${column.width}px` : undefined,
+                "max-width": column ? `${column.width}px` : undefined
+              }}
+            >
+              <Show when={column}>
+                <Dynamic
+                  component={column?.cell}
+                  contentPiece={props.contentPiece}
+                  column={column}
+                />
+              </Show>
+            </div>
+          );
+        }}
+      </For>
+    </div>
   );
 };
 

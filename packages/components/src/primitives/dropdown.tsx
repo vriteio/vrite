@@ -240,7 +240,7 @@ const Dropdown: Component<DropdownProps> = (props) => {
         mount={(!md() && document.getElementById("dropdowns")) || undefined}
       >
         <Card
-          {...props.cardProps}
+          {...(props.cardProps || {})}
           class={clsx(
             `:base-2: z-50 flex flex-col p-2 overflow-hidden transform shadow-2xl duration-250`,
             !md() &&

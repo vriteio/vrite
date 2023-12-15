@@ -73,7 +73,7 @@ const DashboardView: Component = () => {
   return (
     <div class="relative flex-1 overflow-hidden flex flex-row h-full">
       <Switch>
-        <Match when={storage().dashboardView === "list"}>
+        <Match when={storage().dashboardView === "table"}>
           <DashboardListView
             ancestor={ancestor()}
             contentGroups={contentGroups()}

@@ -1,7 +1,13 @@
 import { ContentPieceCard } from "./content-piece-card";
 import { useContentGroupsContext } from "../../content-groups-context";
 import { Component, createEffect, createMemo, createSignal, For, on, Show } from "solid-js";
-import { mdiDotsVertical, mdiFilePlus, mdiFolderPlus, mdiIdentifier, mdiTrashCan } from "@mdi/js";
+import {
+  mdiDotsVertical,
+  mdiFileDocumentPlusOutline,
+  mdiFolderPlus,
+  mdiIdentifier,
+  mdiTrashCan
+} from "@mdi/js";
 import clsx from "clsx";
 import SortableLib from "sortablejs";
 import { Card, IconButton, Sortable, Dropdown, Loader, Icon } from "#components/primitives";
@@ -463,7 +469,7 @@ const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
               class="w-full h-full m-0"
               color="contrast"
               variant="text"
-              path={mdiFilePlus}
+              path={mdiFileDocumentPlusOutline}
               text="soft"
               label="New content piece"
               onClick={async () => {
