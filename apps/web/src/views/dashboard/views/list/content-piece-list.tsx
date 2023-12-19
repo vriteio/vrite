@@ -5,6 +5,7 @@ import {
   mdiDotsHorizontal,
   mdiDotsHorizontalCircleOutline,
   mdiFileDocumentPlusOutline,
+  mdiFolder,
   mdiIdentifier,
   mdiTrashCan
 } from "@mdi/js";
@@ -157,7 +158,30 @@ const ContentPieceList: Component<{
   });
 
   return (
-    <div class="flex flex-col">
+    <div
+      class="flex flex-col"
+      onDragStart={(event) => {
+        const element = document.createElement("div");
+
+        setExpanded(false);
+        element.setAttribute(
+          "class",
+          "fixed left-[9999px] top-[9999px] flex justify-center items-center bg-gray-100 dark:bg-gray-800 h-9 px-2 py-1 rounded-lg"
+        );
+        element.insertAdjacentHTML(
+          "afterbegin",
+          `<svg viewBox="0 0 24 24" clip-rule="evenodd" fill-rule="evenodd" class="fill-current h-6 w-6"><path d="${mdiFolder}"/></svg><span class="pl-1 whitespace-nowrap">${props.ancestor.name}</span>`
+        );
+        document.body.appendChild(element);
+
+        const rect = element.getBoundingClientRect();
+
+        event.dataTransfer?.setDragImage(element, rect.width / 2, rect.height / 2);
+        setTimeout(() => {
+          document.body.removeChild(element);
+        });
+      }}
+    >
       <div class="flex flex-col overflow-hidden" style={{ "min-width": `${tableWidth()}px` }}>
         <div class="border-b-2 border-r-2 text-left font-500 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 w-full h-12 relative">
           <div class="h-12 flex justify-start items-center gap-3 group px-2 border-b-2 border-transparent">
@@ -222,11 +246,11 @@ const ContentPieceList: Component<{
           wrapper="div"
           wrapperProps={{
             class:
-              "flex flex-col items-start overflow-hidden transform transition-all duration-300 ease-in-out",
+              "flex flex-col items-start overflow-hidden transition-all transform duration-300 ease-in-out",
             style: {
               "max-height":
                 expanded() && !activeDraggablePiece()
-                  ? `${filteredContentPieces().length * 38}px`
+                  ? `${filteredContentPieces().length * 34}px`
                   : activeDraggablePiece()
                     ? "unset"
                     : "0px"

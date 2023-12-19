@@ -3,7 +3,7 @@ import { Component, For, Show } from "solid-js";
 import clsx from "clsx";
 import { Dynamic } from "solid-js/web";
 import { mdiFileDocumentOutline } from "@mdi/js";
-import { App } from "#context";
+import { App, useLocalStorage } from "#context";
 
 interface ContentPieceRowProps {
   contentPiece: App.ContentPieceWithAdditionalData;
@@ -11,16 +11,25 @@ interface ContentPieceRowProps {
 
 const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
   const { columns } = useDashboardListViewData();
+  const { setStorage } = useLocalStorage();
 
   return (
     <div
-      class="flex justify-center items-center border-b-2 text-left font-500 border-gray-200 dark:border-gray-700 relative w-full hover:bg-gray-200 hover:bg-opacity-40 dark:hover:bg-gray-700 dark:hover:bg-opacity-40"
+      class="flex justify-center items-center border-b-2 text-left font-500 border-gray-200 dark:border-gray-700 relative w-full hover:cursor-pointer hover:bg-gray-200 hover:bg-opacity-40 dark:hover:bg-gray-700 dark:hover:bg-opacity-40 group"
+      onClick={() => {
+        setStorage((storage) => ({
+          ...storage,
+          sidePanelView: "contentPiece",
+          sidePanelWidth: storage.sidePanelWidth || 375,
+          contentPieceId: props.contentPiece.id
+        }));
+      }}
       onDragStart={(event) => {
         const element = document.createElement("div");
 
         element.setAttribute(
           "class",
-          "fixed left-[9999px] top-[9999px] flex justify-center items-center bg-gray-100 dark:bg-gray-800 h-9 px-2 py-1"
+          "fixed left-[9999px] top-[9999px] flex justify-center items-center bg-gray-100 dark:bg-gray-800 h-9 px-2 py-1 rounded-lg"
         );
         element.insertAdjacentHTML(
           "afterbegin",
@@ -34,6 +43,7 @@ const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
         setTimeout(() => {
           document.body.removeChild(element);
         });
+        event.stopPropagation();
       }}
     >
       <For each={columns}>
@@ -41,8 +51,8 @@ const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
           return (
             <div
               class={clsx(
-                "border-r-2 border-gray-200 dark:border-gray-700 h-9",
-                !column && "flex-1"
+                "border-r-2 border-gray-200 dark:border-gray-700 h-8",
+                !column && "flex-1 min-w-[4rem]"
               )}
               style={{
                 "min-width": column ? `${column.width}px` : undefined,

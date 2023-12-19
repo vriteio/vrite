@@ -115,7 +115,7 @@ const List: Component<DashboardListViewProps> = (props) => {
           {(contentGroup) => {
             if (!contentGroup) {
               return (
-                <div class="h-12 flex justify-start items-center gap-3 group px-2 border-b-2 border-r-2 border-transparent border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 hover:bg-gray-200 dark:hover:bg-gray-700 hover:cursor-pointer">
+                <div class="h-12 flex justify-start items-center gap-3 group px-2 border-b-2 border-r-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 hover:bg-gray-200 dark:hover:bg-gray-700 hover:cursor-pointer">
                   <IconButton path={mdiPlus} class="m-0" variant="text" />
                   <Heading level={3}>Add content group</Heading>
                 </div>

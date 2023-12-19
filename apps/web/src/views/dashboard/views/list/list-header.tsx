@@ -8,7 +8,7 @@ const DashboardListViewHeader: Component = () => {
   const { columns, setColumns } = useDashboardListViewData();
   const [resizedHeader, setResizedHeader] = createSignal("");
   const [dropdownOpened, setDropdownOpened] = createSignal("");
-  const onPointerMove = (event: PointerEvent): void => {
+  const drag = (event: PointerEvent): void => {
     const headerId = resizedHeader();
 
     if (headerId) {
@@ -26,28 +26,30 @@ const DashboardListViewHeader: Component = () => {
       event.preventDefault();
     }
   };
-  const onPointerUp = (): void => {
+  const release = (event: PointerEvent): void => {
     setResizedHeader("");
   };
 
   onMount(() => {
-    document.body.addEventListener("pointermove", onPointerMove);
-    document.body.addEventListener("pointerup", onPointerUp);
+    document.body.addEventListener("pointermove", drag);
+    document.body.addEventListener("pointerup", release);
+    document.body.addEventListener("pointerleave", release);
   });
   onCleanup(() => {
-    document.body.removeEventListener("pointermove", onPointerMove);
-    document.body.removeEventListener("pointerup", onPointerUp);
+    document.body.removeEventListener("pointermove", drag);
+    document.body.removeEventListener("pointerup", release);
+    document.body.removeEventListener("pointerleave", release);
   });
 
   return (
-    <div class="flex bg-gray-50 dark:bg-gray-900 sticky top-0 z-1 overflow-x-hidden">
+    <div class="flex bg-gray-50 dark:bg-gray-900 sticky top-0 z-1 border-b-2 border-gray-200 dark:border-gray-700">
       <For each={columns}>
         {(column, index) => {
           return (
             <div
               class={clsx(
-                "h-9 p-0.5 flex justify-center items-center border-r-2 first:border-l-0 border-b-2 text-left font-500 border-gray-200 dark:border-gray-700 relative bg-gray-200 border-gray-200 bg-opacity-50 dark:bg-gray-700 dark:bg-opacity-30 dark:border-gray-700",
-                !column && "flex-1"
+                "h-8 flex justify-center items-center border-r-2 first:border-l-0 text-left font-500 border-gray-200 dark:border-gray-700 relative bg-gray-200 border-gray-200 bg-opacity-50 dark:bg-gray-700 dark:bg-opacity-30 dark:border-gray-700",
+                !column && "flex-1 min-w-[4rem]"
               )}
               ref={(element) => {
                 if (column) setColumns(index(), "headerRef", element);
@@ -60,28 +62,26 @@ const DashboardListViewHeader: Component = () => {
               <Show
                 when={column}
                 fallback={
-                  <div class="flex justify-start items-center w-full">
+                  <div class="flex justify-start items-center w-full pl-0.5">
                     <Dropdown
-                      placement="bottom-end"
-                      opened={dropdownOpened() === column?.id}
+                      placement="bottom-start"
+                      opened={dropdownOpened() === "add-column"}
                       fixed
-                      class="m-0 mr-1.5"
+                      class="m-0"
                       setOpened={(opened) => {
-                        setDropdownOpened(opened ? column?.id || "" : "");
+                        setDropdownOpened(opened ? "add-column" : "");
                       }}
                       activatorButton={() => (
-                        <Tooltip text="Add column" fixed class="ml-1" side="right">
-                          <IconButton
-                            path={mdiPlus}
-                            class="m-0"
-                            variant="text"
-                            text="soft"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              setDropdownOpened(column?.id || "");
-                            }}
-                          />
-                        </Tooltip>
+                        <IconButton
+                          path={mdiPlus}
+                          class="m-0 p-0.5"
+                          variant="text"
+                          text="soft"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setDropdownOpened("add-column");
+                          }}
+                        />
                       )}
                     >
                       <div class="w-full flex flex-col">
@@ -104,14 +104,14 @@ const DashboardListViewHeader: Component = () => {
                   placement="bottom-end"
                   opened={dropdownOpened() === column?.id}
                   fixed
-                  class="m-0"
+                  class="m-0 mr-0.5"
                   setOpened={(opened) => {
                     setDropdownOpened(opened ? column?.id || "" : "");
                   }}
                   activatorButton={() => (
                     <IconButton
                       path={mdiDotsVertical}
-                      class="m-0"
+                      class="m-0 p-0.5"
                       variant="text"
                       text="soft"
                       onClick={(event) => {

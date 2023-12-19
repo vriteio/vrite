@@ -15,7 +15,7 @@ import {
 import { SetStoreFunction, createStore } from "solid-js/store";
 import { Button, Icon, IconButton, Heading } from "#components/primitives";
 import { tagColorClasses } from "#lib/utils";
-import { useLocalStorage, App } from "#context";
+import { useLocalStorage, App, useAuthenticatedUserData } from "#context";
 
 interface DashboardListViewColumn {
   header: string;
@@ -37,6 +37,7 @@ type DashboardListViewContextType = {
 
 const DashboardListViewContext = createContext<DashboardListViewContextType>();
 const DashboardListViewDataProvider: ParentComponent = (props) => {
+  const {workspaceSettings} = useAuthenticatedUserData();
   const [columns, setColumns] = createStore<Array<DashboardListViewColumn | null>>([
     {
       header: "Title",
@@ -47,17 +48,7 @@ const DashboardListViewDataProvider: ParentComponent = (props) => {
         const { setStorage } = useLocalStorage();
 
         return (
-          <button
-            class="px-2 text-start min-h-9 flex justify-start items-center group hover:cursor-pointer w-full"
-            onClick={() => {
-              setStorage((storage) => ({
-                ...storage,
-                sidePanelView: "contentPiece",
-                sidePanelWidth: storage.sidePanelWidth || 375,
-                contentPieceId: props.contentPiece.id
-              }));
-            }}
-          >
+          <button class="px-2 text-start min-h-8 flex justify-start items-center w-full">
             <div class="mr-1 h-6 w-6 flex justify-center items-center">
               <Icon
                 path={mdiFileDocumentOutline}
@@ -194,7 +185,7 @@ const DashboardListViewDataProvider: ParentComponent = (props) => {
   ]);
   const tableWidth = createMemo(() => {
     return columns.reduce((total, column) => {
-      return total + (column?.width || 0);
+      return total + (column?.width || 66);
     }, 0);
   });
 
