@@ -2,13 +2,11 @@ import { Editor } from "./editor";
 import { Component, createEffect, createSignal, on, onCleanup, Show } from "solid-js";
 import clsx from "clsx";
 import { Loader } from "#components/primitives";
-import { useAuthenticatedUserData, useCache, useLocalStorage } from "#context";
+import { useAuthenticatedUserData, useContentData, useLocalStorage } from "#context";
 import { createRef } from "#lib/utils";
-import { useOpenedContentPiece } from "#lib/composables";
 
 const EditorView: Component = () => {
-  const cache = useCache();
-  const { contentPiece, loading } = cache("openedContentPiece", useOpenedContentPiece);
+  const { contentPieces, activeContentPieceId } = useContentData();
   const { storage, setStorage } = useLocalStorage();
   const { workspaceSettings } = useAuthenticatedUserData();
   const [syncing, setSyncing] = createSignal(true);
@@ -42,7 +40,7 @@ const EditorView: Component = () => {
   });
   createEffect(
     on(
-      contentPiece,
+      activeContentPieceId,
       () => {
         setSyncing(true);
       },
@@ -54,14 +52,14 @@ const EditorView: Component = () => {
   return (
     <>
       <Show
-        when={contentPiece()}
+        when={activeContentPieceId()}
         fallback={
           <div class="flex items-center justify-center w-full h-full">
-            <Show when={!loading()}>
-              <span class="text-2xl font-semibold text-gray-500 dark:text-gray-400">
-                To edit, select an article in the dashboard
-              </span>
-            </Show>
+            {/* <Show when={!loading()}> */}
+            <span class="text-2xl font-semibold text-gray-500 dark:text-gray-400">
+              To edit, select an article in the dashboard
+            </span>
+            {/* </Show> */}
           </div>
         }
       >
@@ -78,9 +76,9 @@ const EditorView: Component = () => {
               storage().zenMode ? "items-center" : "items-start"
             )}
           >
-            <Show when={!loading() && workspaceSettings()} keyed>
+            <Show when={/* !loading() &&*/ workspaceSettings()} keyed>
               <Editor
-                editedContentPiece={contentPiece()!}
+                editedContentPiece={contentPieces[activeContentPieceId() || ""]!}
                 reloaded={reloaded()}
                 reload={async () => {
                   setReloaded(true);
@@ -96,7 +94,7 @@ const EditorView: Component = () => {
           </div>
         </div>
       </Show>
-      <Show when={loading() || (contentPiece() && syncing())}>
+      <Show when={/* loading() || ()*/ activeContentPieceId() && syncing()}>
         <div class="flex items-center justify-center w-full h-full bg-gray-100 dark:bg-gray-800 absolute top-0 left-0">
           <Loader />
         </div>

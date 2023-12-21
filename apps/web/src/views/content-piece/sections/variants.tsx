@@ -1,17 +1,11 @@
 import { Accessor, Component, For, Show, createSignal, onCleanup } from "solid-js";
 import { createStore } from "solid-js/store";
-import { App, useClient, useLocalStorage, useSharedState } from "#context";
+import { App, useClient } from "#context";
 import { Button, Loader } from "#components/primitives";
 
 interface VariantsSectionProps {
   activeVariant: App.Variant | null;
   setActiveVariant(variant: App.Variant | null): void;
-}
-
-declare module "#context" {
-  interface SharedState {
-    activeVariant: App.Variant;
-  }
 }
 
 const useVariants = (): {
@@ -66,8 +60,8 @@ const useVariants = (): {
   return { loading, variants: () => state.variants };
 };
 const VariantsSection: Component<VariantsSectionProps> = (props) => {
-  const createSharedSignal = useSharedState();
-  const [, setActiveVariant] = createSharedSignal("activeVariant");
+  /* TODO: Use ContentData
+     const [, setActiveVariant] = createSharedSignal("activeVariant"); */
   const { loading, variants } = useVariants();
 
   return (
@@ -103,10 +97,10 @@ const VariantsSection: Component<VariantsSectionProps> = (props) => {
                 onClick={() => {
                   if (active()) {
                     props.setActiveVariant(null);
-                    setActiveVariant(undefined);
+                    // setActiveVariant(undefined);
                   } else {
                     props.setActiveVariant(variant);
-                    setActiveVariant(variant);
+                    // setActiveVariant(variant);
                   }
                 }}
               >
@@ -118,7 +112,8 @@ const VariantsSection: Component<VariantsSectionProps> = (props) => {
                   text="soft"
                   size="small"
                 >
-                  {variant.name}
+                  Test
+                  {/* TODO: variant.name*/}
                 </Button>
               </Button>
             );

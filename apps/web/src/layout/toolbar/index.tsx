@@ -19,6 +19,7 @@ import {
   App,
   useClient,
   useCommandPalette,
+  useContentData,
   useHostConfig,
   useLocalStorage,
   useNotifications,
@@ -31,8 +32,8 @@ import { breakpoints, isAppleDevice } from "#lib/utils";
 
 const toolbarViews: Record<string, Component<Record<string, any>>> = {
   editorStandalone: () => {
-    const createSharedSignal = useSharedState();
-    const [sharedEditor] = createSharedSignal("editor");
+    const { useSharedSignal } = useSharedState();
+    const [sharedEditor] = useSharedSignal("editor");
     const { setStorage } = useLocalStorage();
     const [menuOpened, setMenuOpened] = createSignal(false);
 
@@ -155,12 +156,12 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
     );
   },
   conflict: () => {
-    const createSharedSignal = useSharedState();
+    const { useSharedSignal } = useSharedState();
     const client = useClient();
     const { notify } = useNotifications();
-    const [resolvedContent] = createSharedSignal("resolvedContent");
-    const [conflictData, setConflictData] = createSharedSignal("conflictData");
-    const [conflicts, setConflicts] = createSharedSignal("conflicts");
+    const [resolvedContent] = useSharedSignal("resolvedContent");
+    const [conflictData, setConflictData] = useSharedSignal("conflictData");
+    const [conflicts, setConflicts] = useSharedSignal("conflicts");
     const [loading, setLoading] = createSignal(false);
     const pathDetails = createMemo(() => {
       const pathParts = (conflictData()?.path || "").split("/");
@@ -215,17 +216,17 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
     );
   },
   editor: () => {
-    const createSharedSignal = useSharedState();
+    const { activeContentPieceId, contentPieces } = useContentData();
+    const { useSharedSignal } = useSharedState();
     const { registerCommand } = useCommandPalette();
-    const [sharedEditor] = createSharedSignal("editor");
-    const [sharedProvider] = createSharedSignal("provider");
-    const [sharedEditedContentPiece] = createSharedSignal("editedContentPiece");
+    const [sharedEditor] = useSharedSignal("editor");
+    const [sharedProvider] = useSharedSignal("provider");
     const { setStorage } = useLocalStorage();
     const [menuOpened, setMenuOpened] = createSignal(false);
 
     createEffect(
-      on(sharedEditedContentPiece, (sharedEditedContentPiece) => {
-        if (sharedEditedContentPiece) {
+      on(activeContentPieceId, (contentPieceId) => {
+        if (contentPieceId) {
           registerCommand({
             name: "Zen mode",
             category: "editor",
@@ -263,9 +264,9 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
                     wrapperClass="w-full"
                   />
                 </Show>
-                <Show when={sharedEditedContentPiece()}>
+                <Show when={activeContentPieceId() && contentPieces[activeContentPieceId() || ""]}>
                   <ExportMenu
-                    editedContentPiece={sharedEditedContentPiece()!}
+                    editedContentPiece={contentPieces[activeContentPieceId() || ""]!}
                     onClick={() => setMenuOpened(false)}
                     class="w-full justify-start"
                     wrapperClass="w-full"
@@ -289,8 +290,8 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
           <Show when={sharedEditor()}>
             <StatsMenu editor={sharedEditor()!} />
           </Show>
-          <Show when={sharedEditedContentPiece()}>
-            <ExportMenu editedContentPiece={sharedEditedContentPiece()!} />
+          <Show when={activeContentPieceId() && contentPieces[activeContentPieceId() || ""]}>
+            <ExportMenu editedContentPiece={contentPieces[activeContentPieceId() || ""]!} />
             <IconButton
               onClick={() => {
                 setStorage((storage) => ({ ...storage, zenMode: true }));
@@ -308,10 +309,10 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
   },
   default: () => {
     const hostConfig = useHostConfig();
-    const createSharedSignal = useSharedState();
+    const { useSharedSignal } = useSharedState();
     const { storage, setStorage } = useLocalStorage();
     const { setOpened, registerCommand } = useCommandPalette();
-    const [provider] = createSharedSignal("provider");
+    const [provider] = useSharedSignal("provider");
     const [viewSelectorOpened, setViewSelectorOpened] = createSignal(false);
     const view = (): string => storage().dashboardView || "kanban";
     const setView = (view: string): void => {

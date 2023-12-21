@@ -37,9 +37,9 @@ interface ExportMenuProps {
 type ExportType = "html" | "json" | "md" | "mdx";
 
 const ExportMenu: Component<ExportMenuProps> = (props) => {
-  const createSharedSignal = useSharedState();
+  const { useSharedSignal } = useSharedState();
   const client = useClient();
-  const [editor] = createSharedSignal("editor");
+  const [editor] = useSharedSignal("editor");
   const { registerCommand = () => {} } = useCommandPalette() || {};
   const { workspaceSettings = () => null } = useAuthenticatedUserData() || {};
   const { notify } = useNotifications();

@@ -7,20 +7,19 @@ import {
   createSignal,
   useContext
 } from "solid-js";
-import { App } from "#context";
 
 interface StorageData {
   sourceControlConfiguredProvider: string;
-  sidePanelView: string;
-  sidePanelWidth: number;
-  toolbarView: string;
+  activeContentGroupId: string;
+  activeContentPieceId: string;
+  expandedContentLevels: string[];
   dashboardView: string;
-  dashboardViewAncestor: App.ContentGroup;
-  contentPieceId: string;
+  sidePanelView: string;
+  toolbarView: string;
+  sidePanelWidth: number;
   settingsSection: string;
   zenMode: boolean;
   html: string;
-  explorerOpenedLevels: string[];
 }
 interface LocalStorageContextData {
   storage: Accessor<Partial<StorageData>>;

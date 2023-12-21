@@ -4,7 +4,13 @@ import dayjs from "dayjs";
 import DOMPurify from "dompurify";
 import clsx from "clsx";
 import { useNavigate } from "@solidjs/router";
-import { App, hasPermission, useAuthenticatedUserData, useLocalStorage } from "#context";
+import {
+  App,
+  hasPermission,
+  useAuthenticatedUserData,
+  useContentData,
+  useLocalStorage
+} from "#context";
 import { Button, Card, Heading, Icon, IconButton, Tooltip } from "#components/primitives";
 import { breakpoints, tagColorClasses } from "#lib/utils";
 
@@ -14,10 +20,10 @@ interface ContentPieceProps {
 }
 
 const ContentPieceCard: Component<ContentPieceProps> = (props) => {
-  const { setStorage, storage } = useLocalStorage();
+  const { activeContentPieceId } = useContentData();
+  const { setStorage } = useLocalStorage();
   const { deletedTags } = useAuthenticatedUserData();
   const navigate = useNavigate();
-  const editedArticleId = (): string => storage().contentPieceId || "";
   const displayTags = createMemo(() => {
     const visibleTags: App.Tag[] = [];
     const hiddenTags: App.Tag[] = [];
@@ -130,8 +136,8 @@ const ContentPieceCard: Component<ContentPieceProps> = (props) => {
         <Tooltip text="Open in editor" side="left">
           <IconButton
             path={hasPermission("editMetadata") ? mdiPencil : mdiEye}
-            text={editedArticleId() === props.contentPiece.id ? "primary" : "soft"}
-            color={editedArticleId() === props.contentPiece.id ? "primary" : "contrast"}
+            text={activeContentPieceId() === props.contentPiece.id ? "primary" : "soft"}
+            color={activeContentPieceId() === props.contentPiece.id ? "primary" : "contrast"}
             class="whitespace-nowrap contentPiece-card-edit"
             onClick={(event) => {
               event.preventDefault();

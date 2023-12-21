@@ -26,12 +26,12 @@ import {
   useClient,
   useLocalStorage,
   hasPermission,
-  useCache,
-  useHostConfig
+  useHostConfig,
+  useSharedState,
+  useContentData
 } from "#context";
 import { MiniEditor } from "#components/fragments";
 import { breakpoints } from "#lib/utils";
-import { useOpenedContentPiece } from "#lib/composables";
 
 dayjs.extend(CustomParseFormat);
 
@@ -47,11 +47,10 @@ const ContentPieceView: Component = () => {
     id: string;
     icon: string;
   }>;
-  const cache = useCache();
-  const { contentPiece, setContentPiece, loading, activeVariant, setActiveVariant } = cache(
-    "openedContentPiece",
-    useOpenedContentPiece
-  );
+  const { useSharedSignal } = useSharedState();
+  // TODO: use content data
+  const { contentPiece, setContentPiece, loading, activeVariant, setActiveVariant } =
+    useContentData().openedContentPiece;
   const client = useClient();
   const { setStorage } = useLocalStorage();
   const { confirmDelete } = useConfirmationModal();

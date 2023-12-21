@@ -47,7 +47,7 @@ const SortableComponent = <D, W extends Component<WrapperProps> | keyof JSX.Intr
 
         setSortable(
           Sortable.create(wrapperRef, {
-            ...options,
+            ...(options || {}),
             delayOnTouchOnly: true,
             delay: 500
           })

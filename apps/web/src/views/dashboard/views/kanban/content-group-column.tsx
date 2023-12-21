@@ -1,5 +1,4 @@
 import { ContentPieceCard } from "./content-piece-card";
-import { useContentGroupsContext } from "../../content-groups-context";
 import { Component, createEffect, createMemo, createSignal, For, on, Show } from "solid-js";
 import {
   mdiDotsVertical,
@@ -19,40 +18,33 @@ import {
   useConfirmationModal,
   useLocalStorage,
   hasPermission,
-  useCache,
-  useSharedState,
-  useCommandPalette
+  useCommandPalette,
+  useContentData,
+  ContentLevel
 } from "#context";
 import { breakpoints, createRef } from "#lib/utils";
-import { useContentPieces } from "#lib/composables";
 
 interface ContentGroupColumnProps {
   contentGroup: App.ContentGroup;
   index: number;
   onDragStart?(): void;
   onDragEnd?(): void;
-  remove?(id: string): void;
+  remove?(id?: string): void;
 }
 interface AddContentGroupColumnProps {
   class?: string;
 }
 
-declare module "#context" {
-  interface SharedState {
-    activeDraggableGroup: App.ContentGroup | null;
-  }
-}
-
 const AddContentGroupColumn: Component<AddContentGroupColumnProps> = (props) => {
   const client = useClient();
   const { notify } = useNotifications();
-  const { ancestor } = useContentGroupsContext();
+  const { activeContentGroupId } = useContentData();
   const { registerCommand } = useCommandPalette();
   const createNewContentGroup = async (): Promise<void> => {
     try {
       await client.contentGroups.create.mutate({
         name: "",
-        ancestor: ancestor()?.id
+        ancestor: activeContentGroupId() || undefined
       });
       notify({ text: "New content group created", type: "success" });
     } catch (error) {
@@ -86,22 +78,20 @@ const AddContentGroupColumn: Component<AddContentGroupColumnProps> = (props) => 
   );
 };
 const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
-  const cache = useCache();
-  const createSharedSignal = useSharedState();
-  const { contentPieces, setContentPieces, loadMore, loading } = cache(
-    `contentPieces:${props.contentGroup.id}`,
-    () => {
-      return useContentPieces(props.contentGroup.id);
-    }
-  );
+  const {
+    contentPieces,
+    contentLevels,
+    contentActions,
+    contentLoader,
+    activeContentGroupId,
+    setActiveContentGroupId,
+    activeDraggableContentGroupId,
+    setActiveDraggableContentGroupId,
+    setActiveDraggableContentPieceId
+  } = useContentData();
   const { notify } = useNotifications();
   const { confirmDelete } = useConfirmationModal();
   const { setStorage } = useLocalStorage();
-  const { activeDraggablePiece, setActiveDraggablePiece, setAncestor } = useContentGroupsContext();
-  const [activeDraggableGroup, setActiveDraggableGroup] = createSharedSignal(
-    "activeDraggableGroup",
-    null
-  );
   const scrollShadowController = createScrollShadowController();
   const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
   const [dropdownOpened, setDropdownOpened] = createSignal(false);
@@ -148,12 +138,11 @@ const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
             async onConfirm() {
               try {
                 await client.contentGroups.delete.mutate({ id: props.contentGroup.id });
-                setStorage((storage) => ({
-                  ...storage,
-                  ...(contentPieces().find((contentPiece) => {
-                    return contentPiece.contentGroupId === props.contentGroup.id;
-                  }) && { contentPieceId: undefined })
-                }));
+
+                if (activeContentGroupId() === props.contentGroup.id) {
+                  setActiveContentGroupId(null);
+                }
+
                 notify({ text: "Content group deleted", type: "success" });
               } catch (error) {
                 notify({ text: "Couldn't delete the content group", type: "success" });
@@ -167,12 +156,23 @@ const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
     return menuOptions;
   });
   const [highlight, setHighlight] = createSignal(false);
+  const columnContentLevel = (): ContentLevel => {
+    return (
+      contentLevels[props.contentGroup.id || ""] || {
+        groups: [],
+        moreToLoad: false,
+        pieces: [],
+        loading: false
+      }
+    );
+  };
 
   createEffect(
-    on(contentPieces, () => {
+    on(activeContentGroupId, () => {
       scrollShadowController.processScrollState();
     })
   );
+  contentLoader.loadContentLevel(props.contentGroup.id);
 
   return (
     <div
@@ -213,10 +213,10 @@ const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
                   props.remove?.(el.dataset.contentGroupId || "");
                 },
                 onStart() {
-                  setActiveDraggableGroup(props.contentGroup);
+                  setActiveDraggableContentGroupId(props.contentGroup.id);
                 },
                 onEnd() {
-                  setActiveDraggableGroup(null);
+                  setActiveDraggableContentGroupId(null);
                 }
               });
             }}
@@ -224,51 +224,6 @@ const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
             <div
               class="flex flex-1 justify-center items-center overflow-hidden"
               data-content-group-id={props.contentGroup.id}
-              onDragOver={(event) => event.preventDefault()}
-              onDragEnter={(event) => {
-                if (
-                  activeDraggableGroup() &&
-                  event.relatedTarget instanceof HTMLElement &&
-                  !event.target.contains(event.relatedTarget)
-                ) {
-                  setHighlight(true);
-                }
-              }}
-              onDragLeave={(event) => {
-                if (
-                  activeDraggableGroup() &&
-                  event.relatedTarget instanceof HTMLElement &&
-                  !event.target.contains(event.relatedTarget)
-                ) {
-                  setHighlight(false);
-                }
-              }}
-              onMouseEnter={() => {
-                if (activeDraggableGroup()) {
-                  setHighlight(true);
-                }
-              }}
-              onMouseLeave={() => {
-                if (activeDraggableGroup()) {
-                  setHighlight(false);
-                }
-              }}
-              onTouchMove={(event) => {
-                if (activeDraggableGroup()) {
-                  const x = event.touches[0].clientX;
-                  const y = event.touches[0].clientY;
-                  const elementAtTouchPoint = document.elementFromPoint(x, y);
-
-                  if (
-                    elementAtTouchPoint === event.target ||
-                    elementAtTouchPoint?.parentNode === event.target
-                  ) {
-                    setHighlight(true);
-                  } else {
-                    setHighlight(false);
-                  }
-                }
-              }}
             >
               <MiniEditor
                 class={clsx(
@@ -277,7 +232,9 @@ const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
                 )}
                 content="paragraph"
                 initialValue={props.contentGroup.name}
-                readOnly={Boolean(activeDraggableGroup() || !hasPermission("manageDashboard"))}
+                readOnly={Boolean(
+                  activeDraggableContentGroupId() || !hasPermission("manageDashboard")
+                )}
                 placeholder="Group name"
                 onBlur={(editor) => {
                   client.contentGroups.update.mutate({
@@ -326,7 +283,7 @@ const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
             scrollableContainerRef={scrollableContainerRef}
             controller={scrollShadowController}
             onScrollEnd={() => {
-              loadMore();
+              contentLoader.loadContentLevel(props.contentGroup.id);
             }}
           />
           <div
@@ -334,7 +291,7 @@ const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
             ref={setScrollableContainerRef}
           >
             <Show
-              when={!loading() || contentPieces().length > 0}
+              when={!columnContentLevel().loading || columnContentLevel().pieces.length > 0}
               fallback={
                 <div class="flex items-center justify-center min-h-16">
                   <Loader />
@@ -344,7 +301,7 @@ const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
               <Sortable
                 wrapper="div"
                 wrapperProps={{ class: "min-h-[calc(100%-1rem)] flex gap-4 flex-col" }}
-                each={contentPieces()}
+                each={columnContentLevel().pieces}
                 ref={setSortableRef}
                 options={{
                   ghostClass: `:base: border-4 border-gray-200 opacity-50 dark:border-gray-700 children:invisible`,
@@ -353,107 +310,110 @@ const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
                   fallbackOnBody: true,
                   onStart(event) {
                     props.onDragStart?.();
-                    setActiveDraggablePiece(
-                      contentPieces()[parseInt(event.item.dataset.index || "0")]
+                    setActiveDraggableContentPieceId(
+                      columnContentLevel().pieces[parseInt(event.item.dataset.index || "0")]
                     );
                   },
                   onAdd(event) {
-                    if (typeof event.oldIndex === "number" && typeof event.newIndex === "number") {
-                      const id = event.item.dataset.contentPieceId || "";
-                      const baseReferenceContentPiece = contentPieces()[event.newIndex];
-                      const secondReferenceContentPiece = contentPieces()[event.newIndex - 1];
-                      const nextReferenceContentPiece = secondReferenceContentPiece;
-                      const previousReferenceContentPiece = baseReferenceContentPiece;
-
-                      client.contentPieces.move.mutate({
-                        id,
-                        contentGroupId: props.contentGroup.id,
-                        nextReferenceId: nextReferenceContentPiece?.id,
-                        previousReferenceId: previousReferenceContentPiece?.id
-                      });
+                    if (typeof event.oldIndex !== "number" || typeof event.newIndex !== "number") {
+                      return;
                     }
 
-                    const children = [...(event.to?.children || [])] as HTMLElement[];
-                    const newItems = children.map((value) => {
-                      return (
-                        contentPieces().find(
-                          (contentPiece) => contentPiece.id === value.dataset.contentPieceId
-                        ) || activeDraggablePiece()
-                      );
+                    const id = event.item.dataset.contentPieceId || "";
+                    const baseReferenceContentPieceId = columnContentLevel().pieces[event.newIndex];
+                    const secondReferenceContentPieceId =
+                      columnContentLevel().pieces[event.newIndex - 1];
+                    const nextReferenceContentPieceId = secondReferenceContentPieceId;
+                    const previousReferenceContentPieceId = baseReferenceContentPieceId;
+
+                    client.contentPieces.move.mutate({
+                      id,
+                      contentGroupId: props.contentGroup.id,
+                      nextReferenceId: nextReferenceContentPieceId,
+                      previousReferenceId: previousReferenceContentPieceId
                     });
+
+                    const children = [...(event.to?.children || [])] as HTMLElement[];
 
                     if (typeof event.newIndex === "number") {
                       children.splice(event.newIndex, 1);
                     }
 
                     event.to?.replaceChildren(...children);
-                    setContentPieces(
-                      newItems.map((item) => ({
-                        ...item,
+                    contentActions.moveContentPiece({
+                      contentPiece: {
+                        ...contentPieces[id]!,
                         contentGroupId: props.contentGroup.id
-                      })) as App.FullContentPieceWithAdditionalData[]
-                    );
+                      },
+                      nextReferenceId: nextReferenceContentPieceId,
+                      previousReferenceId: previousReferenceContentPieceId
+                    });
                   },
                   onRemove(event) {
                     const children = [...(event.from?.children || [])] as HTMLElement[];
-                    const newItems = children
-                      .map((v) => {
-                        return contentPieces().find(
-                          (contentPiece) => contentPiece.id === v.dataset.contentPieceId
-                        );
-                      })
-                      .filter((item) => item) as App.FullContentPieceWithAdditionalData[];
 
                     children.splice(event.oldIndex || 0, 0, event.item);
                     event.from.replaceChildren(...children);
-                    setContentPieces(newItems);
+                    event.item.remove();
                   },
                   onUpdate(event) {
                     if (typeof event.oldIndex === "number" && typeof event.newIndex === "number") {
-                      const contentPiece = contentPieces()[event.oldIndex];
-                      const baseReferenceContentPiece = contentPieces()[event.newIndex];
-                      const secondReferenceContentPiece =
-                        contentPieces()[
+                      const contentPieceId = columnContentLevel().pieces[event.oldIndex];
+                      const baseReferenceContentPieceId =
+                        columnContentLevel().pieces[event.newIndex];
+                      const secondReferenceContentPieceId =
+                        columnContentLevel().pieces[
                           event.oldIndex < event.newIndex ? event.newIndex + 1 : event.newIndex - 1
                         ];
 
-                      let nextReferenceContentPiece = secondReferenceContentPiece;
-                      let previousReferenceContentPiece = baseReferenceContentPiece;
+                      let nextReferenceContentPieceId = secondReferenceContentPieceId;
+                      let previousReferenceContentPieceId = baseReferenceContentPieceId;
 
                       if (event.oldIndex < event.newIndex) {
-                        nextReferenceContentPiece = baseReferenceContentPiece;
-                        previousReferenceContentPiece = secondReferenceContentPiece;
+                        nextReferenceContentPieceId = baseReferenceContentPieceId;
+                        previousReferenceContentPieceId = secondReferenceContentPieceId;
                       }
 
                       client.contentPieces.move.mutate({
-                        id: contentPiece?.id,
-                        nextReferenceId: nextReferenceContentPiece?.id,
-                        previousReferenceId: previousReferenceContentPiece?.id
+                        id: contentPieceId,
+                        nextReferenceId: nextReferenceContentPieceId,
+                        previousReferenceId: previousReferenceContentPieceId
                       });
-                      setActiveDraggablePiece(null);
+
+                      if (contentPieces[contentPieceId]) {
+                        contentActions.moveContentPiece({
+                          contentPiece: {
+                            ...contentPieces[contentPieceId]!,
+                            contentGroupId: props.contentGroup.id
+                          },
+                          nextReferenceId: nextReferenceContentPieceId,
+                          previousReferenceId: previousReferenceContentPieceId
+                        });
+                      }
+
+                      setActiveDraggableContentPieceId(null);
                     }
                   },
                   onEnd() {
                     const children = [...(sortableRef()?.children || [])] as HTMLElement[];
-                    const newItems = children
-                      .map((v) => {
-                        return contentPieces().find((contentPiece) => {
-                          return contentPiece.id.toString() === (v.dataset.contentPieceId || "");
-                        });
-                      })
-                      .filter((item) => item) as App.FullContentPieceWithAdditionalData[];
 
                     children.sort(
                       (a, b) => parseInt(a.dataset.index || "") - parseInt(b.dataset.index || "")
                     );
                     sortableRef()?.replaceChildren(...children);
-                    setContentPieces(newItems);
                     props.onDragEnd?.();
                   }
                 }}
               >
-                {(contentPiece, index) => {
-                  return <ContentPieceCard contentPiece={contentPiece} index={index()} />;
+                {(contentPieceId, index) => {
+                  if (contentPieceId && contentPieces[contentPieceId]) {
+                    return (
+                      <ContentPieceCard
+                        contentPiece={contentPieces[contentPieceId]!}
+                        index={index()}
+                      />
+                    );
+                  }
                 }}
               </Sortable>
             </Show>
@@ -473,13 +433,14 @@ const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
               text="soft"
               label="New content piece"
               onClick={async () => {
-                const { id } = await client.contentPieces.create.mutate({
+                const newContentPieceData = {
                   contentGroupId: props.contentGroup.id,
-                  referenceId: contentPieces()[0]?.id,
+                  referenceId: columnContentLevel().pieces[0],
                   tags: [],
                   members: [],
                   title: ""
-                });
+                };
+                const { id } = await client.contentPieces.create.mutate(newContentPieceData);
 
                 notify({ type: "success", text: "New content piece created" });
                 setStorage((storage) => ({

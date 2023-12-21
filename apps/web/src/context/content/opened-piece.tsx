@@ -1,10 +1,22 @@
-import { createSignal, createEffect, on, onCleanup, Accessor } from "solid-js";
-import { createStore } from "solid-js/store";
-import { useAuthenticatedUserData, useClient, useLocalStorage, App } from "#context";
+type ContentPiecePropertyKey = keyof App.ExtendedContentPieceWithAdditionalData<"coverWidth">;
 
+interface UseContentGroups {
+  contentGroups: Accessor<App.ContentGroup[]>;
+  loading: Accessor<boolean>;
+  refetch(ancestorId?: string): Promise<void>;
+  setContentGroups(contentGroups: App.ContentGroup[]): void;
+}
+
+interface UseContentPieces {
+  contentPieces(): Array<App.ExtendedContentPieceWithAdditionalData<"order">>;
+  setContentPieces(contentPieces: Array<App.ExtendedContentPieceWithAdditionalData<"order">>): void;
+  loading(): boolean;
+  loadMore(): void;
+  moreToLoad(): boolean;
+}
 interface UseOpenedContentPiece {
   activeVariant: Accessor<App.Variant | null>;
-  setContentPiece<K extends keyof App.ExtendedContentPieceWithAdditionalData<"coverWidth">>(
+  setContentPiece<K extends ContentPiecePropertyKey>(
     keyOrObject: K | Partial<App.ExtendedContentPieceWithAdditionalData<"coverWidth">>,
     value?: App.ExtendedContentPieceWithAdditionalData<"coverWidth">[K]
   ): void;
@@ -23,6 +35,15 @@ const useOpenedContentPiece = (): UseOpenedContentPiece => {
   const [state, setState] = createStore<{
     contentPiece: App.ExtendedContentPieceWithAdditionalData<"coverWidth"> | null;
   }>({ contentPiece: null });
+  const activeContentGroupId = (): string | null => {
+    return storage().activeContentGroupId || null;
+  };
+  const setActiveContentGroupId = (contentGroupId: string): void => {
+    setStorage((storage) => ({
+      ...storage,
+      activeContentGroupId: contentGroupId || undefined
+    }));
+  };
   const fetchContentPiece = async (): Promise<void> => {
     setLoading(true);
 
@@ -142,6 +163,31 @@ const useOpenedContentPiece = (): UseOpenedContentPiece => {
     }
   };
 };
+const reorderContentGroup = (contentGroupId: string, index: number): void => {
+  const newContentGroups = [...state.contentGroups];
+  const contentGroupIndex = newContentGroups.findIndex((contentGroup) => {
+    return contentGroup.id === contentGroupId;
+  });
+  const [contentGroup] = newContentGroups.splice(contentGroupIndex, 1);
 
-export { useOpenedContentPiece };
-export type { UseOpenedContentPiece };
+  newContentGroups.splice(index, 0, contentGroup);
+  setState({
+    contentGroups: newContentGroups
+  });
+};
+const moveContentGroup = (contentGroup: App.ContentGroup): void => {
+  const newContentGroups = [...state.contentGroups];
+  const index = newContentGroups.findIndex((newContentGroup) => {
+    return newContentGroup.id === contentGroup.id;
+  });
+
+  if (index >= 0 && contentGroup.ancestors.at(-1) !== ancestorId()) {
+    newContentGroups.splice(index, 1);
+  } else if (index < 0 && contentGroup.ancestors.at(-1) === ancestorId()) {
+    newContentGroups.push(contentGroup);
+  }
+
+  setState({
+    contentGroups: newContentGroups
+  });
+};

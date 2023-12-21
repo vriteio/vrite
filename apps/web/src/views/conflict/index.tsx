@@ -24,10 +24,10 @@ const ConflictView: Component<{ monaco: typeof monaco }> = (props) => {
   const { setStorage } = useLocalStorage();
   const { monaco } = props;
   const { codeEditorTheme = () => "dark" } = useAppearance() || {};
-  const createSharedSignal = useSharedState();
+  const { useSharedSignal } = useSharedState();
   const [containerRef, setContainerRef] = createRef<HTMLDivElement | null>(null);
-  const [conflictData] = createSharedSignal("conflictData");
-  const [, setResolvedContent] = createSharedSignal("resolvedContent");
+  const [conflictData] = useSharedSignal("conflictData");
+  const [, setResolvedContent] = useSharedSignal("resolvedContent");
   const [currentContent] = createResource(
     () => conflictData()?.contentPieceId,
     async (contentPieceId) => {

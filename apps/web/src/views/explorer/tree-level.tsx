@@ -2,127 +2,69 @@ import { ContentGroupRow } from "./content-group-row";
 import { ContentPieceRow } from "./content-piece-row";
 import { useExplorerData } from "./explorer-context";
 import clsx from "clsx";
-import { Component, createEffect, Show, For, Setter, onCleanup, createSignal } from "solid-js";
+import { Component, createEffect, Show, For, createSignal } from "solid-js";
 import SortableLib from "sortablejs";
-import { Button, Icon, Loader } from "@vrite/components";
+import { Icon, Loader } from "@vrite/components";
 import { mdiDotsHorizontalCircleOutline } from "@mdi/js";
 import { useLocation, useNavigate } from "@solidjs/router";
-import { useClient, useLocalStorage, useSharedState } from "#context";
+import { App, useClient, useContentData, useLocalStorage } from "#context";
 
 const TreeLevel: Component<{
   parentId?: string;
-  openedLevels: string[];
-  highlight: string;
-  setHighlight: Setter<string>;
-  openLevel(parentId: string): void;
-  closeLevel(parentId: string): void;
-  loadLevel(parentId: string, preload?: boolean): Promise<void>;
 }> = (props) => {
-  const { contentPieces, contentGroups, levels, setContentPieces, setContentGroups, setLevels } =
-    useExplorerData();
-  const { storage, setStorage } = useLocalStorage();
-  const createSharedSignal = useSharedState();
+  const {
+    contentPieces,
+    contentGroups,
+    contentLevels,
+    expandedContentLevels,
+    expandContentLevel,
+    collapseContentLevel,
+    activeContentGroupId,
+    activeDraggableContentGroupId,
+    activeDraggableContentPieceId,
+    contentLoader,
+    contentActions
+  } = useContentData();
+  const { highlight, setHighlight } = useExplorerData();
+  const { setStorage } = useLocalStorage();
   const client = useClient();
   const location = useLocation();
   const navigate = useNavigate();
-  const [activeDraggableGroup] = createSharedSignal("activeDraggableGroup", null);
-  const [activeDraggablePiece] = createSharedSignal("activeDraggablePiece", null);
-  const [loadingMore, setLoadingMore] = createSignal(false);
   const handleHighlight = (event: DragEvent | MouseEvent | TouchEvent, groupId: string): void => {
-    const draggablePiece = activeDraggablePiece();
+    const draggablePieceId = activeDraggableContentPieceId();
+    const draggableGroupId = activeDraggableContentGroupId();
 
-    let draggableGroup = activeDraggableGroup();
+    let group = contentGroups[draggableGroupId || ""];
 
-    if (!draggableGroup && draggablePiece) {
-      draggableGroup = contentGroups[draggablePiece.contentGroupId];
+    if (!draggableGroupId && draggablePieceId) {
+      const draggablePiece = contentPieces[draggablePieceId];
+
+      if (!draggablePiece) return;
+
+      group = contentGroups[draggablePiece.contentGroupId];
     }
 
-    if (draggableGroup) {
+    if (group) {
       if (
-        groupId !== draggableGroup?.id &&
-        (draggablePiece || !contentGroups[groupId || ""]?.ancestors.includes(draggableGroup!.id)) &&
-        (draggablePiece || draggableGroup?.ancestors.at(-1) !== groupId)
+        groupId !== group.id &&
+        (draggablePieceId || !contentGroups[groupId || ""]?.ancestors.includes(group.id)) &&
+        (draggablePieceId || group?.ancestors.at(-1) !== groupId)
       ) {
-        props.setHighlight(groupId || "");
+        setHighlight(groupId || "");
       } else {
-        props.setHighlight("");
+        setHighlight("");
       }
     } else {
-      props.setHighlight((highlight) => (highlight === groupId ? "" : highlight));
+      setHighlight((highlight) => (highlight === groupId ? "" : highlight));
     }
 
     event.stopPropagation();
   };
-  const selected = (): boolean => storage().dashboardViewAncestor?.id === props.parentId;
-
-  if (props.parentId) {
-    const contentPiecesSubscription = client.contentPieces.changes.subscribe(
-      { contentGroupId: props.parentId },
-      {
-        onData({ action, data }) {
-          if (action === "update") {
-            setContentPieces(data.id, data);
-          } else if (action === "create") {
-            setContentPieces(data.id, data);
-            setLevels(props.parentId || "", "pieces", (pieces) => [data.id, ...pieces]);
-          } else if (action === "delete") {
-            setContentPieces(data.id, undefined);
-            setLevels(props.parentId || "", "pieces", (pieces) => {
-              return pieces.filter((pieceId) => pieceId !== data.id);
-            });
-          } else if (action === "move") {
-            setContentPieces(data.contentPiece.id, data.contentPiece);
-
-            if (data.contentPiece.contentGroupId === props.parentId) {
-              if (data.nextReferenceId) {
-                setLevels(props.parentId || "", "pieces", (pieces) => {
-                  const newPieces = [
-                    ...pieces.filter((pieceId) => pieceId !== data.contentPiece.id)
-                  ];
-                  const index = newPieces.indexOf(data.nextReferenceId!);
-
-                  if (index < 0) return pieces;
-
-                  newPieces.splice(index + 1, 0, data.contentPiece.id);
-
-                  return newPieces;
-                });
-              } else if (data.previousReferenceId) {
-                setLevels(props.parentId || "", "pieces", (pieces) => {
-                  const newPieces = [
-                    ...pieces.filter((pieceId) => pieceId !== data.contentPiece.id)
-                  ];
-                  const index = newPieces.indexOf(data.previousReferenceId!);
-
-                  if (index < 0) return pieces;
-
-                  newPieces.splice(index, 0, data.contentPiece.id);
-
-                  return newPieces;
-                });
-              } else {
-                setLevels(props.parentId || "", "pieces", (pieces) => {
-                  return [data.contentPiece.id, ...pieces];
-                });
-              }
-            } else {
-              setLevels(props.parentId || "", "pieces", (pieces) => {
-                return pieces.filter((pieceId) => pieceId !== data.contentPiece.id);
-              });
-            }
-          }
-        }
-      }
-    );
-
-    onCleanup(() => {
-      contentPiecesSubscription.unsubscribe();
-    });
-  }
+  const selected = (): boolean => activeContentGroupId() === props.parentId;
 
   createEffect(() => {
-    if (!activeDraggableGroup() && !activeDraggablePiece()) {
-      props.setHighlight("");
+    if (!activeDraggableContentGroupId() && !activeDraggableContentPieceId()) {
+      setHighlight("");
     }
   });
 
@@ -131,7 +73,7 @@ const TreeLevel: Component<{
       <div
         class={clsx(
           "h-full w-full absolute -z-1",
-          props.highlight === props.parentId && "bg-gradient-to-tr opacity-30"
+          highlight() === props.parentId && "bg-gradient-to-tr opacity-30"
         )}
       />
       <Show when={props.parentId}>
@@ -139,10 +81,10 @@ const TreeLevel: Component<{
           class={clsx(
             "h-full w-0.5 -left-[0.5px] left-0 absolute rounded-full bg-black bg-opacity-5 dark:bg-white dark:bg-opacity-10",
             ((selected() &&
-              !activeDraggableGroup() &&
-              !activeDraggablePiece() &&
+              !activeDraggableContentGroupId() &&
+              !activeDraggableContentPieceId() &&
               location.pathname === "/") ||
-              props.highlight === props.parentId) &&
+              highlight() === props.parentId) &&
               "!bg-gradient-to-tr"
           )}
         />
@@ -150,9 +92,9 @@ const TreeLevel: Component<{
       <div>
         <Show
           when={
-            props.parentId &&
-            props.openedLevels.includes(props.parentId || "") &&
-            !levels[props.parentId]
+            !contentLevels[props.parentId || ""] ||
+            (!contentLevels[props.parentId || ""]?.groups.length &&
+              contentLevels[props.parentId || ""]?.loading)
           }
         >
           <div class="ml-2 flex flex-col">
@@ -171,7 +113,7 @@ const TreeLevel: Component<{
             </For>
           </div>
         </Show>
-        <For each={levels[props.parentId || ""]?.groups || []}>
+        <For each={contentLevels[props.parentId || ""]?.groups || []}>
           {(groupId) => {
             return (
               <div
@@ -185,7 +127,7 @@ const TreeLevel: Component<{
                     event.relatedTarget instanceof HTMLElement &&
                     !event.currentTarget.contains(event.relatedTarget)
                   ) {
-                    props.setHighlight((highlight) => (highlight === groupId ? "" : highlight));
+                    setHighlight((highlight) => (highlight === groupId ? "" : highlight));
                   }
                 }}
                 onTouchMove={(event) => {
@@ -205,8 +147,8 @@ const TreeLevel: Component<{
                   }
                 }}
                 onPointerLeave={(event) => {
-                  if (activeDraggableGroup()) {
-                    props.setHighlight((highlight) => (highlight === groupId ? "" : highlight));
+                  if (activeDraggableContentGroupId()) {
+                    setHighlight((highlight) => (highlight === groupId ? "" : highlight));
                   }
                 }}
                 ref={(el) => {
@@ -220,39 +162,23 @@ const TreeLevel: Component<{
               >
                 <ContentGroupRow
                   contentGroup={contentGroups[groupId]!}
-                  removeContentGroup={() => {}}
-                  removeContentPiece={() => {}}
-                  loading={props.openedLevels.includes(groupId || "") && !levels[groupId]}
-                  opened={props.openedLevels.includes(groupId || "")}
-                  active={storage().dashboardViewAncestor?.id === groupId}
-                  highlight={props.highlight === groupId}
+                  loading={
+                    expandedContentLevels().includes(groupId || "") && !contentLevels[groupId]
+                  }
+                  opened={expandedContentLevels().includes(groupId || "")}
                   onDragEnd={() => {
                     const group = contentGroups[groupId]!;
-                    const newParentId = props.highlight || "";
-                    const oldParentId = group.ancestors.at(-1) || "";
+                    const newParentId = highlight() || "";
                     const newParent = contentGroups[newParentId];
-                    const oldParent = contentGroups[oldParentId];
 
-                    if (newParentId === oldParentId || !newParent || !oldParent) return;
-
-                    if (levels[oldParentId]) {
-                      setLevels(oldParentId, "groups", (groupIds) => {
-                        return groupIds.filter((filteredGroupId) => filteredGroupId !== group.id);
+                    if (newParent) {
+                      collapseContentLevel(groupId);
+                      contentActions.moveContentGroup({
+                        ancestors: [...(newParent?.ancestors || []), newParentId || ""],
+                        id: group.id
                       });
                     }
 
-                    setContentGroups(group.id, {
-                      ...group,
-                      ancestors: [...newParent.ancestors, newParentId]
-                    });
-                    setContentGroups(oldParentId, {
-                      ...oldParent,
-                      descendants: oldParent.descendants.filter((id) => id !== group.id)
-                    });
-                    setContentGroups(newParentId, {
-                      ...newParent,
-                      descendants: [...newParent.descendants, group.id]
-                    });
                     client.contentGroups.move.mutate({
                       id: group.id,
                       ancestor: newParentId || null
@@ -262,76 +188,53 @@ const TreeLevel: Component<{
                     navigate("/");
                     setStorage((storage) => ({
                       ...storage,
-                      dashboardViewAncestor: contentGroups[groupId]
+                      activeContentGroupId: groupId
                     }));
                   }}
                   onExpand={(forceOpen) => {
-                    if (props.openedLevels.includes(groupId) && !forceOpen) {
-                      props.closeLevel(groupId);
+                    if (expandedContentLevels().includes(groupId) && !forceOpen) {
+                      collapseContentLevel(groupId);
                     } else {
-                      props.loadLevel(groupId, true);
-                      props.openLevel(groupId);
+                      contentLoader.loadContentLevel(groupId, true);
+                      expandContentLevel(groupId);
                     }
                   }}
                 />
-                <Show when={props.openedLevels.includes(groupId || "")}>
-                  <TreeLevel
-                    loadLevel={props.loadLevel}
-                    openedLevels={props.openedLevels}
-                    parentId={groupId}
-                    openLevel={props.openLevel}
-                    closeLevel={props.closeLevel}
-                    highlight={props.highlight}
-                    setHighlight={props.setHighlight}
-                  />
+                <Show when={expandedContentLevels().includes(groupId || "")}>
+                  <TreeLevel parentId={groupId} />
                 </Show>
               </div>
             );
           }}
         </For>
-        <For each={levels[props.parentId || ""]?.pieces || []}>
-          {(pieceId) => {
+        <For each={contentLevels[props.parentId || ""]?.pieces || []}>
+          {(contentPieceId) => {
             return (
               <ContentPieceRow
-                contentPiece={contentPieces[pieceId]!}
-                active={storage().contentPieceId === pieceId}
+                contentPiece={contentPieces[contentPieceId]!}
                 onClick={() => {
                   navigate("/editor");
                   setStorage((storage) => ({
                     ...storage,
-                    contentPieceId: pieceId
+                    contentPieceId
                   }));
                 }}
                 onDragEnd={() => {
-                  const piece = contentPieces[pieceId]!;
-                  const newParentId = props.highlight || "";
-                  const oldParentId = piece.contentGroupId;
-                  const newParent = contentGroups[newParentId];
-                  const oldParent = contentGroups[oldParentId];
+                  const contentPiece = contentPieces[contentPieceId]!;
+                  const newParentId = highlight() || "";
+                  const oldParentId = contentPiece.contentGroupId;
+                  const updatedContentPiece: App.ExtendedContentPieceWithAdditionalData<"order"> = {
+                    ...contentPiece,
+                    contentGroupId: newParentId
+                  };
 
-                  if (newParentId === oldParentId || !newParent || !oldParent) return;
+                  if (!newParentId || newParentId === oldParentId) return;
 
-                  if (levels[oldParentId]) {
-                    setLevels(oldParentId, "pieces", (pieces) => {
-                      return pieces.filter((filteredPieceId) => filteredPieceId !== piece.id);
-                    });
-                  }
-
-                  if (levels[newParentId]) {
-                    setLevels(newParentId, "pieces", (pieces) => {
-                      return [piece.id, ...pieces];
-                    });
-                  }
-
-                  if (levels[newParentId]) {
-                    setContentPieces(piece.id, (piece) => ({
-                      ...piece,
-                      contentGroupId: newParentId
-                    }));
-                  }
-
+                  contentActions.moveContentPiece({
+                    contentPiece: updatedContentPiece
+                  });
                   client.contentPieces.move.mutate({
-                    id: piece.id,
+                    id: contentPieceId,
                     contentGroupId: newParentId || undefined
                   });
                 }}
@@ -339,25 +242,26 @@ const TreeLevel: Component<{
             );
           }}
         </For>
-        <Show when={levels[props.parentId || ""]?.moreToLoad}>
+        <Show when={contentLevels[props.parentId || ""]?.moreToLoad}>
           <div class="ml-0.5 flex rounded-none hover:bg-gray-200 dark:hover:bg-gray-700 py-1">
             <button
               class="flex"
-              onClick={async () => {
-                setLoadingMore(true);
-                await props.loadLevel(props.parentId || "");
-                setLoadingMore(false);
+              onClick={() => {
+                contentLoader.loadContentLevel(props.parentId || "");
               }}
             >
               <div class="ml-6.5 mr-1 h-6 w-6 flex justify-center items-center">
-                <Show when={!loadingMore()} fallback={<Loader class="h-4 w-4" color="primary" />}>
+                <Show
+                  when={!contentLevels[props.parentId || ""]?.loading}
+                  fallback={<Loader class="h-4 w-4" color="primary" />}
+                >
                   <Icon
                     path={mdiDotsHorizontalCircleOutline}
                     class="h-6 w-6 fill-[url(#gradient)]"
                   />
                 </Show>
               </div>
-              {loadingMore() ? "Loading..." : "Load more"}
+              {contentLevels[props.parentId || ""]?.loading ? "Loading..." : "Load more"}
             </button>
           </div>
         </Show>

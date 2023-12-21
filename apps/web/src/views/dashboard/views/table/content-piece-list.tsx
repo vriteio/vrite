@@ -21,15 +21,7 @@ import {
   Icon,
   Loader
 } from "#components/primitives";
-import { useContentPieces } from "#lib/composables";
-import {
-  App,
-  useCache,
-  useClient,
-  hasPermission,
-  useNotifications,
-  useConfirmationModal
-} from "#context";
+import { App, useClient, hasPermission, useNotifications, useConfirmationModal } from "#context";
 import { useContentGroupsContext } from "#views/dashboard/content-groups-context";
 
 const ContentPieceList: Component<{
@@ -38,7 +30,6 @@ const ContentPieceList: Component<{
   setContentPiecesLoading(loading: boolean): void;
 }> = (props) => {
   const { columns, tableWidth } = useDashboardListViewData();
-  const cache = useCache();
   const { notify } = useNotifications();
   const [expanded, setExpanded] = createSignal(true);
   const [loadingAction, setLoadingAction] = createSignal("");
@@ -48,6 +39,7 @@ const ContentPieceList: Component<{
   const { activeDraggablePiece, setActiveDraggablePiece, setAncestor } = useContentGroupsContext();
   const [sortableRef, setSortableRef] = createRef<HTMLElement | null>(null);
   const client = useClient();
+  // TODO: Use ContentData
   const { contentPieces, loadMore, moreToLoad, loading } = cache(
     `contentPieces:${props.ancestor.id}`,
     () => {

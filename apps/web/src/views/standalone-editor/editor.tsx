@@ -74,7 +74,7 @@ declare module "#context" {
 }
 
 const Editor: Component = () => {
-  const createSharedSignal = useSharedState();
+  const { useSharedSignal } = useSharedState();
   const { storage, setStorage } = useLocalStorage();
   const [containerRef, setContainerRef] = createRef<HTMLElement | null>(null);
   const [bubbleMenuOpened, setBubbleMenuOpened] = createSignal(true);
@@ -145,7 +145,7 @@ const Editor: Component = () => {
       }));
     }
   });
-  const [, setSharedEditor] = createSharedSignal("editor", editor());
+  const [, setSharedEditor] = useSharedSignal("editor", editor());
   const shouldShow = (editor: SolidEditor): boolean => {
     el = null;
 

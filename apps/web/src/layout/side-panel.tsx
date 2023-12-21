@@ -4,7 +4,7 @@ import { createSignal, createMemo, onCleanup, Component, Show } from "solid-js";
 import { Dynamic } from "solid-js/web";
 import { useHostConfig, useLocalStorage } from "#context";
 import { createRef } from "#lib/utils";
-import { ContentPieceView } from "#views/content-piece";
+// import { ContentPieceView } from "#views/content-piece";
 import { SettingsView } from "#views/settings";
 import { ExtensionsView } from "#views/extensions";
 import { GettingStartedView } from "#views/getting-started";
@@ -12,7 +12,8 @@ import { GitView } from "#views/git";
 import { ExplorerView } from "#views/explorer";
 
 const sidePanelViews: Record<string, Component<Record<string, any>>> = {
-  contentPiece: ContentPieceView,
+  // TODO: use content data
+  contentPiece: () => <div></div>, // ContentPieceView,
   git: () => {
     const hostConfig = useHostConfig();
 

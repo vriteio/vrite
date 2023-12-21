@@ -140,7 +140,7 @@ const List: Component<DashboardListViewProps> = (props) => {
     </div>
   );
 };
-const DashboardListView: Component<DashboardListViewProps> = (props) => {
+const DashboardTableView: Component<DashboardListViewProps> = (props) => {
   return (
     <div class="relative overflow-hidden w-full">
       <ContentGroupsContextProvider ancestor={() => props.ancestor} setAncestor={props.setAncestor}>
@@ -152,4 +152,4 @@ const DashboardListView: Component<DashboardListViewProps> = (props) => {
   );
 };
 
-export { DashboardListView };
+export { DashboardTableView };

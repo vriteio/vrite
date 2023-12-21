@@ -47,6 +47,7 @@ import {
   App,
   hasPermission,
   useAuthenticatedUserData,
+  useContentData,
   useHostConfig,
   useSharedState
 } from "#context";
@@ -55,9 +56,8 @@ import { BlockMenu } from "#lib/editor/extensions/slash-menu/component";
 
 declare module "#context" {
   interface SharedState {
-    editor: SolidEditor;
-    provider: HocuspocusProvider;
-    editedContentPiece: App.ContentPieceWithAdditionalData;
+    editor?: SolidEditor;
+    provider?: HocuspocusProvider;
   }
 }
 
@@ -70,10 +70,12 @@ interface EditorProps {
 
 const Editor: Component<EditorProps> = (props) => {
   const hostConfig = useHostConfig();
-  const createSharedSignal = useSharedState();
   const navigate = useNavigate();
   const location = useLocation<{ breadcrumb?: string[] }>();
-  const [activeVariant] = createSharedSignal("activeVariant");
+  const { useSharedSignal } = useSharedState();
+  /* TODO: Use ContentData
+     const [activeVariant] = createSharedSignal("activeVariant"); */
+  const activeVariant = (): null => null;
   const ydoc = new Y.Doc();
   const [containerRef, setContainerRef] = createRef<HTMLElement | null>(null);
   const handleReload = async (): Promise<void> => {
@@ -167,12 +169,9 @@ const Editor: Component<EditorProps> = (props) => {
       el = event?.relatedTarget as HTMLElement | null;
     }
   });
-  const [, setSharedEditor] = createSharedSignal("editor", editor());
-  const [, setSharedProvider] = createSharedSignal("provider", provider);
-  const [, setEditedContentPiece] = createSharedSignal(
-    "editedContentPiece",
-    props.editedContentPiece
-  );
+  const [, setSharedEditor] = useSharedSignal("editor", editor());
+  const [, setSharedProvider] = useSharedSignal("provider", provider);
+  const { setActiveContentPieceId } = useContentData();
   const shouldShow = (editor: SolidEditor): boolean => {
     el = null;
 
@@ -249,7 +248,7 @@ const Editor: Component<EditorProps> = (props) => {
     provider.destroy();
     setSharedEditor(undefined);
     setSharedProvider(undefined);
-    setEditedContentPiece(undefined);
+    setActiveContentPieceId(null);
   });
   createEffect(
     on(
@@ -260,8 +259,7 @@ const Editor: Component<EditorProps> = (props) => {
     )
   );
   createEffect(
-    on([() => props.editedContentPiece, editor], () => {
-      setEditedContentPiece(props.editedContentPiece);
+    on(editor, () => {
       setSharedEditor(editor());
       setSharedProvider(provider);
     })

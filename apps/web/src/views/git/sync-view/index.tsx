@@ -215,12 +215,12 @@ const CommitCard: Component<{ changedRecords: App.GitRecord[] }> = (props) => {
 };
 const PullCard: Component = () => {
   const client = useClient();
-  const createSharedSignal = useSharedState();
+  const { useSharedSignal } = useSharedState();
   const navigate = useNavigate();
   const { notify } = useNotifications();
   const [loading, setLoading] = createSignal(false);
-  const [conflicts, setConflicts] = createSharedSignal("conflicts", []);
-  const [conflictData, setConflictData] = createSharedSignal("conflictData");
+  const [conflicts, setConflicts] = useSharedSignal("conflicts", []);
+  const [conflictData, setConflictData] = useSharedSignal("conflictData");
 
   return (
     <TitledCard

@@ -19,32 +19,31 @@ import {
   hasPermission,
   useClient,
   useConfirmationModal,
-  useNotifications,
-  useSharedState
+  useContentData,
+  useNotifications
 } from "#context";
 import { createRef } from "#lib/utils";
 
 interface ContentPieceRowProps {
   contentPiece: App.ExtendedContentPieceWithAdditionalData<"order">;
-  active?: boolean;
   onDragEnd?(event: SortableLib.SortableEvent): void;
   onClick?(): void;
 }
 
 const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
-  const { renaming, loading, setContentPieces, setLevels, setRenaming, setLoading } =
-    useExplorerData();
-  const createSharedSignal = useSharedState();
+  const {
+    setActiveDraggableContentPieceId,
+    activeContentPieceId,
+    activeDraggableContentGroupId,
+    activeDraggableContentPieceId,
+    contentActions
+  } = useContentData();
+  const { renaming, loading, setRenaming, setLoading } = useExplorerData();
   const { confirmDelete } = useConfirmationModal();
   const { notify } = useNotifications();
   const client = useClient();
   const location = useLocation();
   const [sortableInstanceRef, setSortableInstanceRef] = createRef<SortableLib | null>(null);
-  const [activeDraggablePiece, setActiveDraggablePiece] = createSharedSignal(
-    "activeDraggablePiece",
-    null
-  );
-  const [activeDraggableGroup] = createSharedSignal("activeDraggableGroup", null);
   const [dropdownOpened, setDropdownOpened] = createSignal(false);
   const menuOptions = createMemo(() => {
     const menuOptions: Array<{
@@ -87,10 +86,7 @@ const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
                 try {
                   setLoading(props.contentPiece.id);
                   await client.contentPieces.delete.mutate({ id: props.contentPiece.id });
-                  setLevels(props.contentPiece.contentGroupId, "pieces", (pieces) => {
-                    return pieces.filter((pieceId) => pieceId !== props.contentPiece.id);
-                  });
-                  setContentPieces(props.contentPiece.id, undefined);
+                  contentActions.deleteContentPiece({ id: props.contentPiece.id });
                   setLoading("");
                   notify({ text: "Content piece deleted", type: "success" });
                 } catch (error) {
@@ -106,6 +102,7 @@ const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
 
     return menuOptions;
   });
+  const active = (): boolean => activeContentPieceId() === props.contentPiece.id;
 
   createEffect(() => {
     const sortableInstance = sortableInstanceRef();
@@ -123,7 +120,8 @@ const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
       class={clsx(
         "flex flex-1 justify-center items-center cursor-pointer overflow-hidden ml-0.5 group",
         !dropdownOpened() &&
-          (location.pathname !== "/editor" || !props.active) &&
+          !activeDraggableContentPieceId() &&
+          (location.pathname !== "/editor" || !active()) &&
           "@hover-bg-gray-200 dark:@hover-bg-gray-700"
       )}
       ref={(el) => {
@@ -139,12 +137,12 @@ const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
           revertOnSpill: true,
           sort: false,
           onStart() {
-            setActiveDraggablePiece(props.contentPiece);
+            setActiveDraggableContentPieceId(props.contentPiece.id);
           },
           onEnd(event) {
             event.preventDefault();
             props.onDragEnd?.(event);
-            setActiveDraggablePiece(null);
+            setActiveDraggableContentPieceId(null);
           }
         });
 
@@ -163,9 +161,9 @@ const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
         <Icon
           class={clsx(
             "h-6 min-w-6 ml-6.5 mr-1 text-gray-500 dark:text-gray-400",
-            props.active &&
-              !activeDraggableGroup() &&
-              !activeDraggablePiece() &&
+            active() &&
+              !activeDraggableContentGroupId() &&
+              !activeDraggableContentPieceId() &&
               location.pathname === "/editor" &&
               "fill-[url(#gradient)]"
           )}
@@ -191,7 +189,7 @@ const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
                   id: props.contentPiece.id,
                   title
                 });
-                setContentPieces(props.contentPiece.id, { ...props.contentPiece, title });
+                contentActions.updateContentPiece({ id: props.contentPiece.id, title });
                 setRenaming("");
               }}
               onChange={(event) => {
@@ -201,7 +199,7 @@ const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
                   id: props.contentPiece.id,
                   title
                 });
-                setContentPieces(props.contentPiece.id, { ...props.contentPiece, title });
+                contentActions.updateContentPiece({ id: props.contentPiece.id, title });
                 setRenaming("");
               }}
             />
@@ -210,9 +208,9 @@ const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
           <span
             class={clsx(
               "clamp-1 text-start",
-              props.active &&
-                !activeDraggableGroup() &&
-                !activeDraggablePiece() &&
+              active() &&
+                !activeDraggableContentGroupId() &&
+                !activeDraggableContentPieceId() &&
                 location.pathname === "/editor" &&
                 "text-transparent bg-clip-text bg-gradient-to-tr"
             )}

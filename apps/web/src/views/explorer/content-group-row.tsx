@@ -21,45 +21,35 @@ import {
   hasPermission,
   useClient,
   useConfirmationModal,
-  useNotifications,
-  useSharedState
+  useContentData,
+  useNotifications
 } from "#context";
 
 interface ContentGroupRowProps {
   contentGroup: App.ContentGroup;
-  customLabel?: string;
-  menuDisabled?: boolean;
-  draggable?: boolean;
   loading?: boolean;
   opened?: boolean;
-  active?: boolean;
-  highlight?: boolean;
-  removeContentGroup(id: string): void;
-  removeContentPiece(id: string): void;
   onClick?(): void;
   onExpand?(forceOpen?: boolean): void;
   onDragEnd?(event: SortableLib.SortableEvent): void;
 }
 
-declare module "#context" {
-  interface SharedState {
-    activeDraggableGroup: App.ContentGroup | null;
-  }
-}
-
 const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
   const { loading, renaming, setLoading, setRenaming } = useExplorerData();
-  const createSharedSignal = useSharedState();
   const client = useClient();
   const location = useLocation();
   const { notify } = useNotifications();
   const { confirmDelete } = useConfirmationModal();
-  const { setLevels, setContentGroups } = useExplorerData();
-  const [activeDraggablePiece] = createSharedSignal("activeDraggablePiece", null);
-  const [activeDraggableGroup, setActiveDraggableGroup] = createSharedSignal(
-    "activeDraggableGroup",
-    null
-  );
+  const {
+    activeContentGroupId,
+    activeDraggableContentGroupId,
+    activeDraggableContentPieceId,
+    setActiveDraggableContentGroupId,
+    expandedContentLevels,
+    collapseContentLevel,
+    contentActions
+  } = useContentData();
+  const { highlight } = useExplorerData();
   const [dropdownOpened, setDropdownOpened] = createSignal(false);
   const menuOptions = createMemo(() => {
     const menuOptions: Array<{
@@ -113,7 +103,11 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
               });
 
               setDropdownOpened(false);
-              setRenaming(newContentPiece.id);
+
+              if (expandedContentLevels().includes(props.contentGroup.id)) {
+                setRenaming(newContentPiece.id);
+              }
+
               setLoading("");
               notify({ text: "Content piece created", type: "success" });
             } catch (error) {
@@ -130,13 +124,17 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
             setLoading(props.contentGroup.id);
 
             try {
-              const newContentPiece = await client.contentGroups.create.mutate({
+              const newContentGroup = await client.contentGroups.create.mutate({
                 ancestor: props.contentGroup.id,
                 name: ""
               });
 
               setDropdownOpened(false);
-              setRenaming(newContentPiece.id);
+
+              if (expandedContentLevels().includes(props.contentGroup.id)) {
+                setRenaming(newContentGroup.id);
+              }
+
               setLoading("");
               notify({ text: "Content group created", type: "success" });
             } catch (error) {
@@ -167,10 +165,8 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
                 try {
                   setLoading(props.contentGroup.id);
                   await client.contentGroups.delete.mutate({ id: props.contentGroup.id });
-                  setLevels(props.contentGroup.ancestors.at(-1) || "", "groups", (groups) => {
-                    return groups.filter((groupId) => groupId !== props.contentGroup?.id);
-                  });
-                  setContentGroups(props.contentGroup.id, undefined);
+                  collapseContentLevel(props.contentGroup.id);
+                  contentActions.deleteContentGroup({ id: props.contentGroup.id });
                   setLoading("");
                   notify({ text: "Content group deleted", type: "success" });
                 } catch (error) {
@@ -186,12 +182,17 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
 
     return menuOptions;
   });
+  const active = (): boolean => activeContentGroupId() === props.contentGroup.id;
+  const highlighted = (): boolean => highlight() === props.contentGroup.id;
 
   return (
     <div
       class={clsx(
         "flex flex-1 justify-center items-center cursor-pointer overflow-x-hidden group ml-0.5",
-        !dropdownOpened() && !props.active && "@hover:bg-gray-200 dark:@hover-bg-gray-700"
+        !dropdownOpened() &&
+          !activeDraggableContentGroupId() &&
+          !active() &&
+          "@hover:bg-gray-200 dark:@hover-bg-gray-700"
       )}
       ref={(el) => {
         SortableLib.create(el, {
@@ -208,21 +209,18 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
           fallbackOnBody: true,
           sort: false,
           onStart() {
-            setActiveDraggableGroup(props.contentGroup);
+            setActiveDraggableContentGroupId(props.contentGroup.id);
           },
           onEnd(event) {
             event.preventDefault();
             props.onDragEnd?.(event);
-            setActiveDraggableGroup(null);
+            setActiveDraggableContentGroupId(null);
           }
         });
       }}
     >
       <div
-        class={clsx(
-          "flex flex-1 justify-start items-center overflow-hidden rounded-lg cursor-pointer h-7 group",
-          props.draggable !== false && "draggable"
-        )}
+        class="flex flex-1 justify-start items-center overflow-hidden rounded-lg cursor-pointer h-7 group draggable"
         data-content-group-id={props.contentGroup?.id || ""}
       >
         <IconButton
@@ -245,10 +243,10 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
           <Icon
             class={clsx(
               "h-6 w-6 mr-1 text-gray-500 dark:text-gray-400",
-              (props.highlight ||
-                (props.active &&
-                  !activeDraggableGroup() &&
-                  !activeDraggablePiece() &&
+              (highlighted() ||
+                (active() &&
+                  !activeDraggableContentGroupId() &&
+                  !activeDraggableContentPieceId() &&
                   location.pathname === "/")) &&
                 "fill-[url(#gradient)]"
             )}
@@ -274,7 +272,7 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
                     id: props.contentGroup.id,
                     name
                   });
-                  setContentGroups(props.contentGroup.id, { ...props.contentGroup, name });
+                  contentActions.updateContentGroup({ id: props.contentGroup.id, name });
                   setRenaming("");
                 }}
                 onChange={(event) => {
@@ -284,7 +282,7 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
                     id: props.contentGroup.id,
                     name
                   });
-                  setContentGroups(props.contentGroup.id, { ...props.contentGroup, name });
+                  contentActions.updateContentGroup({ id: props.contentGroup.id, name });
                   setRenaming("");
                 }}
               />
@@ -293,16 +291,16 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
             <span
               class={clsx(
                 "!text-base inline-flex text-start flex-1 overflow-x-auto content-group-name scrollbar-hidden select-none clamp-1",
-                (props.highlight ||
-                  (props.active &&
-                    !activeDraggableGroup() &&
-                    !activeDraggablePiece() &&
+                (highlighted() ||
+                  (active() &&
+                    !activeDraggableContentGroupId() &&
+                    !activeDraggableContentPieceId() &&
                     location.pathname === "/")) &&
                   "text-transparent bg-clip-text bg-gradient-to-tr"
               )}
-              title={props.customLabel || props.contentGroup?.name || ""}
+              title={props.contentGroup?.name || ""}
             >
-              {props.customLabel || props.contentGroup?.name || ""}
+              {props.contentGroup?.name || ""}
             </span>
           </Show>
         </button>

@@ -6,7 +6,7 @@ import dayjs from "dayjs";
 import { Component, For, createEffect, createSignal, on, onCleanup } from "solid-js";
 import RelativeTimePlugin from "dayjs/plugin/relativeTime";
 import { createStore } from "solid-js/store";
-import { useLocalStorage, useSharedState } from "#context";
+import { useContentData, useLocalStorage, useSharedState } from "#context";
 
 interface BlockActionMenuProps {
   state: {
@@ -28,9 +28,8 @@ interface CommentFragmentData {
 dayjs.extend(RelativeTimePlugin);
 
 const CommentMenu: Component<BlockActionMenuProps> = (props) => {
-  const createSharedSignal = useSharedState();
   const { storage } = useLocalStorage();
-  const [editedContentPiece] = createSharedSignal("editedContentPiece");
+  const { activeContentPieceId } = useContentData();
   const [fragments, setFragments] = createSignal<CommentFragmentData[]>([]);
   const handleStateUpdate = (): void => {
     const container = document.getElementById("pm-container");
@@ -85,7 +84,7 @@ const CommentMenu: Component<BlockActionMenuProps> = (props) => {
   });
 
   return (
-    <CommentDataProvider contentPieceId={editedContentPiece()?.id || ""}>
+    <CommentDataProvider contentPieceId={activeContentPieceId() || ""}>
       <div
         class={clsx(
           "hidden md:block not-prose text-base w-80 m-0 transform max-h-[60vh] backdrop-blur-lg bg-gray-100 dark:bg-gray-800 dark:bg-opacity-50 bg-opacity-50 rounded-l-2xl",
@@ -100,7 +99,7 @@ const CommentMenu: Component<BlockActionMenuProps> = (props) => {
                 fragment={fragment}
                 contentOverlap={props.state.contentOverlap}
                 selectedFragmentId={props.state.fragment}
-                contentPieceId={editedContentPiece()?.id || ""}
+                contentPieceId={activeContentPieceId() || ""}
                 editor={props.state.editor}
                 setFragment={props.state.setFragment}
               />

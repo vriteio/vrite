@@ -3,16 +3,16 @@ import { Toolbar } from "./toolbar";
 import { SidebarMenu } from "./sidebar-menu";
 import { ParentComponent, Show, createEffect } from "solid-js";
 import { useLocation } from "@solidjs/router";
-import { mdiFullscreenExit } from "@mdi/js";
+import { mdiCards, mdiCardsOutline, mdiFullscreenExit, mdiSourceBranch } from "@mdi/js";
 import {
   AppearanceProvider,
   AuthenticatedUserDataProvider,
-  CacheProvider,
   ExtensionsProvider,
   CommandPaletteProvider,
+  ContentDataProvider,
   useLocalStorage
 } from "#context";
-import { IconButton, Tooltip } from "#components/primitives";
+import { Card, IconButton, Tooltip } from "#components/primitives";
 
 const SecuredLayout: ParentComponent = (props) => {
   const { storage, setStorage } = useLocalStorage();
@@ -28,48 +28,64 @@ const SecuredLayout: ParentComponent = (props) => {
     <AuthenticatedUserDataProvider>
       <AppearanceProvider>
         <ExtensionsProvider>
-          <CommandPaletteProvider>
-            <CacheProvider>
-              <Show
-                when={!storage().zenMode}
-                fallback={
-                  <Tooltip
-                    wrapperClass="fixed top-0 right-0 z-50 mt-2 md:mt-4 mr-4 md:mr-6"
-                    class="-ml-1"
-                    text="Exit Zen mode"
-                    side="left"
+          <ContentDataProvider>
+            <CommandPaletteProvider>
+              <div class="flex flex-col h-full w-full">
+                <div class="flex-1 flex flex-col-reverse md:flex-row h-[calc(100%-1.5rem)]">
+                  <Show
+                    when={!storage().zenMode}
+                    fallback={
+                      <Tooltip
+                        wrapperClass="fixed top-0 right-0 z-50 mt-2 md:mt-4 mr-4 md:mr-6"
+                        class="-ml-1"
+                        text="Exit Zen mode"
+                        side="left"
+                      >
+                        <IconButton
+                          path={mdiFullscreenExit}
+                          class="m-0"
+                          text="soft"
+                          onClick={() => {
+                            setStorage((storage) => ({ ...storage, zenMode: false }));
+                          }}
+                        />
+                      </Tooltip>
+                    }
                   >
-                    <IconButton
-                      path={mdiFullscreenExit}
-                      class="m-0"
-                      text="soft"
-                      onClick={() => {
-                        setStorage((storage) => ({ ...storage, zenMode: false }));
-                      }}
-                    />
-                  </Tooltip>
-                }
-              >
-                <SidebarMenu />
-              </Show>
-              <div
-                class="flex flex-col flex-1 md:h-full overflow-visible"
-                id="main-scrollable-container"
-              >
-                <div class="flex flex-1 h-full">
-                  <Show when={!storage().zenMode}>
-                    <SidePanel />
+                    <SidebarMenu />
                   </Show>
-                  <div class="flex-1 relative flex flex-col w-full">
-                    <Show when={!storage().zenMode}>
-                      <Toolbar />
-                    </Show>
-                    <div class="absolute h-[calc(100%-3rem)] w-full top-12">{props.children}</div>
+                  <div
+                    class="flex flex-col flex-1 md:h-full overflow-visible"
+                    id="main-scrollable-container"
+                  >
+                    <div class="flex flex-1 h-full">
+                      <Show when={!storage().zenMode}>
+                        <SidePanel />
+                      </Show>
+                      <div class="flex-1 relative flex flex-col w-full">
+                        <Show when={!storage().zenMode}>
+                          <Toolbar />
+                        </Show>
+                        <div class="absolute h-[calc(100%-3rem)] w-full top-12">
+                          {props.children}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
+                <div class="w-full flex z-50 m-0 bg-gray-50 dark:bg-gray-900 h-6 border-t-2 border-gray-200 dark:border-gray-700 box-content">
+                  <IconButton
+                    path={mdiCardsOutline}
+                    label="Base Variant"
+                    size="small"
+                    class="m-0 rounded-0 px-4"
+                    variant="text"
+                    text="soft"
+                  />
+                </div>
               </div>
-            </CacheProvider>
-          </CommandPaletteProvider>
+            </CommandPaletteProvider>
+          </ContentDataProvider>
         </ExtensionsProvider>
       </AppearanceProvider>
     </AuthenticatedUserDataProvider>
