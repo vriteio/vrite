@@ -16,6 +16,7 @@ import { breakpoints, tagColorClasses } from "#lib/utils";
 
 interface ContentPieceProps {
   contentPiece: App.ContentPieceWithAdditionalData;
+  dataProps: Record<string, string>;
   index: number;
 }
 
@@ -62,6 +63,7 @@ const ContentPieceCard: Component<ContentPieceProps> = (props) => {
       }}
       data-content-piece-id={props.contentPiece.id}
       data-index={props.index}
+      {...props.dataProps}
     >
       <Heading level={4} class="font-bold clamp-2">
         <div

@@ -20,12 +20,11 @@ const TreeLevel: Component<{
     expandContentLevel,
     collapseContentLevel,
     activeContentGroupId,
-    activeDraggableContentGroupId,
-    activeDraggableContentPieceId,
     contentLoader,
     contentActions
   } = useContentData();
-  const { highlight, setHighlight } = useExplorerData();
+  const { highlight, setHighlight, activeDraggableContentGroupId, activeDraggableContentPieceId } =
+    useExplorerData();
   const { setStorage } = useLocalStorage();
   const client = useClient();
   const location = useLocation();
@@ -171,6 +170,8 @@ const TreeLevel: Component<{
                     const newParentId = highlight() || "";
                     const newParent = contentGroups[newParentId];
 
+                    if (!newParentId || newParentId === group.id) return;
+
                     if (newParent) {
                       collapseContentLevel(groupId);
                       contentActions.moveContentGroup({
@@ -223,7 +224,9 @@ const TreeLevel: Component<{
                   const contentPiece = contentPieces[contentPieceId]!;
                   const newParentId = highlight() || "";
                   const oldParentId = contentPiece.contentGroupId;
-                  const updatedContentPiece: App.ExtendedContentPieceWithAdditionalData<"order"> = {
+                  const updatedContentPiece: App.ExtendedContentPieceWithAdditionalData<
+                    "order" | "coverWidth"
+                  > = {
                     ...contentPiece,
                     contentGroupId: newParentId
                   };

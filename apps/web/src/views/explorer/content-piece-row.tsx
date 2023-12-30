@@ -25,20 +25,22 @@ import {
 import { createRef } from "#lib/utils";
 
 interface ContentPieceRowProps {
-  contentPiece: App.ExtendedContentPieceWithAdditionalData<"order">;
+  contentPiece: App.ExtendedContentPieceWithAdditionalData<"order" | "coverWidth">;
   onDragEnd?(event: SortableLib.SortableEvent): void;
   onClick?(): void;
 }
 
 const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
+  const { activeContentPieceId, contentActions } = useContentData();
   const {
     setActiveDraggableContentPieceId,
-    activeContentPieceId,
     activeDraggableContentGroupId,
     activeDraggableContentPieceId,
-    contentActions
-  } = useContentData();
-  const { renaming, loading, setRenaming, setLoading } = useExplorerData();
+    renaming,
+    loading,
+    setRenaming,
+    setLoading
+  } = useExplorerData();
   const { confirmDelete } = useConfirmationModal();
   const { notify } = useNotifications();
   const client = useClient();

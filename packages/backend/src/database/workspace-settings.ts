@@ -67,7 +67,14 @@ const workspaceSettings = z.object({
   prettierConfig: z.string(),
   dashboardViews: z
     .object({
-      table: z.record(z.string(), z.boolean())
+      table: z
+        .array(
+          z.object({
+            id: z.string(),
+            width: z.number()
+          })
+        )
+        .optional()
     })
     .optional(),
   metadata: metadataSettings.optional(),

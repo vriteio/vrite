@@ -48,9 +48,7 @@ const ContentPieceView: Component = () => {
     icon: string;
   }>;
   const { useSharedSignal } = useSharedState();
-  // TODO: use content data
-  const { contentPiece, setContentPiece, loading, activeVariant, setActiveVariant } =
-    useContentData().openedContentPiece;
+  const { activeContentPieceId, contentPieces, contentActions } = useContentData();
   const client = useClient();
   const { setStorage } = useLocalStorage();
   const { confirmDelete } = useConfirmationModal();
@@ -64,14 +62,18 @@ const ContentPieceView: Component = () => {
   const editable = createMemo(() => {
     return hasPermission("editMetadata");
   });
+  const activeContentPiece = (): App.ExtendedContentPieceWithAdditionalData<
+    "order" | "coverWidth"
+  > | null => {
+    return activeContentPieceId() ? contentPieces[activeContentPieceId()!] || null : null;
+  };
+  const activeVariant = (): null => null;
   const handleChange = async (
     value: Partial<App.ExtendedContentPieceWithAdditionalData<"coverWidth">>
   ): Promise<void> => {
-    const id = contentPiece()?.id;
+    const id = activeContentPiece()?.id;
 
     if (!id) return;
-
-    setContentPiece(value);
 
     const { tags, members, ...update } = value;
     const contentPieceUpdate: Partial<App.ExtendedContentPiece<"coverWidth">> = {
@@ -91,22 +93,17 @@ const ContentPieceView: Component = () => {
       variant: activeVariant()?.id,
       ...contentPieceUpdate
     });
+    contentActions.updateContentPiece({
+      id,
+      ...update,
+      ...(tags ? { tags } : {}),
+      ...(members ? { members } : {})
+    });
   };
 
   createEffect(
-    on([loading, contentPiece], ([loading, contentPiece]) => {
-      if (!loading && !contentPiece) {
-        setStorage((storage) => ({
-          ...storage,
-          sidePanelView: undefined,
-          contentPieceId: undefined
-        }));
-      }
-    })
-  );
-  createEffect(
     on(
-      () => contentPiece()?.title,
+      () => activeContentPiece()?.title,
       (title) => {
         setTitleInitialValue(title || "");
       }
@@ -114,7 +111,7 @@ const ContentPieceView: Component = () => {
   );
   createEffect(
     on(
-      () => contentPiece()?.description,
+      () => activeContentPiece()?.description,
       (description) => {
         setDescriptionInitialValue(description || "");
       }
@@ -123,9 +120,9 @@ const ContentPieceView: Component = () => {
   createEffect(
     on(
       [
-        () => contentPiece()?.coverUrl,
-        () => contentPiece()?.coverAlt,
-        () => contentPiece()?.coverWidth
+        () => activeContentPiece()?.coverUrl,
+        () => activeContentPiece()?.coverAlt,
+        () => activeContentPiece()?.coverWidth
       ],
       ([url, alt, width]) => {
         setCoverInitialValue(`<img src="${url || ""}" alt="${alt || ""}" width="${width || ""}"/>`);
@@ -135,7 +132,7 @@ const ContentPieceView: Component = () => {
 
   return (
     <Show
-      when={!loading() && contentPiece()}
+      when={activeContentPiece()}
       fallback={
         <div class="flex h-full w-full justify-center items-center">
           <Loader />
@@ -217,7 +214,7 @@ const ContentPieceView: Component = () => {
                       </p>
                     ),
                     async onConfirm() {
-                      const id = contentPiece()?.id;
+                      const id = activeContentPiece()?.id;
 
                       if (!id) return;
 
@@ -255,8 +252,10 @@ const ContentPieceView: Component = () => {
           />
           <ContentPieceMetadata
             activeVariant={activeVariant()}
-            setActiveVariant={setActiveVariant}
-            contentPiece={contentPiece()!}
+            setActiveVariant={() => {
+              /* setActiveVariant*/
+            }}
+            contentPiece={activeContentPiece()!}
             setContentPiece={handleChange}
             editable={editable()}
             sections={sections}

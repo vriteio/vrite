@@ -6,15 +6,17 @@ import { ContentGroup } from "#database";
 type ContentGroupEvent =
   | {
       action: "create";
+      userId: string;
       data: ContentGroup;
     }
   | {
       action: "update";
+      userId: string;
       data: Partial<ContentGroup> & { id: string };
     }
-  | { action: "delete"; data: { id: string } }
-  | { action: "move"; data: ContentGroup }
-  | { action: "reorder"; data: { id: string; index: number } };
+  | { action: "delete"; userId: string; data: { id: string } }
+  | { action: "move"; userId: string; data: ContentGroup }
+  | { action: "reorder"; userId: string; data: { id: string; index: number } };
 
 const publishContentGroupEvent = createEventPublisher<ContentGroupEvent>(
   (workspaceId) => `contentGroups:${workspaceId}`

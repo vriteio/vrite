@@ -40,16 +40,14 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
   const location = useLocation();
   const { notify } = useNotifications();
   const { confirmDelete } = useConfirmationModal();
+  const { activeContentGroupId, expandedContentLevels, collapseContentLevel, contentActions } =
+    useContentData();
   const {
-    activeContentGroupId,
     activeDraggableContentGroupId,
     activeDraggableContentPieceId,
     setActiveDraggableContentGroupId,
-    expandedContentLevels,
-    collapseContentLevel,
-    contentActions
-  } = useContentData();
-  const { highlight } = useExplorerData();
+    highlight
+  } = useExplorerData();
   const [dropdownOpened, setDropdownOpened] = createSignal(false);
   const menuOptions = createMemo(() => {
     const menuOptions: Array<{

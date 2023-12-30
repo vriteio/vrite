@@ -353,7 +353,7 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
             );
           }}
         >
-          <div class="gap-1 flex flex-col">
+          <div class="flex flex-col">
             <IconButton
               onClick={() => {
                 setView("kanban");
@@ -362,8 +362,8 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
               path={mdiViewDashboard}
               class="w-full m-0 justify-start"
               label="Kanban"
-              variant={view() === "kanban" ? "solid" : "text"}
-              text={view() === "kanban" ? "primary" : "soft"}
+              variant="text"
+              text={view() === "kanban" ? "base" : "soft"}
               color={view() === "kanban" ? "primary" : "base"}
             />
             <IconButton
@@ -374,9 +374,9 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
               path={mdiViewList}
               class="w-full m-0 justify-start"
               label="Table"
-              variant={view() === "list" ? "solid" : "text"}
-              text={view() === "list" ? "primary" : "soft"}
-              color={view() === "list" ? "primary" : "base"}
+              variant="text"
+              text={view() === "table" ? "base" : "soft"}
+              color={view() === "table" ? "primary" : "base"}
             />
           </div>
         </Dropdown>

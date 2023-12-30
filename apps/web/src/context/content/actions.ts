@@ -3,11 +3,14 @@ import { App, ContentLevel } from "#context";
 
 interface ContentActionsInput {
   contentGroups: Record<string, App.ContentGroup | undefined>;
-  contentPieces: Record<string, App.ExtendedContentPieceWithAdditionalData<"order"> | undefined>;
+  contentPieces: Record<
+    string,
+    App.ExtendedContentPieceWithAdditionalData<"order" | "coverWidth"> | undefined
+  >;
   contentLevels: Record<string, ContentLevel | undefined>;
   setContentGroups: SetStoreFunction<Record<string, App.ContentGroup | undefined>>;
   setContentPieces: SetStoreFunction<
-    Record<string, App.ExtendedContentPieceWithAdditionalData<"order"> | undefined>
+    Record<string, App.ExtendedContentPieceWithAdditionalData<"order" | "coverWidth"> | undefined>
   >;
   setContentLevels: SetStoreFunction<Record<string, ContentLevel | undefined>>;
 }
@@ -17,14 +20,16 @@ interface ContentActions {
   moveContentGroup(data: Pick<App.ContentGroup, "id" | "ancestors">): void;
   updateContentGroup(data: Partial<App.ContentGroup> & Pick<App.ContentGroup, "id">): void;
   reorderContentGroup(data: Pick<App.ContentGroup, "id"> & { index: number }): void;
-  createContentPiece(data: App.ExtendedContentPieceWithAdditionalData<"order">): void;
+  createContentPiece(
+    data: App.ExtendedContentPieceWithAdditionalData<"order" | "coverWidth">
+  ): void;
   deleteContentPiece(data: Pick<App.ContentPiece, "id">): void;
   updateContentPiece(
-    data: Partial<App.ExtendedContentPieceWithAdditionalData<"order">> &
+    data: Partial<App.ExtendedContentPieceWithAdditionalData<"order" | "coverWidth">> &
       Pick<App.ContentPiece, "id">
   ): void;
   moveContentPiece(data: {
-    contentPiece: App.ExtendedContentPieceWithAdditionalData<"order">;
+    contentPiece: App.ExtendedContentPieceWithAdditionalData<"order" | "coverWidth">;
     nextReferenceId?: string;
     previousReferenceId?: string;
   }): void;

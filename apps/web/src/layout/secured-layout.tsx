@@ -1,9 +1,10 @@
 import { SidePanel } from "./side-panel";
 import { Toolbar } from "./toolbar";
 import { SidebarMenu } from "./sidebar-menu";
+import { BottomMenu } from "./bottom-menu";
 import { ParentComponent, Show, createEffect } from "solid-js";
 import { useLocation } from "@solidjs/router";
-import { mdiCards, mdiCardsOutline, mdiFullscreenExit, mdiSourceBranch } from "@mdi/js";
+import { mdiFullscreenExit } from "@mdi/js";
 import {
   AppearanceProvider,
   AuthenticatedUserDataProvider,
@@ -12,7 +13,7 @@ import {
   ContentDataProvider,
   useLocalStorage
 } from "#context";
-import { Card, IconButton, Tooltip } from "#components/primitives";
+import { IconButton, Tooltip } from "#components/primitives";
 
 const SecuredLayout: ParentComponent = (props) => {
   const { storage, setStorage } = useLocalStorage();
@@ -73,16 +74,7 @@ const SecuredLayout: ParentComponent = (props) => {
                     </div>
                   </div>
                 </div>
-                <div class="w-full flex z-50 m-0 bg-gray-50 dark:bg-gray-900 h-6 border-t-2 border-gray-200 dark:border-gray-700 box-content">
-                  <IconButton
-                    path={mdiCardsOutline}
-                    label="Base Variant"
-                    size="small"
-                    class="m-0 rounded-0 px-4"
-                    variant="text"
-                    text="soft"
-                  />
-                </div>
+                <BottomMenu />
               </div>
             </CommandPaletteProvider>
           </ContentDataProvider>

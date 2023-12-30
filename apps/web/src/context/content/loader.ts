@@ -3,11 +3,14 @@ import { App, ContentLevel, useClient } from "#context";
 
 interface ContentActionsInput {
   contentGroups: Record<string, App.ContentGroup | undefined>;
-  contentPieces: Record<string, App.ExtendedContentPieceWithAdditionalData<"order"> | undefined>;
+  contentPieces: Record<
+    string,
+    App.ExtendedContentPieceWithAdditionalData<"order" | "coverWidth"> | undefined
+  >;
   contentLevels: Record<string, ContentLevel | undefined>;
   setContentGroups: SetStoreFunction<Record<string, App.ContentGroup | undefined>>;
   setContentPieces: SetStoreFunction<
-    Record<string, App.ExtendedContentPieceWithAdditionalData<"order"> | undefined>
+    Record<string, App.ExtendedContentPieceWithAdditionalData<"order" | "coverWidth"> | undefined>
   >;
   setContentLevels: SetStoreFunction<Record<string, ContentLevel | undefined>>;
 }

@@ -1,4 +1,6 @@
-import { DashboardKanbanView } from "./views/kanban";
+import { DashboardKanbanView } from "./kanban";
+import { DashboardTableView } from "./table";
+import { DashboardDataProvider } from "./dashboard-context";
 import { Component, Match, Switch, createEffect, on, onCleanup } from "solid-js";
 import { HocuspocusProvider } from "@hocuspocus/provider";
 import * as Y from "yjs";
@@ -56,14 +58,16 @@ const DashboardView: Component = () => {
 
   return (
     <div class="relative flex-1 overflow-hidden flex flex-row h-full">
-      <Switch>
-        <Match when={storage().dashboardView === "table"}>
-          <div />
-        </Match>
-        <Match when={storage().dashboardView === "kanban" || !storage().dashboardView}>
-          <DashboardKanbanView />
-        </Match>
-      </Switch>
+      <DashboardDataProvider>
+        <Switch>
+          <Match when={storage().dashboardView === "table"}>
+            <DashboardTableView />
+          </Match>
+          <Match when={storage().dashboardView === "kanban" || !storage().dashboardView}>
+            <DashboardKanbanView />
+          </Match>
+        </Switch>
+      </DashboardDataProvider>
     </div>
   );
 };

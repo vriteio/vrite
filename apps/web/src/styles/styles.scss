@@ -372,7 +372,8 @@ kbd {
   &::-webkit-scrollbar-thumb {
     @apply bg-gray-200 rounded-lg dark:bg-gray-800;
   }
-  &-contrast {
+  &-contrast,
+  &-dashboard {
     scrollbar-color: #f8fafc #e2e8f0;
     &::-webkit-scrollbar {
       @apply w-2 h-2 rounded-lg bg-gray-100 dark:bg-gray-800;
@@ -386,7 +387,8 @@ kbd {
   .scrollbar-sm {
     scrollbar-color: #1e293b #0f172a;
 
-    &-contrast {
+    &-contrast,
+    &-dashboard {
       scrollbar-color: #0f172a #1e293b;
     }
   }
@@ -404,6 +406,14 @@ kbd {
   }
   &::-webkit-scrollbar-thumb {
     @apply bg-gray-200 rounded-lg dark:bg-gray-900;
+  }
+}
+.scrollbar-dashboard {
+  &::-webkit-scrollbar {
+    @apply w-5 h-5 rounded-xl bg-gray-100 dark:bg-gray-800;
+  }
+  &::-webkit-scrollbar-thumb {
+    @apply rounded-xl bg-gray-200 dark:bg-gray-900 border-6 border-solid border-gray-100 dark:border-gray-800;
   }
 }
 

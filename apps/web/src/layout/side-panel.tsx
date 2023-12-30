@@ -10,10 +10,10 @@ import { ExtensionsView } from "#views/extensions";
 import { GettingStartedView } from "#views/getting-started";
 import { GitView } from "#views/git";
 import { ExplorerView } from "#views/explorer";
+import { ContentPieceView } from "#views/content-piece";
 
 const sidePanelViews: Record<string, Component<Record<string, any>>> = {
-  // TODO: use content data
-  contentPiece: () => <div></div>, // ContentPieceView,
+  contentPiece: ContentPieceView,
   git: () => {
     const hostConfig = useHostConfig();
 
@@ -50,7 +50,7 @@ const SidePanel: Component = () => {
   });
   const sidePanelEnabled = createMemo(() => {
     if (!storage().sidePanelView) return false;
-    if (storage().sidePanelView === "contentPiece" && !storage().contentPieceId) return false;
+    if (storage().sidePanelView === "contentPiece" && !storage().activeContentPieceId) return false;
 
     return true;
   });

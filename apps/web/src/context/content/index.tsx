@@ -1,9 +1,9 @@
 import { ContentActions, createContentActions } from "./actions";
 import { ContentLoader, createContentLoader } from "./loader";
-import { createContext, ParentComponent, Setter, useContext } from "solid-js";
-import { createSignal, createEffect, on, onCleanup, Accessor } from "solid-js";
+import { createContext, ParentComponent, useContext } from "solid-js";
+import { createSignal, createEffect, on, onCleanup } from "solid-js";
 import { createStore } from "solid-js/store";
-import { useClient, useLocalStorage, App } from "#context";
+import { useClient, useLocalStorage, App, useAuthenticatedUserData } from "#context";
 
 interface ContentLevel {
   groups: string[];
@@ -14,14 +14,13 @@ interface ContentLevel {
 
 interface ContentDataContextData {
   contentGroups: Record<string, App.ContentGroup | undefined>;
-  contentPieces: Record<string, App.ExtendedContentPieceWithAdditionalData<"order"> | undefined>;
+  contentPieces: Record<
+    string,
+    App.ExtendedContentPieceWithAdditionalData<"order" | "coverWidth"> | undefined
+  >;
   contentLevels: Record<string, ContentLevel | undefined>;
   contentActions: ContentActions;
   contentLoader: ContentLoader;
-  activeDraggableContentGroupId: Accessor<string | null>;
-  activeDraggableContentPieceId: Accessor<string | null>;
-  setActiveDraggableContentGroupId: Setter<string | null>;
-  setActiveDraggableContentPieceId: Setter<string | null>;
   activeContentGroupId(): string | null;
   activeContentPieceId(): string | null;
   expandedContentLevels(): string[];
@@ -34,6 +33,7 @@ interface ContentDataContextData {
 const ContentDataContext = createContext<ContentDataContextData>();
 const ContentDataProvider: ParentComponent = (props) => {
   const client = useClient();
+  const { profile } = useAuthenticatedUserData();
   const { storage, setStorage } = useLocalStorage();
   const [activeDraggableContentGroupId, setActiveDraggableContentGroupId] = createSignal<
     string | null
@@ -48,7 +48,7 @@ const ContentDataProvider: ParentComponent = (props) => {
     Record<string, App.ContentGroup | undefined>
   >({});
   const [contentPieces, setContentPieces] = createStore<
-    Record<string, App.ExtendedContentPieceWithAdditionalData<"order"> | undefined>
+    Record<string, App.ExtendedContentPieceWithAdditionalData<"order" | "coverWidth"> | undefined>
   >({});
   const activeContentGroupId = (): string | null => {
     return storage().activeContentGroupId || null;
@@ -114,16 +114,22 @@ const ContentDataProvider: ParentComponent = (props) => {
     setContentLevels
   });
   const contentGroupsSubscription = client.contentGroups.changes.subscribe(undefined, {
-    onData({ action, data }) {
+    onData({ action, data, userId }) {
       if (action === "move") {
         contentActions.moveContentGroup(data);
       } else if (action === "create") {
+        if (userId === profile()?.id) return;
+
         contentActions.createContentGroup(data);
       } else if (action === "delete") {
         contentActions.deleteContentGroup(data);
       } else if (action === "update") {
+        if (userId === profile()?.id) return;
+
         contentActions.updateContentGroup(data);
       } else if (action === "reorder") {
+        if (userId === profile()?.id) return;
+
         contentActions.reorderContentGroup(data);
       }
     }
@@ -138,14 +144,18 @@ const ContentDataProvider: ParentComponent = (props) => {
             const contentPiecesSubscription = client.contentPieces.changes.subscribe(
               { contentGroupId },
               {
-                onData({ action, data }) {
+                onData({ action, data, userId }) {
                   if (action === "update") {
+                    if (userId === profile()?.id) return;
+
                     contentActions.updateContentPiece(data);
                   } else if (action === "create") {
                     contentActions.createContentPiece(data);
                   } else if (action === "delete") {
                     contentActions.deleteContentPiece(data);
                   } else if (action === "move") {
+                    if (userId === profile()?.id) return;
+
                     contentActions.moveContentPiece(data);
                   }
                 }
@@ -180,12 +190,8 @@ const ContentDataProvider: ParentComponent = (props) => {
         contentActions,
         contentLoader,
         expandedContentLevels,
-        activeDraggableContentGroupId,
-        activeDraggableContentPieceId,
         activeContentGroupId,
         activeContentPieceId,
-        setActiveDraggableContentGroupId,
-        setActiveDraggableContentPieceId,
         setActiveContentGroupId,
         setActiveContentPieceId,
         expandContentLevel,

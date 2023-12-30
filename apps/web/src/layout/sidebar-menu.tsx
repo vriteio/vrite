@@ -76,7 +76,7 @@ const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
         onClick: () => {
           navigate("/");
 
-          if (storage().contentPieceId && md() && location.pathname === "/") {
+          if (storage().activeContentPieceId && md() && location.pathname === "/") {
             setSidePanelView("contentPiece");
           }
 
@@ -108,7 +108,7 @@ const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
         onClick: () => {
           navigate("/editor");
 
-          if (storage().contentPieceId && md() && location.pathname === "/editor") {
+          if (storage().activeContentPieceId && md() && location.pathname === "/editor") {
             setSidePanelView("contentPiece");
           }
 
@@ -163,13 +163,6 @@ const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
         active: () => storage().sidePanelView === "extensions",
         onClick: async () => {
           setSidePanelView("extensions");
-        }
-      },
-      {
-        icon: mdiHexagonSlice6,
-        label: "Workspace",
-        onClick: () => {
-          navigate("/workspaces");
         }
       }
     ].filter((value) => value !== false) as Array<MenuItem | null>;

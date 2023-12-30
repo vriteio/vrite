@@ -1,14 +1,15 @@
 import { ContentPieceCard } from "./content-piece-card";
+import { useDashboardData } from "../dashboard-context";
 import { Component, createEffect, createMemo, createSignal, For, on, Show } from "solid-js";
 import {
   mdiDotsVertical,
+  mdiFileDocumentOutline,
   mdiFileDocumentPlusOutline,
   mdiFolderPlus,
   mdiIdentifier,
   mdiTrashCan
 } from "@mdi/js";
 import clsx from "clsx";
-import SortableLib from "sortablejs";
 import { Card, IconButton, Sortable, Dropdown, Loader, Icon } from "#components/primitives";
 import { MiniEditor, ScrollShadow, createScrollShadowController } from "#components/fragments";
 import {
@@ -22,10 +23,11 @@ import {
   useContentData,
   ContentLevel
 } from "#context";
-import { breakpoints, createRef } from "#lib/utils";
+import { createRef } from "#lib/utils";
 
 interface ContentGroupColumnProps {
   contentGroup: App.ContentGroup;
+  dataProps: Record<string, string>;
   index: number;
   onDragStart?(): void;
   onDragEnd?(): void;
@@ -81,21 +83,18 @@ const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
   const {
     contentPieces,
     contentLevels,
-    contentActions,
     contentLoader,
+    contentActions,
     activeContentGroupId,
-    setActiveContentGroupId,
-    activeDraggableContentGroupId,
-    setActiveDraggableContentGroupId,
-    setActiveDraggableContentPieceId
+    setActiveContentGroupId
   } = useContentData();
+  const { activeDraggableContentGroupId, setActiveDraggableContentPieceId } = useDashboardData();
   const { notify } = useNotifications();
   const { confirmDelete } = useConfirmationModal();
   const { setStorage } = useLocalStorage();
   const scrollShadowController = createScrollShadowController();
   const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
   const [dropdownOpened, setDropdownOpened] = createSignal(false);
-  const [sortableRef, setSortableRef] = createRef<HTMLElement | null>(null);
   const client = useClient();
   const menuOptions = createMemo(() => {
     const menuOptions: Array<{
@@ -155,7 +154,6 @@ const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
 
     return menuOptions;
   });
-  const [highlight, setHighlight] = createSignal(false);
   const columnContentLevel = (): ContentLevel => {
     return (
       contentLevels[props.contentGroup.id || ""] || {
@@ -179,57 +177,17 @@ const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
       class="px-2.5 pb-2.5 last:pr-5 first:pl-5 md:last:pr-0 md:first:pl-0 h-full snap-center"
       data-content-group-id={props.contentGroup.id}
       data-index={props.index}
+      {...(props.dataProps || {})}
     >
       <Card class="flex flex-col items-start justify-start h-full p-4 relative m-0 mb-1 pr-2 md:pr-1 overflow-x-hidden content-group select-none">
         <div class="flex items-center justify-center mb-2 w-full">
-          <div
-            class="flex flex-1 justify-center items-center cursor-pointer overflow-x-hidden"
-            ref={(el) => {
-              SortableLib.create(el, {
-                group: {
-                  name: "shared",
-                  put: (_to, _from, dragEl) => {
-                    return (
-                      Boolean(dragEl.dataset.contentGroupId) &&
-                      dragEl.dataset.contentGroupId !== props.contentGroup.id
-                    );
-                  }
-                },
-                delayOnTouchOnly: true,
-                delay: 500,
-                fallbackOnBody: true,
-                disabled: !hasPermission("manageDashboard") || !breakpoints.md(),
-                ghostClass: "!hidden",
-                revertOnSpill: true,
-                onAdd(evt) {
-                  const el = evt.item;
-
-                  el.remove();
-                  setHighlight(false);
-                  client.contentGroups.move.mutate({
-                    id: el.dataset.contentGroupId || "",
-                    ancestor: props.contentGroup.id
-                  });
-                  props.remove?.(el.dataset.contentGroupId || "");
-                },
-                onStart() {
-                  setActiveDraggableContentGroupId(props.contentGroup.id);
-                },
-                onEnd() {
-                  setActiveDraggableContentGroupId(null);
-                }
-              });
-            }}
-          >
+          <div class="flex flex-1 justify-center items-center cursor-pointer overflow-x-hidden">
             <div
               class="flex flex-1 justify-center items-center overflow-hidden"
               data-content-group-id={props.contentGroup.id}
             >
               <MiniEditor
-                class={clsx(
-                  "inline-flex flex-1 overflow-x-auto content-group-name scrollbar-hidden hover:cursor-text whitespace-nowrap-children",
-                  highlight() && "highlight-text"
-                )}
+                class="inline-flex flex-1 overflow-x-auto content-group-name scrollbar-hidden hover:cursor-text whitespace-nowrap-children"
                 content="paragraph"
                 initialValue={props.contentGroup.name}
                 readOnly={Boolean(
@@ -259,7 +217,7 @@ const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
               />
             )}
           >
-            <div class="w-full gap-1 flex flex-col">
+            <div class="w-full flex flex-col">
               <For each={menuOptions()}>
                 {(item) => {
                   return (
@@ -299,117 +257,104 @@ const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
               }
             >
               <Sortable
-                wrapper="div"
-                wrapperProps={{ class: "min-h-[calc(100%-1rem)] flex gap-4 flex-col" }}
-                each={columnContentLevel().pieces}
-                ref={setSortableRef}
-                options={{
-                  ghostClass: `:base: border-4 border-gray-200 opacity-50 dark:border-gray-700 children:invisible`,
-                  group: "card",
-                  disabled: !hasPermission("manageDashboard"),
-                  fallbackOnBody: true,
-                  onStart(event) {
-                    props.onDragStart?.();
-                    setActiveDraggableContentPieceId(
-                      columnContentLevel().pieces[parseInt(event.item.dataset.index || "0")]
-                    );
-                  },
-                  onAdd(event) {
-                    if (typeof event.oldIndex !== "number" || typeof event.newIndex !== "number") {
-                      return;
-                    }
+                class="min-h-[calc(100%-1rem)] flex gap-4 flex-col"
+                ids={columnContentLevel().pieces}
+                group="shared"
+                ghostClass=":base: border-2 border-gray-200 dark:border-gray-700 opacity-50 children:invisible"
+                disabled={!hasPermission("manageDashboard")}
+                sortableId={props.contentGroup.id}
+                dragImage={(props) => {
+                  return (
+                    <div class="flex whitespace-nowrap gap-1 rounded-lg px-1 py-0.5 border-2 bg-gray-100 border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+                      <Icon path={mdiFileDocumentOutline} class="h-6 w-6" />
+                      {contentPieces[props.id]?.title}
+                    </div>
+                  );
+                }}
+                onDragStart={(affectedId) => {
+                  props.onDragStart?.();
 
-                    const id = event.item.dataset.contentPieceId || "";
-                    const baseReferenceContentPieceId = columnContentLevel().pieces[event.newIndex];
+                  if (affectedId) {
+                    setActiveDraggableContentPieceId(affectedId);
+                  }
+                }}
+                onDragEnd={(newIds, details) => {
+                  const isMoved =
+                    columnContentLevel().pieces.some((id) => !newIds.includes(id)) ||
+                    newIds.some((id) => !columnContentLevel().pieces.includes(id));
+                  const isReordered =
+                    !isMoved && columnContentLevel().pieces.join(":") !== newIds.join(":");
+
+                  props.onDragEnd?.();
+                  setActiveDraggableContentPieceId(null);
+
+                  if (isReordered) {
+                    const oldIndex = columnContentLevel().pieces.indexOf(details.affectedId);
+                    const newIndex = newIds.indexOf(details.affectedId);
+                    const contentPieceId = columnContentLevel().pieces[oldIndex];
+                    const baseReferenceContentPieceId = columnContentLevel().pieces[newIndex];
                     const secondReferenceContentPieceId =
-                      columnContentLevel().pieces[event.newIndex - 1];
-                    const nextReferenceContentPieceId = secondReferenceContentPieceId;
-                    const previousReferenceContentPieceId = baseReferenceContentPieceId;
+                      columnContentLevel().pieces[
+                        oldIndex < newIndex ? newIndex + 1 : newIndex - 1
+                      ];
+
+                    let nextReferenceContentPieceId = secondReferenceContentPieceId;
+                    let previousReferenceContentPieceId = baseReferenceContentPieceId;
+
+                    if (oldIndex < newIndex) {
+                      nextReferenceContentPieceId = baseReferenceContentPieceId;
+                      previousReferenceContentPieceId = secondReferenceContentPieceId;
+                    }
 
                     client.contentPieces.move.mutate({
-                      id,
-                      contentGroupId: props.contentGroup.id,
+                      id: contentPieceId,
                       nextReferenceId: nextReferenceContentPieceId,
                       previousReferenceId: previousReferenceContentPieceId
                     });
 
-                    const children = [...(event.to?.children || [])] as HTMLElement[];
-
-                    if (typeof event.newIndex === "number") {
-                      children.splice(event.newIndex, 1);
-                    }
-
-                    event.to?.replaceChildren(...children);
-                    contentActions.moveContentPiece({
-                      contentPiece: {
-                        ...contentPieces[id]!,
-                        contentGroupId: props.contentGroup.id
-                      },
-                      nextReferenceId: nextReferenceContentPieceId,
-                      previousReferenceId: previousReferenceContentPieceId
-                    });
-                  },
-                  onRemove(event) {
-                    const children = [...(event.from?.children || [])] as HTMLElement[];
-
-                    children.splice(event.oldIndex || 0, 0, event.item);
-                    event.from.replaceChildren(...children);
-                    event.item.remove();
-                  },
-                  onUpdate(event) {
-                    if (typeof event.oldIndex === "number" && typeof event.newIndex === "number") {
-                      const contentPieceId = columnContentLevel().pieces[event.oldIndex];
-                      const baseReferenceContentPieceId =
-                        columnContentLevel().pieces[event.newIndex];
-                      const secondReferenceContentPieceId =
-                        columnContentLevel().pieces[
-                          event.oldIndex < event.newIndex ? event.newIndex + 1 : event.newIndex - 1
-                        ];
-
-                      let nextReferenceContentPieceId = secondReferenceContentPieceId;
-                      let previousReferenceContentPieceId = baseReferenceContentPieceId;
-
-                      if (event.oldIndex < event.newIndex) {
-                        nextReferenceContentPieceId = baseReferenceContentPieceId;
-                        previousReferenceContentPieceId = secondReferenceContentPieceId;
-                      }
-
-                      client.contentPieces.move.mutate({
-                        id: contentPieceId,
+                    if (contentPieces[contentPieceId]) {
+                      contentActions.moveContentPiece({
+                        contentPiece: {
+                          ...contentPieces[contentPieceId]!,
+                          contentGroupId: props.contentGroup.id
+                        },
                         nextReferenceId: nextReferenceContentPieceId,
                         previousReferenceId: previousReferenceContentPieceId
                       });
-
-                      if (contentPieces[contentPieceId]) {
-                        contentActions.moveContentPiece({
-                          contentPiece: {
-                            ...contentPieces[contentPieceId]!,
-                            contentGroupId: props.contentGroup.id
-                          },
-                          nextReferenceId: nextReferenceContentPieceId,
-                          previousReferenceId: previousReferenceContentPieceId
-                        });
-                      }
-
-                      setActiveDraggableContentPieceId(null);
                     }
-                  },
-                  onEnd() {
-                    const children = [...(sortableRef()?.children || [])] as HTMLElement[];
+                  }
 
-                    children.sort(
-                      (a, b) => parseInt(a.dataset.index || "") - parseInt(b.dataset.index || "")
+                  if (isMoved && details.movedInSortableId && details.movedInIds) {
+                    const movedInIdsWithoutAffectedId = details.movedInIds.filter(
+                      (id) => id !== details.affectedId
                     );
-                    sortableRef()?.replaceChildren(...children);
-                    props.onDragEnd?.();
+                    const newIndex = details.movedInIds.indexOf(details.affectedId);
+                    const nextReferenceId = movedInIdsWithoutAffectedId[newIndex - 1];
+                    const previousReferenceId = movedInIdsWithoutAffectedId[newIndex];
+
+                    client.contentPieces.move.mutate({
+                      id: details.affectedId,
+                      contentGroupId: details.movedInSortableId,
+                      nextReferenceId,
+                      previousReferenceId
+                    });
+                    contentActions.moveContentPiece({
+                      contentPiece: {
+                        ...contentPieces[details.affectedId]!,
+                        contentGroupId: details.movedInSortableId
+                      },
+                      nextReferenceId,
+                      previousReferenceId
+                    });
                   }
                 }}
               >
-                {(contentPieceId, index) => {
-                  if (contentPieceId && contentPieces[contentPieceId]) {
+                {(contentPieceId, index, dataProps) => {
+                  if (contentPieces[contentPieceId]) {
                     return (
                       <ContentPieceCard
                         contentPiece={contentPieces[contentPieceId]!}
+                        dataProps={dataProps()}
                         index={index()}
                       />
                     );

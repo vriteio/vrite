@@ -167,6 +167,7 @@ const contentGroupsRouter = router({
       });
       publishContentGroupEvent(ctx, `${ctx.auth.workspaceId}`, {
         action: "update",
+        userId: `${ctx.auth.userId}`,
         data: { id, ...update }
       });
     }),
@@ -221,6 +222,7 @@ const contentGroupsRouter = router({
       await contentGroupsCollection.insertOne(contentGroup);
       publishContentGroupEvent(ctx, `${ctx.auth.workspaceId}`, {
         action: "create",
+        userId: `${ctx.auth.userId}`,
         data: {
           id: `${contentGroup._id}`,
           ancestors: contentGroup.ancestors.map((id) => `${id}`),
@@ -318,6 +320,7 @@ const contentGroupsRouter = router({
       });
       publishContentGroupEvent(ctx, `${ctx.auth.workspaceId}`, {
         action: "delete",
+        userId: `${ctx.auth.userId}`,
         data: input
       });
       ctx.fastify.search.deleteContent({
@@ -494,6 +497,7 @@ const contentGroupsRouter = router({
       });
       publishContentGroupEvent(ctx, `${ctx.auth.workspaceId}`, {
         action: "move",
+        userId: `${ctx.auth.userId}`,
         data: {
           id: input.id,
           ancestors: ancestors.map((id) => `${id}`),
@@ -571,6 +575,7 @@ const contentGroupsRouter = router({
 
       publishContentGroupEvent(ctx, `${ctx.auth.workspaceId}`, {
         action: "reorder",
+        userId: `${ctx.auth.userId}`,
         data: input
       });
     }),

@@ -36,7 +36,8 @@ const workspaceSettingsRouter = router({
         metadata: workspaceSettings.metadata,
         marks: workspaceSettings.marks,
         blocks: workspaceSettings.blocks,
-        embeds: workspaceSettings.embeds
+        embeds: workspaceSettings.embeds,
+        dashboardViews: workspaceSettings.dashboardViews
       };
     }),
   changes: authenticatedProcedure.input(z.void()).subscription(({ ctx }) => {
