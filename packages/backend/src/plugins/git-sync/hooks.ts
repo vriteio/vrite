@@ -1,11 +1,11 @@
 /* eslint-disable sonarjs/no-identical-functions */
 import { createGenericOutputContentProcessor } from "./process-content";
 import { OutputContentProcessor } from "./types";
-import { AuthenticatedContext } from "../../lib/middleware";
-import { UnderscoreID } from "../../lib/mongo";
-import { jsonToBuffer } from "../../lib/content-processing";
 import { ObjectId } from "mongodb";
 import crypto from "node:crypto";
+import { UnderscoreID } from "#lib/mongo";
+import { jsonToBuffer } from "#lib/content-processing";
+import { AuthenticatedContext } from "#lib/middleware";
 import {
   FullContentGroup,
   FullContentPiece,
@@ -629,6 +629,32 @@ const gitSyncPlugin = createPlugin(async (fastify) => {
         contentGroupId: `${data.updatedContentPiece.contentGroupId}`
       });
     }
+  });
+  fastify.routeCallbacks.register("contentGroups.create", (ctx, data) => {
+    runGitSyncHook(ctx, "contentGroupCreated", {
+      contentGroup: data.contentGroup
+    });
+  });
+  fastify.routeCallbacks.register("contentGroups.delete", (ctx, data) => {
+    runGitSyncHook(ctx, "contentGroupRemoved", { contentGroup: data.contentGroup });
+  });
+  fastify.routeCallbacks.register("contentGroups.move", (ctx, data) => {
+    runGitSyncHook(ctx, "contentGroupMoved", {
+      ancestor: `${data.updatedContentGroup.ancestors.at(-1) || ""}` || null,
+      contentGroup: data.updatedContentGroup
+    });
+  });
+  fastify.routeCallbacks.register("contentGroups.update", (ctx, data) => {
+    const newAncestor = data.updatedContentGroup.ancestors.at(-1);
+    const newName = data.updatedContentGroup.name;
+    const ancestorUpdated = newAncestor !== data.contentGroup.ancestors.at(-1);
+    const nameUpdated = newName !== data.contentGroup.name;
+
+    runGitSyncHook(ctx, "contentGroupUpdated", {
+      contentGroup: data.contentGroup,
+      ancestor: ancestorUpdated ? `${newAncestor || ""}` || undefined : undefined,
+      name: nameUpdated ? newName : undefined
+    });
   });
 });
 

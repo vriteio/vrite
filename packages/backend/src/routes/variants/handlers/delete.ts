@@ -10,6 +10,17 @@ import { publishVariantEvent } from "#events";
 import { errors } from "#lib/errors";
 import { zodId } from "#lib/mongo";
 
+declare module "fastify" {
+  interface RouteCallbacks {
+    "variants.delete": {
+      ctx: AuthenticatedContext;
+      data: {
+        variantId: ObjectId;
+      };
+    };
+  }
+}
+
 const inputSchema = z.object({ id: zodId() });
 const handler = async (
   ctx: AuthenticatedContext,
@@ -35,7 +46,7 @@ const handler = async (
   if (!deletedCount) throw errors.notFound("variant");
 
   publishVariantEvent(ctx, `${ctx.auth.workspaceId}`, { action: "delete", data: input });
-  ctx.fastify.search.deleteContent({ variantId, workspaceId: ctx.auth.workspaceId });
+  ctx.fastify.routeCallbacks.run("variants.delete", ctx, { variantId });
 };
 
 export { inputSchema, handler };

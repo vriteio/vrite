@@ -103,6 +103,62 @@ const webhooksPlugin = createPlugin(async (fastify) => {
       runWebhooks(ctx, "contentPieceAdded", contentPieceWebhookPayload(data.updatedContentPiece));
     }
   });
+  fastify.routeCallbacks.register("contentGroups.create", (ctx, data) => {
+    runWebhooks(ctx, "contentGroupAdded", {
+      name: data.contentGroup.name,
+      id: `${data.contentGroup._id}`,
+      ancestors: data.contentGroup.ancestors.map((id) => `${id}`),
+      descendants: data.contentGroup.descendants.map((id) => `${id}`)
+    });
+  });
+  fastify.routeCallbacks.register("contentGroups.delete", (ctx, data) => {
+    runWebhooks(ctx, "contentGroupRemoved", {
+      name: data.contentGroup.name,
+      id: `${data.contentGroup._id}`,
+      ancestors: data.contentGroup.ancestors.map((id) => `${id}`),
+      descendants: data.contentGroup.descendants.map((id) => `${id}`)
+    });
+  });
+  fastify.routeCallbacks.register("contentGroups.move", (ctx, data) => {
+    runWebhooks(ctx, "contentGroupMoved", {
+      id: `${data.updatedContentGroup._id}`,
+      ancestors: data.updatedContentGroup.ancestors.map((id) => `${id}`),
+      descendants: data.updatedContentGroup.descendants.map((id) => `${id}`),
+      name: data.updatedContentGroup.name
+    });
+  });
+  fastify.routeCallbacks.register("verification.verifyWorkspaceInvite", (ctx, data) => {
+    runWebhooks(ctx, "memberAdded", {
+      ...data.workspaceMembership,
+      id: `${data.workspaceMembership._id}`,
+      userId: `${data.workspaceMembership.userId}`,
+      roleId: `${data.workspaceMembership.roleId}`
+    });
+  });
+  fastify.routeCallbacks.register("workspaceMemberships.delete", (ctx, data) => {
+    runWebhooks(ctx, "memberRemoved", {
+      ...data.workspaceMembership,
+      id: `${data.workspaceMembership._id}`,
+      userId: `${data.workspaceMembership.userId}`,
+      roleId: `${data.workspaceMembership.roleId}`
+    });
+  });
+  fastify.routeCallbacks.register("workspaceMemberships.leave", (ctx, data) => {
+    runWebhooks(ctx, "memberRemoved", {
+      ...data.workspaceMembership,
+      id: `${data.workspaceMembership._id}`,
+      userId: `${data.workspaceMembership.userId}`,
+      roleId: `${data.workspaceMembership.roleId}`
+    });
+  });
+  fastify.routeCallbacks.register("workspaceMemberships.sendInvite", (ctx, data) => {
+    runWebhooks(ctx, "memberInvited", {
+      ...data.workspaceMembership,
+      id: `${data.workspaceMembership._id}`,
+      userId: `${data.workspaceMembership.userId}`,
+      roleId: `${data.workspaceMembership.roleId}`
+    });
+  });
 });
 
 export { webhooksPlugin };

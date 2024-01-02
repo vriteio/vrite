@@ -2,11 +2,26 @@ import { z } from "zod";
 import { ObjectId } from "mongodb";
 import { nanoid } from "nanoid";
 import { AuthenticatedContext } from "#lib/middleware";
-import { getWorkspaceMembershipsCollection, getRolesCollection } from "#collections";
+import {
+  getWorkspaceMembershipsCollection,
+  getRolesCollection,
+  FullWorkspaceMembership
+} from "#collections";
 import { publishWorkspaceMembershipEvent } from "#events";
 import { errors } from "#lib/errors";
 import { generateSalt, hashValue } from "#lib/hash";
-import { zodId } from "#lib/mongo";
+import { UnderscoreID, zodId } from "#lib/mongo";
+
+declare module "fastify" {
+  interface RouteCallbacks {
+    "workspaceMemberships.sendInvite": {
+      ctx: AuthenticatedContext;
+      data: {
+        workspaceMembership: UnderscoreID<FullWorkspaceMembership<ObjectId>>;
+      };
+    };
+  }
+}
 
 const inputSchema = z.object({
   email: z.string().email().max(320),
@@ -54,7 +69,7 @@ const handler = async (
       pendingInvite: true
     }
   });
-  runWebhooks(ctx, "memberInvited", { ...input, id: `${workspaceMembership._id}` });
+  ctx.fastify.routeCallbacks.run("workspaceMemberships.sendInvite", ctx, { workspaceMembership });
 };
 
 export { inputSchema, handler };

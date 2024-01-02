@@ -1,10 +1,26 @@
 import { z } from "zod";
 import { ObjectId } from "mongodb";
 import { AuthenticatedContext } from "#lib/middleware";
-import { getWorkspaceMembershipsCollection, getUsersCollection } from "#collections";
+import {
+  getWorkspaceMembershipsCollection,
+  getUsersCollection,
+  FullWorkspaceMembership
+} from "#collections";
 import { publishWorkspaceMembershipEvent } from "#events";
 import { errors } from "#lib/errors";
 import { verifyValue } from "#lib/hash";
+import { UnderscoreID } from "#lib/mongo";
+
+declare module "fastify" {
+  interface RouteCallbacks {
+    "verification.verifyWorkspaceInvite": {
+      ctx: AuthenticatedContext;
+      data: {
+        workspaceMembership: UnderscoreID<FullWorkspaceMembership<ObjectId>>;
+      };
+    };
+  }
+}
 
 const inputSchema = z.object({ code: z.string(), membershipId: z.string() });
 const outputSchema = z.object({ workspaceId: z.string() });
@@ -66,11 +82,8 @@ const handler = async (
       pendingInvite: false
     }
   });
-  runWebhooks(ctx, "memberAdded", {
-    ...workspaceMembership,
-    id: `${workspaceMembership._id}`,
-    userId: `${workspaceMembership.userId}`,
-    roleId: `${workspaceMembership.roleId}`
+  ctx.fastify.routeCallbacks.run("verification.verifyWorkspaceInvite", ctx, {
+    workspaceMembership
   });
 
   return { workspaceId: `${workspaceMembership.workspaceId}` };

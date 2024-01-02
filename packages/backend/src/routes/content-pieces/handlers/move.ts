@@ -9,6 +9,12 @@ import {
 import { UnderscoreID, zodId } from "#lib/mongo";
 import { errors } from "#lib/errors";
 import { AuthenticatedContext } from "#lib/middleware";
+import {
+  fetchContentPieceMembers,
+  fetchContentPieceTags,
+  getCanonicalLinkFromPattern
+} from "#lib/utils";
+import { publishContentPieceEvent } from "#events";
 
 declare module "fastify" {
   interface RouteCallbacks {
@@ -98,6 +104,44 @@ const handler = async (
     { _id: new ObjectId(input.id) },
     {
       $set: update
+    }
+  );
+
+  const updatedContentPiece = {
+    ...contentPiece,
+    ...update
+  };
+  const tags = await fetchContentPieceTags(ctx.db, updatedContentPiece);
+  const members = await fetchContentPieceMembers(ctx.db, updatedContentPiece);
+  const sameContentGroup = contentPiece.contentGroupId.equals(updatedContentPiece.contentGroupId);
+
+  publishContentPieceEvent(
+    ctx,
+    [
+      `${contentPiece.contentGroupId}`,
+      ...(sameContentGroup ? [] : [`${updatedContentPiece.contentGroupId}`])
+    ],
+    {
+      action: "move",
+      userId: `${ctx.auth.userId}`,
+      data: {
+        contentPiece: {
+          ...updatedContentPiece,
+          ...(typeof updatedContentPiece.canonicalLink !== "string" && {
+            canonicalLink: await getCanonicalLinkFromPattern(ctx, {
+              slug: updatedContentPiece.slug
+            })
+          }),
+          id: `${updatedContentPiece._id}`,
+          contentGroupId: `${updatedContentPiece.contentGroupId}`,
+          workspaceId: `${updatedContentPiece.workspaceId}`,
+          date: updatedContentPiece.date?.toISOString(),
+          tags,
+          members
+        },
+        nextReferenceId: `${nextReferenceContentPiece?._id || ""}`,
+        previousReferenceId: `${previousReferenceContentPiece?._id || ""}`
+      }
     }
   );
   ctx.fastify.routeCallbacks.run("contentPieces.move", ctx, {

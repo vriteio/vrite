@@ -2,11 +2,26 @@ import { outputSchema } from "./get";
 import { z } from "zod";
 import { ObjectId } from "mongodb";
 import { AuthenticatedContext } from "#lib/middleware";
-import { getContentGroupsCollection, getWorkspacesCollection } from "#collections";
+import {
+  FullContentGroup,
+  getContentGroupsCollection,
+  getWorkspacesCollection
+} from "#collections";
 import { publishContentGroupEvent } from "#events";
 import { errors } from "#lib/errors";
-import { zodId } from "#lib/mongo";
-import { runGitSyncHook } from "#plugins/git-sync";
+import { UnderscoreID, zodId } from "#lib/mongo";
+
+declare module "fastify" {
+  interface RouteCallbacks {
+    "contentGroups.move": {
+      ctx: AuthenticatedContext;
+      data: {
+        contentGroup: UnderscoreID<FullContentGroup<ObjectId>>;
+        updatedContentGroup: UnderscoreID<FullContentGroup<ObjectId>>;
+      };
+    };
+  }
+}
 
 const inputSchema = z.object({
   id: zodId(),
@@ -100,10 +115,6 @@ const handler = async (
     await contentGroupsCollection.bulkWrite(writeOperations);
   }
 
-  runGitSyncHook(ctx, "contentGroupMoved", {
-    ancestor: input.ancestor,
-    contentGroup
-  });
   publishContentGroupEvent(ctx, `${ctx.auth.workspaceId}`, {
     action: "move",
     userId: `${ctx.auth.userId}`,
@@ -114,11 +125,12 @@ const handler = async (
       name: contentGroup.name
     }
   });
-  runWebhooks(ctx, "contentGroupMoved", {
-    id: input.id,
-    ancestors: ancestors.map((id) => `${id}`),
-    descendants: contentGroup.descendants.map((id) => `${id}`),
-    name: contentGroup.name
+  ctx.fastify.routeCallbacks.run("contentGroups.move", ctx, {
+    contentGroup,
+    updatedContentGroup: {
+      ...contentGroup,
+      ancestors
+    }
   });
 };
 

@@ -498,6 +498,18 @@ const searchPlugin = createPlugin(async (fastify) => {
       content: data.contentBuffer || undefined
     });
   });
+  fastify.routeCallbacks.register("contentGroups.delete", async (ctx, data) => {
+    ctx.fastify.search.deleteContent({
+      contentPieceId: data.contentPieceIds,
+      workspaceId: ctx.auth.workspaceId
+    });
+  });
+  fastify.routeCallbacks.register("variants.delete", async (ctx, data) => {
+    ctx.fastify.search.deleteContent({
+      variantId: data.variantId,
+      workspaceId: ctx.auth.workspaceId
+    });
+  });
 });
 
 export { searchPlugin };

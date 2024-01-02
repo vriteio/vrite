@@ -1,11 +1,19 @@
 import { ObjectId } from "mongodb";
-import { getWorkspaceMembershipsCollection, getRolesCollection } from "#collections";
+import {
+  getWorkspaceMembershipsCollection,
+  getRolesCollection,
+  FullWorkspaceMembership
+} from "#collections";
 import { publishWorkspaceMembershipEvent } from "#events";
 import { errors } from "#lib/errors";
 import { AuthenticatedContext } from "#lib/middleware";
 import { updateSessionUser } from "#lib/session";
+import { UnderscoreID } from "#lib/mongo";
 
-const removeMemberFromWorkspace = async (ctx: AuthenticatedContext, id?: string): Promise<void> => {
+const removeMemberFromWorkspace = async (
+  ctx: AuthenticatedContext,
+  id?: string
+): Promise<UnderscoreID<FullWorkspaceMembership<ObjectId>>> => {
   const workspaceMembershipsCollection = getWorkspaceMembershipsCollection(ctx.db);
   const rolesCollection = getRolesCollection(ctx.db);
   const workspaceMembership = await workspaceMembershipsCollection.findOne({
@@ -41,12 +49,8 @@ const removeMemberFromWorkspace = async (ctx: AuthenticatedContext, id?: string)
     action: "delete",
     data: { id: `${workspaceMembership._id}`, userId: `${workspaceMembership.userId}` }
   });
-  runWebhooks(ctx, "memberRemoved", {
-    ...workspaceMembership,
-    id: `${workspaceMembership._id}`,
-    userId: `${workspaceMembership.userId}`,
-    roleId: `${workspaceMembership.roleId}`
-  });
+
+  return workspaceMembership;
 };
 
 export { removeMemberFromWorkspace };

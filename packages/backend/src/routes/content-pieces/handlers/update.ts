@@ -15,6 +15,12 @@ import { jsonToBuffer, htmlToJSON } from "#lib/content-processing";
 import { errors } from "#lib/errors";
 import { AuthenticatedContext } from "#lib/middleware";
 import { UnderscoreID, zodId } from "#lib/mongo";
+import { publishContentPieceEvent } from "#events";
+import {
+  fetchContentPieceTags,
+  fetchContentPieceMembers,
+  getCanonicalLinkFromPattern
+} from "#lib/utils";
 
 declare module "fastify" {
   interface RouteCallbacks {
@@ -24,8 +30,6 @@ declare module "fastify" {
         contentPiece: UnderscoreID<FullContentPiece<ObjectId>>;
         updatedContentPiece: UnderscoreID<FullContentPiece<ObjectId>>;
         contentBuffer: Buffer | null;
-        variantId: ObjectId | null;
-        variantKey: string | null;
       };
     };
   }
@@ -177,12 +181,33 @@ const handler = async (
     }
   }
 
+  const tags = await fetchContentPieceTags(ctx.db, newContentPiece);
+  const members = await fetchContentPieceMembers(ctx.db, newContentPiece);
+
+  publishContentPieceEvent(ctx, `${newContentPiece.contentGroupId}`, {
+    action: "update",
+    userId: `${ctx.auth.userId}`,
+    data: {
+      ...newContentPiece,
+      ...(typeof newContentPiece.canonicalLink !== "string" && {
+        canonicalLink: await getCanonicalLinkFromPattern(ctx, {
+          slug: newContentPiece.slug,
+          variant: variantKey
+        })
+      }),
+      id: `${newContentPiece._id}`,
+      contentGroupId: `${newContentPiece.contentGroupId}`,
+      workspaceId: `${newContentPiece.workspaceId}`,
+      date: newContentPiece.date?.toISOString() || null,
+      tags,
+      members,
+      ...(variantId ? { variantId } : {})
+    }
+  });
   ctx.fastify.routeCallbacks.run("contentPieces.update", ctx, {
     updatedContentPiece: newContentPiece,
     contentPiece,
-    contentBuffer,
-    variantId,
-    variantKey
+    contentBuffer
   });
 };
 

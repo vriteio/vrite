@@ -1,16 +1,19 @@
 import { z } from "zod";
 import { ObjectId } from "mongodb";
 import { AuthenticatedContext } from "#lib/middleware";
-import { contentGroup, getContentGroupsCollection } from "#collections";
+import { FullContentGroup, contentGroup, getContentGroupsCollection } from "#collections";
 import { publishContentGroupEvent } from "#events";
 import { errors } from "#lib/errors";
-import { zodId } from "#lib/mongo";
+import { UnderscoreID, zodId } from "#lib/mongo";
 
 declare module "fastify" {
   interface RouteCallbacks {
     "contentGroups.update": {
       ctx: AuthenticatedContext;
-      data: {};
+      data: {
+        contentGroup: UnderscoreID<FullContentGroup<ObjectId>>;
+        updatedContentGroup: UnderscoreID<FullContentGroup<ObjectId>>;
+      };
     };
   }
 }
@@ -96,15 +99,20 @@ const handler = async (
     ]);
   }
 
-  runGitSyncHook(ctx, "contentGroupUpdated", {
-    contentGroup,
-    ancestor: "ancestor" in input ? input.ancestor : undefined,
-    name: "name" in input ? input.name : undefined
-  });
   publishContentGroupEvent(ctx, `${ctx.auth.workspaceId}`, {
     action: "update",
     userId: `${ctx.auth.userId}`,
     data: { id, ...update }
+  });
+  ctx.fastify.routeCallbacks.run("contentGroups.update", ctx, {
+    contentGroup,
+    updatedContentGroup: {
+      ...contentGroup,
+      ...update,
+      ...(ancestorContentGroup && {
+        ancestors: [...ancestorContentGroup.ancestors, ancestorContentGroup._id]
+      })
+    }
   });
 };
 

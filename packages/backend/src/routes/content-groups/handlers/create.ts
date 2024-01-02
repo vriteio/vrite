@@ -10,7 +10,17 @@ import {
 import { publishContentGroupEvent } from "#events";
 import { errors } from "#lib/errors";
 import { zodId, UnderscoreID } from "#lib/mongo";
-import { runGitSyncHook } from "#plugins/git-sync";
+
+declare module "fastify" {
+  interface RouteCallbacks {
+    "contentGroups.create": {
+      ctx: AuthenticatedContext;
+      data: {
+        contentGroup: UnderscoreID<FullContentGroup<ObjectId>>;
+      };
+    };
+  }
+}
 
 const inputSchema = contentGroup
   .omit({ descendants: true, ancestors: true, id: true })
@@ -67,14 +77,8 @@ const handler = async (
       ...input
     }
   });
-  runGitSyncHook(ctx, "contentGroupCreated", {
+  ctx.fastify.routeCallbacks.run("contentGroups.create", ctx, {
     contentGroup
-  });
-  runWebhooks(ctx, "contentGroupAdded", {
-    ...input,
-    id: `${contentGroup._id}`,
-    ancestors: contentGroup.ancestors.map((id) => `${id}`),
-    descendants: contentGroup.descendants.map((id) => `${id}`)
   });
 
   return { id: `${contentGroup._id}` };

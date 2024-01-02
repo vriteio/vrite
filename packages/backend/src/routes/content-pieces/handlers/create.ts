@@ -13,6 +13,12 @@ import { AuthenticatedContext } from "#lib/middleware";
 import { jsonToBuffer, htmlToJSON } from "#lib/content-processing";
 import { errors } from "#lib/errors";
 import { UnderscoreID, zodId } from "#lib/mongo";
+import { publishContentPieceEvent } from "#events";
+import {
+  fetchContentPieceTags,
+  fetchContentPieceMembers,
+  getCanonicalLinkFromPattern
+} from "#lib/utils";
 
 declare module "fastify" {
   interface RouteCallbacks {
@@ -92,6 +98,26 @@ const handler = async (
     _id: new ObjectId(),
     contentPieceId: contentPiece._id,
     content: new Binary(contentBuffer)
+  });
+
+  const tags = await fetchContentPieceTags(ctx.db, contentPiece);
+  const members = await fetchContentPieceMembers(ctx.db, contentPiece);
+
+  publishContentPieceEvent(ctx, `${contentPiece.contentGroupId}`, {
+    action: "create",
+    userId: `${ctx.auth.userId}`,
+    data: {
+      ...contentPiece,
+      ...(typeof contentPiece.canonicalLink !== "string" && {
+        canonicalLink: await getCanonicalLinkFromPattern(ctx, { slug: contentPiece.slug })
+      }),
+      id: `${contentPiece._id}`,
+      workspaceId: `${contentPiece.workspaceId}`,
+      date: contentPiece.date?.toISOString(),
+      contentGroupId: `${contentPiece.contentGroupId}`,
+      tags,
+      members
+    }
   });
   ctx.fastify.routeCallbacks.run("contentPieces.create", ctx, { contentPiece, contentBuffer });
 

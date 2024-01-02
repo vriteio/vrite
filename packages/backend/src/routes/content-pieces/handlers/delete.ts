@@ -10,6 +10,7 @@ import {
 import { errors } from "#lib/errors";
 import { AuthenticatedContext } from "#lib/middleware";
 import { UnderscoreID, zodId } from "#lib/mongo";
+import { publishContentPieceEvent } from "#events";
 
 declare module "fastify" {
   interface RouteCallbacks {
@@ -47,6 +48,11 @@ const handler = async (
   });
   await contentVariantsCollection.deleteMany({
     contentPieceId: contentPiece._id
+  });
+  publishContentPieceEvent(ctx, `${contentPiece.contentGroupId}`, {
+    action: "delete",
+    userId: `${ctx.auth.userId}`,
+    data: { id: `${contentPiece._id}` }
   });
   ctx.fastify.routeCallbacks.run("contentPieces.delete", ctx, { contentPiece });
 

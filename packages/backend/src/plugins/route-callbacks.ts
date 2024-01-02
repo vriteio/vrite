@@ -42,7 +42,10 @@ const routeCallbacksPlugin = createPlugin(async (fastify) => {
     ctx: Callbacks[R]["ctx"],
     data: Callbacks[R]["data"]
   ): void => {
-    handlers[route]?.forEach((handler) => handler(ctx, data));
+    // Run after the response is sent
+    setTimeout(() => {
+      handlers[route]?.forEach((handler) => handler(ctx, data));
+    }, 0);
   };
 
   fastify.decorate("routeCallbacks", {

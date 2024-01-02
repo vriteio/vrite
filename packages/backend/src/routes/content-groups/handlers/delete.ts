@@ -7,12 +7,24 @@ import {
   getContentPiecesCollection,
   getContentsCollection,
   getContentPieceVariantsCollection,
-  getContentVariantsCollection
+  getContentVariantsCollection,
+  FullContentGroup
 } from "#collections";
 import { publishContentGroupEvent } from "#events";
 import { errors } from "#lib/errors";
-import { zodId } from "#lib/mongo";
-import { runGitSyncHook } from "#plugins/git-sync";
+import { UnderscoreID, zodId } from "#lib/mongo";
+
+declare module "fastify" {
+  interface RouteCallbacks {
+    "contentGroups.delete": {
+      ctx: AuthenticatedContext;
+      data: {
+        contentGroup: UnderscoreID<FullContentGroup<ObjectId>>;
+        contentPieceIds: ObjectId[];
+      };
+    };
+  }
+}
 
 const inputSchema = z.object({
   id: zodId()
@@ -78,21 +90,14 @@ const handler = async (
   await contentVariantsCollection.deleteMany({
     contentPieceId: { $in: contentPieceIds }
   });
-  runGitSyncHook(ctx, "contentGroupRemoved", { contentGroup });
-  runWebhooks(ctx, "contentGroupAdded", {
-    ...contentGroup,
-    ancestors: contentGroup.ancestors.map((id) => `${id}`),
-    descendants: contentGroup.descendants.map((id) => `${id}`),
-    id: `${contentGroup._id}`
-  });
   publishContentGroupEvent(ctx, `${ctx.auth.workspaceId}`, {
     action: "delete",
     userId: `${ctx.auth.userId}`,
     data: input
   });
-  ctx.fastify.search.deleteContent({
-    contentPieceId: contentPieceIds,
-    workspaceId: ctx.auth.workspaceId
+  ctx.fastify.routeCallbacks.run("contentGroups.delete", ctx, {
+    contentGroup,
+    contentPieceIds
   });
 };
 
