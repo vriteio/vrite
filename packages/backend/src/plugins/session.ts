@@ -1,8 +1,14 @@
 import { getHTTPStatusCodeFromError } from "@trpc/server/http";
+import jwtPlugin from "@fastify/jwt";
+import cookiePlugin from "@fastify/cookie";
 import { appRouter } from "#routes";
-import { publicPlugin, errors } from "#lib";
+import { createPlugin, errors } from "#lib";
 
-const sessionPlugin = publicPlugin(async (fastify) => {
+const sessionPlugin = createPlugin(async (fastify) => {
+  await fastify.register(cookiePlugin, { secret: fastify.config.SECRET }).register(jwtPlugin, {
+    secret: fastify.config.SECRET,
+    cookie: { cookieName: "accessToken", signed: true }
+  });
   fastify.post("/session/refresh", async (req, res) => {
     const caller = appRouter.createCaller({ db: fastify.mongo.db!, fastify, req, res });
 

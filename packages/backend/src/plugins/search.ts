@@ -11,8 +11,14 @@ import { OpenAI } from "openai";
 import { Stream } from "openai/streaming";
 import { ChatCompletionChunk } from "openai/resources/chat";
 import { Db, ObjectId } from "mongodb";
-import { UnderscoreID, bufferToJSON, publicPlugin } from "#lib";
-import { FullContentPiece, getContentVariantsCollection, getContentsCollection } from "#database";
+import { createPlugin } from "#lib/plugin";
+import { UnderscoreID } from "#lib/mongo";
+import { bufferToJSON } from "#lib/content-processing";
+import {
+  FullContentPiece,
+  getContentVariantsCollection,
+  getContentsCollection
+} from "#collections";
 
 interface RawSearchResult {
   data: {
@@ -466,12 +472,32 @@ const registerStub = (fastify: FastifyInstance): void => {
     deleteContent: () => Promise.resolve()
   });
 };
-const searchPlugin = publicPlugin(async (fastify) => {
+const searchPlugin = createPlugin(async (fastify) => {
   if (fastify.hostConfig.search) {
     await registerSearch(fastify);
   } else {
     registerStub(fastify);
   }
+
+  fastify.routeCallbacks.register("contentPieces.create", async (ctx, data) => {
+    ctx.fastify.search.upsertContent({
+      contentPiece: data.contentPiece,
+      content: data.contentBuffer
+    });
+  });
+  fastify.routeCallbacks.register("contentPieces.delete", async (ctx, data) => {
+    ctx.fastify.search.deleteContent({
+      contentPieceId: data.contentPiece._id,
+      workspaceId: ctx.auth.workspaceId
+    });
+  });
+  fastify.routeCallbacks.register("contentPieces.update", async (ctx, data) => {
+    ctx.fastify.search.upsertContent({
+      contentPiece: data.updatedContentPiece,
+      variantId: data.variantId || undefined,
+      content: data.contentBuffer || undefined
+    });
+  });
 });
 
 export { searchPlugin };

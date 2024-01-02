@@ -38,7 +38,7 @@ import {
   getWorkspaceSettingsCollection,
   getWorkspacesCollection,
   githubData
-} from "#database";
+} from "#collections";
 import { UnderscoreID, zodId } from "#lib";
 import {
   publishContentGroupEvent,

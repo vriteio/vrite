@@ -1,6 +1,6 @@
 import { Octokit } from "octokit";
 import { Endpoints } from "@octokit/types";
-import { GitHubData } from "#database";
+import { GitHubData } from "#collections";
 
 type GitHubRequestData<P = void> = {
   octokit: Octokit;

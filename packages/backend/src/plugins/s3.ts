@@ -1,5 +1,5 @@
 import { S3Client, CreateBucketCommand, HeadBucketCommand } from "@aws-sdk/client-s3";
-import { publicPlugin } from "#lib";
+import { createPlugin } from "#lib";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -7,7 +7,7 @@ declare module "fastify" {
   }
 }
 
-const s3Plugin = publicPlugin(async (fastify) => {
+const s3Plugin = createPlugin(async (fastify) => {
   const s3Client = new S3Client({
     endpoint: fastify.config.S3_ENDPOINT,
     forcePathStyle: fastify.config.S3_FORCE_PATH_STYLE,

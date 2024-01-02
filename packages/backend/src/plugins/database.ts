@@ -1,4 +1,5 @@
-import { publicPlugin } from "#lib";
+import mongoPlugin from "@fastify/mongodb";
+import { createPlugin } from "#lib";
 import {
   getUserSettingsCollection,
   getWebhooksCollection,
@@ -15,9 +16,14 @@ import {
   getContentPieceVariantsCollection,
   getContentVariantsCollection,
   getVariantsCollection
-} from "#database";
+} from "#collections";
 
-const databasePlugin = publicPlugin(async (fastify) => {
+const databasePlugin = createPlugin(async (fastify) => {
+  await fastify.register(mongoPlugin, {
+    forceClose: true,
+    url: fastify.config.MONGO_URL
+  });
+
   const db = fastify.mongo.db!;
   const contentPiecesCollection = getContentPiecesCollection(db);
   const contentGroupsCollection = getContentGroupsCollection(db);

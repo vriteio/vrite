@@ -10,7 +10,7 @@ import {
   getRolesCollection,
   getUserSettingsCollection,
   getWorkspaceMembershipsCollection
-} from "#database";
+} from "#collections";
 
 declare module "node:net" {
   interface Socket {

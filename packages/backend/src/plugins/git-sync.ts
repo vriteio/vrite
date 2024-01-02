@@ -1,6 +1,6 @@
 import { App } from "octokit";
 import { FastifyInstance } from "fastify";
-import { publicPlugin } from "#lib";
+import { createPlugin } from "#lib";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -41,7 +41,7 @@ const registerGitHubApp = (fastify: FastifyInstance): void => {
     res.redirect(`/?token=${authentication.token}`);
   });
 };
-const gitSyncPlugin = publicPlugin(async (fastify) => {
+const gitSyncPlugin = createPlugin(async (fastify) => {
   if (fastify.hostConfig.githubApp) {
     registerGitHubApp(fastify);
   }

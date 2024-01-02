@@ -1,5 +1,5 @@
 import { UnderscoreID } from "./mongo";
-import { jsonToBuffer, DocJSON } from "./processing";
+import { jsonToBuffer, DocJSON } from "./content-processing";
 import { ObjectId, Db, Binary } from "mongodb";
 import { LexoRank } from "lexorank";
 import { FastifyInstance } from "fastify";
@@ -8,11 +8,11 @@ import {
   embeds,
   getWorkspaceSettingsCollection,
   marks
-} from "#database/workspace-settings";
-import { getWorkspacesCollection } from "#database/workspaces";
-import { getWorkspaceMembershipsCollection } from "#database/workspace-memberships";
-import { getRolesCollection } from "#database/roles";
-import { FullUser } from "#database/users";
+} from "#collections/workspace-settings";
+import { getWorkspacesCollection } from "#collections/workspaces";
+import { getWorkspaceMembershipsCollection } from "#collections/workspace-memberships";
+import { getRolesCollection } from "#collections/roles";
+import { FullUser } from "#collections/users";
 import {
   getContentGroupsCollection,
   getContentPieceVariantsCollection,
@@ -20,7 +20,7 @@ import {
   getContentVariantsCollection,
   getContentsCollection,
   getVariantsCollection
-} from "#database";
+} from "#collections";
 import initialContent from "#assets/initial-content.json";
 
 const createWorkspace = async (

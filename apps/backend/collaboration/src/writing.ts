@@ -1,5 +1,5 @@
 import {
-  publicPlugin,
+  createPlugin,
   getContentsCollection,
   getContentVariantsCollection,
   errors,
@@ -12,7 +12,7 @@ import { ObjectId, Binary } from "mongodb";
 import { SearchIndexing } from "#extensions/search-indexing";
 import { GitSync } from "#extensions/git-sync";
 
-const writingPlugin = publicPlugin(async (fastify) => {
+const writingPlugin = createPlugin(async (fastify) => {
   const contentsCollection = getContentsCollection(fastify.mongo.db!);
   const contentVariantsCollection = getContentVariantsCollection(fastify.mongo.db!);
   const server = Server.configure({

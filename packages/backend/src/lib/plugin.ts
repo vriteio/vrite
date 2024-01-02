@@ -1,13 +1,13 @@
 import { FastifyPluginAsync } from "fastify";
 
-type PublicPlugin = { [key: symbol]: boolean } & FastifyPluginAsync;
+type Plugin = { [key: symbol]: boolean } & FastifyPluginAsync;
 
-const publicPlugin = (plugin: FastifyPluginAsync): PublicPlugin => {
-  const publicPlugin = plugin as PublicPlugin;
+const createPlugin = (plugin: FastifyPluginAsync): Plugin => {
+  const typedPlugin = plugin as Plugin;
 
-  publicPlugin[Symbol.for("skip-override")] = true;
+  typedPlugin[Symbol.for("skip-override")] = true;
 
-  return publicPlugin;
+  return typedPlugin;
 };
 
-export { publicPlugin };
+export { createPlugin };

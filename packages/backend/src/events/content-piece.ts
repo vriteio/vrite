@@ -1,7 +1,7 @@
 import { Observable } from "@trpc/server/observable";
 import { Context } from "#lib/context";
 import { createEventPublisher, createEventSubscription } from "#lib/pub-sub";
-import { FullContentPieceWithAdditionalData } from "#database";
+import { FullContentPieceWithAdditionalData } from "#collections";
 
 type ContentPieceEvent =
   | { action: "delete"; userId: string; data: { id: string } }

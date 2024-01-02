@@ -3,7 +3,7 @@ import { processRecords } from "./process-records";
 import { z } from "zod";
 import { publishGitDataEvent, subscribeToGitDataEvents } from "#events";
 import { procedure, router, errors, isAuthenticated } from "#lib";
-import { getGitDataCollection, gitData } from "#database";
+import { getGitDataCollection, gitData } from "#collections";
 
 const authenticatedProcedure = procedure.use(isAuthenticated);
 const gitRouter = router({

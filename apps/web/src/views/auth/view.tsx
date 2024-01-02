@@ -57,7 +57,7 @@ const AuthView: Component = () => {
   const [formContainerRef, setFormContainerRef] = createRef<HTMLElement | null>(null);
   const checkIfLoggedIn = async (): Promise<void> => {
     try {
-      const isSignedIn = await client.auth.isSignedIn.query();
+      const { isSignedIn } = await client.auth.isSignedIn.query();
 
       if (isSignedIn) {
         navigate("/");

@@ -1,4 +1,4 @@
-import { publicPlugin, z } from "@vrite/backend";
+import { createPlugin, z } from "@vrite/backend";
 import rateLimitPlugin from "@fastify/rate-limit";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import sharp from "sharp";
@@ -17,7 +17,7 @@ const querystring = z.object({
   fit: z.enum(["cover", "contain", "fill"]).optional(),
   format: z.enum(["jpg", "jpeg", "png", "gif", "webp", "tiff"]).optional()
 });
-const assetsService = publicPlugin(async (fastify) => {
+const assetsService = createPlugin(async (fastify) => {
   await fastify.register(rateLimitPlugin, {
     max: 1000,
     timeWindow: "1 minute",

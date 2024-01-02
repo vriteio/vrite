@@ -1,6 +1,6 @@
 import { ObjectId, Binary } from "mongodb";
 import { convert as convertToSlug } from "url-slug";
-import { FullContentPiece, FullContents } from "#database";
+import { FullContentPiece, FullContents } from "#collections";
 import { InputContentProcessor, UnderscoreID } from "#lib";
 
 const createSyncedPieces = async (

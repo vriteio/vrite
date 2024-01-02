@@ -19,8 +19,8 @@ import { gitRouter } from "./git";
 import { searchRouter } from "./search";
 import { transformersRouter } from "./transformers";
 import type { TRPCClientError } from "@trpc/client";
-import { Context, createContext } from "#lib";
-import { router } from "#lib";
+import { Context, createContext } from "#lib/context";
+import { router } from "#lib/trpc";
 
 const appRouter = router({
   auth: authRouter,
@@ -51,5 +51,5 @@ type ClientError = TRPCClientError<Router> & {
 };
 
 export { appRouter, createContext };
-export type * from "#database";
+export type * from "#collections";
 export type { ClientError, Router, PreviewData, HostConfig, Context };

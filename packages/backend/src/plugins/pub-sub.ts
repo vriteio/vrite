@@ -1,5 +1,6 @@
+import redisPlugin from "@fastify/redis";
 import type { PubSubMessage, PubSubPlugin } from "fastify";
-import { publicPlugin } from "#lib";
+import { createPlugin } from "#lib";
 
 declare module "fastify" {
   interface PubSubMessage {
@@ -17,9 +18,12 @@ declare module "fastify" {
   }
 }
 
-const pubSubPlugin = publicPlugin(async (fastify) => {
+const pubSubPlugin = createPlugin(async (fastify) => {
   const listeners = new Map<string, Set<(message: PubSubMessage) => void>>();
 
+  await fastify
+    .register(redisPlugin, { url: fastify.config.REDIS_URL })
+    .register(redisPlugin, { url: fastify.config.REDIS_URL, namespace: "sub" });
   fastify.redis.sub.on("message", (channel, message) => {
     const messageListeners = listeners.get(channel);
 

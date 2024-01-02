@@ -13,7 +13,7 @@ import {
   FullContents,
   GitRecord,
   GitDirectory
-} from "#database";
+} from "#collections";
 import { AuthenticatedContext, UnderscoreID, errors } from "#lib";
 
 interface PulledRecords {
