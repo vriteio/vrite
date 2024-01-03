@@ -1,7 +1,8 @@
+import { InputContentProcessor } from "./process-content";
 import { ObjectId, Binary } from "mongodb";
 import { convert as convertToSlug } from "url-slug";
 import { FullContentPiece, FullContents } from "#collections";
-import { InputContentProcessor, UnderscoreID } from "#lib";
+import { UnderscoreID } from "#lib/mongo";
 
 const createSyncedPieces = async (
   inputs: Array<{

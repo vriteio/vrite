@@ -1,7 +1,3 @@
-import { AuthenticatedContext } from "../../../lib/middleware";
-import { UnderscoreID } from "../../../lib/mongo";
-import { jsonToBuffer, htmlToJSON, bufferToJSON } from "../../../lib/content-processing";
-import { InputContentProcessor, OutputContentProcessor } from "../types";
 import {
   GenericJSONContentNode,
   gfmInputTransformer,
@@ -15,12 +11,37 @@ import markdownPlugin from "prettier/plugins/markdown";
 import htmlPlugin from "prettier/plugins/html";
 import axios from "axios";
 import crypto from "node:crypto";
+import { jsonToBuffer, htmlToJSON, bufferToJSON } from "#lib/content-processing";
+import { UnderscoreID } from "#lib/mongo";
+import { AuthenticatedContext } from "#lib/middleware";
 import {
-  FullGitData,
+  FullContentPiece,
   getTransformersCollection,
   getWorkspaceSettingsCollection,
   Transformer
 } from "#collections";
+
+interface ProcessInputResult {
+  buffer: Buffer;
+  contentHash: string;
+  metadata: Partial<
+    Pick<FullContentPiece, keyof NonNullable<ReturnType<InputTransformer>["contentPiece"]>>
+  >;
+}
+interface OutputContentProcessorInput {
+  buffer: Buffer;
+  contentPiece: UnderscoreID<FullContentPiece<ObjectId>>;
+}
+
+interface InputContentProcessor {
+  process(inputContent: string): Promise<ProcessInputResult>;
+  processBatch(inputContent: string[]): Promise<ProcessInputResult[]>;
+}
+
+interface OutputContentProcessor {
+  process(input: OutputContentProcessorInput): Promise<string>;
+  processBatch(input: OutputContentProcessorInput[]): Promise<string[]>;
+}
 
 const extensionParserMap = {
   mdx: "mdx",
@@ -29,10 +50,9 @@ const extensionParserMap = {
 } as const;
 const createInputContentProcessor = async (
   ctx: Pick<AuthenticatedContext, "db" | "auth">,
-  gitData: UnderscoreID<FullGitData<ObjectId>>
+  transformer: string = "markdown"
 ): Promise<InputContentProcessor> => {
   const transformersCollection = getTransformersCollection(ctx.db);
-  const transformer = gitData.github?.transformer || "markdown";
 
   let remoteTransformer: UnderscoreID<Transformer<ObjectId>> | null = null;
 
@@ -111,10 +131,9 @@ const createInputContentProcessor = async (
 };
 const createOutputContentProcessor = async (
   ctx: Pick<AuthenticatedContext, "db" | "auth">,
-  gitData: UnderscoreID<FullGitData<ObjectId>>
+  transformer: string = "markdown"
 ): Promise<OutputContentProcessor> => {
   const transformersCollection = getTransformersCollection(ctx.db);
-  const transformer = gitData.github?.transformer || "markdown";
 
   let remoteTransformer: UnderscoreID<Transformer<ObjectId>> | null = null;
 
@@ -236,3 +255,4 @@ const createOutputContentProcessor = async (
 };
 
 export { createInputContentProcessor, createOutputContentProcessor };
+export type { InputContentProcessor, OutputContentProcessor, OutputContentProcessorInput };

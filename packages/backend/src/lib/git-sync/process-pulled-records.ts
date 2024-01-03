@@ -1,7 +1,8 @@
 import { createSyncedPieces } from "./synced-pieces";
+import { createInputContentProcessor } from "./process-content";
+import { GitSyncCommit } from "./integration";
 import { LexoRank } from "lexorank";
 import { ObjectId, Binary } from "mongodb";
-import { createInputContentProcessorGitHub } from "#lib";
 import {
   FullGitData,
   getContentGroupsCollection,
@@ -14,22 +15,29 @@ import {
   GitRecord,
   GitDirectory
 } from "#collections";
-import { AuthenticatedContext, UnderscoreID, errors } from "#lib";
+import { errors } from "#lib/errors";
+import { AuthenticatedContext } from "#lib/middleware";
+import { UnderscoreID } from "#lib/mongo";
 
 interface PulledRecords {
   changedRecordsByDirectory: Map<
     string,
     Array<{ fileName: string; status: string; content?: string; hash: string }>
   >;
-  lastCommitDate: string;
-  lastCommitId: string;
+  lastCommit: GitSyncCommit;
 }
 
-const processPulledRecords = async (
-  { changedRecordsByDirectory, lastCommitDate, lastCommitId }: PulledRecords,
-  gitData: UnderscoreID<FullGitData<ObjectId>>,
-  ctx: AuthenticatedContext
-): Promise<{
+const processPulledRecords = async ({
+  changedRecordsByDirectory,
+  lastCommit,
+  gitData,
+  ctx,
+  transformer
+}: PulledRecords & {
+  gitData: UnderscoreID<FullGitData<ObjectId>>;
+  ctx: AuthenticatedContext;
+  transformer: string;
+}): Promise<{
   applyPull: () => Promise<void>;
   conflicts: Array<{
     path: string;
@@ -64,7 +72,7 @@ const processPulledRecords = async (
     pulledContent: string;
     pulledHash: string;
   }> = [];
-  const inputContentProcessor = await createInputContentProcessorGitHub(ctx, gitData);
+  const inputContentProcessor = await createInputContentProcessor(ctx, transformer);
   const createDirectory = async (
     path: string
   ): Promise<UnderscoreID<FullContentGroup<ObjectId>>> => {
@@ -311,8 +319,8 @@ const processPulledRecords = async (
         $set: {
           directories: newDirectories,
           records: newRecords,
-          lastCommitDate,
-          lastCommitId
+          lastCommitDate: lastCommit.date,
+          lastCommitId: lastCommit.id
         }
       }
     );

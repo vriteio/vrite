@@ -1,40 +1,82 @@
-import { githubRouter } from "./github";
-import { processRecords } from "./process-records";
+import * as getConfig from "./handlers/get-config";
+import * as resetConfig from "./handlers/reset-config";
+import * as configure from "./handlers/configure";
+import * as initialSync from "./handlers/initial-sync";
+import * as pull from "./handlers/pull";
+import * as getConflictedContent from "./handlers/get-conflicted-content";
+import * as resolveConflict from "./handlers/resolve-conflict";
+import * as commit from "./handlers/commit";
 import { z } from "zod";
-import { publishGitDataEvent, subscribeToGitDataEvents } from "#events";
-import { procedure, router, errors, isAuthenticated } from "#lib";
-import { getGitDataCollection, gitData } from "#collections";
+import { subscribeToGitDataEvents } from "#events";
+import { procedure, router } from "#lib/trpc";
+import { isAuthenticated } from "#lib/middleware";
 
 const authenticatedProcedure = procedure.use(isAuthenticated);
 const gitRouter = router({
-  github: githubRouter,
+  pull: authenticatedProcedure
+    .meta({
+      permissions: { session: ["manageGit"] },
+      requiredConfig: ["githubApp"]
+    })
+    .input(pull.inputSchema)
+    .output(pull.outputSchema)
+    .mutation(async ({ ctx, input }) => {
+      return pull.handler(ctx, input);
+    }),
+  commit: authenticatedProcedure
+    .meta({
+      permissions: { session: ["manageGit"] },
+      requiredConfig: ["githubApp"]
+    })
+    .input(commit.inputSchema)
+    .output(commit.outputSchema)
+    .mutation(async ({ ctx, input }) => {
+      return commit.handler(ctx, input);
+    }),
+  getConflictedContent: authenticatedProcedure
+    .meta({
+      requiredConfig: ["githubApp"]
+    })
+    .input(getConflictedContent.inputSchema)
+    .output(getConflictedContent.outputSchema)
+    .query(async ({ ctx, input }) => {
+      return getConflictedContent.handler(ctx, input);
+    }),
+  resolveConflict: authenticatedProcedure
+    .meta({
+      permissions: { session: ["manageGit"] },
+      requiredConfig: ["githubApp"]
+    })
+    .input(resolveConflict.inputSchema)
+    .output(z.void())
+    .mutation(async ({ ctx, input }) => {
+      return resolveConflict.handler(ctx, input);
+    }),
+  initialSync: authenticatedProcedure
+    .meta({
+      permissions: { session: ["manageGit"] },
+      requiredConfig: ["githubApp"]
+    })
+    .input(z.void())
+    .output(z.void())
+    .mutation(async ({ ctx }) => {
+      return initialSync.handler(ctx);
+    }),
+  configure: authenticatedProcedure
+    .meta({
+      permissions: { session: ["manageGit"] },
+      requiredConfig: ["githubApp"]
+    })
+    .input(configure.inputSchema)
+    .output(z.void())
+    .mutation(async ({ ctx, input }) => {
+      return configure.handler(ctx, input);
+    }),
   config: authenticatedProcedure
     .input(z.void())
-    .output(gitData)
+    .output(getConfig.outputSchema)
     .query(async ({ ctx }) => {
-      const gitDataCollection = getGitDataCollection(ctx.db);
-      const gitData = await gitDataCollection.findOne({ workspaceId: ctx.auth.workspaceId });
-
-      if (!gitData) throw errors.notFound("gitData");
-
-      const records = processRecords(gitData);
-
-      return {
-        ...(gitData.contentGroupId ? { contentGroupId: `${gitData.contentGroupId}` } : {}),
-        id: `${gitData._id}`,
-        provider: gitData.provider,
-        github: gitData.github,
-        lastCommitDate: gitData.lastCommitDate,
-        lastCommitId: gitData.lastCommitId,
-        directories: gitData.directories.map((directory) => ({
-          ...directory,
-          contentGroupId: `${directory.contentGroupId}`
-        })),
-        records: records.map((record) => ({
-          ...record,
-          contentPieceId: `${record.contentPieceId}`
-        }))
-      };
+      return getConfig.handler(ctx);
     }),
   reset: authenticatedProcedure
     .meta({
@@ -43,14 +85,7 @@ const gitRouter = router({
     .input(z.void())
     .output(z.void())
     .mutation(async ({ ctx }) => {
-      const gitDataCollection = getGitDataCollection(ctx.db);
-      const { deletedCount } = await gitDataCollection.deleteOne({
-        workspaceId: ctx.auth.workspaceId
-      });
-
-      if (!deletedCount) throw errors.notFound("gitData");
-
-      publishGitDataEvent(ctx, `${ctx.auth.workspaceId}`, { action: "reset", data: {} });
+      return resetConfig.handler(ctx);
     }),
   changes: authenticatedProcedure.input(z.void()).subscription(async ({ ctx }) => {
     return subscribeToGitDataEvents(ctx, `${ctx.auth.workspaceId}`);
