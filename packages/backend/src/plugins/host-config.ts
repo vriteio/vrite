@@ -1,4 +1,5 @@
-import { HostConfig, createPlugin } from "#lib";
+import { HostConfig } from "#lib/host-config";
+import { createPlugin } from "#lib/plugin";
 
 declare module "fastify" {
   interface FastifyInstance {

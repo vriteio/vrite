@@ -121,7 +121,7 @@ const createEmailSender = (fastify: FastifyInstance): EmailSender => {
     throw errors.serverError();
   };
 };
-const mailPlugin = createPlugin(async (fastify) => {
+const emailPlugin = createPlugin(async (fastify) => {
   const sendEmail = createEmailSender(fastify);
 
   fastify.decorate("email", {
@@ -187,4 +187,4 @@ const mailPlugin = createPlugin(async (fastify) => {
   } as EmailPlugin);
 });
 
-export { mailPlugin };
+export { emailPlugin };

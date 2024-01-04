@@ -1,6 +1,6 @@
 import { App } from "octokit";
 import { FastifyInstance } from "fastify";
-import { createPlugin } from "#lib";
+import { createPlugin } from "#lib/plugin";
 
 declare module "fastify" {
   interface FastifyInstance {

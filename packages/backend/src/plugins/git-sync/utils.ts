@@ -1,7 +1,11 @@
 import { ObjectId } from "mongodb";
 import { FullGitData, GitDirectory, GitRecord, getGitDataCollection } from "#collections";
 import { publishGitDataEvent } from "#events";
-import { OutputContentProcessor, createGenericOutputContentProcessor } from "#lib/git-sync";
+import {
+  OutputContentProcessor,
+  createOutputContentProcessor,
+  useGitSyncIntegration
+} from "#lib/git-sync";
 import { AuthenticatedContext } from "#lib/middleware";
 import { UnderscoreID } from "#lib/mongo";
 
@@ -64,7 +68,14 @@ const createGitSyncHandler = <D extends object>(process: GitSyncHookProcessor<D>
 
       if (!gitData || !process) return;
 
-      const outputContentProcessor = await createGenericOutputContentProcessor(ctx, gitData);
+      const gitSyncIntegration = useGitSyncIntegration(ctx, gitData);
+
+      if (!gitSyncIntegration) return;
+
+      const outputContentProcessor = await createOutputContentProcessor(
+        ctx,
+        gitSyncIntegration.getTransformer()
+      );
       const { directories, records } = await process(
         {
           ctx,

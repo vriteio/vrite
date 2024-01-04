@@ -1,4 +1,4 @@
-import { createPlugin } from "#lib";
+import { createPlugin } from "#lib/plugin";
 
 const billingPlugin = createPlugin(async (fastify) => {});
 

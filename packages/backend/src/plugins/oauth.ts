@@ -2,8 +2,11 @@ import axios from "axios";
 import fastifyOAuth2, { FastifyOAuth2Options, OAuth2Namespace } from "@fastify/oauth2";
 import { ObjectId } from "mongodb";
 import { FastifyInstance } from "fastify";
-import { createPlugin, generateSalt, createSession, createWorkspace } from "#lib";
 import { getUserSettingsCollection, getUsersCollection } from "#collections";
+import { generateSalt } from "#lib/hash";
+import { createPlugin } from "#lib/plugin";
+import { createSession } from "#lib/session";
+import { createWorkspace } from "#lib/workspace";
 
 declare module "fastify" {
   interface FastifyInstance {

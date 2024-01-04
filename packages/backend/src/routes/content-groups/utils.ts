@@ -1,7 +1,7 @@
 import { ObjectId } from "mongodb";
 import { ContentGroup } from "#collections";
 import { FullContentGroup } from "#collections";
-import { UnderscoreID } from "#lib";
+import { UnderscoreID } from "#lib/mongo";
 
 const rearrangeContentGroups = (
   contentGroups: Array<UnderscoreID<FullContentGroup<ObjectId>>>,

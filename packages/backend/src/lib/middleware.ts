@@ -1,6 +1,6 @@
 import { processAuth } from "./auth";
 import { Context } from "./context";
-import * as errors from "./errors";
+import { errors } from "./errors";
 import { Meta, middleware } from "./trpc";
 import { ObjectId } from "mongodb";
 

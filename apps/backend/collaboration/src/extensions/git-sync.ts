@@ -1,11 +1,12 @@
 import { Extension, onChangePayload, onDisconnectPayload } from "@hocuspocus/server";
 import {
-  createGenericOutputContentProcessor,
+  createOutputContentProcessor,
   docToJSON,
   getContentPiecesCollection,
   getGitDataCollection,
   jsonToBuffer,
-  publishGitDataEvent
+  publishGitDataEvent,
+  useGitSyncIntegration
 } from "@vrite/backend";
 import { FastifyInstance } from "fastify";
 import { ObjectId } from "mongodb";
@@ -74,25 +75,30 @@ class GitSync implements Extension {
     contentPieceId: string,
     details: Pick<onChangePayload, "context" | "document">
   ): Promise<void> {
+    const ctx = {
+      db: this.fastify.mongo.db!,
+      auth: {
+        workspaceId: new ObjectId(details.context.workspaceId),
+        userId: new ObjectId(details.context.userId)
+      }
+    };
     const gitData = await this.gitDataCollection.findOne({
       workspaceId: new ObjectId(details.context.workspaceId)
     });
 
     if (!gitData) return;
 
+    const gitSyncIntegration = useGitSyncIntegration(ctx, gitData);
+
+    if (!gitSyncIntegration) return;
+
     const contentPiece = await this.contentPiecesCollection.findOne({
       _id: new ObjectId(contentPieceId)
     });
     const json = docToJSON(details.document);
-    const outputContentProcessor = await createGenericOutputContentProcessor(
-      {
-        db: this.fastify.mongo.db!,
-        auth: {
-          workspaceId: new ObjectId(details.context.workspaceId),
-          userId: new ObjectId(details.context.userId)
-        }
-      },
-      gitData
+    const outputContentProcessor = await createOutputContentProcessor(
+      ctx,
+      gitSyncIntegration.getTransformer()
     );
     const output = await outputContentProcessor.process({
       buffer: jsonToBuffer(json),

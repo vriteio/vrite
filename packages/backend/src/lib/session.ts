@@ -1,6 +1,6 @@
 import { Context } from "./context";
 import { UnderscoreID } from "./mongo";
-import * as errors from "./errors";
+import { errors } from "./errors";
 import { nanoid } from "nanoid";
 import { ObjectId } from "mongodb";
 import {

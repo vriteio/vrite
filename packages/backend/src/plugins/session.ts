@@ -2,7 +2,8 @@ import { getHTTPStatusCodeFromError } from "@trpc/server/http";
 import jwtPlugin from "@fastify/jwt";
 import cookiePlugin from "@fastify/cookie";
 import { appRouter } from "#routes";
-import { createPlugin, errors } from "#lib";
+import { createPlugin } from "#lib/plugin";
+import { CustomError } from "#lib/errors";
 
 const sessionPlugin = createPlugin(async (fastify) => {
   await fastify.register(cookiePlugin, { secret: fastify.config.SECRET }).register(jwtPlugin, {
@@ -15,7 +16,7 @@ const sessionPlugin = createPlugin(async (fastify) => {
     try {
       await caller.auth.refreshToken();
     } catch (e) {
-      const error = e as errors.CustomError;
+      const error = e as CustomError;
       const httpStatusCode = getHTTPStatusCodeFromError(error);
 
       res
@@ -31,7 +32,7 @@ const sessionPlugin = createPlugin(async (fastify) => {
     try {
       await caller.auth.logout();
     } catch (e) {
-      const error = e as errors.CustomError;
+      const error = e as CustomError;
       const httpStatusCode = getHTTPStatusCodeFromError(error);
 
       res

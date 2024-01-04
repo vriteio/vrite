@@ -1,5 +1,5 @@
 import mongoPlugin from "@fastify/mongodb";
-import { createPlugin } from "#lib";
+import { createPlugin } from "#lib/plugin";
 import {
   getUserSettingsCollection,
   getWebhooksCollection,

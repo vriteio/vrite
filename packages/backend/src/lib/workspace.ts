@@ -1,6 +1,6 @@
 import { UnderscoreID } from "./mongo";
 import { jsonToBuffer, DocJSON } from "./content-processing";
-import { ObjectId, Db, Binary } from "mongodb";
+import { ObjectId, Binary } from "mongodb";
 import { LexoRank } from "lexorank";
 import { FastifyInstance } from "fastify";
 import {

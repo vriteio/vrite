@@ -1,5 +1,5 @@
 import { S3Client, CreateBucketCommand, HeadBucketCommand } from "@aws-sdk/client-s3";
-import { createPlugin } from "#lib";
+import { createPlugin } from "#lib/plugin";
 
 declare module "fastify" {
   interface FastifyInstance {

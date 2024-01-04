@@ -1,9 +1,9 @@
 import { assetsService } from "./assets";
-import { createServer } from "@vrite/backend";
+import { createServer, s3Plugin } from "@vrite/backend";
 
 (async () => {
-  const server = await createServer({
-    storage: true
+  const server = await createServer(async (server) => {
+    await server.register(s3Plugin);
   });
 
   await server.register(assetsService);

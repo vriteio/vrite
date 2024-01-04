@@ -1,15 +1,25 @@
 import { appService } from "./app";
 import { createServer } from "@vrite/backend";
+import {
+  databasePlugin,
+  pubSubPlugin,
+  gitSyncPlugin,
+  searchPlugin,
+  s3Plugin,
+  sessionPlugin,
+  OAuthPlugin,
+  emailPlugin
+} from "@vrite/backend";
 
 (async () => {
-  const server = await createServer({
-    database: true,
-    pubSub: true,
-    auth: true,
-    email: true,
-    gitSync: true,
-    search: true,
-    storage: true
+  const server = await createServer(async (server) => {
+    await server.register(databasePlugin);
+    await server.register(pubSubPlugin);
+    await server.register(sessionPlugin).register(OAuthPlugin);
+    await server.register(emailPlugin);
+    await server.register(gitSyncPlugin);
+    await server.register(searchPlugin);
+    await server.register(s3Plugin);
   });
 
   await server.register(appService);

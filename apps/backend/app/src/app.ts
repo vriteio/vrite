@@ -1,7 +1,6 @@
-import { errors, createPlugin, trpcPlugin, processAuth } from "@vrite/backend";
+import { createPlugin, errors, processAuth, trpcPlugin } from "@vrite/backend";
 import staticPlugin from "@fastify/static";
 import websocketPlugin from "@fastify/websocket";
-import axios from "axios";
 import viewPlugin from "@fastify/view";
 import handlebars from "handlebars";
 import { FastifyReply } from "fastify";

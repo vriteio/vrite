@@ -85,7 +85,7 @@ const writingPlugin = createPlugin(async (fastify) => {
             }
 
             if (variantId) {
-              return contentVariantsCollection?.updateOne(
+              await contentVariantsCollection?.updateOne(
                 {
                   contentPieceId: new ObjectId(contentPieceId),
                   variantId: new ObjectId(variantId)
@@ -93,9 +93,11 @@ const writingPlugin = createPlugin(async (fastify) => {
                 { $set: { content: new Binary(state) } },
                 { upsert: true }
               );
+
+              return;
             }
 
-            return contentsCollection?.updateOne(
+            await contentsCollection?.updateOne(
               { contentPieceId: new ObjectId(contentPieceId) },
               { $set: { content: new Binary(state) } },
               { upsert: true }

@@ -5,7 +5,7 @@ import { getExtensionsCollection, tokenPermission } from "#collections";
 import { publishExtensionEvent } from "#events";
 import { errors } from "#lib/errors";
 import { zodId } from "#lib/mongo";
-import { createToken } from "#routes/tokens";
+import { createToken } from "#lib/utils";
 
 const inputSchema = z.object({
   extension: z.object({

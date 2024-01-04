@@ -1,8 +1,8 @@
-import { AuthenticatedContext } from "../lib/middleware";
-import { UnderscoreID, zodId } from "../lib/mongo";
 import axios from "axios";
 import { z } from "zod";
 import { ObjectId } from "mongodb";
+import { UnderscoreID, zodId } from "#lib/mongo";
+import { AuthenticatedContext } from "#lib/middleware";
 import {
   WebhookEventName,
   getWebhooksCollection,

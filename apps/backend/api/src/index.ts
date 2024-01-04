@@ -1,15 +1,25 @@
 import { apiService } from "./api";
 import { generateOpenApiDocument } from "trpc-openapi";
-import { createServer, appRouter } from "@vrite/backend";
+import {
+  createServer,
+  appRouter,
+  OAuthPlugin,
+  databasePlugin,
+  emailPlugin,
+  gitSyncPlugin,
+  pubSubPlugin,
+  searchPlugin,
+  sessionPlugin
+} from "@vrite/backend";
 
 (async () => {
-  const server = await createServer({
-    database: true,
-    pubSub: true,
-    auth: true,
-    email: true,
-    gitSync: true,
-    search: true
+  const server = await createServer(async (server) => {
+    await server.register(databasePlugin);
+    await server.register(pubSubPlugin);
+    await server.register(sessionPlugin).register(OAuthPlugin);
+    await server.register(emailPlugin);
+    await server.register(gitSyncPlugin);
+    await server.register(searchPlugin);
   });
 
   await server.register(apiService);

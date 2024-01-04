@@ -1,6 +1,7 @@
-import { createPlugin, z } from "@vrite/backend";
+import { createPlugin } from "@vrite/backend";
 import rateLimitPlugin from "@fastify/rate-limit";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
+import { z } from "zod";
 import sharp from "sharp";
 
 const imageMimeTypes = {

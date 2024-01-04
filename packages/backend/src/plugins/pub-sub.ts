@@ -1,6 +1,6 @@
 import redisPlugin from "@fastify/redis";
 import type { PubSubMessage, PubSubPlugin } from "fastify";
-import { createPlugin } from "#lib";
+import { createPlugin } from "#lib/plugin";
 
 declare module "fastify" {
   interface PubSubMessage {

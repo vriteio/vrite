@@ -30,6 +30,7 @@ declare module "fastify" {
         contentPiece: UnderscoreID<FullContentPiece<ObjectId>>;
         updatedContentPiece: UnderscoreID<FullContentPiece<ObjectId>>;
         contentBuffer: Buffer | null;
+        variantId: ObjectId | null;
       };
     };
   }
@@ -206,6 +207,7 @@ const handler = async (
   });
   ctx.fastify.routeCallbacks.run("contentPieces.update", ctx, {
     updatedContentPiece: newContentPiece,
+    variantId,
     contentPiece,
     contentBuffer
   });

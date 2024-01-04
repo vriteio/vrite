@@ -37,7 +37,8 @@
     "remark-mdx": "^2.3.0",
     "remark-parse": "^11.0.0",
     "trpc-openapi": "^1.2.0",
-    "unist-util-visit": "^5.0.0"
+    "unist-util-visit": "^5.0.0",
+    "zod": "^3.21.4"
   },
   "devDependencies": {
     "@vrite/scripts": "workspace:*"
