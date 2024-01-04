@@ -120,7 +120,7 @@ const SidePanel: Component = () => {
       </div>
       <div
         class={clsx(
-          "w-4 cursor-col-resize flex justify-start items-center absolute -right-4 top-0 h-full z-50"
+          "w-4 cursor-col-resize flex justify-start items-center absolute -right-4 top-0 h-full z-60"
         )}
         onPointerDown={(event) => {
           setDragging(true);

@@ -75,6 +75,8 @@ class SearchIndexing implements Extension {
       workspaceId: new ObjectId(details.workspaceId)
     });
 
+    if (!contentPiece) return;
+
     await this.fastify.search.upsertContent({
       contentPiece,
       content: details.contentBuffer,

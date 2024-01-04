@@ -17,4 +17,4 @@ const getContentVariantsCollection = (
 };
 
 export { getContentVariantsCollection };
-export type { ContentVariant };
+export type { ContentVariant, FullContentVariant };

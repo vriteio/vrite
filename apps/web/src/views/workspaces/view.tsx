@@ -75,7 +75,9 @@ const WorkspacesView: Component = () => {
   const [currentWorkspaceId] = createResource<string | null>(
     async () => {
       try {
-        return await client.userSettings.getWorkspaceId.query();
+        const { workspaceId } = await client.userSettings.getWorkspaceId.query();
+
+        return workspaceId;
       } catch (error) {
         return null;
       }
@@ -106,7 +108,7 @@ const WorkspacesView: Component = () => {
   const navigate = useNavigate();
   const switchWorkspace = throttle(async (workspaceId: string) => {
     if (currentWorkspaceId() !== workspaceId) {
-      await client.auth.switchWorkspace.mutate(workspaceId);
+      await client.auth.switchWorkspace.mutate({ workspaceId });
       setStorage((storage) => ({
         sidePanelWidth: storage.sidePanelWidth
       }));

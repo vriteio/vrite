@@ -10,7 +10,9 @@ import {
   FullContentPiece,
   FullContents,
   GitRecord,
-  GitDirectory
+  GitDirectory,
+  FullContentPieceVariant,
+  FullContentVariant
 } from "#collections";
 import { errors } from "#lib/errors";
 import { UnderscoreID } from "#lib/mongo";
@@ -20,7 +22,9 @@ const initialSync: GitSyncConfiguration["initialSync"] = async ({ ctx, gitData }
 
   const newContentGroups: UnderscoreID<FullContentGroup<ObjectId>>[] = [];
   const newContentPieces: UnderscoreID<FullContentPiece<ObjectId>>[] = [];
+  const newContentPieceVariants: UnderscoreID<FullContentPieceVariant<ObjectId>>[] = [];
   const newContents: UnderscoreID<FullContents<ObjectId>>[] = [];
+  const newContentVariants: UnderscoreID<FullContentVariant<ObjectId>>[] = [];
   const newRecords: Array<GitRecord<ObjectId>> = [];
   const newDirectories: Array<GitDirectory<ObjectId>> = [];
   const octokit = await ctx.fastify.github.getInstallationOctokit(gitData?.github.installationId);
@@ -114,7 +118,9 @@ const initialSync: GitSyncConfiguration["initialSync"] = async ({ ctx, gitData }
   return {
     newContentGroups,
     newContentPieces,
+    newContentPieceVariants,
     newContents,
+    newContentVariants,
     newRecords,
     newDirectories,
     topContentGroup,

@@ -2,6 +2,8 @@ import { ObjectId } from "mongodb";
 import {
   FullContentGroup,
   FullContentPiece,
+  FullContentPieceVariant,
+  FullContentVariant,
   FullContents,
   FullGitData,
   GitDirectory,
@@ -52,28 +54,13 @@ type UseGitSyncIntegration = (
   ctx: AuthenticatedContext,
   gitData: UnderscoreID<FullGitData<ObjectId>>
 ) => {
-  getRecords: () => GitRecord<ObjectId>[];
-  getTransformer: () => string;
-  commit: (input: Omit<GitSyncCommitInput, "ctx" | "gitData">) => Promise<{
-    commit?: GitSyncCommit;
-    status: "success" | "stale";
-  }>;
-  pull: () => Promise<{
-    changedRecordsByDirectory: Map<
-      string,
-      Array<{ fileName: string; status: string; content?: string; hash: string }>
-    >;
-    lastCommit: GitSyncCommit;
-  }>;
-  initialSync: () => Promise<{
-    newContentGroups: UnderscoreID<FullContentGroup<ObjectId>>[];
-    newContentPieces: UnderscoreID<FullContentPiece<ObjectId>>[];
-    newContents: UnderscoreID<FullContents<ObjectId>>[];
-    newRecords: Array<GitRecord<ObjectId>>;
-    newDirectories: Array<GitDirectory<ObjectId>>;
-    topContentGroup: UnderscoreID<FullContentGroup<ObjectId>>;
-    lastCommit: GitSyncCommit;
-  }>;
+  getRecords: () => ReturnType<GitSyncConfiguration["getRecords"]>;
+  getTransformer: () => ReturnType<GitSyncConfiguration["getTransformer"]>;
+  commit: (
+    input: Omit<GitSyncCommitInput, "ctx" | "gitData">
+  ) => ReturnType<GitSyncConfiguration["commit"]>;
+  pull: () => ReturnType<GitSyncConfiguration["pull"]>;
+  initialSync: () => ReturnType<GitSyncConfiguration["initialSync"]>;
 };
 
 const createGitSyncIntegration = (configuration: GitSyncConfiguration): UseGitSyncIntegration => {

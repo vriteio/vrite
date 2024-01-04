@@ -9,13 +9,16 @@ const githubData = z.object({
   branchName: z.string(),
   baseDirectory: z.string(),
   matchPattern: z.string(),
+  variantsDirectory: z.string(),
+  baseVariantDirectory: z.string(),
   transformer: z.string()
 });
 const gitRecord = z.object({
   contentPieceId: zodId(),
   syncedHash: z.string(),
   currentHash: z.string(),
-  path: z.string()
+  path: z.string(),
+  variantId: zodId().optional()
 });
 const gitDirectory = z.object({
   path: z.string(),
