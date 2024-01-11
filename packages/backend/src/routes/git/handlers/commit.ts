@@ -112,7 +112,8 @@ const handler = async (
     data: {
       records: outputRecords.map((record) => ({
         ...record,
-        contentPieceId: `${record.contentPieceId}`
+        contentPieceId: `${record.contentPieceId}`,
+        variantId: record.variantId ? `${record.variantId}` : undefined
       }))
     }
   });

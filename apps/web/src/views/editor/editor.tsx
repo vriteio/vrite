@@ -69,13 +69,11 @@ interface EditorProps {
 }
 
 const Editor: Component<EditorProps> = (props) => {
+  const { activeVariantId } = useContentData();
   const hostConfig = useHostConfig();
   const navigate = useNavigate();
   const location = useLocation<{ breadcrumb?: string[] }>();
   const { useSharedSignal } = useSharedState();
-  /* TODO: Use ContentData
-     const [activeVariant] = createSharedSignal("activeVariant"); */
-  const activeVariant = (): null => null;
   const ydoc = new Y.Doc();
   const [containerRef, setContainerRef] = createRef<HTMLElement | null>(null);
   const handleReload = async (): Promise<void> => {
@@ -107,8 +105,8 @@ const Editor: Component<EditorProps> = (props) => {
     },
     onDisconnect: handleReload,
     onAuthenticationFailed: handleReload,
-    name: `${props.editedContentPiece.id || ""}${activeVariant() ? ":" : ""}${
-      activeVariant()?.id || ""
+    name: `${props.editedContentPiece.id || ""}${activeVariantId() ? ":" : ""}${
+      activeVariantId() || ""
     }`,
     document: ydoc
   });
@@ -248,7 +246,6 @@ const Editor: Component<EditorProps> = (props) => {
     provider.destroy();
     setSharedEditor(undefined);
     setSharedProvider(undefined);
-    setActiveContentPieceId(null);
   });
   createEffect(
     on(

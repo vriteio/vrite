@@ -2,7 +2,6 @@ import { getVariantDetails, mergeVariantData } from "../utils";
 import { ObjectId } from "mongodb";
 import { z } from "zod";
 import {
-  getWorkspaceSettingsCollection,
   getContentPiecesCollection,
   getContentPieceVariantsCollection,
   contentPieceMember,
@@ -47,12 +46,8 @@ const handler = async (
   ctx: AuthenticatedContext,
   input: z.infer<typeof inputSchema>
 ): Promise<z.infer<typeof outputSchema>> => {
-  const workspaceSettingsCollection = getWorkspaceSettingsCollection(ctx.db);
   const contentPiecesCollection = getContentPiecesCollection(ctx.db);
   const contentPieceVariantsCollection = getContentPieceVariantsCollection(ctx.db);
-  const workspaceSettings = await workspaceSettingsCollection.findOne({
-    workspaceId: ctx.auth.workspaceId
-  });
   const contentGroupId = new ObjectId(input.contentGroupId);
   const { variantId, variantKey } = await getVariantDetails(ctx.db, input.variant);
   const cursor = contentPiecesCollection

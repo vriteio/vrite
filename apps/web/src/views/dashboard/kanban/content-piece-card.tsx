@@ -21,7 +21,7 @@ interface ContentPieceProps {
 }
 
 const ContentPieceCard: Component<ContentPieceProps> = (props) => {
-  const { activeContentPieceId } = useContentData();
+  const { activeContentPieceId, setActiveContentPieceId } = useContentData();
   const { setStorage } = useLocalStorage();
   const { deletedTags } = useAuthenticatedUserData();
   const navigate = useNavigate();
@@ -57,9 +57,9 @@ const ContentPieceCard: Component<ContentPieceProps> = (props) => {
         setStorage((storage) => ({
           ...storage,
           sidePanelView: "contentPiece",
-          sidePanelWidth: storage.sidePanelWidth || 375,
-          contentPieceId: props.contentPiece.id
+          sidePanelWidth: storage.sidePanelWidth || 375
         }));
+        setActiveContentPieceId(props.contentPiece.id);
       }}
       data-content-piece-id={props.contentPiece.id}
       data-index={props.index}
@@ -147,9 +147,9 @@ const ContentPieceCard: Component<ContentPieceProps> = (props) => {
               setStorage((storage) => ({
                 ...storage,
                 sidePanelWidth: breakpoints.md() ? storage.sidePanelWidth || 375 : 0,
-                sidePanelView: "contentPiece",
-                contentPieceId: props.contentPiece.id
+                sidePanelView: "contentPiece"
               }));
+              setActiveContentPieceId(props.contentPiece.id);
               navigate("/editor");
             }}
           />

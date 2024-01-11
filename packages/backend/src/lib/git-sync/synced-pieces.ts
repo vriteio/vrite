@@ -17,7 +17,7 @@ const createSyncedPieces = async (
   Array<{
     contentPiece: UnderscoreID<FullContentPiece<ObjectId>>;
     content: UnderscoreID<FullContents<ObjectId>>;
-    contentHash: string;
+    hash: string;
   }>
 > => {
   const inputContentProcessorOutput = await inputContentProcessor.processBatch(
@@ -26,7 +26,7 @@ const createSyncedPieces = async (
 
   return inputs.map((input, index) => {
     const filename = input.path.split("/").pop() || "";
-    const { buffer, contentHash, metadata } = inputContentProcessorOutput[index];
+    const { buffer, hash, metadata } = inputContentProcessorOutput[index];
     const { members, tags, date, ...inputMetadata } = metadata;
     const contentPiece: UnderscoreID<FullContentPiece<ObjectId>> = {
       _id: new ObjectId(),
@@ -51,7 +51,7 @@ const createSyncedPieces = async (
 
     return {
       contentPiece,
-      contentHash,
+      hash,
       content
     };
   });

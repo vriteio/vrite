@@ -193,7 +193,7 @@ const processPulledRecords = async ({
       if (!contentGroupId) continue;
 
       if (existingRecord) {
-        const { buffer, contentHash, metadata } = await inputContentProcessor.process(
+        const { buffer, hash, metadata } = await inputContentProcessor.process(
           changedRecord.content || ""
         );
         const { date, members, tags, ...restMetadata } = metadata;
@@ -222,8 +222,8 @@ const processPulledRecords = async ({
             contentPieceId: existingRecord.contentPieceId,
             content: new Binary(buffer)
           });
-          existingRecord.syncedHash = contentHash;
-          existingRecord.currentHash = contentHash;
+          existingRecord.syncedHash = hash;
+          existingRecord.currentHash = hash;
         }
 
         continue;
@@ -254,15 +254,15 @@ const processPulledRecords = async ({
 
     const syncedPieces = await createSyncedPieces(createSyncedPiecesSource, inputContentProcessor);
 
-    syncedPieces.forEach(({ contentPiece, content, contentHash }, index) => {
+    syncedPieces.forEach(({ contentPiece, content, hash }, index) => {
       const { path } = createSyncedPiecesSource[index];
 
       newContentPieces.push(contentPiece);
       newContents.push(content);
       newRecords.push({
         contentPieceId: contentPiece._id,
-        currentHash: contentHash,
-        syncedHash: contentHash,
+        currentHash: hash,
+        syncedHash: hash,
         path
       });
     });

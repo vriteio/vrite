@@ -18,8 +18,8 @@ interface SlashMenuItem {
   command(params: { editor: SolidEditor; range: Range }): void;
 }
 interface SlashMenuState extends SuggestionProps<SlashMenuItem> {
-  onKeyDown?(props: SuggestionKeyDownProps): void;
-  setOnKeyDown(callback: (props: SuggestionKeyDownProps) => void): void;
+  onKeyDown?(props: SuggestionKeyDownProps): boolean;
+  setOnKeyDown(callback: (props: SuggestionKeyDownProps) => boolean): void;
 }
 interface SlashMenuProps {
   state: SlashMenuState;

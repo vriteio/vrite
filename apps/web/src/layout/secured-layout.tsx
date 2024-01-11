@@ -29,8 +29,8 @@ const SecuredLayout: ParentComponent = (props) => {
     <AuthenticatedUserDataProvider>
       <AppearanceProvider>
         <ExtensionsProvider>
-          <ContentDataProvider>
-            <CommandPaletteProvider>
+          <CommandPaletteProvider>
+            <ContentDataProvider>
               <div class="flex flex-col h-full w-full">
                 <div class="flex-1 flex flex-col-reverse md:flex-row h-[calc(100%-1.5rem)]">
                   <Show
@@ -76,8 +76,8 @@ const SecuredLayout: ParentComponent = (props) => {
                 </div>
                 <BottomMenu />
               </div>
-            </CommandPaletteProvider>
-          </ContentDataProvider>
+            </ContentDataProvider>
+          </CommandPaletteProvider>
         </ExtensionsProvider>
       </AppearanceProvider>
     </AuthenticatedUserDataProvider>

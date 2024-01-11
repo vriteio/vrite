@@ -1,8 +1,8 @@
 import { ContentActions, createContentActions } from "./actions";
 import { ContentLoader, createContentLoader } from "./loader";
 import { createContext, ParentComponent, useContext } from "solid-js";
-import { createSignal, createEffect, on, onCleanup } from "solid-js";
-import { createStore } from "solid-js/store";
+import { createEffect, on, onCleanup } from "solid-js";
+import { createStore, reconcile } from "solid-js/store";
 import { useClient, useLocalStorage, App, useAuthenticatedUserData } from "#context";
 
 interface ContentLevel {
@@ -19,13 +19,16 @@ interface ContentDataContextData {
     App.ExtendedContentPieceWithAdditionalData<"order" | "coverWidth"> | undefined
   >;
   contentLevels: Record<string, ContentLevel | undefined>;
+  variants: Record<string, App.Variant | undefined>;
   contentActions: ContentActions;
   contentLoader: ContentLoader;
   activeContentGroupId(): string | null;
   activeContentPieceId(): string | null;
+  activeVariantId(): string | null;
   expandedContentLevels(): string[];
   setActiveContentGroupId(contentGroupId: string | null): void;
   setActiveContentPieceId(contentPieceId: string | null): void;
+  setActiveVariantId(variantId: string | null): void;
   expandContentLevel(contentGroupId: string): void;
   collapseContentLevel(contentGroupId: string): void;
 }
@@ -35,12 +38,7 @@ const ContentDataProvider: ParentComponent = (props) => {
   const client = useClient();
   const { profile } = useAuthenticatedUserData();
   const { storage, setStorage } = useLocalStorage();
-  const [activeDraggableContentGroupId, setActiveDraggableContentGroupId] = createSignal<
-    string | null
-  >(null);
-  const [activeDraggableContentPieceId, setActiveDraggableContentPieceId] = createSignal<
-    string | null
-  >(null);
+  const [variants, setVariants] = createStore<Record<string, App.Variant | undefined>>({});
   const [contentLevels, setContentLevels] = createStore<Record<string, ContentLevel | undefined>>(
     {}
   );
@@ -50,11 +48,20 @@ const ContentDataProvider: ParentComponent = (props) => {
   const [contentPieces, setContentPieces] = createStore<
     Record<string, App.ExtendedContentPieceWithAdditionalData<"order" | "coverWidth"> | undefined>
   >({});
+  const activeVariantId = (): string | null => {
+    return storage().activeVariantId || null;
+  };
   const activeContentGroupId = (): string | null => {
     return storage().activeContentGroupId || null;
   };
   const activeContentPieceId = (): string | null => {
     return storage().activeContentPieceId || null;
+  };
+  const setActiveVariantId = (variantId: string | null): void => {
+    setStorage((storage) => ({
+      ...storage,
+      activeVariantId: variantId || undefined
+    }));
   };
   const setActiveContentGroupId = (contentGroupId: string | null): void => {
     setStorage((storage) => ({
@@ -109,6 +116,7 @@ const ContentDataProvider: ParentComponent = (props) => {
     contentGroups,
     contentPieces,
     contentLevels,
+    activeVariantId,
     setContentGroups,
     setContentPieces,
     setContentLevels
@@ -134,7 +142,50 @@ const ContentDataProvider: ParentComponent = (props) => {
       }
     }
   });
+  const load = (): void => {
+    setContentLevels(reconcile({}));
+    setContentGroups(reconcile({}));
+    setContentPieces(reconcile({}));
+    expandedContentLevels().forEach(async (id) => {
+      try {
+        await contentLoader.loadContentLevel(id);
+      } catch (e) {
+        collapseContentLevel(id);
+      }
+    });
+    client.variants.list.query().then((variants) => {
+      variants.forEach((variant) => {
+        setVariants(variant.id, variant);
+      });
+    });
+  };
 
+  createEffect(
+    on(activeVariantId, () => {
+      load();
+
+      const variantsSubscription = client.variants.changes.subscribe(undefined, {
+        onData({ action, data }) {
+          if (action === "create") {
+            setVariants(data.id, data);
+          } else if (action === "update") {
+            if (variants[data.id]) {
+              setVariants(data.id, (variant) => ({
+                ...variant,
+                ...data
+              }));
+            }
+          } else if (action === "delete") {
+            setVariants(data.id, undefined);
+          }
+        }
+      });
+
+      onCleanup(() => {
+        variantsSubscription.unsubscribe();
+      });
+    })
+  );
   createEffect(() => {
     for (const contentGroupId in contentGroups) {
       createEffect(
@@ -170,15 +221,23 @@ const ContentDataProvider: ParentComponent = (props) => {
       );
     }
   });
+  createEffect(() => {
+    const id = activeContentPieceId();
+    const variantId = activeVariantId();
+
+    if (!id || contentPieces[id]) return;
+
+    client.contentPieces.get
+      .query({
+        id,
+        variant: variantId || undefined
+      })
+      .then((contentPiece) => {
+        setContentPieces(id, contentPiece);
+      });
+  });
   onCleanup(() => {
     contentGroupsSubscription.unsubscribe();
-  });
-  expandedContentLevels().forEach((id) => {
-    try {
-      contentLoader.loadContentLevel(id);
-    } catch (e) {
-      collapseContentLevel(id);
-    }
   });
 
   return (
@@ -189,11 +248,14 @@ const ContentDataProvider: ParentComponent = (props) => {
         contentLevels,
         contentActions,
         contentLoader,
+        variants,
         expandedContentLevels,
         activeContentGroupId,
         activeContentPieceId,
+        activeVariantId,
         setActiveContentGroupId,
         setActiveContentPieceId,
+        setActiveVariantId,
         expandContentLevel,
         collapseContentLevel
       }}

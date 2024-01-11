@@ -23,7 +23,7 @@ import {
 
 interface ProcessInputResult {
   buffer: Buffer;
-  contentHash: string;
+  hash: string;
   metadata: Partial<
     Pick<FullContentPiece, keyof NonNullable<ReturnType<InputTransformer>["contentPiece"]>>
   >;
@@ -106,12 +106,12 @@ const createInputContentProcessor = async (
         const { content, contentPiece } = transformed[index];
         const buffer = jsonToBuffer(htmlToJSON(content || "<p></p>"));
         const metadata = contentPiece || {};
-        const contentHash = crypto.createHash("md5").update(inputContent).digest("hex");
+        const hash = crypto.createHash("md5").update(inputContent).digest("hex");
 
         return {
           buffer,
           metadata,
-          contentHash
+          hash
         };
       });
     },
@@ -119,12 +119,12 @@ const createInputContentProcessor = async (
       const [{ content, contentPiece }] = await transformInputContent([inputContent]);
       const buffer = jsonToBuffer(htmlToJSON(content || "<p></p>"));
       const metadata = contentPiece || {};
-      const contentHash = crypto.createHash("md5").update(inputContent).digest("hex");
+      const hash = crypto.createHash("md5").update(inputContent).digest("hex");
 
       return {
         buffer,
         metadata,
-        contentHash
+        hash
       };
     }
   };
@@ -255,4 +255,9 @@ const createOutputContentProcessor = async (
 };
 
 export { createInputContentProcessor, createOutputContentProcessor };
-export type { InputContentProcessor, OutputContentProcessor, OutputContentProcessorInput };
+export type {
+  InputContentProcessor,
+  OutputContentProcessor,
+  OutputContentProcessorInput,
+  ProcessInputResult
+};

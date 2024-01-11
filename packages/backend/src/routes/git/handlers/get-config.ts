@@ -27,7 +27,8 @@ const handler = async (ctx: AuthenticatedContext): Promise<z.infer<typeof output
     })),
     records: records.map((record) => ({
       ...record,
-      contentPieceId: `${record.contentPieceId}`
+      contentPieceId: `${record.contentPieceId}`,
+      variantId: record.variantId ? `${record.variantId}` : undefined
     })),
     ...(gitData.contentGroupId ? { contentGroupId: `${gitData.contentGroupId}` } : {})
   };

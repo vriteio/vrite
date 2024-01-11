@@ -4,6 +4,7 @@ import { Node, mergeAttributes } from "@tiptap/core";
 interface ImageAttributes {
   src?: string;
   alt?: string;
+  caption?: string;
   width?: string;
   aspectRatio?: string;
 }
@@ -49,6 +50,9 @@ const Image = Node.create<ImageOptions>({
         }
       },
       alt: {
+        default: null
+      },
+      caption: {
         default: null
       },
       width: {

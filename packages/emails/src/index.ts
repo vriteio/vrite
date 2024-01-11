@@ -20,7 +20,7 @@ type RenderEmail = <T extends keyof TemplateMap>(
   plainText?: boolean
 ) => string;
 
-const renderEmail: RenderEmail = renderEmailFn;
+const renderEmail = renderEmailFn as RenderEmail;
 const getSubject = (template: keyof TemplateMap): string => {
   const subjectMap = {
     "magic-link": "Magic sign-in link | Vrite",

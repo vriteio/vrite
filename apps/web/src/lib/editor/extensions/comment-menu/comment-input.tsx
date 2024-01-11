@@ -28,6 +28,8 @@ const CommentInput: Component<{
     if (!props.thread || !memberId) return;
 
     await client.comments.createComment.mutate({
+      contentPieceId: props.thread.contentPieceId,
+      variantId: props.thread.variantId,
       content: currentContent(),
       fragment: props.thread.fragment,
       memberId

@@ -38,16 +38,17 @@ const EditorView: Component = () => {
       });
     }
   });
+  setStorage((storage) => ({ ...storage, toolbarView: "editor" }));
   createEffect(
     on(
-      activeContentPieceId,
-      () => {
-        setSyncing(true);
-      },
-      { defer: true }
+      () => contentPieces[activeContentPieceId() || ""],
+      (newContentPiece, previousContentPiece) => {
+        if (newContentPiece !== previousContentPiece) {
+          setSyncing(true);
+        }
+      }
     )
   );
-  setStorage((storage) => ({ ...storage, toolbarView: "editor" }));
 
   return (
     <>
@@ -55,11 +56,9 @@ const EditorView: Component = () => {
         when={activeContentPieceId()}
         fallback={
           <div class="flex items-center justify-center w-full h-full">
-            {/* <Show when={!loading()}> */}
             <span class="text-2xl font-semibold text-gray-500 dark:text-gray-400">
               To edit, select an article in the dashboard
             </span>
-            {/* </Show> */}
           </div>
         }
       >
@@ -76,25 +75,29 @@ const EditorView: Component = () => {
               storage().zenMode ? "items-center" : "items-start"
             )}
           >
-            <Show when={/* !loading() &&*/ workspaceSettings()} keyed>
-              <Editor
-                editedContentPiece={contentPieces[activeContentPieceId() || ""]!}
-                reloaded={reloaded()}
-                reload={async () => {
-                  setReloaded(true);
-                }}
-                onLoad={() => {
-                  setTimeout(() => {
-                    scrollableContainerRef()?.scrollTo({ top: lastScrollTop() });
-                  }, 0);
-                  setSyncing(false);
-                }}
-              />
+            <Show when={workspaceSettings()}>
+              <Show when={contentPieces[activeContentPieceId() || ""]} keyed>
+                <Editor
+                  editedContentPiece={contentPieces[activeContentPieceId() || ""]!}
+                  reloaded={reloaded()}
+                  reload={async () => {
+                    setReloaded(true);
+                  }}
+                  onLoad={() => {
+                    setTimeout(() => {
+                      scrollableContainerRef()?.scrollTo({ top: lastScrollTop() });
+                    }, 0);
+                    setSyncing(false);
+                  }}
+                />
+              </Show>
             </Show>
           </div>
         </div>
       </Show>
-      <Show when={/* loading() || ()*/ activeContentPieceId() && syncing()}>
+      <Show
+        when={!contentPieces[activeContentPieceId() || ""] || (activeContentPieceId() && syncing())}
+      >
         <div class="flex items-center justify-center w-full h-full bg-gray-100 dark:bg-gray-800 absolute top-0 left-0">
           <Loader />
         </div>

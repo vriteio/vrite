@@ -2,12 +2,12 @@ import { ContentGroupRow } from "./content-group-row";
 import { ContentPieceRow } from "./content-piece-row";
 import { useExplorerData } from "./explorer-context";
 import clsx from "clsx";
-import { Component, createEffect, Show, For, createSignal } from "solid-js";
+import { Component, createEffect, Show, For } from "solid-js";
 import SortableLib from "sortablejs";
 import { Icon, Loader } from "@vrite/components";
 import { mdiDotsHorizontalCircleOutline } from "@mdi/js";
 import { useLocation, useNavigate } from "@solidjs/router";
-import { App, useClient, useContentData, useLocalStorage } from "#context";
+import { App, useClient, useContentData } from "#context";
 
 const TreeLevel: Component<{
   parentId?: string;
@@ -20,12 +20,13 @@ const TreeLevel: Component<{
     expandContentLevel,
     collapseContentLevel,
     activeContentGroupId,
+    setActiveContentGroupId,
+    setActiveContentPieceId,
     contentLoader,
     contentActions
   } = useContentData();
   const { highlight, setHighlight, activeDraggableContentGroupId, activeDraggableContentPieceId } =
     useExplorerData();
-  const { setStorage } = useLocalStorage();
   const client = useClient();
   const location = useLocation();
   const navigate = useNavigate();
@@ -187,10 +188,7 @@ const TreeLevel: Component<{
                   }}
                   onClick={() => {
                     navigate("/");
-                    setStorage((storage) => ({
-                      ...storage,
-                      activeContentGroupId: groupId
-                    }));
+                    setActiveContentGroupId(groupId);
                   }}
                   onExpand={(forceOpen) => {
                     if (expandedContentLevels().includes(groupId) && !forceOpen) {
@@ -215,10 +213,7 @@ const TreeLevel: Component<{
                 contentPiece={contentPieces[contentPieceId]!}
                 onClick={() => {
                   navigate("/editor");
-                  setStorage((storage) => ({
-                    ...storage,
-                    contentPieceId
-                  }));
+                  setActiveContentPieceId(contentPieceId);
                 }}
                 onDragEnd={() => {
                   const contentPiece = contentPieces[contentPieceId]!;

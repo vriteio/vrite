@@ -86,7 +86,7 @@ const databasePlugin = createPlugin(async (fastify) => {
     extensionsCollection.createIndex({ workspaceId: 1 }),
     extensionsCollection.createIndex({ name: 1 }),
     variantsCollection.createIndex({ workspaceId: 1 }),
-    variantsCollection.createIndex({ name: 1 }),
+    variantsCollection.createIndex({ key: 1 }),
     gitDataCollection.createIndex({ workspaceId: 1 }, { unique: true }),
     gitDataCollection.createIndex({ "records.contentPieceId": 1 })
   ]);

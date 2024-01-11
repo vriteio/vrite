@@ -251,7 +251,7 @@ const ProfileMenu: Component<{ close(): void }> = (props) => {
       </Card>
       <div class="flex justify-center items-center gap-2">
         <div class="flex flex-1">
-          <Icon path={mdiHexagonSlice6} class="h-5 min-w-5 mr-1" />
+          <Icon path={mdiHexagonSlice6} class="h-5 min-w-5 mr-1 text-gray-500 dark:text-gray-400" />
           <span class="text-sm clamp-1">{workspace()?.name}</span>
         </div>
         <Link href="https://discord.gg/4Z5MdEffBn">

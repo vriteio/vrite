@@ -12,6 +12,7 @@ interface StorageData {
   sourceControlConfiguredProvider: string;
   activeContentGroupId: string;
   activeContentPieceId: string;
+  activeVariantId: string;
   expandedContentLevels: string[];
   dashboardView: string;
   sidePanelView: string;

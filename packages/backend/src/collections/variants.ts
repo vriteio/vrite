@@ -6,11 +6,7 @@ const variant = z.object({
   id: zodId(),
   label: z.string().min(1).max(50),
   description: z.string().optional(),
-  key: z
-    .string()
-    .min(1)
-    .max(20)
-    .regex(/^[a-z0-9_]*$/)
+  key: z.string().min(1).max(50)
 });
 
 interface Variant<ID extends string | ObjectId = string>
@@ -26,4 +22,4 @@ const getVariantsCollection = (db: Db): Collection<UnderscoreID<FullVariant<Obje
 };
 
 export { variant, getVariantsCollection };
-export type { Variant };
+export type { Variant, FullVariant };

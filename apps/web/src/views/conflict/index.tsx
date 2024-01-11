@@ -34,7 +34,7 @@ const ConflictView: Component<{ monaco: typeof monaco }> = (props) => {
       if (!contentPieceId) return null;
 
       try {
-        const result = await client.git.github.getConflictedContent.query({
+        const result = await client.git.getConflictedContent.query({
           contentPieceId
         });
 

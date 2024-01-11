@@ -1,7 +1,7 @@
 import { ImageAttributes, ImageOptions } from "./node";
 import { SolidNodeViewProps } from "@vrite/tiptap-solid";
-import { mdiLinkVariant, mdiText, mdiUpload } from "@mdi/js";
-import { Component, createSignal } from "solid-js";
+import { mdiImageText, mdiLinkVariant, mdiText, mdiUpload } from "@mdi/js";
+import { Component, Show, createSignal } from "solid-js";
 import { nanoid } from "nanoid";
 import { debounce } from "@solid-primitives/scheduled";
 import clsx from "clsx";
@@ -14,18 +14,20 @@ interface ImageMenuProps {
 
 const ImageMenu: Component<ImageMenuProps> = (props) => {
   const { storage } = props.state.extension;
-  const [inputMode, setInputMode] = createSignal<"alt" | "src">("src");
+  const [inputMode, setInputMode] = createSignal<"alt" | "src" | "caption">("src");
   const [uploading, setUploading] = createSignal(false);
   const attrs = (): ImageAttributes => props.state.node.attrs;
   const options = (): ImageOptions => props.state.extension.options;
   const placeholder = (): string => {
+    if (inputMode() === "caption") return "Caption";
+
     if (inputMode() === "src") {
       return options().cover ? "Cover image URL" : "Image URL";
     }
 
     return options().cover ? "Cover alt description" : "Alt description";
   };
-  const updateAttribute = debounce((attribute: "src" | "alt", value: string) => {
+  const updateAttribute = debounce((attribute: "src" | "alt" | "caption", value: string) => {
     return props.state.updateAttributes({ [attribute]: value });
   }, 200);
   const uploadFile = async (file?: File | null): Promise<void> => {
@@ -58,7 +60,7 @@ const ImageMenu: Component<ImageMenuProps> = (props) => {
       <Card
         class={clsx(
           "p-1 flex m-0 border-0 overflow-hidden rounded-none gap-1",
-          !options().cover && "md:gap-0 md:p-0 md:border-2 md:rounded-xl"
+          !options().cover && "md:gap-0.5 md:p-0 md:border-2 md:rounded-xl"
         )}
       >
         <Tooltip text="Alt" fixed class="mt-1">
@@ -73,18 +75,20 @@ const ImageMenu: Component<ImageMenuProps> = (props) => {
             }}
           ></IconButton>
         </Tooltip>
-        <Tooltip text="Image URL" fixed class="mt-1">
-          <IconButton
-            path={mdiLinkVariant}
-            color={inputMode() === "src" ? "primary" : "contrast"}
-            text={inputMode() === "src" ? "primary" : "soft"}
-            variant={inputMode() === "src" ? "solid" : "text"}
-            class="m-0"
-            onClick={() => {
-              setInputMode("src");
-            }}
-          ></IconButton>
-        </Tooltip>
+        <Show when={!options().cover}>
+          <Tooltip text="Caption" fixed class="mt-1">
+            <IconButton
+              path={mdiImageText}
+              color={inputMode() === "caption" ? "primary" : "contrast"}
+              text={inputMode() === "caption" ? "primary" : "soft"}
+              variant={inputMode() === "caption" ? "solid" : "text"}
+              class="m-0"
+              onClick={() => {
+                setInputMode("caption");
+              }}
+            ></IconButton>
+          </Tooltip>
+        </Show>
       </Card>
       <Card
         class={clsx(
@@ -106,10 +110,22 @@ const ImageMenu: Component<ImageMenuProps> = (props) => {
       </Card>
       <Card
         class={clsx(
-          "p-1 m-0 border-0 overflow-hidden rounded-none",
-          !options().cover && "md:p-0 md:border-2 md:rounded-xl"
+          "p-1 flex m-0 border-0 overflow-hidden rounded-none gap-1",
+          !options().cover && "md:gap-0.5 md:p-0 md:border-2 md:rounded-xl"
         )}
       >
+        <Tooltip text="Image URL" fixed class="mt-1">
+          <IconButton
+            path={mdiLinkVariant}
+            color={inputMode() === "src" ? "primary" : "contrast"}
+            text={inputMode() === "src" ? "primary" : "soft"}
+            variant={inputMode() === "src" ? "solid" : "text"}
+            class="m-0"
+            onClick={() => {
+              setInputMode("src");
+            }}
+          ></IconButton>
+        </Tooltip>{" "}
         <input
           type="file"
           hidden

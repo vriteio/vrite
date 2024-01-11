@@ -70,39 +70,41 @@ const ExtensionsSection: Component<ExtensionsSectionProps> = (props) => {
         }
         when={true}
       >
-        <div class="flex gap-1">
-          <div class="flex flex-col gap-1">
-            <For each={extensionsWithContentPieceView()}>
-              {(extension) => {
-                return (
-                  <Tooltip text={extension.spec.displayName} side="right" class="ml-1">
-                    <button
-                      onClick={() => {
-                        setData(
-                          reconcile(
-                            props.contentPiece.customData?.__extensions__?.[
-                              extension.spec.name || ""
-                            ] || {}
-                          )
-                        );
-                        setActiveExtension(extension);
-                      }}
-                    >
-                      <ExtensionIcon
-                        spec={extension.spec}
-                        class={clsx(
-                          "border-2",
-                          activeExtension()?.id === extension.id && "border-primary",
-                          activeExtension()?.id !== extension.id &&
-                            "border-gray-200 dark:border-gray-700"
-                        )}
-                      />
-                    </button>
-                  </Tooltip>
-                );
-              }}
-            </For>
-          </div>
+        <div class="flex gap-1 m-1">
+          <Show when={extensionsWithContentPieceView().length}>
+            <div class="flex flex-col gap-1">
+              <For each={extensionsWithContentPieceView()}>
+                {(extension) => {
+                  return (
+                    <Tooltip text={extension.spec.displayName} side="right" class="ml-1">
+                      <button
+                        onClick={() => {
+                          setData(
+                            reconcile(
+                              props.contentPiece.customData?.__extensions__?.[
+                                extension.spec.name || ""
+                              ] || {}
+                            )
+                          );
+                          setActiveExtension(extension);
+                        }}
+                      >
+                        <ExtensionIcon
+                          spec={extension.spec}
+                          class={clsx(
+                            "border-2",
+                            activeExtension()?.id === extension.id && "border-primary",
+                            activeExtension()?.id !== extension.id &&
+                              "border-gray-200 dark:border-gray-700"
+                          )}
+                        />
+                      </button>
+                    </Tooltip>
+                  );
+                }}
+              </For>
+            </div>
+          </Show>
           <Card class="flex flex-col justify-center flex-1 p-3 m-0" color="base">
             <Show
               when={activeExtension()}

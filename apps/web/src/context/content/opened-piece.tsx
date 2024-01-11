@@ -1,4 +1,4 @@
-type ContentPiecePropertyKey = keyof App.ExtendedContentPieceWithAdditionalData<"coverWidth">;
+/* type ContentPiecePropertyKey = keyof App.ExtendedContentPieceWithAdditionalData<"coverWidth">;
 
 interface UseContentGroups {
   contentGroups: Accessor<App.ContentGroup[]>;
@@ -191,3 +191,4 @@ const moveContentGroup = (contentGroup: App.ContentGroup): void => {
     contentGroups: newContentGroups
   });
 };
+*/

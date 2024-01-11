@@ -1,4 +1,4 @@
-import { DetailsSection, CustomDataSection, ExtensionsSection, VariantsSection } from "./sections";
+import { DetailsSection, CustomDataSection, ExtensionsSection } from "./sections";
 import { ContentPieceDescription } from "./description";
 import { mdiMenu } from "@mdi/js";
 import { Component, createSignal, For, Switch, Match, onMount } from "solid-js";
@@ -24,7 +24,6 @@ interface ContentPieceMetadataProps {
 }
 
 const ContentPieceMetadata: Component<ContentPieceMetadataProps> = (props) => {
-  const hostConfig = useHostConfig();
   const [menuOpened, setMenuOpened] = createSignal(false);
   const [scrollableSectionRef, setScrollableSectionRef] = createRef<HTMLDivElement | null>(null);
 
@@ -35,7 +34,7 @@ const ContentPieceMetadata: Component<ContentPieceMetadataProps> = (props) => {
 
     scrollableSection.addEventListener("scroll", (event) => {
       const sectionIndex = Math.round(
-        (scrollableSection.scrollLeft / scrollableSection.scrollWidth) * 4
+        (scrollableSection.scrollLeft / scrollableSection.scrollWidth) * 3
       );
 
       props.setActiveSection(props.sections[sectionIndex]);
@@ -59,6 +58,7 @@ const ContentPieceMetadata: Component<ContentPieceMetadataProps> = (props) => {
         )}
         opened={menuOpened()}
         setOpened={setMenuOpened}
+        cardProps={{ class: "m-0" }}
       >
         <div class="flex flex-col items-start justify-center gap-1 w-full min-w-34">
           <For each={props.sections}>
@@ -74,9 +74,8 @@ const ContentPieceMetadata: Component<ContentPieceMetadataProps> = (props) => {
                   onClick={() => {
                     props.setActiveSection(section);
                     scrollableSectionRef()?.scrollTo({
-                      behavior: "smooth",
                       left:
-                        scrollableSectionRef()!.scrollWidth * (props.sections.indexOf(section) / 4)
+                        scrollableSectionRef()!.scrollWidth * (props.sections.indexOf(section) / 3)
                     });
                     setMenuOpened(false);
                   }}
@@ -87,7 +86,7 @@ const ContentPieceMetadata: Component<ContentPieceMetadataProps> = (props) => {
         </div>
       </Dropdown>
       <div
-        class="flex w-full gap-1 overflow-auto scrollbar-hidden snap-mandatory snap-x"
+        class="flex w-full overflow-auto scrollbar-hidden snap-mandatory snap-x"
         ref={setScrollableSectionRef}
       >
         <div class="min-w-full snap-center">
@@ -144,12 +143,6 @@ const ContentPieceMetadata: Component<ContentPieceMetadataProps> = (props) => {
                 customData
               });
             }}
-          />
-        </div>
-        <div class="min-w-full snap-center">
-          <VariantsSection
-            activeVariant={props.activeVariant}
-            setActiveVariant={props.setActiveVariant}
           />
         </div>
       </div>

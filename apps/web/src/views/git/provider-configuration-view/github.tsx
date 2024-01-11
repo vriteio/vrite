@@ -387,9 +387,9 @@ const GitHubConfigurationView: Component<GitHubConfigurationViewProps> = (props)
               label="Base Variant Directory"
               color="contrast"
               type="text"
-              value={savedGitHubConfig()?.variantsDirectory || variantsDirectory()}
+              value={savedGitHubConfig()?.baseVariantDirectory || baseVariantDirectory()}
               disabled={Boolean(savedGitHubConfig())}
-              setValue={setVariantsDirectory}
+              setValue={setBaseVariantDirectory}
               placeholder="/en"
             >
               Directory of the base variant. Only files that exist in both base and other variant

@@ -36,8 +36,9 @@ const gitData = z.object({
 });
 
 interface GitRecord<ID extends string | ObjectId = string>
-  extends Omit<z.infer<typeof gitRecord>, "contentPieceId"> {
+  extends Omit<z.infer<typeof gitRecord>, "contentPieceId" | "variantId"> {
   contentPieceId: ID;
+  variantId?: ID;
 }
 interface GitDirectory<ID extends string | ObjectId = string>
   extends Omit<z.infer<typeof gitDirectory>, "contentGroupId"> {

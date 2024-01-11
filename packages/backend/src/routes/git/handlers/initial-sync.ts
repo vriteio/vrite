@@ -5,7 +5,10 @@ import {
   getContentPiecesCollection,
   getContentsCollection,
   getWorkspacesCollection,
-  FullContentPiece
+  FullContentPiece,
+  getContentPieceVariantsCollection,
+  getContentVariantsCollection,
+  getVariantsCollection
 } from "#collections";
 import { publishGitDataEvent, publishContentGroupEvent } from "#events";
 import { errors } from "#lib/errors";
@@ -19,6 +22,9 @@ const handler = async (ctx: AuthenticatedContext): Promise<void> => {
   const contentPiecesCollection = getContentPiecesCollection(ctx.db);
   const contentsCollection = getContentsCollection(ctx.db);
   const workspaceCollection = getWorkspacesCollection(ctx.db);
+  const contentPieceVariantsCollection = getContentPieceVariantsCollection(ctx.db);
+  const contentVariantsCollection = getContentVariantsCollection(ctx.db);
+  const variantsCollection = getVariantsCollection(ctx.db);
   const gitData = await gitDataCollection.findOne({ workspaceId: ctx.auth.workspaceId });
 
   if (!gitData) throw errors.notFound("gitData");
@@ -34,12 +40,36 @@ const handler = async (ctx: AuthenticatedContext): Promise<void> => {
     newContents,
     newDirectories,
     newRecords,
+    newContentPieceVariants,
+    newContentVariants,
+    newVariants,
     topContentGroup
   } = await gitSyncIntegration.initialSync();
 
-  await contentGroupsCollection.insertMany(newContentGroups);
-  await contentPiecesCollection.insertMany(newContentPieces);
-  await contentsCollection.insertMany(newContents);
+  if (newContentGroups.length) {
+    await contentGroupsCollection.insertMany(newContentGroups);
+  }
+
+  if (newContentPieces.length) {
+    await contentPiecesCollection.insertMany(newContentPieces);
+  }
+
+  if (newContents.length) {
+    await contentsCollection.insertMany(newContents);
+  }
+
+  if (newContentPieceVariants.length) {
+    await contentPieceVariantsCollection.insertMany(newContentPieceVariants);
+  }
+
+  if (newContentVariants.length) {
+    await contentVariantsCollection.insertMany(newContentVariants);
+  }
+
+  if (newVariants.length) {
+    await variantsCollection.insertMany(newVariants);
+  }
+
   await gitDataCollection.updateOne(
     { workspaceId: ctx.auth.workspaceId },
     {
@@ -63,6 +93,7 @@ const handler = async (ctx: AuthenticatedContext): Promise<void> => {
     data: {
       records: newRecords.map((record) => ({
         ...record,
+        variantId: record.variantId ? `${record.variantId}` : undefined,
         contentPieceId: `${record.contentPieceId}`
       })),
       directories: newDirectories.map((directory) => ({

@@ -73,7 +73,7 @@ const InitialSyncCard: Component = () => {
             setLoading(true);
 
             try {
-              await client.git.github.initialSync.mutate();
+              await client.git.initialSync.mutate();
               notify({ text: "Latest content pulled", type: "success" });
             } catch (error) {
               notify({ text: "Couldn't pull content", type: "error" });
@@ -112,9 +112,9 @@ const CommitCard: Component<{ changedRecords: App.GitRecord[] }> = (props) => {
               setLoading(true);
 
               try {
-                const { status } = await client.git.github.commit.mutate({ message: message() });
+                const { status } = await client.git.commit.mutate({ message: message() });
 
-                if (status === "committed") {
+                if (status === "success") {
                   notify({ text: "Changes committed", type: "success" });
                   setMessage("");
                 } else {
@@ -236,7 +236,7 @@ const PullCard: Component = () => {
             setLoading(true);
 
             try {
-              const data = await client.git.github.pull.mutate({});
+              const data = await client.git.pull.mutate({});
 
               if (data.status === "conflict") {
                 setConflicts(data.conflicted || []);

@@ -111,7 +111,8 @@ const createGitSyncHandler = <D extends object>(process: GitSyncHookProcessor<D>
           })),
           records: output.records.map((record) => ({
             ...record,
-            contentPieceId: `${record.contentPieceId}`
+            contentPieceId: `${record.contentPieceId}`,
+            variantId: record.variantId ? `${record.variantId}` : undefined
           }))
         }
       });

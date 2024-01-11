@@ -1,4 +1,5 @@
 import { SetStoreFunction } from "solid-js/store";
+import { Accessor } from "solid-js";
 import { App, ContentLevel, useClient } from "#context";
 
 interface ContentActionsInput {
@@ -8,6 +9,7 @@ interface ContentActionsInput {
     App.ExtendedContentPieceWithAdditionalData<"order" | "coverWidth"> | undefined
   >;
   contentLevels: Record<string, ContentLevel | undefined>;
+  activeVariantId: Accessor<string | null>;
   setContentGroups: SetStoreFunction<Record<string, App.ContentGroup | undefined>>;
   setContentPieces: SetStoreFunction<
     Record<string, App.ExtendedContentPieceWithAdditionalData<"order" | "coverWidth"> | undefined>
@@ -21,6 +23,7 @@ interface ContentLoader {
 const createContentLoader = ({
   contentPieces,
   contentLevels,
+  activeVariantId,
   setContentGroups,
   setContentPieces,
   setContentLevels
@@ -49,7 +52,8 @@ const createContentLoader = ({
 
         const newContentPieces = await client.contentPieces.list.query({
           contentGroupId,
-          lastOrder: lastPiece.order
+          lastOrder: lastPiece.order,
+          variant: activeVariantId() || undefined
         });
 
         level.pieces.push(...newContentPieces.map((contentPiece) => contentPiece.id));
@@ -88,9 +92,11 @@ const createContentLoader = ({
 
       if (contentGroupId) {
         const contentPieces = await client.contentPieces.list.query({
-          contentGroupId
+          contentGroupId,
+          variant: activeVariantId() || undefined
         });
 
+        console.log("load", activeVariantId(), contentPieces);
         level.pieces = contentPieces.map((contentPiece) => contentPiece.id);
         contentPieces.forEach((contentPiece) => {
           setContentPieces(contentPiece.id, contentPiece);

@@ -130,7 +130,7 @@ const SlashMenuPlugin = Extension.create<SlashMenuPluginOptions>({
                 return true;
               }
 
-              return component?.state().onKeyDown?.(props);
+              return component?.state().onKeyDown?.(props) ?? false;
             },
 
             onExit() {

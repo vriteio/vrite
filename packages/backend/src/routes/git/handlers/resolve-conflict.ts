@@ -35,7 +35,7 @@ const handler = async (
     ctx,
     gitSyncIntegration.getTransformer()
   );
-  const { buffer, metadata, contentHash } = await inputContentProcessor.process(input.content);
+  const { buffer, metadata, hash } = await inputContentProcessor.process(input.content);
   const { date, members, tags, ...restMetadata } = metadata;
 
   await contentsCollection.updateOne(
@@ -69,7 +69,7 @@ const handler = async (
     {
       $set: {
         "records.$.syncedHash": input.syncedHash,
-        "records.$.currentHash": contentHash
+        "records.$.currentHash": hash
       }
     }
   );
@@ -81,12 +81,17 @@ const handler = async (
           return {
             ...record,
             contentPieceId: `${record.contentPieceId}`,
+            variantId: record.variantId ? `${record.variantId}` : undefined,
             syncedHash: input.syncedHash,
-            currentHash: contentHash
+            currentHash: hash
           };
         }
 
-        return { ...record, contentPieceId: `${record.contentPieceId}` };
+        return {
+          ...record,
+          variantId: record.variantId ? `${record.variantId}` : undefined,
+          contentPieceId: `${record.contentPieceId}`
+        };
       })
     }
   });

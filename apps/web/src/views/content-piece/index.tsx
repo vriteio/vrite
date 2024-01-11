@@ -40,8 +40,7 @@ const ContentPieceView: Component = () => {
   const sections = [
     { label: "Details", id: "details", icon: mdiInformationOutline },
     { label: "Custom data", id: "custom-data", icon: mdiCodeJson },
-    hostConfig.extensions && { label: "Extensions", id: "extensions", icon: mdiPuzzleOutline },
-    { label: "Variants", id: "variants", icon: mdiCardsOutline }
+    hostConfig.extensions && { label: "Extensions", id: "extensions", icon: mdiPuzzleOutline }
   ].filter(Boolean) as Array<{
     label: string;
     id: string;
@@ -228,21 +227,6 @@ const ContentPieceView: Component = () => {
           </Show>
         </div>
         <div class="flex-1 border-gray-200 dark:border-gray-700 transition-all p-3 overflow-initial md:overflow-y-auto scrollbar-sm-contrast">
-          <div class="flex justify-start items-center mb-1">
-            <Tooltip text="Active Variant" side="right" class="ml-1">
-              <IconButton
-                class="m-0"
-                size="small"
-                path={mdiCards}
-                color={activeVariant() ? "primary" : "base"}
-                text={activeVariant() ? "primary" : "soft"}
-                label={activeVariant() ? activeVariant()?.label : "Base"}
-                onClick={() => {
-                  setActiveSection(sections[3]);
-                }}
-              />
-            </Tooltip>
-          </div>
           <ContentPieceTitle
             initialTitle={titleInitialValue()}
             editable={editable()}

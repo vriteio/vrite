@@ -16,7 +16,6 @@ import { Dynamic } from "solid-js/web";
 import clsx from "clsx";
 import { JSONContent } from "@vrite/sdk";
 import {
-  App,
   useClient,
   useCommandPalette,
   useContentData,
@@ -25,7 +24,7 @@ import {
   useNotifications,
   useSharedState
 } from "#context";
-import { ExportMenu, StatsMenu } from "#views/editor/menus";
+import { ExportMenu } from "#views/editor/menus";
 import { Button, Dropdown, Icon, IconButton, Tooltip } from "#components/primitives";
 import { logoIcon } from "#assets/icons";
 import { breakpoints, isAppleDevice } from "#lib/utils";
@@ -65,12 +64,6 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
               >
                 <div class="gap-1 flex flex-col">
                   <Show when={sharedEditor()}>
-                    <StatsMenu
-                      editor={sharedEditor()!}
-                      onClick={() => setMenuOpened(false)}
-                      class="w-full justify-start"
-                      wrapperClass="w-full"
-                    />
                     <ExportMenu
                       content={sharedEditor()!.getJSON() as JSONContent}
                       onClick={() => setMenuOpened(false)}
@@ -113,7 +106,6 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
         >
           <div class="gap-2 flex">
             <Show when={sharedEditor()}>
-              <StatsMenu editor={sharedEditor()!} />
               <ExportMenu content={sharedEditor()!.getJSON() as JSONContent} />
             </Show>
             <IconButton
@@ -191,7 +183,7 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
             onClick={async () => {
               try {
                 setLoading(true);
-                await client.git.github.resolveConflict.mutate({
+                await client.git.resolveConflict.mutate({
                   content: resolvedContent()!,
                   contentPieceId: conflictData()!.contentPieceId,
                   syncedHash: conflictData()!.pulledHash,
@@ -256,14 +248,6 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
               )}
             >
               <div class="overflow-hidden w-full h-full flex flex-col gap-1">
-                <Show when={sharedEditor()}>
-                  <StatsMenu
-                    editor={sharedEditor()!}
-                    onClick={() => setMenuOpened(false)}
-                    class="w-full justify-start"
-                    wrapperClass="w-full"
-                  />
-                </Show>
                 <Show when={activeContentPieceId() && contentPieces[activeContentPieceId() || ""]}>
                   <ExportMenu
                     editedContentPiece={contentPieces[activeContentPieceId() || ""]!}
@@ -287,9 +271,6 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
             </Dropdown>
           }
         >
-          <Show when={sharedEditor()}>
-            <StatsMenu editor={sharedEditor()!} />
-          </Show>
           <Show when={activeContentPieceId() && contentPieces[activeContentPieceId() || ""]}>
             <ExportMenu editedContentPiece={contentPieces[activeContentPieceId() || ""]!} />
             <IconButton
@@ -311,7 +292,7 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
     const hostConfig = useHostConfig();
     const { useSharedSignal } = useSharedState();
     const { storage, setStorage } = useLocalStorage();
-    const { setOpened, registerCommand } = useCommandPalette();
+    const { open, registerCommand } = useCommandPalette();
     const [provider] = useSharedSignal("provider");
     const [viewSelectorOpened, setViewSelectorOpened] = createSignal(false);
     const view = (): string => storage().dashboardView || "kanban";
@@ -404,7 +385,7 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
           onClick={() => {
             // Force mobile keyboard to open (focus must be in user-triggered event handler)
             document.getElementById("command-palette-input")?.focus({ preventScroll: true });
-            setOpened(true);
+            open();
           }}
         />
       </div>
