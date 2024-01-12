@@ -244,15 +244,23 @@ const initialSync: GitSyncConfiguration["initialSync"] = async ({ ctx, gitData }
 
           return {
             name: rawGitDirectory.name,
-            path: rawGitDirectory.path,
+            path: rawGitDirectory.path.replace(
+              `${variantsDirectory}/${baseVariantDirectory}`,
+              `${variantsDirectory}/[variant]`
+            ),
             records: newRecords,
             directories: newDirectories
           };
         };
 
         return {
-          ...processBaseVariantDirectory(baseVariantRawGitDirectory),
-          name: rawGitDirectory.name
+          ...rawGitDirectory,
+          directories: [
+            {
+              ...processBaseVariantDirectory(baseVariantRawGitDirectory),
+              name: "[variant]"
+            }
+          ]
         };
       }
 
