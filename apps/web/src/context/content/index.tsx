@@ -76,6 +76,10 @@ const ContentDataProvider: ParentComponent = (props) => {
     }));
   };
   const expandedContentLevels = (): string[] => {
+    if (storage().expandedContentLevels?.length === 0) {
+      return [""];
+    }
+
     return storage().expandedContentLevels || [""];
   };
   const expandContentLevel = (contentGroupId: string): void => {
@@ -161,7 +165,9 @@ const ContentDataProvider: ParentComponent = (props) => {
   };
 
   createEffect(
-    on(activeVariantId, () => {
+    on(activeVariantId, (newVariantId, previousVariantId) => {
+      if (newVariantId === previousVariantId) return;
+
       load();
 
       const variantsSubscription = client.variants.changes.subscribe(undefined, {

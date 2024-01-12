@@ -16,7 +16,7 @@ import {
   App,
   hasPermission,
   useClient,
-  useLocalStorage,
+  useContentData,
   useNotifications,
   useSharedState
 } from "#context";
@@ -89,10 +89,10 @@ const InitialSyncCard: Component = () => {
   );
 };
 const CommitCard: Component<{ changedRecords: App.GitRecord[] }> = (props) => {
+  const { setActiveContentPieceId, setActiveVariantId } = useContentData();
   const client = useClient();
   const navigate = useNavigate();
   const { notify } = useNotifications();
-  const { setStorage } = useLocalStorage();
   const [message, setMessage] = createSignal("");
   const [loading, setLoading] = createSignal(false);
 
@@ -181,10 +181,8 @@ const CommitCard: Component<{ changedRecords: App.GitRecord[] }> = (props) => {
                     disabled={record.currentHash === ""}
                     hover={record.currentHash !== ""}
                     onClick={() => {
-                      setStorage((storage) => ({
-                        ...storage,
-                        contentPieceId: record.contentPieceId
-                      }));
+                      setActiveVariantId(record.variantId || null);
+                      setActiveContentPieceId(record.contentPieceId);
                       navigate("/editor");
                     }}
                   />

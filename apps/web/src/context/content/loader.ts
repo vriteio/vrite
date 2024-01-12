@@ -96,7 +96,6 @@ const createContentLoader = ({
           variant: activeVariantId() || undefined
         });
 
-        console.log("load", activeVariantId(), contentPieces);
         level.pieces = contentPieces.map((contentPiece) => contentPiece.id);
         contentPieces.forEach((contentPiece) => {
           setContentPieces(contentPiece.id, contentPiece);

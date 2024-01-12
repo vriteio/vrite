@@ -2,6 +2,7 @@ import { Extension, onChangePayload, onDisconnectPayload } from "@hocuspocus/ser
 import {
   createOutputContentProcessor,
   docToJSON,
+  getContentPieceVariantsCollection,
   getContentPiecesCollection,
   getGitDataCollection,
   jsonToBuffer,
@@ -29,6 +30,8 @@ class GitSync implements Extension {
 
   private contentPiecesCollection: ReturnType<typeof getContentPiecesCollection>;
 
+  private contentPieceVariantsCollection: ReturnType<typeof getContentPieceVariantsCollection>;
+
   private debounced: Map<string, { timeout: NodeJS.Timeout; start: number }> = new Map();
 
   public constructor(fastify: FastifyInstance, configuration?: Partial<Configuration>) {
@@ -39,6 +42,7 @@ class GitSync implements Extension {
     };
     this.gitDataCollection = getGitDataCollection(fastify.mongo.db!);
     this.contentPiecesCollection = getContentPiecesCollection(fastify.mongo.db!);
+    this.contentPieceVariantsCollection = getContentPieceVariantsCollection(fastify.mongo.db!);
   }
 
   public async onDisconnect({
@@ -60,9 +64,9 @@ class GitSync implements Extension {
   }: Pick<onChangePayload, "documentName" | "document" | "context">): void {
     if (documentName.startsWith("workspace:")) return;
 
-    const [contentPieceId] = documentName.split(":");
+    const [contentPieceId, variantId = null] = documentName.split(":");
     const update = (): void => {
-      this.updateGitRecord(contentPieceId, {
+      this.updateGitRecord(contentPieceId, variantId, {
         context,
         document
       });
@@ -73,6 +77,7 @@ class GitSync implements Extension {
 
   private async updateGitRecord(
     contentPieceId: string,
+    variantId: string | null,
     details: Pick<onChangePayload, "context" | "document">
   ): Promise<void> {
     const ctx = {
@@ -92,9 +97,23 @@ class GitSync implements Extension {
 
     if (!gitSyncIntegration) return;
 
-    const contentPiece = await this.contentPiecesCollection.findOne({
+    const baseContentPiece = await this.contentPiecesCollection.findOne({
       _id: new ObjectId(contentPieceId)
     });
+
+    let contentPiece = baseContentPiece;
+
+    if (variantId) {
+      const contentPieceVariant = await this.contentPieceVariantsCollection.findOne({
+        _id: new ObjectId(variantId)
+      });
+
+      contentPiece = {
+        ...baseContentPiece,
+        ...contentPieceVariant
+      };
+    }
+
     const json = docToJSON(details.document);
     const outputContentProcessor = await createOutputContentProcessor(
       ctx,
@@ -109,7 +128,8 @@ class GitSync implements Extension {
     await this.gitDataCollection.updateOne(
       {
         "workspaceId": new ObjectId(details.context.workspaceId),
-        "records.contentPieceId": new ObjectId(contentPieceId)
+        "records.contentPieceId": new ObjectId(contentPieceId),
+        ...(variantId && { "records.variantId": new ObjectId(variantId) })
       },
       {
         $set: {
@@ -121,7 +141,10 @@ class GitSync implements Extension {
       action: "update",
       data: {
         records: gitData.records.map((record: any) => {
-          if (record.contentPieceId.toString() === contentPieceId) {
+          if (
+            record.contentPieceId.toString() === contentPieceId &&
+            ((!variantId && !record.variantId) || `${record.variantId}` === `${variantId}`)
+          ) {
             return {
               ...record,
               currentHash

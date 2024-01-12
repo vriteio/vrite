@@ -1,6 +1,9 @@
 import { z } from "zod";
+import { Binary } from "mongodb";
 import {
+  getContentPieceVariantsCollection,
   getContentPiecesCollection,
+  getContentVariantsCollection,
   getContentsCollection,
   getGitDataCollection
 } from "#collections";
@@ -24,7 +27,9 @@ const handler = async (
   input: z.infer<typeof inputSchema>
 ): Promise<z.infer<typeof outputSchema>> => {
   const contentsCollection = getContentsCollection(ctx.db);
+  const contentVariantsCollection = getContentVariantsCollection(ctx.db);
   const contentPiecesCollection = getContentPiecesCollection(ctx.db);
+  const contentPieceVariantsCollection = getContentPieceVariantsCollection(ctx.db);
   const gitDataCollection = getGitDataCollection(ctx.db);
   const gitData = await gitDataCollection.findOne({ workspaceId: ctx.auth.workspaceId });
 
@@ -45,13 +50,41 @@ const handler = async (
   const deletions: Array<{ path: string }> = [];
 
   for await (const record of changedRecords) {
-    const { content } =
-      (await contentsCollection.findOne({
-        contentPieceId: record.contentPieceId
-      })) || {};
-    const contentPiece = await contentPiecesCollection.findOne({
+    const baseContentPiece = await contentPiecesCollection.findOne({
       _id: record.contentPieceId
     });
+
+    let contentPiece = baseContentPiece;
+    let content: Binary | null = null;
+
+    if (record.variantId) {
+      content =
+        (
+          await contentVariantsCollection.findOne({
+            contentPieceId: record.contentPieceId,
+            variantId: record.variantId
+          })
+        )?.content || null;
+    } else {
+      content =
+        (
+          await contentsCollection.findOne({
+            contentPieceId: record.contentPieceId
+          })
+        )?.content || null;
+    }
+
+    if (record.variantId && baseContentPiece) {
+      const contentPieceVariant = await contentPieceVariantsCollection.findOne({
+        contentPieceId: record.contentPieceId,
+        variantId: record.variantId
+      });
+
+      contentPiece = {
+        ...baseContentPiece,
+        ...(contentPieceVariant || {})
+      };
+    }
 
     if (record.currentHash === "") {
       deletions.push({

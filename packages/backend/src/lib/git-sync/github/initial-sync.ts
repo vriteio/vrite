@@ -1,9 +1,5 @@
 import { getDirectory, getLastCommit } from "./requests";
-import {
-  InputContentProcessor,
-  ProcessInputResult,
-  createInputContentProcessor
-} from "../process-content";
+import { ProcessInputResult, createInputContentProcessor } from "../process-content";
 import { GitSyncConfiguration } from "../integration";
 import { LexoRank } from "lexorank";
 import { minimatch } from "minimatch";
@@ -31,6 +27,7 @@ type RawGitRecord = {
   buffer: Buffer;
   metadata: ProcessInputResult["metadata"];
   variantKey?: string;
+  baseVariantPath?: string;
 };
 type RawGitDirectory = {
   path: string;
@@ -215,10 +212,7 @@ const initialSync: GitSyncConfiguration["initialSync"] = async ({ ctx, gitData }
                 hash: record.hash,
                 metadata: record.metadata,
                 order: record.order,
-                path: record.path.replace(
-                  `${variantsDirectory}/${baseVariantDirectory}`,
-                  variantsDirectory
-                )
+                path: record.path
               },
               ...(variantKeys
                 .map((variantKey) => {
@@ -235,12 +229,10 @@ const initialSync: GitSyncConfiguration["initialSync"] = async ({ ctx, gitData }
                     buffer: rawGitRecord.buffer,
                     hash: rawGitRecord.hash,
                     metadata: rawGitRecord.metadata,
+                    path: rawGitRecord.path,
                     order: record.order,
                     variantKey,
-                    path: rawGitRecord.path.replace(
-                      `${variantsDirectory}/${variantKey}`,
-                      variantsDirectory
-                    )
+                    baseVariantPath: record.path
                   };
                 })
                 .filter(Boolean) as RawGitRecord[])
@@ -252,10 +244,7 @@ const initialSync: GitSyncConfiguration["initialSync"] = async ({ ctx, gitData }
 
           return {
             name: rawGitDirectory.name,
-            path: rawGitDirectory.path.replace(
-              `${variantsDirectory}/${baseVariantDirectory}`,
-              variantsDirectory
-            ),
+            path: rawGitDirectory.path,
             records: newRecords,
             directories: newDirectories
           };
@@ -333,7 +322,9 @@ const initialSync: GitSyncConfiguration["initialSync"] = async ({ ctx, gitData }
           path: record.path
         });
         rawGitDirectory.records
-          .filter((variantRecord) => variantRecord.variantKey && variantRecord.path === record.path)
+          .filter((variantRecord) => {
+            return variantRecord.variantKey && variantRecord.baseVariantPath === record.path;
+          })
           .forEach((record) => {
             const { members, tags, date, ...inputMetadata } = record.metadata;
             const variantId = variants.get(record.variantKey!.toLowerCase())!._id;
@@ -361,6 +352,13 @@ const initialSync: GitSyncConfiguration["initialSync"] = async ({ ctx, gitData }
 
             newContentPieceVariants.push(contentPieceVariant);
             newContentVariants.push(contentVariant);
+            newRecords.push({
+              contentPieceId: contentPiece._id,
+              currentHash: record.hash,
+              syncedHash: record.hash,
+              path: record.path,
+              variantId
+            });
           });
       });
     contentGroup.descendants = rawGitDirectory.directories

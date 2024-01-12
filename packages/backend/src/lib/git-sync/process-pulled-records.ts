@@ -48,7 +48,9 @@ const processPulledRecords = async ({
 }> => {
   const contentGroupsCollection = getContentGroupsCollection(ctx.db);
   const contentPiecesCollection = getContentPiecesCollection(ctx.db);
+  const contentPieceVariantsCollection = getContentPiecesCollection(ctx.db);
   const contentsCollection = getContentsCollection(ctx.db);
+  const contentVariantsCollection = getContentsCollection(ctx.db);
   const gitDataCollection = getGitDataCollection(ctx.db);
   const newContentGroups: UnderscoreID<FullContentGroup<ObjectId>>[] = [];
   const updatedContentGroups: Pick<
