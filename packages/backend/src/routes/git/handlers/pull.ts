@@ -1,8 +1,11 @@
 import { z } from "zod";
+import { Binary } from "mongodb";
 import {
   getGitDataCollection,
   getContentsCollection,
-  getContentPiecesCollection
+  getContentPiecesCollection,
+  getContentPieceVariantsCollection,
+  getContentVariantsCollection
 } from "#collections";
 import { errors } from "#lib/errors";
 import { AuthenticatedContext } from "#lib/middleware";
@@ -24,6 +27,7 @@ const outputSchema = z.object({
       z.object({
         path: z.string(),
         contentPieceId: zodId(),
+        variantId: zodId().optional(),
         currentContent: z.string(),
         pulledContent: z.string(),
         pulledHash: z.string()
@@ -38,6 +42,8 @@ const handler = async (
   const gitDataCollection = getGitDataCollection(ctx.db);
   const contentsCollection = getContentsCollection(ctx.db);
   const contentPiecesCollection = getContentPiecesCollection(ctx.db);
+  const contentVariantsCollection = getContentVariantsCollection(ctx.db);
+  const contentPieceVariantsCollection = getContentPieceVariantsCollection(ctx.db);
   const gitData = await gitDataCollection.findOne({ workspaceId: ctx.auth.workspaceId });
 
   if (!gitData) throw errors.notFound("gitData");
@@ -58,28 +64,85 @@ const handler = async (
 
   if (conflicts.length && !input.force) {
     const outputContentProcessor = await createOutputContentProcessor(ctx, transformer);
-    const contentPieceIds = conflicts.map((conflict) => conflict.contentPieceId);
+    const contentDataVariantsFilter = {
+      $or: conflicts
+        .filter((conflict) => conflict.variantId)
+        .map((conflict) => {
+          return {
+            contentPieceId: conflict.contentPieceId,
+            variantId: conflict.variantId
+          };
+        })
+    };
     const contentPieces = await contentPiecesCollection
-      .find({ _id: { $in: contentPieceIds } })
+      .find({
+        _id: {
+          $in: conflicts.map((conflict) => conflict.contentPieceId)
+        }
+      })
       .toArray();
     const contents = await contentsCollection
-      .find({ contentPieceId: { $in: contentPieceIds } })
+      .find({
+        contentPieceId: {
+          $in: conflicts
+            .filter((conflict) => !conflict.variantId)
+            .map((conflict) => conflict.contentPieceId)
+        }
+      })
+      .toArray();
+    const contentPieceVariants = await contentPieceVariantsCollection
+      .find(contentDataVariantsFilter)
+      .toArray();
+    const contentVariants = await contentVariantsCollection
+      .find(contentDataVariantsFilter)
       .toArray();
     const currentContents = await outputContentProcessor.processBatch(
       conflicts
         .map((conflict) => {
-          const contentPiece = contentPieces.find(
+          const baseContentPiece = contentPieces.find(
             (contentPiece) => `${contentPiece._id}` === `${conflict.contentPieceId}`
           );
-          const { content } =
-            contents.find(
-              (content) => `${content.contentPieceId}` === `${conflict.contentPieceId}`
-            ) || {};
 
-          if (!contentPiece || !content) return null;
+          let contentPiece = baseContentPiece;
+          let contentBuffer: Uint8Array | null = null;
+
+          if (conflict.variantId) {
+            const contentPieceVariant = contentPieceVariants.find((contentPiece) => {
+              return (
+                `${contentPiece.contentPieceId}` === `${conflict.contentPieceId}` &&
+                `${contentPiece.variantId}` === `${conflict.variantId}`
+              );
+            });
+
+            if (baseContentPiece && contentPieceVariant) {
+              contentPiece = {
+                ...baseContentPiece,
+                ...contentPieceVariant
+              };
+            }
+
+            contentBuffer =
+              (
+                contentVariants.find((content) => {
+                  return (
+                    `${content.contentPieceId}` === `${conflict.contentPieceId}` &&
+                    `${content.variantId}` === `${conflict.variantId}`
+                  );
+                }) || {}
+              ).content?.buffer || null;
+          } else {
+            contentBuffer =
+              (
+                contents.find(
+                  (content) => `${content.contentPieceId}` === `${conflict.contentPieceId}`
+                ) || {}
+              ).content?.buffer || null;
+          }
+
+          if (!contentPiece || !contentBuffer) return null;
 
           return {
-            buffer: Buffer.from(content.buffer),
+            buffer: Buffer.from(contentBuffer),
             contentPiece
           };
         })
@@ -94,6 +157,7 @@ const handler = async (
             return {
               path: conflict.path,
               contentPieceId: `${conflict.contentPieceId}`,
+              variantId: conflict.variantId ? `${conflict.variantId}` : undefined,
               currentContent: currentContents[index],
               pulledContent: conflict.pulledContent,
               pulledHash: conflict.pulledHash
@@ -103,6 +167,7 @@ const handler = async (
           Promise<{
             path: string;
             contentPieceId: string;
+            variantId?: string;
             currentContent: string;
             pulledContent: string;
             pulledHash: string;

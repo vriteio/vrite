@@ -3,7 +3,6 @@ import * as resetConfig from "./handlers/reset-config";
 import * as configure from "./handlers/configure";
 import * as initialSync from "./handlers/initial-sync";
 import * as pull from "./handlers/pull";
-import * as getConflictedContent from "./handlers/get-conflicted-content";
 import * as resolveConflict from "./handlers/resolve-conflict";
 import * as commit from "./handlers/commit";
 import { z } from "zod";
@@ -32,15 +31,6 @@ const gitRouter = router({
     .output(commit.outputSchema)
     .mutation(async ({ ctx, input }) => {
       return commit.handler(ctx, input);
-    }),
-  getConflictedContent: authenticatedProcedure
-    .meta({
-      requiredConfig: ["githubApp"]
-    })
-    .input(getConflictedContent.inputSchema)
-    .output(getConflictedContent.outputSchema)
-    .query(async ({ ctx, input }) => {
-      return getConflictedContent.handler(ctx, input);
     }),
   resolveConflict: authenticatedProcedure
     .meta({

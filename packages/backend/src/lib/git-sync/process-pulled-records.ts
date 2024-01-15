@@ -83,6 +83,7 @@ const processPulledRecords = async ({
   conflicts: Array<{
     path: string;
     contentPieceId: ObjectId;
+    variantId?: ObjectId;
     pulledContent: string;
     pulledHash: string;
   }>;
@@ -328,7 +329,7 @@ const processPulledRecords = async ({
         if (existingRecord.currentHash === existingRecord.syncedHash) {
           if (existingRecord.variantId) {
             updatedContentPieceVariants.push({
-              contentPieceId: existingRecord.variantId,
+              contentPieceId: existingRecord.contentPieceId,
               variantId: existingRecord.variantId,
               ...restMetadata,
               ...(date && { date: new Date(date) }),
@@ -604,11 +605,11 @@ const processPulledRecords = async ({
         }))
       ];
 
-    if (newContentPieceVariants.length) {
+    if (contentPieceVariantsChanges.length) {
       await contentPieceVariantsCollection.bulkWrite(contentPieceVariantsChanges);
     }
 
-    if (newContentVariants.length) {
+    if (contentVariantsChanges.length) {
       await contentVariantsCollection.bulkWrite(contentVariantsChanges);
     }
 

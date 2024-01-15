@@ -77,10 +77,11 @@ class SearchIndexing implements Extension {
 
     if (!contentPiece) return;
 
-    await this.fastify.search.upsertContent({
+    await this.fastify.search.content.upsert({
       contentPiece,
       content: details.contentBuffer,
-      variantId: details.variantId
+      variantId: details.variantId,
+      workspaceId: details.workspaceId
     });
   }
 

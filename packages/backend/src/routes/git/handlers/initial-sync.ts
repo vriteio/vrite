@@ -8,7 +8,8 @@ import {
   FullContentPiece,
   getContentPieceVariantsCollection,
   getContentVariantsCollection,
-  getVariantsCollection
+  getVariantsCollection,
+  FullContentGroup
 } from "#collections";
 import { publishGitDataEvent, publishContentGroupEvent } from "#events";
 import { errors } from "#lib/errors";
@@ -115,9 +116,11 @@ const handler = async (ctx: AuthenticatedContext): Promise<void> => {
     }
   });
 
-  const bulkUpsertDetails: Array<{
+  const bulkUpsertEntries: Array<{
     contentPiece: UnderscoreID<FullContentPiece<ObjectId>>;
+    contentGroup?: UnderscoreID<FullContentGroup<ObjectId>>;
     content: Buffer;
+    variantId?: string | ObjectId;
   }> = [];
 
   newContentPieces.forEach((contentPiece) => {
@@ -125,15 +128,52 @@ const handler = async (ctx: AuthenticatedContext): Promise<void> => {
       newContents.find(({ contentPieceId }) => {
         return contentPieceId.equals(contentPiece._id);
       }) || {};
+    const contentPieceVariants = newContentPieceVariants.filter(({ contentPieceId }) => {
+      return contentPieceId.equals(contentPiece._id);
+    });
+    const contentVariants = newContentVariants.filter(({ contentPieceId }) => {
+      return contentPieceId.equals(contentPiece._id);
+    });
+    const contentGroup = newContentGroups.find(({ _id }) => {
+      return _id.equals(contentPiece.contentGroupId);
+    });
 
     if (content) {
-      bulkUpsertDetails.push({
+      bulkUpsertEntries.push({
         contentPiece,
-        content: Buffer.from(content.buffer)
+        contentGroup,
+        content: Buffer.from(content.buffer),
+        variantId: "base"
       });
     }
+
+    contentPieceVariants.forEach((contentPieceVariant) => {
+      const { _id, contentPieceId, variantId, ...variantData } = contentPieceVariant;
+      const { content } =
+        contentVariants.find(({ contentPieceId, variantId }) => {
+          return (
+            contentPieceId.equals(contentPiece._id) &&
+            variantId.equals(contentPieceVariant.variantId)
+          );
+        }) || {};
+
+      if (content) {
+        bulkUpsertEntries.push({
+          contentPiece: {
+            ...contentPiece,
+            ...variantData
+          },
+          contentGroup,
+          content: Buffer.from(content.buffer),
+          variantId: contentPieceVariant.variantId
+        });
+      }
+    });
   });
-  ctx.fastify.search.bulkUpsertContent(bulkUpsertDetails);
+  ctx.fastify.search.content.bulkUpsert({
+    entries: bulkUpsertEntries,
+    workspaceId: ctx.auth.workspaceId
+  });
 };
 
 export { handler };

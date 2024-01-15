@@ -28,6 +28,7 @@ interface SyncViewProps {
 interface GitConflict {
   path: string;
   contentPieceId: string;
+  variantId?: string;
   currentContent: string;
   pulledContent: string;
   pulledHash: string;
@@ -286,7 +287,9 @@ const PullCard: Component = () => {
                       setConflictData({
                         pulledContent: conflict.pulledContent,
                         pulledHash: conflict.pulledHash,
+                        currentContent: conflict.currentContent,
                         contentPieceId: conflict.contentPieceId,
+                        variantId: conflict.variantId,
                         path: conflict.path
                       });
                       navigate("/conflict");

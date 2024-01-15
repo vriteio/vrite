@@ -779,8 +779,8 @@ importers:
         specifier: ^4.0.1
         version: 4.0.1
       weaviate-ts-client:
-        specifier: ^1.4.0
-        version: 1.6.0(graphql@16.8.1)
+        specifier: ^2.0.0
+        version: 2.0.0(graphql@16.8.1)
       yjs:
         specifier: ^13.6.7
         version: 13.6.10
@@ -10703,15 +10703,6 @@ packages:
     engines: {node: '>=0.10.0'}
     dev: false
 
-  /isomorphic-fetch@3.0.0:
-    resolution: {integrity: sha512-qvUtwJ3j6qwsF3jLxkZ72qCgjMysPzDfeV240JHiGZsANBYd+EEuu35v7dfrJ9Up0Ak07D7GGSkGhCHTqg/5wA==}
-    dependencies:
-      node-fetch: 2.7.0
-      whatwg-fetch: 3.6.19
-    transitivePeerDependencies:
-      - encoding
-    dev: false
-
   /isomorphic-unfetch@3.1.0:
     resolution: {integrity: sha512-geDJjpoZ8N0kWexiwkX8F9NkTsXhetLPVbZFQ+JTW239QNOwvB0gniuR1Wc6f0AMTn7/mFGyXvHTifrCp/GH8Q==}
     dependencies:
@@ -16039,12 +16030,11 @@ packages:
     dependencies:
       defaults: 1.0.4
 
-  /weaviate-ts-client@1.6.0(graphql@16.8.1):
-    resolution: {integrity: sha512-1We0l8/uw6r8xnPsY8nSne1+/Ntd6o2JFq5LODqb63ac9v4QWDpT8dyPSRriUhif+IZ2Ttusw+w38361z72eaw==}
+  /weaviate-ts-client@2.0.0(graphql@16.8.1):
+    resolution: {integrity: sha512-RB4bQ+5pv6fn3b2srrRxDt1JhBCKH6D2DyA71RQkqTb1lu4EW3UyuMeJxlqN6ua9Oua/voU53zfJcOvusGXPPg==}
     engines: {node: '>=16.0.0'}
     dependencies:
       graphql-request: 5.2.0(graphql@16.8.1)
-      isomorphic-fetch: 3.0.0
       uuid: 9.0.1
     transitivePeerDependencies:
       - encoding
@@ -16071,10 +16061,6 @@ packages:
   /webidl-conversions@7.0.0:
     resolution: {integrity: sha512-VwddBukDzu71offAQR975unBIGqfKZpM+8ZX6ySk8nYhVoo5CYaZyzt3YBvYtRtO+aoGlqxPg/B87NGVZ/fu6g==}
     engines: {node: '>=12'}
-    dev: false
-
-  /whatwg-fetch@3.6.19:
-    resolution: {integrity: sha512-d67JP4dHSbm2TrpFj8AbO8DnL1JXL5J9u0Kq2xW6d0TFDbCA3Muhdt8orXC22utleTVj7Prqt82baN6RBvnEgw==}
     dev: false
 
   /whatwg-url@11.0.0:

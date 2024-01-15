@@ -4,7 +4,8 @@ import { z } from "zod";
 import {
   getContentPiecesCollection,
   getContentGroupsCollection,
-  FullContentPiece
+  FullContentPiece,
+  FullContentGroup
 } from "#collections";
 import { UnderscoreID, zodId } from "#lib/mongo";
 import { errors } from "#lib/errors";
@@ -22,6 +23,7 @@ declare module "fastify" {
       ctx: AuthenticatedContext;
       data: {
         contentPiece: UnderscoreID<FullContentPiece<ObjectId>>;
+        contentGroup: UnderscoreID<FullContentGroup<ObjectId>>;
         updatedContentPiece: UnderscoreID<FullContentPiece<ObjectId>>;
         nextReferenceId?: ObjectId;
         previousReferenceId?: ObjectId;
@@ -146,6 +148,7 @@ const handler = async (
   );
   ctx.fastify.routeCallbacks.run("contentPieces.move", ctx, {
     contentPiece,
+    contentGroup,
     updatedContentPiece: {
       ...contentPiece,
       ...update

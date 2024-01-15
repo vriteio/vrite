@@ -60,6 +60,9 @@ const gitSyncPlugin = createPlugin(async (fastify) => {
       name: nameUpdated ? newName : undefined
     });
   });
+  fastify.routeCallbacks.register("variants.delete", () => {
+    // TODO: handle variant deletion
+  });
 });
 
 export { gitSyncPlugin };

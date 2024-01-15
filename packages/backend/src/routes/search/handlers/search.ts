@@ -8,7 +8,9 @@ const inputSchema = z.object({
   query: z.string(),
   limit: z.number().optional(),
   variantId: zodId().optional(),
-  contentPieceId: zodId().optional()
+  contentPieceId: zodId().optional(),
+  contentGroupId: zodId().optional(),
+  byTitle: z.boolean().optional()
 });
 const outputSchema = z.array(
   z.object({
@@ -28,7 +30,9 @@ const handler = async (
     workspaceId: ctx.auth.workspaceId,
     limit: input.limit || 8,
     variantId: input.variantId,
-    contentPieceId: input.contentPieceId
+    contentPieceId: input.contentPieceId,
+    contentGroupId: input.contentGroupId,
+    byTitle: input.byTitle
   });
   const processedResults = results.data.Get.Content.map(({ _additional, ...result }) => result);
   const contentPieces = await contentPiecesCollection

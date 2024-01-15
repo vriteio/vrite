@@ -107,6 +107,9 @@ const CommandPaletteContext = createContext<CommandPaletteContextData>();
 const CommandPalette: Component<CommandPaletteProps> = (props) => {
   const hostConfig = useHostConfig();
   const client = useClient();
+
+  window.client = client;
+
   const navigate = useNavigate();
   const { setStorage } = useLocalStorage();
   const [inputRef, setInputRef] = createSignal<HTMLInputElement | null>(null);

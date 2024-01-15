@@ -186,6 +186,7 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
                 await client.git.resolveConflict.mutate({
                   content: resolvedContent()!,
                   contentPieceId: conflictData()!.contentPieceId,
+                  variantId: conflictData()!.variantId,
                   syncedHash: conflictData()!.pulledHash,
                   path: conflictData()!.path
                 });

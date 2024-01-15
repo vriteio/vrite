@@ -166,6 +166,45 @@ const ConfigureWebhookSubsection: Component<ConfigureWebhookSubsectionProps> = (
             ID of the content group to listen for the event on
           </InputField>
         </Show>
+        <InputField
+          placeholder="Event"
+          label="Batching"
+          color="contrast"
+          type="checkbox"
+          options={webhookEvents}
+          value={webhookData.event || ""}
+          setValue={(value) => {
+            setWebhookData("event", value as App.WebhookEventName);
+          }}
+        >
+          Batch multiple events into a single request
+        </InputField>
+        <InputField
+          placeholder="Event"
+          label="Batching window"
+          color="contrast"
+          type="text"
+          options={webhookEvents}
+          value={webhookData.event || ""}
+          setValue={(value) => {
+            setWebhookData("event", value as App.WebhookEventName);
+          }}
+        >
+          Time window in seconds for batching events
+        </InputField>
+        <InputField
+          placeholder="Event"
+          label="Signing secret"
+          color="contrast"
+          type="text"
+          options={webhookEvents}
+          value={webhookData.event || ""}
+          setValue={(value) => {
+            setWebhookData("event", value as App.WebhookEventName);
+          }}
+        >
+          Secret used to sign the payload
+        </InputField>
       </Show>
     </TitledCard>
   );

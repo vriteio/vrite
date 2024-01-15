@@ -311,8 +311,7 @@ const createExtension = (extensionConfig: ExtensionConfig): Extension => {
       if (runFunc) {
         runFunc(context);
       }
-    },
-    env
+    }
   };
 };
 

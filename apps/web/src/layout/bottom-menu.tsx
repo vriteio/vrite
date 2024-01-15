@@ -77,7 +77,7 @@ const StatsMenu: Component = () => {
 
   return (
     <Show when={sharedEditor()}>
-      <div class="flex text-gray-500 dark:text-gray-500 text-sm">
+      <div class="flex text-gray-500 dark:text-gray-400 text-sm">
         <StatDisplay value={stats().paragraphs} label="paragraphs" />
         <StatDisplay value={stats().words} label="words" />
         <StatDisplay value={stats().textCharacters} label="characters" />

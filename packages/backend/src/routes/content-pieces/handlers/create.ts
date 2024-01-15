@@ -7,7 +7,8 @@ import {
   getContentPiecesCollection,
   getContentsCollection,
   getContentGroupsCollection,
-  FullContentPiece
+  FullContentPiece,
+  FullContentGroup
 } from "#collections";
 import { AuthenticatedContext } from "#lib/middleware";
 import { jsonToBuffer, htmlToJSON } from "#lib/content-processing";
@@ -26,6 +27,7 @@ declare module "fastify" {
       ctx: AuthenticatedContext;
       data: {
         contentPiece: UnderscoreID<FullContentPiece<ObjectId>>;
+        contentGroup: UnderscoreID<FullContentGroup<ObjectId>>;
         contentBuffer: Buffer;
       };
     };
@@ -119,7 +121,11 @@ const handler = async (
       members
     }
   });
-  ctx.fastify.routeCallbacks.run("contentPieces.create", ctx, { contentPiece, contentBuffer });
+  ctx.fastify.routeCallbacks.run("contentPieces.create", ctx, {
+    contentPiece,
+    contentGroup,
+    contentBuffer
+  });
 
   return { id: `${contentPiece._id}` };
 };

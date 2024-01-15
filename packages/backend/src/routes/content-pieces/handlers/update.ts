@@ -9,7 +9,8 @@ import {
   getContentGroupsCollection,
   getContentsCollection,
   getContentVariantsCollection,
-  FullContentPiece
+  FullContentPiece,
+  FullContentGroup
 } from "#collections";
 import { jsonToBuffer, htmlToJSON } from "#lib/content-processing";
 import { errors } from "#lib/errors";
