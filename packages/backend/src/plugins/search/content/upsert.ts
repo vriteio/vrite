@@ -21,7 +21,7 @@ const upsertContent = createSearchContentHandler<{
   await deleteContent(fastify, client, {
     workspaceId: details.workspaceId,
     contentPieceId: details.contentPiece._id,
-    variantId: details.variantId
+    variantId: details.variantId || "base"
   });
 
   const contentBuffer =

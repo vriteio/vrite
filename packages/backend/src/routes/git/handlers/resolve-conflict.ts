@@ -36,98 +36,146 @@ const handler = async (
 
   if (!gitSyncIntegration) throw errors.serverError();
 
-  const inputContentProcessor = await createInputContentProcessor(
-    ctx,
-    gitSyncIntegration.getTransformer()
-  );
-  const { buffer, metadata, hash } = await inputContentProcessor.process(input.content);
-  const { date, members, tags, ...restMetadata } = metadata;
+  const isRemoved = input.content.trim() === "";
 
-  if (input.variantId) {
-    await contentVariantsCollection.updateOne(
-      {
-        contentPieceId: new ObjectId(input.contentPieceId),
-        variantId: new ObjectId(input.variantId)
-      },
-      {
-        $set: {
-          content: new Binary(buffer)
-        }
-      }
+  let currentHash = "";
+
+  if (isRemoved) {
+    await contentVariantsCollection.deleteMany({
+      contentPieceId: new ObjectId(input.contentPieceId),
+      ...(input.variantId && { variantId: new ObjectId(input.variantId) })
+    });
+    await contentPieceVariantsCollection.deleteMany({
+      contentPieceId: new ObjectId(input.contentPieceId),
+      ...(input.variantId && { variantId: new ObjectId(input.variantId) })
+    });
+
+    if (!input.variantId) {
+      await contentsCollection.deleteOne({
+        contentPieceId: new ObjectId(input.contentPieceId)
+      });
+      await contentPiecesCollection.deleteOne({
+        _id: new ObjectId(input.contentPieceId)
+      });
+    }
+  } else {
+    const inputContentProcessor = await createInputContentProcessor(
+      ctx,
+      gitSyncIntegration.getTransformer()
     );
-    await contentPieceVariantsCollection.updateOne(
+    const { buffer, metadata, hash } = await inputContentProcessor.process(input.content.trim());
+    const { date, members, tags, ...restMetadata } = metadata;
+
+    currentHash = hash;
+
+    if (input.variantId) {
+      await contentVariantsCollection.updateOne(
+        {
+          contentPieceId: new ObjectId(input.contentPieceId),
+          variantId: new ObjectId(input.variantId)
+        },
+        {
+          $set: {
+            content: new Binary(buffer)
+          }
+        }
+      );
+      await contentPieceVariantsCollection.updateOne(
+        {
+          contentPieceId: new ObjectId(input.contentPieceId),
+          variantId: new ObjectId(input.variantId)
+        },
+        {
+          $set: {
+            ...restMetadata,
+            ...(date && { date: new Date(date) }),
+            ...(members && { members: members.map((memberId) => new ObjectId(memberId)) }),
+            ...(tags && { tags: tags.map((tagId) => new ObjectId(tagId)) })
+          }
+        }
+      );
+    } else {
+      await contentsCollection.updateOne(
+        {
+          contentPieceId: new ObjectId(input.contentPieceId)
+        },
+        {
+          $set: {
+            content: new Binary(buffer)
+          }
+        }
+      );
+      await contentPiecesCollection.updateOne(
+        {
+          _id: new ObjectId(input.contentPieceId)
+        },
+        {
+          $set: {
+            ...restMetadata,
+            ...(date && { date: new Date(date) }),
+            ...(members && { members: members.map((memberId) => new ObjectId(memberId)) }),
+            ...(tags && { tags: tags.map((tagId) => new ObjectId(tagId)) })
+          }
+        }
+      );
+    }
+  }
+
+  if (!currentHash && !input.syncedHash) {
+    await gitDataCollection.updateOne(
       {
-        contentPieceId: new ObjectId(input.contentPieceId),
-        variantId: new ObjectId(input.variantId)
+        workspaceId: ctx.auth.workspaceId
       },
       {
-        $set: {
-          ...restMetadata,
-          ...(date && { date: new Date(date) }),
-          ...(members && { members: members.map((memberId) => new ObjectId(memberId)) }),
-          ...(tags && { tags: tags.map((tagId) => new ObjectId(tagId)) })
+        $pull: {
+          "records.contentPieceId": new ObjectId(input.contentPieceId),
+          ...(input.variantId && { "records.variantId": new ObjectId(input.variantId) })
         }
       }
     );
   } else {
-    await contentsCollection.updateOne(
+    await gitDataCollection.updateOne(
       {
-        contentPieceId: new ObjectId(input.contentPieceId)
+        "workspaceId": ctx.auth.workspaceId,
+        "records.contentPieceId": new ObjectId(input.contentPieceId),
+        ...(input.variantId && { "records.variantId": new ObjectId(input.variantId) })
       },
       {
         $set: {
-          content: new Binary(buffer)
-        }
-      }
-    );
-    await contentPiecesCollection.updateOne(
-      {
-        _id: new ObjectId(input.contentPieceId)
-      },
-      {
-        $set: {
-          ...restMetadata,
-          ...(date && { date: new Date(date) }),
-          ...(members && { members: members.map((memberId) => new ObjectId(memberId)) }),
-          ...(tags && { tags: tags.map((tagId) => new ObjectId(tagId)) })
+          "records.$.syncedHash": input.syncedHash,
+          "records.$.currentHash": currentHash
         }
       }
     );
   }
 
-  await gitDataCollection.updateOne(
-    {
-      "workspaceId": ctx.auth.workspaceId,
-      "records.contentPieceId": new ObjectId(input.contentPieceId),
-      ...(input.variantId && { "records.variantId": new ObjectId(input.variantId) })
-    },
-    {
-      $set: {
-        "records.$.syncedHash": input.syncedHash,
-        "records.$.currentHash": hash
-      }
-    }
-  );
   publishGitDataEvent(ctx, `${ctx.auth.workspaceId}`, {
     action: "update",
     data: {
-      records: gitData.records.map((record) => {
-        if (`${record.contentPieceId}` === input.contentPieceId) {
+      records: gitData.records
+        .map((record) => {
+          if (
+            `${record.contentPieceId}` === input.contentPieceId &&
+            (!input.variantId || `${record.variantId}` === input.variantId)
+          ) {
+            return {
+              ...record,
+              contentPieceId: `${record.contentPieceId}`,
+              variantId: record.variantId ? `${record.variantId}` : undefined,
+              syncedHash: input.syncedHash,
+              currentHash
+            };
+          }
+
           return {
             ...record,
-            contentPieceId: `${record.contentPieceId}`,
             variantId: record.variantId ? `${record.variantId}` : undefined,
-            syncedHash: input.syncedHash,
-            currentHash: hash
+            contentPieceId: `${record.contentPieceId}`
           };
-        }
-
-        return {
-          ...record,
-          variantId: record.variantId ? `${record.variantId}` : undefined,
-          contentPieceId: `${record.contentPieceId}`
-        };
-      })
+        })
+        .filter((record) => {
+          return record.syncedHash || record.currentHash;
+        })
     }
   });
 };

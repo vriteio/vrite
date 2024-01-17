@@ -79,11 +79,11 @@ const App: Component = () => {
             <Route path="/edit" component={EditorView} />
           </Route>
           <Route path={["/", "**"]} component={SecuredWrapper}>
-            <Route path="/editor" component={EditorView} />
+            <Route path={["/:workspaceId"]} component={DashboardView} />
+            <Route path="/:workspaceId/*contentPieceId" component={EditorView} />
             <Show when={hostConfig.githubApp}>
               <Route path="/conflict" component={ConflictView} />
             </Show>
-            <Route path={["/", "**"]} component={DashboardView} />
           </Route>
         </Match>
       </Switch>

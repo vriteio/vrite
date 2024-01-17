@@ -8,6 +8,11 @@ import { handleContentGroupMoved } from "./handlers/content-group-moved";
 import { handleContentGroupUpdated } from "./handlers/content-group-updated";
 import { createPlugin } from "#lib/plugin";
 
+/*  let { variantsDirectory } = gitData.github!;
+
+  if (variantsDirectory.startsWith("/")) variantsDirectory = variantsDirectory.slice(1);
+
+  const variantsPathRegex = new RegExp(`^${variantsDirectory}/(.+?)(?=/|$)`); */
 const gitSyncPlugin = createPlugin(async (fastify) => {
   fastify.routeCallbacks.register("contentPieces.create", (ctx, data) => {
     handleContentPieceCreated(ctx, {
@@ -25,14 +30,10 @@ const gitSyncPlugin = createPlugin(async (fastify) => {
     });
   });
   fastify.routeCallbacks.register("contentPieces.update", (ctx, data) => {
-    if (data.contentPiece.contentGroupId.equals(data.updatedContentPiece.contentGroupId)) {
-      handleContentPieceUpdated(ctx, { contentPiece: data.updatedContentPiece });
-    } else {
-      handleContentPieceMoved(ctx, {
-        contentPiece: data.updatedContentPiece,
-        contentGroupId: `${data.updatedContentPiece.contentGroupId}`
-      });
-    }
+    handleContentPieceUpdated(ctx, {
+      contentPiece: data.updatedContentPiece,
+      variantId: data.variantId
+    });
   });
   fastify.routeCallbacks.register("contentGroups.create", (ctx, data) => {
     handleContentGroupCreated(ctx, {

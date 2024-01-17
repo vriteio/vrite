@@ -1,4 +1,5 @@
 import { Switch, Match, JSX, Show, Component } from "solid-js";
+import clsx from "clsx";
 import { Input, Select, Checkbox, Heading } from "#components/primitives";
 
 type InputFieldType = "text" | "select" | "checkbox";
@@ -15,6 +16,7 @@ type SettingFieldOptions = {
     placeholder?: string;
     color?: "base" | "contrast";
     disabled?: boolean;
+    class?: string;
     inputProps?: Omit<JSX.InputHTMLAttributes<HTMLInputElement>, "ref">;
     adornment?: () => JSX.Element;
   };
@@ -53,11 +55,12 @@ const TextField: Component<InputFieldProps<"text">> = (props) => {
         color={props.color}
         textarea={props.textarea}
         autoResize={props.textarea}
-        class="m-0"
+        wrapperClass={props.class}
         value={props.value}
         setValue={props.setValue}
         disabled={props.disabled}
         adornment={props.adornment}
+        class="m-0"
       />
     </>
   );

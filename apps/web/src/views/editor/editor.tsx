@@ -16,7 +16,7 @@ import { Typography } from "@tiptap/extension-typography";
 import { HocuspocusProvider } from "@hocuspocus/provider";
 import { CharacterCount } from "@tiptap/extension-character-count";
 import * as Y from "yjs";
-import { useLocation, useNavigate } from "@solidjs/router";
+import { useLocation, useNavigate, useParams } from "@solidjs/router";
 import { CellSelection } from "@tiptap/pm/tables";
 import { AllSelection, NodeSelection } from "@tiptap/pm/state";
 import clsx from "clsx";
@@ -69,6 +69,10 @@ interface EditorProps {
 }
 
 const Editor: Component<EditorProps> = (props) => {
+  const params = useParams();
+
+  console.log(params.workspaceId, params.contentPieceId);
+
   const { activeVariantId } = useContentData();
   const hostConfig = useHostConfig();
   const navigate = useNavigate();

@@ -8,7 +8,7 @@ import { jsonToBuffer } from "#lib/content-processing";
 const handleContentPieceCreated = createGitSyncHandler<{
   contentPiece: UnderscoreID<FullContentPiece<ObjectId>>;
   contentBuffer?: Buffer | null;
-}>(async ({ ctx, directories, records, outputContentProcessor }, data) => {
+}>(async ({ directories, records, outputContentProcessor }, data) => {
   const existingDirectory = directories.find((directory) => {
     return directory.contentGroupId.equals(data.contentPiece.contentGroupId);
   });

@@ -1,4 +1,4 @@
-import { getVariantDetails, mergeVariantData } from "../utils";
+import { getVariantDetails } from "../utils";
 import { z } from "zod";
 import { ObjectId } from "mongodb";
 import { convert as convertToText } from "html-to-text";
@@ -65,7 +65,10 @@ const handler = async (
     });
 
     if (contentPieceVariant) {
-      contentPiece = mergeVariantData(contentPiece, contentPieceVariant);
+      contentPiece = {
+        ...contentPiece,
+        ...contentPieceVariant
+      };
     }
   }
 

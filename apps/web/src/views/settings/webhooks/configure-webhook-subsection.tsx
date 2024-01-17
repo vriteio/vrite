@@ -1,5 +1,13 @@
 import { webhookEvents } from "./events";
-import { mdiCheck, mdiTune } from "@mdi/js";
+import {
+  mdiCheck,
+  mdiClipboardOutline,
+  mdiInformationOutline,
+  mdiRefresh,
+  mdiShieldLockOutline,
+  mdiTrayFull,
+  mdiTune
+} from "@mdi/js";
 import { Component, Show, createEffect, createMemo, createResource, createSignal } from "solid-js";
 import { createStore } from "solid-js/store";
 import { InputField, TitledCard } from "#components/fragments";
@@ -106,31 +114,35 @@ const ConfigureWebhookSubsection: Component<ConfigureWebhookSubsectionProps> = (
   });
 
   return (
-    <TitledCard icon={mdiTune} label="Configure">
-      <Show when={!editedWebhookData.loading || !props.editedWebhookId} fallback={<Loader />}>
-        <InputField
-          label="Name"
-          color="contrast"
-          placeholder="Webhook name"
-          type="text"
-          value={webhookData.name || ""}
-          inputProps={{ maxLength: 50 }}
-          setValue={(value) => setWebhookData("name", value)}
-        >
-          Name of the Webhook
-        </InputField>
-        <InputField
-          label="Description"
-          color="contrast"
-          textarea
-          optional
-          placeholder="Webhook description"
-          type="text"
-          value={webhookData.description || ""}
-          setValue={(value) => setWebhookData("description", value)}
-        >
-          Additional details about the Webhook
-        </InputField>
+    <>
+      <TitledCard icon={mdiInformationOutline} label="Details">
+        <Show when={!editedWebhookData.loading || !props.editedWebhookId} fallback={<Loader />}>
+          <InputField
+            label="Name"
+            color="contrast"
+            placeholder="Webhook name"
+            type="text"
+            value={webhookData.name || ""}
+            inputProps={{ maxLength: 50 }}
+            setValue={(value) => setWebhookData("name", value)}
+          >
+            Name of the Webhook
+          </InputField>
+          <InputField
+            label="Description"
+            color="contrast"
+            textarea
+            optional
+            placeholder="Webhook description"
+            type="text"
+            value={webhookData.description || ""}
+            setValue={(value) => setWebhookData("description", value)}
+          >
+            Additional details about the Webhook
+          </InputField>
+        </Show>
+      </TitledCard>
+      <TitledCard icon={mdiTune} label="Configuration">
         <InputField
           label="Target URL"
           color="contrast"
@@ -166,47 +178,76 @@ const ConfigureWebhookSubsection: Component<ConfigureWebhookSubsectionProps> = (
             ID of the content group to listen for the event on
           </InputField>
         </Show>
+      </TitledCard>
+      <TitledCard icon={mdiTrayFull} label="Batching">
+        <p class="prose text-gray-500 dark:text-gray-400">
+          Webhooks can be batched to reduce the number of requests. This is useful when you have a
+          lot of events happening at the same time.
+        </p>
         <InputField
-          placeholder="Event"
-          label="Batching"
-          color="contrast"
-          type="checkbox"
-          options={webhookEvents}
-          value={webhookData.event || ""}
-          setValue={(value) => {
-            setWebhookData("event", value as App.WebhookEventName);
-          }}
-        >
-          Batch multiple events into a single request
-        </InputField>
-        <InputField
-          placeholder="Event"
+          placeholder="Batching window"
           label="Batching window"
+          optional
           color="contrast"
           type="text"
-          options={webhookEvents}
-          value={webhookData.event || ""}
+          inputProps={{ type: "number" }}
+          value={`${webhookData.batchingWindow || ""}`}
           setValue={(value) => {
-            setWebhookData("event", value as App.WebhookEventName);
+            const numericValue = Number(value);
+
+            if (Number.isNaN(numericValue)) {
+              setWebhookData("batchingWindow", undefined);
+            } else {
+              setWebhookData("batchingWindow", numericValue);
+            }
           }}
         >
           Time window in seconds for batching events
         </InputField>
         <InputField
-          placeholder="Event"
-          label="Signing secret"
+          placeholder="Max Batch Size"
+          label="Max Batch Size"
+          optional
           color="contrast"
           type="text"
-          options={webhookEvents}
-          value={webhookData.event || ""}
+          inputProps={{ type: "number" }}
+          value={`${webhookData.maxBatchSize || ""}`}
           setValue={(value) => {
-            setWebhookData("event", value as App.WebhookEventName);
+            const numericValue = Number(value);
+
+            if (Number.isNaN(numericValue)) {
+              setWebhookData("maxBatchSize", undefined);
+            } else {
+              setWebhookData("maxBatchSize", numericValue);
+            }
+          }}
+        >
+          Maximum number of events to batch
+        </InputField>
+      </TitledCard>
+      <TitledCard icon={mdiShieldLockOutline} label="Security">
+        <p class="prose text-gray-500 dark:text-gray-400">
+          Provide a secret to generate a signature of the payload.
+        </p>
+        <InputField
+          placeholder="Event"
+          label="Signing secret"
+          optional
+          color="contrast"
+          type="text"
+          value={webhookData.secret || ""}
+          class="flex items-center gap-1"
+          setValue={(value) => {
+            setWebhookData("secret", value as App.WebhookEventName);
+          }}
+          adornment={() => {
+            return <IconButton path={mdiRefresh} class="m-0" text="soft" />;
           }}
         >
           Secret used to sign the payload
         </InputField>
-      </Show>
-    </TitledCard>
+      </TitledCard>
+    </>
   );
 };
 

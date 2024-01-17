@@ -2,7 +2,7 @@ import { deleteContent } from "./content/delete";
 import { SearchContentHandlerData, WhereOperand } from "./utils";
 import { upsertContent } from "./content/upsert";
 import { bulkUpsertContent } from "./content/bulk-upsert";
-import weaviate, { WeaviateClient } from "weaviate-ts-client";
+import weaviate, { FusionType, WeaviateClient } from "weaviate-ts-client";
 import { FastifyInstance, RouteCallbackHandler, SearchService } from "fastify";
 import { OpenAI } from "openai";
 import { Stream } from "openai/streaming";
@@ -144,15 +144,18 @@ const registerSearch = async (fastify: FastifyInstance): Promise<void> => {
       await client.schema.tenantsDeleter("Content", [`${workspaceId}`]).do();
     },
     async search(details) {
-      const getter = client.graphql
+      let getter = client.graphql
         .get()
         .withClassName("Content")
         .withTenant(`${details.workspaceId}`)
         .withHybrid({
           query: details.query,
           properties: details.byTitle ? ["breadcrumb"] : ["breadcrumb^2", "content"],
+          fusionType: FusionType.relativeScoreFusion,
           alpha: 0.4
-        });
+        })
+        .withAutocut(2);
+
       const operands: WhereOperand[] = [];
 
       if (details.contentPieceId) {
@@ -183,13 +186,23 @@ const registerSearch = async (fastify: FastifyInstance): Promise<void> => {
       });
 
       if (operands.length) {
-        getter.withWhere({ operator: "And", operands });
+        getter = getter.withWhere({ operator: "And", operands });
       }
 
-      return await getter
-        .withLimit(details.limit || 10)
-        .withFields("content breadcrumb contentPieceId contentGroupIds _additional { score id }")
-        .do();
+      try {
+        return await getter
+          .withLimit(details.limit || 10)
+          .withFields("content breadcrumb contentPieceId contentGroupIds _additional { score }")
+          .do();
+      } catch (e) {
+        return {
+          data: {
+            Get: {
+              Content: []
+            }
+          }
+        };
+      }
     },
     async ask(details) {
       const results = await this.search({

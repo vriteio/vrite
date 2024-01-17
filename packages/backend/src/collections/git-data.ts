@@ -2,16 +2,18 @@ import { Collection, Db, ObjectId } from "mongodb";
 import { z } from "zod";
 import { UnderscoreID, zodId } from "#lib/mongo";
 
-const githubData = z.object({
-  installationId: z.number(),
-  repositoryName: z.string(),
-  repositoryOwner: z.string(),
-  branchName: z.string(),
+const commonGitProviderData = z.object({
   baseDirectory: z.string(),
   matchPattern: z.string(),
   variantsDirectory: z.string(),
   baseVariantDirectory: z.string(),
   transformer: z.string()
+});
+const githubData = commonGitProviderData.extend({
+  installationId: z.number(),
+  repositoryName: z.string(),
+  repositoryOwner: z.string(),
+  branchName: z.string()
 });
 const gitRecord = z.object({
   contentPieceId: zodId(),
@@ -45,6 +47,7 @@ interface GitDirectory<ID extends string | ObjectId = string>
   contentGroupId: ID;
 }
 interface GitHubData extends z.infer<typeof githubData> {}
+interface CommonGitProviderData extends z.infer<typeof commonGitProviderData> {}
 interface GitData<ID extends string | ObjectId = string>
   extends Omit<
     z.infer<typeof gitData>,
@@ -64,5 +67,12 @@ const getGitDataCollection = (db: Db): Collection<UnderscoreID<FullGitData<Objec
   return db.collection("git-data");
 };
 
-export { gitData, githubData, gitRecord, gitDirectory, getGitDataCollection };
-export type { GitHubData, FullGitData, GitData, GitRecord, GitDirectory };
+export {
+  gitData,
+  githubData,
+  gitRecord,
+  gitDirectory,
+  commonGitProviderData,
+  getGitDataCollection
+};
+export type { GitHubData, FullGitData, GitData, GitRecord, GitDirectory, CommonGitProviderData };

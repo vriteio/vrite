@@ -155,7 +155,7 @@ const BottomMenu: Component = () => {
       <Show when={workspace()}>
         <IconButton
           path={mdiHexagonSlice6}
-          label={workspace()!.name}
+          label={<span class="max-w-48 clamp-1 pl-1">{workspace()!.name}</span>}
           link="/workspaces"
           size="small"
           class="m-0 rounded-0 px-2"
@@ -165,7 +165,11 @@ const BottomMenu: Component = () => {
       </Show>
       <IconButton
         path={mdiCards}
-        label={activeVariantId() ? variants[activeVariantId()!]?.label : "Base"}
+        label={
+          <span class="max-w-48 clamp-1 pl-1">
+            {activeVariantId() ? variants[activeVariantId()!]?.label : "Base"}
+          </span>
+        }
         size="small"
         class="m-0 rounded-0 px-2"
         variant="text"

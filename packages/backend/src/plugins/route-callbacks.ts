@@ -13,7 +13,10 @@ declare module "fastify" {
   };
 
   interface RouteCallbacksPlugin {
-    register: <R extends keyof RouteCallbacks>(route: R, handler: RouteCallbackHandler<R>) => void;
+    register: <R extends keyof RouteCallbacks>(
+      route: R | R[],
+      handler: RouteCallbackHandler<R>
+    ) => void;
     run: <R extends keyof RouteCallbacks>(
       route: R,
       ctx: RouteCallbacks[R]["ctx"],
@@ -30,12 +33,18 @@ interface Callbacks {}
 const routeCallbacksPlugin = createPlugin(async (fastify) => {
   const handlers: RouteCallbackHandlers = {};
   const register = <R extends keyof Callbacks>(
-    route: R,
+    route: R | R[],
     handler: (ctx: Callbacks[R]["ctx"], data: Callbacks[R]["data"]) => {}
   ): void => {
-    if (!handlers[route]) handlers[route] = [] as RouteCallbackHandlers[R];
+    if (Array.isArray(route)) {
+      (route as R[]).forEach((r) => register(r, handler));
 
-    handlers[route]?.push(handler);
+      return;
+    }
+
+    if (!handlers[route as R]) handlers[route as R] = [] as RouteCallbackHandlers[R];
+
+    handlers[route as R]?.push(handler);
   };
   const run = <R extends keyof Callbacks>(
     route: R,

@@ -1,15 +1,19 @@
 import { z } from "zod";
-import { Binary } from "mongodb";
+import { Binary, ObjectId } from "mongodb";
 import {
   getGitDataCollection,
   getContentsCollection,
   getContentPiecesCollection,
   getContentPieceVariantsCollection,
-  getContentVariantsCollection
+  getContentVariantsCollection,
+  FullContentPiece,
+  FullContentPieceVariant,
+  FullContentVariant,
+  FullContents
 } from "#collections";
 import { errors } from "#lib/errors";
 import { AuthenticatedContext } from "#lib/middleware";
-import { zodId } from "#lib/mongo";
+import { UnderscoreID, zodId } from "#lib/mongo";
 import {
   createOutputContentProcessor,
   useGitSyncIntegration,
@@ -64,38 +68,49 @@ const handler = async (
 
   if (conflicts.length && !input.force) {
     const outputContentProcessor = await createOutputContentProcessor(ctx, transformer);
+    const variantConflicts = conflicts.filter((conflict) => conflict.variantId);
+    const nonVariantConflicts = conflicts.filter((conflict) => !conflict.variantId);
     const contentDataVariantsFilter = {
-      $or: conflicts
-        .filter((conflict) => conflict.variantId)
-        .map((conflict) => {
-          return {
-            contentPieceId: conflict.contentPieceId,
-            variantId: conflict.variantId
-          };
-        })
+      $or: variantConflicts.map((conflict) => {
+        return {
+          contentPieceId: conflict.contentPieceId,
+          variantId: conflict.variantId
+        };
+      })
     };
-    const contentPieces = await contentPiecesCollection
-      .find({
-        _id: {
-          $in: conflicts.map((conflict) => conflict.contentPieceId)
-        }
-      })
-      .toArray();
-    const contents = await contentsCollection
-      .find({
-        contentPieceId: {
-          $in: conflicts
-            .filter((conflict) => !conflict.variantId)
-            .map((conflict) => conflict.contentPieceId)
-        }
-      })
-      .toArray();
-    const contentPieceVariants = await contentPieceVariantsCollection
-      .find(contentDataVariantsFilter)
-      .toArray();
-    const contentVariants = await contentVariantsCollection
-      .find(contentDataVariantsFilter)
-      .toArray();
+
+    let contentPieces: Array<UnderscoreID<FullContentPiece<ObjectId>>> = [];
+    let contents: Array<UnderscoreID<FullContents<ObjectId>>> = [];
+    let contentPieceVariants: Array<UnderscoreID<FullContentPieceVariant<ObjectId>>> = [];
+    let contentVariants: Array<UnderscoreID<FullContentVariant<ObjectId>>> = [];
+
+    if (conflicts.length) {
+      contentPieces = await contentPiecesCollection
+        .find({
+          _id: {
+            $in: conflicts.map((conflict) => conflict.contentPieceId)
+          }
+        })
+        .toArray();
+    }
+
+    if (variantConflicts.length) {
+      contentPieceVariants = await contentPieceVariantsCollection
+        .find(contentDataVariantsFilter)
+        .toArray();
+      contentVariants = await contentVariantsCollection.find(contentDataVariantsFilter).toArray();
+    }
+
+    if (nonVariantConflicts.length) {
+      contents = await contentsCollection
+        .find({
+          contentPieceId: {
+            $in: nonVariantConflicts.map((conflict) => conflict.contentPieceId)
+          }
+        })
+        .toArray();
+    }
+
     const currentContents = await outputContentProcessor.processBatch(
       conflicts
         .map((conflict) => {

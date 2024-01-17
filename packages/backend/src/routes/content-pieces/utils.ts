@@ -1,7 +1,6 @@
 import { Db, ObjectId } from "mongodb";
-import { FullContentPiece, FullContentPieceVariant, getVariantsCollection } from "#collections";
+import { getVariantsCollection } from "#collections";
 import { errors } from "#lib/errors";
-import { UnderscoreID } from "#lib/mongo";
 
 const getVariantDetails = async (
   db: Db,
@@ -21,23 +20,5 @@ const getVariantDetails = async (
 
   return { variantId: variant._id || null, variantKey: variant.key || null };
 };
-const mergeVariantData = (
-  contentPiece: UnderscoreID<FullContentPiece<ObjectId>>,
-  contentPieceVariant: UnderscoreID<FullContentPieceVariant<ObjectId>>
-): UnderscoreID<FullContentPiece<ObjectId>> => {
-  const { _id, contentPieceId, variantId, ...variantData } = contentPieceVariant;
-  const mergedVariantData = Object.fromEntries(
-    Object.keys(variantData).map((key) => {
-      const typedKey = key as keyof Omit<
-        UnderscoreID<FullContentPieceVariant<ObjectId>>,
-        "_id" | "contentPieceId" | "variantId"
-      >;
 
-      return [typedKey, variantData[typedKey] || contentPiece[typedKey]];
-    })
-  );
-
-  return { ...contentPiece, ...mergedVariantData };
-};
-
-export { getVariantDetails, mergeVariantData };
+export { getVariantDetails };

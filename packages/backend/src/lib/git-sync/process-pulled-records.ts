@@ -294,7 +294,9 @@ const processPulledRecords = async ({
       }
 
       const existingRecord = newRecords.find((record) => {
-        return record.path === `${directoryPath}/${changedRecord.fileName}`;
+        return (
+          record.path === `${directoryPath}${directoryPath ? "/" : ""}${changedRecord.fileName}`
+        );
       });
       const { contentGroupId } =
         newDirectories.find((directory) => {
@@ -305,6 +307,8 @@ const processPulledRecords = async ({
         }) || {};
 
       if (!contentGroupId) continue;
+
+      // TODO: Remove console.log("EXISTING RECORD", existingRecord, directoryPath, changedRecord);
 
       // Update existing record
       if (existingRecord) {
@@ -362,6 +366,7 @@ const processPulledRecords = async ({
         continue;
       }
 
+      // Create new record
       const [lastContentPiece] = await contentPiecesCollection
         .find({ contentGroupId })
         .sort({ order: -1 })
@@ -524,6 +529,15 @@ const processPulledRecords = async ({
       }))
     );
   }
+
+  /* TODO: Remove
+  console.log("RECORDS", newDirectories, newRecords);
+  console.log("GROUPS", newContentGroups, updatedContentGroups);
+  console.log("PIECES", newContentPieces, updatedContentPieces);
+  console.log("PIECE VARIANTS", newContentPieceVariants, updatedContentPieceVariants);
+  console.log("VARIANTS", newVariants);
+  console.log("REMOVED DATA", removedContentData);
+  console.log("CONFLICTS", conflicts);*/
 
   const applyPull = async (): Promise<void> => {
     const removeContentDataVariantsChanges = removedContentData

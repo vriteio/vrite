@@ -1,57 +1,56 @@
 import { createGitSyncHandler } from "../utils";
 import { ObjectId } from "mongodb";
-import crypto from "node:crypto";
-import { FullContentPiece, getContentsCollection } from "#collections";
+import { FullContentPiece } from "#collections";
 import { UnderscoreID } from "#lib/mongo";
 
 const handleContentPieceMoved = createGitSyncHandler<{
   contentPiece: UnderscoreID<FullContentPiece<ObjectId>>;
   contentGroupId?: string;
-}>(async ({ ctx, directories, records, outputContentProcessor }, data) => {
-  const contentsCollection = getContentsCollection(ctx.db);
-
+}>(async ({ directories, records, gitData }, data) => {
   let newRecords = [...records];
+  // TODO: Extract
+  let { variantsDirectory, baseVariantDirectory } = gitData.github!;
+
+  if (variantsDirectory.startsWith("/")) variantsDirectory = variantsDirectory.slice(1);
+  if (baseVariantDirectory.startsWith("/")) baseVariantDirectory = baseVariantDirectory.slice(1);
+
+  const variantsPathRegex = new RegExp(`^${variantsDirectory}/(.+?)(?=/|$)`);
 
   if (!data.contentGroupId) return { directories, records };
-
-  newRecords = newRecords.map((record) => {
-    if (record.contentPieceId.equals(data.contentPiece._id)) {
-      return {
-        ...record,
-        currentHash: ""
-      };
-    }
-
-    return record;
-  });
 
   const existingDirectory = directories.find((directory) => {
     return directory.contentGroupId.equals(data.contentGroupId!);
   });
 
-  if (!existingDirectory) return { directories, records: newRecords };
+  if (!existingDirectory) return { directories, records };
 
-  const { content } =
-    (await contentsCollection.findOne({
-      contentPieceId: data.contentPiece._id
-    })) || {};
+  newRecords = newRecords.flatMap((record) => {
+    if (record.contentPieceId.equals(data.contentPiece._id)) {
+      return [
+        {
+          ...record,
+          currentHash: ""
+        },
+        {
+          ...record,
+          path: `${existingDirectory.path
+            .split("/")
+            .concat(data.contentPiece.filename || `${data.contentPiece._id}`)
+            .filter(Boolean)
+            .join("/")
+            .replace(
+              variantsPathRegex,
+              `${variantsDirectory}/${data.variantKey || baseVariantDirectory}`
+                .split("/")
+                .filter(Boolean)
+                .join("/")
+            )}`,
+          syncedHash: ""
+        }
+      ];
+    }
 
-  if (!content) return { directories, records: newRecords };
-
-  const output = await outputContentProcessor.process({
-    buffer: Buffer.from(content.buffer),
-    contentPiece: data.contentPiece
-  });
-
-  newRecords.push({
-    contentPieceId: data.contentPiece._id,
-    path: `${existingDirectory.path
-      .split("/")
-      .concat(data.contentPiece.filename || `${data.contentPiece._id}`)
-      .filter(Boolean)
-      .join("/")}`,
-    currentHash: crypto.createHash("md5").update(output).digest("hex"),
-    syncedHash: ""
+    return [record];
   });
 
   return {

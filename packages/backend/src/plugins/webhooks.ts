@@ -135,22 +135,17 @@ const webhooksPlugin = createPlugin(async (fastify) => {
       roleId: `${data.workspaceMembership.roleId}`
     });
   });
-  fastify.routeCallbacks.register("workspaceMemberships.delete", (ctx, data) => {
-    runWebhooks(ctx, "memberRemoved", {
-      ...data.workspaceMembership,
-      id: `${data.workspaceMembership._id}`,
-      userId: `${data.workspaceMembership.userId}`,
-      roleId: `${data.workspaceMembership.roleId}`
-    });
-  });
-  fastify.routeCallbacks.register("workspaceMemberships.leave", (ctx, data) => {
-    runWebhooks(ctx, "memberRemoved", {
-      ...data.workspaceMembership,
-      id: `${data.workspaceMembership._id}`,
-      userId: `${data.workspaceMembership.userId}`,
-      roleId: `${data.workspaceMembership.roleId}`
-    });
-  });
+  fastify.routeCallbacks.register(
+    ["workspaceMemberships.leave", "workspaceMemberships.delete"],
+    (ctx, data) => {
+      runWebhooks(ctx, "memberRemoved", {
+        ...data.workspaceMembership,
+        id: `${data.workspaceMembership._id}`,
+        userId: `${data.workspaceMembership.userId}`,
+        roleId: `${data.workspaceMembership.roleId}`
+      });
+    }
+  );
   fastify.routeCallbacks.register("workspaceMemberships.sendInvite", (ctx, data) => {
     runWebhooks(ctx, "memberInvited", {
       ...data.workspaceMembership,

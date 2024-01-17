@@ -1,4 +1,4 @@
-import { getVariantDetails, mergeVariantData } from "../utils";
+import { getVariantDetails } from "../utils";
 import { ObjectId, Binary } from "mongodb";
 import { convert as convertToSlug } from "url-slug";
 import { z } from "zod";
@@ -32,6 +32,7 @@ declare module "fastify" {
         updatedContentPiece: UnderscoreID<FullContentPiece<ObjectId>>;
         contentBuffer: Buffer | null;
         variantId: ObjectId | null;
+        variantKey: string | null;
       };
     };
   }
@@ -90,7 +91,7 @@ const handler = async (
     });
 
     if (contentPieceVariant) {
-      contentPiece = mergeVariantData(contentPiece, contentPieceVariant);
+      contentPiece = { ...contentPiece, ...contentPieceVariant };
     }
   }
 
@@ -209,6 +210,7 @@ const handler = async (
   ctx.fastify.routeCallbacks.run("contentPieces.update", ctx, {
     updatedContentPiece: newContentPiece,
     variantId,
+    variantKey,
     contentPiece,
     contentBuffer
   });
