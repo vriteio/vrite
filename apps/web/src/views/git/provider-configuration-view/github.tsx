@@ -25,8 +25,6 @@ const GitHubConfigurationView: Component<GitHubConfigurationViewProps> = (props)
   const [selectedRepository, setSelectedRepository] = createSignal<Repository | null>(null);
   const [selectedBranch, setSelectedBranch] = createSignal<Branch | null>(null);
   const [baseDirectory, setBaseDirectory] = createSignal("/");
-  const [variantsDirectory, setVariantsDirectory] = createSignal("");
-  const [baseVariantDirectory, setBaseVariantDirectory] = createSignal("");
   const [matchPattern, setMatchPattern] = createSignal("**/*.md");
   const [transformer, setTransformer] = createSignal("markdown");
   const [token, setToken] = createSignal("");
@@ -137,8 +135,6 @@ const GitHubConfigurationView: Component<GitHubConfigurationViewProps> = (props)
                   branchName: selectedBranch()!.name,
                   baseDirectory: baseDirectory(),
                   matchPattern: matchPattern(),
-                  variantsDirectory: variantsDirectory(),
-                  baseVariantDirectory: baseVariantDirectory(),
                   transformer: transformer()
                 }
               });
@@ -369,31 +365,6 @@ const GitHubConfigurationView: Component<GitHubConfigurationViewProps> = (props)
               placeholder="**/*.md"
             >
               Provide a glob match pattern for the files to sync. (relative to the base directory)
-            </InputField>
-
-            <InputField
-              label="Variants Directory"
-              color="contrast"
-              type="text"
-              value={savedGitHubConfig()?.variantsDirectory || variantsDirectory()}
-              disabled={Boolean(savedGitHubConfig())}
-              setValue={setVariantsDirectory}
-              placeholder="/docs/i18n"
-            >
-              The subdirectories of this path will be converted to variants. (relative to the base
-              directory)
-            </InputField>
-            <InputField
-              label="Base Variant Directory"
-              color="contrast"
-              type="text"
-              value={savedGitHubConfig()?.baseVariantDirectory || baseVariantDirectory()}
-              disabled={Boolean(savedGitHubConfig())}
-              setValue={setBaseVariantDirectory}
-              placeholder="/en"
-            >
-              Directory of the base variant. Only files that exist in both base and other variant
-              directory will be synced. (relative to the variants directory)
             </InputField>
 
             <Heading level={3}>Transformer</Heading>

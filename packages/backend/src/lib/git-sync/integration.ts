@@ -2,11 +2,8 @@ import { ObjectId } from "mongodb";
 import {
   FullContentGroup,
   FullContentPiece,
-  FullContentPieceVariant,
-  FullContentVariant,
   FullContents,
   FullGitData,
-  FullVariant,
   GitDirectory,
   GitRecord
 } from "#collections";
@@ -46,9 +43,6 @@ interface GitSyncConfiguration {
     newContents: UnderscoreID<FullContents<ObjectId>>[];
     newRecords: GitRecord<ObjectId>[];
     newDirectories: GitDirectory<ObjectId>[];
-    newVariants: UnderscoreID<FullVariant<ObjectId>>[];
-    newContentPieceVariants: UnderscoreID<FullContentPieceVariant<ObjectId>>[];
-    newContentVariants: UnderscoreID<FullContentVariant<ObjectId>>[];
     topContentGroup: UnderscoreID<FullContentGroup<ObjectId>>;
     lastCommit: GitSyncCommit;
   }>;

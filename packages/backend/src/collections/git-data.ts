@@ -5,8 +5,6 @@ import { UnderscoreID, zodId } from "#lib/mongo";
 const commonGitProviderData = z.object({
   baseDirectory: z.string(),
   matchPattern: z.string(),
-  variantsDirectory: z.string(),
-  baseVariantDirectory: z.string(),
   transformer: z.string()
 });
 const githubData = commonGitProviderData.extend({
@@ -19,8 +17,7 @@ const gitRecord = z.object({
   contentPieceId: zodId(),
   syncedHash: z.string(),
   currentHash: z.string(),
-  path: z.string(),
-  variantId: zodId().optional()
+  path: z.string()
 });
 const gitDirectory = z.object({
   path: z.string(),
@@ -38,9 +35,8 @@ const gitData = z.object({
 });
 
 interface GitRecord<ID extends string | ObjectId = string>
-  extends Omit<z.infer<typeof gitRecord>, "contentPieceId" | "variantId"> {
+  extends Omit<z.infer<typeof gitRecord>, "contentPieceId"> {
   contentPieceId: ID;
-  variantId?: ID;
 }
 interface GitDirectory<ID extends string | ObjectId = string>
   extends Omit<z.infer<typeof gitDirectory>, "contentGroupId"> {

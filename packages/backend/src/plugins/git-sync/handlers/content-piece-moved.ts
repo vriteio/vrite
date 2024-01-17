@@ -8,13 +8,6 @@ const handleContentPieceMoved = createGitSyncHandler<{
   contentGroupId?: string;
 }>(async ({ directories, records, gitData }, data) => {
   let newRecords = [...records];
-  // TODO: Extract
-  let { variantsDirectory, baseVariantDirectory } = gitData.github!;
-
-  if (variantsDirectory.startsWith("/")) variantsDirectory = variantsDirectory.slice(1);
-  if (baseVariantDirectory.startsWith("/")) baseVariantDirectory = baseVariantDirectory.slice(1);
-
-  const variantsPathRegex = new RegExp(`^${variantsDirectory}/(.+?)(?=/|$)`);
 
   if (!data.contentGroupId) return { directories, records };
 
@@ -37,14 +30,7 @@ const handleContentPieceMoved = createGitSyncHandler<{
             .split("/")
             .concat(data.contentPiece.filename || `${data.contentPiece._id}`)
             .filter(Boolean)
-            .join("/")
-            .replace(
-              variantsPathRegex,
-              `${variantsDirectory}/${data.variantKey || baseVariantDirectory}`
-                .split("/")
-                .filter(Boolean)
-                .join("/")
-            )}`,
+            .join("/")}`,
           syncedHash: ""
         }
       ];

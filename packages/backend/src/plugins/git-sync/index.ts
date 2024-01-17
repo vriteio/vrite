@@ -8,11 +8,6 @@ import { handleContentGroupMoved } from "./handlers/content-group-moved";
 import { handleContentGroupUpdated } from "./handlers/content-group-updated";
 import { createPlugin } from "#lib/plugin";
 
-/*  let { variantsDirectory } = gitData.github!;
-
-  if (variantsDirectory.startsWith("/")) variantsDirectory = variantsDirectory.slice(1);
-
-  const variantsPathRegex = new RegExp(`^${variantsDirectory}/(.+?)(?=/|$)`); */
 const gitSyncPlugin = createPlugin(async (fastify) => {
   fastify.routeCallbacks.register("contentPieces.create", (ctx, data) => {
     handleContentPieceCreated(ctx, {
@@ -31,8 +26,7 @@ const gitSyncPlugin = createPlugin(async (fastify) => {
   });
   fastify.routeCallbacks.register("contentPieces.update", (ctx, data) => {
     handleContentPieceUpdated(ctx, {
-      contentPiece: data.updatedContentPiece,
-      variantId: data.variantId
+      contentPiece: data.updatedContentPiece
     });
   });
   fastify.routeCallbacks.register("contentGroups.create", (ctx, data) => {
@@ -60,9 +54,6 @@ const gitSyncPlugin = createPlugin(async (fastify) => {
       ancestor: ancestorUpdated ? `${newAncestor || ""}` || undefined : undefined,
       name: nameUpdated ? newName : undefined
     });
-  });
-  fastify.routeCallbacks.register("variants.delete", () => {
-    // TODO: handle variant deletion
   });
 });
 
