@@ -1,9 +1,6 @@
 import { z } from "zod";
-import { Binary } from "mongodb";
 import {
-  getContentPieceVariantsCollection,
   getContentPiecesCollection,
-  getContentVariantsCollection,
   getContentsCollection,
   getGitDataCollection
 } from "#collections";
@@ -13,7 +10,8 @@ import { AuthenticatedContext } from "#lib/middleware";
 import {
   OutputContentProcessorInput,
   createOutputContentProcessor,
-  useGitSyncIntegration
+  filterRecords,
+  useGitProvider
 } from "#lib/git-sync";
 
 const inputSchema = z.object({
@@ -27,24 +25,19 @@ const handler = async (
   input: z.infer<typeof inputSchema>
 ): Promise<z.infer<typeof outputSchema>> => {
   const contentsCollection = getContentsCollection(ctx.db);
-  const contentVariantsCollection = getContentVariantsCollection(ctx.db);
   const contentPiecesCollection = getContentPiecesCollection(ctx.db);
-  const contentPieceVariantsCollection = getContentPieceVariantsCollection(ctx.db);
   const gitDataCollection = getGitDataCollection(ctx.db);
   const gitData = await gitDataCollection.findOne({ workspaceId: ctx.auth.workspaceId });
+  const gitProvider = useGitProvider(ctx, gitData);
 
-  if (!gitData) throw errors.notFound("gitDate");
+  if (!gitData || !gitProvider) throw errors.serverError();
 
-  const gitSyncIntegration = useGitSyncIntegration(ctx, gitData);
-
-  if (!gitSyncIntegration) throw errors.serverError();
-
-  const changedRecords = gitSyncIntegration.getRecords().filter((record) => {
+  const changedRecords = filterRecords(gitData.records, gitProvider.data).filter((record) => {
     return record.currentHash !== record.syncedHash;
   });
   const outputContentProcessor = await createOutputContentProcessor(
     ctx,
-    gitSyncIntegration.getTransformer()
+    gitProvider.data.transformer
   );
   const additions: Array<{ path: string; contents: OutputContentProcessorInput }> = [];
   const deletions: Array<{ path: string }> = [];
@@ -53,38 +46,13 @@ const handler = async (
     const baseContentPiece = await contentPiecesCollection.findOne({
       _id: record.contentPieceId
     });
-
-    let contentPiece = baseContentPiece;
-    let content: Binary | null = null;
-
-    if (record.variantId) {
-      content =
-        (
-          await contentVariantsCollection.findOne({
-            contentPieceId: record.contentPieceId,
-            variantId: record.variantId
-          })
-        )?.content || null;
-    } else {
-      content =
-        (
-          await contentsCollection.findOne({
-            contentPieceId: record.contentPieceId
-          })
-        )?.content || null;
-    }
-
-    if (record.variantId && baseContentPiece) {
-      const contentPieceVariant = await contentPieceVariantsCollection.findOne({
-        contentPieceId: record.contentPieceId,
-        variantId: record.variantId
-      });
-
-      contentPiece = {
-        ...baseContentPiece,
-        ...(contentPieceVariant || {})
-      };
-    }
+    const contentPiece = baseContentPiece;
+    const content =
+      (
+        await contentsCollection.findOne({
+          contentPieceId: record.contentPieceId
+        })
+      )?.content || null;
 
     if (record.currentHash === "") {
       deletions.push({
@@ -112,9 +80,10 @@ const handler = async (
     path: addition.path,
     contents: additionsContents[index]
   }));
-  const { commit, status } = await gitSyncIntegration.commit({
+  const { commit, status } = await gitProvider.commit({
     message: input.message,
     additions: additionsWithContents,
+    changes: [],
     deletions
   });
 
@@ -145,8 +114,7 @@ const handler = async (
     data: {
       records: outputRecords.map((record) => ({
         ...record,
-        contentPieceId: `${record.contentPieceId}`,
-        variantId: record.variantId ? `${record.variantId}` : undefined
+        contentPieceId: `${record.contentPieceId}`
       }))
     }
   });

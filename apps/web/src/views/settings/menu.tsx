@@ -20,11 +20,13 @@ const MenuSection: Component<MenuSectionProps> = (props) => {
         <For each={props.sectionMenuItems}>
           {(menuItem) => {
             return (
-              <button onClick={() => props.setCurrentSectionId(menuItem.section)}>
+              <button
+                class={clsx(menuItem.resize && "@lg:col-span-2")}
+                onClick={() => props.setCurrentSectionId(menuItem.section)}
+              >
                 <Card
                   class={clsx(
-                    "h-28 w-full flex flex-col justify-center items-center m-0 disabled:opacity-50 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700",
-                    menuItem.resize && "@lg:col-span-2"
+                    "h-28 w-full flex flex-col justify-center items-center m-0 disabled:opacity-50 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
                   )}
                 >
                   <Icon path={menuItem.icon} class="h-8 w-8" />

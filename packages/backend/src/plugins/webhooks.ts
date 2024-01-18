@@ -1,6 +1,7 @@
 import axios from "axios";
 import { z } from "zod";
 import { ObjectId } from "mongodb";
+import crypto from "node:crypto";
 import { UnderscoreID, zodId } from "#lib/mongo";
 import { AuthenticatedContext } from "#lib/middleware";
 import {
@@ -20,6 +21,17 @@ const webhookPayload = z.union([
   contentGroup,
   workspaceMembership.extend({ id: zodId() })
 ]);
+const generateWebhookSignature = (
+  secret: string,
+  url: string,
+  params: Record<string, any>
+): string => {
+  const data = Object.keys(params)
+    .sort()
+    .reduce((acc, key) => acc + key + params[key], url);
+
+  return crypto.createHmac("sha1", secret).update(Buffer.from(data, "utf-8")).digest("base64");
+};
 const runWebhooks = async (
   ctx: AuthenticatedContext,
   event: WebhookEventName,
@@ -57,12 +69,19 @@ const runWebhooks = async (
     }
 
     try {
-      await axios.post(webhook.url, webhookPayload.parse(payload), {
-        ...(webhook.extensionId && {
-          headers: {
-            "X-Vrite-Extension-ID": `${webhook.extensionId}`
-          }
-        })
+      const parsedPayload = webhookPayload.parse(payload);
+
+      await axios.post(webhook.url, parsedPayload, {
+        headers: {
+          ...(webhook.extensionId && { "X-Vrite-Extension-ID": `${webhook.extensionId}` }),
+          ...(webhook.secret && {
+            "X-Vrite-Signature": generateWebhookSignature(
+              webhook.secret,
+              webhook.url,
+              parsedPayload
+            )
+          })
+        }
       });
     } catch (error) {
       ctx.fastify.log.error("Failed to run webhook", error);

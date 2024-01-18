@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { useGitSyncIntegration } from "#lib/git-sync";
+import { filterRecords, useGitProvider } from "#lib/git-sync";
 import { AuthenticatedContext } from "#lib/middleware";
 import { gitData, getGitDataCollection } from "#collections";
 import { errors } from "#lib/errors";
@@ -8,14 +8,11 @@ const outputSchema = gitData;
 const handler = async (ctx: AuthenticatedContext): Promise<z.infer<typeof outputSchema>> => {
   const gitDataCollection = getGitDataCollection(ctx.db);
   const gitData = await gitDataCollection.findOne({ workspaceId: ctx.auth.workspaceId });
+  const gitProvider = useGitProvider(ctx, gitData);
 
-  if (!gitData) throw errors.notFound("gitData");
+  if (!gitData || !gitProvider) throw errors.serverError();
 
-  const gitSyncIntegration = useGitSyncIntegration(ctx, gitData);
-
-  if (!gitSyncIntegration) throw errors.serverError();
-
-  const records = gitSyncIntegration.getRecords();
+  const records = filterRecords(gitData.records, gitProvider.data);
 
   return {
     ...gitData,
@@ -27,8 +24,7 @@ const handler = async (ctx: AuthenticatedContext): Promise<z.infer<typeof output
     })),
     records: records.map((record) => ({
       ...record,
-      contentPieceId: `${record.contentPieceId}`,
-      variantId: record.variantId ? `${record.variantId}` : undefined
+      contentPieceId: `${record.contentPieceId}`
     })),
     ...(gitData.contentGroupId ? { contentGroupId: `${gitData.contentGroupId}` } : {})
   };

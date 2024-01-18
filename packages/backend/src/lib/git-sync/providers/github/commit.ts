@@ -1,5 +1,5 @@
 import { commitChanges } from "./requests";
-import { GitSyncConfiguration } from "../integration";
+import { GitSyncConfiguration } from "../../provider";
 import { errors } from "#lib/errors";
 
 const commit: GitSyncConfiguration["commit"] = async ({

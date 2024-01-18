@@ -10,7 +10,9 @@ const inputSchema = z.object({
   lastId: zodId().optional(),
   extensionOnly: z.boolean().optional()
 });
-const outputSchema = z.array(webhook.extend({ extension: z.boolean().optional() }));
+const outputSchema = z.array(
+  webhook.omit({ secret: true }).extend({ extension: z.boolean().optional() })
+);
 const handler = async (
   ctx: AuthenticatedContext,
   input: z.infer<typeof inputSchema>
@@ -31,7 +33,7 @@ const handler = async (
 
   const webhooks = await cursor.limit(input.perPage).toArray();
 
-  return webhooks.map(({ _id, workspaceId, metadata, extensionId, ...webhook }) => {
+  return webhooks.map(({ _id, workspaceId, metadata, extensionId, secret, ...webhook }) => {
     const result: Webhook & { id: string; extension?: boolean } = {
       ...webhook,
       id: `${_id}`

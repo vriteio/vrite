@@ -1,5 +1,6 @@
 import * as listWebhooks from "./handlers/list";
 import * as getWebhook from "./handlers/get";
+import * as revealWebhookSecret from "./handlers/reveal-secret";
 import * as createWebhook from "./handlers/create";
 import * as updateWebhook from "./handlers/update";
 import * as deleteWebhook from "./handlers/delete";
@@ -30,6 +31,13 @@ const webhooksRouter = router({
     .output(getWebhook.outputSchema)
     .query(async ({ ctx, input }) => {
       return getWebhook.handler(ctx, input);
+    }),
+  revealSecret: authenticatedProcedure
+    .meta({ permissions: { session: ["manageWebhooks"] } })
+    .input(revealWebhookSecret.inputSchema)
+    .output(revealWebhookSecret.outputSchema)
+    .query(async ({ ctx, input }) => {
+      return revealWebhookSecret.handler(ctx, input);
     }),
   create: authenticatedProcedure
     .meta({

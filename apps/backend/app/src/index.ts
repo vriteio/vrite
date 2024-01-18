@@ -1,5 +1,5 @@
 import { appService } from "./app";
-import { createServer } from "@vrite/backend";
+import { createServer, webhooksPlugin } from "@vrite/backend";
 import {
   databasePlugin,
   pubSubPlugin,
@@ -19,6 +19,7 @@ import {
     await server.register(emailPlugin);
     await server.register(gitSyncPlugin);
     await server.register(searchPlugin);
+    await server.register(webhooksPlugin);
     await server.register(s3Plugin);
   });
 

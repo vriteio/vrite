@@ -7,7 +7,7 @@ import {
   getGitDataCollection,
   jsonToBuffer,
   publishGitDataEvent,
-  useGitSyncIntegration
+  useGitProvider
 } from "@vrite/backend";
 import { FastifyInstance } from "fastify";
 import { ObjectId } from "mongodb";
@@ -90,12 +90,9 @@ class GitSync implements Extension {
     const gitData = await this.gitDataCollection.findOne({
       workspaceId: new ObjectId(details.context.workspaceId)
     });
+    const gitProvider = useGitProvider(ctx, gitData);
 
-    if (!gitData) return;
-
-    const gitSyncIntegration = useGitSyncIntegration(ctx, gitData);
-
-    if (!gitSyncIntegration) return;
+    if (!gitData || !gitProvider) return;
 
     const baseContentPiece = await this.contentPiecesCollection.findOne({
       _id: new ObjectId(contentPieceId)
@@ -117,7 +114,7 @@ class GitSync implements Extension {
     const json = docToJSON(details.document);
     const outputContentProcessor = await createOutputContentProcessor(
       ctx,
-      gitSyncIntegration.getTransformer()
+      gitProvider.data.transformer
     );
     const output = await outputContentProcessor.process({
       buffer: jsonToBuffer(json),

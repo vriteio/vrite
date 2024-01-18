@@ -8,3 +8,4 @@ export * from "./trpc";
 export * from "./git-sync";
 export * from "./search";
 export * from "./host-config";
+export * from "./webhooks";

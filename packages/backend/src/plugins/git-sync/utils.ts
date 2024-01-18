@@ -4,7 +4,7 @@ import { publishGitDataEvent } from "#events";
 import {
   OutputContentProcessor,
   createOutputContentProcessor,
-  useGitSyncIntegration
+  useGitProvider
 } from "#lib/git-sync";
 import { AuthenticatedContext } from "#lib/middleware";
 import { UnderscoreID } from "#lib/mongo";
@@ -65,16 +65,13 @@ const createGitSyncHandler = <D extends object>(process: GitSyncHookProcessor<D>
       const gitData = await gitDataCollection.findOne({
         workspaceId: ctx.auth.workspaceId
       });
+      const gitProvider = useGitProvider(ctx, gitData);
 
-      if (!gitData || !process) return;
-
-      const gitSyncIntegration = useGitSyncIntegration(ctx, gitData);
-
-      if (!gitSyncIntegration) return;
+      if (!gitData || !process || !gitProvider) return;
 
       const outputContentProcessor = await createOutputContentProcessor(
         ctx,
-        gitSyncIntegration.getTransformer()
+        gitProvider.data.transformer
       );
       const { directories, records } = await process(
         {

@@ -3,18 +3,15 @@ import { z } from "zod";
 import {
   getGitDataCollection,
   getContentPiecesCollection,
-  getContentsCollection,
-  getContentPieceVariantsCollection,
-  getContentVariantsCollection
+  getContentsCollection
 } from "#collections";
 import { publishGitDataEvent } from "#events";
 import { errors } from "#lib/errors";
 import { AuthenticatedContext } from "#lib/middleware";
-import { createInputContentProcessor, useGitSyncIntegration } from "#lib/git-sync";
+import { createInputContentProcessor, useGitProvider } from "#lib/git-sync";
 
 const inputSchema = z.object({
   contentPieceId: z.string(),
-  variantId: z.string().optional(),
   content: z.string(),
   syncedHash: z.string(),
   path: z.string()
@@ -26,99 +23,54 @@ const handler = async (
   const gitDataCollection = getGitDataCollection(ctx.db);
   const contentPiecesCollection = getContentPiecesCollection(ctx.db);
   const contentsCollection = getContentsCollection(ctx.db);
-  const contentPieceVariantsCollection = getContentPieceVariantsCollection(ctx.db);
-  const contentVariantsCollection = getContentVariantsCollection(ctx.db);
   const gitData = await gitDataCollection.findOne({ workspaceId: ctx.auth.workspaceId });
+  const gitProvider = useGitProvider(ctx, gitData);
 
-  if (!gitData) throw errors.notFound("gitData");
-
-  const gitSyncIntegration = useGitSyncIntegration(ctx, gitData);
-
-  if (!gitSyncIntegration) throw errors.serverError();
+  if (!gitData || !gitProvider) throw errors.serverError();
 
   const isRemoved = input.content.trim() === "";
 
   let currentHash = "";
 
   if (isRemoved) {
-    await contentVariantsCollection.deleteMany({
-      contentPieceId: new ObjectId(input.contentPieceId),
-      ...(input.variantId && { variantId: new ObjectId(input.variantId) })
+    await contentsCollection.deleteOne({
+      contentPieceId: new ObjectId(input.contentPieceId)
     });
-    await contentPieceVariantsCollection.deleteMany({
-      contentPieceId: new ObjectId(input.contentPieceId),
-      ...(input.variantId && { variantId: new ObjectId(input.variantId) })
+    await contentPiecesCollection.deleteOne({
+      _id: new ObjectId(input.contentPieceId)
     });
-
-    if (!input.variantId) {
-      await contentsCollection.deleteOne({
-        contentPieceId: new ObjectId(input.contentPieceId)
-      });
-      await contentPiecesCollection.deleteOne({
-        _id: new ObjectId(input.contentPieceId)
-      });
-    }
   } else {
     const inputContentProcessor = await createInputContentProcessor(
       ctx,
-      gitSyncIntegration.getTransformer()
+      gitProvider.data.transformer
     );
     const { buffer, metadata, hash } = await inputContentProcessor.process(input.content.trim());
     const { date, members, tags, ...restMetadata } = metadata;
 
     currentHash = hash;
-
-    if (input.variantId) {
-      await contentVariantsCollection.updateOne(
-        {
-          contentPieceId: new ObjectId(input.contentPieceId),
-          variantId: new ObjectId(input.variantId)
-        },
-        {
-          $set: {
-            content: new Binary(buffer)
-          }
+    await contentsCollection.updateOne(
+      {
+        contentPieceId: new ObjectId(input.contentPieceId)
+      },
+      {
+        $set: {
+          content: new Binary(buffer)
         }
-      );
-      await contentPieceVariantsCollection.updateOne(
-        {
-          contentPieceId: new ObjectId(input.contentPieceId),
-          variantId: new ObjectId(input.variantId)
-        },
-        {
-          $set: {
-            ...restMetadata,
-            ...(date && { date: new Date(date) }),
-            ...(members && { members: members.map((memberId) => new ObjectId(memberId)) }),
-            ...(tags && { tags: tags.map((tagId) => new ObjectId(tagId)) })
-          }
+      }
+    );
+    await contentPiecesCollection.updateOne(
+      {
+        _id: new ObjectId(input.contentPieceId)
+      },
+      {
+        $set: {
+          ...restMetadata,
+          ...(date && { date: new Date(date) }),
+          ...(members && { members: members.map((memberId) => new ObjectId(memberId)) }),
+          ...(tags && { tags: tags.map((tagId) => new ObjectId(tagId)) })
         }
-      );
-    } else {
-      await contentsCollection.updateOne(
-        {
-          contentPieceId: new ObjectId(input.contentPieceId)
-        },
-        {
-          $set: {
-            content: new Binary(buffer)
-          }
-        }
-      );
-      await contentPiecesCollection.updateOne(
-        {
-          _id: new ObjectId(input.contentPieceId)
-        },
-        {
-          $set: {
-            ...restMetadata,
-            ...(date && { date: new Date(date) }),
-            ...(members && { members: members.map((memberId) => new ObjectId(memberId)) }),
-            ...(tags && { tags: tags.map((tagId) => new ObjectId(tagId)) })
-          }
-        }
-      );
-    }
+      }
+    );
   }
 
   if (!currentHash && !input.syncedHash) {
@@ -128,8 +80,7 @@ const handler = async (
       },
       {
         $pull: {
-          "records.contentPieceId": new ObjectId(input.contentPieceId),
-          ...(input.variantId && { "records.variantId": new ObjectId(input.variantId) })
+          "records.contentPieceId": new ObjectId(input.contentPieceId)
         }
       }
     );
@@ -137,8 +88,7 @@ const handler = async (
     await gitDataCollection.updateOne(
       {
         "workspaceId": ctx.auth.workspaceId,
-        "records.contentPieceId": new ObjectId(input.contentPieceId),
-        ...(input.variantId && { "records.variantId": new ObjectId(input.variantId) })
+        "records.contentPieceId": new ObjectId(input.contentPieceId)
       },
       {
         $set: {
@@ -154,14 +104,10 @@ const handler = async (
     data: {
       records: gitData.records
         .map((record) => {
-          if (
-            `${record.contentPieceId}` === input.contentPieceId &&
-            (!input.variantId || `${record.variantId}` === input.variantId)
-          ) {
+          if (`${record.contentPieceId}` === input.contentPieceId) {
             return {
               ...record,
               contentPieceId: `${record.contentPieceId}`,
-              variantId: record.variantId ? `${record.variantId}` : undefined,
               syncedHash: input.syncedHash,
               currentHash
             };
@@ -169,7 +115,6 @@ const handler = async (
 
           return {
             ...record,
-            variantId: record.variantId ? `${record.variantId}` : undefined,
             contentPieceId: `${record.contentPieceId}`
           };
         })

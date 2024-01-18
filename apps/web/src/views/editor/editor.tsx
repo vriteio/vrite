@@ -70,9 +70,6 @@ interface EditorProps {
 
 const Editor: Component<EditorProps> = (props) => {
   const params = useParams();
-
-  console.log(params.workspaceId, params.contentPieceId);
-
   const { activeVariantId } = useContentData();
   const hostConfig = useHostConfig();
   const navigate = useNavigate();

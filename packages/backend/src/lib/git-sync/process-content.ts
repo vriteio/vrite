@@ -10,14 +10,17 @@ import * as prettier from "prettier/standalone";
 import markdownPlugin from "prettier/plugins/markdown";
 import htmlPlugin from "prettier/plugins/html";
 import axios from "axios";
+import { minimatch } from "minimatch";
 import crypto from "node:crypto";
 import { jsonToBuffer, htmlToJSON, bufferToJSON } from "#lib/content-processing";
 import { UnderscoreID } from "#lib/mongo";
 import { AuthenticatedContext } from "#lib/middleware";
 import {
+  CommonGitProviderData,
   FullContentPiece,
   getTransformersCollection,
   getWorkspaceSettingsCollection,
+  GitRecord,
   Transformer
 } from "#collections";
 
@@ -253,8 +256,16 @@ const createOutputContentProcessor = async (
     }
   };
 };
+const filterRecords = (
+  records: GitRecord<ObjectId>[],
+  commonGitProviderData: CommonGitProviderData
+): GitRecord<ObjectId>[] => {
+  return records.filter((record) => {
+    return minimatch(record.path, commonGitProviderData.matchPattern);
+  });
+};
 
-export { createInputContentProcessor, createOutputContentProcessor };
+export { createInputContentProcessor, createOutputContentProcessor, filterRecords };
 export type {
   InputContentProcessor,
   OutputContentProcessor,

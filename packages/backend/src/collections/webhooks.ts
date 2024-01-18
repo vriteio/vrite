@@ -23,8 +23,6 @@ const webhook = z.object({
   name: z.string().min(1).max(50),
   description: z.string().optional(),
   secret: z.string().optional(),
-  batchingWindow: z.number().min(1).optional(),
-  maxBatchSize: z.number().min(1).max(1000).optional(),
   metadata: webhookMetadata.optional(),
   event: webhookEventName
 });

@@ -5,7 +5,7 @@ import { webhook, getWebhooksCollection, Webhook } from "#collections";
 import { publishWebhookEvent } from "#events";
 import { errors } from "#lib/errors";
 
-const inputSchema = webhook.partial().required({ id: true });
+const inputSchema = webhook.omit({ secret: true }).partial().required({ id: true });
 const handler = async (
   ctx: AuthenticatedContext,
   input: z.infer<typeof inputSchema>

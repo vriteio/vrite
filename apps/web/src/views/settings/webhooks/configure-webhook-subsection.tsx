@@ -10,6 +10,7 @@ import {
 } from "@mdi/js";
 import { Component, Show, createEffect, createMemo, createResource, createSignal } from "solid-js";
 import { createStore } from "solid-js/store";
+import { nanoid } from "nanoid";
 import { InputField, TitledCard } from "#components/fragments";
 import { IconButton, Button, Loader, Tooltip } from "#components/primitives";
 import { App, useClient, useNotifications } from "#context";
@@ -25,6 +26,7 @@ const ConfigureWebhookSubsection: Component<ConfigureWebhookSubsectionProps> = (
   const client = useClient();
   const { notify } = useNotifications();
   const [loading, setLoading] = createSignal(false);
+  const [loadingSecret, setLoadingSecret] = createSignal(false);
   const [webhookData, setWebhookData] = createStore<Omit<App.Webhook, "id">>({
     description: "",
     event: "" as App.WebhookEventName,
@@ -45,6 +47,26 @@ const ConfigureWebhookSubsection: Component<ConfigureWebhookSubsectionProps> = (
         webhookData.url.startsWith("https://")
     );
   });
+  const secretHidden = (): boolean => {
+    return Boolean(props.editedWebhookId && typeof webhookData.secret === "undefined");
+  };
+  const revealSecret = async (): Promise<void> => {
+    if (!props.editedWebhookId) return;
+
+    setLoadingSecret(true);
+
+    try {
+      const { secret } = await client.webhooks.revealSecret.query({ id: props.editedWebhookId! });
+
+      setWebhookData("secret", secret);
+      setLoadingSecret(false);
+    } catch (error) {
+      notify({
+        type: "error",
+        text: "Failed to reveal secret"
+      });
+    }
+  };
   const onClick = async (): Promise<void> => {
     setLoading(true);
 
@@ -151,7 +173,7 @@ const ConfigureWebhookSubsection: Component<ConfigureWebhookSubsectionProps> = (
           value={webhookData.url || ""}
           setValue={(value) => setWebhookData("url", value)}
         >
-          Webhook URL must start with <code>https://</code>
+          Webhook URL must start with <code class="!px-1 !py-0.5 !rounded-md">https://</code>
         </InputField>
         <InputField
           placeholder="Event"
@@ -179,69 +201,56 @@ const ConfigureWebhookSubsection: Component<ConfigureWebhookSubsectionProps> = (
           </InputField>
         </Show>
       </TitledCard>
-      <TitledCard icon={mdiTrayFull} label="Batching">
-        <p class="prose text-gray-500 dark:text-gray-400">
-          Webhooks can be batched to reduce the number of requests. This is useful when you have a
-          lot of events happening at the same time.
-        </p>
-        <InputField
-          placeholder="Batching window"
-          label="Batching window"
-          optional
-          color="contrast"
-          type="text"
-          inputProps={{ type: "number" }}
-          value={`${webhookData.batchingWindow || ""}`}
-          setValue={(value) => {
-            const numericValue = Number(value);
-
-            if (Number.isNaN(numericValue)) {
-              setWebhookData("batchingWindow", undefined);
-            } else {
-              setWebhookData("batchingWindow", numericValue);
-            }
-          }}
-        >
-          Time window in seconds for batching events
-        </InputField>
-        <InputField
-          placeholder="Max Batch Size"
-          label="Max Batch Size"
-          optional
-          color="contrast"
-          type="text"
-          inputProps={{ type: "number" }}
-          value={`${webhookData.maxBatchSize || ""}`}
-          setValue={(value) => {
-            const numericValue = Number(value);
-
-            if (Number.isNaN(numericValue)) {
-              setWebhookData("maxBatchSize", undefined);
-            } else {
-              setWebhookData("maxBatchSize", numericValue);
-            }
-          }}
-        >
-          Maximum number of events to batch
-        </InputField>
-      </TitledCard>
-      <TitledCard icon={mdiShieldLockOutline} label="Security">
+      <TitledCard
+        icon={mdiShieldLockOutline}
+        label="Security"
+        action={
+          <Show when={secretHidden()}>
+            <Button
+              class="m-0"
+              color="contrast"
+              text="soft"
+              loading={loadingSecret()}
+              onClick={revealSecret}
+            >
+              Reveal secret
+            </Button>
+          </Show>
+        }
+      >
         <p class="prose text-gray-500 dark:text-gray-400">
           Provide a secret to generate a signature of the payload.
         </p>
         <InputField
-          placeholder="Event"
+          placeholder="Secret"
           label="Signing secret"
           optional
           color="contrast"
           type="text"
-          value={webhookData.secret || ""}
+          value={props.editedWebhookId ? webhookData.secret || "secret" : webhookData.secret || ""}
+          disabled={Boolean(props.editedWebhookId)}
+          inputProps={{
+            type: secretHidden() ? "password" : "text"
+          }}
           class="flex items-center gap-1"
           setValue={(value) => {
-            setWebhookData("secret", value as App.WebhookEventName);
+            setWebhookData("secret", value || undefined);
           }}
           adornment={() => {
-            return <IconButton path={mdiRefresh} class="m-0" text="soft" />;
+            return (
+              <Show when={!props.editedWebhookId}>
+                <Tooltip text="Generate secret">
+                  <IconButton
+                    path={mdiRefresh}
+                    class="m-0"
+                    text="soft"
+                    onClick={() => {
+                      setWebhookData("secret", nanoid());
+                    }}
+                  />
+                </Tooltip>
+              </Show>
+            );
           }}
         >
           Secret used to sign the payload

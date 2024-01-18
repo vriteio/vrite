@@ -1,4 +1,6 @@
-import { ObjectId } from "mongodb";
+import { Binary, ObjectId } from "mongodb";
+import { convert as convertToSlug } from "url-slug";
+import { LexoRank } from "lexorank";
 import {
   getGitDataCollection,
   getContentGroupsCollection,
@@ -6,16 +8,20 @@ import {
   getContentsCollection,
   getWorkspacesCollection,
   FullContentPiece,
-  getContentPieceVariantsCollection,
-  getContentVariantsCollection,
-  getVariantsCollection,
-  FullContentGroup
+  FullContentGroup,
+  FullContents,
+  GitDirectory,
+  GitRecord
 } from "#collections";
 import { publishGitDataEvent, publishContentGroupEvent } from "#events";
 import { errors } from "#lib/errors";
 import { AuthenticatedContext } from "#lib/middleware";
 import { UnderscoreID } from "#lib/mongo";
-import { useGitSyncIntegration } from "#lib/git-sync";
+import {
+  CommonGitProviderDirectory,
+  createInputContentProcessor,
+  useGitProvider
+} from "#lib/git-sync";
 
 const handler = async (ctx: AuthenticatedContext): Promise<void> => {
   const gitDataCollection = getGitDataCollection(ctx.db);
@@ -23,29 +29,94 @@ const handler = async (ctx: AuthenticatedContext): Promise<void> => {
   const contentPiecesCollection = getContentPiecesCollection(ctx.db);
   const contentsCollection = getContentsCollection(ctx.db);
   const workspaceCollection = getWorkspacesCollection(ctx.db);
-  const contentPieceVariantsCollection = getContentPieceVariantsCollection(ctx.db);
-  const contentVariantsCollection = getContentVariantsCollection(ctx.db);
-  const variantsCollection = getVariantsCollection(ctx.db);
   const gitData = await gitDataCollection.findOne({ workspaceId: ctx.auth.workspaceId });
+  const gitProvider = useGitProvider(ctx, gitData);
 
-  if (!gitData) throw errors.notFound("gitData");
+  if (!gitData || !gitProvider) throw errors.serverError();
 
-  const gitSyncIntegration = useGitSyncIntegration(ctx, gitData);
+  const newContentGroups: UnderscoreID<FullContentGroup<ObjectId>>[] = [];
+  const newContentPieces: UnderscoreID<FullContentPiece<ObjectId>>[] = [];
+  const newContents: UnderscoreID<FullContents<ObjectId>>[] = [];
+  const newRecords: Array<GitRecord<ObjectId>> = [];
+  const newDirectories: Array<GitDirectory<ObjectId>> = [];
+  const { directory, lastCommit } = await gitProvider.initialSync();
+  const inputContentProcessor = await createInputContentProcessor(
+    ctx,
+    gitProvider.data.transformer
+  );
+  const gitDirectoryToContentGroup = async (
+    gitDirectory: CommonGitProviderDirectory,
+    ancestors: ObjectId[] = []
+  ): Promise<UnderscoreID<FullContentGroup<ObjectId>>> => {
+    const contentGroupId = new ObjectId();
+    const contentGroup = {
+      _id: contentGroupId,
+      ancestors,
+      descendants: [] as ObjectId[],
+      name: gitDirectory.name,
+      workspaceId: ctx.auth.workspaceId
+    };
 
-  if (!gitSyncIntegration) throw errors.serverError();
+    let order = LexoRank.min();
 
-  const {
-    lastCommit,
-    newContentGroups,
-    newContentPieces,
-    newContents,
-    newDirectories,
-    newRecords,
-    newContentPieceVariants,
-    newContentVariants,
-    newVariants,
-    topContentGroup
-  } = await gitSyncIntegration.initialSync();
+    newContentGroups.push(contentGroup);
+    newDirectories.push({
+      contentGroupId,
+      path: gitDirectory.path
+    });
+
+    const processedContentEntries = await inputContentProcessor.processBatch(
+      gitDirectory.records.map((record) => record.content)
+    );
+
+    gitDirectory.records.forEach((record, index) => {
+      const filename = record.path.split("/").pop() || "";
+      const processedContentEntry = processedContentEntries[index];
+      const { members, tags, date, ...inputMetadata } = processedContentEntry.metadata;
+      const contentPiece: UnderscoreID<FullContentPiece<ObjectId>> = {
+        _id: new ObjectId(),
+        workspaceId: ctx.auth.workspaceId,
+        order: `${order}`,
+        members: [],
+        slug: convertToSlug(filename),
+        tags: [],
+        title: filename,
+        contentGroupId,
+        filename,
+        ...inputMetadata,
+        ...(date && { date: new Date(date) }),
+        ...(members && { members: members.map((memberId) => new ObjectId(memberId)) }),
+        ...(tags && { tags: tags.map((tagId) => new ObjectId(tagId)) })
+      };
+      const content: UnderscoreID<FullContents<ObjectId>> = {
+        _id: new ObjectId(),
+        contentPieceId: contentPiece._id,
+        content: new Binary(processedContentEntry.buffer)
+      };
+
+      newContentPieces.push(contentPiece);
+      newContents.push(content);
+      newRecords.push({
+        contentPieceId: contentPiece._id,
+        currentHash: record.hash,
+        syncedHash: record.hash,
+        path: record.path
+      });
+      order = order.genNext();
+    });
+
+    for await (const directory of gitDirectory.directories) {
+      const descendantContentGroup = await gitDirectoryToContentGroup(directory, [
+        contentGroupId,
+        ...ancestors
+      ]);
+
+      contentGroup.descendants.push(descendantContentGroup._id);
+    }
+
+    return contentGroup;
+  };
+  const topContentGroup = await gitDirectoryToContentGroup(directory);
 
   if (newContentGroups.length) {
     await contentGroupsCollection.insertMany(newContentGroups);
@@ -57,18 +128,6 @@ const handler = async (ctx: AuthenticatedContext): Promise<void> => {
 
   if (newContents.length) {
     await contentsCollection.insertMany(newContents);
-  }
-
-  if (newContentPieceVariants.length) {
-    await contentPieceVariantsCollection.insertMany(newContentPieceVariants);
-  }
-
-  if (newContentVariants.length) {
-    await contentVariantsCollection.insertMany(newContentVariants);
-  }
-
-  if (newVariants.length) {
-    await variantsCollection.insertMany(newVariants);
   }
 
   await gitDataCollection.updateOne(
@@ -94,7 +153,6 @@ const handler = async (ctx: AuthenticatedContext): Promise<void> => {
     data: {
       records: newRecords.map((record) => ({
         ...record,
-        variantId: record.variantId ? `${record.variantId}` : undefined,
         contentPieceId: `${record.contentPieceId}`
       })),
       directories: newDirectories.map((directory) => ({
@@ -128,12 +186,6 @@ const handler = async (ctx: AuthenticatedContext): Promise<void> => {
       newContents.find(({ contentPieceId }) => {
         return contentPieceId.equals(contentPiece._id);
       }) || {};
-    const contentPieceVariants = newContentPieceVariants.filter(({ contentPieceId }) => {
-      return contentPieceId.equals(contentPiece._id);
-    });
-    const contentVariants = newContentVariants.filter(({ contentPieceId }) => {
-      return contentPieceId.equals(contentPiece._id);
-    });
     const contentGroup = newContentGroups.find(({ _id }) => {
       return _id.equals(contentPiece.contentGroupId);
     });
@@ -146,29 +198,6 @@ const handler = async (ctx: AuthenticatedContext): Promise<void> => {
         variantId: "base"
       });
     }
-
-    contentPieceVariants.forEach((contentPieceVariant) => {
-      const { _id, contentPieceId, variantId, ...variantData } = contentPieceVariant;
-      const { content } =
-        contentVariants.find(({ contentPieceId, variantId }) => {
-          return (
-            contentPieceId.equals(contentPiece._id) &&
-            variantId.equals(contentPieceVariant.variantId)
-          );
-        }) || {};
-
-      if (content) {
-        bulkUpsertEntries.push({
-          contentPiece: {
-            ...contentPiece,
-            ...variantData
-          },
-          contentGroup,
-          content: Buffer.from(content.buffer),
-          variantId: contentPieceVariant.variantId
-        });
-      }
-    });
   });
   ctx.fastify.search.content.bulkUpsert({
     entries: bulkUpsertEntries,

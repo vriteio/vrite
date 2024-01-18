@@ -1,5 +1,5 @@
 import { getCommitsSince, getFilesChangedInCommit, getDirectory } from "./requests";
-import { GitSyncConfiguration } from "../integration";
+import { CommonGitProviderRecord, GitSyncConfiguration } from "../../provider";
 import { minimatch } from "minimatch";
 import crypto from "node:crypto";
 import { errors } from "#lib/errors";
@@ -8,10 +8,7 @@ const pull: GitSyncConfiguration["pull"] = async ({ ctx, gitData }) => {
   if (!gitData.github) throw errors.notFound("githubData");
 
   const octokit = await ctx.fastify.github.getInstallationOctokit(gitData?.github.installationId);
-  const changedRecordsByDirectory = new Map<
-    string,
-    Array<{ fileName: string; status: string; content?: string; hash: string }>
-  >();
+  const changedRecordsByDirectory = new Map<string, Array<CommonGitProviderRecord>>();
   const lastCommits = await getCommitsSince({
     payload: { since: gitData.lastCommitDate! },
     githubData: gitData.github!,
@@ -35,17 +32,14 @@ const pull: GitSyncConfiguration["pull"] = async ({ ctx, gitData }) => {
         return;
       }
 
-      const recordPath = file.filename.replace(basePath, "").split("/").filter(Boolean).join("/");
-      const directory = recordPath.split("/").slice(0, -1).join("/");
-      const fileName = recordPath.split("/").pop() || "";
+      const path = file.filename.replace(basePath, "").split("/").filter(Boolean).join("/");
+      const directory = path.split("/").slice(0, -1).join("/");
       const { status } = file;
       const directoryRecords = changedRecordsByDirectory.get(directory) || [];
-      const existingRecordIndex = directoryRecords.findIndex(
-        (record) => record.fileName === fileName
-      );
+      const existingRecordIndex = directoryRecords.findIndex((record) => record.path === path);
 
       if (existingRecordIndex === -1) {
-        directoryRecords.push({ fileName, status, hash: "" });
+        directoryRecords.push({ content: "", hash: "", status, path });
       } else {
         directoryRecords[existingRecordIndex].status = status;
       }
@@ -64,7 +58,7 @@ const pull: GitSyncConfiguration["pull"] = async ({ ctx, gitData }) => {
     });
 
     for await (const entry of directoryEntries) {
-      const file = files.find((file) => file.fileName === entry.name);
+      const file = files.find((file) => file.path.split("/").at(-1) === entry.name);
 
       if (entry.type === "blob" && file && entry.object.text) {
         file.content = entry.object.text;

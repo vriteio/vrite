@@ -5,7 +5,7 @@ import { webhook, getWebhooksCollection, Webhook } from "#collections";
 import { errors } from "#lib/errors";
 
 const inputSchema = z.object({ id: z.string() });
-const outputSchema = webhook.extend({ extension: z.boolean().optional() });
+const outputSchema = webhook.omit({ secret: true }).extend({ extension: z.boolean().optional() });
 const handler = async (
   ctx: AuthenticatedContext,
   input: z.infer<typeof inputSchema>
