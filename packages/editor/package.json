@@ -4,7 +4,7 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "dependencies": {
-    "@floating-ui/dom": "^1.4.5",
+    "@floating-ui/dom": "^1.5.4",
     "@mdi/js": "^7.2.96",
     "@tiptap/core": "2.1.12",
     "@tiptap/extension-blockquote": "^2.1.12",
@@ -44,7 +44,7 @@
     "@tiptap/extension-underline": "^2.1.12",
     "@tiptap/pm": "2.1.12",
     "clsx": "^2.0.0",
-    "solid-js": "^1.7.8",
+    "solid-js": "^1.8.11",
     "url-slug": "^4.0.1"
   }
 }

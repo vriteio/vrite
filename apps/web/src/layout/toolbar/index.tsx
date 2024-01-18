@@ -186,7 +186,6 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
                 await client.git.resolveConflict.mutate({
                   content: resolvedContent()!,
                   contentPieceId: conflictData()!.contentPieceId,
-                  variantId: conflictData()!.variantId,
                   syncedHash: conflictData()!.pulledHash,
                   path: conflictData()!.path
                 });
@@ -212,7 +211,6 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
     const { activeContentPieceId, contentPieces } = useContentData();
     const { useSharedSignal } = useSharedState();
     const { registerCommand } = useCommandPalette();
-    const [sharedEditor] = useSharedSignal("editor");
     const [sharedProvider] = useSharedSignal("provider");
     const { setStorage } = useLocalStorage();
     const [menuOpened, setMenuOpened] = createSignal(false);

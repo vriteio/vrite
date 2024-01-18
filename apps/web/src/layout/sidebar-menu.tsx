@@ -14,7 +14,7 @@ import {
   mdiFile
 } from "@mdi/js";
 import { Accessor, Component, For, Show, createEffect, createSignal, on } from "solid-js";
-import { Link, useLocation, useNavigate } from "@solidjs/router";
+import { useLocation, useNavigate } from "@solidjs/router";
 import clsx from "clsx";
 import { createMediaQuery } from "@solid-primitives/media";
 import { createActiveElement } from "@solid-primitives/active-element";
@@ -24,7 +24,8 @@ import {
   useLocalStorage,
   useAuthenticatedUserData,
   useCommandPalette,
-  useHostConfig
+  useHostConfig,
+  useContentData
 } from "#context";
 import {
   Button,
@@ -50,6 +51,7 @@ interface MenuItem {
 
 const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
   const { storage, setStorage } = useLocalStorage();
+  const { activeContentPieceId } = useContentData();
   const hostConfig = useHostConfig();
   const navigate = useNavigate();
   const location = useLocation();
@@ -76,7 +78,7 @@ const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
         onClick: () => {
           navigate("/");
 
-          if (storage().activeContentPieceId && md() && location.pathname === "/") {
+          if (activeContentPieceId() && md() && location.pathname === "/") {
             setSidePanelView("contentPiece");
           }
 
@@ -108,7 +110,7 @@ const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
         onClick: () => {
           navigate("/editor");
 
-          if (storage().activeContentPieceId && md() && location.pathname === "/editor") {
+          if (activeContentPieceId() && md() && location.pathname === "/editor") {
             setSidePanelView("contentPiece");
           }
 
@@ -254,12 +256,12 @@ const ProfileMenu: Component<{ close(): void }> = (props) => {
           <Icon path={mdiHexagonSlice6} class="h-5 min-w-5 mr-1 text-gray-500 dark:text-gray-400" />
           <span class="text-sm clamp-1">{workspace()?.name}</span>
         </div>
-        <Link href="https://discord.gg/4Z5MdEffBn">
+        <a href="https://discord.gg/4Z5MdEffBn" target="_blank">
           <IconButton path={discordIcon} badge text="soft" class="m-0" variant="text" />
-        </Link>
-        <Link href="https://github.com/vriteio/vrite">
+        </a>
+        <a href="https://github.com/vriteio/vrite" target="_blank">
           <IconButton path={mdiGithub} badge text="soft" class="m-0" variant="text" />
-        </Link>
+        </a>
       </div>
     </div>
   );

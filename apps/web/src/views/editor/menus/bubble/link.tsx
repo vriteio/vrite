@@ -17,6 +17,7 @@ const LinkMenu: Component<{
 }> = (props) => {
   const client = useClient();
   const [link, setLink] = createSignal("");
+  const [loading, setLoading] = createSignal(false);
   const [selectedIndex, setSelectedIndex] = createSignal(0);
   const [linkInputRef, setLinkInputRef] = createRef<HTMLInputElement | null>(null);
   const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLDivElement | null>(
@@ -56,23 +57,41 @@ const LinkMenu: Component<{
   };
 
   createEffect(
-    on<string, AbortController>(link, (link, _, previousController) => {
-      previousController?.abort();
+    on<string, AbortController>(
+      link,
+      (link, _, previousController) => {
+        previousController?.abort();
 
-      const controller = new AbortController();
+        const controller = new AbortController();
 
-      if (link) {
-        client.search.search
-          .query({ query: link, byTitle: true }, { signal: controller.signal })
-          .then((results) => {
-            setSearchResults(results.map((result) => result.contentPiece));
-          });
-      } else {
-        setSearchResults([]);
-      }
+        if (
+          link &&
+          link !== props.editor.getAttributes("link").href &&
+          !link.startsWith("http://") &&
+          !link.startsWith("https://")
+        ) {
+          setLoading(true);
+          client.search.search
+            .query({ query: link, byTitle: true }, { signal: controller.signal })
+            .then((results) => {
+              setSearchResults(results.map((result) => result.contentPiece));
+              setLoading(false);
+            })
+            .catch((error) => {
+              if (controller.signal.aborted) return;
 
-      return controller;
-    })
+              setSearchResults([]);
+              setLoading(false);
+            });
+        } else {
+          setSearchResults([]);
+          setLoading(false);
+        }
+
+        return controller;
+      },
+      { defer: true }
+    )
   );
   createEffect(
     on(
@@ -120,7 +139,7 @@ const LinkMenu: Component<{
           <Input
             ref={setLinkInputRef}
             value={link()}
-            placeholder="Provide a link or search"
+            placeholder="Search or provide a link"
             wrapperClass="w-full md:w-auto"
             setValue={(value) => {
               setLink(value);
@@ -153,7 +172,13 @@ const LinkMenu: Component<{
               }
             }}
           />
-          <IconButton path={mdiCheck} text="soft" variant="text" onClick={saveLink} />
+          <IconButton
+            path={mdiCheck}
+            text="soft"
+            variant="text"
+            onClick={saveLink}
+            loading={loading()}
+          />
           <IconButton
             path={mdiDelete}
             text="soft"
@@ -180,16 +205,30 @@ const LinkMenu: Component<{
                     hover={false}
                     class={clsx(
                       "items-start",
-                      selectedIndex() === index() ? "bg-gray-300" : "bg-transparent"
+                      selectedIndex() === index() && "bg-gray-300 dark:bg-gray-700",
+                      selectedIndex() !== index() && "bg-transparent"
                     )}
                     onPointerEnter={() => {
                       setSelectedIndex(index());
                     }}
+                    onClick={() => {
+                      const selectedResult = searchResults()[selectedIndex()];
+
+                      props.editor
+                        .chain()
+                        .unsetLink()
+                        .setLink({ href: getLink(selectedResult) })
+                        .focus()
+                        .run();
+                      props.setMode("format");
+                    }}
                     data-index={index()}
                     label={
                       <div class="flex flex-col flex-1 justify-start items-start pl-1 text-left">
-                        <span class="flex-1 text-start font-semibold clamp-1">{result.title}</span>
-                        <span class="text-xs text-gray-500 dark:text-gray-400 font-mono clamp-1">
+                        <span class="flex-1 text-start font-semibold clamp-1 break-all">
+                          {result.title}
+                        </span>
+                        <span class="text-xs text-gray-500 dark:text-gray-400 font-mono clamp-1 break-all">
                           {getLink(result)}
                         </span>
                       </div>

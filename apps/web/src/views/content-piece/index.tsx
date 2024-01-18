@@ -46,8 +46,7 @@ const ContentPieceView: Component = () => {
     id: string;
     icon: string;
   }>;
-  const { useSharedSignal } = useSharedState();
-  const { activeContentPieceId, contentPieces, contentActions } = useContentData();
+  const { activeContentPieceId, activeVariantId, contentPieces, contentActions } = useContentData();
   const client = useClient();
   const { setStorage } = useLocalStorage();
   const { confirmDelete } = useConfirmationModal();
@@ -66,7 +65,6 @@ const ContentPieceView: Component = () => {
   > | null => {
     return activeContentPieceId() ? contentPieces[activeContentPieceId()!] || null : null;
   };
-  const activeVariant = (): null => null;
   const handleChange = async (
     value: Partial<App.ExtendedContentPieceWithAdditionalData<"coverWidth">>
   ): Promise<void> => {
@@ -89,7 +87,7 @@ const ContentPieceView: Component = () => {
 
     client.contentPieces.update.mutate({
       id,
-      variant: activeVariant()?.id,
+      variant: activeVariantId() || undefined,
       ...contentPieceUpdate
     });
     contentActions.updateContentPiece({
@@ -218,7 +216,7 @@ const ContentPieceView: Component = () => {
                       if (!id) return;
 
                       await client.contentPieces.delete.mutate({ id });
-                      setStorage((storage) => ({ ...storage, contentPieceId: undefined }));
+                      // TODO: Navigate
                     }
                   });
                 }}
@@ -235,10 +233,6 @@ const ContentPieceView: Component = () => {
             }}
           />
           <ContentPieceMetadata
-            activeVariant={activeVariant()}
-            setActiveVariant={() => {
-              /* setActiveVariant*/
-            }}
             contentPiece={activeContentPiece()!}
             setContentPiece={handleChange}
             editable={editable()}

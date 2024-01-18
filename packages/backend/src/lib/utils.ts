@@ -1,6 +1,5 @@
 import { AuthenticatedContext } from "./middleware";
 import { generateSalt, hashValue } from "./hash";
-import { OgObject } from "open-graph-scraper/dist/lib/types";
 import { Db, ObjectId } from "mongodb";
 import { nanoid } from "nanoid";
 import {
@@ -19,25 +18,6 @@ import { UnderscoreID } from "#lib/mongo";
 
 const stringToRegex = (str: string): RegExp => {
   return new RegExp(`^${str.replace(/[|\\{}()[\]^$+*?.]/g, "\\$&")}`, "i");
-};
-const extractPreviewDataFromOpenGraph = (input: OgObject): string => {
-  if (input.ogImage) {
-    if (typeof input.ogImage === "string") {
-      return input.ogImage;
-    }
-
-    if (Array.isArray(input.ogImage)) {
-      return input.ogImage[0].url;
-    }
-
-    return (input.ogImage as any).url;
-  }
-
-  if (input.twitterImage && typeof input.twitterImage === "string") {
-    return input.twitterImage;
-  }
-
-  return "";
 };
 const fetchContentPieceTags = async (
   db: Db,
@@ -148,7 +128,6 @@ const createToken = async (
 
 export {
   stringToRegex,
-  extractPreviewDataFromOpenGraph,
   fetchContentPieceTags,
   fetchContentPieceMembers,
   getCanonicalLinkFromPattern,

@@ -31,7 +31,7 @@
     "plausible-tracker": "^0.3.8",
     "seamless-scroll-polyfill": "^2.3.4",
     "shiki": "^0.14.4",
-    "solid-js": "^1.7.11",
+    "solid-js": "^1.8.11",
     "tinykeys": "^2.1.0",
     "typescript": "^5.2.2",
     "unocss": "^0.55.7",

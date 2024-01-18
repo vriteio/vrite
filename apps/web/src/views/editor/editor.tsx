@@ -170,7 +170,6 @@ const Editor: Component<EditorProps> = (props) => {
   });
   const [, setSharedEditor] = useSharedSignal("editor", editor());
   const [, setSharedProvider] = useSharedSignal("provider", provider);
-  const { setActiveContentPieceId } = useContentData();
   const shouldShow = (editor: SolidEditor): boolean => {
     el = null;
 

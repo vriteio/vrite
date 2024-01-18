@@ -2,7 +2,7 @@ import { debounce } from "@solid-primitives/scheduled";
 import clsx from "clsx";
 import { createSignal, createMemo, onCleanup, Component, Show } from "solid-js";
 import { Dynamic } from "solid-js/web";
-import { useHostConfig, useLocalStorage } from "#context";
+import { useContentData, useHostConfig, useLocalStorage } from "#context";
 import { createRef } from "#lib/utils";
 // import { ContentPieceView } from "#views/content-piece";
 import { SettingsView } from "#views/settings";
@@ -38,6 +38,7 @@ const sidePanelViews: Record<string, Component<Record<string, any>>> = {
 };
 const SidePanel: Component = () => {
   const { storage, setStorage } = useLocalStorage();
+  const { activeContentPieceId } = useContentData();
   const [prevX, setPrevX] = createRef(0);
   const [dragging, setDragging] = createSignal(false);
   const [previousWidth, setPreviousWidth] = createRef(480);
@@ -50,7 +51,7 @@ const SidePanel: Component = () => {
   });
   const sidePanelEnabled = createMemo(() => {
     if (!storage().sidePanelView) return false;
-    if (storage().sidePanelView === "contentPiece" && !storage().activeContentPieceId) return false;
+    if (storage().sidePanelView === "contentPiece" && !activeContentPieceId()) return false;
 
     return true;
   });

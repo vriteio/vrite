@@ -1,8 +1,9 @@
 import { ContentActions, createContentActions } from "./actions";
 import { ContentLoader, createContentLoader } from "./loader";
-import { createContext, ParentComponent, useContext } from "solid-js";
+import { createContext, createResource, ParentComponent, useContext } from "solid-js";
 import { createEffect, on, onCleanup } from "solid-js";
 import { createStore, reconcile } from "solid-js/store";
+import { useLocation, useNavigate, useParams } from "@solidjs/router";
 import { useClient, useLocalStorage, App, useAuthenticatedUserData } from "#context";
 
 interface ContentLevel {
@@ -36,12 +37,18 @@ interface ContentDataContextData {
 const ContentDataContext = createContext<ContentDataContextData>();
 const ContentDataProvider: ParentComponent = (props) => {
   const client = useClient();
+  const params = useParams();
+  const location = useLocation();
+  const navigate = useNavigate();
   const { profile } = useAuthenticatedUserData();
   const { storage, setStorage } = useLocalStorage();
   const [variants, setVariants] = createStore<Record<string, App.Variant | undefined>>({});
   const [contentLevels, setContentLevels] = createStore<Record<string, ContentLevel | undefined>>(
     {}
   );
+  const [gitData] = createResource(() => {
+    return client.git.config.query();
+  });
   const [contentGroups, setContentGroups] = createStore<
     Record<string, App.ContentGroup | undefined>
   >({});
@@ -55,7 +62,21 @@ const ContentDataProvider: ParentComponent = (props) => {
     return storage().activeContentGroupId || null;
   };
   const activeContentPieceId = (): string | null => {
-    return storage().activeContentPieceId || null;
+    const contentPieceParam = params.contentPiece;
+
+    if (contentPieceParam) {
+      if (contentPieceParam.includes("/")) {
+        const record = gitData()?.records.find((record) => {
+          return record.path === contentPieceParam.split("/").filter(Boolean).join("/");
+        });
+
+        return record?.contentPieceId || null;
+      }
+
+      return contentPieceParam || null;
+    }
+
+    return null;
   };
   const setActiveVariantId = (variantId: string | null): void => {
     setStorage((storage) => ({
@@ -70,10 +91,11 @@ const ContentDataProvider: ParentComponent = (props) => {
     }));
   };
   const setActiveContentPieceId = (contentPieceId: string | null): void => {
-    setStorage((storage) => ({
-      ...storage,
-      activeContentPieceId: contentPieceId || undefined
-    }));
+    if (location.pathname.includes("editor")) {
+      navigate(`/editor/${contentPieceId || ""}`);
+    } else {
+      navigate(`/${contentPieceId || ""}`);
+    }
   };
   const expandedContentLevels = (): string[] => {
     if (storage().expandedContentLevels?.length === 0) {

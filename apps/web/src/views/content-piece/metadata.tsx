@@ -17,8 +17,6 @@ interface ContentPieceMetadataProps {
   editable?: boolean;
   activeSection: ContentPieceMetadataSection;
   sections: ContentPieceMetadataSection[];
-  activeVariant: App.Variant | null;
-  setActiveVariant(variant: App.Variant | null): void;
   setActiveSection(activeSection: ContentPieceMetadataSection): void;
   setContentPiece(value: Partial<App.ExtendedContentPieceWithAdditionalData<"coverWidth">>): void;
 }
