@@ -1,5 +1,5 @@
 import Sandbox from "@jetbrains/websandbox";
-import { ExtensionGeneralContext, ExtensionSpec } from "@vrite/extensions";
+import { ExtensionGeneralContext, ExtensionSpec } from "@vrite/sdk/extensions";
 import { Accessor } from "solid-js";
 import { createRef } from "#lib/utils";
 import { useNotifications } from "#context";
@@ -18,7 +18,7 @@ interface ExtensionsSandbox {
   ): Promise<unknown>;
 }
 
-const loadSandbox = (): ExtensionsSandbox => {
+const loadExtensionSandbox = (): ExtensionsSandbox => {
   const { notify } = useNotifications();
   const [resolveRef, setResolveRef] = createRef(() => {});
   const [contextRef, setContextRef] = createRef<{
@@ -56,23 +56,13 @@ const loadSandbox = (): ExtensionsSandbox => {
     },
     { frameContainer: "#sandbox", allowAdditionalAttributes: "" }
   );
-
-  let hasLoaded = new Promise<void>((resolve) => {
+  const hasLoaded = new Promise<void>((resolve) => {
     setResolveRef(resolve);
   });
 
   sandbox.iframe.addEventListener("load", () => {
     sandbox.importScript("/sandbox.js");
   });
-
-  const reload = async (): Promise<void> => {
-    hasLoaded = new Promise<void>((resolve) => {
-      setResolveRef(resolve);
-    });
-    await sandbox.connection?.remote.reload();
-
-    return hasLoaded;
-  };
 
   return {
     callFunction: async (spec, funcName, { context, token, extensionId }) => {
@@ -118,5 +108,5 @@ const loadSandbox = (): ExtensionsSandbox => {
   };
 };
 
-export { loadSandbox };
+export { loadExtensionSandbox };
 export type { ExtensionsSandbox };

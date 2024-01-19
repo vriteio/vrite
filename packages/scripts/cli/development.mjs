@@ -132,83 +132,38 @@ program
   .argument("[location]", "Location of the extension(s)", "./")
   .option("-o, --output <dir>", "Output directory", "build")
   .action(async (location, options) => {
-    const specsPaths = await glob("**/spec.json", { cwd: location });
-
-    for await (const specPath of specsPaths) {
-      const specFile = await fs.readFile(path.join(location, specPath), "utf-8");
-      const spec = JSON.parse(specFile);
-      const functionsDir = path.join(location, path.dirname(specPath), "functions");
-      const outPath = path.join(options.output, `${spec.name}.json`);
-      const functionsPaths = await glob(["*.[tj]s", "**/index.[tj]s"], {
-        cwd: functionsDir
-      });
-      const [iconPath] = await glob("icon.*", {
-        cwd: path.join(location, path.dirname(specPath))
-      });
-      const [darkIconPath] = await glob("icon-dark.*", {
-        cwd: path.join(location, path.dirname(specPath))
-      });
-      const build = await context({
-        entryPoints: functionsPaths.map((functionPath) => path.join(functionsDir, functionPath)),
-        platform: "browser",
-        bundle: true,
-        format: "esm",
-        // globalName: "__extension_function__",
-        write: false,
-        minify: false,
-        outdir: "out",
-        plugins: [
-          {
-            name: "json",
-            setup(build) {
-              build.onEnd(async (result) => {
-                if (result.errors.length > 0) {
-                  log.error("Build failed!", result.errors);
-                } else {
-                  try {
-                    if (iconPath) {
-                      const contents = await fs.readFile(
-                        path.join(location, path.dirname(specPath), iconPath)
-                      );
-                      const b64 = contents.toString("base64");
-                      const type = await imageType(contents);
-
-                      spec.icon = `data:${type?.mime || "image/svg+xml"};base64,${b64}`;
-                    }
-
-                    if (darkIconPath) {
-                      const contents = await fs.readFile(
-                        path.join(location, path.dirname(specPath), darkIconPath)
-                      );
-                      const b64 = contents.toString("base64");
-                      const type = await imageType(contents);
-
-                      spec.darkIcon = `data:${type?.mime || "image/svg+xml"};base64,${b64}`;
-                    }
-
-                    spec.functions = {};
-
-                    for (const file of result.outputFiles) {
-                      const name = path.basename(file.path, ".js");
-
-                      spec.functions[name] = file.text;
-                    }
-
-                    await fs.mkdir(path.dirname(outPath), { recursive: true });
-                    await fs.writeFile(outPath, JSON.stringify(spec));
-                    log.success("Build succeeded!");
-                  } catch (error) {
-                    log.error("Build failed!", error);
-                  }
+    const indexPath = await glob("src/index.*", { cwd: location });
+    const assetsDir = path.join(location, "assets");
+    const outputDir = options.output;
+    const build = await context({
+      entryPoints: [indexPath[0]],
+      bundle: true,
+      outfile: `${outputDir}/index.js`,
+      platform: "browser",
+      format: "esm",
+      minify: true,
+      plugins: [
+        {
+          name: "copy-assets",
+          setup(build) {
+            build.onEnd(async (result) => {
+              if (result.errors.length > 0) {
+                log.error("Build failed!", result.errors);
+              } else {
+                try {
+                  await fs.cp(assetsDir, path.join(outputDir, "assets"), { recursive: true });
+                  log.success("Build succeeded!");
+                } catch (error) {
+                  log.error("Build failed!", error);
                 }
-              });
-            }
+              }
+            });
           }
-        ]
-      });
+        }
+      ]
+    });
 
-      await build.rebuild();
-    }
+    await build.rebuild();
 
     process.exit();
   });

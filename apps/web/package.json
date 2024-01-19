@@ -50,7 +50,7 @@
     "@vrite/backend": "workspace:*",
     "@vrite/components": "workspace:*",
     "@vrite/editor": "workspace:*",
-    "@vrite/extensions": "workspace:*",
+    "@vrite/extension-gpt-3.5": "workspace:^",
     "@vrite/scripts": "workspace:*",
     "@vrite/sdk": "workspace:*",
     "@vrite/tiptap-solid": "1.0.0",

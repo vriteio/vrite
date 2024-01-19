@@ -6,7 +6,7 @@ import {
   createFunction,
   createElement,
   createExtension
-} from "./extensions-sdk";
+} from "@vrite/sdk/extensions";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
 import { gfmInputTransformer, gfmOutputTransformer } from "@vrite/sdk/transformers";
 

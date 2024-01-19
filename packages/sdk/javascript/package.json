@@ -35,6 +35,9 @@
       "transformers": [
         "./dist/transformers.d.ts"
       ],
+      "extensions": [
+        "./dist/extensions.d.ts"
+      ],
       "astro": [
         "./dist/astro/index.d.ts"
       ],
@@ -51,6 +54,10 @@
     "./api": {
       "import": "./dist/api.mjs",
       "require": "./dist/api.cjs"
+    },
+    "./extensions": {
+      "import": "./dist/extensions.mjs",
+      "require": "./dist/extensions.cjs"
     },
     "./transformers": {
       "import": "./dist/transformers.mjs",

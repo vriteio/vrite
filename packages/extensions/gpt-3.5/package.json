@@ -1,0 +1,24 @@
+{
+  "name": "@vrite/extension-gpt-3.5",
+  "private": true,
+  "files": [
+    "build",
+    "src"
+  ],
+  "types": "./src/index.tsx",
+  "exports": {
+    ".": {
+      "import": "./build/index.js"
+    }
+  },
+  "scripts": {
+    "build": "scripts build-extension"
+  },
+  "devDependencies": {
+    "@vrite/scripts": "workspace:*"
+  },
+  "dependencies": {
+    "@microsoft/fetch-event-source": "^2.0.1",
+    "@vrite/sdk": "workspace:*"
+  }
+}

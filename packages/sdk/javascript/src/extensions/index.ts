@@ -1,4 +1,4 @@
-import type { Client, JSONContent, ContentPieceWithAdditionalData } from "@vrite/sdk";
+import type { Client, JSONContent, ContentPieceWithAdditionalData } from "../api";
 
 /* eslint-disable no-redeclare */
 /* eslint-disable func-style */
@@ -151,7 +151,6 @@ type ExtensionElement = {
   component: string;
   props?: Record<string, string | boolean | number>;
 };
-type Unsubscribe = () => void;
 interface ExtensionConfig {
   name: string;
   displayName: string;
@@ -316,3 +315,12 @@ const createExtension = (extensionConfig: ExtensionConfig): Extension => {
 };
 
 export { Components, createView, createTemp, createFunction, createElement, createExtension };
+export type {
+  Extension,
+  ExtensionBaseComponents,
+  ExtensionBaseViewContext,
+  ExtensionElement,
+  ContextValue,
+  View,
+  Func
+};
