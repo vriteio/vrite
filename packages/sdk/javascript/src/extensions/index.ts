@@ -61,10 +61,7 @@ type View<C extends ExtensionBaseViewContext | never = never> = Brand<"View"> & 
 };
 
 interface Extension {
-  generateSpec: () => Pick<
-    ExtensionConfig,
-    "name" | "displayName" | "description" | "permissions"
-  > & {
+  generateRuntimeSpec: () => {
     onUninstall?: string;
     onConfigure?: string;
     configurationView?: string;
@@ -151,11 +148,7 @@ type ExtensionElement = {
   component: string;
   props?: Record<string, string | boolean | number>;
 };
-interface ExtensionConfig {
-  name: string;
-  displayName: string;
-  description: string;
-  permissions: string[];
+interface ExtensionRuntimeConfig {
   onUninstall?: Func<ExtensionBaseContext>;
   onConfigure?: Func<ExtensionBaseContext>;
   configurationView?: View<ExtensionConfigurationViewContext>;
@@ -282,16 +275,16 @@ const createView = <C extends ExtensionBaseViewContext>(
 
   return view;
 };
-const createExtension = (extensionConfig: ExtensionConfig): Extension => {
+const createExtensionRuntime = (config: ExtensionRuntimeConfig): Extension => {
   return {
-    generateSpec: () => {
+    generateRuntimeSpec: () => {
       return {
-        ...extensionConfig,
-        onUninstall: extensionConfig.onUninstall?.[__id],
-        onConfigure: extensionConfig.onConfigure?.[__id],
-        configurationView: extensionConfig.configurationView?.[__id],
-        contentPieceView: extensionConfig.contentPieceView?.[__id],
-        blockActions: extensionConfig.blockActions?.map((blockAction) => ({
+        ...config,
+        onUninstall: config.onUninstall?.[__id],
+        onConfigure: config.onConfigure?.[__id],
+        configurationView: config.configurationView?.[__id],
+        contentPieceView: config.contentPieceView?.[__id],
+        blockActions: config.blockActions?.map((blockAction) => ({
           ...blockAction,
           view: blockAction.view[__id]
         }))
@@ -314,11 +307,22 @@ const createExtension = (extensionConfig: ExtensionConfig): Extension => {
   };
 };
 
-export { Components, createView, createTemp, createFunction, createElement, createExtension };
+export {
+  Components,
+  createView,
+  createTemp,
+  createFunction,
+  createElement,
+  createExtensionRuntime
+};
 export type {
   Extension,
   ExtensionBaseComponents,
   ExtensionBaseViewContext,
+  ExtensionBaseContext,
+  ExtensionBlockActionViewContext,
+  ExtensionContentPieceViewContext,
+  ExtensionConfigurationViewContext,
   ExtensionElement,
   ContextValue,
   View,

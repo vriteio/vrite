@@ -5,7 +5,7 @@ import {
   createTemp,
   createFunction,
   createElement,
-  createExtension
+  createExtensionRuntime
 } from "@vrite/sdk/extensions";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
 import { gfmInputTransformer, gfmOutputTransformer } from "@vrite/sdk/transformers";
@@ -19,11 +19,7 @@ declare global {
 const stopIcon =
   "M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z";
 
-export default createExtension({
-  name: "gpt-4",
-  displayName: "GPT-4",
-  description: "Integrates OpenAI's GPT-3.5 into the editor",
-  permissions: [],
+export default createExtensionRuntime({
   onConfigure: createFunction(() => {}),
   onUninstall: createFunction(() => {}),
   blockActions: [

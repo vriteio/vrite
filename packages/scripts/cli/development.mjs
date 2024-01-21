@@ -5,7 +5,6 @@ import chalk from "chalk";
 import { glob } from "glob";
 import fs from "fs/promises";
 import path from "path";
-import imageType from "image-type";
 
 const log = {
   info(msg) {
@@ -127,13 +126,12 @@ program
   });
 program
   .command("build-extension")
-  .alias("build-extensions")
-  .description("Builds Vrite extension(s)")
-  .argument("[location]", "Location of the extension(s)", "./")
+  .description("Builds a Vrite extension")
+  .argument("[spec]", "Path to the extension's spec.json file", "./")
   .option("-o, --output <dir>", "Output directory", "build")
-  .action(async (location, options) => {
-    const indexPath = await glob("src/index.*", { cwd: location });
-    const assetsDir = path.join(location, "assets");
+  .action(async (specPath, options) => {
+    const specFile = await fs.readFile(specPath, "utf-8");
+    const spec = JSON.parse(specFile);
     const outputDir = options.output;
     const build = await context({
       entryPoints: [indexPath[0]],
