@@ -4,7 +4,7 @@ import {
   ContextValue,
   ExtensionContentPieceViewContext,
   ExtensionSpec
-} from "@vrite/extensions";
+} from "@vrite/sdk/extensions";
 import clsx from "clsx";
 import { createStore, reconcile, unwrap } from "solid-js/store";
 import { Loader, Tooltip, Card } from "#components/primitives";
@@ -26,12 +26,12 @@ const ExtensionIcon: Component<ExtensionIconProps> = (props) => {
       <Show when={props.spec.icon}>
         <img
           src={props.spec.icon}
-          class={clsx("w-8 h-8 rounded-lg", props.class, props.spec.darkIcon && "dark:hidden")}
+          class={clsx("w-8 h-8 rounded-lg", props.class, props.spec.iconDark && "dark:hidden")}
         />
       </Show>
-      <Show when={props.spec.darkIcon}>
+      <Show when={props.spec.iconDark}>
         <img
-          src={props.spec.darkIcon}
+          src={props.spec.iconDark}
           class={clsx("w-8 h-8 rounded-lg", props.class, props.spec.icon && "hidden dark:block")}
         />
       </Show>

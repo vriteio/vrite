@@ -2,12 +2,17 @@ import { useViewContext } from "./view-context";
 import { Component, ComponentProps, createEffect, For, JSX, on, Show } from "solid-js";
 import { marked } from "marked";
 import { createStore } from "solid-js/store";
-import { ExtensionSpec, ExtensionView } from "@vrite/extensions";
+import { ExtensionSpec } from "@vrite/sdk/extensions";
 import { Dynamic } from "solid-js/web";
 import { useExtensions } from "#context";
 import { Button, IconButton, Loader, Tooltip } from "#components/primitives";
 import { InputField } from "#components/fragments";
 
+interface ExtensionView {
+  [key: `slot:${string}`]: string | ExtensionView | ExtensionView[];
+  component: string;
+  props?: Record<string, string | boolean | number>;
+}
 interface ComponentRendererProps {
   view: ExtensionView | string;
   spec: ExtensionSpec;
@@ -103,8 +108,9 @@ renderer.link = (href, title, text) => {
 };
 
 const ComponentRenderer: Component<ComponentRendererProps> = (props) => {
-  const { callFunction } = useExtensions();
+  const { getExtensionSandbox } = useExtensions();
   const { context, extension } = useViewContext();
+  const sandbox = getExtensionSandbox(extension.spec.name);
 
   if (typeof props.view === "string") {
     return (
@@ -114,25 +120,13 @@ const ComponentRenderer: Component<ComponentRendererProps> = (props) => {
     );
   }
 
-  const shortcutProps: Record<string, string | boolean | number> = {};
   const componentName =
     (props.view.component.match(/^(.+?)(?:\[|\.|$)/)?.[1] as keyof typeof components) || "";
-  const shortcutClasses = [...props.view.component.matchAll(/\.(.+?)(?=\.|\[|$)/g)].map((value) => {
-    return value[1];
-  });
-
-  [...props.view.component.matchAll(/\[(.+?)=(.+?)\]/g)].forEach(([match, attribute, value]) => {
-    if (!attribute.startsWith("bind:") && !attribute.startsWith("on:")) {
-      shortcutProps[attribute] = value;
-    }
-  });
-  shortcutProps.class = [...shortcutClasses, shortcutProps.class || ""].join(" ").trim();
-
   const [componentProps, setComponentProps] = createStore<Record<string, any>>({});
-  const allProps = { ...shortcutProps, ...props.view.props };
+  const viewProps = props.view.props || {};
 
-  Object.keys(allProps).forEach((key) => {
-    const value = allProps[key];
+  Object.keys(viewProps).forEach((key) => {
+    const value = viewProps[key];
 
     if (key.startsWith("bind:")) {
       const bindKey = key.slice(5);
@@ -164,7 +158,8 @@ const ComponentRenderer: Component<ComponentRendererProps> = (props) => {
       setComponentProps(`on${eventKey[0].toUpperCase()}${eventKey.slice(1)}`, () => {
         return () => {
           if (extension.id && extension.token) {
-            callFunction(props.spec, `${value}`, {
+            // TODO: Fix runFunction
+            sandbox?.runFunction(props.spec, `${value}`, {
               context,
               extensionId: extension.id,
               token: extension.token
@@ -204,3 +199,4 @@ const ComponentRenderer: Component<ComponentRendererProps> = (props) => {
 };
 
 export { ComponentRenderer };
+export type { ExtensionView };

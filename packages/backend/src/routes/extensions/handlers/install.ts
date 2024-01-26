@@ -10,6 +10,7 @@ import { createToken } from "#lib/utils";
 const inputSchema = z.object({
   extension: z.object({
     name: z.string(),
+    url: z.string(),
     permissions: z.array(tokenPermission),
     displayName: z.string()
   })
@@ -46,6 +47,7 @@ const handler = async (
   await extensionsCollection.insertOne({
     _id,
     config: {},
+    url: input.extension.url,
     name: input.extension.name,
     workspaceId: ctx.auth.workspaceId,
     token: value
@@ -54,6 +56,7 @@ const handler = async (
     action: "create",
     data: {
       config: {},
+      url: input.extension.url,
       name: input.extension.name,
       token: value,
       id: `${_id}`

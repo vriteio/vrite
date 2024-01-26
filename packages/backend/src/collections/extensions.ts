@@ -21,7 +21,7 @@ const contextObject = z.record(contextValue);
 const extension = z.object({
   id: zodId(),
   name: z.string(),
-  externalUrl: z.string().optional(),
+  url: z.string(),
   config: contextObject,
   token: z.string()
 });

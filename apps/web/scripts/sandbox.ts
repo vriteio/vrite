@@ -1,99 +1,100 @@
-import { ContextObject, ContextValue } from "@vrite/extensions";
+import {
+  ContextObject,
+  ContextValue,
+  ExtensionSpec,
+  ExtensionEnvironment,
+  ExtensionMetadata,
+  Extension,
+  ExtensionBaseViewContext,
+  ExtensionBaseContext,
+  Val
+} from "@vrite/sdk/extensions";
 
 // eslint-disable-next-line init-declarations
 declare const Websandbox: import("@jetbrains/websandbox").default;
 
 (async () => {
+  let extension: Extension | null = null;
+  let env: ExtensionEnvironment | null = null;
+  let metadata: ExtensionMetadata | null = null;
+
   const { createClient } = await import("@vrite/sdk");
   const client = createClient({
     token: "",
     extensionId: ""
   });
-  const context: Record<string, ContextObject> = {};
-  const createSetterMethod = (contextKey: string) => {
-    return (keyOrPartial: string | ContextObject, value?: ContextValue) => {
-      context[contextKey] = context[contextKey] || {};
+  const createDataScope = (name: string, defaultValue: ContextObject): void => {
+    if (!env || !metadata) return;
 
-      if (typeof keyOrPartial === "string" && typeof value !== "undefined") {
-        context[contextKey][keyOrPartial] = value;
-
-        if (keyOrPartial.startsWith("$")) {
-          Websandbox.connection?.remote.forceUpdate(JSON.parse(JSON.stringify(context)));
-        }
-      } else {
-        Object.assign(context[contextKey], keyOrPartial);
-
-        const dynamic = Object.keys(keyOrPartial).some((key) => key.startsWith("$"));
-
-        if (dynamic) {
-          Websandbox.connection?.remote.forceUpdate(JSON.parse(JSON.stringify(context)));
-        }
-      }
-    };
-  };
-  const contextMethods = {
-    setConfig: createSetterMethod("config"),
-    setTemp: createSetterMethod("temp"),
-    setData: createSetterMethod("data")
-  };
-  const buildContext = ({ methods, ...inputContext }: ContextObject): void => {
-    Object.assign(context, {
-      ...inputContext,
-      ...(methods &&
-        Object.fromEntries(
-          (methods as Array<keyof typeof contextMethods>).map((method) => [
-            method,
-            contextMethods[method]
-          ])
-        ))
+    env.data[name] = {};
+    Object.keys(defaultValue).forEach((key) => {
+      env!.data[name]![key] = {
+        [metadata!.__id]: key,
+        [metadata!.__value]: defaultValue[key]
+      } as Val<ContextValue>;
     });
   };
+  const reconcileEnvData = (envData: Record<string, ContextObject>): void => {};
+  const extractEnvData = (): Record<string, ContextObject> => {};
 
   Websandbox.connection?.setLocalApi({
-    reload: () => {
-      window.location.reload();
+    loadExtension: async (spec: ExtensionSpec) => {
+      const module = await import(spec.runtime);
+
+      extension = module.default || null;
+      env = extension?.getEnvironment() || null;
+      metadata = extension?.getMetadata() || null;
+
+      return extension?.generateRuntimeSpec() || null;
     },
-    callFunction: async (
-      func: string,
-      inputContext: ContextObject,
-      meta: { token: string; extensionId: string }
+    generateView: async <C extends ExtensionBaseViewContext = ExtensionBaseViewContext>(
+      id: string,
+      envData: Record<string, ContextObject>,
+      ctx: C
     ) => {
-      client.reconfigure({
-        token: meta.token,
-        extensionId: meta.extensionId
+      reconcileEnvData(envData);
+
+      const view = extension?.generateView<C>(id, {
+        ...ctx,
+        client,
+        extensionId: "",
+        config: {},
+        useConfig: () => {
+          return {};
+        },
+        flush: () => {
+          return Websandbox.connection?.remote.flush(JSON.parse(JSON.stringify(context)));
+        },
+        notify: (message) => {
+          return Websandbox.connection?.remote.notify(message);
+        },
+        token: ""
       });
-      buildContext(inputContext);
 
-      const url = URL.createObjectURL(new Blob([func], { type: "text/javascript" }));
-      // import() has to include backtick (`${url}`) to be ignored by Vite
-      // eslint-disable-next-line no-inline-comments
-      const module = await import(/* @vite-ignore */ `${url}`);
+      return {
+        view,
+        envData: extractEnvData()
+      };
+    },
+    runFunction: async <C extends ExtensionBaseContext | never = never>(
+      id: string,
+      envData: Record<string, ContextObject>,
+      ctx: C
+    ) => {
+      reconcileEnvData(envData);
+      extension?.runFunction<C>(id, {
+        ...ctx,
+        client,
+        extensionId: "",
+        config: {},
+        flush: () => {},
+        notify: () => {},
+        token: ""
+      });
 
-      URL.revokeObjectURL(url);
-      await module.default(
-        new Proxy(
-          {
-            ...context,
-            client,
-            token: meta.token,
-            extensionId: meta.extensionId,
-            notify: Websandbox.connection?.remote.notify
-          },
-          {
-            get(target, prop: string) {
-              if (prop in target && typeof target[prop as keyof typeof target] !== "undefined") {
-                return target[prop as keyof typeof target];
-              }
-
-              return (...args: any[]) => {
-                return Websandbox.connection?.remote.remoteFunction(prop, ...args);
-              };
-            }
-          }
-        )
-      );
-
-      return JSON.parse(JSON.stringify(context));
+      return {
+        envData: extractEnvData()
+      };
     }
   });
   Websandbox.connection?.remote.hasLoaded();

@@ -1,7 +1,7 @@
 import { ExtensionIcon } from "./extension-icon";
 import { mdiTune, mdiDownloadOutline } from "@mdi/js";
 import { Component, Show } from "solid-js";
-import { ExtensionDetails, hasPermission, useClient, useExtensions } from "#context";
+import { App, ExtensionDetails, hasPermission, useClient, useExtensions } from "#context";
 import { Card, Heading, IconButton } from "#components/primitives";
 
 interface ExtensionCardProps {
@@ -12,7 +12,7 @@ interface ExtensionCardProps {
 
 const ExtensionCard: Component<ExtensionCardProps> = (props) => {
   const client = useClient();
-  const { callFunction } = useExtensions();
+  const { getExtensionSandbox } = useExtensions();
 
   return (
     <Card class="m-0 gap-1 flex flex-col justify-center items-center" color="contrast">
@@ -38,20 +38,19 @@ const ExtensionCard: Component<ExtensionCardProps> = (props) => {
                 const { id, token } = await client.extensions.install.mutate({
                   extension: {
                     name: props.extension.spec.name,
+                    url: props.extension.url,
                     displayName: props.extension.spec.displayName,
-                    permissions: props.extension.spec.permissions || []
+                    permissions: (props.extension.spec.permissions || []) as App.TokenPermission[]
                   }
                 });
-                const onConfigureCallback = props.extension.spec.lifecycle?.["on:configure"];
+                const sandbox = getExtensionSandbox(props.extension.spec.name);
+                const onConfigureCallback = sandbox?.runtimeSpec?.onConfigure;
 
                 if (onConfigureCallback) {
-                  await callFunction(props.extension.spec, onConfigureCallback, {
+                  await sandbox.runFunction(onConfigureCallback, {
                     extensionId: id,
                     token,
-                    context: () => ({
-                      config: {},
-                      spec: props.extension.spec
-                    })
+                    config: {}
                   });
                 }
 

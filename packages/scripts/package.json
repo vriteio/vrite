@@ -8,5 +8,5 @@
     "glob": "^10.3.3",
     "image-type": "^5.2.0"
   },
-  "bin": "cli/development.mjs"
+  "bin": "development.mjs"
 }

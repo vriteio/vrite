@@ -1,32 +1,43 @@
 import Sandbox from "@jetbrains/websandbox";
-import { ExtensionGeneralContext, ExtensionSpec } from "@vrite/sdk/extensions";
-import { Accessor } from "solid-js";
+import {
+  ExtensionBlockActionViewContext,
+  ExtensionContentPieceViewContext,
+  ExtensionConfigurationViewContext,
+  ExtensionRuntimeSpec,
+  ExtensionSpec,
+  ExtensionBaseContext,
+  ExtensionEnvironment,
+  ContextObject,
+  ExtensionElement
+} from "@vrite/sdk/extensions";
 import { createRef } from "#lib/utils";
 import { useNotifications } from "#context";
 
-interface ExtensionsSandbox {
-  callFunction(
-    spec: ExtensionSpec,
-    func: string,
-    ctx: {
-      extensionId: string;
-      token: string;
-      context: Accessor<
-        Omit<ExtensionGeneralContext, "client" | "token" | "extensionId" | "notify">
-      >;
-    }
-  ): Promise<unknown>;
+interface ExtensionSandbox {
+  spec: ExtensionSpec;
+  runtimeSpec: ExtensionRuntimeSpec | null;
+  destroy(): void;
+  generateView<C>(
+    id: string,
+    envData: Record<string, ContextObject>,
+    ctx: C
+  ): Promise<ExtensionElement>;
+  runFunction<
+    C extends Omit<ExtensionBaseContext, "notify" | "client" | "flush"> = Omit<
+      ExtensionBaseContext,
+      "notify" | "client" | "flush"
+    >
+  >(
+    id: string,
+    envData: Record<string, ContextObject>,
+    ctx: C
+  ): Promise<void>;
 }
 
-const loadExtensionSandbox = (): ExtensionsSandbox => {
+const reconcileEnvData = (envData: Record<string, ContextObject>): void => {};
+const loadExtensionSandbox = (spec: ExtensionSpec): ExtensionSandbox => {
   const { notify } = useNotifications();
   const [resolveRef, setResolveRef] = createRef(() => {});
-  const [contextRef, setContextRef] = createRef<{
-    value: Omit<ExtensionGeneralContext, "client" | "token" | "extensionId" | "notify">;
-    setter?: (
-      data: Omit<ExtensionGeneralContext, "client" | "token" | "extensionId" | "notify">
-    ) => void;
-  } | null>(null);
   const sandbox = Sandbox.create(
     {
       hasLoaded() {
@@ -35,23 +46,8 @@ const loadExtensionSandbox = (): ExtensionsSandbox => {
         resolve?.();
       },
       notify,
-      remoteFunction(
-        functionName: keyof Omit<
-          ExtensionGeneralContext,
-          "client" | "token" | "extensionId" | "notify"
-        >,
-        ...args: any[]
-      ) {
-        const func = contextRef()?.value[functionName] as unknown;
-
-        if (typeof func === "function") {
-          func?.(...args);
-        }
-      },
-      forceUpdate(
-        data: Omit<ExtensionGeneralContext, "client" | "token" | "extensionId" | "notify">
-      ) {
-        contextRef()?.setter?.(data);
+      flush(env: ExtensionEnvironment) {
+        // TODO: Update env
       }
     },
     { frameContainer: "#sandbox", allowAdditionalAttributes: "" }
@@ -60,53 +56,43 @@ const loadExtensionSandbox = (): ExtensionsSandbox => {
     setResolveRef(resolve);
   });
 
+  let runtimeSpec: ExtensionRuntimeSpec | null = null;
+
+  // Load sandbox
   sandbox.iframe.addEventListener("load", () => {
     sandbox.importScript("/sandbox.js");
   });
+  // Load extension's runtime
+  hasLoaded.then(async () => {
+    runtimeSpec = await sandbox.connection?.remote.loadExtension(spec);
+  });
 
   return {
-    callFunction: async (spec, funcName, { context, token, extensionId }) => {
-      setContextRef({
-        value: context(),
-        setter: (data) => {
-          Object.keys(data).forEach((key) => {
-            const value =
-              data[
-                key as keyof Omit<
-                  ExtensionGeneralContext,
-                  "client" | "token" | "extensionId" | "notify"
-                >
-              ];
-            const setter = context()[
-              `set${key[0].toUpperCase()}${key.slice(1)}` as keyof Omit<
-                ExtensionGeneralContext,
-                "client" | "token" | "extensionId" | "notify"
-              >
-            ] as unknown;
+    spec,
+    get runtimeSpec() {
+      return runtimeSpec;
+    },
+    destroy: () => sandbox.destroy(),
+    generateView: async (id, envData, ctx) => {
+      const result = await sandbox.connection?.remote.generateView(id, envData, ctx);
 
-            if (key === "spec") return;
+      if (result) {
+        reconcileEnvData(result.envData);
 
-            if (setter && typeof setter === "function") {
-              setter(value);
-            }
-          });
-        }
-      });
+        return result.view;
+      }
 
-      const func = spec.functions[funcName];
-      const updatedContext = await sandbox.connection?.remote.callFunction(
-        func,
-        JSON.parse(JSON.stringify(context())),
-        {
-          extensionId,
-          token
-        }
-      );
+      return null;
+    },
+    runFunction: async (id, envData, ctx) => {
+      const result = await sandbox.connection?.remote.runFunction(id, envData, ctx);
 
-      contextRef()?.setter?.(updatedContext);
+      if (result) {
+        reconcileEnvData(result.envData);
+      }
     }
   };
 };
 
 export { loadExtensionSandbox };
-export type { ExtensionsSandbox };
+export type { ExtensionSandbox };

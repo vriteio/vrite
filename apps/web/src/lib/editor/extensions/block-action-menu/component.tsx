@@ -1,11 +1,7 @@
 import { debounce } from "@solid-primitives/scheduled";
 import { Range, createNodeFromContent, generateJSON } from "@tiptap/core";
 import { Node as PMNode } from "@tiptap/pm/model";
-import {
-  ExtensionBlockActionSpec,
-  ExtensionBlockActionViewContext,
-  ExtensionSpec
-} from "@vrite/extensions";
+import { ExtensionBlockActionViewContext, ExtensionSpec } from "@vrite/sdk/extensions";
 import { SolidEditor } from "@vrite/tiptap-solid";
 import clsx from "clsx";
 import { Component, For, Show, createEffect, createMemo, createSignal, on } from "solid-js";
@@ -22,6 +18,12 @@ interface BlockActionMenuProps {
     node: PMNode | null;
   };
 }
+interface ExtensionBlockActionSpec {
+  id: string;
+  label: string;
+  blocks: string[];
+  view: string;
+}
 interface ExtensionIconProps {
   class?: string;
   spec: ExtensionSpec;
@@ -34,12 +36,12 @@ const ExtensionIcon: Component<ExtensionIconProps> = (props) => {
         <img
           src={props.spec.icon}
           draggable={false}
-          class={clsx("w-8 h-8 rounded-lg", props.class, props.spec.darkIcon && "dark:hidden")}
+          class={clsx("w-8 h-8 rounded-lg", props.class, props.spec.iconDark && "dark:hidden")}
         />
       </Show>
-      <Show when={props.spec.darkIcon}>
+      <Show when={props.spec.iconDark}>
         <img
-          src={props.spec.darkIcon}
+          src={props.spec.iconDark}
           draggable={false}
           class={clsx("w-8 h-8 rounded-lg", props.class, props.spec.icon && "hidden dark:block")}
         />
@@ -48,7 +50,7 @@ const ExtensionIcon: Component<ExtensionIconProps> = (props) => {
   );
 };
 const BlockActionMenu: Component<BlockActionMenuProps> = (props) => {
-  const { installedExtensions } = useExtensions();
+  const { installedExtensions, getExtensionSandbox } = useExtensions();
   const [computeDropdownPosition, setComputeDropdownPosition] = createRef(() => {});
   const [containerRef, setContainerRef] = createRef<HTMLDivElement | null>(null);
   const [range, setRange] = createSignal<Range | null>(props.state.range);
@@ -67,8 +69,12 @@ const BlockActionMenu: Component<BlockActionMenuProps> = (props) => {
     }> = [];
 
     installedExtensions().map((extension) => {
-      if (extension.spec.blockActions) {
-        extension.spec.blockActions.forEach((blockAction) => {
+      // TODO: Fix ID
+      const sandbox = getExtensionSandbox(extension.id);
+      const runtimeSpec = sandbox?.runtimeSpec();
+
+      if (runtimeSpec?.blockActions) {
+        runtimeSpec.blockActions.forEach((blockAction) => {
           blockActions.push({
             blockAction,
             extension

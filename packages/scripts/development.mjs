@@ -2,7 +2,6 @@ import { ChildProcess, fork } from "child_process";
 import { Command } from "commander";
 import { context } from "esbuild";
 import chalk from "chalk";
-import { glob } from "glob";
 import fs from "fs/promises";
 import path from "path";
 

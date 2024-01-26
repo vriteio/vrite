@@ -1,6 +1,6 @@
-import { ComponentRenderer } from "./component-renderer";
+import { ComponentRenderer, ExtensionView } from "./component-renderer";
 import { useViewContext } from "./view-context";
-import { ExtensionSpec, ExtensionView } from "@vrite/extensions";
+import { ExtensionElement, ExtensionSpec } from "@vrite/sdk/extensions";
 import { Component, For, Show, createSignal } from "solid-js";
 import { Loader } from "#components/primitives";
 import { useExtensions } from "#context";
@@ -11,50 +11,42 @@ interface ViewRendererProps {
 }
 
 const ViewRenderer: Component<ViewRendererProps> = (props) => {
-  const { callFunction } = useExtensions();
+  const { getExtensionSandbox } = useExtensions();
   const [initiated, setInitiated] = createSignal(false);
-  const { context, setContext, extension } = useViewContext();
+  const { extension } = useViewContext();
+  const sandbox = getExtensionSandbox(extension.spec.name);
+  const runtimeSpec = sandbox?.runtimeSpec;
 
-  let initFunction = "";
-  let views: ExtensionView | ExtensionView[] = [];
+  let viewId = "";
+  let view: ExtensionElement | null = null;
 
   if (props.view === "configurationView") {
-    views = props.spec.configurationView || [];
-    initFunction = props.spec.lifecycle?.["on:initConfigurationView"] || "";
+    viewId = runtimeSpec?.configurationView || "";
   } else if (props.view === "contentPieceView") {
-    views = props.spec.contentPieceView || [];
-    initFunction = props.spec.lifecycle?.["on:initContentPieceView"] || "";
+    viewId = runtimeSpec?.contentPieceView || "";
   } else {
     const [, blockActionId] = props.view.split(":");
-    const blockAction = props.spec.blockActions?.find((blockAction) => {
+    const blockAction = runtimeSpec?.blockActions?.find((blockAction) => {
       return blockAction.id === blockActionId;
     });
 
     if (blockAction) {
-      views = blockAction.view || [];
-      initFunction = blockAction["on:init"] || "";
+      viewId = blockAction.view || "";
     }
   }
 
-  if (!Array.isArray(views)) {
-    views = [views];
-  }
-
-  if (initFunction && extension.id && extension.token) {
-    callFunction(props.spec, initFunction, {
-      context,
-      extensionId: extension.id,
-      token: extension.token
-    }).then(() => {
+  if (viewId && sandbox && extension.id && extension.token) {
+    sandbox.generateView(viewId, {}, {}).then((generatedView) => {
+      view = generatedView;
       setInitiated(true);
-    });
+    }) || null;
   } else {
     setInitiated(true);
   }
 
   return (
-    <Show when={initiated()} fallback={<Loader />}>
-      <For each={views}>{(el) => <ComponentRenderer spec={props.spec} view={el} />}</For>
+    <Show when={initiated() && view} fallback={<Loader />}>
+      <ComponentRenderer spec={props.spec} view={view!} />
     </Show>
   );
 };

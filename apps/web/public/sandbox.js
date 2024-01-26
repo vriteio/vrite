@@ -1080,83 +1080,76 @@
 
   // scripts/sandbox.ts
   (async () => {
+    let extension = null;
+    let env = null;
+    let metadata = null;
     const { createClient } = await Promise.resolve().then(() => (init_api(), api_exports));
     const client = createClient({
       token: "",
       extensionId: ""
     });
-    const context = {};
-    const createSetterMethod = (contextKey) => {
-      return (keyOrPartial, value) => {
-        context[contextKey] = context[contextKey] || {};
-        if (typeof keyOrPartial === "string" && typeof value !== "undefined") {
-          context[contextKey][keyOrPartial] = value;
-          if (keyOrPartial.startsWith("$")) {
-            Websandbox.connection?.remote.forceUpdate(JSON.parse(JSON.stringify(context)));
-          }
-        } else {
-          Object.assign(context[contextKey], keyOrPartial);
-          const dynamic = Object.keys(keyOrPartial).some((key) => key.startsWith("$"));
-          if (dynamic) {
-            Websandbox.connection?.remote.forceUpdate(JSON.parse(JSON.stringify(context)));
-          }
-        }
-      };
-    };
-    const contextMethods = {
-      setConfig: createSetterMethod("config"),
-      setTemp: createSetterMethod("temp"),
-      setData: createSetterMethod("data")
-    };
-    const buildContext = ({ methods, ...inputContext }) => {
-      Object.assign(context, {
-        ...inputContext,
-        ...methods && Object.fromEntries(
-          methods.map((method) => [
-            method,
-            contextMethods[method]
-          ])
-        )
+    const createDataScope = (name, defaultValue) => {
+      if (!env || !metadata)
+        return;
+      env.data[name] = {};
+      Object.keys(defaultValue).forEach((key) => {
+        env.data[name][key] = {
+          [metadata.__id]: key,
+          [metadata.__value]: defaultValue[key]
+        };
       });
     };
+    const reconcileEnvData = (envData) => {
+    };
+    const extractEnvData = () => {
+    };
     Websandbox.connection?.setLocalApi({
-      reload: () => {
-        window.location.reload();
+      loadExtension: async (spec) => {
+        const module = await import(spec.runtime);
+        extension = module.default || null;
+        env = extension?.getEnvironment() || null;
+        metadata = extension?.getMetadata() || null;
+        return extension?.generateRuntimeSpec() || null;
       },
-      callFunction: async (func, inputContext, meta) => {
-        client.reconfigure({
-          token: meta.token,
-          extensionId: meta.extensionId
+      generateView: async (id, envData, ctx) => {
+        reconcileEnvData(envData);
+        const view = extension?.generateView(id, {
+          ...ctx,
+          client,
+          extensionId: "",
+          config: {},
+          useConfig: () => {
+            return {};
+          },
+          flush: () => {
+            return Websandbox.connection?.remote.flush(JSON.parse(JSON.stringify(context)));
+          },
+          notify: (message) => {
+            return Websandbox.connection?.remote.notify(message);
+          },
+          token: ""
         });
-        buildContext(inputContext);
-        const url = URL.createObjectURL(new Blob([func], { type: "text/javascript" }));
-        const module = await import(
-          /* @vite-ignore */
-          `${url}`
-        );
-        URL.revokeObjectURL(url);
-        await module.default(
-          new Proxy(
-            {
-              ...context,
-              client,
-              token: meta.token,
-              extensionId: meta.extensionId,
-              notify: Websandbox.connection?.remote.notify
-            },
-            {
-              get(target, prop) {
-                if (prop in target && typeof target[prop] !== "undefined") {
-                  return target[prop];
-                }
-                return (...args) => {
-                  return Websandbox.connection?.remote.remoteFunction(prop, ...args);
-                };
-              }
-            }
-          )
-        );
-        return JSON.parse(JSON.stringify(context));
+        return {
+          view,
+          envData: extractEnvData()
+        };
+      },
+      runFunction: async (id, envData, ctx) => {
+        reconcileEnvData(envData);
+        extension?.runFunction(id, {
+          ...ctx,
+          client,
+          extensionId: "",
+          config: {},
+          flush: () => {
+          },
+          notify: () => {
+          },
+          token: ""
+        });
+        return {
+          envData: extractEnvData()
+        };
       }
     });
     Websandbox.connection?.remote.hasLoaded();

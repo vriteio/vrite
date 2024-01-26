@@ -1,4 +1,10 @@
-import { ContextObject, ContextValue, ExtensionGeneralViewContext } from "@vrite/extensions";
+import {
+  ContextObject,
+  ContextValue,
+  ExtensionBlockActionViewContext,
+  ExtensionConfigurationViewContext,
+  ExtensionContentPieceViewContext
+} from "@vrite/sdk/extensions";
 import {
   Accessor,
   createContext,
@@ -18,26 +24,42 @@ type ViewContextProviderProps<O> = {
   config: Record<string, any>;
   extension: ExtensionDetails;
 } & O;
+
+type ExtensionGeneralViewContext =
+  | ExtensionBlockActionViewContext
+  | ExtensionContentPieceViewContext
+  | ExtensionConfigurationViewContext;
 interface ViewContextData {
   context: Accessor<
-    Omit<ExtensionGeneralViewContext, "client" | "token" | "extensionId" | "notify">
+    Omit<ExtensionGeneralViewContext, "client" | "token" | "extensionId" | "notify" | "flush">
   >;
   extension: ExtensionDetails;
   setContext: Setter<
-    Omit<ExtensionGeneralViewContext, "client" | "token" | "extensionId" | "notify">
+    Omit<ExtensionGeneralViewContext, "client" | "token" | "extensionId" | "notify" | "flush">
   >;
 }
 
 const ViewContext = createContext<ViewContextData>();
 const ViewContextProvider = <C extends ExtensionGeneralViewContext>(
   props: ViewContextProviderProps<
-    Omit<C, "spec" | "temp" | "config" | "setTemp" | "client" | "token" | "extensionId" | "notify">
+    Omit<
+      C,
+      | "spec"
+      | "temp"
+      | "config"
+      | "setTemp"
+      | "client"
+      | "token"
+      | "extensionId"
+      | "notify"
+      | "flush"
+    >
   >
 ): JSX.Element => {
   const [, passedProps] = splitProps(props, ["children", "extension", "config"]);
   const [temp, setTemp] = createStore({} as ContextObject);
   const [context, setContext] = createSignal<
-    Omit<ExtensionGeneralViewContext, "client" | "token" | "extensionId" | "notify"> & {
+    Omit<ExtensionGeneralViewContext, "client" | "token" | "extensionId" | "notify" | "flush"> & {
       methods: string[];
     }
   >({
