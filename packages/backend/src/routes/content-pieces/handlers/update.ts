@@ -134,7 +134,7 @@ const handler = async (
   if (updatedCustomData) {
     const { $schema, ...customData } = updatedCustomData;
 
-    contentPieceUpdates.customData = customData;
+    contentPieceUpdates.customData = JSON.parse(JSON.stringify(customData));
   }
 
   const newContentPiece = { ...contentPiece, ...contentPieceUpdates };

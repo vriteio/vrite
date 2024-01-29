@@ -44,7 +44,13 @@ const handler = async (
   ctx: AuthenticatedContext,
   input: z.infer<typeof inputSchema>
 ): Promise<z.infer<typeof outputSchema>> => {
-  const { referenceId, contentGroupId, customData, content, ...create } = input;
+  const {
+    referenceId,
+    contentGroupId,
+    customData: { $schema, ...customData } = {},
+    content,
+    ...create
+  } = input;
   const contentPiecesCollection = getContentPiecesCollection(ctx.db);
   const contentsCollection = getContentsCollection(ctx.db);
   const contentGroupsCollection = getContentGroupsCollection(ctx.db);
@@ -60,7 +66,10 @@ const handler = async (
     tags: create.tags?.map((tag) => new ObjectId(tag)) || [],
     members: create.members?.map((member) => new ObjectId(member)) || [],
     order: LexoRank.min().toString(),
-    slug: create.slug || convertToSlug(create.title)
+    slug: create.slug || convertToSlug(create.title),
+    ...(Object.keys(customData) && {
+      customData: JSON.parse(JSON.stringify(customData || {}))
+    })
   };
 
   if (!contentGroup) throw errors.notFound("contentGroup");
