@@ -1,70 +1,34 @@
 import { debounce } from "@solid-primitives/scheduled";
 import clsx from "clsx";
-import { createSignal, createMemo, onCleanup, Component, Show } from "solid-js";
-import { Dynamic } from "solid-js/web";
-import { useContentData, useHostConfig, useLocalStorage } from "#context";
+import { createSignal, createMemo, onCleanup, Component } from "solid-js";
+import { useLocalStorage } from "#context";
 import { createRef } from "#lib/utils";
-import { SettingsView } from "#views/settings";
-import { ExtensionsView } from "#views/extensions";
-import { GettingStartedView } from "#views/getting-started";
-import { GitView } from "#views/git";
-import { ContentPieceView } from "#views/content-piece";
+import { ExplorerView } from "#views/explorer";
 
-const sidePanelViews: Record<string, Component<Record<string, any>>> = {
-  contentPiece: ContentPieceView,
-  git: () => {
-    const hostConfig = useHostConfig();
-
-    return (
-      <Show when={hostConfig.githubApp}>
-        <GitView />
-      </Show>
-    );
-  },
-  settings: SettingsView,
-  extensions: () => {
-    const hostConfig = useHostConfig();
-
-    return (
-      <Show when={hostConfig.extensions}>
-        <ExtensionsView />
-      </Show>
-    );
-  },
-  default: GettingStartedView
-};
-const SidePanel: Component = () => {
+const SidePanelRight: Component = () => {
   const { storage, setStorage } = useLocalStorage();
-  const { activeContentPieceId } = useContentData();
   const [prevX, setPrevX] = createRef(0);
   const [dragging, setDragging] = createSignal(false);
   const [previousWidth, setPreviousWidth] = createRef(480);
   const [minWidth] = createSignal(375);
   const [maxWidth] = createSignal(640);
   const [handleHover, setHandleHover] = createSignal(false);
-  const view = createMemo(() => sidePanelViews[storage().sidePanelView || ""]);
   const collapsed = createMemo(() => {
-    return (storage().sidePanelWidth || 0) < minWidth();
-  });
-  const sidePanelEnabled = createMemo(() => {
-    if (!storage().sidePanelView) return false;
-    if (storage().sidePanelView === "contentPiece" && !activeContentPieceId()) return false;
-
-    return true;
+    return (storage().rightPanelWidth || 0) < minWidth();
   });
   const triggerHandleHover = debounce(() => {
     setHandleHover(true);
   }, 100);
   const closeOffset = 50;
-  const setWidth = (sidePanelWidth: number): void => {
+  const setWidth = (rightPanelWidth: number): void => {
     setStorage((storage) => ({
       ...storage,
-      sidePanelWidth
+      rightPanelWidth
     }));
   };
   const onPointerMove = (event: MouseEvent): void => {
     if (dragging()) {
-      const newWidth = previousWidth() - (prevX() || 0) + event.x;
+      const newWidth = previousWidth() + (prevX() || 0) - event.x;
 
       if (newWidth > minWidth()) {
         setWidth(Math.min(maxWidth(), newWidth));
@@ -87,7 +51,7 @@ const SidePanel: Component = () => {
     setDragging(false);
   };
 
-  setPreviousWidth(Number(localStorage.getItem("sidePanelWidth")));
+  setPreviousWidth(Number(localStorage.getItem("rightPanelWidth")));
   window.addEventListener("pointermove", onPointerMove);
   window.addEventListener("pointerup", onPointerUp);
   window.addEventListener("pointerleave", onPointerLeave);
@@ -100,29 +64,29 @@ const SidePanel: Component = () => {
   return (
     <div
       class={clsx(
-        "fixed top-0 left-0 !lt-md:w-full md:relative h-[calc(100%-3.25rem-env(safe-area-inset-bottom,0px))] md:h-full border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800",
+        "fixed top-0 left-0 !lt-md:w-full flex md:relative h-[calc(100%-3.25rem-env(safe-area-inset-bottom,0px))] md:h-full border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800",
         "transition-transform ease-out duration-350",
-        sidePanelEnabled() ? "flex" : "hidden",
+
         collapsed() && "translate-y-[100vh] md:translate-y-0 z-50",
-        !collapsed() && "md:border-r-2 z-20"
+        !collapsed() && "md:border-l-2 z-20"
       )}
       style={{
-        "width": `${storage().sidePanelWidth || 0}px`,
+        "width": `${storage().rightPanelWidth || 0}px`,
         "max-width": `${maxWidth()}px`
       }}
     >
       <div class={clsx("flex-1 w-full relative", collapsed() && "md:hidden")}>
         <div class="h-full">
-          <Dynamic component={view()} />
+          <ExplorerView />
         </div>
       </div>
       <div
         class={clsx(
-          "w-4 cursor-col-resize flex justify-start items-center absolute -right-4 top-0 h-full z-60"
+          "w-4 cursor-col-resize flex justify-start items-center absolute -left-0.5 top-0 h-full z-60"
         )}
         onPointerDown={(event) => {
           setDragging(true);
-          setPreviousWidth(storage().sidePanelWidth || 0);
+          setPreviousWidth(storage().rightPanelWidth || 0);
           setPrevX(event.x);
         }}
         onPointerEnter={() => {
@@ -145,4 +109,4 @@ const SidePanel: Component = () => {
   );
 };
 
-export { SidePanel };
+export { SidePanelRight };

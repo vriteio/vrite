@@ -183,7 +183,7 @@ const ContentPieceView: Component = () => {
                 }
 
                 setDropdownMenuOpened(false);
-                navigate("/editor");
+                navigate(`/editor/${activeContentPieceId() || ""}`);
               }}
             />
           </Show>

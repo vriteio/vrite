@@ -1,6 +1,7 @@
 import { useDashboardTableViewData } from "./table-view-context";
 import { Component, For } from "solid-js";
 import { Dynamic } from "solid-js/web";
+import { useNavigate } from "@solidjs/router";
 import { App, useLocalStorage } from "#context";
 
 interface ContentPieceRowProps {
@@ -12,6 +13,7 @@ interface ContentPieceRowProps {
 const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
   const { columnDefs, columns } = useDashboardTableViewData();
   const { setStorage } = useLocalStorage();
+  const navigate = useNavigate();
 
   return (
     <div
@@ -31,11 +33,14 @@ const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
       <For each={columns}>
         {(column) => {
           return (
-            <div
+            <button
               class="border-r-2 border-gray-200 dark:border-gray-700 h-8"
               style={{
                 "min-width": `${column.width}px`,
                 "max-width": `${column.width}px`
+              }}
+              onClick={() => {
+                navigate(`/${props.contentPiece.id}`);
               }}
             >
               <Dynamic
@@ -44,11 +49,11 @@ const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
                 contentPiece={props.contentPiece}
                 column={column}
               />
-            </div>
+            </button>
           );
         }}
       </For>
-      <div class="border-r-2 border-gray-200 dark:border-gray-700 h-8 flex-1 min-w-[4rem]" />
+      <div class="border-gray-200 dark:border-gray-700 h-8 flex-1 min-w-[4rem]" />
     </div>
   );
 };

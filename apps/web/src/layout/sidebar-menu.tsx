@@ -13,7 +13,16 @@ import {
   mdiFileMultiple,
   mdiFile
 } from "@mdi/js";
-import { Accessor, Component, For, Show, createEffect, createSignal, on } from "solid-js";
+import {
+  Accessor,
+  Component,
+  For,
+  Show,
+  createEffect,
+  createMemo,
+  createSignal,
+  on
+} from "solid-js";
 import { useLocation, useNavigate } from "@solidjs/router";
 import clsx from "clsx";
 import { createMediaQuery } from "@solid-primitives/media";
@@ -45,7 +54,6 @@ interface MenuItem {
   props?: Record<string, string>;
   inMenu?: boolean;
   active?: () => boolean;
-  ui?: Component;
   onClick(): void;
 }
 
@@ -63,6 +71,17 @@ const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
       sidePanelView: view
     }));
   };
+  const pathData = createMemo(() => {
+    const pathRegex = /^\/(?:editor\/)?([a-f\d]{24})?$/i;
+    const match = location.pathname.match(pathRegex);
+
+    if (!match) return {};
+
+    return {
+      activeContentPieceId: match[1],
+      view: match[0].includes("editor") ? "editor" : "dashboard"
+    };
+  });
 
   return () => {
     return [
@@ -71,31 +90,18 @@ const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
         label: "Dashboard",
         active: () => {
           return (
-            location.pathname === "/" &&
+            pathData().view === "dashboard" &&
             (md() || !(storage().sidePanelView && storage().sidePanelWidth))
           );
         },
         onClick: () => {
-          navigate("/");
+          navigate(`/${activeContentPieceId() || ""}`);
 
-          if (activeContentPieceId() && md() && location.pathname === "/") {
+          if (activeContentPieceId() && md() && pathData().view === "dashboard") {
             setSidePanelView("contentPiece");
           }
 
           if (!md()) setStorage((storage) => ({ ...storage, sidePanelWidth: 0 }));
-        },
-        ui: () => {
-          return (
-            <Show when={location.pathname === "/"}>
-              <Icon
-                path={mdiFile}
-                class={clsx(
-                  "hidden md:flex absolute bottom-0 right-0 h-3.5 w-3.5 text-gray-500 dark:text-gray-400 !group-hover:fill-white group-hover:opacity-90 pointer-events-none",
-                  storage().sidePanelView === "contentPiece" && "fill-[url(#gradient)]"
-                )}
-              />
-            </Show>
-          );
         }
       },
       {
@@ -103,41 +109,23 @@ const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
         label: "Editor",
         active: () => {
           return (
-            location.pathname === "/editor" &&
+            pathData().view === "editor" &&
             (md() || !(storage().sidePanelView && storage().sidePanelWidth))
           );
         },
         onClick: () => {
-          navigate("/editor");
-
-          if (activeContentPieceId() && md() && location.pathname === "/editor") {
-            setSidePanelView("contentPiece");
-          }
+          navigate(`/editor/${activeContentPieceId() || ""}`);
 
           if (!md()) setStorage((storage) => ({ ...storage, sidePanelWidth: 0 }));
-        },
-        ui: () => {
-          return (
-            <Show when={location.pathname === "/editor"}>
-              <Icon
-                path={mdiFile}
-                class={clsx(
-                  "hidden md:flex absolute bottom-0 right-0 h-3.5 w-3.5 text-gray-500 dark:text-gray-400 !group-hover:fill-white group-hover:opacity-90 pointer-events-none",
-                  storage().sidePanelView === "contentPiece" && "fill-[url(#gradient)]"
-                )}
-              />
-            </Show>
-          );
         }
       },
       null,
-      {
-        icon: mdiFileMultiple,
-        label: "Explorer",
-        inMenu: true,
-        active: () => storage().sidePanelView === "explorer",
+      activeContentPieceId() && {
+        icon: mdiFile,
+        label: "Content piece",
+        active: () => storage().sidePanelView === "contentPiece",
         onClick: () => {
-          setSidePanelView("explorer");
+          setSidePanelView("contentPiece");
         }
       },
       hostConfig.githubApp && {
@@ -322,13 +310,13 @@ const SidebarMenu: Component = () => {
     >
       <Card
         class={clsx(
-          "lg:p-2 fixed z-50 p-0 md:py-2 h-[calc(env(safe-area-inset-bottom,0)+3.625rem)] transition-all duration-300 m-0 rounded-0 border-0 border-t-2 md:border-t-0 md:border-r-2 w-full md:w-[calc(3.75rem+env(safe-area-inset-left,0px))] pl-[calc(env(safe-area-inset-left,0px))] md:h-full relative bottom-0 md:bottom-unset",
+          "lg:p-0 flex justify-center items-center box-content fixed z-50 p-0 md:py-2 h-[calc(env(safe-area-inset-bottom,0)+3.625rem)] transition-all duration-300 m-0 rounded-0 border-0 border-t-2 md:border-t-0 md:border-r-2 w-full md:w-[calc(3.25rem+env(safe-area-inset-left,0px))] pl-[calc(env(safe-area-inset-left,0px))] md:h-full relative bottom-0 md:bottom-unset",
           hideMenu() && "hidden"
         )}
         color="base"
         onTransitionEnd={() => tooltipController.updatePosition()}
       >
-        <div class="flex md:flex-col h-full lg:w-10">
+        <div class="flex md:flex-col h-full lg:w-10 py-1.5">
           <div class="flex items-center justify-center md:mb-4">
             <IconButton
               path={logoIcon}
@@ -370,9 +358,6 @@ const SidebarMenu: Component = () => {
                             }
                             {...(menuItem().props || {})}
                           />
-                          <Show when={menuItem().ui}>
-                            <Dynamic component={menuItem().ui} />
-                          </Show>
                         </button>
                       </Tooltip>
                     );

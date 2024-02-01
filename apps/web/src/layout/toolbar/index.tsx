@@ -1,4 +1,5 @@
 import { UserList } from "./user-list";
+import { RightPanelMenu } from "./right-panel-menu";
 import {
   mdiAppleKeyboardCommand,
   mdiBookOpenBlankVariant,
@@ -8,6 +9,8 @@ import {
   mdiGithub,
   mdiMagnify,
   mdiMenu,
+  mdiMenuClose,
+  mdiMenuOpen,
   mdiViewDashboard,
   mdiViewList
 } from "@mdi/js";
@@ -212,7 +215,7 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
     const { useSharedSignal } = useSharedState();
     const { registerCommand } = useCommandPalette();
     const [sharedProvider] = useSharedSignal("provider");
-    const { setStorage } = useLocalStorage();
+    const { storage, setStorage } = useLocalStorage();
     const [menuOpened, setMenuOpened] = createSignal(false);
 
     createEffect(
@@ -282,6 +285,7 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
               path={mdiFullscreen}
               label="Zen mode"
             />
+            <RightPanelMenu variant="text" />
           </Show>
         </Show>
       </div>
@@ -387,6 +391,7 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
             open();
           }}
         />
+        <RightPanelMenu />
       </div>
     );
   }

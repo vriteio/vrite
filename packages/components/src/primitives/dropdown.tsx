@@ -14,7 +14,7 @@ import {
   onMount,
   Show
 } from "solid-js";
-import { computePosition, flip, hide, Placement, size } from "@floating-ui/dom";
+import { autoPlacement, computePosition, flip, hide, Placement, size } from "@floating-ui/dom";
 import { Dynamic, Portal } from "solid-js/web";
 import { createMediaQuery } from "@solid-primitives/media";
 import { createActiveElement } from "@solid-primitives/active-element";
@@ -32,6 +32,8 @@ interface DropdownProps extends JSX.HTMLAttributes<HTMLDivElement> {
   attachActivatorHandler?: boolean;
   activatorWrapperClass?: string;
   overflowContainerClass?: string;
+  alternativePlacements?: Placement[];
+  autoPlacement?: boolean;
   activatorButton: Component<{ opened: boolean; computeDropdownPosition(): void }>;
   setOpened?(opened: boolean): void;
 }
@@ -88,9 +90,20 @@ const Dropdown: Component<DropdownProps> = (props) => {
     const box = boxRef();
 
     if (button && box) {
+      const strategyFixedMiddleware = [
+        props.autoPlacement &&
+          autoPlacement({
+            allowedPlacements: props.alternativePlacements,
+            altBoundary: true
+          })
+      ].filter(Boolean);
+      const strategyAbsoluteMiddleware = [
+        flip({ fallbackPlacements: props.alternativePlacements })
+      ];
+
       computePosition(button, box, {
         middleware: [
-          flip(),
+          ...(props.fixed ? strategyFixedMiddleware : strategyAbsoluteMiddleware),
           hide(),
           size({
             padding: 16,

@@ -34,6 +34,7 @@ import {
   useCommandPalette,
   useLocalStorage
 } from "#context";
+import { MiniEditor } from "#components/fragments";
 
 interface ContentPieceGroupProps {
   contentGroup: App.ContentGroup;
@@ -72,7 +73,7 @@ const AddContentPieceGroup: Component<AddContentPieceGroupProps> = (props) => {
   return (
     <button
       class={clsx(
-        "h-12 w-full flex justify-start items-center gap-3 group px-2 border-b-2 border-r-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 hover:bg-gray-200 dark:hover:bg-gray-700 hover:cursor-pointer",
+        "h-12 w-full flex justify-start items-center gap-3 group px-2 border-b-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 hover:bg-gray-200 dark:hover:bg-gray-700 hover:cursor-pointer",
         props.class
       )}
       onClick={createNewContentGroup}
@@ -210,7 +211,7 @@ const ContentPieceGroup: Component<ContentPieceGroupProps> = (props) => {
       {...(props.dataProps || {})}
     >
       <div class="flex flex-col overflow-hidden" style={{ "min-width": `${tableWidth()}px` }}>
-        <div class="border-b-2 border-r-2 text-left font-500 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 w-full h-12 relative">
+        <div class="border-b-2 text-left font-500 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 w-full h-12 relative">
           <div class="h-12 flex justify-start items-center gap-3 group px-2 border-b-2 border-transparent">
             <IconButton
               path={mdiChevronDown}
@@ -220,7 +221,27 @@ const ContentPieceGroup: Component<ContentPieceGroupProps> = (props) => {
                 setExpanded(!expanded());
               }}
             />
-            <Heading level={3}>{props.contentGroup.name}</Heading>
+            <div>
+              <MiniEditor
+                class="inline-flex overflow-x-auto font-semibold content-group-name scrollbar-hidden hover:cursor-text whitespace-nowrap-children"
+                content="paragraph"
+                initialValue={props.contentGroup.name}
+                readOnly={Boolean(
+                  activeDraggableContentGroupId() || !hasPermission("manageDashboard")
+                )}
+                placeholder="Group name"
+                onBlur={(editor) => {
+                  client.contentGroups.update.mutate({
+                    id: props.contentGroup.id,
+                    name: editor.getText()
+                  });
+                  contentActions.updateContentGroup({
+                    id: props.contentGroup.id,
+                    name: editor.getText()
+                  });
+                }}
+              />
+            </div>
             <Dropdown
               placement="bottom-start"
               opened={dropdownOpened()}
@@ -273,7 +294,7 @@ const ContentPieceGroup: Component<ContentPieceGroupProps> = (props) => {
           class="flex flex-col items-start overflow-hidden transition-all transform duration-300 ease-in-out"
           fallback={
             <Show when={!activeDraggableContentPieceId() && !columnContentLevel().loading}>
-              <div class="border-b-2 border-gray-200 dark:border-gray-700 text-center w-full h-8 flex justify-center items-center text-gray-500 dark:text-gray-400 text-sm">
+              <div class="locked border-b-2 border-gray-200 dark:border-gray-700 text-center w-full h-8 flex justify-start px-3 items-center text-gray-500 dark:text-gray-400 text-sm">
                 No content pieces
               </div>
             </Show>
@@ -282,6 +303,7 @@ const ContentPieceGroup: Component<ContentPieceGroupProps> = (props) => {
             "max-height": maxHeight()
           }}
           ids={columnContentLevel().pieces}
+          filter=".locked"
           ghostClass=":base: border-b-2 border-gray-200 dark:border-gray-700 children:invisible"
           group="table-row"
           disabled={!hasPermission("manageDashboard")}

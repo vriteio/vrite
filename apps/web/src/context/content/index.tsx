@@ -152,18 +152,12 @@ const ContentDataProvider: ParentComponent = (props) => {
       if (action === "move") {
         contentActions.moveContentGroup(data);
       } else if (action === "create") {
-        if (userId === profile()?.id) return;
-
         contentActions.createContentGroup(data);
       } else if (action === "delete") {
         contentActions.deleteContentGroup(data);
       } else if (action === "update") {
-        if (userId === profile()?.id) return;
-
         contentActions.updateContentGroup(data);
       } else if (action === "reorder") {
-        if (userId === profile()?.id) return;
-
         contentActions.reorderContentGroup(data);
       }
     }
@@ -225,16 +219,12 @@ const ContentDataProvider: ParentComponent = (props) => {
               {
                 onData({ action, data, userId }) {
                   if (action === "update") {
-                    if (userId === profile()?.id) return;
-
                     contentActions.updateContentPiece(data);
                   } else if (action === "create") {
                     contentActions.createContentPiece(data);
                   } else if (action === "delete") {
                     contentActions.deleteContentPiece(data);
                   } else if (action === "move") {
-                    if (userId === profile()?.id) return;
-
                     contentActions.moveContentPiece(data);
                   }
                 }

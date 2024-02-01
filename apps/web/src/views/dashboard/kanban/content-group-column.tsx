@@ -199,6 +199,10 @@ const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
                     id: props.contentGroup.id,
                     name: editor.getText()
                   });
+                  contentActions.updateContentGroup({
+                    id: props.contentGroup.id,
+                    name: editor.getText()
+                  });
                 }}
               />
             </div>

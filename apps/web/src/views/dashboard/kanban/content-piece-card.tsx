@@ -150,7 +150,7 @@ const ContentPieceCard: Component<ContentPieceProps> = (props) => {
                 sidePanelView: "contentPiece"
               }));
               setActiveContentPieceId(props.contentPiece.id);
-              navigate("/editor");
+              navigate(`/editor/${props.contentPiece.id || ""}`);
             }}
           />
         </Tooltip>

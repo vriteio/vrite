@@ -366,9 +366,26 @@ kbd {
     }
   }
 }
+@supports (not selector(::-webkit-scrollbar)) {
+  .scrollbar-sm {
+    scrollbar-color: #e2e8f0 #f8fafc;
+    scrollbar-width: thin;
+    &-dashboard {
+      scrollbar-color: #f8fafc #e2e8f0;
+    }
+  }
+  .dark {
+    .scrollbar-sm {
+      scrollbar-color: #1e293b #0f172a;
+
+      &-contrast,
+      &-dashboard {
+        scrollbar-color: #0f172a #1e293b;
+      }
+    }
+  }
+}
 .scrollbar-sm {
-  scrollbar-color: #e2e8f0 #f8fafc;
-  scrollbar-width: thin;
   &::-webkit-scrollbar {
     @apply w-2 h-2 rounded-lg bg-gray-50 dark:bg-gray-900;
   }
@@ -377,22 +394,11 @@ kbd {
   }
   &-contrast,
   &-dashboard {
-    scrollbar-color: #f8fafc #e2e8f0;
     &::-webkit-scrollbar {
       @apply w-2 h-2 rounded-lg bg-gray-100 dark:bg-gray-800;
     }
     &::-webkit-scrollbar-thumb {
       @apply bg-gray-200 rounded-lg dark:bg-gray-900;
-    }
-  }
-}
-.dark {
-  .scrollbar-sm {
-    scrollbar-color: #1e293b #0f172a;
-
-    &-contrast,
-    &-dashboard {
-      scrollbar-color: #0f172a #1e293b;
     }
   }
 }

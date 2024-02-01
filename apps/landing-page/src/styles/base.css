@@ -14,10 +14,13 @@ h2 {
   font-family: "Nunito", sans-serif;
   @apply !font-semibold;
 }
-
+@supports (not selector(::-webkit-scrollbar)) {
+  .scrollbar-sm {
+    scrollbar-width: thin;
+    scrollbar-color: #f8fafc #e2e8f0;
+  }
+}
 .scrollbar-sm {
-  scrollbar-width: thin;
-  scrollbar-color: #f8fafc #e2e8f0;
   &::-webkit-scrollbar {
     @apply w-2 h-2 rounded-lg bg-gray-100 dark:bg-gray-800;
   }
@@ -25,9 +28,11 @@ h2 {
     @apply bg-gray-200 rounded-lg dark:bg-gray-900;
   }
 }
-.dark {
-  .scrollbar-sm {
-    scrollbar-color: #0f172a #1e293b;
+@supports (not selector(::-webkit-scrollbar)) {
+  .dark {
+    .scrollbar-sm {
+      scrollbar-color: #0f172a #1e293b;
+    }
   }
 }
 

@@ -11,8 +11,7 @@ import { ScrollShadow } from "#components/fragments";
 
 const Table: Component = () => {
   const client = useClient();
-  const { activeContentGroupId, contentGroups, contentPieces, contentLevels, contentActions } =
-    useContentData();
+  const { activeContentGroupId, contentGroups, contentLevels, contentActions } = useContentData();
   const { setActiveDraggableContentGroupId } = useDashboardData();
   const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
   const { tableWidth } = useDashboardTableViewData();

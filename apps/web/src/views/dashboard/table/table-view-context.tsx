@@ -29,7 +29,13 @@ import { SetStoreFunction, createStore } from "solid-js/store";
 import { debounce } from "@solid-primitives/scheduled";
 import { Button, Icon, IconButton, Heading } from "#components/primitives";
 import { tagColorClasses } from "#lib/utils";
-import { useLocalStorage, App, useAuthenticatedUserData, useClient } from "#context";
+import {
+  useLocalStorage,
+  App,
+  useAuthenticatedUserData,
+  useClient,
+  useContentData
+} from "#context";
 
 interface DashboardTableViewColumnConfig {
   id: string;
@@ -58,6 +64,7 @@ type DashboardTableViewContextType = {
 const DashboardTableViewContext = createContext<DashboardTableViewContextType>();
 const DashboardTableViewDataProvider: ParentComponent = (props) => {
   const { workspaceSettings } = useAuthenticatedUserData();
+  const { activeContentPieceId } = useContentData();
   const client = useClient();
   const columnDefs: Record<string, DashboardTableViewColumnDef> = {
     title: {
@@ -66,26 +73,29 @@ const DashboardTableViewDataProvider: ParentComponent = (props) => {
       minWidth: 250,
       icon: mdiFormatTitle,
       cell: (props) => {
-        const { setStorage } = useLocalStorage();
+        const active = (): boolean => activeContentPieceId() === props.contentPiece.id;
 
         return (
-          <button class="px-2 text-start min-h-8 flex justify-start items-center w-full">
+          <div class="px-2 text-start min-h-8 flex justify-start items-center w-full">
             <div class="mr-1 h-6 w-6 flex justify-center items-center">
               <Icon
                 path={mdiFileDocumentOutline}
-                class="h-6 w-6 group-hover:fill-[url(#gradient)]"
+                class={clsx("h-6 w-6", active() && "fill-[url(#gradient)]")}
               />
             </div>
             <Heading
               level={4}
-              class="font-semibold clamp-1 group-hover:bg-gradient-to-tr group-hover:text-transparent group-hover:bg-clip-text group-hover:underline"
+              class={clsx(
+                "font-semibold clamp-1",
+                active() && "bg-gradient-to-tr text-transparent bg-clip-text"
+              )}
             >
               <div
                 class="contents"
                 innerHTML={DOMPurify.sanitize(props.contentPiece.title || "[No Title]")}
               />
             </Heading>
-          </button>
+          </div>
         );
       }
     },
@@ -303,27 +313,32 @@ const DashboardTableViewDataProvider: ParentComponent = (props) => {
 
   let ignoreNextUpdate = true;
 
-  createEffect(() => {
-    ignoreNextUpdate = true;
-    setColumns(
-      (workspaceSettings()?.dashboardViews?.table || columns).map((column) => {
-        const existingColumnConfig = columns.find(
-          (existingColumn) => existingColumn.id === column.id
+  createEffect(
+    on(
+      () => workspaceSettings()?.dashboardViews?.table,
+      () => {
+        ignoreNextUpdate = true;
+        setColumns(
+          (workspaceSettings()?.dashboardViews?.table || columns).map((column) => {
+            const existingColumnRef = columns.find(
+              (existingColumn) => existingColumn.id === column.id
+            )?.ref;
+
+            return {
+              ...column,
+              ref: existingColumnRef
+            };
+          })
         );
-
-        if (existingColumnConfig) return existingColumnConfig;
-
-        return column;
-      })
-    );
-  });
+      }
+    )
+  );
   createEffect(() => {
     // Handle show/hide/reorder columns
     if (!ignoreNextUpdate) debouncedColumnsUpdate();
 
     columns.forEach((column) => {
       column.width;
-      if (!ignoreNextUpdate) debouncedColumnsUpdate();
     });
     ignoreNextUpdate = false;
   });

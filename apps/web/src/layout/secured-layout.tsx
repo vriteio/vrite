@@ -2,6 +2,7 @@ import { SidePanel } from "./side-panel";
 import { Toolbar } from "./toolbar";
 import { SidebarMenu } from "./sidebar-menu";
 import { BottomMenu } from "./bottom-menu";
+import { SidePanelRight } from "./side-panel-right";
 import { ParentComponent, Show, createEffect } from "solid-js";
 import { useLocation } from "@solidjs/router";
 import { mdiFullscreenExit } from "@mdi/js";
@@ -14,6 +15,7 @@ import {
   useLocalStorage
 } from "#context";
 import { IconButton, Tooltip } from "#components/primitives";
+import { ExplorerView } from "#views/explorer";
 
 const SecuredLayout: ParentComponent = (props) => {
   const { storage, setStorage } = useLocalStorage();
@@ -71,6 +73,7 @@ const SecuredLayout: ParentComponent = (props) => {
                           {props.children}
                         </div>
                       </div>
+                      <SidePanelRight />
                     </div>
                   </div>
                 </div>
