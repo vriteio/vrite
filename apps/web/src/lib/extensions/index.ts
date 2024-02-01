@@ -1,4 +1,3 @@
-export * from "./view-renderer";
-export * from "./view-context";
+export * from "./extension-view-renderer";
 export * from "./sandbox";
 export * from "./component-renderer";

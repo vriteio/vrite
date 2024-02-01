@@ -3,40 +3,90 @@ import type { Client, JSONContent, ContentPieceWithAdditionalData } from "../api
 /* eslint-disable no-redeclare */
 /* eslint-disable func-style */
 /* eslint-disable no-use-before-define */
-type ContextValue = string | number | boolean | undefined | ContextObject | ContextArray;
-
-interface ContextObject {
+type ContextValue = string | number | boolean | undefined | null | ContextObject | ContextArray;
+type ContextObject = {
   [x: string]: ContextValue;
-}
-
-interface ContextArray extends Array<ContextValue> {}
+};
+type ContextArray = Array<ContextValue>;
+type IsFunction<T, R, Fallback = T> = T extends (...args: any[]) => any ? R : Fallback;
+type IsObject<T, R, Fallback = T> = IsFunction<
+  T,
+  Fallback,
+  T extends object ? (T extends any[] ? Fallback : R) : Fallback
+>;
+type Tail<S> = S extends `${string}.${infer T}` ? Tail<T> : S;
+type Value<T> = T[keyof T];
+type FlattenStepOne<T> = {
+  [K in keyof T as K extends string
+    ? IsObject<T[K], `${K}.${keyof T[K] & string}`, K>
+    : K]: IsObject<T[K], { [key in keyof T[K]]: T[K][key] }>;
+};
+type FlattenStepTwo<T> = {
+  [a in keyof T]: IsObject<
+    T[a],
+    Value<{ [M in keyof T[a] as M extends Tail<a> ? M : never]: T[a][M] }>
+  >;
+};
+type FlattenOneLevel<T> = FlattenStepTwo<FlattenStepOne<T>>;
+type Flatten<T> = T extends FlattenOneLevel<T> ? T : Flatten<FlattenOneLevel<T>>;
+type UsableEnv<R extends ContextObject = ContextObject, W extends ContextObject = ContextObject> = {
+  readable: R;
+  writable: W;
+};
+type UseEnv<C extends ExtensionBaseContext> = C[typeof __usableEnv] extends UsableEnv
+  ? <
+      K extends
+        | keyof Flatten<C[typeof __usableEnv]["readable"]>
+        | keyof Flatten<C[typeof __usableEnv]["writable"]>
+        | keyof C[typeof __usableEnv]["readable"]
+        | keyof C[typeof __usableEnv]["writable"]
+    >(
+      key: K
+    ) => K extends keyof Flatten<C[typeof __usableEnv]["readable"]>
+      ? Val<Flatten<C[typeof __usableEnv]["readable"]>[K]>
+      : K extends keyof Flatten<C[typeof __usableEnv]["writable"]>
+        ? [
+            Val<Flatten<C[typeof __usableEnv]["writable"]>[K]>,
+            (value: Flatten<C[typeof __usableEnv]["writable"]>[K]) => void
+          ]
+        : K extends keyof C[typeof __usableEnv]["readable"]
+          ? Val<C[typeof __usableEnv]["readable"][K]>
+          : K extends keyof C[typeof __usableEnv]["writable"]
+            ? [
+                Val<C[typeof __usableEnv]["writable"][K]>,
+                (value: C[typeof __usableEnv]["writable"][K]) => void
+              ]
+            : never
+  : never;
 
 interface ExtensionBaseContext<C extends ContextObject = ContextObject> {
   client: Omit<Client, "reconfigure">;
   token: string;
   extensionId: string;
-  config: C;
+  config?: C;
+  spec: ExtensionSpec;
+  [__usableEnv]: UsableEnv<any, any>;
+  use: UseEnv<this>;
   flush(): Promise<void>;
   notify(message: { text: string; type: "success" | "error" }): Promise<void>;
 }
 interface ExtensionBaseViewContext<C extends ContextObject = ContextObject>
   extends ExtensionBaseContext<C> {}
 interface ExtensionConfigurationViewContext<C extends ContextObject = ContextObject>
-  extends Omit<ExtensionBaseViewContext<C>, "config"> {
-  useConfig<K extends keyof C>(key: K): [() => C[K], (value: C[K]) => void];
+  extends ExtensionBaseViewContext<C> {
+  [__usableEnv]: UsableEnv<{ [__value]: any }, { config: C }>;
 }
 interface ExtensionContentPieceViewContext<
   C extends ContextObject = ContextObject,
   D extends ContextObject = ContextObject
 > extends ExtensionBaseViewContext<C> {
-  contentPiece: ContentPieceWithAdditionalData;
-  useData(): [D, (value: D) => void];
+  [__usableEnv]: UsableEnv<{ contentPiece: ContentPieceWithAdditionalData }, { data: D }>;
 }
 interface ExtensionBlockActionViewContext<C extends ContextObject = ContextObject>
   extends ExtensionBaseViewContext<C> {
-  content: JSONContent;
-  replaceContent(contentHTML: string): void;
-  refreshContent(): void;
+  [__usableEnv]: UsableEnv<{ content: JSONContent }, { [__value]: any }>;
+  replaceContent(contentHTML: string): Promise<void>;
+  refreshContent(): Promise<void>;
 }
 
 // eslint-disable-next-line init-declarations
@@ -44,25 +94,33 @@ declare const __brand: unique symbol;
 // eslint-disable-next-line init-declarations
 declare const __props: unique symbol;
 
+const __usableEnv: unique symbol = Symbol("usableEnv");
 const __value: unique symbol = Symbol("value");
-const __name: unique symbol = Symbol("name");
 const __id: unique symbol = Symbol("id");
+const __componentName: unique symbol = Symbol("componentName");
 
 type Brand<B> = { [__brand]: B };
-type Val<V extends ContextValue> = Brand<"Val"> & { [__value]: V; [__id]: string };
+type Val<V extends ContextValue | { [K: string]: Val } = ContextValue | { [K: string]: Val }> =
+  Brand<"Val"> & {
+    (): V;
+    [__value]: V;
+    [__id]: string;
+  };
 type Func<C extends ExtensionBaseContext | never = never> = Brand<"Func"> & {
-  [__value]: (context: C) => void;
+  (context: C): void;
   [__id]: string;
 };
 interface ExtensionEnvironment {
-  data: Partial<{ [scope: string]: Partial<{ [id: string]: Val<any> }> }>;
+  data: Record<string, Val>;
   func: Record<string, Func<any>>;
   views: Record<string, View<any>>;
+  currentScope: { func: string[]; temp: string[] } | null;
 }
 interface ExtensionMetadata {
   __value: typeof __value;
-  __name: typeof __name;
   __id: typeof __id;
+  __componentName: typeof __componentName;
+  __usableEnv: typeof __usableEnv;
 }
 type View<C extends Partial<ExtensionBaseViewContext> | never = never> = Brand<"View"> & {
   [__value]: (context: C) => ExtensionElement;
@@ -98,6 +156,7 @@ interface Extension {
     id: string,
     context: C
   ) => ExtensionElement | void;
+  removeScope: (id: string) => void;
   runFunction: <C extends ExtensionBaseContext | never = never>(id: string, context: C) => void;
 }
 type BaseProps<P extends Record<string, any>> = {
@@ -114,7 +173,7 @@ interface ExtensionBaseComponent<
   E extends string | never = never
 > {
   (props: BaseProps<P> & BindableProps<P> & EventProps<E>): void;
-  [__name]: string;
+  [__componentName]: string;
   [__props]: P;
 }
 interface ExtensionBaseComponents {
@@ -127,7 +186,10 @@ interface ExtensionBaseComponents {
       color: "base" | "contrast";
       label: string;
       textarea: boolean;
-      value: string | boolean;
+      value?: string | boolean;
+      disabled: boolean;
+      placeholder: string;
+      optional: boolean;
     },
     "change"
   >;
@@ -160,10 +222,10 @@ interface ExtensionBaseComponents {
   // Control Components
   Switch: ExtensionBaseComponent<{}>;
   Match: ExtensionBaseComponent<{
-    value: ContextValue;
+    when: ContextValue;
   }>;
   Show: ExtensionBaseComponent<{
-    value: ContextValue;
+    when: ContextValue;
   }>;
   Text: ExtensionBaseComponent<{
     content: string;
@@ -190,93 +252,103 @@ interface ExtensionRuntimeConfig<C extends ContextObject = ContextObject> {
 const env: ExtensionEnvironment = {
   data: {},
   func: {},
-  views: {}
+  views: {},
+  currentScope: null
+};
+const scopes: Record<string, { func: string[]; temp: string[] }> = {};
+const generateId = (): string => {
+  return `_${Math.random().toString(36).substr(2, 9)}`;
 };
 const Components = new Proxy({} as ExtensionBaseComponents, {
   get(_, key) {
     const component = (): void => {};
 
-    Object.defineProperty(component, __name, {
-      get() {
-        return key;
-      }
+    Object.defineProperty(component, __componentName, {
+      value: key
     });
 
     return component;
   }
 });
 
-function createTemp<T extends ContextValue>(
-  initialValue: T
-): [Val<T> & (() => T), (value: T) => void];
+function createTemp<T extends ContextValue>(initialValue: T): [Val<T>, (value: T) => void];
 function createTemp<T extends ContextValue>(
   initialValue?: T
-): [Val<T | undefined> & (() => T | undefined), (value: T | undefined) => void];
+): [Val<T | undefined>, (value: T | undefined) => void];
 function createTemp<T extends ContextValue>(
   initialValue?: T
-): [Val<T | undefined> & (() => T | undefined), (value: T | undefined) => void] {
-  const id = `${Object.keys(env.data.temp || {}).length}`;
-  const temp = {
-    [__id]: id,
-    [__value]: initialValue
-  } as Val<T>;
-  const baseGetter: () => T | undefined = () => env.data.temp?.[id]?.[__value];
+): [Val<T | undefined>, (value: T | undefined) => void] {
+  if (!env.data.temp) {
+    const tempVal = (() => env.data.temp[__value]) as Val<{
+      [key: string]: Val<ContextValue>;
+    }>;
+
+    Object.defineProperty(tempVal, __id, {
+      value: `temp`
+    });
+    Object.defineProperty(tempVal, __value, { value: {}, writable: true });
+    env.data.temp = tempVal;
+  }
+
+  const id = generateId();
   const setter = (value: T | undefined): void => {
-    if (env.data.temp?.[id]) {
-      env.data.temp[id]![__value] = value;
+    const tempVal = env.data.temp as Val<{
+      [key: string]: Val<ContextValue>;
+    }>;
+
+    if (tempVal[__value][id]) {
+      tempVal[__value][id][__value] = value;
     }
   };
+  const temp = (() => {
+    const tempVal = env.data.temp as Val<{
+      [key: string]: Val<ContextValue>;
+    }>;
 
-  env.data.temp = env.data.temp || {};
-  env.data.temp[id] = temp;
-  Object.defineProperty(baseGetter, __id, {
-    get() {
-      return temp[__id];
-    }
+    return tempVal[__value][id]![__value];
+  }) as Val<T | undefined>;
+
+  Object.defineProperty(temp, __id, {
+    value: `temp.${id}`
   });
-  Object.defineProperty(baseGetter, __value, {
-    get() {
-      return temp[__value];
-    }
-  });
+  Object.defineProperty(temp, __value, { value: initialValue, writable: true });
+  (
+    env.data.temp as Val<{
+      [key: string]: Val<ContextValue>;
+    }>
+  )[__value][id] = temp;
 
-  const getter = baseGetter as Val<T> & (() => T);
+  if (env.currentScope) {
+    env.currentScope.temp.push(id);
+  }
 
-  return [getter, setter];
+  return [temp, setter];
 }
 
-function createFunction<C extends ExtensionBaseContext | never = never>(
+const createFunction = <C extends ExtensionBaseContext | never = never>(
   run: (context: C) => void
-): Func<C> {
-  const id = `${Object.keys(env.func).length}`;
-  const func = {
-    [__id]: id,
-    [__value]: run
-  } as Func<C>;
-  const baseFunc = func;
+): Func<C> => {
+  const id = generateId();
+  const func = run as Func<C>;
 
+  Object.defineProperty(func, __id, {
+    value: id
+  });
   env.func[id] = func;
-  Object.defineProperty(baseFunc, __id, {
-    get() {
-      return id;
-    }
-  });
-  Object.defineProperty(baseFunc, __value, {
-    get() {
-      return func;
-    }
-  });
 
-  return baseFunc as Func<C> & (() => void);
-}
+  if (env.currentScope) {
+    env.currentScope.func.push(id);
+  }
 
+  return func;
+};
 const createElement = <C extends ExtensionBaseComponent<any>>(
   component: C,
   props: C[typeof __props],
   ...children: Array<ExtensionElement | string>
 ): ExtensionElement => {
   return {
-    component: component[__name],
+    component: component[__componentName] || "Fragment",
     slot: children,
     props: Object.fromEntries(
       Object.keys(props || {}).map((key) => {
@@ -291,10 +363,17 @@ const createElement = <C extends ExtensionBaseComponent<any>>(
     )
   };
 };
+const createFragment = (...children: Array<ExtensionElement | string>): ExtensionElement => {
+  return {
+    component: "Fragment",
+    slot: children,
+    props: {}
+  };
+};
 const createView = <C extends ExtensionBaseViewContext>(
   run: (context: C) => ExtensionElement
 ): View<C> => {
-  const id = `${Object.keys(env.views).length}`;
+  const id = generateId();
   const view = {
     [__id]: id,
     [__value]: run
@@ -304,6 +383,24 @@ const createView = <C extends ExtensionBaseViewContext>(
 
   return view;
 };
+const removeScope = (id: string): void => {
+  const scope = scopes[id];
+
+  if (scope) {
+    scope.func.forEach((funcId) => {
+      delete env.func[funcId];
+    });
+    scope.temp.forEach((tempId) => {
+      const tempVal = env.data.temp as Val<{
+        [key: string]: Val<ContextValue>;
+      }>;
+
+      if (tempVal()) {
+        delete tempVal()[tempId];
+      }
+    });
+  }
+};
 const createRuntime = <C extends ContextObject = ContextObject>(
   runtimeConfig: ExtensionRuntimeConfig<C>
 ): Extension => {
@@ -311,8 +408,9 @@ const createRuntime = <C extends ContextObject = ContextObject>(
     getEnvironment: () => env,
     getMetadata: () => ({
       __value,
-      __name,
-      __id
+      __id,
+      __componentName,
+      __usableEnv
     }),
     generateRuntimeSpec: () => {
       return {
@@ -331,20 +429,46 @@ const createRuntime = <C extends ContextObject = ContextObject>(
       const runView = env.views[id]?.[__value];
 
       if (runView) {
-        return runView(context);
+        env.currentScope = {
+          func: [],
+          temp: []
+        };
+
+        const element = runView(context);
+
+        scopes[`view:${id}`] = env.currentScope;
+        env.currentScope = null;
+
+        return element;
       }
     },
     runFunction: <C extends ExtensionBaseContext | never = never>(id: string, context: C) => {
-      const runFunc = env.func[id]?.[__value];
+      const runFunc = env.func[id];
 
       if (runFunc) {
+        env.currentScope = {
+          func: [],
+          temp: []
+        };
         runFunc(context);
+        scopes[`func:${id}`] = env.currentScope;
+        env.currentScope = null;
+        removeScope(`func:${id}`);
       }
-    }
+    },
+    removeScope
   };
 };
 
-export { Components, createView, createTemp, createFunction, createElement, createRuntime };
+export {
+  Components,
+  createView,
+  createTemp,
+  createFunction,
+  createElement,
+  createFragment,
+  createRuntime
+};
 export type {
   Extension,
   ExtensionEnvironment,

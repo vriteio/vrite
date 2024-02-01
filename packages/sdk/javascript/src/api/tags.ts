@@ -15,7 +15,7 @@ type TagColor =
   | "lime"
   | "fuchsia"
   | "emerald";
-interface Tag {
+type Tag = {
   /**
    * Label describing the tag
    */
@@ -28,7 +28,7 @@ interface Tag {
    * Tag ID
    */
   id: string;
-}
+};
 interface TagsEndpoints {
   get(input: Pick<Tag, "id">): Promise<Tag>;
   update(input: Partial<Tag> & Pick<Tag, "id">): Promise<void>;

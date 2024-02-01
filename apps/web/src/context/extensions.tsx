@@ -7,18 +7,10 @@ import {
   ParentComponent,
   useContext
 } from "solid-js";
-import { ExtensionSpec, ContextObject } from "@vrite/sdk/extensions";
+import { ExtensionSpec } from "@vrite/sdk/extensions";
 import { useClient, useHostConfig } from "#context";
-import { ExtensionSandbox, loadExtensionSandbox } from "#lib/extensions";
+import { ExtensionDetails, ExtensionSandbox, loadExtensionSandbox } from "#lib/extensions";
 
-interface ExtensionDetails {
-  spec: ExtensionSpec;
-  url: string;
-  config?: ContextObject;
-  token?: string;
-  id?: string;
-  sandbox?: ExtensionSandbox | null;
-}
 interface ExtensionsContextData {
   installedExtensions: InitializedResource<ExtensionDetails[]>;
   getAvailableExtensions: () => Promise<ExtensionDetails[]>;
@@ -26,7 +18,8 @@ interface ExtensionsContextData {
 }
 
 const officialExtensions = [
-  "https://raw.githubusercontent.com/vriteio/extensions/main/vrite/gpt-3.5/build/spec.json"
+  "https://raw.githubusercontent.com/vriteio/extensions/main/vrite/gpt-3.5/build/spec.json",
+  "http://127.0.0.1:5500/vrite/publish-dev/build/spec.json"
 ];
 const getAbsoluteSpecPath = (url: string, specPath: string): string => {
   if (specPath.startsWith("http://") || specPath.startsWith("https://")) {
@@ -78,8 +71,7 @@ const ExtensionsProvider: ParentComponent = (props) => {
 
         if (response.ok) {
           const spec = await response.json();
-
-          result.push({
+          const extensionDetails = {
             url: extension.url,
             id: extension.id,
             // @ts-ignore
@@ -89,7 +81,10 @@ const ExtensionsProvider: ParentComponent = (props) => {
             get sandbox() {
               return extensionSandboxes.get(spec.name) || null;
             }
-          });
+          };
+
+          extensionSandboxes.set(spec.name, loadExtensionSandbox(extensionDetails));
+          result.push(extensionDetails);
         }
       }
 
@@ -175,11 +170,6 @@ const ExtensionsProvider: ParentComponent = (props) => {
       installedExtensions.forEach((extension) => {
         if (existingSandboxes.includes(extension.spec.name)) {
           existingSandboxes.splice(existingSandboxes.indexOf(extension.spec.name), 1);
-        } else {
-          extensionSandboxes.set(
-            extension.spec.name,
-            loadExtensionSandbox(extension.url, extension.spec)
-          );
         }
       });
       existingSandboxes.forEach((id) => {

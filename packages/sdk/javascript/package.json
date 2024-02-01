@@ -1,6 +1,6 @@
 {
   "name": "@vrite/sdk",
-  "version": "0.3.1",
+  "version": "0.3.5",
   "private": false,
   "description": "JavaScript SDK and API client for Vrite - open-source developer content platform",
   "license": "MIT",
@@ -38,6 +38,9 @@
       "extensions": [
         "./dist/extensions.d.ts"
       ],
+      "extensions/jsx-runtime": [
+        "./dist/extensions.d.ts"
+      ],
       "astro": [
         "./dist/astro/index.d.ts"
       ],
@@ -56,6 +59,10 @@
       "require": "./dist/api.cjs"
     },
     "./extensions": {
+      "import": "./dist/extensions.mjs",
+      "require": "./dist/extensions.cjs"
+    },
+    "./extensions/jsx-runtime": {
       "import": "./dist/extensions.mjs",
       "require": "./dist/extensions.cjs"
     },

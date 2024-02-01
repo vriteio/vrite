@@ -1,7 +1,14 @@
 import { ExtensionIcon } from "./extension-icon";
 import { mdiTune, mdiDownloadOutline } from "@mdi/js";
 import { Component, Show } from "solid-js";
-import { App, ExtensionDetails, hasPermission, useClient, useExtensions } from "#context";
+import {
+  App,
+  ExtensionDetails,
+  hasPermission,
+  useClient,
+  useExtensions,
+  useNotifications
+} from "#context";
 import { Card, Heading, IconButton } from "#components/primitives";
 
 interface ExtensionCardProps {
@@ -12,6 +19,7 @@ interface ExtensionCardProps {
 
 const ExtensionCard: Component<ExtensionCardProps> = (props) => {
   const client = useClient();
+  const { notify } = useNotifications();
   const { getExtensionSandbox } = useExtensions();
 
   return (
@@ -47,11 +55,15 @@ const ExtensionCard: Component<ExtensionCardProps> = (props) => {
                 const onConfigureCallback = sandbox?.runtimeSpec?.onConfigure;
 
                 if (onConfigureCallback) {
-                  await sandbox.runFunction(onConfigureCallback, {
-                    extensionId: id,
-                    token,
-                    config: {}
-                  });
+                  await sandbox.runFunction(
+                    onConfigureCallback,
+                    {
+                      contextFunctions: ["notify"],
+                      usableEnv: { readable: [], writable: [] },
+                      config: {}
+                    },
+                    { notify }
+                  );
                 }
 
                 props.setOpenedExtension({ ...props.extension, config: {}, id, token });

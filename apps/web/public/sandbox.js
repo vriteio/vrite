@@ -46,7 +46,7 @@
         var NativeEventSource = global.EventSource;
         var document = global.document;
         var Promise2 = global.Promise;
-        var fetch = global.fetch;
+        var fetch2 = global.fetch;
         var Response = global.Response;
         var TextDecoder = global.TextDecoder;
         var TextEncoder = global.TextEncoder;
@@ -76,8 +76,8 @@
           };
         }
         if (AbortController == void 0) {
-          var originalFetch2 = fetch;
-          fetch = function(url, options) {
+          var originalFetch2 = fetch2;
+          fetch2 = function(url, options) {
             var signal = options.signal;
             return originalFetch2(url, { headers: options.headers, credentials: options.credentials, cache: options.cache }).then(function(response) {
               var reader = response.body.getReader();
@@ -484,7 +484,7 @@
           var controller = new AbortController();
           var signal = controller.signal;
           var textDecoder = new TextDecoder();
-          fetch(url, {
+          fetch2(url, {
             headers,
             credentials: withCredentials ? "include" : "same-origin",
             signal,
@@ -658,7 +658,7 @@
         function getBestXHRTransport() {
           return XMLHttpRequest2 != void 0 && "withCredentials" in XMLHttpRequest2.prototype || XDomainRequest == void 0 ? new XMLHttpRequest2() : new XDomainRequest();
         }
-        var isFetchSupported = fetch != void 0 && Response != void 0 && "body" in Response.prototype;
+        var isFetchSupported = fetch2 != void 0 && Response != void 0 && "body" in Response.prototype;
         function start(es, url, options) {
           url = String(url);
           var withCredentials = Boolean(options.withCredentials);
@@ -1083,72 +1083,150 @@
     let extension = null;
     let env = null;
     let metadata = null;
+    let extensionId = "";
+    let token = "";
+    let spec = null;
     const { createClient } = await Promise.resolve().then(() => (init_api(), api_exports));
     const client = createClient({
-      token: "",
-      extensionId: ""
+      token,
+      extensionId,
+      baseURL: "http://localhost:4444"
     });
-    const createDataScope = (name, defaultValue) => {
-      if (!env || !metadata)
+    const wrapInVal = (value, path) => {
+      const output = () => output[metadata.__value];
+      output[metadata.__id] = `${path}`;
+      if (typeof value === "object" && !Array.isArray(value) && value !== null) {
+        output[metadata.__value] = Object.fromEntries(
+          Object.keys(value).map((key) => {
+            return [key, wrapInVal(value[key], path ? `${path}.${key}` : key)];
+          })
+        );
+      } else {
+        output[metadata.__value] = value;
+      }
+      return output;
+    };
+    const unwrapVal = (value) => {
+      const output = value();
+      if (typeof output === "object" && !Array.isArray(output) && output !== null) {
+        return Object.fromEntries(
+          Object.keys(output).map((key) => {
+            return [key, unwrapVal(output[key])];
+          })
+        );
+      }
+      return output;
+    };
+    const updateEnvData = (serializedEnvData) => {
+      if (!env)
         return;
-      env.data[name] = {};
-      Object.keys(defaultValue).forEach((key) => {
-        env.data[name][key] = {
-          [metadata.__id]: key,
-          [metadata.__value]: defaultValue[key]
-        };
+      env.data = {};
+      Object.keys(serializedEnvData).forEach((key) => {
+        env.data[key] = wrapInVal(serializedEnvData[key], key);
       });
     };
-    const reconcileEnvData = (envData) => {
+    const serializeEnvData = () => {
+      const output = {};
+      Object.keys(env.data).forEach((key) => {
+        output[key] = unwrapVal(env.data[key]);
+      });
+      return output;
     };
-    const extractEnvData = () => {
+    const createExtensionContext = (ctx, scopeId) => {
+      return new Proxy(
+        {},
+        {
+          get(_, key) {
+            if (key === "client")
+              return client;
+            if (key === "token")
+              return token;
+            if (key === "extensionId")
+              return extensionId;
+            if (key === "spec")
+              return spec;
+            if (ctx.contextFunctions.includes(key)) {
+              return (...args) => {
+                return Websandbox.connection?.remote.runFunction(scopeId, key, ...args);
+              };
+            }
+            if (key === "flush") {
+              return () => {
+                return Websandbox.connection?.remote.flush(serializeEnvData());
+              };
+            }
+            if (key === "use") {
+              return (path) => {
+                const parts = path.split(".");
+                const val = parts.slice(1).reduce((currentVal, part, index) => {
+                  const value = currentVal();
+                  if (typeof value !== "object" || Array.isArray(value) || value === null) {
+                    throw new Error(`Cannot use ${path} in this context`);
+                  }
+                  let output = value[part];
+                  if (typeof output === "undefined") {
+                    value[part] = wrapInVal(void 0, parts.slice(0, index + 2).join("."));
+                    output = value[part];
+                  }
+                  return output;
+                }, env.data[parts[0]]);
+                if (ctx.usableEnv.readable.includes(parts[0])) {
+                  return val;
+                } else if (ctx.usableEnv.writable.includes(parts[0])) {
+                  const setter = (value) => {
+                    val[metadata.__value] = wrapInVal(value, path)[metadata.__value];
+                  };
+                  return [val, setter];
+                }
+                throw new Error(`Cannot use ${path} in this context`);
+              };
+            }
+            return ctx[key];
+          }
+        }
+      );
     };
     Websandbox.connection?.setLocalApi({
-      loadExtension: async (spec) => {
-        const module = await import(spec.runtime);
+      loadExtension: async (extensionDetails) => {
+        const runtime = await fetch(extensionDetails.spec.runtime);
+        const func = await runtime.text();
+        const url = URL.createObjectURL(new Blob([func], { type: "text/javascript" }));
+        const module = await import(
+          /* @vite-ignore */
+          `${url}`
+        );
+        URL.revokeObjectURL(url);
         extension = module.default || null;
         env = extension?.getEnvironment() || null;
         metadata = extension?.getMetadata() || null;
+        token = extensionDetails.token;
+        extensionId = extensionDetails.extensionId;
+        spec = extensionDetails.spec;
+        client.reconfigure({ token, extensionId });
         return extension?.generateRuntimeSpec() || null;
       },
-      generateView: async (id, envData, ctx) => {
-        reconcileEnvData(envData);
-        const view = extension?.generateView(id, {
-          ...ctx,
-          client,
-          extensionId: "",
-          config: {},
-          useConfig: () => {
-            return {};
-          },
-          flush: () => {
-            return Websandbox.connection?.remote.flush(JSON.parse(JSON.stringify(context)));
-          },
-          notify: (message) => {
-            return Websandbox.connection?.remote.notify(message);
-          },
-          token: ""
-        });
+      generateView: (id, envData, serializedContext) => {
+        updateEnvData(envData);
+        const view = extension?.generateView(
+          id,
+          createExtensionContext(serializedContext, `view:${id}`)
+        );
         return {
           view,
-          envData: extractEnvData()
+          envData: serializeEnvData()
         };
       },
-      runFunction: async (id, envData, ctx) => {
-        reconcileEnvData(envData);
-        extension?.runFunction(id, {
-          ...ctx,
-          client,
-          extensionId: "",
-          config: {},
-          flush: () => {
-          },
-          notify: () => {
-          },
-          token: ""
-        });
+      runFunction: (id, envData, serializedContext) => {
+        updateEnvData(envData);
+        extension?.runFunction(id, createExtensionContext(serializedContext, `func:${id}`));
         return {
-          envData: extractEnvData()
+          envData: serializeEnvData()
+        };
+      },
+      removeScope: (id) => {
+        extension?.removeScope(id);
+        return {
+          envData: serializeEnvData()
         };
       }
     });

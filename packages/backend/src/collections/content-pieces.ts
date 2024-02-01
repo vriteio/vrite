@@ -16,7 +16,7 @@ const contentPiece = z.object({
   customData: z.any().optional().nullable(),
   canonicalLink: z.string().optional().nullable(),
   slug: z.string(),
-  filename: z.string().optional(),
+  filename: z.string().optional().nullable(),
   members: z.array(zodId())
 });
 const contentPieceMember = z.object({

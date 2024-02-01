@@ -1,4 +1,4 @@
-import { Component, For, Show, createMemo, createSignal } from "solid-js";
+import { Component, For, Show, createEffect, createMemo, createSignal } from "solid-js";
 import {
   ContextObject,
   ContextValue,
@@ -8,8 +8,8 @@ import {
 import clsx from "clsx";
 import { createStore, reconcile, unwrap } from "solid-js/store";
 import { Loader, Tooltip, Card } from "#components/primitives";
-import { App, ExtensionDetails, useClient, useExtensions } from "#context";
-import { ViewContextProvider, ViewRenderer } from "#lib/extensions";
+import { App, ExtensionDetails, useClient, useExtensions, useNotifications } from "#context";
+import { ExtensionViewRenderer } from "#lib/extensions";
 
 interface ExtensionsSectionProps {
   contentPiece: App.ExtendedContentPieceWithAdditionalData<"coverWidth">;
@@ -41,16 +41,17 @@ const ExtensionIcon: Component<ExtensionIconProps> = (props) => {
 const ExtensionsSection: Component<ExtensionsSectionProps> = (props) => {
   const client = useClient();
   const { installedExtensions } = useExtensions();
+  const { notify } = useNotifications();
   const extensionsWithContentPieceView = createMemo(() => {
     return installedExtensions().filter((extension) => {
-      return extension.spec.contentPieceView;
+      return extension.sandbox?.loaded() && extension.sandbox?.runtimeSpec?.contentPieceView;
     });
   });
   const [activeExtension, setActiveExtension] = createSignal<ExtensionDetails | null>(
     extensionsWithContentPieceView()[0] || null
   );
   const [data, setData] = createStore<ContextObject>(
-    props.contentPiece.customData?.__extensions__?.[activeExtension()!.spec.name || ""] || {}
+    props.contentPiece.customData?.__extensions__?.[activeExtension()?.spec?.name || ""] || {}
   );
 
   return (
@@ -113,31 +114,28 @@ const ExtensionsSection: Component<ExtensionsSectionProps> = (props) => {
                 <p class="prose text-gray-500 dark:text-gray-400">No extensions available</p>
               }
             >
-              <ViewContextProvider<ExtensionContentPieceViewContext>
+              <ExtensionViewRenderer<ExtensionContentPieceViewContext>
+                ctx={{
+                  contextFunctions: ["notify"],
+                  usableEnv: { readable: ["contentPiece"], writable: ["data"] },
+                  config: activeExtension()!.config || {}
+                }}
                 extension={activeExtension()!}
-                config={activeExtension()!.config || {}}
-                contentPiece={props.contentPiece}
-                data={data}
-                setData={(keyOrObject: string | ContextObject, value?: ContextValue) => {
-                  let extensionDataUpdate: ContextObject = {};
-
-                  if (typeof keyOrObject === "string" && typeof value !== "undefined") {
-                    extensionDataUpdate[keyOrObject] = value;
-                    setData(keyOrObject, value);
-                  } else if (typeof keyOrObject === "object") {
-                    extensionDataUpdate = keyOrObject;
-                    setData(keyOrObject);
-                  }
-
+                func={{ notify }}
+                view="contentPieceView"
+                usableEnvData={{
+                  contentPiece: props.contentPiece,
+                  data
+                }}
+                onUsableEnvDataUpdate={(envData) => {
+                  setData(envData.data);
                   client.extensions.updateContentPieceData.mutate({
                     contentPieceId: props.contentPiece.id,
                     extensionId: activeExtension()!.id,
                     data: unwrap(data)
                   });
                 }}
-              >
-                <ViewRenderer spec={activeExtension()!.spec} view="contentPieceView" />
-              </ViewContextProvider>
+              />
             </Show>
           </Card>
         </div>
