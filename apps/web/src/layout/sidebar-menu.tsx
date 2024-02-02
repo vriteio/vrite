@@ -71,7 +71,7 @@ const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
       sidePanelView: view
     }));
   };
-  const pathData = createMemo(() => {
+  const pathnameData = createMemo(() => {
     const pathRegex = /^\/(?:editor\/)?([a-f\d]{24})?$/i;
     const match = location.pathname.match(pathRegex);
 
@@ -90,14 +90,14 @@ const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
         label: "Dashboard",
         active: () => {
           return (
-            pathData().view === "dashboard" &&
+            pathnameData().view === "dashboard" &&
             (md() || !(storage().sidePanelView && storage().sidePanelWidth))
           );
         },
         onClick: () => {
           navigate(`/${activeContentPieceId() || ""}`);
 
-          if (activeContentPieceId() && md() && pathData().view === "dashboard") {
+          if (activeContentPieceId() && md() && pathnameData().view === "dashboard") {
             setSidePanelView("contentPiece");
           }
 
@@ -109,7 +109,7 @@ const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
         label: "Editor",
         active: () => {
           return (
-            pathData().view === "editor" &&
+            pathnameData().view === "editor" &&
             (md() || !(storage().sidePanelView && storage().sidePanelWidth))
           );
         },

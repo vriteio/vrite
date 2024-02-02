@@ -10,7 +10,6 @@ import {
   createSignal
 } from "solid-js";
 import { mdiCheck, mdiDotsVertical, mdiFileDocumentOutline, mdiRename, mdiTrashCan } from "@mdi/js";
-import { useLocation } from "@solidjs/router";
 import SortableLib from "sortablejs";
 import clsx from "clsx";
 import { Dropdown, Icon, IconButton, Input, Loader } from "#components/primitives";
@@ -39,12 +38,12 @@ const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
     renaming,
     loading,
     setRenaming,
-    setLoading
+    setLoading,
+    pathnameData
   } = useExplorerData();
   const { confirmDelete } = useConfirmationModal();
   const { notify } = useNotifications();
   const client = useClient();
-  const location = useLocation();
   const [sortableInstanceRef, setSortableInstanceRef] = createRef<SortableLib | null>(null);
   const [dropdownOpened, setDropdownOpened] = createSignal(false);
   const menuOptions = createMemo(() => {
@@ -123,7 +122,7 @@ const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
         "flex flex-1 justify-center items-center cursor-pointer overflow-hidden ml-0.5 group",
         !dropdownOpened() &&
           !activeDraggableContentPieceId() &&
-          (location.pathname !== "/editor" || !active()) &&
+          (pathnameData().view === "dashboard" || !active()) &&
           "@hover-bg-gray-200 dark:@hover-bg-gray-700"
       )}
       ref={(el) => {
@@ -166,7 +165,7 @@ const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
             active() &&
               !activeDraggableContentGroupId() &&
               !activeDraggableContentPieceId() &&
-              location.pathname === "/editor" &&
+              pathnameData().view === "editor" &&
               "fill-[url(#gradient)]"
           )}
           path={mdiFileDocumentOutline}
@@ -213,7 +212,7 @@ const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
               active() &&
                 !activeDraggableContentGroupId() &&
                 !activeDraggableContentPieceId() &&
-                location.pathname === "/editor" &&
+                pathnameData().view === "editor" &&
                 "text-transparent bg-clip-text bg-gradient-to-tr"
             )}
           >

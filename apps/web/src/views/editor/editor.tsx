@@ -9,19 +9,17 @@ import {
 import { Component, createEffect, createSignal, on, onCleanup } from "solid-js";
 import { HardBreak, Paragraph, Text } from "@vrite/editor";
 import { Extension, isTextSelection } from "@tiptap/core";
-import { convert as convertToSlug } from "url-slug";
 import { Gapcursor } from "@tiptap/extension-gapcursor";
 import { Dropcursor } from "@tiptap/extension-dropcursor";
 import { Typography } from "@tiptap/extension-typography";
 import { HocuspocusProvider } from "@hocuspocus/provider";
 import { CharacterCount } from "@tiptap/extension-character-count";
 import * as Y from "yjs";
-import { useLocation, useNavigate, useParams } from "@solidjs/router";
+import { useLocation, useNavigate } from "@solidjs/router";
 import { CellSelection } from "@tiptap/pm/tables";
 import { AllSelection, NodeSelection } from "@tiptap/pm/state";
 import clsx from "clsx";
 import { Instance } from "tippy.js";
-import { scrollIntoView } from "seamless-scroll-polyfill";
 import { debounce } from "@solid-primitives/scheduled";
 import { Dropdown } from "#components/primitives";
 import {
@@ -64,12 +62,12 @@ declare module "#context" {
 interface EditorProps {
   reloaded?: boolean;
   editedContentPiece: App.ContentPieceWithAdditionalData;
+  scrollableContainerRef(): HTMLElement | null;
   onLoad?(): void;
   reload?(): void;
 }
 
 const Editor: Component<EditorProps> = (props) => {
-  const params = useParams();
   const { activeVariantId } = useContentData();
   const hostConfig = useHostConfig();
   const navigate = useNavigate();
@@ -86,16 +84,25 @@ const Editor: Component<EditorProps> = (props) => {
     }
   };
   const scrollToHeading = (): void => {
-    const headingText = location.state?.breadcrumb?.at(-1) || "";
+    const slug = location.hash.replace("#", "");
+    const scrollableContainer = props.scrollableContainerRef();
 
-    if (headingText) {
-      const slug = convertToSlug(headingText);
-      const heading = containerRef()?.querySelector(`[data-slug="${slug}"]`);
+    if (!slug || !scrollableContainer) return;
 
-      if (heading) {
-        scrollIntoView(heading, { behavior: "smooth", block: "start" });
-      }
-    }
+    const heading = containerRef()?.querySelector(`[data-slug="${slug}"]`);
+
+    if (!heading) return;
+
+    const containerRect = scrollableContainer.getBoundingClientRect();
+    const rect = heading.getBoundingClientRect();
+
+    setTimeout(() => {
+      scrollableContainer.scrollTo({
+        top: rect.top - containerRect.top + scrollableContainer.scrollTop,
+        behavior: "instant"
+      });
+      navigate(location.pathname, { replace: true });
+    }, 0);
   };
   const provider = new HocuspocusProvider({
     token: "vrite",
@@ -249,7 +256,7 @@ const Editor: Component<EditorProps> = (props) => {
   });
   createEffect(
     on(
-      () => location.state,
+      () => location.hash,
       () => {
         scrollToHeading();
       }
@@ -270,7 +277,7 @@ const Editor: Component<EditorProps> = (props) => {
   return (
     <>
       <div
-        class="w-full max-w-[70ch] prose prose-editor text-xl dark:prose-invert h-full relative transform"
+        class="w-full max-w-[70ch] prose prose-editor text-xl dark:prose-invert relative transform"
         ref={setContainerRef}
         id="pm-container"
       >

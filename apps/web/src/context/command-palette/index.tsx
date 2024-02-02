@@ -35,6 +35,7 @@ import { fetchEventSource } from "@microsoft/fetch-event-source";
 import { marked } from "marked";
 import { useNavigate } from "@solidjs/router";
 import { Dynamic } from "solid-js/web";
+import { convert as convertToSlug } from "url-slug";
 import { ScrollShadow } from "#components/fragments";
 import {
   Button,
@@ -107,9 +108,6 @@ const CommandPaletteContext = createContext<CommandPaletteContextData>();
 const CommandPalette: Component<CommandPaletteProps> = (props) => {
   const hostConfig = useHostConfig();
   const client = useClient();
-
-  window.client = client;
-
   const navigate = useNavigate();
   const { setStorage } = useLocalStorage();
   const [inputRef, setInputRef] = createSignal<HTMLInputElement | null>(null);
@@ -218,7 +216,7 @@ const CommandPalette: Component<CommandPaletteProps> = (props) => {
       sidePanelView: "contentPiece",
       contentPieceId
     }));
-    navigate("/editor", { state: { breadcrumb } });
+    navigate(`/editor/${contentPieceId}#${convertToSlug(breadcrumb?.at(-1) || "")}`);
     props.setOpened(false);
   };
   const unsubscribeTinykeys = tinykeys(window, {

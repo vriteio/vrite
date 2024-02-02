@@ -71,7 +71,7 @@ const EditorView: Component = () => {
         >
           <div
             class={clsx(
-              "flex flex-col justify-center p-2 md:mx-10 w-full md:w-[calc(100%-5rem)]",
+              "p-2 md:mx-10 w-full md:w-[calc(100%-5rem)]",
               storage().zenMode ? "items-center" : "items-start"
             )}
           >
@@ -79,6 +79,7 @@ const EditorView: Component = () => {
               <Show when={contentPieces[activeContentPieceId() || ""]} keyed>
                 <Editor
                   editedContentPiece={contentPieces[activeContentPieceId() || ""]!}
+                  scrollableContainerRef={scrollableContainerRef}
                   reloaded={reloaded()}
                   reload={async () => {
                     setReloaded(true);

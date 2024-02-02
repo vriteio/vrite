@@ -14,7 +14,6 @@ import {
 } from "@mdi/js";
 import clsx from "clsx";
 import SortableLib from "sortablejs";
-import { useLocation } from "@solidjs/router";
 import { Dropdown, Icon, IconButton, Input, Loader } from "#components/primitives";
 import {
   App,
@@ -37,7 +36,6 @@ interface ContentGroupRowProps {
 const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
   const { loading, renaming, setLoading, setRenaming } = useExplorerData();
   const client = useClient();
-  const location = useLocation();
   const { notify } = useNotifications();
   const { confirmDelete } = useConfirmationModal();
   const { activeContentGroupId, expandedContentLevels, collapseContentLevel, contentActions } =
@@ -46,6 +44,7 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
     activeDraggableContentGroupId,
     activeDraggableContentPieceId,
     setActiveDraggableContentGroupId,
+    pathnameData,
     highlight
   } = useExplorerData();
   const [dropdownOpened, setDropdownOpened] = createSignal(false);
@@ -245,7 +244,7 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
                 (active() &&
                   !activeDraggableContentGroupId() &&
                   !activeDraggableContentPieceId() &&
-                  location.pathname === "/")) &&
+                  pathnameData().view === "dashboard")) &&
                 "fill-[url(#gradient)]"
             )}
             path={props.opened ? mdiFolderOpen : mdiFolder}
@@ -293,7 +292,7 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
                   (active() &&
                     !activeDraggableContentGroupId() &&
                     !activeDraggableContentPieceId() &&
-                    location.pathname === "/")) &&
+                    pathnameData().view === "dashboard")) &&
                   "text-transparent bg-clip-text bg-gradient-to-tr"
               )}
               title={props.contentGroup?.name || ""}

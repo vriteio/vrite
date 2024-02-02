@@ -90,7 +90,6 @@ const InitialSyncCard: Component = () => {
   );
 };
 const CommitCard: Component<{ changedRecords: App.GitRecord[] }> = (props) => {
-  const { setActiveContentPieceId } = useContentData();
   const client = useClient();
   const navigate = useNavigate();
   const { notify } = useNotifications();
@@ -182,8 +181,7 @@ const CommitCard: Component<{ changedRecords: App.GitRecord[] }> = (props) => {
                     disabled={record.currentHash === ""}
                     hover={record.currentHash !== ""}
                     onClick={() => {
-                      setActiveContentPieceId(record.contentPieceId);
-                      navigate("/editor");
+                      navigate(`/editor/${record.contentPieceId}`);
                     }}
                   />
                   <span

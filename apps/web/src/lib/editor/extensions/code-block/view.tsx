@@ -169,7 +169,8 @@ const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
       insertSpaces: true,
       readOnly: !state().editor.isEditable,
       scrollbar: {
-        alwaysConsumeMouseWheel: false
+        alwaysConsumeMouseWheel: false,
+        horizontal: "hidden"
       },
       scrollBeyondLastLine: false,
       contextmenu: false,

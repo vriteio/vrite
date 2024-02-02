@@ -6,7 +6,7 @@ import { Component, createEffect, Show, For } from "solid-js";
 import SortableLib from "sortablejs";
 import { Icon, Loader } from "@vrite/components";
 import { mdiDotsHorizontalCircleOutline } from "@mdi/js";
-import { useLocation, useNavigate } from "@solidjs/router";
+import { useNavigate } from "@solidjs/router";
 import { App, useClient, useContentData } from "#context";
 
 const TreeLevel: Component<{
@@ -20,15 +20,19 @@ const TreeLevel: Component<{
     expandContentLevel,
     collapseContentLevel,
     activeContentGroupId,
+    activeContentPieceId,
     setActiveContentGroupId,
-    setActiveContentPieceId,
     contentLoader,
     contentActions
   } = useContentData();
-  const { highlight, setHighlight, activeDraggableContentGroupId, activeDraggableContentPieceId } =
-    useExplorerData();
+  const {
+    highlight,
+    setHighlight,
+    activeDraggableContentGroupId,
+    activeDraggableContentPieceId,
+    pathnameData
+  } = useExplorerData();
   const client = useClient();
-  const location = useLocation();
   const navigate = useNavigate();
   const handleHighlight = (event: DragEvent | MouseEvent | TouchEvent, groupId: string): void => {
     const draggablePieceId = activeDraggableContentPieceId();
@@ -83,7 +87,7 @@ const TreeLevel: Component<{
             ((selected() &&
               !activeDraggableContentGroupId() &&
               !activeDraggableContentPieceId() &&
-              location.pathname === "/") ||
+              pathnameData().view === "dashboard") ||
               highlight() === props.parentId) &&
               "!bg-gradient-to-tr"
           )}
@@ -187,8 +191,8 @@ const TreeLevel: Component<{
                     });
                   }}
                   onClick={() => {
-                    navigate("/");
                     setActiveContentGroupId(groupId);
+                    navigate(`/${activeContentPieceId() || ""}`);
                   }}
                   onExpand={(forceOpen) => {
                     if (expandedContentLevels().includes(groupId) && !forceOpen) {
@@ -212,8 +216,7 @@ const TreeLevel: Component<{
               <ContentPieceRow
                 contentPiece={contentPieces[contentPieceId]!}
                 onClick={() => {
-                  navigate("/editor");
-                  setActiveContentPieceId(contentPieceId);
+                  navigate(`/editor/${contentPieceId}`);
                 }}
                 onDragEnd={() => {
                   const contentPiece = contentPieces[contentPieceId]!;

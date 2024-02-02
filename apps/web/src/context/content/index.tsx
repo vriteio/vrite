@@ -28,7 +28,6 @@ interface ContentDataContextData {
   activeVariantId(): string | null;
   expandedContentLevels(): string[];
   setActiveContentGroupId(contentGroupId: string | null): void;
-  setActiveContentPieceId(contentPieceId: string | null): void;
   setActiveVariantId(variantId: string | null): void;
   expandContentLevel(contentGroupId: string): void;
   collapseContentLevel(contentGroupId: string): void;
@@ -40,7 +39,6 @@ const ContentDataProvider: ParentComponent = (props) => {
   const params = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const { profile } = useAuthenticatedUserData();
   const { storage, setStorage } = useLocalStorage();
   const [variants, setVariants] = createStore<Record<string, App.Variant | undefined>>({});
   const [contentLevels, setContentLevels] = createStore<Record<string, ContentLevel | undefined>>(
@@ -89,13 +87,6 @@ const ContentDataProvider: ParentComponent = (props) => {
       ...storage,
       activeContentGroupId: contentGroupId || undefined
     }));
-  };
-  const setActiveContentPieceId = (contentPieceId: string | null): void => {
-    if (location.pathname.includes("editor")) {
-      navigate(`/editor/${contentPieceId || ""}`);
-    } else {
-      navigate(`/${contentPieceId || ""}`);
-    }
   };
   const expandedContentLevels = (): string[] => {
     if (storage().expandedContentLevels?.length === 0) {
@@ -272,7 +263,6 @@ const ContentDataProvider: ParentComponent = (props) => {
         activeContentPieceId,
         activeVariantId,
         setActiveContentGroupId,
-        setActiveContentPieceId,
         setActiveVariantId,
         expandContentLevel,
         collapseContentLevel
