@@ -198,7 +198,7 @@ const TreeLevel: Component<{
                     if (expandedContentLevels().includes(groupId) && !forceOpen) {
                       collapseContentLevel(groupId);
                     } else {
-                      contentLoader.loadContentLevel(groupId, true);
+                      contentLoader.loadContentLevel(groupId, { preload: true, loadMore: false });
                       expandContentLevel(groupId);
                     }
                   }}

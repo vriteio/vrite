@@ -34,7 +34,7 @@ const SecuredLayout: ParentComponent = (props) => {
           <CommandPaletteProvider>
             <ContentDataProvider>
               <div class="flex flex-col h-full w-full">
-                <div class="flex-1 flex flex-col-reverse md:flex-row h-[calc(100%-1.5rem)]">
+                <div class="flex-1 flex flex-col-reverse md:flex-row h-[calc(100%-1.5rem)] border-b-2 border-gray-200 dark:border-gray-700 ">
                   <Show
                     when={!storage().zenMode}
                     fallback={

@@ -3,8 +3,8 @@ import { ContentLoader, createContentLoader } from "./loader";
 import { createContext, createResource, ParentComponent, useContext } from "solid-js";
 import { createEffect, on, onCleanup } from "solid-js";
 import { createStore, reconcile } from "solid-js/store";
-import { useLocation, useNavigate, useParams } from "@solidjs/router";
-import { useClient, useLocalStorage, App, useAuthenticatedUserData } from "#context";
+import { useParams } from "@solidjs/router";
+import { useClient, useLocalStorage, App } from "#context";
 
 interface ContentLevel {
   groups: string[];
@@ -37,8 +37,6 @@ const ContentDataContext = createContext<ContentDataContextData>();
 const ContentDataProvider: ParentComponent = (props) => {
   const client = useClient();
   const params = useParams();
-  const location = useLocation();
-  const navigate = useNavigate();
   const { storage, setStorage } = useLocalStorage();
   const [variants, setVariants] = createStore<Record<string, App.Variant | undefined>>({});
   const [contentLevels, setContentLevels] = createStore<Record<string, ContentLevel | undefined>>(

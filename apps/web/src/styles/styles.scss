@@ -424,6 +424,9 @@ kbd {
   &::-webkit-scrollbar-thumb {
     @apply rounded-xl bg-gray-200 dark:bg-gray-900 border-6 border-solid border-gray-100 dark:border-gray-800;
   }
+  &::-webkit-scrollbar-corner {
+    @apply bg-gray-100 dark:bg-gray-800;
+  }
 }
 
 .narrow-prose {

@@ -219,7 +219,7 @@ const ConfigureWebhookSubsection: Component<ConfigureWebhookSubsectionProps> = (
         }
       >
         <p class="prose text-gray-500 dark:text-gray-400">
-          Provide a secret to generate a signature of the payload.
+          Provide a secret to sign the payload of your webhook
         </p>
         <InputField
           placeholder="Secret"
@@ -239,7 +239,7 @@ const ConfigureWebhookSubsection: Component<ConfigureWebhookSubsectionProps> = (
           adornment={() => {
             return (
               <Show when={!props.editedWebhookId}>
-                <Tooltip text="Generate secret">
+                <Tooltip text="Generate secret" class="mt-1">
                   <IconButton
                     path={mdiRefresh}
                     class="m-0"
@@ -252,9 +252,7 @@ const ConfigureWebhookSubsection: Component<ConfigureWebhookSubsectionProps> = (
               </Show>
             );
           }}
-        >
-          Secret used to sign the payload
-        </InputField>
+        />
       </TitledCard>
     </>
   );

@@ -17,7 +17,13 @@ interface ContentActionsInput {
   setContentLevels: SetStoreFunction<Record<string, ContentLevel | undefined>>;
 }
 interface ContentLoader {
-  loadContentLevel(contentGroupId?: string, preload?: boolean): Promise<void>;
+  loadContentLevel(
+    contentGroupId?: string,
+    options?: {
+      preload?: boolean;
+      loadMore?: boolean;
+    }
+  ): Promise<void>;
 }
 
 const createContentLoader = ({
@@ -29,17 +35,21 @@ const createContentLoader = ({
   setContentLevels
 }: ContentActionsInput): ContentLoader => {
   const client = useClient();
-  const loadContentLevel: ContentLoader["loadContentLevel"] = async (contentGroupId, preload) => {
+  const loadContentLevel: ContentLoader["loadContentLevel"] = async (
+    contentGroupId,
+    { preload, loadMore } = {}
+  ) => {
     const existingLevel = contentLevels[contentGroupId || ""];
 
-    if (existingLevel && existingLevel.moreToLoad) {
+    if (existingLevel && existingLevel.moreToLoad && loadMore !== false) {
       if (contentGroupId) {
         setContentLevels(contentGroupId, "loading", true);
 
         const level = {
           groups: [...existingLevel.groups],
           pieces: [...existingLevel.pieces],
-          moreToLoad: false
+          moreToLoad: false,
+          loading: false
         };
         const lastPieceId = existingLevel.pieces.at(-1);
         const lastPiece = contentPieces[lastPieceId || ""];

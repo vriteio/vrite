@@ -143,6 +143,7 @@ const CommandPalette: Component<CommandPaletteProps> = (props) => {
 
         content += partOfContent;
         setAnswer(marked.parse(content, { gfm: true, headerIds: false, mangle: false }));
+        scrollableContainerRef()?.scrollTo(0, scrollableContainerRef()?.scrollHeight || 0);
       },
       onclose() {
         setLoading(false);
@@ -540,10 +541,7 @@ const CommandPalette: Component<CommandPaletteProps> = (props) => {
                     )}
                     color="base"
                   >
-                    <div
-                      class="flex flex-col w-full prose whitespace-pre-wrap"
-                      innerHTML={answer()}
-                    />
+                    <div class="flex flex-col w-full prose prose-editor" innerHTML={answer()} />
                     <Show when={!loading()}>
                       <IconButton
                         color="contrast"

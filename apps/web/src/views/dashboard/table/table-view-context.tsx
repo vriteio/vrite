@@ -86,7 +86,7 @@ const DashboardTableViewDataProvider: ParentComponent = (props) => {
             <Heading
               level={4}
               class={clsx(
-                "font-semibold clamp-1",
+                "font-semibold clamp-1 text-start",
                 active() && "bg-gradient-to-tr text-transparent bg-clip-text"
               )}
             >
@@ -108,7 +108,7 @@ const DashboardTableViewDataProvider: ParentComponent = (props) => {
         return (
           <Show when={props.contentPiece.filename}>
             <div class="flex justify-start items-center gap-2 h-full px-2 text-gray-500 dark:text-gray-400 text-sm">
-              <span class="clamp-1">{props.contentPiece.filename}</span>
+              <span class="clamp-1 text-start">{props.contentPiece.filename}</span>
             </div>
           </Show>
         );
@@ -122,7 +122,7 @@ const DashboardTableViewDataProvider: ParentComponent = (props) => {
       cell: (props) => {
         return (
           <div class="flex justify-start items-center gap-2 h-full px-2 text-gray-500 dark:text-gray-400 text-sm">
-            <span class="clamp-1">{props.contentPiece.slug}</span>
+            <span class="clamp-1 text-start">{props.contentPiece.slug}</span>
           </div>
         );
       }
@@ -137,7 +137,7 @@ const DashboardTableViewDataProvider: ParentComponent = (props) => {
           <Show when={props.contentPiece.canonicalLink}>
             <div class="flex justify-start items-center gap-2 h-full px-2 text-gray-500 dark:text-gray-400 text-sm">
               <a
-                class="clamp-1 underline"
+                class="clamp-1 text-start underline"
                 href={props.contentPiece.canonicalLink || ""}
                 target="_blank"
               >
@@ -157,7 +157,9 @@ const DashboardTableViewDataProvider: ParentComponent = (props) => {
         return (
           <Show when={props.contentPiece.date}>
             <div class="flex justify-start items-center gap-2 h-full px-2 text-gray-500 dark:text-gray-400 text-sm">
-              <span class="clamp-1">{dayjs(props.contentPiece.date).format("MMM D, YYYY")}</span>
+              <span class="clamp-1 text-start">
+                {dayjs(props.contentPiece.date).format("MMM D, YYYY")}
+              </span>
             </div>
           </Show>
         );

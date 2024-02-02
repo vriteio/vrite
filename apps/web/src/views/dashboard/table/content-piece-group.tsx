@@ -13,7 +13,7 @@ import {
   mdiTrashCan
 } from "@mdi/js";
 import clsx from "clsx";
-import { Component, For, Show, createMemo, createSignal } from "solid-js";
+import { Component, For, Show, createEffect, createMemo, createSignal } from "solid-js";
 import {
   IconButton,
   Dropdown,
@@ -202,7 +202,7 @@ const ContentPieceGroup: Component<ContentPieceGroupProps> = (props) => {
     return activeDraggableContentPieceId() ? "unset" : "0px";
   };
 
-  contentLoader.loadContentLevel(props.contentGroup.id);
+  contentLoader.loadContentLevel(props.contentGroup.id, { loadMore: false });
 
   return (
     <div

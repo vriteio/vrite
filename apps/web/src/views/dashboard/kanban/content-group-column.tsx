@@ -170,7 +170,7 @@ const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
       scrollShadowController.processScrollState();
     })
   );
-  contentLoader.loadContentLevel(props.contentGroup.id);
+  contentLoader.loadContentLevel(props.contentGroup.id, { loadMore: false });
 
   return (
     <div

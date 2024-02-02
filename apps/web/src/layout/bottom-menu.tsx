@@ -90,7 +90,7 @@ const BottomMenu: Component = () => {
   const { variants, setActiveVariantId, activeVariantId } = useContentData();
   const { workspace } = useAuthenticatedUserData();
   const { open, registerCommand } = useCommandPalette();
-  const VariantCommand: Component<{ selected: boolean; variant: App.Variant }> = (props) => {
+  const VariantCommand: Component<{ selected?: boolean; variant: App.Variant }> = (props) => {
     return (
       <Card
         class={clsx(
@@ -113,7 +113,7 @@ const BottomMenu: Component = () => {
       </Card>
     );
   };
-  const selectVariantCommand = {
+  const selectVariantCommand: Command = {
     category: "workspace",
     icon: mdiCards,
     name: "Select Variant",
@@ -130,7 +130,7 @@ const BottomMenu: Component = () => {
               action: () => {
                 setActiveVariantId(variant.id);
               }
-            };
+            } as Command;
           })
           .filter(Boolean),
         {
@@ -151,7 +151,7 @@ const BottomMenu: Component = () => {
   registerCommand(selectVariantCommand);
 
   return (
-    <div class="w-full flex m-0 bg-gray-50 dark:bg-gray-900 h-6 border-t-2 border-gray-200 dark:border-gray-700 box-content z-20">
+    <div class="w-full flex m-0 bg-gray-50 dark:bg-gray-900 h-6 box-content z-20">
       <Show when={workspace()}>
         <IconButton
           path={mdiHexagonSlice6}
