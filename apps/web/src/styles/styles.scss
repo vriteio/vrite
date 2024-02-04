@@ -45,6 +45,7 @@ kbd {
   cursor: ew-resize;
   cursor: col-resize;
 }
+.prose-output,
 .prose-editor {
   p,
   ul,
@@ -363,6 +364,27 @@ kbd {
         content: "";
         @apply bg-secondary opacity-20 absolute w-full h-full top-0 left-0 pointer-events-none;
       }
+    }
+  }
+}
+.prose-output {
+  :where(p, ul, ol, pre):not(:where(.not-prose, .not-prose *)) {
+    margin: 0.375rem 0;
+  }
+  pre {
+    @apply bg-gray-100 dark:bg-gray-800 leading-5 px-3 py-2 whitespace-pre-wrap;
+    &::-webkit-scrollbar {
+      @apply bg-gray-100 dark:bg-gray-800 border rounded-bl-lg rounded-br-lg w-2 h-4;
+    }
+    &::-webkit-scrollbar-thumb {
+      @apply bg-gray-50 dark:bg-gray-900 border-4 border-4 border-solid border-gray-100 dark:border-gray-800 rounded-lg;
+    }
+    &::-webkit-scrollbar-track {
+      @apply mx-2;
+    }
+    code {
+      padding: 0;
+      @apply bg-transparent dark:bg-transparent text-gray-500 dark:text-gray-400;
     }
   }
 }

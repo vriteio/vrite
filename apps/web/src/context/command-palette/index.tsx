@@ -140,10 +140,22 @@ const CommandPalette: Component<CommandPaletteProps> = (props) => {
       },
       onmessage(event) {
         const partOfContent = decodeURIComponent(event.data);
+        const scrollableContainer = scrollableContainerRef();
 
         content += partOfContent;
         setAnswer(marked.parse(content, { gfm: true, headerIds: false, mangle: false }));
-        scrollableContainerRef()?.scrollTo(0, scrollableContainerRef()?.scrollHeight || 0);
+
+        if (!scrollableContainer) return;
+
+        const delta =
+          scrollableContainer.scrollHeight -
+          scrollableContainer.scrollTop -
+          scrollableContainer.clientHeight;
+
+        // If the user has not scrolled up
+        if (delta < 50) {
+          scrollableContainer.scrollTop = scrollableContainer.scrollHeight;
+        }
       },
       onclose() {
         setLoading(false);
@@ -541,7 +553,7 @@ const CommandPalette: Component<CommandPaletteProps> = (props) => {
                     )}
                     color="base"
                   >
-                    <div class="flex flex-col w-full prose prose-editor" innerHTML={answer()} />
+                    <div class="flex flex-col w-full prose prose-output" innerHTML={answer()} />
                     <Show when={!loading()}>
                       <IconButton
                         color="contrast"
