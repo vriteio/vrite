@@ -38,8 +38,7 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
   const client = useClient();
   const { notify } = useNotifications();
   const { confirmDelete } = useConfirmationModal();
-  const { activeContentGroupId, expandedContentLevels, collapseContentLevel, contentActions } =
-    useContentData();
+  const { activeContentGroupId, expandedContentLevels, contentActions } = useContentData();
   const {
     activeDraggableContentGroupId,
     activeDraggableContentPieceId,
@@ -162,7 +161,6 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
                 try {
                   setLoading(props.contentGroup.id);
                   await client.contentGroups.delete.mutate({ id: props.contentGroup.id });
-                  collapseContentLevel(props.contentGroup.id);
                   contentActions.deleteContentGroup({ id: props.contentGroup.id });
                   setLoading("");
                   notify({ text: "Content group deleted", type: "success" });

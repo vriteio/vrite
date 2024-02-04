@@ -3,7 +3,7 @@ import { ContentLoader, createContentLoader } from "./loader";
 import { createContext, createResource, ParentComponent, useContext } from "solid-js";
 import { createEffect, on, onCleanup } from "solid-js";
 import { createStore, reconcile } from "solid-js/store";
-import { useParams } from "@solidjs/router";
+import { useNavigate, useParams } from "@solidjs/router";
 import { useClient, useLocalStorage, App } from "#context";
 
 interface ContentLevel {
@@ -37,6 +37,7 @@ const ContentDataContext = createContext<ContentDataContextData>();
 const ContentDataProvider: ParentComponent = (props) => {
   const client = useClient();
   const params = useParams();
+  const navigate = useNavigate();
   const { storage, setStorage } = useLocalStorage();
   const [variants, setVariants] = createStore<Record<string, App.Variant | undefined>>({});
   const [contentLevels, setContentLevels] = createStore<Record<string, ContentLevel | undefined>>(
@@ -125,7 +126,11 @@ const ContentDataProvider: ParentComponent = (props) => {
     contentLevels,
     setContentGroups,
     setContentPieces,
-    setContentLevels
+    setContentLevels,
+    activeContentPieceId,
+    activeContentGroupId,
+    setActiveContentGroupId,
+    collapseContentLevel
   });
   const contentLoader = createContentLoader({
     contentGroups,
@@ -241,6 +246,9 @@ const ContentDataProvider: ParentComponent = (props) => {
       })
       .then((contentPiece) => {
         setContentPieces(id, contentPiece);
+      })
+      .catch(() => {
+        navigate(location.pathname.includes("editor") ? "/editor" : "/", { replace: true });
       });
   });
   onCleanup(() => {

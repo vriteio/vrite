@@ -1,4 +1,6 @@
 import { SetStoreFunction } from "solid-js/store";
+import { useLocation, useNavigate } from "@solidjs/router";
+import { Accessor } from "solid-js";
 import { App, ContentLevel } from "#context";
 
 interface ContentActionsInput {
@@ -13,6 +15,10 @@ interface ContentActionsInput {
     Record<string, App.ExtendedContentPieceWithAdditionalData<"order" | "coverWidth"> | undefined>
   >;
   setContentLevels: SetStoreFunction<Record<string, ContentLevel | undefined>>;
+  activeContentGroupId(): string | null;
+  activeContentPieceId(): string | null;
+  setActiveContentGroupId(contentGroupId: string | null): void;
+  collapseContentLevel(contentGroupId: string): void;
 }
 interface ContentActions {
   createContentGroup(data: App.ContentGroup): void;
@@ -39,10 +45,14 @@ const createContentActions = ({
   contentGroups,
   contentPieces,
   contentLevels,
+  activeContentPieceId,
   setContentGroups,
   setContentPieces,
-  setContentLevels
+  setContentLevels,
+  collapseContentLevel
 }: ContentActionsInput): ContentActions => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const createContentGroup: ContentActions["createContentGroup"] = (data) => {
     const parentId = data.ancestors.at(-1) || "";
 
@@ -72,31 +82,34 @@ const createContentActions = ({
       });
     }
 
-    if (contentGroups[data.id]) {
-      // Remove group
-      setContentGroups(data.id, undefined);
+    collapseContentLevel(data.id);
 
-      // Remove descendants (content pieces and groups)
-      const removeDescendants = (groupId: string): void => {
+    if (contentGroups[data.id]) {
+      const deleteNestedContentGroups = (groupId: string): void => {
         const group = contentGroups[groupId];
 
         if (!group) return;
 
+        if (contentLevels[groupId]) {
+          setContentPieces(contentLevels[groupId]?.pieces || [], undefined);
+          setContentLevels(groupId, undefined);
+        }
+
         group.descendants.forEach((descendantId) => {
           const descendant = contentGroups[descendantId];
 
-          if (contentLevels[descendantId]) {
-            setContentLevels(descendantId, undefined);
-          }
-
           if (descendant) {
             setContentGroups(descendantId, undefined);
-            removeDescendants(descendantId);
+            deleteNestedContentGroups(descendantId);
           }
         });
       };
 
-      removeDescendants(data.id);
+      deleteNestedContentGroups(data.id);
+    }
+
+    if (activeContentPieceId() && !contentPieces[activeContentPieceId()!]) {
+      navigate(location.pathname.includes("editor") ? "/editor" : "/", { replace: true });
     }
   };
   const moveContentGroup: ContentActions["moveContentGroup"] = (data) => {
@@ -300,8 +313,8 @@ const createContentActions = ({
     }
   };
   const deleteContentPiece: ContentActions["deleteContentPiece"] = (data) => {
-    const currentContentPiece = contentPieces[data.id];
-    const currentParentId = currentContentPiece?.contentGroupId || "";
+    const deletedContentPiece = contentPieces[data.id];
+    const currentParentId = deletedContentPiece?.contentGroupId || "";
 
     if (contentLevels[currentParentId]) {
       setContentLevels(currentParentId, "pieces", (pieces) => {
@@ -309,8 +322,12 @@ const createContentActions = ({
       });
     }
 
-    if (currentContentPiece) {
+    if (deletedContentPiece) {
       setContentPieces(data.id, undefined);
+    }
+
+    if (activeContentPieceId() === data.id) {
+      navigate(location.pathname.includes("editor") ? "/editor" : "/", { replace: true });
     }
   };
 

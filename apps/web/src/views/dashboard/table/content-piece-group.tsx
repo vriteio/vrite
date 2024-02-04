@@ -95,6 +95,7 @@ const ContentPieceGroup: Component<ContentPieceGroupProps> = (props) => {
   const { confirmDelete } = useConfirmationModal();
   const { tableWidth } = useDashboardTableViewData();
   const [expanded, setExpanded] = createSignal(true);
+  const [loading, setLoading] = createSignal(false);
   const [dropdownOpened, setDropdownOpened] = createSignal(false);
   const client = useClient();
   const columnContentLevel = (): ContentLevel => {
@@ -180,10 +181,14 @@ const ContentPieceGroup: Component<ContentPieceGroupProps> = (props) => {
                 if (!props.contentGroup) return;
 
                 try {
-                  await client.contentGroups.delete.mutate({ id: props.contentGroup.id });
+                  setLoading(true);
+                  // await client.contentGroups.delete.mutate({ id: props.contentGroup.id });
+                  contentActions.deleteContentGroup({ id: props.contentGroup.id });
+                  setLoading(false);
                   notify({ text: "Content group deleted", type: "success" });
                 } catch (error) {
                   notify({ text: "Couldn't delete the content group", type: "error" });
+                  setLoading(false);
                 }
               }
             });
@@ -251,10 +256,8 @@ const ContentPieceGroup: Component<ContentPieceGroupProps> = (props) => {
               activatorButton={() => (
                 <IconButton
                   path={mdiDotsHorizontal}
-                  class={clsx(
-                    "m-0 opacity-0 group-hover:opacity-100",
-                    !dropdownOpened() && "opacity-0"
-                  )}
+                  class={clsx("m-0 opacity-0 group-hover:opacity-100", loading() && "!opacity-100")}
+                  loading={loading()}
                   variant="text"
                   text="soft"
                   onClick={(event) => {

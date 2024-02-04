@@ -6,6 +6,7 @@ import { SidePanelRight } from "./side-panel-right";
 import { ParentComponent, Show, createEffect } from "solid-js";
 import { useLocation } from "@solidjs/router";
 import { mdiFullscreenExit } from "@mdi/js";
+import clsx from "clsx";
 import {
   AppearanceProvider,
   AuthenticatedUserDataProvider,
@@ -31,10 +32,15 @@ const SecuredLayout: ParentComponent = (props) => {
     <AuthenticatedUserDataProvider>
       <AppearanceProvider>
         <ExtensionsProvider>
-          <CommandPaletteProvider>
-            <ContentDataProvider>
+          <ContentDataProvider>
+            <CommandPaletteProvider>
               <div class="flex flex-col h-full w-full">
-                <div class="flex-1 flex flex-col-reverse md:flex-row h-[calc(100%-1.5rem)] border-b-2 border-gray-200 dark:border-gray-700 ">
+                <div
+                  class={clsx(
+                    "flex-1 flex flex-col-reverse md:flex-row h-[calc(100%-1.5rem)]",
+                    !storage().zenMode && "border-b-2 border-gray-200 dark:border-gray-700"
+                  )}
+                >
                   <Show
                     when={!storage().zenMode}
                     fallback={
@@ -69,18 +75,27 @@ const SecuredLayout: ParentComponent = (props) => {
                         <Show when={!storage().zenMode}>
                           <Toolbar />
                         </Show>
-                        <div class="absolute h-[calc(100%-3rem)] w-full top-12">
+                        <div
+                          class={clsx(
+                            "absolute w-full",
+                            storage().zenMode ? "top-0 h-full" : "h-[calc(100%-3rem)] top-12"
+                          )}
+                        >
                           {props.children}
                         </div>
                       </div>
-                      <SidePanelRight />
+                      <Show when={!storage().zenMode}>
+                        <SidePanelRight />
+                      </Show>
                     </div>
                   </div>
                 </div>
-                <BottomMenu />
+                <Show when={!storage().zenMode}>
+                  <BottomMenu />
+                </Show>
               </div>
-            </ContentDataProvider>
-          </CommandPaletteProvider>
+            </CommandPaletteProvider>
+          </ContentDataProvider>
         </ExtensionsProvider>
       </AppearanceProvider>
     </AuthenticatedUserDataProvider>

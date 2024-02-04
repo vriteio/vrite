@@ -80,6 +80,8 @@ class GitSync implements Extension {
     variantId: string | null,
     details: Pick<onChangePayload, "context" | "document">
   ): Promise<void> {
+    if (variantId) return;
+
     const ctx = {
       db: this.fastify.mongo.db!,
       auth: {
@@ -94,22 +96,11 @@ class GitSync implements Extension {
 
     if (!gitData || !gitProvider) return;
 
-    const baseContentPiece = await this.contentPiecesCollection.findOne({
+    const contentPiece = await this.contentPiecesCollection.findOne({
       _id: new ObjectId(contentPieceId)
     });
 
-    let contentPiece = baseContentPiece;
-
-    if (variantId) {
-      const contentPieceVariant = await this.contentPieceVariantsCollection.findOne({
-        _id: new ObjectId(variantId)
-      });
-
-      contentPiece = {
-        ...baseContentPiece,
-        ...contentPieceVariant
-      };
-    }
+    if (!contentPiece) return;
 
     const json = docToJSON(details.document);
     const outputContentProcessor = await createOutputContentProcessor(
@@ -125,8 +116,7 @@ class GitSync implements Extension {
     await this.gitDataCollection.updateOne(
       {
         "workspaceId": new ObjectId(details.context.workspaceId),
-        "records.contentPieceId": new ObjectId(contentPieceId),
-        ...(variantId && { "records.variantId": new ObjectId(variantId) })
+        "records.contentPieceId": new ObjectId(contentPieceId)
       },
       {
         $set: {
@@ -138,10 +128,7 @@ class GitSync implements Extension {
       action: "update",
       data: {
         records: gitData.records.map((record: any) => {
-          if (
-            record.contentPieceId.toString() === contentPieceId &&
-            ((!variantId && !record.variantId) || `${record.variantId}` === `${variantId}`)
-          ) {
+          if (record.contentPieceId.toString() === contentPieceId) {
             return {
               ...record,
               currentHash

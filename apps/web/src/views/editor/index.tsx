@@ -71,7 +71,7 @@ const EditorView: Component = () => {
         >
           <div
             class={clsx(
-              "p-2 md:mx-10 w-full md:w-[calc(100%-5rem)]",
+              "p-2 md:mx-10 w-full md:w-[calc(100%-5rem)] flex flex-col",
               storage().zenMode ? "items-center" : "items-start"
             )}
           >

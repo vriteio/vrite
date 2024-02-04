@@ -214,7 +214,9 @@ const gfmOutputTransformer = createOutputTransformer<string>((contentNode) => {
       .join("\n");
   };
 
-  return transformContentNode(contentWalker as JSONContentNodeWalker<JSONContentNode["doc"]>);
+  return transformContentNode(
+    contentWalker as JSONContentNodeWalker<JSONContentNode["doc"]>
+  ).trim();
 });
 const htmlOutputTransformer = createOutputTransformer<string>((contentNode) => {
   const contentWalker = createContentWalker(contentNode);

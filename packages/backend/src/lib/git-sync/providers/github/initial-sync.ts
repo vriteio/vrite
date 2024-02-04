@@ -59,7 +59,7 @@ const initialSync: GitSyncConfiguration["initialSync"] = async ({ ctx, gitData }
     return {
       records: gitRecords,
       directories: gitDirectories,
-      path: syncedPath,
+      path: recordPath,
       name
     };
   };

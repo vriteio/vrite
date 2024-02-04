@@ -1,6 +1,10 @@
-import { DashboardTableViewColumnConfig, useDashboardTableViewData } from "./table-view-context";
+import {
+  DashboardTableViewColumnConfig,
+  DashboardTableViewColumnDef,
+  useDashboardTableViewData
+} from "./table-view-context";
 import { mdiDotsVertical, mdiEyeOffOutline, mdiPlus } from "@mdi/js";
-import { Component, For, createSignal, onCleanup, onMount } from "solid-js";
+import { Component, For, createEffect, createSignal, onCleanup, onMount } from "solid-js";
 import clsx from "clsx";
 import { Checkbox, Dropdown, Icon, IconButton, Sortable } from "#components/primitives";
 
@@ -121,8 +125,8 @@ const DashboardTableViewHeader: Component = () => {
       )}
     >
       {(_columnId, index, dataProps) => {
-        const column = columns[index()];
-        const columnDef = columnDefs[column.id];
+        const column = (): DashboardTableViewColumnConfig => columns[index()];
+        const columnDef = (): DashboardTableViewColumnDef => columnDefs[column().id];
 
         return (
           <div
@@ -131,24 +135,24 @@ const DashboardTableViewHeader: Component = () => {
               setColumns(index(), "ref", element);
             }}
             style={{
-              "min-width": `${column.width}px`,
-              "max-width": `${column.width}px`
+              "min-width": `${column().width}px`,
+              "max-width": `${column().width}px`
             }}
             {...dataProps()}
           >
             <span class="text-gray-500 dark:text-gray-400 font-semibold flex-1 px-2">
-              {columnDef.label}
+              {columnDef().label}
             </span>
             <Dropdown
               placement="bottom-end"
               alternativePlacements={["bottom-start", "bottom-end"]}
               cardProps={{ class: "mt-2" }}
-              opened={dropdownOpened() === column?.id}
+              opened={dropdownOpened() === column()?.id}
               fixed
               autoPlacement
               class="m-0 mr-0.5"
               setOpened={(opened) => {
-                setDropdownOpened(opened ? column.id : "");
+                setDropdownOpened(opened ? column().id : "");
               }}
               activatorButton={() => (
                 <IconButton
@@ -158,7 +162,7 @@ const DashboardTableViewHeader: Component = () => {
                   text="soft"
                   onClick={(event) => {
                     event.stopPropagation();
-                    setDropdownOpened(column.id);
+                    setDropdownOpened(column().id);
                   }}
                 />
               )}
@@ -172,7 +176,7 @@ const DashboardTableViewHeader: Component = () => {
                   class="justify-start whitespace-nowrap w-full m-0 justify-start"
                   onClick={() => {
                     setColumns((columns) => {
-                      return columns.filter((column) => column?.id !== columnDef.id);
+                      return columns.filter((column) => column?.id !== columnDef().id);
                     });
                   }}
                 />
@@ -181,14 +185,14 @@ const DashboardTableViewHeader: Component = () => {
             <div
               class="flex justify-center items-center absolute h-full -right-11px w-5 hover:cursor-col-resize group z-1"
               onPointerDown={(event) => {
-                setResizedHeader(column.id);
+                setResizedHeader(column().id);
                 event.preventDefault();
               }}
             >
               <div
                 class={clsx(
                   "group-hover:bg-gradient-to-tr h-full w-3px rounded-full",
-                  resizedHeader() === column.id && "bg-gradient-to-tr"
+                  resizedHeader() === column().id && "bg-gradient-to-tr"
                 )}
               />
             </div>

@@ -21,6 +21,7 @@ interface StorageData {
   settingsSection: string;
   zenMode: boolean;
   html: string;
+  version: string;
 }
 interface LocalStorageContextData {
   storage: Accessor<Partial<StorageData>>;
@@ -30,18 +31,27 @@ interface LocalStorageContextData {
 const LocalStorageContext = createContext<LocalStorageContextData>();
 const LocalStorageProvider: ParentComponent = (props) => {
   const [storage, setStorage] = createSignal<Partial<StorageData>>({});
+  const currentVersion = "0.4";
+  const defaultData: Partial<StorageData> = {
+    toolbarView: "default",
+    sidePanelView: "default",
+    sidePanelWidth: 375,
+    version: currentVersion
+  };
 
   try {
-    const storedData = localStorage.getItem("ui");
+    const storedDataString = localStorage.getItem("ui");
 
-    if (storedData && storedData !== "{}") {
-      setStorage(JSON.parse(storedData));
+    if (storedDataString && storedDataString !== "{}") {
+      const storedData = JSON.parse(storedDataString);
+
+      if (storedData.version === currentVersion) {
+        setStorage(storedData);
+      } else {
+        setStorage(defaultData);
+      }
     } else {
-      setStorage({
-        toolbarView: "default",
-        sidePanelView: "default",
-        sidePanelWidth: 375
-      });
+      setStorage(defaultData);
     }
   } catch (error) {
     // eslint-disable-next-line no-console

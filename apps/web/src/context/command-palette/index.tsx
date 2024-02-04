@@ -51,6 +51,7 @@ import { App, useClient } from "#context/client";
 import { useLocalStorage } from "#context/local-storage";
 import { breakpoints } from "#lib/utils";
 import { useHostConfig } from "#context/host-config";
+import { useContentData } from "#context/content";
 
 interface CommandCategory {
   label: string;
@@ -110,6 +111,7 @@ const CommandPalette: Component<CommandPaletteProps> = (props) => {
   const client = useClient();
   const navigate = useNavigate();
   const { setStorage } = useLocalStorage();
+  const { activeVariantId } = useContentData();
   const [inputRef, setInputRef] = createSignal<HTMLInputElement | null>(null);
   const [abortControllerRef, setAbortControllerRef] = createSignal<AbortController | null>(null);
   const [searchResults, setSearchResults] = createSignal<
@@ -178,7 +180,7 @@ const CommandPalette: Component<CommandPaletteProps> = (props) => {
 
     try {
       const results = await client.search.search.query(
-        { query: query() },
+        { query: query(), variantId: activeVariantId() || undefined },
         { signal: abortControllerRef()?.signal }
       );
 

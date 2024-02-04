@@ -80,14 +80,8 @@ const AddContentGroupColumn: Component<AddContentGroupColumnProps> = (props) => 
   );
 };
 const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
-  const {
-    contentPieces,
-    contentLevels,
-    contentLoader,
-    contentActions,
-    activeContentGroupId,
-    setActiveContentGroupId
-  } = useContentData();
+  const { contentPieces, contentLevels, contentLoader, contentActions, activeContentGroupId } =
+    useContentData();
   const { activeDraggableContentGroupId, setActiveDraggableContentPieceId } = useDashboardData();
   const { notify } = useNotifications();
   const { confirmDelete } = useConfirmationModal();
@@ -95,6 +89,7 @@ const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
   const scrollShadowController = createScrollShadowController();
   const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
   const [dropdownOpened, setDropdownOpened] = createSignal(false);
+  const [loading, setLoading] = createSignal(false);
   const client = useClient();
   const menuOptions = createMemo(() => {
     const menuOptions: Array<{
@@ -136,15 +131,14 @@ const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
             ),
             async onConfirm() {
               try {
+                setLoading(true);
                 await client.contentGroups.delete.mutate({ id: props.contentGroup.id });
-
-                if (activeContentGroupId() === props.contentGroup.id) {
-                  setActiveContentGroupId(null);
-                }
-
+                contentActions.deleteContentGroup({ id: props.contentGroup.id });
+                setLoading(false);
                 notify({ text: "Content group deleted", type: "success" });
               } catch (error) {
-                notify({ text: "Couldn't delete the content group", type: "success" });
+                notify({ text: "Couldn't delete the content group", type: "error" });
+                setLoading(false);
               }
             }
           });
@@ -217,6 +211,7 @@ const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
                 path={mdiDotsVertical}
                 class="justify-start m-0 content-group-menu"
                 variant="text"
+                loading={loading()}
                 text="soft"
               />
             )}

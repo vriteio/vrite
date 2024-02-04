@@ -1,5 +1,4 @@
 import { ContentPieceTitle } from "./title";
-import { ContentPieceDescription } from "./description";
 import { ContentPieceMetadata } from "./metadata";
 import { Component, createEffect, createMemo, createSignal, on, Show } from "solid-js";
 import {
@@ -9,8 +8,6 @@ import {
   mdiLock,
   mdiEye,
   mdiClose,
-  mdiCardsOutline,
-  mdiCards,
   mdiInformationOutline,
   mdiCodeJson,
   mdiPuzzleOutline
@@ -19,7 +16,7 @@ import dayjs from "dayjs";
 import CustomParseFormat from "dayjs/plugin/customParseFormat";
 import { useLocation, useNavigate } from "@solidjs/router";
 import { Image } from "#lib/editor";
-import { Card, IconButton, Dropdown, Loader, Tooltip } from "#components/primitives";
+import { Card, IconButton, Dropdown, Loader } from "#components/primitives";
 import {
   useConfirmationModal,
   App,
@@ -28,7 +25,8 @@ import {
   hasPermission,
   useHostConfig,
   useSharedState,
-  useContentData
+  useContentData,
+  useNotifications
 } from "#context";
 import { MiniEditor } from "#components/fragments";
 import { breakpoints } from "#lib/utils";
@@ -37,6 +35,7 @@ dayjs.extend(CustomParseFormat);
 
 const ContentPieceView: Component = () => {
   const hostConfig = useHostConfig();
+  const { notify } = useNotifications();
   const sections = [
     { label: "Details", id: "details", icon: mdiInformationOutline },
     { label: "Custom data", id: "custom-data", icon: mdiCodeJson },
@@ -52,6 +51,7 @@ const ContentPieceView: Component = () => {
   const { confirmDelete } = useConfirmationModal();
   const location = useLocation();
   const navigate = useNavigate();
+  const [loading, setLoading] = createSignal(false);
   const [dropdownMenuOpened, setDropdownMenuOpened] = createSignal(false);
   const [coverInitialValue, setCoverInitialValue] = createSignal("");
   const [titleInitialValue, setTitleInitialValue] = createSignal("");
@@ -168,7 +168,7 @@ const ContentPieceView: Component = () => {
             }}
           />
           <div class="flex-1" />
-          <Show when={location.pathname !== "/editor"}>
+          <Show when={!location.pathname.includes("editor")}>
             <IconButton
               path={editable() ? mdiPencil : mdiEye}
               label={editable() ? "Open in editor" : "Preview content"}
@@ -192,7 +192,9 @@ const ContentPieceView: Component = () => {
               placement="bottom-end"
               opened={dropdownMenuOpened()}
               setOpened={setDropdownMenuOpened}
-              activatorButton={() => <IconButton path={mdiDotsVertical} class="m-0" text="soft" />}
+              activatorButton={() => (
+                <IconButton path={mdiDotsVertical} class="m-0" text="soft" loading={loading()} />
+              )}
             >
               <IconButton
                 path={mdiTrashCan}
@@ -215,8 +217,16 @@ const ContentPieceView: Component = () => {
 
                       if (!id) return;
 
-                      await client.contentPieces.delete.mutate({ id });
-                      // TODO: Navigate
+                      try {
+                        setLoading(true);
+                        await client.contentPieces.delete.mutate({ id });
+                        contentActions.deleteContentPiece({ id });
+                        setLoading(false);
+                        notify({ text: "Content piece deleted", type: "success" });
+                      } catch (error) {
+                        notify({ text: "Couldn't delete the content piece", type: "error" });
+                        setLoading(false);
+                      }
                     }
                   });
                 }}
