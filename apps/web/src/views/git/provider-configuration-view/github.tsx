@@ -178,6 +178,7 @@ const GitHubConfigurationView: Component<GitHubConfigurationViewProps> = (props)
                 path={mdiRefresh}
                 loading={installations.loading || repositories.loading || branches.loading}
                 text="soft"
+                color="contrast"
                 class="m-0"
                 onClick={async () => {
                   setSelectedInstallation(null);

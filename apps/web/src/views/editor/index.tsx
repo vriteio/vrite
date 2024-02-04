@@ -56,8 +56,8 @@ const EditorView: Component = () => {
         when={activeContentPieceId()}
         fallback={
           <div class="flex items-center justify-center w-full h-full">
-            <span class="text-2xl font-semibold text-gray-500 dark:text-gray-400">
-              To edit, select an article in the dashboard
+            <span class="text-2xl font-semibold text-gray-500 dark:text-gray-400 text-center">
+              Select article to edit
             </span>
           </div>
         }
@@ -95,13 +95,15 @@ const EditorView: Component = () => {
             </Show>
           </div>
         </div>
-      </Show>
-      <Show
-        when={!contentPieces[activeContentPieceId() || ""] || (activeContentPieceId() && syncing())}
-      >
-        <div class="flex items-center justify-center w-full h-full bg-gray-100 dark:bg-gray-800 absolute top-0 left-0">
-          <Loader />
-        </div>
+        <Show
+          when={
+            !contentPieces[activeContentPieceId() || ""] || (activeContentPieceId() && syncing())
+          }
+        >
+          <div class="flex items-center justify-center w-full h-full bg-gray-100 dark:bg-gray-800 absolute top-0 left-0">
+            <Loader />
+          </div>
+        </Show>
       </Show>
     </>
   );

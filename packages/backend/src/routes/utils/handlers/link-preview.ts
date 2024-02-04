@@ -54,7 +54,7 @@ const handler = async (
   ctx: Context,
   input: z.infer<typeof inputSchema>
 ): Promise<z.infer<typeof outputSchema>> => {
-  const urlFragments = input.url.split("/").filter(Boolean);
+  const urlFragments = input.url.split(".")[0].split("/").filter(Boolean);
 
   if (input.url.startsWith("/")) {
     if (!input.workspaceId) throw errors.serverError();
@@ -72,7 +72,9 @@ const handler = async (
       const gitData = await gitDataCollection.findOne({
         workspaceId: new ObjectId(input.workspaceId)
       });
-      const record = gitData?.records.find((record) => record.path === urlFragments.join("/"));
+      const record = gitData?.records.find(
+        (record) => record.path.split(".")[0] === urlFragments.join("/")
+      );
 
       if (record) {
         contentPieceId = new ObjectId(record.contentPieceId);

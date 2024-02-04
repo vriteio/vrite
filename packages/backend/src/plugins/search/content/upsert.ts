@@ -36,10 +36,13 @@ const upsertContent = createSearchContentHandler<{
   if (!contentBuffer) return;
 
   const fragments = fragmentedContentProcessor(bufferToJSON(contentBuffer), details.contentPiece);
+  const validFragments = fragments.filter((fragment) => {
+    return Boolean(fragment.breadcrumb.map((crumb) => crumb === crumb.trim()).join(""));
+  });
 
-  if (!fragments.length) return;
+  if (!validFragments.length) return;
 
-  fragments.forEach((fragment) => {
+  validFragments.forEach((fragment) => {
     batchCreator = batchCreator.withObject({
       class: "Content",
       tenant: `${details.contentPiece.workspaceId}`,

@@ -310,7 +310,7 @@ const SidebarMenu: Component = () => {
     >
       <Card
         class={clsx(
-          "lg:p-0 flex justify-center items-center box-content fixed z-50 p-0 md:py-2 h-[calc(env(safe-area-inset-bottom,0)+3.625rem)] transition-all duration-300 m-0 rounded-0 border-0 border-t-2 md:border-t-0 md:border-r-2 w-full md:w-[calc(3.25rem+env(safe-area-inset-left,0px))] pl-[calc(env(safe-area-inset-left,0px))] md:h-full relative bottom-0 md:bottom-unset",
+          "flex justify-center items-center box-content fixed z-50 p-0 h-[calc(env(safe-area-inset-bottom,0)+3.625rem)] transition-all duration-300 m-0 rounded-0 border-0 border-t-2 md:border-t-0 md:border-r-2 w-full md:w-[calc(3.25rem+env(safe-area-inset-left,0px))] pl-[calc(env(safe-area-inset-left,0px))] md:h-full relative bottom-0 md:bottom-unset",
           hideMenu() && "hidden"
         )}
         color="base"

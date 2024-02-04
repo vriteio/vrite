@@ -101,10 +101,13 @@ const bulkUpsertContent = createSearchContentHandler<{
     if (!contentBuffer) continue;
 
     const fragments = fragmentedContentProcessor(bufferToJSON(contentBuffer), contentPiece);
+    const validFragments = fragments.filter((fragment) => {
+      return Boolean(fragment.breadcrumb.map((crumb) => crumb === crumb.trim()).join(""));
+    });
 
-    if (!fragments.length) return;
+    if (!validFragments.length) return;
 
-    fragments.forEach((fragment) => {
+    validFragments.forEach((fragment) => {
       batchCreator = batchCreator.withObject({
         class: "Content",
         tenant: `${contentPiece.workspaceId}`,
