@@ -25,7 +25,7 @@ const ExplorerTree: Component = () => {
             onClick={() => {
               setStorage((storage) => ({
                 ...storage,
-                sidePanelWidth: 0
+                rightPanelWidth: 0
               }));
             }}
           />

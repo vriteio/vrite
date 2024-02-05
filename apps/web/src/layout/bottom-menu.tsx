@@ -1,6 +1,7 @@
 import { mdiHexagonSlice6, mdiCards } from "@mdi/js";
 import { Component, Show, createEffect, createSignal, onCleanup } from "solid-js";
 import clsx from "clsx";
+import { useNavigate } from "@solidjs/router";
 import { IconButton, Card, Button } from "#components/primitives";
 import {
   App,
@@ -90,6 +91,7 @@ const BottomMenu: Component = () => {
   const { variants, setActiveVariantId, activeVariantId } = useContentData();
   const { workspace } = useAuthenticatedUserData();
   const { open, registerCommand } = useCommandPalette();
+  const navigate = useNavigate();
   const VariantCommand: Component<{ selected?: boolean; variant: App.Variant }> = (props) => {
     return (
       <Card
@@ -148,10 +150,20 @@ const BottomMenu: Component = () => {
     }
   };
 
-  registerCommand(selectVariantCommand);
+  registerCommand([
+    {
+      name: "Select Workspace",
+      icon: mdiHexagonSlice6,
+      category: "workspace",
+      action: () => {
+        navigate("/workspaces");
+      }
+    },
+    selectVariantCommand
+  ]);
 
   return (
-    <div class="w-full flex m-0 bg-gray-50 dark:bg-gray-900 h-6 box-content z-20">
+    <div class="w-full hidden md:flex m-0 bg-gray-50 dark:bg-gray-900 h-6 box-content z-20">
       <Show when={workspace()}>
         <IconButton
           path={mdiHexagonSlice6}

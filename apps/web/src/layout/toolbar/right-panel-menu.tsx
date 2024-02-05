@@ -8,7 +8,12 @@ const RightPanelMenu: Component<{ variant?: "text" | "solid" }> = (props) => {
   const rightPanelOpened = (): boolean => Number(storage().rightPanelWidth || 0) > 0;
 
   return (
-    <Tooltip text={`${rightPanelOpened() ? "Hide" : "Show"} Explorer`} side="left" class="-ml-1">
+    <Tooltip
+      text={`${rightPanelOpened() ? "Hide" : "Show"} Explorer`}
+      side="left"
+      class="-ml-1"
+      wrapperClass="hidden @xl:flex"
+    >
       <IconButton
         path={rightPanelOpened() ? mdiMenuClose : mdiMenuOpen}
         variant={props.variant}

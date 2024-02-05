@@ -38,7 +38,7 @@ const SecuredLayout: ParentComponent = (props) => {
                 <div
                   class={clsx(
                     "flex-1 flex flex-col-reverse md:flex-row h-[calc(100%-1.5rem)]",
-                    !storage().zenMode && "border-b-2 border-gray-200 dark:border-gray-700"
+                    !storage().zenMode && "md:border-b-2 border-gray-200 dark:border-gray-700"
                   )}
                 >
                   <Show

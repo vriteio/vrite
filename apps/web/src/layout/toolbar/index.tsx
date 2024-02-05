@@ -9,8 +9,6 @@ import {
   mdiGithub,
   mdiMagnify,
   mdiMenu,
-  mdiMenuClose,
-  mdiMenuOpen,
   mdiViewDashboard,
   mdiViewList
 } from "@mdi/js";
@@ -371,7 +369,7 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
         <IconButton
           path={hostConfig.search ? mdiMagnify : mdiConsoleLine}
           label={
-            <div class="hidden @xl:flex w-full items-center">
+            <div class="flex w-full items-center">
               <span class="pl-1 flex-1 text-start">{hostConfig.search ? "Search" : "Command"}</span>
               <kbd class="bg-gray-300 dark:bg-gray-700 group-hover:bg-gray-200 dark:group-hover:bg-gray-800 flex justify-center items-center rounded-md px-1 h-5 text-sm">
                 {isAppleDevice() ? (
@@ -384,7 +382,7 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
             </div>
           }
           text="soft"
-          class="@xl:min-w-48 justify-start m-0 bg-gray-200 group"
+          class="hidden @xl:flex @xl:min-w-48 justify-start m-0 bg-gray-200 group"
           onClick={() => {
             // Force mobile keyboard to open (focus must be in user-triggered event handler)
             document.getElementById("command-palette-input")?.focus({ preventScroll: true });

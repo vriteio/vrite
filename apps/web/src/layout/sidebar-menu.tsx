@@ -10,8 +10,9 @@ import {
   mdiPuzzle,
   mdiMicrosoftXboxControllerMenu,
   mdiGit,
-  mdiFileMultiple,
-  mdiFile
+  mdiFile,
+  mdiMagnify,
+  mdiFileMultiple
 } from "@mdi/js";
 import {
   Accessor,
@@ -27,7 +28,6 @@ import { useLocation, useNavigate } from "@solidjs/router";
 import clsx from "clsx";
 import { createMediaQuery } from "@solid-primitives/media";
 import { createActiveElement } from "@solid-primitives/active-element";
-import { Dynamic } from "solid-js/web";
 import { breakpoints, navigateAndReload } from "#lib/utils";
 import {
   useLocalStorage,
@@ -59,6 +59,7 @@ interface MenuItem {
 
 const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
   const { storage, setStorage } = useLocalStorage();
+  const commandPalette = useCommandPalette();
   const { activeContentPieceId } = useContentData();
   const hostConfig = useHostConfig();
   const navigate = useNavigate();
@@ -70,6 +71,9 @@ const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
       sidePanelWidth: storage.sidePanelWidth || 375,
       sidePanelView: view
     }));
+  };
+  const switchRightPanel = (): void => {
+    setStorage((storage) => ({ ...storage, rightPanelWidth: storage.rightPanelWidth ? 0 : 375 }));
   };
   const pathnameData = createMemo(() => {
     const pathRegex = /^\/(?:editor\/)?([a-f\d]{24})?$/i;
@@ -91,7 +95,9 @@ const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
         active: () => {
           return (
             pathnameData().view === "dashboard" &&
-            (md() || !(storage().sidePanelView && storage().sidePanelWidth))
+            (md() ||
+              (!(storage().sidePanelView && storage().sidePanelWidth) &&
+                !storage().rightPanelWidth))
           );
         },
         onClick: () => {
@@ -110,7 +116,9 @@ const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
         active: () => {
           return (
             pathnameData().view === "editor" &&
-            (md() || !(storage().sidePanelView && storage().sidePanelWidth))
+            (md() ||
+              (!(storage().sidePanelView && storage().sidePanelWidth) &&
+                !storage().rightPanelWidth))
           );
         },
         onClick: () => {
@@ -123,9 +131,27 @@ const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
       activeContentPieceId() && {
         icon: mdiFile,
         label: "Content piece",
+        inMenu: true,
         active: () => storage().sidePanelView === "contentPiece",
         onClick: () => {
           setSidePanelView("contentPiece");
+        }
+      },
+      !breakpoints.md() && {
+        icon: mdiMagnify,
+        label: "Search",
+        onClick: () => {
+          // Force mobile keyboard to open (focus must be in user-triggered event handler)
+          document.getElementById("command-palette-input")?.focus({ preventScroll: true });
+          commandPalette.open();
+        }
+      },
+      !breakpoints.md() && {
+        icon: mdiFileMultiple,
+        label: "Explorer",
+        active: () => Number(storage().rightPanelWidth || 0) > 0,
+        onClick: () => {
+          switchRightPanel();
         }
       },
       hostConfig.githubApp && {
@@ -316,7 +342,7 @@ const SidebarMenu: Component = () => {
         color="base"
         onTransitionEnd={() => tooltipController.updatePosition()}
       >
-        <div class="flex md:flex-col h-full lg:w-10 py-1.5">
+        <div class="flex md:flex-col h-full w-full lg:w-10 lg:py-1.5">
           <div class="flex items-center justify-center md:mb-4">
             <IconButton
               path={logoIcon}
@@ -383,32 +409,37 @@ const SidebarMenu: Component = () => {
                   text="soft"
                   color={active() ? "primary" : "base"}
                 >
-                  <Show
-                    when={profile()?.avatar}
-                    fallback={
-                      <Icon
-                        path={mdiAccountCircle}
-                        class="h-6 w-6 text-gray-500 dark:text-gray-400"
-                      />
-                    }
-                  >
-                    <div class="relative">
+                  <div class="relative">
+                    <Show
+                      when={profile()?.avatar}
+                      fallback={
+                        <Icon
+                          path={mdiAccountCircle}
+                          class={clsx(
+                            "h-6 w-6 text-gray-500 dark:text-gray-400",
+                            storage().sidePanelView &&
+                              storage().sidePanelWidth &&
+                              "fill-[url(#gradient)]"
+                          )}
+                        />
+                      }
+                    >
                       <img src={profile()?.avatar} class="h-6 w-6 rounded-full" />
-                      <IconButton
-                        path={mdiMicrosoftXboxControllerMenu}
-                        variant="text"
-                        badge
-                        hover={false}
-                        color={
-                          storage().sidePanelView && storage().sidePanelWidth ? "primary" : "base"
-                        }
-                        text="soft"
-                        size="small"
-                        class=" md:hidden absolute -right-2 -bottom-2 m-0"
-                      />
-                    </div>
-                    <span class="md:hidden text-xs mt-1 font-semibold">Menu</span>
-                  </Show>
+                    </Show>
+                    <IconButton
+                      path={mdiMicrosoftXboxControllerMenu}
+                      variant="text"
+                      badge
+                      hover={false}
+                      color={
+                        storage().sidePanelView && storage().sidePanelWidth ? "primary" : "base"
+                      }
+                      text="soft"
+                      size="small"
+                      class=" md:hidden absolute -right-2 -bottom-2 m-0"
+                    />
+                  </div>
+                  <span class="md:hidden text-xs mt-1 font-semibold">Menu</span>
                 </Button>
               );
             }}
