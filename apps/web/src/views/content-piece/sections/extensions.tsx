@@ -1,4 +1,4 @@
-import { Component, For, Show, createEffect, createMemo, createSignal } from "solid-js";
+import { Component, For, Show, createEffect, createMemo, createSignal, on } from "solid-js";
 import {
   ContextObject,
   ContextValue,
@@ -44,7 +44,7 @@ const ExtensionsSection: Component<ExtensionsSectionProps> = (props) => {
   const { notify } = useNotifications();
   const extensionsWithContentPieceView = createMemo(() => {
     return installedExtensions().filter((extension) => {
-      return extension.sandbox?.loaded() && extension.sandbox?.runtimeSpec?.contentPieceView;
+      return extension.sandbox?.spec.contentPieceView;
     });
   });
   const [activeExtension, setActiveExtension] = createSignal<ExtensionDetails | null>(
@@ -52,6 +52,14 @@ const ExtensionsSection: Component<ExtensionsSectionProps> = (props) => {
   );
   const [data, setData] = createStore<ContextObject>(
     props.contentPiece.customData?.__extensions__?.[activeExtension()?.spec?.name || ""] || {}
+  );
+
+  createEffect(
+    on(extensionsWithContentPieceView, () => {
+      if (!activeExtension()) {
+        setActiveExtension(extensionsWithContentPieceView()[0] || null);
+      }
+    })
   );
 
   return (

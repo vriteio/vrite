@@ -415,12 +415,7 @@ const SidebarMenu: Component = () => {
                       fallback={
                         <Icon
                           path={mdiAccountCircle}
-                          class={clsx(
-                            "h-6 w-6 text-gray-500 dark:text-gray-400",
-                            storage().sidePanelView &&
-                              storage().sidePanelWidth &&
-                              "fill-[url(#gradient)]"
-                          )}
+                          class="h-6 w-6 text-gray-500 dark:text-gray-400"
                         />
                       }
                     >

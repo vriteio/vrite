@@ -22,7 +22,7 @@ interface ExtensionModalProps {
 const ExtensionConfigurationView: Component<ExtensionModalProps> = (props) => {
   const { confirmDelete } = useConfirmationModal();
   const { notify } = useNotifications();
-  const { getExtensionSandbox } = useExtensions();
+  const { getExtensionSandbox, uninstallExtension } = useExtensions();
   const client = useClient();
   const [loading, setLoading] = createSignal(false);
   const [extensionInstallation, setExtensionInstallation] = createStore<{
@@ -54,23 +54,7 @@ const ExtensionConfigurationView: Component<ExtensionModalProps> = (props) => {
                   header: "Remove extension",
                   content: "Are you sure you want to remove this extension?",
                   async onConfirm() {
-                    const onUninstallCallback = sandbox?.runtimeSpec?.onUninstall;
-
-                    if (onUninstallCallback) {
-                      await sandbox?.runFunction(
-                        onUninstallCallback,
-                        {
-                          contextFunctions: ["notify"],
-                          usableEnv: { readable: [], writable: [] },
-                          config: extensionInstallation.config
-                        },
-                        { notify }
-                      );
-                    }
-
-                    await client.extensions.uninstall.mutate({
-                      id: props.extension.id || ""
-                    });
+                    await uninstallExtension(props.extension);
                     props.close();
                   }
                 });
@@ -78,7 +62,7 @@ const ExtensionConfigurationView: Component<ExtensionModalProps> = (props) => {
             />
           </Tooltip>
         </Show>
-        <Show when={sandbox?.runtimeSpec?.configurationView}>
+        <Show when={sandbox?.spec?.configurationView}>
           <Button
             color="primary"
             class="m-0"
@@ -91,7 +75,7 @@ const ExtensionConfigurationView: Component<ExtensionModalProps> = (props) => {
                   config: extensionInstallation.config
                 });
 
-                const onConfigureCallback = sandbox?.runtimeSpec?.onConfigure;
+                const onConfigureCallback = sandbox?.spec?.onConfigure;
 
                 if (onConfigureCallback) {
                   await sandbox?.runFunction(
@@ -125,7 +109,7 @@ const ExtensionConfigurationView: Component<ExtensionModalProps> = (props) => {
           {props.extension.spec.description}
         </p>
       </TitledCard>
-      <Show when={sandbox?.runtimeSpec?.configurationView}>
+      <Show when={sandbox?.spec?.configurationView}>
         <TitledCard label="Configuration" icon={mdiTune}>
           <ExtensionViewRenderer<ExtensionConfigurationViewContext>
             ctx={{

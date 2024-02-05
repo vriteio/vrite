@@ -12,14 +12,14 @@ import {
 interface ExplorerContextData {
   renaming: Accessor<string>;
   loading: Accessor<string>;
-  highlight: Accessor<string>;
+  highlight: Accessor<string | null>;
   activeDraggableContentGroupId: Accessor<string | null>;
   activeDraggableContentPieceId: Accessor<string | null>;
   setActiveDraggableContentGroupId: Setter<string | null>;
   setActiveDraggableContentPieceId: Setter<string | null>;
   setRenaming: Setter<string>;
   setLoading: Setter<string>;
-  setHighlight: Setter<string>;
+  setHighlight: Setter<string | null>;
   pathnameData: Accessor<{
     activeContentPieceId?: string;
     view?: "editor" | "dashboard";
@@ -37,7 +37,7 @@ const ExplorerDataProvider: ParentComponent = (props) => {
   >(null);
   const [renaming, setRenaming] = createSignal("");
   const [loading, setLoading] = createSignal("");
-  const [highlight, setHighlight] = createSignal("");
+  const [highlight, setHighlight] = createSignal<string | null>(null);
   const pathnameData = createMemo<{
     activeContentPieceId?: string;
     view?: "editor" | "dashboard";

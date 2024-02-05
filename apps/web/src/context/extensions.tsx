@@ -1,25 +1,35 @@
 import {
+  Accessor,
   createContext,
   createEffect,
+  createMemo,
   createResource,
+  createSignal,
   InitializedResource,
   on,
   ParentComponent,
   useContext
 } from "solid-js";
 import { ExtensionSpec } from "@vrite/sdk/extensions";
-import { useClient, useHostConfig } from "#context";
+import { App, useClient, useHostConfig, useNotifications } from "#context";
 import { ExtensionDetails, ExtensionSandbox, loadExtensionSandbox } from "#lib/extensions";
 
 interface ExtensionsContextData {
-  installedExtensions: InitializedResource<ExtensionDetails[]>;
-  getAvailableExtensions: () => Promise<ExtensionDetails[]>;
+  installedExtensions: Accessor<ExtensionDetails[]>;
+  availableExtensions: Accessor<ExtensionDetails[]>;
+  loadingInstalledExtensions: Accessor<boolean>;
+  loadingAvailableExtensions: Accessor<boolean>;
   getExtensionSandbox: (name: string) => ExtensionSandbox | undefined;
+  installExtension: (extensionDetails: ExtensionDetails) => Promise<ExtensionDetails>;
+  uninstallExtension: (extensionDetails: ExtensionDetails) => Promise<void>;
 }
 
 const officialExtensions = [
   "https://raw.githubusercontent.com/vriteio/extensions/main/vrite/gpt-3.5/build/spec.json",
-  "http://127.0.0.1:5500/vrite/publish-dev/build/spec.json"
+  "https://raw.githubusercontent.com/vriteio/extensions/main/vrite/mdx-transformer/build/spec.json",
+  "https://raw.githubusercontent.com/vriteio/extensions/main/vrite/publish-dev/build/spec.json",
+  "https://raw.githubusercontent.com/vriteio/extensions/main/vrite/publish-medium/build/spec.json",
+  "https://raw.githubusercontent.com/vriteio/extensions/main/vrite/publish-hashnode/build/spec.json"
 ];
 const getAbsoluteSpecPath = (url: string, specPath: string): string => {
   if (specPath.startsWith("http://") || specPath.startsWith("https://")) {
@@ -56,12 +66,16 @@ const ExtensionsContext = createContext<ExtensionsContextData>();
 const ExtensionsProvider: ParentComponent = (props) => {
   const client = useClient();
   const hostConfig = useHostConfig();
+  const { notify } = useNotifications();
   const extensionSandboxes = new Map<string, ExtensionSandbox>();
-  const [installedExtensions, { mutate: setInstalledExtensions }] = createResource<
-    ExtensionDetails[]
-  >(
+  const [installedExtensions, setInstalledExtensions] = createSignal<ExtensionDetails[]>([]);
+  const [availableExtensions, setAvailableExtensions] = createSignal<ExtensionDetails[]>([]);
+  const [loadingInstalledExtensions, setLoadingInstalledExtensions] = createSignal(true);
+  const [loadingAvailableExtensions, setLoadingAvailableExtensions] = createSignal(true);
+
+  createEffect(
     async () => {
-      if (!hostConfig.extensions) return [];
+      if (!hostConfig.extensions) return;
 
       const extensions = await client.extensions.list.query();
       const result: ExtensionDetails[] = [];
@@ -83,46 +97,123 @@ const ExtensionsProvider: ParentComponent = (props) => {
             }
           };
 
-          extensionSandboxes.set(spec.name, loadExtensionSandbox(extensionDetails));
+          extensionSandboxes.set(spec.name, await loadExtensionSandbox(extensionDetails));
           result.push(extensionDetails);
         }
       }
 
-      return result;
+      setLoadingInstalledExtensions(false);
+      setInstalledExtensions(result);
     },
     { initialValue: [] }
   );
-  const getAvailableExtensions = async (): Promise<ExtensionDetails[]> => {
-    if (!hostConfig.extensions) return [];
+  createEffect(
+    on(installedExtensions, async () => {
+      if (!hostConfig.extensions) return;
 
-    const installed = installedExtensions();
-    const result: ExtensionDetails[] = [];
+      const installed = installedExtensions();
+      const available = availableExtensions();
+      const result: ExtensionDetails[] = [];
 
-    for await (const url of officialExtensions) {
-      const isInstalled = installed.find((extension) => {
-        return extension.url === url;
-      });
-
-      if (isInstalled) {
-        continue;
-      }
-
-      const response = await fetch(url);
-
-      if (response.ok) {
-        const spec = await response.json();
-
-        result.push({
-          url,
-          spec: processSpec(url, spec),
-          get sandbox() {
-            return extensionSandboxes.get(spec.name) || null;
-          }
+      for await (const url of officialExtensions) {
+        const installedExtension = installed.find((extension) => {
+          return extension.url === url;
         });
+        const availableExtensions = available.find((extension) => {
+          return extension.url === url;
+        });
+
+        if (installedExtension) {
+          continue;
+        }
+
+        if (availableExtensions) {
+          result.push(availableExtensions);
+          continue;
+        }
+
+        const response = await fetch(url);
+
+        if (response.ok) {
+          const spec = await response.json();
+
+          result.push({
+            url,
+            spec: processSpec(url, spec),
+            get sandbox() {
+              return extensionSandboxes.get(spec.name) || null;
+            }
+          });
+        }
       }
+
+      setLoadingAvailableExtensions(false);
+      setAvailableExtensions(result);
+    })
+  );
+
+  const installExtension = async (
+    extensionDetails: ExtensionDetails
+  ): Promise<ExtensionDetails> => {
+    const { id, token } = await client.extensions.install.mutate({
+      extension: {
+        name: extensionDetails.spec.name,
+        displayName: extensionDetails.spec.displayName,
+        permissions: (extensionDetails.spec.permissions || []) as App.TokenPermission[],
+        url: extensionDetails.url
+      }
+    });
+    const sandbox = await loadExtensionSandbox({
+      id,
+      token,
+      spec: extensionDetails.spec
+    });
+    const onConfigureCallback = sandbox.spec.onConfigure;
+
+    extensionSandboxes.set(extensionDetails.spec.name, sandbox);
+
+    if (onConfigureCallback) {
+      await sandbox.runFunction(
+        onConfigureCallback,
+        {
+          contextFunctions: ["notify"],
+          usableEnv: { readable: [], writable: [] },
+          config: {}
+        },
+        { notify }
+      );
     }
 
-    return result;
+    return {
+      ...extensionDetails,
+      id,
+      token,
+      // @ts-ignore
+      config: {},
+      spec: processSpec(extensionDetails.url, extensionDetails.spec),
+      get sandbox() {
+        return extensionSandboxes.get(extensionDetails.spec.name) || null;
+      }
+    };
+  };
+  const uninstallExtension = async (extensionDetails: ExtensionDetails): Promise<void> => {
+    const onUninstallCallback = extensionDetails.sandbox?.spec?.onUninstall;
+
+    if (onUninstallCallback) {
+      await extensionDetails.sandbox?.runFunction(
+        onUninstallCallback,
+        {
+          contextFunctions: ["notify"],
+          usableEnv: { readable: [], writable: [] },
+          config: extensionDetails.config
+        },
+        { notify }
+      );
+    }
+
+    await client.extensions.uninstall.mutate({
+      id: extensionDetails.id || ""
+    });
   };
 
   if (hostConfig.extensions) {
@@ -136,11 +227,19 @@ const ExtensionsProvider: ParentComponent = (props) => {
             setInstalledExtensions((extensions) => {
               return [
                 ...extensions,
-                { config: data.config, id: data.id, token: data.token, url: data.url, spec }
+                {
+                  // @ts-ignore
+                  config: data.config,
+                  id: data.id,
+                  token: data.token,
+                  url: data.url,
+                  spec: processSpec(data.url, spec)
+                }
               ];
             });
           } catch (e) {
-            // TODO: Handle error
+            // eslint-disable-next-line no-console
+            console.error(e);
           }
         } else if (action === "update") {
           setInstalledExtensions((extensions) => {
@@ -182,8 +281,12 @@ const ExtensionsProvider: ParentComponent = (props) => {
   return (
     <ExtensionsContext.Provider
       value={{
+        loadingInstalledExtensions,
+        loadingAvailableExtensions,
         installedExtensions,
-        getAvailableExtensions,
+        availableExtensions,
+        installExtension,
+        uninstallExtension,
         getExtensionSandbox: (id: string) => extensionSandboxes.get(id)
       }}
     >

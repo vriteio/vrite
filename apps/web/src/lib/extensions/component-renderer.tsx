@@ -39,6 +39,7 @@ const components = {
         optional={"optional" in props ? props.optional : false}
         disabled={"disabled" in props ? props.disabled : false}
         textarea={"textarea" in props ? props.textarea : false}
+        placeholder={"placeholder" in props ? props.placeholder : ""}
         {...("options" in props ? { options: props.options } : {})}
       >
         {props.children}

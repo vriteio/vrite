@@ -1089,8 +1089,7 @@
     const { createClient } = await Promise.resolve().then(() => (init_api(), api_exports));
     const client = createClient({
       token,
-      extensionId,
-      baseURL: "http://localhost:4444"
+      extensionId
     });
     const wrapInVal = (value, path) => {
       const output = () => output[metadata.__value];
@@ -1158,25 +1157,36 @@
             if (key === "use") {
               return (path) => {
                 const parts = path.split(".");
-                const val = parts.slice(1).reduce((currentVal, part, index) => {
-                  const value = currentVal();
-                  if (typeof value !== "object" || Array.isArray(value) || value === null) {
-                    throw new Error(`Cannot use ${path} in this context`);
+                const getVal = () => {
+                  return parts.slice(1).reduce((currentVal, part, index) => {
+                    const value = currentVal();
+                    if (typeof value !== "object" || Array.isArray(value) || value === null) {
+                      throw new Error(`Cannot use ${path} in this context`);
+                    }
+                    let output = value[part];
+                    if (typeof output === "undefined") {
+                      value[part] = wrapInVal(void 0, parts.slice(0, index + 2).join("."));
+                      output = value[part];
+                    }
+                    return output;
+                  }, env.data[parts[0]]);
+                };
+                const getter = () => {
+                  return unwrapVal(getVal());
+                };
+                Object.defineProperty(getter, metadata.__value, {
+                  get() {
+                    return unwrapVal(getVal());
                   }
-                  let output = value[part];
-                  if (typeof output === "undefined") {
-                    value[part] = wrapInVal(void 0, parts.slice(0, index + 2).join("."));
-                    output = value[part];
-                  }
-                  return output;
-                }, env.data[parts[0]]);
+                });
+                Object.defineProperty(getter, metadata.__id, { value: path });
                 if (ctx.usableEnv.readable.includes(parts[0])) {
-                  return val;
+                  return getter;
                 } else if (ctx.usableEnv.writable.includes(parts[0])) {
                   const setter = (value) => {
-                    val[metadata.__value] = wrapInVal(value, path)[metadata.__value];
+                    getVal()[metadata.__value] = wrapInVal(value, path)[metadata.__value];
                   };
-                  return [val, setter];
+                  return [getter, setter];
                 }
                 throw new Error(`Cannot use ${path} in this context`);
               };
@@ -1205,9 +1215,9 @@
         client.reconfigure({ token, extensionId });
         return extension?.generateRuntimeSpec() || null;
       },
-      generateView: (id, envData, serializedContext) => {
+      generateView: async (id, envData, serializedContext) => {
         updateEnvData(envData);
-        const view = extension?.generateView(
+        const view = await extension?.generateView(
           id,
           createExtensionContext(serializedContext, `view:${id}`)
         );
@@ -1216,9 +1226,12 @@
           envData: serializeEnvData()
         };
       },
-      runFunction: (id, envData, serializedContext) => {
+      runFunction: async (id, envData, serializedContext) => {
         updateEnvData(envData);
-        extension?.runFunction(id, createExtensionContext(serializedContext, `func:${id}`));
+        await extension?.runFunction(
+          id,
+          createExtensionContext(serializedContext, `func:${id}`)
+        );
         return {
           envData: serializeEnvData()
         };

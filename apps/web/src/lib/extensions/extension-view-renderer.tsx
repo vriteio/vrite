@@ -39,7 +39,7 @@ const ExtensionViewRenderer = <C extends ExtensionBaseViewContext>(
   const [initiated, setInitiated] = createSignal(false);
   const { getExtensionSandbox } = useExtensions();
   const sandbox = getExtensionSandbox(props.extension.spec.name);
-  const runtimeSpec = sandbox?.runtimeSpec;
+  const spec = sandbox?.spec;
 
   let viewId = "";
   let view: ExtensionElement | null = null;
@@ -69,12 +69,12 @@ const ExtensionViewRenderer = <C extends ExtensionBaseViewContext>(
   );
   onMount(() => {
     if (props.view === "configurationView") {
-      viewId = runtimeSpec?.configurationView || "";
+      viewId = spec?.configurationView || "";
     } else if (props.view === "contentPieceView") {
-      viewId = runtimeSpec?.contentPieceView || "";
+      viewId = spec?.contentPieceView || "";
     } else {
       const [, blockActionId] = props.view.split(":");
-      const blockAction = runtimeSpec?.blockActions?.find((blockAction) => {
+      const blockAction = spec?.blockActions?.find((blockAction) => {
         return blockAction.id === blockActionId;
       });
 

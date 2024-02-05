@@ -9,6 +9,7 @@ import {
   Italic,
   Blockquote,
   Highlight,
+  History,
   Superscript,
   Subscript,
   Strike,
@@ -61,6 +62,7 @@ const getExtensions = (options: ExtensionOptions): Extensions => {
     Text,
     HardBreak,
     TrailingNode,
+    History,
     ...(options.blocks ? [Heading, Blockquote] : []),
     ...(options.lists ? [BulletList, OrderedList, TaskList, TaskItem, ListItem] : []),
     ...(options.extensions || [])

@@ -113,8 +113,8 @@ const createContentActions = ({
     }
   };
   const moveContentGroup: ContentActions["moveContentGroup"] = (data) => {
-    const currentParentId = contentGroups[data.id]?.ancestors.at(-1);
-    const currentParent = contentGroups[currentParentId || ""];
+    const currentParentId = contentGroups[data.id]?.ancestors.at(-1) || "";
+    const currentParent = contentGroups[currentParentId];
     const newParentId = data.ancestors.at(-1) || "";
     const newParent = contentGroups[newParentId];
 
@@ -153,6 +153,7 @@ const createContentActions = ({
     }
 
     // Update old parent group
+
     if (currentParentId === "" || (currentParentId && currentParent)) {
       if (contentLevels[currentParentId]) {
         setContentLevels(currentParentId, "groups", (groups) => {

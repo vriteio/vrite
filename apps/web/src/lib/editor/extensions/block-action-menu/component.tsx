@@ -70,12 +70,12 @@ const BlockActionMenu: Component<BlockActionMenuProps> = (props) => {
     }> = [];
 
     installedExtensions().forEach((extension) => {
-      if (!extension.id || !extension.sandbox?.loaded()) return;
+      if (!extension.id) return;
 
-      const runtimeSpec = extension.sandbox?.runtimeSpec;
+      const spec = extension.sandbox?.spec;
 
-      if (runtimeSpec?.blockActions) {
-        runtimeSpec.blockActions.forEach((blockAction) => {
+      if (spec?.blockActions) {
+        spec.blockActions.forEach((blockAction) => {
           blockActions.push({
             blockAction,
             extension

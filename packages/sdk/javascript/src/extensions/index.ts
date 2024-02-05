@@ -107,7 +107,7 @@ type Val<V extends ContextValue | { [K: string]: Val } = ContextValue | { [K: st
     [__id]: string;
   };
 type Func<C extends ExtensionBaseContext | never = never> = Brand<"Func"> & {
-  (context: C): void;
+  (context: C): void | Promise<void>;
   [__id]: string;
 };
 interface ExtensionEnvironment {
@@ -123,7 +123,7 @@ interface ExtensionMetadata {
   __usableEnv: typeof __usableEnv;
 }
 type View<C extends Partial<ExtensionBaseViewContext> | never = never> = Brand<"View"> & {
-  [__value]: (context: C) => ExtensionElement;
+  [__value]: (context: C) => ExtensionElement | Promise<ExtensionElement>;
   [__id]: string;
 };
 
@@ -155,9 +155,12 @@ interface Extension {
   generateView: <C extends ExtensionBaseViewContext>(
     id: string,
     context: C
-  ) => ExtensionElement | void;
+  ) => Promise<ExtensionElement>;
   removeScope: (id: string) => void;
-  runFunction: <C extends ExtensionBaseContext | never = never>(id: string, context: C) => void;
+  runFunction: <C extends ExtensionBaseContext | never = never>(
+    id: string,
+    context: C
+  ) => Promise<void>;
 }
 type BaseProps<P extends Record<string, any>> = {
   [K in keyof P as Exclude<K, symbol>]?: P[K];
@@ -425,7 +428,7 @@ const createRuntime = <C extends ContextObject = ContextObject>(
         }))
       };
     },
-    generateView: <C extends ExtensionBaseViewContext>(id: string, context: C) => {
+    generateView: async <C extends ExtensionBaseViewContext>(id: string, context: C) => {
       const runView = env.views[id]?.[__value];
 
       if (runView) {
@@ -434,15 +437,20 @@ const createRuntime = <C extends ContextObject = ContextObject>(
           temp: []
         };
 
-        const element = runView(context);
+        const element = await runView(context);
 
         scopes[`view:${id}`] = env.currentScope;
         env.currentScope = null;
 
         return element;
       }
+
+      return {
+        component: "",
+        slot: []
+      };
     },
-    runFunction: <C extends ExtensionBaseContext | never = never>(id: string, context: C) => {
+    runFunction: async <C extends ExtensionBaseContext | never = never>(id: string, context: C) => {
       const runFunc = env.func[id];
 
       if (runFunc) {
@@ -450,7 +458,7 @@ const createRuntime = <C extends ContextObject = ContextObject>(
           func: [],
           temp: []
         };
-        runFunc(context);
+        await runFunc(context);
         scopes[`func:${id}`] = env.currentScope;
         env.currentScope = null;
         removeScope(`func:${id}`);

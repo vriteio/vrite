@@ -52,11 +52,11 @@ const TreeLevel: Component<{
       if (
         groupId !== group.id &&
         (draggablePieceId || !contentGroups[groupId || ""]?.ancestors.includes(group.id)) &&
-        (draggablePieceId || group?.ancestors.at(-1) !== groupId)
+        (draggablePieceId || (group?.ancestors.at(-1) || "") !== groupId)
       ) {
-        setHighlight(groupId || "");
+        setHighlight(groupId || null);
       } else {
-        setHighlight("");
+        setHighlight(null);
       }
     } else {
       setHighlight((highlight) => (highlight === groupId ? "" : highlight));
@@ -68,7 +68,7 @@ const TreeLevel: Component<{
 
   createEffect(() => {
     if (!activeDraggableContentGroupId() && !activeDraggableContentPieceId()) {
-      setHighlight("");
+      setHighlight(null);
     }
   });
 
@@ -131,7 +131,7 @@ const TreeLevel: Component<{
                     event.relatedTarget instanceof HTMLElement &&
                     !event.currentTarget.contains(event.relatedTarget)
                   ) {
-                    setHighlight((highlight) => (highlight === groupId ? "" : highlight));
+                    setHighlight((highlight) => (highlight === groupId ? null : highlight));
                   }
                 }}
                 onTouchMove={(event) => {
@@ -152,7 +152,7 @@ const TreeLevel: Component<{
                 }}
                 onPointerLeave={(event) => {
                   if (activeDraggableContentGroupId()) {
-                    setHighlight((highlight) => (highlight === groupId ? "" : highlight));
+                    setHighlight((highlight) => (highlight === groupId ? null : highlight));
                   }
                 }}
                 ref={(el) => {
@@ -172,10 +172,18 @@ const TreeLevel: Component<{
                   opened={expandedContentLevels().includes(groupId || "")}
                   onDragEnd={() => {
                     const group = contentGroups[groupId]!;
-                    const newParentId = highlight() || "";
-                    const newParent = contentGroups[newParentId];
+                    const newParentId = highlight();
+                    const oldParentId = group.ancestors.at(-1) || "";
 
-                    if (!newParentId || newParentId === group.id) return;
+                    if (
+                      newParentId === null ||
+                      newParentId === oldParentId ||
+                      newParentId === group.id
+                    ) {
+                      return;
+                    }
+
+                    const newParent = contentGroups[newParentId];
 
                     if (newParent) {
                       collapseContentLevel(groupId);

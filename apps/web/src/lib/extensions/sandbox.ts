@@ -45,10 +45,8 @@ type UsableEnvData<C extends ExtensionBaseContext> = {
 };
 
 interface ExtensionSandbox {
-  spec: ExtensionSpec;
+  spec: ExtensionSpec & ExtensionRuntimeSpec;
   envData: Accessor<ContextObject>;
-  runtimeSpec: ExtensionRuntimeSpec | null;
-  loaded: Accessor<boolean>;
   setEnvData: Setter<ContextObject>;
   destroy(): void;
   generateView<C extends ExtensionBaseViewContext>(
@@ -72,9 +70,10 @@ interface ExtensionDetails {
   sandbox?: ExtensionSandbox | null;
 }
 
-const loadExtensionSandbox = (extensionDetails: ExtensionDetails): ExtensionSandbox => {
+const loadExtensionSandbox = async (
+  extensionDetails: Required<Pick<ExtensionDetails, "spec" | "token" | "id">>
+): Promise<ExtensionSandbox> => {
   const [resolveRef, setResolveRef] = createRef(() => {});
-  const [loaded, setLoaded] = createSignal(false);
   const [envData, setEnvData] = createSignal<ContextObject>({});
   const scopes = new Map<string, { func: Record<string, (...args: any[]) => void> }>();
   const sandbox = Sandbox.create(
@@ -99,27 +98,23 @@ const loadExtensionSandbox = (extensionDetails: ExtensionDetails): ExtensionSand
     setResolveRef(resolve);
   });
 
-  let runtimeSpec: ExtensionRuntimeSpec | null = null;
-
   // Load sandbox
   sandbox.iframe.addEventListener("load", () => {
     sandbox.importScript("/sandbox.js");
   });
   // Load extension's runtime
-  hasLoaded.then(async () => {
-    runtimeSpec = await sandbox.connection?.remote.loadExtension({
-      token: extensionDetails.token || "",
-      extensionId: extensionDetails.id || "",
-      spec: extensionDetails.spec
-    });
-    setLoaded(true);
+  await hasLoaded;
+
+  const runtimeSpec: ExtensionRuntimeSpec = await sandbox.connection?.remote.loadExtension({
+    token: extensionDetails.token || "",
+    extensionId: extensionDetails.id || "",
+    spec: extensionDetails.spec
   });
 
   return {
-    loaded,
-    spec: extensionDetails.spec,
-    get runtimeSpec() {
-      return runtimeSpec;
+    spec: {
+      ...extensionDetails.spec,
+      ...runtimeSpec
     },
     envData,
     setEnvData,

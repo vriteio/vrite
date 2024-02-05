@@ -1,5 +1,4 @@
 import {
-  ContextObject,
   ContextValue,
   ExtensionSpec,
   ExtensionEnvironment,
@@ -44,8 +43,7 @@ type SerializedContext<C extends ExtensionBaseContext> = Omit<
   const { createClient } = await import("@vrite/sdk/api");
   const client = createClient({
     token,
-    extensionId,
-    baseURL: "http://localhost:4444"
+    extensionId
   });
   const wrapInVal = (value: ContextValue, path: string): Val => {
     const output = (() => output[metadata!.__value]) as Val;
@@ -124,31 +122,43 @@ type SerializedContext<C extends ExtensionBaseContext> = Omit<
           if (key === "use") {
             return (path: string) => {
               const parts = path.split(".");
-              const val = parts.slice(1).reduce((currentVal, part, index) => {
-                const value = currentVal();
+              const getVal = (): Val => {
+                return parts.slice(1).reduce((currentVal, part, index) => {
+                  const value = currentVal();
 
-                if (typeof value !== "object" || Array.isArray(value) || value === null) {
-                  throw new Error(`Cannot use ${path} in this context`);
+                  if (typeof value !== "object" || Array.isArray(value) || value === null) {
+                    throw new Error(`Cannot use ${path} in this context`);
+                  }
+
+                  let output = (value as { [K: string]: Val })[part];
+
+                  if (typeof output === "undefined") {
+                    value[part] = wrapInVal(undefined, parts.slice(0, index + 2).join("."));
+                    output = value[part] as Val;
+                  }
+
+                  return output;
+                }, env!.data[parts[0]]);
+              };
+              const getter = (() => {
+                return unwrapVal(getVal());
+              }) as Val;
+
+              Object.defineProperty(getter, metadata!.__value, {
+                get() {
+                  return unwrapVal(getVal());
                 }
-
-                let output = (value as { [K: string]: Val })[part];
-
-                if (typeof output === "undefined") {
-                  value[part] = wrapInVal(undefined, parts.slice(0, index + 2).join("."));
-                  output = value[part] as Val;
-                }
-
-                return output;
-              }, env!.data[parts[0]]);
+              });
+              Object.defineProperty(getter, metadata!.__id, { value: path });
 
               if (ctx.usableEnv.readable.includes(parts[0])) {
-                return val;
+                return getter;
               } else if (ctx.usableEnv.writable.includes(parts[0])) {
                 const setter = (value: any): void => {
-                  val[metadata!.__value] = wrapInVal(value, path)[metadata!.__value];
+                  getVal()[metadata!.__value] = wrapInVal(value, path)[metadata!.__value];
                 };
 
-                return [val, setter];
+                return [getter, setter];
               }
 
               throw new Error(`Cannot use ${path} in this context`);
@@ -185,14 +195,14 @@ type SerializedContext<C extends ExtensionBaseContext> = Omit<
 
       return extension?.generateRuntimeSpec() || null;
     },
-    generateView: <C extends ExtensionBaseViewContext = ExtensionBaseViewContext>(
+    generateView: async <C extends ExtensionBaseViewContext = ExtensionBaseViewContext>(
       id: string,
       envData: SerializedEnvData,
       serializedContext: SerializedContext<C>
     ) => {
       updateEnvData(envData);
 
-      const view = extension?.generateView<C>(
+      const view = await extension?.generateView<C>(
         id,
         createExtensionContext<C>(serializedContext, `view:${id}`)
       );
@@ -202,13 +212,16 @@ type SerializedContext<C extends ExtensionBaseContext> = Omit<
         envData: serializeEnvData()
       };
     },
-    runFunction: <C extends ExtensionBaseContext | never = never>(
+    runFunction: async <C extends ExtensionBaseContext | never = never>(
       id: string,
       envData: SerializedEnvData,
       serializedContext: SerializedContext<C>
     ) => {
       updateEnvData(envData);
-      extension?.runFunction<C>(id, createExtensionContext<C>(serializedContext, `func:${id}`));
+      await extension?.runFunction<C>(
+        id,
+        createExtensionContext<C>(serializedContext, `func:${id}`)
+      );
 
       return {
         envData: serializeEnvData()

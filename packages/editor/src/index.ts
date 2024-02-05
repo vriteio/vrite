@@ -22,3 +22,4 @@ export { OrderedList } from "@tiptap/extension-ordered-list";
 export { TaskList } from "@tiptap/extension-task-list";
 export { TableRow } from "@tiptap/extension-table-row";
 export { Paragraph } from "@tiptap/extension-paragraph";
+export { History } from "@tiptap/extension-history";

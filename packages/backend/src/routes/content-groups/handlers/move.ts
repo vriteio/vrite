@@ -39,11 +39,24 @@ const handler = async (
   });
 
   let ancestors: ObjectId[] = [];
+  let ancestor: UnderscoreID<FullContentGroup<ObjectId>> | null = null;
 
   if (!contentGroup) throw errors.notFound("contentGroup");
 
-  // Remove from current ancestor
+  if (`${contentGroup.ancestors.at(-1) || ""}` === `${input.ancestor || ""}`) return;
+
+  if (input.ancestor) {
+    ancestor = await contentGroupsCollection.findOne({
+      _id: new ObjectId(input.ancestor),
+      workspaceId: ctx.auth.workspaceId
+    });
+
+    if (!ancestor) throw errors.notFound("contentGroup");
+    if (ancestor.ancestors.includes(contentGroup._id)) throw errors.badRequest("notAllowed");
+  }
+
   if (contentGroup.ancestors.length > 0) {
+    // Remove from current ancestor
     const { matchedCount } = await contentGroupsCollection.updateOne(
       {
         _id: contentGroup.ancestors[contentGroup.ancestors.length - 1],
@@ -66,14 +79,7 @@ const handler = async (
     if (!matchedCount) throw errors.notFound("contentGroup");
   }
 
-  if (input.ancestor) {
-    const ancestor = await contentGroupsCollection.findOne({
-      _id: new ObjectId(input.ancestor),
-      workspaceId: ctx.auth.workspaceId
-    });
-
-    if (!ancestor) throw errors.notFound("contentGroup");
-
+  if (input.ancestor && ancestor) {
     ancestors = [...ancestor.ancestors, ancestor._id];
     await contentGroupsCollection.updateOne(
       { _id: ancestor._id },
