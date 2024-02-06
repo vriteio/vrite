@@ -27,6 +27,10 @@ interface Webhook {
    */
   description?: string;
   /**
+   * Webhook signing secret
+   */
+  secret?: string;
+  /**
    * Webhook metadata containing details about the Webhook configuration
    */
   metadata?: {
@@ -38,11 +42,13 @@ interface Webhook {
   event: WebhookEvent;
 }
 interface WebhooksEndpoints {
-  get(input: Pick<Webhook, "id">): Promise<Webhook>;
+  get(input: Pick<Webhook, "id">): Promise<Omit<Webhook, "secret"> & { extension?: boolean }>;
   create(input: Omit<Webhook, "id">): Promise<Pick<Webhook, "id">>;
-  update(input: Partial<Webhook> & Pick<Webhook, "id">): Promise<void>;
+  update(input: Partial<Omit<Webhook, "secret">> & Pick<Webhook, "id">): Promise<void>;
   delete(query: Pick<Webhook, "id">): Promise<void>;
-  list(input: PaginationParams & { extensionOnly?: boolean }): Promise<Webhook[]>;
+  list(
+    input: PaginationParams & { extensionOnly?: boolean }
+  ): Promise<Array<Omit<Webhook, "secret"> & { extension?: boolean }>>;
 }
 
 const basePath = `/webhooks`;

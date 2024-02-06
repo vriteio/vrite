@@ -34,6 +34,7 @@ const createInputTransformer = <
 };
 const gfmInputTransformer = createInputTransformer<string>((input) => {
   const marked = new Marked({
+    async: false,
     renderer: {
       paragraph(text) {
         if (text.startsWith("<img")) {
@@ -63,14 +64,12 @@ const gfmInputTransformer = createInputTransformer<string>((input) => {
         return `<${type}${startAt}${dataType}>${body}</${type}>\n`;
       }
     },
-    mangle: false,
-    headerIds: false,
     gfm: true,
     breaks: true
   });
 
   return {
-    content: marked.parse(input)
+    content: marked.parse(input) as string
   };
 });
 

@@ -10,7 +10,7 @@ interface ContextArray extends Array<ContextValue> {}
 interface Extension {
   id: string;
   name: string;
-  externalUrl?: string;
+  url: string;
   config: ContextObject;
   token: string;
 }

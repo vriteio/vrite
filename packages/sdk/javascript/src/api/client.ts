@@ -46,10 +46,15 @@ interface Client {
     query: string;
     limit?: number;
     variantId?: string;
+    contentGroupId?: string;
     contentPieceId?: string;
+    byTitle?: boolean;
   }): Promise<SearchResult[]>;
   ask(input: {
     query: string;
+    variantId?: string;
+    contentGroupId?: string;
+    contentPieceId?: string;
     onChunk?(chunk: string, content: string): void;
     onEnd?(content: string): void;
     onError?(error: string): void;

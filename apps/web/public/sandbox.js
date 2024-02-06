@@ -998,7 +998,7 @@
   __export(api_exports, {
     createClient: () => M
   });
-  var import_eventsource, l, U, E, S, f, h, L, m, D, O, R, T, x, C, I, u, v, k, j, q, G, A, b, z, y, B, M;
+  var import_eventsource, l, U, E, S, f, h, L, m, D, O, R, T, C, x, I, u, v, k, j, q, G, A, b, z, y, B, M;
   var init_api = __esm({
     "../../packages/sdk/javascript/dist/api.mjs"() {
       "use strict";
@@ -1039,9 +1039,9 @@
       O = "/profile";
       R = (t) => ({ get: () => t("GET", `${O}`) });
       T = "/webhooks";
-      x = (t) => ({ get: (e) => t("GET", `${T}`, { params: e }), create: (e) => t("POST", `${T}`, { body: e }), update: (e) => t("PUT", `${T}`, { body: e }), delete: (e) => t("DELETE", `${T}`, { params: e }), list: (e) => t("GET", `${T}/list`, { params: e }) });
-      C = "/workspace";
-      I = (t) => ({ get: () => t("GET", `${C}`) });
+      C = (t) => ({ get: (e) => t("GET", `${T}`, { params: e }), create: (e) => t("POST", `${T}`, { body: e }), update: (e) => t("PUT", `${T}`, { body: e }), delete: (e) => t("DELETE", `${T}`, { params: e }), list: (e) => t("GET", `${T}/list`, { params: e }) });
+      x = "/workspace";
+      I = (t) => ({ get: () => t("GET", `${x}`) });
       u = "/roles";
       v = (t) => ({ get: (e) => t("GET", `${u}`, { params: e }), create: (e) => t("POST", `${u}`, { body: e }), update: (e) => t("PUT", `${u}`, { body: e }), delete: (e) => t("DELETE", `${u}`, { params: e }), list: (e) => t("GET", `${u}/list`, { params: e }) });
       k = "/workspace-settings";
@@ -1054,7 +1054,7 @@
       y = "/transformers";
       B = (t) => ({ create: (e) => t("POST", `${y}`, { body: e }), delete: (e) => t("DELETE", `${y}`, { params: e }), list: () => t("GET", `${y}/list`) });
       M = (t) => {
-        const { sendRequest: e, reconfigure: c, getConfig: i, getSignal: $, useSignal: p } = f(t), s = { contentGroups: U(e), contentPieces: S(e), tags: D(e), profile: R(e), userSettings: L(e), webhooks: x(e), workspace: I(e), roles: v(e), workspaceSettings: j(e), workspaceMemberships: q(e), extension: A(e), variants: z(e), transformers: B(e), search(a) {
+        const { sendRequest: e, reconfigure: c, getConfig: i, getSignal: $, useSignal: p } = f(t), s = { contentGroups: U(e), contentPieces: S(e), tags: D(e), profile: R(e), userSettings: L(e), webhooks: C(e), workspace: I(e), roles: v(e), workspaceSettings: j(e), workspaceMemberships: q(e), extension: A(e), variants: z(e), transformers: B(e), search(a) {
           return e("GET", "/search", { params: a });
         }, async ask(a) {
           let n = "";

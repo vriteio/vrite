@@ -6,6 +6,7 @@ type Mark =
   | "strike"
   | "code"
   | "link"
+  | "underline"
   | "highlight"
   | "subscript"
   | "superscript";
@@ -23,7 +24,8 @@ type Block =
   | "codeBlock"
   | "horizontalRule"
   | "image"
-  | "table";
+  | "table"
+  | "element";
 type Embed = "codepen" | "codesandbox" | "youtube";
 interface WorkspaceSettings {
   /**
@@ -51,7 +53,17 @@ interface WorkspaceSettings {
    */
   metadata?: Partial<{
     canonicalLinkPattern: string;
+    enabledFields: Array<"date" | "tags" | "slug" | "filename" | "members" | "canonical-link">;
   }>;
+  /**
+   * Dashboard views
+   */
+  dashboardViews?: {
+    table?: Array<{
+      id: string;
+      width: number;
+    }>;
+  };
 }
 interface WorkspaceSettingsEndpoints {
   get(): Promise<WorkspaceSettings>;

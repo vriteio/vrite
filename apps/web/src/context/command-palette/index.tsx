@@ -128,41 +128,46 @@ const CommandPalette: Component<CommandPaletteProps> = (props) => {
   const ask = async (): Promise<void> => {
     let content = "";
 
-    await fetchEventSource(`${window.env.PUBLIC_API_URL}/search/ask/?query=${query()}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        "Accept": "text/event-stream"
-      },
-      credentials: "include",
-      signal: abortControllerRef()?.signal,
-      onerror(error) {
-        setLoading(false);
-        throw error;
-      },
-      onmessage(event) {
-        const partOfContent = decodeURIComponent(event.data);
-        const scrollableContainer = scrollableContainerRef();
+    await fetchEventSource(
+      `${window.env.PUBLIC_API_URL}/search/ask/?query=${query()}${
+        activeVariantId() ? `&variantId=${activeVariantId}` : ""
+      }`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "text/event-stream"
+        },
+        credentials: "include",
+        signal: abortControllerRef()?.signal,
+        onerror(error) {
+          setLoading(false);
+          throw error;
+        },
+        onmessage(event) {
+          const partOfContent = decodeURIComponent(event.data);
+          const scrollableContainer = scrollableContainerRef();
 
-        content += partOfContent;
-        setAnswer(marked.parse(content, { gfm: true, headerIds: false, mangle: false }));
+          content += partOfContent;
+          setAnswer(marked.parse(content, { gfm: true }) as string);
 
-        if (!scrollableContainer) return;
+          if (!scrollableContainer) return;
 
-        const delta =
-          scrollableContainer.scrollHeight -
-          scrollableContainer.scrollTop -
-          scrollableContainer.clientHeight;
+          const delta =
+            scrollableContainer.scrollHeight -
+            scrollableContainer.scrollTop -
+            scrollableContainer.clientHeight;
 
-        // If the user has not scrolled up
-        if (delta < 50) {
-          scrollableContainer.scrollTop = scrollableContainer.scrollHeight;
+          // If the user has not scrolled up
+          if (delta < 50) {
+            scrollableContainer.scrollTop = scrollableContainer.scrollHeight;
+          }
+        },
+        onclose() {
+          setLoading(false);
         }
-      },
-      onclose() {
-        setLoading(false);
       }
-    });
+    );
     setLoading(false);
   };
   const search = debounce(async () => {

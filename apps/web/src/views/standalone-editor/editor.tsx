@@ -7,7 +7,7 @@ import {
   SolidEditorContent,
   useEditor
 } from "@vrite/tiptap-solid";
-import { Component, createSignal, onCleanup } from "solid-js";
+import { Component, createEffect, createSignal, on, onCleanup } from "solid-js";
 import { isTextSelection } from "@tiptap/core";
 import { Gapcursor } from "@tiptap/extension-gapcursor";
 import { Dropcursor } from "@tiptap/extension-dropcursor";
@@ -45,6 +45,7 @@ import { CellSelection } from "@tiptap/pm/tables";
 import { AllSelection, NodeSelection } from "@tiptap/pm/state";
 import { Instance } from "tippy.js";
 import clsx from "clsx";
+import { debounce } from "@solid-primitives/scheduled";
 import { Dropdown } from "#components/primitives";
 import {
   Document,
@@ -61,7 +62,7 @@ import {
   AutoDir,
   ElementMenuPlugin,
   Element,
-  CommentMenuPlugin
+  DraggableText
 } from "#lib/editor";
 import { useLocalStorage, useSharedState } from "#context";
 import { breakpoints, createRef } from "#lib/utils";
@@ -82,6 +83,10 @@ const Editor: Component = () => {
   const [floatingMenuOpened, setFloatingMenuOpened] = createSignal(true);
   const [blockMenuOpened, setBlockMenuOpened] = createSignal(false);
   const [showBlockBubbleMenu, setShowBlockBubbleMenu] = createSignal(false);
+  const [isNodeSelection, setIsNodeSelection] = createSignal(false);
+  const updateBubbleMenuPlacement = debounce(() => {
+    bubbleMenuInstance()?.setProps({ placement: isNodeSelection() ? "top-start" : "top" });
+  }, 250);
 
   if (!storage().html) {
     setStorage((storage) => ({ ...storage, html: initialContent }));
@@ -126,6 +131,7 @@ const Editor: Component = () => {
       TableHeader,
       TableRow,
       TrailingNode,
+      DraggableText,
       CharacterCount,
       AutoDir,
       Gapcursor,
@@ -138,11 +144,17 @@ const Editor: Component = () => {
     ],
     editorProps: { attributes: { class: `outline-none` } },
     content: storage().html,
+    onSelectionUpdate({ editor }) {
+      setIsNodeSelection(editor.state.selection instanceof NodeSelection);
+    },
     onUpdate: ({ editor }) => {
       setStorage((storage) => ({
         ...storage,
         html: editor.getHTML()
       }));
+    },
+    onBlur({ event }) {
+      el = event?.relatedTarget as HTMLElement | null;
     }
   });
   const [, setSharedEditor] = useSharedSignal("editor", editor());
@@ -174,7 +186,7 @@ const Editor: Component = () => {
 
     if (
       isNodeSelection &&
-      ["horizontalRule", "image", "codeBlock", "embed", "element"].some((name) => {
+      ["horizontalRule", "image", "codeBlock", "embed", "element", "blockquote"].some((name) => {
         return editor.isActive(name);
       })
     ) {
@@ -223,11 +235,16 @@ const Editor: Component = () => {
   });
   setStorage((storage) => ({ ...storage, toolbarView: "editorStandalone" }));
   setSharedEditor(editor());
+  createEffect(
+    on(isNodeSelection, () => {
+      updateBubbleMenuPlacement();
+    })
+  );
 
   return (
     <>
       <div
-        class="w-full max-w-[70ch] prose prose-editor text-xl dark:prose-invert h-full relative"
+        class="w-full max-w-[70ch] prose prose-editor text-xl dark:prose-invert relative transform"
         ref={setContainerRef}
         id="pm-container"
       >
@@ -263,6 +280,12 @@ const Editor: Component = () => {
               }
 
               setShowBlockBubbleMenu(false);
+
+              if (isNodeSelection()) {
+                bubbleMenuInstance()?.setProps({
+                  placement: isNodeSelection() ? "top-start" : "top"
+                });
+              }
 
               return shouldShow(editor as SolidEditor);
             }}

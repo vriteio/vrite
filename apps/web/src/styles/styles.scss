@@ -53,7 +53,7 @@ kbd {
   blockquote {
     @apply relative;
   }
-  :where(p, ul, ol, blockquote):hover > .ProseMirror-widget[data-widget="draggableText"] {
+  :where(p, ul, ol, blockquote):hover .ProseMirror-widget[data-widget="draggableText"] {
     @apply opacity-100;
   }
   // Drag handle

@@ -14,7 +14,7 @@ const SelectMenu: Component<{
   setMode(mode: string): void;
   setBlockMenuOpened?(opened: boolean): void;
 }> = (props) => {
-  const { workspaceSettings } = useAuthenticatedUserData();
+  const { workspaceSettings = () => null } = useAuthenticatedUserData() || {};
   const [currentNodeType, setCurrentNodeType] = createSignal("");
   const [optionsMode, setOptionsMode] = createSignal("");
   const lists: Record<string, { listType: string; itemType: string }> = {
