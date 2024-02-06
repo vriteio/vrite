@@ -8,6 +8,7 @@ import {
   createSignal,
   JSX,
   on,
+  onCleanup,
   onMount,
   Setter,
   Show,
@@ -98,6 +99,9 @@ const ExtensionViewRenderer = <C extends ExtensionBaseViewContext>(
     } else {
       setInitiated(true);
     }
+  });
+  onCleanup(() => {
+    sandbox?.removeScope(`view:${viewId}`);
   });
 
   return (

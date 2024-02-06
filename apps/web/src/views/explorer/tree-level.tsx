@@ -2,13 +2,53 @@ import { ContentGroupRow } from "./content-group-row";
 import { ContentPieceRow } from "./content-piece-row";
 import { useExplorerData } from "./explorer-context";
 import clsx from "clsx";
-import { Component, createEffect, Show, For } from "solid-js";
+import { Component, createEffect, Show, For, createSignal } from "solid-js";
 import SortableLib from "sortablejs";
-import { Icon, Loader } from "@vrite/components";
-import { mdiDotsHorizontalCircleOutline } from "@mdi/js";
+import { Card, Icon, IconButton, Loader } from "@vrite/components";
+import { mdiDotsHorizontalCircleOutline, mdiFolderPlus } from "@mdi/js";
 import { useNavigate } from "@solidjs/router";
-import { App, useClient, useContentData } from "#context";
+import { App, useClient, useContentData, useNotifications } from "#context";
 
+const NewGroupButton: Component = () => {
+  const { setRenaming } = useExplorerData();
+  const { notify } = useNotifications();
+  const client = useClient();
+  const [loading, setLoading] = createSignal(false);
+
+  return (
+    <div class="px-2 h-full">
+      <button
+        class="flex w-full pr-3"
+        onClick={async () => {
+          try {
+            setLoading(true);
+
+            const contentGroup = await client.contentGroups.create.mutate({
+              name: ""
+            });
+
+            setRenaming(contentGroup.id);
+            setLoading(false);
+            notify({ text: "New content group created", type: "success" });
+          } catch (error) {
+            setLoading(false);
+            notify({ text: "Couldn't create new content group", type: "error" });
+          }
+        }}
+      >
+        <Card class="relative overflow-hidden flex-col flex justify-center items-center w-full m-0 border-2 rounded-2xl dark:border-gray-700 text-gray-500 dark:text-gray-400 @hover-bg-gray-200 dark:@hover-bg-gray-700 @hover:cursor-pointer h-32">
+          <Icon path={mdiFolderPlus} class="h-6 w-6" />
+          <span>New group</span>
+          <Show when={loading()}>
+            <div class="flex justify-center items-center absolute w-full h-full top-0 left-0 bg-gray-50">
+              <Loader class="h-full fill-inherit" />
+            </div>
+          </Show>
+        </Card>
+      </button>
+    </div>
+  );
+};
 const TreeLevel: Component<{
   parentId?: string;
 }> = (props) => {
@@ -117,7 +157,14 @@ const TreeLevel: Component<{
             </For>
           </div>
         </Show>
-        <For each={contentLevels[props.parentId || ""]?.groups || []}>
+        <For
+          each={contentLevels[props.parentId || ""]?.groups || []}
+          fallback={
+            <Show when={!props.parentId}>
+              <NewGroupButton />
+            </Show>
+          }
+        >
           {(groupId) => {
             return (
               <div
