@@ -110,7 +110,11 @@ const WorkspacesView: Component = () => {
     if (currentWorkspaceId() !== workspaceId) {
       await client.auth.switchWorkspace.mutate({ workspaceId });
       setStorage((storage) => ({
-        sidePanelWidth: storage.sidePanelWidth
+        ...storage,
+        activeContentGroupId: undefined,
+        activeVariantId: undefined,
+        expandedContentLevels: [],
+        sourceControlConfiguredProvider: undefined
       }));
     }
 
