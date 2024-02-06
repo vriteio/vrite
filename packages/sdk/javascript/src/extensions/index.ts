@@ -357,7 +357,7 @@ const createElement = <C extends ExtensionBaseComponent<any>>(
       Object.keys(props || {}).map((key) => {
         const value = props[key];
 
-        if (value[__id]) {
+        if (value && value[__id]) {
           return [key, value[__id]];
         }
 

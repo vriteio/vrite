@@ -51,7 +51,7 @@ const ExtensionIcon: Component<ExtensionIconProps> = (props) => {
 };
 const BlockActionMenu: Component<BlockActionMenuProps> = (props) => {
   const { notify } = useNotifications();
-  const { installedExtensions, getExtensionSandbox } = useExtensions();
+  const { installedExtensions } = useExtensions();
   const [computeDropdownPosition, setComputeDropdownPosition] = createRef(() => {});
   const [containerRef, setContainerRef] = createRef<HTMLDivElement | null>(null);
   const [range, setRange] = createSignal<Range | null>(props.state.range);
@@ -219,7 +219,6 @@ const BlockActionMenu: Component<BlockActionMenuProps> = (props) => {
                   }}
                   view={`blockActionView:${blockAction.id}`}
                   usableEnvData={{ content: node()?.toJSON() || { type: "doc", content: [] } }}
-                  setUsableEnvData={() => {}}
                 />
               </div>
             </Dropdown>

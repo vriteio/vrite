@@ -117,10 +117,9 @@ renderer.link = (href, title, text) => {
 };
 
 const ComponentRenderer: Component<ComponentRendererProps> = (props) => {
-  const { getExtensionSandbox } = useExtensions();
   const { notify } = useNotifications();
   const { envData, setEnvData, extension } = useViewContext();
-  const sandbox = getExtensionSandbox(extension.spec.name);
+  const { sandbox } = extension;
 
   if (typeof props.view === "string") {
     return (

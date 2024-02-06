@@ -22,7 +22,7 @@ interface ExtensionModalProps {
 const ExtensionConfigurationView: Component<ExtensionModalProps> = (props) => {
   const { confirmDelete } = useConfirmationModal();
   const { notify } = useNotifications();
-  const { getExtensionSandbox, uninstallExtension } = useExtensions();
+  const { uninstallExtension } = useExtensions();
   const client = useClient();
   const [loading, setLoading] = createSignal(false);
   const [extensionInstallation, setExtensionInstallation] = createStore<{
@@ -32,7 +32,7 @@ const ExtensionConfigurationView: Component<ExtensionModalProps> = (props) => {
     extension: props.extension,
     config: props.extension.config || {}
   });
-  const sandbox = getExtensionSandbox(props.extension.spec.name);
+  const { sandbox } = props.extension;
 
   createEffect(() => {
     setExtensionInstallation({

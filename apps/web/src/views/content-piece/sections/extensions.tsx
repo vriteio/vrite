@@ -79,7 +79,7 @@ const ExtensionsSection: Component<ExtensionsSectionProps> = (props) => {
         }
         when={true}
       >
-        <div class="flex gap-1 m-1">
+        <div class="flex gap-1 m-1 items-start">
           <Show when={extensionsWithContentPieceView().length}>
             <div class="flex flex-col gap-1">
               <For each={extensionsWithContentPieceView()}>

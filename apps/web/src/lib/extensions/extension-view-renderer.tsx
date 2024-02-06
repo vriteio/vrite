@@ -13,8 +13,9 @@ import {
   Show,
   useContext
 } from "solid-js";
+import { mdiAlertCircle } from "@mdi/js";
 import { ExtensionDetails, useExtensions } from "#context";
-import { Loader } from "#components/primitives";
+import { Icon, Loader } from "#components/primitives";
 
 type ExtensionViewRendererProps<O> = {
   extension: ExtensionDetails;
@@ -37,11 +38,11 @@ const ExtensionViewRenderer = <C extends ExtensionBaseViewContext>(
   }>
 ): JSX.Element => {
   const [initiated, setInitiated] = createSignal(false);
-  const { getExtensionSandbox } = useExtensions();
-  const sandbox = getExtensionSandbox(props.extension.spec.name);
+  const { sandbox } = props.extension;
   const spec = sandbox?.spec;
 
   let viewId = "";
+  let error: Error | null = null;
   let view: ExtensionElement | null = null;
 
   createEffect(
@@ -84,10 +85,16 @@ const ExtensionViewRenderer = <C extends ExtensionBaseViewContext>(
     }
 
     if (viewId && sandbox && props.extension.id && props.extension.token) {
-      sandbox.generateView<C>(viewId, props.ctx, props.func).then((generatedView) => {
-        view = generatedView;
-        setInitiated(true);
-      }) || null;
+      sandbox
+        .generateView<C>(viewId, props.ctx, props.func)
+        .then((generatedView) => {
+          view = generatedView;
+          setInitiated(true);
+        })
+        .catch((caughtError) => {
+          error = caughtError;
+          setInitiated(true);
+        });
     } else {
       setInitiated(true);
     }
@@ -101,7 +108,19 @@ const ExtensionViewRenderer = <C extends ExtensionBaseViewContext>(
         setEnvData: sandbox!.setEnvData
       }}
     >
-      <Show when={initiated() && view} fallback={<Loader />}>
+      <Show
+        when={initiated() && view && !error}
+        fallback={
+          <div class="h-full w-full flex justify-center items-center">
+            <Show when={initiated() && error} fallback={<Loader />}>
+              <div class=" text-gray-500 dark:text-gray-400 flex gap-1 justify-center items-center">
+                <Icon path={mdiAlertCircle} class="h-5 w-5" />
+                <span>Couldn't load the view</span>
+              </div>
+            </Show>
+          </div>
+        }
+      >
         <ComponentRenderer spec={props.extension.spec} view={view!} />
       </Show>
     </ExtensionViewContext.Provider>
