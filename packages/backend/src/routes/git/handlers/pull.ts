@@ -24,7 +24,8 @@ import {
   createInputContentProcessor,
   ProcessInputResult,
   CommonGitProviderCommit,
-  CommonGitProviderRecord
+  CommonGitProviderRecord,
+  UseGitProvider
 } from "#lib/git-sync";
 
 interface PulledRecords {
@@ -51,12 +52,14 @@ const outputSchema = z.object({
 });
 const processPulledRecords = async ({
   changedRecordsByDirectory,
+  gitProvider,
   lastCommit,
   gitData,
   ctx,
   transformer
 }: PulledRecords & {
   gitData: UnderscoreID<FullGitData<ObjectId>>;
+  gitProvider: ReturnType<UseGitProvider>;
   ctx: AuthenticatedContext;
   transformer: string;
 }): Promise<{
@@ -96,8 +99,7 @@ const processPulledRecords = async ({
   }> = [];
   const inputContentProcessor = await createInputContentProcessor(ctx, transformer);
 
-  // TODO: Remove GitHub specific code
-  let { baseDirectory } = gitData.github!;
+  let { baseDirectory } = gitProvider.data;
 
   if (baseDirectory.startsWith("/")) baseDirectory = baseDirectory.slice(1);
 
@@ -423,6 +425,7 @@ const handler = async (
   const { transformer } = gitProvider.data;
   const { applyPull, conflicts } = await processPulledRecords({
     changedRecordsByDirectory,
+    gitProvider,
     lastCommit,
     gitData,
     ctx,
