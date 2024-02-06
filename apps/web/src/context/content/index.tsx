@@ -142,7 +142,7 @@ const ContentDataProvider: ParentComponent = (props) => {
     setContentLevels
   });
   const contentGroupsSubscription = client.contentGroups.changes.subscribe(undefined, {
-    onData({ action, data, userId }) {
+    onData({ action, data }) {
       if (action === "move") {
         contentActions.moveContentGroup(data);
       } else if (action === "create") {
@@ -153,6 +153,22 @@ const ContentDataProvider: ParentComponent = (props) => {
         contentActions.updateContentGroup(data);
       } else if (action === "reorder") {
         contentActions.reorderContentGroup(data);
+      }
+    }
+  });
+  const variantsSubscription = client.variants.changes.subscribe(undefined, {
+    onData({ action, data }) {
+      if (action === "create") {
+        setVariants(data.id, data);
+      } else if (action === "update") {
+        if (variants[data.id]) {
+          setVariants(data.id, (variant) => ({
+            ...variant,
+            ...data
+          }));
+        }
+      } else if (action === "delete") {
+        setVariants(data.id, undefined);
       }
     }
   });
@@ -167,11 +183,6 @@ const ContentDataProvider: ParentComponent = (props) => {
         collapseContentLevel(id);
       }
     });
-    client.variants.list.query().then((variants) => {
-      variants.forEach((variant) => {
-        setVariants(variant.id, variant);
-      });
-    });
   };
 
   createEffect(
@@ -179,27 +190,6 @@ const ContentDataProvider: ParentComponent = (props) => {
       if (newVariantId === previousVariantId) return;
 
       load();
-
-      const variantsSubscription = client.variants.changes.subscribe(undefined, {
-        onData({ action, data }) {
-          if (action === "create") {
-            setVariants(data.id, data);
-          } else if (action === "update") {
-            if (variants[data.id]) {
-              setVariants(data.id, (variant) => ({
-                ...variant,
-                ...data
-              }));
-            }
-          } else if (action === "delete") {
-            setVariants(data.id, undefined);
-          }
-        }
-      });
-
-      onCleanup(() => {
-        variantsSubscription.unsubscribe();
-      });
     })
   );
   createEffect(() => {
@@ -253,6 +243,12 @@ const ContentDataProvider: ParentComponent = (props) => {
   });
   onCleanup(() => {
     contentGroupsSubscription.unsubscribe();
+    variantsSubscription.unsubscribe();
+  });
+  client.variants.list.query().then((variants) => {
+    variants.forEach((variant) => {
+      setVariants(variant.id, variant);
+    });
   });
 
   return (
