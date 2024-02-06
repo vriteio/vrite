@@ -27,7 +27,7 @@
     "keen-slider": "^6.8.6",
     "plausible-tracker": "^0.3.8",
     "shiki": "^0.14.4",
-    "solid-js": "^1.7.11",
+    "solid-js": "^1.8.11",
     "typescript": "^5.2.2",
     "unocss": "^0.55.7",
     "vite": "^4.4.9"

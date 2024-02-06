@@ -28,9 +28,11 @@ h1,
 h2 {
   font-family: "NunitoVariable", sans-serif;
 }
-.scrollbar-sm {
-  scrollbar-color: #e2e8f0 #f8fafc;
-  scrollbar-width: thin;
+@supports (not selector(::-webkit-scrollbar)) {
+  .scrollbar-sm {
+    scrollbar-color: #e2e8f0 #f8fafc;
+    scrollbar-width: thin;
+  }
 }
 .scrollbar-sm::-webkit-scrollbar {
   @apply w-2 h-2 rounded-lg bg-gray-50 dark:bg-gray-900;
@@ -38,8 +40,10 @@ h2 {
 .scrollbar-sm::-webkit-scrollbar-thumb {
   @apply bg-gray-200 rounded-lg dark:bg-gray-800;
 }
-.scrollbar-sm-contrast {
-  scrollbar-color: #f8fafc #e2e8f0;
+@supports (not selector(::-webkit-scrollbar)) {
+  .scrollbar-sm-contrast {
+    scrollbar-color: #f8fafc #e2e8f0;
+  }
 }
 .scrollbar-sm-contrast::-webkit-scrollbar {
   @apply w-2 h-2 rounded-lg bg-gray-100 dark:bg-gray-800;
@@ -48,13 +52,15 @@ h2 {
   @apply bg-gray-200 rounded-lg dark:bg-gray-900;
 }
 
-@media (prefers-color-scheme: dark) {
-  .scrollbar-sm {
-    scrollbar-color: #1e293b #0f172a;
-  }
+@supports (not selector(::-webkit-scrollbar)) {
+  @media (prefers-color-scheme: dark) {
+    .scrollbar-sm {
+      scrollbar-color: #1e293b #0f172a;
+    }
 
-  .scrollbar-sm-contrast {
-    scrollbar-color: #0f172a #1e293b;
+    .scrollbar-sm-contrast {
+      scrollbar-color: #0f172a #1e293b;
+    }
   }
 }
 
@@ -171,9 +177,11 @@ h2 {
     "Courier New", monospace !important;
 }
 
-@media (prefers-color-scheme: dark) {
-  .astro-code {
-    scrollbar-color: #1e293b #0f172a;
+@supports (not selector(::-webkit-scrollbar)) {
+  @media (prefers-color-scheme: dark) {
+    .astro-code {
+      scrollbar-color: #1e293b #0f172a;
+    }
   }
 }
 

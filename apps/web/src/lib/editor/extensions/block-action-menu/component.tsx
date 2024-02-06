@@ -1,19 +1,15 @@
 import { debounce } from "@solid-primitives/scheduled";
 import { Range, createNodeFromContent, generateJSON } from "@tiptap/core";
 import { Node as PMNode } from "@tiptap/pm/model";
-import {
-  ExtensionBlockActionSpec,
-  ExtensionBlockActionViewContext,
-  ExtensionSpec
-} from "@vrite/extensions";
+import { ExtensionBlockActionViewContext, ExtensionSpec } from "@vrite/sdk/extensions";
 import { SolidEditor } from "@vrite/tiptap-solid";
 import clsx from "clsx";
 import { Component, For, Show, createEffect, createMemo, createSignal, on } from "solid-js";
 import { createRef } from "#lib/utils";
-import { ViewContextProvider, ViewRenderer } from "#lib/extensions";
-import { ExtensionDetails, useExtensions } from "#context";
+import { ExtensionDetails, useExtensions, useNotifications } from "#context";
 import { Button, Dropdown, Tooltip } from "#components/primitives";
 import { ScrollShadow } from "#components/fragments";
+import { ExtensionViewRenderer } from "#lib/extensions";
 
 interface BlockActionMenuProps {
   state: {
@@ -21,6 +17,12 @@ interface BlockActionMenuProps {
     range: Range | null;
     node: PMNode | null;
   };
+}
+interface ExtensionBlockActionSpec {
+  id: string;
+  label: string;
+  blocks: string[];
+  view: string;
 }
 interface ExtensionIconProps {
   class?: string;
@@ -34,12 +36,12 @@ const ExtensionIcon: Component<ExtensionIconProps> = (props) => {
         <img
           src={props.spec.icon}
           draggable={false}
-          class={clsx("w-8 h-8 rounded-lg", props.class, props.spec.darkIcon && "dark:hidden")}
+          class={clsx("w-8 h-8 rounded-lg", props.class, props.spec.iconDark && "dark:hidden")}
         />
       </Show>
-      <Show when={props.spec.darkIcon}>
+      <Show when={props.spec.iconDark}>
         <img
-          src={props.spec.darkIcon}
+          src={props.spec.iconDark}
           draggable={false}
           class={clsx("w-8 h-8 rounded-lg", props.class, props.spec.icon && "hidden dark:block")}
         />
@@ -48,6 +50,7 @@ const ExtensionIcon: Component<ExtensionIconProps> = (props) => {
   );
 };
 const BlockActionMenu: Component<BlockActionMenuProps> = (props) => {
+  const { notify } = useNotifications();
   const { installedExtensions } = useExtensions();
   const [computeDropdownPosition, setComputeDropdownPosition] = createRef(() => {});
   const [containerRef, setContainerRef] = createRef<HTMLDivElement | null>(null);
@@ -66,17 +69,19 @@ const BlockActionMenu: Component<BlockActionMenuProps> = (props) => {
       extension: ExtensionDetails;
     }> = [];
 
-    installedExtensions().map((extension) => {
-      if (extension.spec.blockActions) {
-        extension.spec.blockActions.forEach((blockAction) => {
+    installedExtensions().forEach((extension) => {
+      if (!extension.id) return;
+
+      const spec = extension.sandbox?.spec;
+
+      if (spec?.blockActions) {
+        spec.blockActions.forEach((blockAction) => {
           blockActions.push({
             blockAction,
             extension
           });
         });
       }
-
-      return blockActions;
     });
 
     return blockActions;
@@ -164,51 +169,57 @@ const BlockActionMenu: Component<BlockActionMenuProps> = (props) => {
                 class="text-base overflow-auto pr-1.5 not-prose scrollbar-sm"
               >
                 <ScrollShadow scrollableContainerRef={scrollableContainerRef} />
-                <ViewContextProvider<ExtensionBlockActionViewContext>
+                <ExtensionViewRenderer<ExtensionBlockActionViewContext>
                   extension={extension}
-                  config={extension.config || {}}
-                  content={node()?.toJSON()}
-                  refreshContent={() => {
-                    setRange(props.state.range);
-                    setNode(props.state.node);
+                  ctx={{
+                    contextFunctions: ["notify", "replaceContent", "refreshContent"],
+                    usableEnv: { readable: ["content"], writable: [] },
+                    config: extension.config || {}
                   }}
-                  replaceContent={(content) => {
-                    unlock.clear();
-                    setLocked(true);
+                  func={{
+                    notify,
+                    refreshContent: () => {
+                      setRange(props.state.range);
+                      setNode(props.state.node);
+                    },
+                    replaceContent(content) {
+                      unlock.clear();
+                      setLocked(true);
 
-                    if (range()) {
-                      let size = 0;
+                      if (range()) {
+                        let size = 0;
 
-                      const nodeOrFragment = createNodeFromContent(
-                        content,
-                        props.state.editor.schema
-                      );
+                        const nodeOrFragment = createNodeFromContent(
+                          content,
+                          props.state.editor.schema
+                        );
 
-                      if (nodeOrFragment instanceof PMNode) {
-                        size = nodeOrFragment.nodeSize;
-                      } else {
-                        size = nodeOrFragment.size || 0;
+                        if (nodeOrFragment instanceof PMNode) {
+                          size = nodeOrFragment.nodeSize;
+                        } else {
+                          size = nodeOrFragment.size || 0;
+                        }
+
+                        props.state.editor
+                          .chain()
+                          .focus()
+                          .insertContentAt(
+                            range()!,
+                            generateJSON(content, props.state.editor.extensionManager.extensions)
+                          )
+                          .scrollIntoView()
+                          .focus()
+                          .run();
+                        setRange({ from: range()!.from, to: range()!.from + size - 1 });
+                        computeDropdownPosition()();
                       }
 
-                      props.state.editor
-                        .chain()
-                        .focus()
-                        .insertContentAt(
-                          range()!,
-                          generateJSON(content, props.state.editor.extensionManager.extensions)
-                        )
-                        .scrollIntoView()
-                        .focus()
-                        .run();
-                      setRange({ from: range()!.from, to: range()!.from + size - 1 });
-                      computeDropdownPosition()();
+                      unlock();
                     }
-
-                    unlock();
                   }}
-                >
-                  <ViewRenderer spec={extension.spec} view={`blockActionView:${blockAction.id}`} />
-                </ViewContextProvider>
+                  view={`blockActionView:${blockAction.id}`}
+                  usableEnvData={{ content: node()?.toJSON() || { type: "doc", content: [] } }}
+                />
               </div>
             </Dropdown>
           );

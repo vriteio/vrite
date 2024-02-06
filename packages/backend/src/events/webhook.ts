@@ -1,7 +1,7 @@
 import { Observable } from "@trpc/server/observable";
 import { Context } from "#lib/context";
 import { createEventPublisher, createEventSubscription } from "#lib/pub-sub";
-import { Webhook } from "#database";
+import { Webhook } from "#collections";
 
 type WebhookEvent =
   | {

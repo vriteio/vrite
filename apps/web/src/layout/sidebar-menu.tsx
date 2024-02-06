@@ -9,10 +9,22 @@ import {
   mdiHelpCircle,
   mdiPuzzle,
   mdiMicrosoftXboxControllerMenu,
-  mdiGit
+  mdiGit,
+  mdiFile,
+  mdiMagnify,
+  mdiFileMultiple
 } from "@mdi/js";
-import { Accessor, Component, For, Show, createEffect, createSignal, on } from "solid-js";
-import { Link, useLocation, useNavigate } from "@solidjs/router";
+import {
+  Accessor,
+  Component,
+  For,
+  Show,
+  createEffect,
+  createMemo,
+  createSignal,
+  on
+} from "solid-js";
+import { useLocation, useNavigate } from "@solidjs/router";
 import clsx from "clsx";
 import { createMediaQuery } from "@solid-primitives/media";
 import { createActiveElement } from "@solid-primitives/active-element";
@@ -21,7 +33,8 @@ import {
   useLocalStorage,
   useAuthenticatedUserData,
   useCommandPalette,
-  useHostConfig
+  useHostConfig,
+  useContentData
 } from "#context";
 import {
   Button,
@@ -46,6 +59,8 @@ interface MenuItem {
 
 const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
   const { storage, setStorage } = useLocalStorage();
+  const commandPalette = useCommandPalette();
+  const { activeContentPieceId } = useContentData();
   const hostConfig = useHostConfig();
   const navigate = useNavigate();
   const location = useLocation();
@@ -57,6 +72,20 @@ const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
       sidePanelView: view
     }));
   };
+  const switchRightPanel = (): void => {
+    setStorage((storage) => ({ ...storage, rightPanelWidth: storage.rightPanelWidth ? 0 : 375 }));
+  };
+  const pathnameData = createMemo(() => {
+    const pathRegex = /^\/(?:editor\/)?([a-f\d]{24})?$/i;
+    const match = location.pathname.match(pathRegex);
+
+    if (!match) return {};
+
+    return {
+      activeContentPieceId: match[1],
+      view: match[0].includes("editor") ? "editor" : "dashboard"
+    };
+  });
 
   return () => {
     return [
@@ -65,13 +94,19 @@ const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
         label: "Dashboard",
         active: () => {
           return (
-            location.pathname === "/" &&
-            (md() || !(storage().sidePanelView && storage().sidePanelWidth))
+            pathnameData().view === "dashboard" &&
+            (md() ||
+              (!(storage().sidePanelView && storage().sidePanelWidth) &&
+                !storage().rightPanelWidth))
           );
         },
         onClick: () => {
-          navigate("/");
-          if (storage().contentPieceId && md()) setSidePanelView("contentPiece");
+          navigate(`/${activeContentPieceId() || ""}`);
+
+          if (activeContentPieceId() && md() && pathnameData().view === "dashboard") {
+            setSidePanelView("contentPiece");
+          }
+
           if (!md()) setStorage((storage) => ({ ...storage, sidePanelWidth: 0 }));
         }
       },
@@ -80,17 +115,45 @@ const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
         label: "Editor",
         active: () => {
           return (
-            location.pathname === "/editor" &&
-            (md() || !(storage().sidePanelView && storage().sidePanelWidth))
+            pathnameData().view === "editor" &&
+            (md() ||
+              (!(storage().sidePanelView && storage().sidePanelWidth) &&
+                !storage().rightPanelWidth))
           );
         },
         onClick: () => {
-          navigate("/editor");
-          if (storage().contentPieceId && md()) setSidePanelView("contentPiece");
+          navigate(`/editor/${activeContentPieceId() || ""}`);
+
           if (!md()) setStorage((storage) => ({ ...storage, sidePanelWidth: 0 }));
         }
       },
       null,
+      activeContentPieceId() && {
+        icon: mdiFile,
+        label: "Content piece",
+        inMenu: true,
+        active: () => storage().sidePanelView === "contentPiece",
+        onClick: () => {
+          setSidePanelView("contentPiece");
+        }
+      },
+      !breakpoints.md() && {
+        icon: mdiMagnify,
+        label: "Search",
+        onClick: () => {
+          // Force mobile keyboard to open (focus must be in user-triggered event handler)
+          document.getElementById("command-palette-input")?.focus({ preventScroll: true });
+          commandPalette.open();
+        }
+      },
+      !breakpoints.md() && {
+        icon: mdiFileMultiple,
+        label: "Explorer",
+        active: () => Number(storage().rightPanelWidth || 0) > 0,
+        onClick: () => {
+          switchRightPanel();
+        }
+      },
       hostConfig.githubApp && {
         icon: mdiGit,
         label: "Source control",
@@ -116,13 +179,6 @@ const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
         active: () => storage().sidePanelView === "extensions",
         onClick: async () => {
           setSidePanelView("extensions");
-        }
-      },
-      {
-        icon: mdiHexagonSlice6,
-        label: "Workspace",
-        onClick: () => {
-          navigate("/workspaces");
         }
       }
     ].filter((value) => value !== false) as Array<MenuItem | null>;
@@ -211,15 +267,15 @@ const ProfileMenu: Component<{ close(): void }> = (props) => {
       </Card>
       <div class="flex justify-center items-center gap-2">
         <div class="flex flex-1">
-          <Icon path={mdiHexagonSlice6} class="h-5 min-w-5 mr-1" />
+          <Icon path={mdiHexagonSlice6} class="h-5 min-w-5 mr-1 text-gray-500 dark:text-gray-400" />
           <span class="text-sm clamp-1">{workspace()?.name}</span>
         </div>
-        <Link href="https://discord.gg/4Z5MdEffBn">
+        <a href="https://discord.gg/4Z5MdEffBn" target="_blank">
           <IconButton path={discordIcon} badge text="soft" class="m-0" variant="text" />
-        </Link>
-        <Link href="https://github.com/vriteio/vrite">
+        </a>
+        <a href="https://github.com/vriteio/vrite" target="_blank">
           <IconButton path={mdiGithub} badge text="soft" class="m-0" variant="text" />
-        </Link>
+        </a>
       </div>
     </div>
   );
@@ -280,13 +336,13 @@ const SidebarMenu: Component = () => {
     >
       <Card
         class={clsx(
-          "lg:p-2 fixed z-50 p-0 md:py-2 h-[calc(env(safe-area-inset-bottom,0)+3.625rem)] transition-all duration-300 m-0 rounded-0 border-0 border-t-2 md:border-t-0 md:border-r-2 w-full md:w-[calc(3.75rem+env(safe-area-inset-left,0px))] pl-[calc(env(safe-area-inset-left,0px))] md:h-full relative bottom-0 md:bottom-unset",
+          "flex justify-center items-center box-content fixed z-50 p-0 h-[calc(env(safe-area-inset-bottom,0)+3.625rem)] transition-all duration-300 m-0 rounded-0 border-0 border-t-2 md:border-t-0 md:border-r-2 w-full md:w-[calc(3.25rem+env(safe-area-inset-left,0px))] pl-[calc(env(safe-area-inset-left,0px))] md:h-full relative bottom-0 md:bottom-unset",
           hideMenu() && "hidden"
         )}
         color="base"
         onTransitionEnd={() => tooltipController.updatePosition()}
       >
-        <div class="flex md:flex-col h-full lg:w-10">
+        <div class="flex md:flex-col h-full w-full lg:w-10 lg:py-1.5">
           <div class="flex items-center justify-center md:mb-4">
             <IconButton
               path={logoIcon}
@@ -310,16 +366,17 @@ const SidebarMenu: Component = () => {
                           menuItem().inMenu && "hidden md:flex"
                         )}
                       >
-                        <div class="w-full h-full md:h-auto md:w-auto">
+                        <button
+                          class="w-full h-full md:h-auto md:w-auto relative group overflow-hidden m-0 md:m-1"
+                          onClick={menuItem()?.onClick}
+                        >
                           <IconButton
                             path={menuItem().icon}
                             variant="text"
+                            badge
                             color={menuItem().active?.() ? "primary" : "base"}
                             text={menuItem().active?.() ? "base" : "soft"}
-                            onClick={menuItem()?.onClick}
-                            class={clsx(
-                              "rounded-none md:rounded-lg w-full m-0 md:m-1 flex-col h-full pb-[calc(env(safe-area-inset-bottom,0)+0.25rem)] md:pb-1 md:h-auto md:w-auto"
-                            )}
+                            class="rounded-none md:rounded-lg w-full m-0 flex-col h-full pb-[calc(env(safe-area-inset-bottom,0)+0.25rem)] md:pb-1 md:h-auto md:w-auto"
                             label={
                               <span class="md:hidden text-xs mt-1 font-semibold">
                                 {menuItem().label}
@@ -327,7 +384,7 @@ const SidebarMenu: Component = () => {
                             }
                             {...(menuItem().props || {})}
                           />
-                        </div>
+                        </button>
                       </Tooltip>
                     );
                   }}
@@ -352,32 +409,32 @@ const SidebarMenu: Component = () => {
                   text="soft"
                   color={active() ? "primary" : "base"}
                 >
-                  <Show
-                    when={profile()?.avatar}
-                    fallback={
-                      <Icon
-                        path={mdiAccountCircle}
-                        class="h-6 w-6 text-gray-500 dark:text-gray-400"
-                      />
-                    }
-                  >
-                    <div class="relative">
+                  <div class="relative">
+                    <Show
+                      when={profile()?.avatar}
+                      fallback={
+                        <Icon
+                          path={mdiAccountCircle}
+                          class="h-6 w-6 text-gray-500 dark:text-gray-400"
+                        />
+                      }
+                    >
                       <img src={profile()?.avatar} class="h-6 w-6 rounded-full" />
-                      <IconButton
-                        path={mdiMicrosoftXboxControllerMenu}
-                        variant="text"
-                        badge
-                        hover={false}
-                        color={
-                          storage().sidePanelView && storage().sidePanelWidth ? "primary" : "base"
-                        }
-                        text="soft"
-                        size="small"
-                        class=" md:hidden absolute -right-2 -bottom-2 m-0"
-                      />
-                    </div>
-                    <span class="md:hidden text-xs mt-1 font-semibold">Menu</span>
-                  </Show>
+                    </Show>
+                    <IconButton
+                      path={mdiMicrosoftXboxControllerMenu}
+                      variant="text"
+                      badge
+                      hover={false}
+                      color={
+                        storage().sidePanelView && storage().sidePanelWidth ? "primary" : "base"
+                      }
+                      text="soft"
+                      size="small"
+                      class=" md:hidden absolute -right-2 -bottom-2 m-0"
+                    />
+                  </div>
+                  <span class="md:hidden text-xs mt-1 font-semibold">Menu</span>
                 </Button>
               );
             }}

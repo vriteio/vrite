@@ -9,21 +9,22 @@
     "start": "node ./dist/index.js"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.374.0",
-    "@fastify/multipart": "^7.7.3",
-    "@fastify/static": "^6.10.2",
-    "@fastify/view": "^8.0.0",
-    "@fastify/websocket": "^8.2.0",
-    "@types/mime-types": "^2.1.1",
+    "@aws-sdk/client-s3": "^3.507.0",
+    "@fastify/multipart": "^8.1.0",
+    "@fastify/static": "^7.0.0",
+    "@fastify/view": "^8.2.0",
+    "@fastify/websocket": "^8.3.1",
+    "@types/mime-types": "^2.1.4",
     "@vrite/backend": "workspace:*",
-    "axios": "^1.4.0",
-    "fastify": "^4.20.0",
+    "axios": "^1.6.7",
+    "fastify": "^4.26.0",
     "handlebars": "^4.7.8",
     "mime-types": "^2.1.35",
-    "nanoid": "^4.0.2",
-    "sharp": "^0.32.5"
+    "nanoid": "^5.0.5",
+    "sharp": "^0.33.2"
   },
   "devDependencies": {
+    "@img/sharp-darwin-arm64": "^0.33.2",
     "@vrite/scripts": "workspace:*",
     "@vrite/web": "workspace:*"
   }

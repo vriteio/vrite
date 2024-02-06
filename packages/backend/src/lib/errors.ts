@@ -127,8 +127,7 @@ const badRequest = (code?: string): CustomError => {
     }
   );
 };
-
-export {
+const errors = {
   notFound,
   serverError,
   expired,
@@ -140,4 +139,6 @@ export {
   invalid,
   badRequest
 };
+
+export { errors };
 export type { CustomError };

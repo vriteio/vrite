@@ -1,19 +1,30 @@
-import { useViewContext } from "./view-context";
-import { Component, ComponentProps, createEffect, For, JSX, on, Show } from "solid-js";
+import { useViewContext } from "./extension-view-renderer";
+import {
+  Component,
+  ComponentProps,
+  createEffect,
+  For,
+  JSX,
+  Match,
+  on,
+  Show,
+  Switch
+} from "solid-js";
 import { marked } from "marked";
 import { createStore } from "solid-js/store";
-import { ExtensionSpec, ExtensionView } from "@vrite/extensions";
+import { ExtensionElement, ExtensionSpec } from "@vrite/sdk/extensions";
 import { Dynamic } from "solid-js/web";
-import { useExtensions } from "#context";
+import { useNotifications } from "#context";
 import { Button, IconButton, Loader, Tooltip } from "#components/primitives";
 import { InputField } from "#components/fragments";
+import { ContextObject } from "#collections";
 
 interface ComponentRendererProps {
-  view: ExtensionView | string;
+  view: ExtensionElement | string;
   spec: ExtensionSpec;
 }
 type RenderedComponentProps<O = Record<string, any>> = {
-  slots: Record<string, JSX.Element>;
+  children: JSX.Element;
 } & O;
 
 const components = {
@@ -28,17 +39,15 @@ const components = {
         optional={"optional" in props ? props.optional : false}
         disabled={"disabled" in props ? props.disabled : false}
         textarea={"textarea" in props ? props.textarea : false}
+        placeholder={"placeholder" in props ? props.placeholder : ""}
         {...("options" in props ? { options: props.options } : {})}
       >
-        {props.slots.default}
+        {props.children}
       </InputField>
     );
   },
-  Fragment: (props: RenderedComponentProps) => {
-    return <>{props.slots.default}</>;
-  },
-  Text: (props: { value: string; class?: string }) => {
-    return <span class={props.class}>{props.value}</span>;
+  Text: (props: { content: string; class?: string }) => {
+    return <span class={props.class}>{props.content}</span>;
   },
   Button: (props: RenderedComponentProps<ComponentProps<typeof Button>>) => {
     return (
@@ -51,14 +60,14 @@ const components = {
         disabled={"disabled" in props ? props.disabled : false}
         loading={"loading" in props ? props.loading : false}
       >
-        {props.slots.default}
+        {props.children}
       </Button>
     );
   },
   Tooltip: (props: RenderedComponentProps<ComponentProps<typeof Tooltip>>) => {
     return (
       <Tooltip text={props.text} side={props.side} fixed={props.fixed} class={props.class}>
-        {props.slots.default}
+        {props.children}
       </Tooltip>
     );
   },
@@ -78,15 +87,20 @@ const components = {
     );
   },
   Loader,
-  Show: (props: RenderedComponentProps<{ value: boolean }>) => {
-    return (
-      <Show when={props.value} fallback={props.slots.false}>
-        {props.slots.true}
-      </Show>
-    );
+  Show: (props: RenderedComponentProps<{ when: boolean }>) => {
+    return <Show when={props.when}>{props.children}</Show>;
+  },
+  Switch: (props: RenderedComponentProps) => {
+    return <Switch>{props.children}</Switch>;
+  },
+  Match: (props: RenderedComponentProps<{ when: boolean }>) => {
+    return <Match when={props.when}>{props.children}</Match>;
   },
   View: (props: RenderedComponentProps<{ class?: string }>) => {
-    return <div class={props.class}>{props.slots.default}</div>;
+    return <div class={props.class}>{props.children}</div>;
+  },
+  Fragment: (props: RenderedComponentProps) => {
+    return <>{props.children}</>;
   }
 };
 const renderer = new marked.Renderer();
@@ -103,55 +117,61 @@ renderer.link = (href, title, text) => {
 };
 
 const ComponentRenderer: Component<ComponentRendererProps> = (props) => {
-  const { callFunction } = useExtensions();
-  const { context, extension } = useViewContext();
+  const { notify } = useNotifications();
+  const { envData, setEnvData, extension } = useViewContext();
+  const { sandbox } = extension;
 
   if (typeof props.view === "string") {
-    return (
-      <span
-        innerHTML={marked.parseInline(props.view, { renderer, mangle: false, headerIds: false })}
-      />
-    );
+    return <span innerHTML={marked.parseInline(props.view, { renderer }) as string} />;
   }
 
-  const shortcutProps: Record<string, string | boolean | number> = {};
   const componentName =
     (props.view.component.match(/^(.+?)(?:\[|\.|$)/)?.[1] as keyof typeof components) || "";
-  const shortcutClasses = [...props.view.component.matchAll(/\.(.+?)(?=\.|\[|$)/g)].map((value) => {
-    return value[1];
-  });
-
-  [...props.view.component.matchAll(/\[(.+?)=(.+?)\]/g)].forEach(([match, attribute, value]) => {
-    if (!attribute.startsWith("bind:") && !attribute.startsWith("on:")) {
-      shortcutProps[attribute] = value;
-    }
-  });
-  shortcutProps.class = [...shortcutClasses, shortcutProps.class || ""].join(" ").trim();
-
   const [componentProps, setComponentProps] = createStore<Record<string, any>>({});
-  const allProps = { ...shortcutProps, ...props.view.props };
+  const viewProps = props.view.props || {};
 
-  Object.keys(allProps).forEach((key) => {
-    const value = allProps[key];
+  Object.keys(viewProps).forEach((key) => {
+    const value = viewProps[key];
 
     if (key.startsWith("bind:")) {
       const bindKey = key.slice(5);
-      const [group, propertyKey] = `${value}`.split(".") as ["temp", string];
+      const pathParts = `${value}`.split(".");
 
       createEffect(
         on(
-          () => context()[group][propertyKey],
+          () => {
+            return pathParts.slice(1).reduce((acc, part) => {
+              return (acc as ContextObject)?.[part];
+            }, envData()[pathParts[0]]);
+          },
           (value) => {
             setComponentProps(bindKey, value);
           }
         )
       );
-      setComponentProps(bindKey, context()[group][propertyKey]);
+      setComponentProps(
+        bindKey,
+        pathParts.slice(1).reduce((acc, part) => {
+          return (acc as ContextObject)?.[part];
+        }, envData()[pathParts[0]])
+      );
       setComponentProps(`set${bindKey[0].toUpperCase()}${bindKey.slice(1)}`, () => {
         return (value: any) => {
-          const setterName = `set${group[0].toUpperCase()}${group.slice(1)}` as "setTemp";
+          setEnvData((currentValue) => {
+            const newValue = { ...(currentValue as ContextObject) };
 
-          context()[setterName](propertyKey, value);
+            let currentObject = newValue;
+
+            pathParts.forEach((part, index) => {
+              if (index === pathParts.length - 1) {
+                currentObject[part] = value;
+              } else {
+                currentObject = currentObject[part] as ContextObject;
+              }
+            });
+
+            return newValue;
+          });
         };
       });
 
@@ -163,13 +183,15 @@ const ComponentRenderer: Component<ComponentRendererProps> = (props) => {
 
       setComponentProps(`on${eventKey[0].toUpperCase()}${eventKey.slice(1)}`, () => {
         return () => {
-          if (extension.id && extension.token) {
-            callFunction(props.spec, `${value}`, {
-              context,
-              extensionId: extension.id,
-              token: extension.token
-            });
-          }
+          sandbox?.runFunction(
+            `${value}`,
+            {
+              contextFunctions: [],
+              usableEnv: { readable: [], writable: [] },
+              config: {}
+            },
+            { notify }
+          );
         };
       });
     } else {
@@ -177,29 +199,14 @@ const ComponentRenderer: Component<ComponentRendererProps> = (props) => {
     }
   });
 
-  const children = props.view["slot:default"] || props.view["slot:"];
-
   return (
-    <Dynamic
-      component={components[componentName]}
-      {...componentProps}
-      slots={Object.fromEntries(
-        Object.keys(props.view)
-          .filter((key) => key.startsWith("slot:"))
-          .map((key) => {
-            const slot = (props.view as ExtensionView)[key as `slot:${string}`] as ExtensionView;
-
-            return [
-              key.slice(5) || "default",
-              <For each={Array.isArray(slot) ? slot : [slot]}>
-                {(view) => {
-                  return <ComponentRenderer view={view} spec={props.spec} />;
-                }}
-              </For>
-            ];
-          })
-      )}
-    />
+    <Dynamic component={components[componentName]} {...componentProps}>
+      <For each={Array.isArray(props.view.slot) ? props.view.slot : [props.view.slot]}>
+        {(view) => {
+          return <ComponentRenderer view={view} spec={props.spec} />;
+        }}
+      </For>
+    </Dynamic>
   );
 };
 

@@ -87,7 +87,7 @@ const UserList: Component<{ provider?: HocuspocusProvider }> = (props) => {
         });
       }
     };
-    const users = [...awareness.getStates().entries()].map(([awarenessId, state]) => {
+    const users = [...(awareness?.getStates().entries() || [])].map(([awarenessId, state]) => {
       return {
         awarenessId,
         ...state.user
@@ -95,7 +95,7 @@ const UserList: Component<{ provider?: HocuspocusProvider }> = (props) => {
     }) as UserAwarenessData[];
 
     setState("users", users);
-    awareness.on("change", updateUserList);
+    awareness?.on("change", updateUserList);
     onCleanup(() => {
       if (!awareness) return;
 

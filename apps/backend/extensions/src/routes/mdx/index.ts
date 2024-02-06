@@ -1,7 +1,8 @@
 import { mdxAsyncInputTransformer } from "./input-transformer";
 import { mdxAsyncOutputTransformer } from "./output-transformer";
-import { procedure, router, z } from "@vrite/backend";
+import { procedure, router } from "@vrite/backend";
 import { InputTransformer } from "@vrite/sdk/transformers";
+import { z } from "zod";
 
 const basePath = "/mdx";
 const mdxRouter = router({

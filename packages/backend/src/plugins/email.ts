@@ -1,10 +1,11 @@
-import { EmailService, FastifyInstance } from "fastify";
+import { EmailPlugin, FastifyInstance } from "fastify";
 import { MailService } from "@sendgrid/mail";
 import { ObjectId } from "mongodb";
 import { EmailTemplate, getSubject, renderEmail } from "@vrite/emails";
 import * as nodemailer from "nodemailer";
-import { getWorkspacesCollection, getUsersCollection } from "#database";
-import { errors, publicPlugin } from "#lib";
+import { getWorkspacesCollection, getUsersCollection } from "#collections";
+import { createPlugin } from "#lib/plugin";
+import { errors } from "#lib/errors";
 
 type EmailSender = (email: {
   to: string;
@@ -12,7 +13,7 @@ type EmailSender = (email: {
   data: Record<string, string>;
 }) => Promise<void>;
 declare module "fastify" {
-  interface EmailService {
+  interface EmailPlugin {
     sendEmailVerification(
       email: string,
       details: {
@@ -52,7 +53,7 @@ declare module "fastify" {
     ): Promise<void>;
   }
   interface FastifyInstance {
-    email: EmailService;
+    email: EmailPlugin;
   }
 }
 
@@ -120,7 +121,7 @@ const createEmailSender = (fastify: FastifyInstance): EmailSender => {
     throw errors.serverError();
   };
 };
-const mailPlugin = publicPlugin(async (fastify) => {
+const emailPlugin = createPlugin(async (fastify) => {
   const sendEmail = createEmailSender(fastify);
 
   fastify.decorate("email", {
@@ -183,7 +184,7 @@ const mailPlugin = publicPlugin(async (fastify) => {
         }
       });
     }
-  } as EmailService);
+  } as EmailPlugin);
 });
 
-export { mailPlugin };
+export { emailPlugin };

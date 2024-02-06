@@ -1,5 +1,5 @@
 import {
-  publicPlugin,
+  createPlugin,
   getContentsCollection,
   getContentVariantsCollection,
   errors,
@@ -12,7 +12,7 @@ import { ObjectId, Binary } from "mongodb";
 import { SearchIndexing } from "#extensions/search-indexing";
 import { GitSync } from "#extensions/git-sync";
 
-const writingPlugin = publicPlugin(async (fastify) => {
+const writingPlugin = createPlugin(async (fastify) => {
   const contentsCollection = getContentsCollection(fastify.mongo.db!);
   const contentVariantsCollection = getContentVariantsCollection(fastify.mongo.db!);
   const server = Server.configure({
@@ -85,7 +85,7 @@ const writingPlugin = publicPlugin(async (fastify) => {
             }
 
             if (variantId) {
-              return contentVariantsCollection?.updateOne(
+              await contentVariantsCollection?.updateOne(
                 {
                   contentPieceId: new ObjectId(contentPieceId),
                   variantId: new ObjectId(variantId)
@@ -93,9 +93,11 @@ const writingPlugin = publicPlugin(async (fastify) => {
                 { $set: { content: new Binary(state) } },
                 { upsert: true }
               );
+
+              return;
             }
 
-            return contentsCollection?.updateOne(
+            await contentsCollection?.updateOne(
               { contentPieceId: new ObjectId(contentPieceId) },
               { $set: { content: new Binary(state) } },
               { upsert: true }

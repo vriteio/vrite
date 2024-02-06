@@ -1,6 +1,5 @@
 import { WorkspaceSwitchOverlay } from "./overlay";
 import { WorkspaceCreateSection } from "./create-workspace-subsection";
-import { ScrollShadow } from "../../components/fragments/scroll-shadow";
 import {
   Accessor,
   Component,
@@ -16,6 +15,7 @@ import { throttle } from "@solid-primitives/scheduled";
 import { Dynamic } from "solid-js/web";
 import { createStore } from "solid-js/store";
 import { useNavigate } from "@solidjs/router";
+import { ScrollShadow } from "#components/fragments";
 import { createRef, navigateAndReload } from "#lib/utils";
 import { App, useClient, useLocalStorage } from "#context";
 import { Button, Card, Heading, Icon, IconButton, Loader, Tooltip } from "#components/primitives";
@@ -75,7 +75,9 @@ const WorkspacesView: Component = () => {
   const [currentWorkspaceId] = createResource<string | null>(
     async () => {
       try {
-        return await client.userSettings.getWorkspaceId.query();
+        const { workspaceId } = await client.userSettings.getWorkspaceId.query();
+
+        return workspaceId;
       } catch (error) {
         return null;
       }
@@ -106,7 +108,7 @@ const WorkspacesView: Component = () => {
   const navigate = useNavigate();
   const switchWorkspace = throttle(async (workspaceId: string) => {
     if (currentWorkspaceId() !== workspaceId) {
-      await client.auth.switchWorkspace.mutate(workspaceId);
+      await client.auth.switchWorkspace.mutate({ workspaceId });
       setStorage((storage) => ({
         sidePanelWidth: storage.sidePanelWidth
       }));

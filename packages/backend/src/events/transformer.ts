@@ -1,7 +1,7 @@
 import { Observable } from "@trpc/server/observable";
 import { Context } from "#lib/context";
 import { createEventPublisher, createEventSubscription } from "#lib/pub-sub";
-import { Transformer } from "#database";
+import { Transformer } from "#collections";
 
 type TransformerEvent =
   | {

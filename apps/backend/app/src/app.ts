@@ -1,7 +1,6 @@
-import { errors, publicPlugin, trpcPlugin, processAuth } from "@vrite/backend";
+import { createPlugin, errors, processAuth, trpcPlugin } from "@vrite/backend";
 import staticPlugin from "@fastify/static";
 import websocketPlugin from "@fastify/websocket";
-import axios from "axios";
 import viewPlugin from "@fastify/view";
 import handlebars from "handlebars";
 import { FastifyReply } from "fastify";
@@ -12,7 +11,7 @@ import sharp from "sharp";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import path from "path";
 
-const appService = publicPlugin(async (fastify) => {
+const appService = createPlugin(async (fastify) => {
   const renderPage = async (reply: FastifyReply): Promise<void> => {
     return reply.header("X-Frame-Options", "SAMEORIGIN").view("index.html", {
       PUBLIC_APP_URL: fastify.config.PUBLIC_APP_URL,

@@ -1,8 +1,8 @@
 import { Accessor, Component, createMemo, createResource, Show } from "solid-js";
-import { mdiWeb } from "@mdi/js";
+import { mdiWeb, mdiFileDocumentOutline } from "@mdi/js";
 import clsx from "clsx";
 import { Instance } from "tippy.js";
-import { App, useClient } from "#context";
+import { App, useAuthenticatedUserData, useClient, useContentData } from "#context";
 import { Card, Icon, IconButton, Loader } from "#components/primitives";
 
 interface LinkPreviewMenuProps {
@@ -11,6 +11,8 @@ interface LinkPreviewMenuProps {
 }
 
 const LinkPreviewMenu: Component<LinkPreviewMenuProps> = (props) => {
+  const { activeVariantId = () => null } = useContentData() || {};
+  const { workspace = () => null } = useAuthenticatedUserData() || {};
   const client = useClient();
   const updateTooltipPosition = (): void => {
     setTimeout(() => {
@@ -21,7 +23,11 @@ const LinkPreviewMenu: Component<LinkPreviewMenuProps> = (props) => {
     if (!link) return null;
 
     try {
-      const result = await client.utils.openGraph.query({ url: props.link() });
+      const result = await client.utils.linkPreview.query({
+        url: props.link(),
+        variantId: activeVariantId() || undefined,
+        workspaceId: workspace()?.id
+      });
 
       updateTooltipPosition();
 
@@ -53,43 +59,63 @@ const LinkPreviewMenu: Component<LinkPreviewMenuProps> = (props) => {
         (previewData()?.image || previewData()?.description) && "min-h-40 min-w-80"
       )}
     >
-      <Card
-        class={clsx(
-          previewData.loading && "flex justify-center items-center text-primary h-40 w-80",
-          "overflow-hidden"
-        )}
+      <a
+        href={`/editor${previewData()?.url || props.link()}`}
+        class="no-underline"
+        {...(previewData()?.type === "internal" ? {} : { target: "_blank" })}
       >
-        <Show when={!previewData.loading} fallback={<Loader class="w-8 h-8" />}>
-          <Show when={previewData()?.image}>
-            <div class="flex items-center justify-center mb-2 overflow-hidden shadow-lg rounded-2xl">
-              <img src={previewData()?.image} class=" max-h-48" />
-            </div>
-          </Show>
-          <Show when={previewData()?.description}>
-            <p class="mt-0 mb-2 text-sm">{previewData()?.description}</p>
-          </Show>
-          <Show
-            when={previewData()?.title}
-            fallback={
-              <a href={previewData()?.url || props.link()} target="_blank" class="no-underline">
-                <IconButton path={mdiWeb} badge class="m-0" text="soft" label="Visit website" />
-              </a>
-            }
-          >
-            <div class="flex items-center justify-start gap-2 text-sm">
-              <Show when={icon()} fallback={<Icon path={mdiWeb} class="text-gray-700 h-7 w-7" />}>
-                <img src={icon()} class="w-7 h-7" />
-              </Show>
-              <div class="flex flex-col text-xs overflow-hidden">
-                <span class="clamp-1">{previewData()?.title}</span>
-                <a href={previewData()?.url || props.link()} target="_blank" class="clamp-1">
-                  {previewData()?.url}
-                </a>
+        <Card
+          class={clsx(
+            previewData.loading && "flex justify-center items-center text-primary h-40 w-80",
+            "overflow-hidden"
+          )}
+        >
+          <Show when={!previewData.loading} fallback={<Loader class="w-8 h-8" />}>
+            <Show when={previewData()?.image}>
+              <div class="flex items-center justify-center mb-2 overflow-hidden shadow-lg rounded-2xl">
+                <img src={previewData()?.image} class=" max-h-48" />
               </div>
-            </div>
+            </Show>
+            <Show when={previewData()?.description}>
+              <p class="mt-0 mb-2 text-sm px-2">{previewData()?.description}</p>
+            </Show>
+            <Show
+              when={previewData()?.title}
+              fallback={
+                <IconButton
+                  path={previewData()?.type === "internal" ? mdiFileDocumentOutline : mdiWeb}
+                  badge
+                  class="m-0"
+                  text="soft"
+                  label="Visit website"
+                />
+              }
+            >
+              <div class="flex items-start justify-start text-base">
+                <Show
+                  when={icon()}
+                  fallback={
+                    <Icon
+                      path={previewData()?.type === "internal" ? mdiFileDocumentOutline : mdiWeb}
+                      class="h-6 w-6"
+                    />
+                  }
+                >
+                  <img src={icon()} class="w-6 h-6 mr-1" />
+                </Show>
+                <div class="flex flex-col flex-1 justify-start items-start pl-1 text-left">
+                  <span class="flex-1 text-start font-semibold clamp-1 break-all">
+                    {previewData()?.title}
+                  </span>
+                  <span class="text-xs text-gray-500 dark:text-gray-400 font-mono clamp-1 break-all">
+                    {previewData()?.url}
+                  </span>
+                </div>
+              </div>
+            </Show>
           </Show>
-        </Show>
-      </Card>
+        </Card>
+      </a>
     </div>
   );
 };

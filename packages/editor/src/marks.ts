@@ -7,6 +7,7 @@ import { Link as BaseLink } from "@tiptap/extension-link";
 import { Highlight as BaseHighlight } from "@tiptap/extension-highlight";
 import { Subscript as BaseSubscript } from "@tiptap/extension-subscript";
 import { Superscript as BaseSuperscript } from "@tiptap/extension-superscript";
+import { Underline as BaseUnderline } from "@tiptap/extension-underline";
 
 const Bold = BaseBold.extend({
   exitable: true,
@@ -23,7 +24,11 @@ const Bold = BaseBold.extend({
       },
       {
         style: "font-weight",
-        getAttrs: (value) => /^(bold(er)?|[7-9]\d{2,})$/.test(value as string) && null
+        getAttrs: (value) => {
+          const matchBold = /^(bold(er)?|[7-9]\d{2,})$/;
+
+          return matchBold.test(value as string) && null;
+        }
       }
     ];
   },
@@ -166,6 +171,7 @@ const Link = BaseLink.extend({
       markPasteRule({
         find: /\[(.+?)]\(.+?\)/g,
         type: this.type.schema.marks.link,
+        // eslint-disable-next-line sonarjs/no-identical-functions
         getAttributes({ input = "" }: RegExpMatchArray) {
           const [wrappedUrl] = input.match(/\(.+?\)/) || [];
           const url = wrappedUrl ? wrappedUrl.slice(1, -1) : 0;
@@ -203,5 +209,8 @@ const Subscript = BaseSubscript.extend({
 const Superscript = BaseSuperscript.extend({
   exitable: true
 });
+const Underline = BaseUnderline.extend({
+  exitable: true
+});
 
-export { Bold, Italic, Strike, Code, Link, Highlight, Subscript, Superscript };
+export { Bold, Italic, Strike, Code, Link, Highlight, Subscript, Superscript, Underline };

@@ -1,10 +1,11 @@
 import { Element as BaseElement, ElementAttributes } from "@vrite/editor";
-import { SolidEditor } from "@vrite/tiptap-solid";
+import { SolidEditor, SolidRenderer } from "@vrite/tiptap-solid";
 import { NodeView } from "@tiptap/core";
 import { keymap } from "@tiptap/pm/keymap";
 import { Node } from "@tiptap/pm/model";
 import { EditorState } from "@tiptap/pm/state";
 import { Node as PMNode } from "@tiptap/pm/model";
+import { Component } from "solid-js";
 import { formatCode } from "#lib/code-editor";
 
 const getOpeningTag = async (node: PMNode): Promise<string> => {
@@ -26,6 +27,16 @@ const getOpeningTag = async (node: PMNode): Promise<string> => {
   return formattedCode.replace(/ *?\/>;/gm, node.content.size ? ">" : "/>").trim();
 };
 const getClosingTag = (node: PMNode): string => node.attrs.type;
+const registeredComponent: Record<string, Component> = {
+  /* Important: () => {
+    return (
+      <Card class="flex items-center justify-start m-0 my-4" color="primary">
+        <Icon path={mdiAlertCircleOutline} class="w-6 h-6 mr-2" />
+        <div class="flex-1 not-prose" data-content="true"></div>
+      </Card>
+    );
+  }*/
+};
 const Element = BaseElement.extend({
   addProseMirrorPlugins() {
     const handleDeleteElement = (state: EditorState): boolean => {
@@ -77,10 +88,42 @@ const Element = BaseElement.extend({
   },
   addNodeView() {
     return (props) => {
+      const referenceView = new NodeView(() => {}, props);
+
       let node = props.node as Node;
 
+      const customNodeType = node.attrs.type;
+
+      if (customNodeType && registeredComponent[customNodeType]) {
+        const component = new SolidRenderer(registeredComponent[customNodeType], {
+          editor: this.editor as SolidEditor,
+          state: {}
+        });
+
+        return {
+          dom: component.element,
+          contentDOM: component.element.querySelector("[data-content=true]") as HTMLElement,
+          ignoreMutation(mutation: MutationRecord | { type: "selection"; target: Element }) {
+            if (mutation.type === "selection") {
+              return true;
+            }
+
+            return referenceView.ignoreMutation(mutation);
+          },
+          stopEvent(event) {
+            return referenceView.stopEvent(event);
+          },
+          update(newNode) {
+            if (newNode.type.name !== "element") return false;
+
+            node = newNode as Node;
+
+            return true;
+          }
+        };
+      }
+
       const editor = this.editor as SolidEditor;
-      const referenceView = new NodeView(() => {}, props);
       const dom = document.createElement("div");
       const contentContainer = document.createElement("div");
       const content = document.createElement("div");

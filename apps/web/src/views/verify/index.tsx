@@ -35,13 +35,13 @@ const VerifyView: Component = () => {
     }
   });
   const verifyEmail = async (): Promise<void> => {
-    const redirect = await client.verification.verifyEmail.mutate({ code: code!, userId: id });
+    const { redirect } = await client.verification.verifyEmail.mutate({ code: code!, userId: id });
 
     setRedirect(redirect);
     setVerified(true);
   };
   const verifyMagicLink = async (): Promise<void> => {
-    const redirect = await client.verification.verifyMagicLink.mutate({
+    const { redirect } = await client.verification.verifyMagicLink.mutate({
       code: code || "",
       userId: id
     });
@@ -50,7 +50,7 @@ const VerifyView: Component = () => {
     navigate(redirect);
   };
   const verifyWorkspaceInvite = async (): Promise<void> => {
-    const workspaceId = await client.verification.verifyWorkspaceInvite.mutate({
+    const { workspaceId } = await client.verification.verifyWorkspaceInvite.mutate({
       code: code || "",
       membershipId: id
     });
@@ -148,7 +148,7 @@ const VerifyView: Component = () => {
               const workspaceId = newWorkspaceId();
 
               if (workspaceId) {
-                await client.auth.switchWorkspace.mutate(workspaceId);
+                await client.auth.switchWorkspace.mutate({ workspaceId });
                 setStorage((storage) => ({
                   sidePanelWidth: storage.sidePanelWidth
                 }));

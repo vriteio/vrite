@@ -4,7 +4,6 @@ import { Octokit, RestEndpointMethodTypes } from "@octokit/rest";
 import { Button, Heading, IconButton, Input, Tooltip } from "#components/primitives";
 import { App, hasPermission, useClient, useConfirmationModal } from "#context";
 import { InputField, TitledCard, SearchableSelect } from "#components/fragments";
-import { transformer } from "#database";
 
 interface GitHubConfigurationViewProps {
   gitData: App.GitData | null;
@@ -128,14 +127,16 @@ const GitHubConfigurationView: Component<GitHubConfigurationViewProps> = (props)
             loading={loading()}
             onClick={async () => {
               setLoading(true);
-              await client.git.github.configure.mutate({
-                installationId: selectedInstallation()!.id,
-                repositoryName: selectedRepository()!.name,
-                repositoryOwner: selectedRepository()!.owner.login,
-                branchName: selectedBranch()!.name,
-                baseDirectory: baseDirectory(),
-                matchPattern: matchPattern(),
-                transformer: transformer()
+              await client.git.configure.mutate({
+                github: {
+                  installationId: selectedInstallation()!.id,
+                  repositoryName: selectedRepository()!.name,
+                  repositoryOwner: selectedRepository()!.owner.login,
+                  branchName: selectedBranch()!.name,
+                  baseDirectory: baseDirectory(),
+                  matchPattern: matchPattern(),
+                  transformer: transformer()
+                }
               });
               setLoading(false);
               props.setOpenedProvider("");
@@ -177,6 +178,7 @@ const GitHubConfigurationView: Component<GitHubConfigurationViewProps> = (props)
                 path={mdiRefresh}
                 loading={installations.loading || repositories.loading || branches.loading}
                 text="soft"
+                color="contrast"
                 class="m-0"
                 onClick={async () => {
                   setSelectedInstallation(null);
@@ -337,70 +339,72 @@ const GitHubConfigurationView: Component<GitHubConfigurationViewProps> = (props)
           </Show>
         </div>
       </TitledCard>
-      <TitledCard icon={mdiFileTree} label="Mapping">
-        <div class="flex flex-col items-start w-full gap-2">
-          <p class="prose text-gray-500 dark:text-gray-400 w-full">
-            Map your content to the GitHub repository.
-          </p>
-          <InputField
-            label="Base directory"
-            color="contrast"
-            type="text"
-            value={savedGitHubConfig()?.baseDirectory || baseDirectory()}
-            disabled={Boolean(savedGitHubConfig())}
-            setValue={setBaseDirectory}
-            placeholder="/docs"
-          >
-            Path to the base directory of which files will be synced.
-          </InputField>
-          <InputField
-            label="Match pattern"
-            color="contrast"
-            type="text"
-            value={savedGitHubConfig()?.matchPattern || matchPattern()}
-            disabled={Boolean(savedGitHubConfig())}
-            setValue={setMatchPattern}
-            placeholder="**/*.md"
-          >
-            Provide a glob match pattern for the files to sync. (relative to the base directory)
-          </InputField>
+      <Show when={token() || savedGitHubConfig()}>
+        <TitledCard icon={mdiFileTree} label="Mapping">
+          <div class="flex flex-col items-start w-full gap-2">
+            <p class="prose text-gray-500 dark:text-gray-400 w-full">
+              Map your content to the GitHub repository.
+            </p>
+            <InputField
+              label="Base directory"
+              color="contrast"
+              type="text"
+              value={savedGitHubConfig()?.baseDirectory || baseDirectory()}
+              disabled={Boolean(savedGitHubConfig())}
+              setValue={setBaseDirectory}
+              placeholder="/docs"
+            >
+              Path to the base directory of which files will be synced.
+            </InputField>
+            <InputField
+              label="Match pattern"
+              color="contrast"
+              type="text"
+              value={savedGitHubConfig()?.matchPattern || matchPattern()}
+              disabled={Boolean(savedGitHubConfig())}
+              setValue={setMatchPattern}
+              placeholder="**/*.md"
+            >
+              Provide a glob match pattern for the files to sync. (relative to the base directory)
+            </InputField>
 
-          <Heading level={3}>Transformer</Heading>
-          <p class="prose text-gray-500 dark:text-gray-400 w-full">
-            Transformer to use for processing the content in and out of Vrite.
-          </p>
-          <Show
-            when={!savedGitHubConfig()}
-            fallback={
-              <Input
-                value={getTransformerLabel()}
-                class="w-full m-0"
-                wrapperClass="w-full"
-                color="contrast"
-                disabled
+            <Heading level={3}>Transformer</Heading>
+            <p class="prose text-gray-500 dark:text-gray-400 w-full">
+              Transformer to use for processing the content in and out of Vrite.
+            </p>
+            <Show
+              when={!savedGitHubConfig()}
+              fallback={
+                <Input
+                  value={getTransformerLabel()}
+                  class="w-full m-0"
+                  wrapperClass="w-full"
+                  color="contrast"
+                  disabled
+                />
+              }
+            >
+              <SearchableSelect
+                options={[...builtInTransformers, ...remoteTransformers()]}
+                selected={selectedTransformer()}
+                placement="top-start"
+                extractId={(transformer) => transformer.id}
+                renderOption={({ label }) => (
+                  <div class="text-start w-full clamp-1 px-1">{label}</div>
+                )}
+                filterOption={({ label }, query) => {
+                  return label.toLowerCase().includes(query.toLowerCase());
+                }}
+                selectOption={(option) => {
+                  setTransformer(option?.id || "markdown");
+                }}
+                loading={remoteTransformers.loading}
+                placeholder="Select Transformer"
               />
-            }
-          >
-            <SearchableSelect
-              options={[...builtInTransformers, ...remoteTransformers()]}
-              selected={selectedTransformer()}
-              placement="top-start"
-              extractId={(transformer) => transformer.id}
-              renderOption={({ label }) => (
-                <div class="text-start w-full clamp-1 px-1">{label}</div>
-              )}
-              filterOption={({ label }, query) => {
-                return label.toLowerCase().includes(query.toLowerCase());
-              }}
-              selectOption={(option) => {
-                setTransformer(option?.id || "markdown");
-              }}
-              loading={remoteTransformers.loading}
-              placeholder="Select Transformer"
-            />
-          </Show>
-        </div>
-      </TitledCard>
+            </Show>
+          </div>
+        </TitledCard>
+      </Show>
     </>
   );
 };

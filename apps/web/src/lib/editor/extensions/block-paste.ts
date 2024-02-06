@@ -197,7 +197,7 @@ const run = (
         const html = marked.parse(lines.join("\n"), {
           breaks: true,
           gfm: true
-        });
+        }) as string;
         const json = generateJSON(html, editor.extensionManager.extensions);
 
         if (json.content[0].type === activeBlockType) {
@@ -257,7 +257,7 @@ const run = (
 
     rangeEnd = state.tr.mapping.map(end);
 
-    const html = marked.parse(lines.join("\n"), { breaks: true, gfm: true });
+    const html = marked.parse(lines.join("\n"), { breaks: true, gfm: true }) as string;
     const json = generateJSON(html, editor.extensionManager.extensions);
 
     if (json.content[0].type === activeBlockType) {

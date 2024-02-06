@@ -12,6 +12,8 @@ declare module "#context" {
       pulledContent: string;
       pulledHash: string;
       contentPieceId: string;
+      variantId?: string;
+      currentContent: string;
       path: string;
     } | null;
     resolvedContent: string;
@@ -24,26 +26,10 @@ const ConflictView: Component<{ monaco: typeof monaco }> = (props) => {
   const { setStorage } = useLocalStorage();
   const { monaco } = props;
   const { codeEditorTheme = () => "dark" } = useAppearance() || {};
-  const createSharedSignal = useSharedState();
+  const { useSharedSignal } = useSharedState();
   const [containerRef, setContainerRef] = createRef<HTMLDivElement | null>(null);
-  const [conflictData] = createSharedSignal("conflictData");
-  const [, setResolvedContent] = createSharedSignal("resolvedContent");
-  const [currentContent] = createResource(
-    () => conflictData()?.contentPieceId,
-    async (contentPieceId) => {
-      if (!contentPieceId) return null;
-
-      try {
-        const result = await client.git.github.getConflictedContent.query({
-          contentPieceId
-        });
-
-        return result.content;
-      } catch (e) {
-        return null;
-      }
-    }
-  );
+  const [conflictData] = useSharedSignal("conflictData");
+  const [, setResolvedContent] = useSharedSignal("resolvedContent");
 
   onMount(() => {
     if (!conflictData()) {
@@ -83,7 +69,7 @@ const ConflictView: Component<{ monaco: typeof monaco }> = (props) => {
       originalModel.setValue(conflictData()?.pulledContent || "");
     });
     createEffect(() => {
-      modifiedModel.setValue(currentContent() || "");
+      modifiedModel.setValue(conflictData()?.currentContent || "");
     });
     createEffect(() => {
       diffEditor.updateOptions({ renderSideBySide: breakpoints.md() });
@@ -128,7 +114,7 @@ const ConflictView: Component<{ monaco: typeof monaco }> = (props) => {
         class="flex-1 h-full w-full split-view"
         data-code-editor-theme={codeEditorTheme()}
       />
-      <Show when={!conflictData() || currentContent.loading}>
+      <Show when={!conflictData()}>
         <div class="h-full w-full absolute top-0 left-0 bg-gray-100 dark:bg-gray-800 flex justify-center items-center z-12">
           <Show when={!conflictData()} fallback={<Loader />}>
             <span class="text-2xl font-semibold text-gray-500 dark:text-gray-400">

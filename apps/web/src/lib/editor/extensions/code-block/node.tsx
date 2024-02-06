@@ -75,7 +75,11 @@ const CodeBlock = BaseCodeBlock.extend<CodeBlockOptions>({
         });
 
         return (
-          <NodeViewWrapper>
+          <NodeViewWrapper
+            style={{
+              "min-height": `${state().node.textContent.split("\n").length * 20 + 4}px`
+            }}
+          >
             <Show when={!loading()}>
               <CodeBlockView
                 monaco={monacoRef()!}

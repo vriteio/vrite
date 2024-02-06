@@ -1,34 +1,27 @@
-import { DashboardKanbanView } from "./views/kanban";
-import { DashboardListView } from "./views/list";
+import { DashboardKanbanView } from "./kanban";
+import { DashboardTableView } from "./table";
+import { DashboardDataProvider } from "./dashboard-context";
 import { Component, Match, Switch, createEffect, on, onCleanup } from "solid-js";
 import { HocuspocusProvider } from "@hocuspocus/provider";
 import * as Y from "yjs";
-import { App, useAuthenticatedUserData, useLocalStorage, useCache, useSharedState } from "#context";
+import {
+  useAuthenticatedUserData,
+  useContentData,
+  useLocalStorage,
+  useSharedState
+} from "#context";
 import { getSelectionColor } from "#lib/utils";
-import { useContentGroups } from "#lib/composables";
 
 const DashboardView: Component = () => {
-  const createSharedSignal = useSharedState();
-  const cache = useCache();
+  const { useSharedSignal } = useSharedState();
   const { workspace, profile } = useAuthenticatedUserData();
   const { storage, setStorage } = useLocalStorage();
-  const [provider, setProvider] = createSharedSignal("provider");
-  const ancestor = (): App.ContentGroup | null => {
-    return storage().dashboardViewAncestor || null;
-  };
-  const { contentGroups, setContentGroups, refetch, loading } = cache("contentGroups", () => {
-    return useContentGroups(ancestor()?.id);
-  });
+  const { activeContentPieceId } = useContentData();
+  const [provider, setProvider] = useSharedSignal("provider");
   const ydoc = new Y.Doc();
   const handleReload = async (): Promise<void> => {
     await fetch("/session/refresh", { method: "POST" });
     provider()?.connect();
-  };
-  const setAncestor = (ancestor: App.ContentGroup | null): void => {
-    setStorage((storage) => ({
-      ...storage,
-      dashboardViewAncestor: ancestor || undefined
-    }));
   };
 
   provider()?.awareness?.setLocalStateField("user", {
@@ -44,18 +37,11 @@ const DashboardView: Component = () => {
   setStorage((storage) => ({ ...storage, toolbarView: "default" }));
   createEffect(
     on(storage, (storage, previousContentPieceId) => {
-      if (storage.contentPieceId !== previousContentPieceId) {
-        provider()?.awareness?.setLocalStateField("contentPieceId", storage.contentPieceId);
+      if (activeContentPieceId() !== previousContentPieceId) {
+        provider()?.awareness?.setLocalStateField("contentPieceId", activeContentPieceId());
       }
 
-      return storage.contentPieceId;
-    })
-  );
-  createEffect(
-    on(ancestor, (ancestor, previousAncestor) => {
-      if (ancestor?.id !== previousAncestor?.id) {
-        refetch(ancestor?.id);
-      }
+      return activeContentPieceId();
     })
   );
 
@@ -72,26 +58,16 @@ const DashboardView: Component = () => {
 
   return (
     <div class="relative flex-1 overflow-hidden flex flex-row h-full">
-      <Switch>
-        <Match when={storage().dashboardView === "list"}>
-          <DashboardListView
-            ancestor={ancestor()}
-            contentGroups={contentGroups()}
-            contentGroupsLoading={loading()}
-            setAncestor={setAncestor}
-            setContentGroups={setContentGroups}
-          />
-        </Match>
-        <Match when={storage().dashboardView === "kanban" || !storage().dashboardView}>
-          <DashboardKanbanView
-            ancestor={ancestor()}
-            contentGroups={contentGroups()}
-            contentGroupsLoading={loading()}
-            setAncestor={setAncestor}
-            setContentGroups={setContentGroups}
-          />
-        </Match>
-      </Switch>
+      <DashboardDataProvider>
+        <Switch>
+          <Match when={storage().dashboardView === "table"}>
+            <DashboardTableView />
+          </Match>
+          <Match when={storage().dashboardView === "kanban" || !storage().dashboardView}>
+            <DashboardKanbanView />
+          </Match>
+        </Switch>
+      </DashboardDataProvider>
     </div>
   );
 };

@@ -1,11 +1,12 @@
 import { hashnodeOutputTransformer } from "./transformer";
-import { procedure, router, zodId, z, errors } from "@vrite/backend";
+import { procedure, router, zodId, errors } from "@vrite/backend";
 import {
   JSONContent,
   createClient,
   ContentPieceWithAdditionalData,
   Extension
 } from "@vrite/sdk/api";
+import { z } from "zod";
 
 const processContent = (content: JSONContent): string => {
   return hashnodeOutputTransformer(content);
@@ -27,22 +28,18 @@ const publishToHashnode = async (
     tags: contentPiece.tags.map((tag) => ({
       slug: (tag.label || "").toLowerCase(),
       name: (tag.label || "").toLowerCase(),
-      _id: ""
+      id: ""
     })),
-    isPartOfPublication: {
-      publicationId: extension.config!.publicationId
-    },
-    ...(contentPiece.coverUrl && { coverImageURL: contentPiece.coverUrl }),
+    publicationId: extension.config!.publicationId,
+    ...(contentPiece.coverUrl && { coverImageOptions: { coverImageURL: contentPiece.coverUrl } }),
     ...(contentPiece.canonicalLink && {
-      isRepublished: {
-        originalArticleURL: contentPiece.canonicalLink
-      }
+      originalArticleURL: contentPiece.canonicalLink
     })
   };
 
   if (contentPieceData?.hashnodeId) {
     try {
-      const response = await fetch("https://api.hashnode.com/", {
+      const response = await fetch("https://gql.hashnode.com/", {
         method: "POST",
         headers: {
           "Authorization": `${extension.config.accessToken}`,
@@ -51,17 +48,15 @@ const publishToHashnode = async (
           "User-Agent": "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; .NET CLR 1.1.4322)"
         },
         body: JSON.stringify({
-          query: `mutation ($postId:String!, $input: UpdateStoryInput!) {
-            updateStory(postId:$postId, input: $input) {
-              success
+          query: `mutation ($postId:String!, $input: UpdatePostInput!) {
+            updatePost(input: $input) {
               post {
-                _id
+                id
               }
             }
           }`,
           variables: {
-            postId: contentPieceData.hashnodeId,
-            input: articleInput
+            input: { id: contentPieceData.hashnodeId, ...articleInput }
           }
         })
       });
@@ -72,9 +67,8 @@ const publishToHashnode = async (
           locations: Array<{ line: number; column: number }>;
         }>;
         data?: {
-          updateStory: {
-            success: boolean;
-            post: { _id: string };
+          updatePost: {
+            post: { id: string };
           };
         };
       } = await response.json();
@@ -85,7 +79,7 @@ const publishToHashnode = async (
         throw errors.serverError();
       }
 
-      return { hashnodeId: `${json.data?.updateStory.post._id || ""}` };
+      return { hashnodeId: `${json.data?.updatePost.post.id || ""}` };
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error(error);
@@ -102,11 +96,10 @@ const publishToHashnode = async (
           "User-Agent": "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; .NET CLR 1.1.4322)"
         },
         body: JSON.stringify({
-          query: `mutation ($input: CreateStoryInput!) {
-            createStory(input: $input) {
-              success
+          query: `mutation ($input: PublishPostInput!) {
+            publishPost(input: $input) {
               post {
-                _id
+                id
               }
             }
           }`,
@@ -120,9 +113,8 @@ const publishToHashnode = async (
           locations: Array<{ line: number; column: number }>;
         }>;
         data?: {
-          createStory: {
-            success: boolean;
-            post: { _id: string };
+          publishPost: {
+            post: { id: string };
           };
         };
       } = await response.json();
@@ -133,7 +125,7 @@ const publishToHashnode = async (
         throw errors.serverError();
       }
 
-      return { hashnodeId: `${json.data?.createStory.post._id || ""}` };
+      return { hashnodeId: `${json.data?.publishPost.post.id || ""}` };
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error(error);

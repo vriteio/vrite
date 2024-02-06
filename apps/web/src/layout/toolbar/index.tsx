@@ -1,5 +1,5 @@
 import { UserList } from "./user-list";
-import { Breadcrumb } from "./breadcrumb";
+import { RightPanelMenu } from "./right-panel-menu";
 import {
   mdiAppleKeyboardCommand,
   mdiBookOpenBlankVariant,
@@ -17,23 +17,23 @@ import { Dynamic } from "solid-js/web";
 import clsx from "clsx";
 import { JSONContent } from "@vrite/sdk";
 import {
-  App,
   useClient,
   useCommandPalette,
+  useContentData,
   useHostConfig,
   useLocalStorage,
   useNotifications,
   useSharedState
 } from "#context";
-import { ExportMenu, StatsMenu } from "#views/editor/menus";
+import { ExportMenu } from "#views/editor/menus";
 import { Button, Dropdown, Icon, IconButton, Tooltip } from "#components/primitives";
 import { logoIcon } from "#assets/icons";
 import { breakpoints, isAppleDevice } from "#lib/utils";
 
 const toolbarViews: Record<string, Component<Record<string, any>>> = {
   editorStandalone: () => {
-    const createSharedSignal = useSharedState();
-    const [sharedEditor] = createSharedSignal("editor");
+    const { useSharedSignal } = useSharedState();
+    const [sharedEditor] = useSharedSignal("editor");
     const { setStorage } = useLocalStorage();
     const [menuOpened, setMenuOpened] = createSignal(false);
 
@@ -65,12 +65,6 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
               >
                 <div class="gap-1 flex flex-col">
                   <Show when={sharedEditor()}>
-                    <StatsMenu
-                      editor={sharedEditor()!}
-                      onClick={() => setMenuOpened(false)}
-                      class="w-full justify-start"
-                      wrapperClass="w-full"
-                    />
                     <ExportMenu
                       content={sharedEditor()!.getJSON() as JSONContent}
                       onClick={() => setMenuOpened(false)}
@@ -113,7 +107,6 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
         >
           <div class="gap-2 flex">
             <Show when={sharedEditor()}>
-              <StatsMenu editor={sharedEditor()!} />
               <ExportMenu content={sharedEditor()!.getJSON() as JSONContent} />
             </Show>
             <IconButton
@@ -156,12 +149,12 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
     );
   },
   conflict: () => {
-    const createSharedSignal = useSharedState();
+    const { useSharedSignal } = useSharedState();
     const client = useClient();
     const { notify } = useNotifications();
-    const [resolvedContent] = createSharedSignal("resolvedContent");
-    const [conflictData, setConflictData] = createSharedSignal("conflictData");
-    const [conflicts, setConflicts] = createSharedSignal("conflicts");
+    const [resolvedContent] = useSharedSignal("resolvedContent");
+    const [conflictData, setConflictData] = useSharedSignal("conflictData");
+    const [conflicts, setConflicts] = useSharedSignal("conflicts");
     const [loading, setLoading] = createSignal(false);
     const pathDetails = createMemo(() => {
       const pathParts = (conflictData()?.path || "").split("/");
@@ -191,7 +184,7 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
             onClick={async () => {
               try {
                 setLoading(true);
-                await client.git.github.resolveConflict.mutate({
+                await client.git.resolveConflict.mutate({
                   content: resolvedContent()!,
                   contentPieceId: conflictData()!.contentPieceId,
                   syncedHash: conflictData()!.pulledHash,
@@ -216,17 +209,16 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
     );
   },
   editor: () => {
-    const createSharedSignal = useSharedState();
+    const { activeContentPieceId, contentPieces } = useContentData();
+    const { useSharedSignal } = useSharedState();
     const { registerCommand } = useCommandPalette();
-    const [sharedEditor] = createSharedSignal("editor");
-    const [sharedProvider] = createSharedSignal("provider");
-    const [sharedEditedContentPiece] = createSharedSignal("editedContentPiece");
-    const { setStorage } = useLocalStorage();
+    const [sharedProvider] = useSharedSignal("provider");
+    const { storage, setStorage } = useLocalStorage();
     const [menuOpened, setMenuOpened] = createSignal(false);
 
     createEffect(
-      on(sharedEditedContentPiece, (sharedEditedContentPiece) => {
-        if (sharedEditedContentPiece) {
+      on(activeContentPieceId, (contentPieceId) => {
+        if (contentPieceId) {
           registerCommand({
             name: "Zen mode",
             category: "editor",
@@ -256,17 +248,9 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
               )}
             >
               <div class="overflow-hidden w-full h-full flex flex-col gap-1">
-                <Show when={sharedEditor()}>
-                  <StatsMenu
-                    editor={sharedEditor()!}
-                    onClick={() => setMenuOpened(false)}
-                    class="w-full justify-start"
-                    wrapperClass="w-full"
-                  />
-                </Show>
-                <Show when={sharedEditedContentPiece()}>
+                <Show when={activeContentPieceId() && contentPieces[activeContentPieceId() || ""]}>
                   <ExportMenu
-                    editedContentPiece={sharedEditedContentPiece()!}
+                    editedContentPiece={contentPieces[activeContentPieceId() || ""]!}
                     onClick={() => setMenuOpened(false)}
                     class="w-full justify-start"
                     wrapperClass="w-full"
@@ -287,11 +271,8 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
             </Dropdown>
           }
         >
-          <Show when={sharedEditor()}>
-            <StatsMenu editor={sharedEditor()!} />
-          </Show>
-          <Show when={sharedEditedContentPiece()}>
-            <ExportMenu editedContentPiece={sharedEditedContentPiece()!} />
+          <Show when={activeContentPieceId() && contentPieces[activeContentPieceId() || ""]}>
+            <ExportMenu editedContentPiece={contentPieces[activeContentPieceId() || ""]!} />
             <IconButton
               onClick={() => {
                 setStorage((storage) => ({ ...storage, zenMode: true }));
@@ -302,6 +283,7 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
               path={mdiFullscreen}
               label="Zen mode"
             />
+            <RightPanelMenu variant="text" />
           </Show>
         </Show>
       </div>
@@ -309,29 +291,18 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
   },
   default: () => {
     const hostConfig = useHostConfig();
-    const createSharedSignal = useSharedState();
+    const { useSharedSignal } = useSharedState();
     const { storage, setStorage } = useLocalStorage();
-    const { setOpened, registerCommand } = useCommandPalette();
-    const [provider] = createSharedSignal("provider");
-    const [activeDraggableGroup] = createSharedSignal("activeDraggableGroup");
-    const [activeDraggablePiece] = createSharedSignal("activeDraggablePiece");
+    const { open, registerCommand } = useCommandPalette();
+    const [provider] = useSharedSignal("provider");
     const [viewSelectorOpened, setViewSelectorOpened] = createSignal(false);
     const view = (): string => storage().dashboardView || "kanban";
     const setView = (view: string): void => {
       setStorage((storage) => ({ ...storage, dashboardView: view }));
     };
-    const ancestor = (): App.ContentGroup | null => {
-      return storage().dashboardViewAncestor || null;
-    };
-    const setAncestor = (ancestor: App.ContentGroup | null): void => {
-      setStorage((storage) => ({
-        ...storage,
-        dashboardViewAncestor: ancestor || undefined
-      }));
-    };
 
     createEffect(() => {
-      if (view() === "list") {
+      if (view() === "table") {
         registerCommand({
           action: () => setView("kanban"),
           category: "dashboard",
@@ -340,10 +311,10 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
         });
       } else {
         registerCommand({
-          action: () => setView("list"),
+          action: () => setView("table"),
           category: "dashboard",
           icon: mdiViewList,
-          name: "Switch to List view"
+          name: "Switch to Table view"
         });
       }
     });
@@ -358,13 +329,13 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
               <IconButton
                 path={view() === "kanban" ? mdiViewDashboard : mdiViewList}
                 class="m-0"
-                label={view() === "kanban" ? "Kanban" : "List"}
+                label={view() === "kanban" ? "Kanban" : "Table"}
                 text="soft"
               />
             );
           }}
         >
-          <div class="gap-1 flex flex-col">
+          <div class="flex flex-col">
             <IconButton
               onClick={() => {
                 setView("kanban");
@@ -373,30 +344,24 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
               path={mdiViewDashboard}
               class="w-full m-0 justify-start"
               label="Kanban"
-              variant={view() === "kanban" ? "solid" : "text"}
-              text={view() === "kanban" ? "primary" : "soft"}
+              variant="text"
+              text={view() === "kanban" ? "base" : "soft"}
               color={view() === "kanban" ? "primary" : "base"}
             />
             <IconButton
               onClick={() => {
-                setView("list");
+                setView("table");
                 setViewSelectorOpened(false);
               }}
               path={mdiViewList}
               class="w-full m-0 justify-start"
-              label="List"
-              variant={view() === "list" ? "solid" : "text"}
-              text={view() === "list" ? "primary" : "soft"}
-              color={view() === "list" ? "primary" : "base"}
+              label="Table"
+              variant="text"
+              text={view() === "table" ? "base" : "soft"}
+              color={view() === "table" ? "primary" : "base"}
             />
           </div>
         </Dropdown>
-        <Breadcrumb
-          ancestor={ancestor()}
-          activeDraggableGroup={activeDraggableGroup()}
-          activeDraggablePiece={activeDraggablePiece()}
-          setAncestor={setAncestor}
-        />
         <div class="flex-1" />
         <Show when={provider()}>
           <UserList provider={provider()!} />
@@ -404,7 +369,7 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
         <IconButton
           path={hostConfig.search ? mdiMagnify : mdiConsoleLine}
           label={
-            <div class="hidden @xl:flex w-full items-center">
+            <div class="flex w-full items-center">
               <span class="pl-1 flex-1 text-start">{hostConfig.search ? "Search" : "Command"}</span>
               <kbd class="bg-gray-300 dark:bg-gray-700 group-hover:bg-gray-200 dark:group-hover:bg-gray-800 flex justify-center items-center rounded-md px-1 h-5 text-sm">
                 {isAppleDevice() ? (
@@ -417,13 +382,14 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
             </div>
           }
           text="soft"
-          class="@xl:min-w-48 justify-start m-0 bg-gray-200 group"
+          class="hidden @xl:flex @xl:min-w-48 justify-start m-0 bg-gray-200 group"
           onClick={() => {
             // Force mobile keyboard to open (focus must be in user-triggered event handler)
             document.getElementById("command-palette-input")?.focus({ preventScroll: true });
-            setOpened(true);
+            open();
           }}
         />
+        <RightPanelMenu />
       </div>
     );
   }

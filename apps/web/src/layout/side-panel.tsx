@@ -2,13 +2,13 @@ import { debounce } from "@solid-primitives/scheduled";
 import clsx from "clsx";
 import { createSignal, createMemo, onCleanup, Component, Show } from "solid-js";
 import { Dynamic } from "solid-js/web";
-import { useHostConfig, useLocalStorage } from "#context";
+import { useContentData, useHostConfig, useLocalStorage } from "#context";
 import { createRef } from "#lib/utils";
-import { ContentPieceView } from "#views/content-piece";
 import { SettingsView } from "#views/settings";
 import { ExtensionsView } from "#views/extensions";
 import { GettingStartedView } from "#views/getting-started";
 import { GitView } from "#views/git";
+import { ContentPieceView } from "#views/content-piece";
 
 const sidePanelViews: Record<string, Component<Record<string, any>>> = {
   contentPiece: ContentPieceView,
@@ -35,6 +35,7 @@ const sidePanelViews: Record<string, Component<Record<string, any>>> = {
 };
 const SidePanel: Component = () => {
   const { storage, setStorage } = useLocalStorage();
+  const { activeContentPieceId } = useContentData();
   const [prevX, setPrevX] = createRef(0);
   const [dragging, setDragging] = createSignal(false);
   const [previousWidth, setPreviousWidth] = createRef(480);
@@ -47,7 +48,7 @@ const SidePanel: Component = () => {
   });
   const sidePanelEnabled = createMemo(() => {
     if (!storage().sidePanelView) return false;
-    if (storage().sidePanelView === "contentPiece" && !storage().contentPieceId) return false;
+    if (storage().sidePanelView === "contentPiece" && !activeContentPieceId()) return false;
 
     return true;
   });
@@ -117,7 +118,7 @@ const SidePanel: Component = () => {
       </div>
       <div
         class={clsx(
-          "w-4 cursor-col-resize flex justify-start items-center absolute -right-4 top-0 h-full z-50"
+          "w-4 cursor-col-resize flex justify-start items-center absolute -right-4 top-0 h-full z-60"
         )}
         onPointerDown={(event) => {
           setDragging(true);

@@ -4,6 +4,7 @@ import { Node, mergeAttributes } from "@tiptap/core";
 interface ImageAttributes {
   src?: string;
   alt?: string;
+  caption?: string;
   width?: string;
   aspectRatio?: string;
 }
@@ -26,6 +27,7 @@ declare module "@tiptap/core" {
 const Image = Node.create<ImageOptions>({
   name: "image",
   draggable: true,
+  selectable: true,
   addOptions() {
     return {
       inline: false,
@@ -48,6 +50,9 @@ const Image = Node.create<ImageOptions>({
         }
       },
       alt: {
+        default: null
+      },
+      caption: {
         default: null
       },
       width: {

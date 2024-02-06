@@ -1,4 +1,5 @@
-import { publicPlugin } from "#lib";
+import mongoPlugin from "@fastify/mongodb";
+import { createPlugin } from "#lib/plugin";
 import {
   getUserSettingsCollection,
   getWebhooksCollection,
@@ -15,9 +16,14 @@ import {
   getContentPieceVariantsCollection,
   getContentVariantsCollection,
   getVariantsCollection
-} from "#database";
+} from "#collections";
 
-const databasePlugin = publicPlugin(async (fastify) => {
+const databasePlugin = createPlugin(async (fastify) => {
+  await fastify.register(mongoPlugin, {
+    forceClose: true,
+    url: fastify.config.MONGO_URL
+  });
+
   const db = fastify.mongo.db!;
   const contentPiecesCollection = getContentPiecesCollection(db);
   const contentGroupsCollection = getContentGroupsCollection(db);
@@ -80,7 +86,7 @@ const databasePlugin = publicPlugin(async (fastify) => {
     extensionsCollection.createIndex({ workspaceId: 1 }),
     extensionsCollection.createIndex({ name: 1 }),
     variantsCollection.createIndex({ workspaceId: 1 }),
-    variantsCollection.createIndex({ name: 1 }),
+    variantsCollection.createIndex({ key: 1 }),
     gitDataCollection.createIndex({ workspaceId: 1 }, { unique: true }),
     gitDataCollection.createIndex({ "records.contentPieceId": 1 })
   ]);

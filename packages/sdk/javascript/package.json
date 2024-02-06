@@ -1,8 +1,8 @@
 {
   "name": "@vrite/sdk",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": false,
-  "description": "JavaScript SDK and API client for Vrite - headless CMS for technical content",
+  "description": "JavaScript SDK and API client for Vrite - open-source developer content platform",
   "license": "MIT",
   "type": "module",
   "scripts": {
@@ -15,7 +15,7 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/vriteio/vrite.git",
-    "directory": "apps/sdk/javascript"
+    "directory": "packages/sdk/javascript"
   },
   "keywords": [
     "vrite",
@@ -35,6 +35,9 @@
       "transformers": [
         "./dist/transformers.d.ts"
       ],
+      "extensions": [
+        "./dist/extensions.d.ts"
+      ],
       "astro": [
         "./dist/astro/index.d.ts"
       ],
@@ -52,6 +55,10 @@
       "import": "./dist/api.mjs",
       "require": "./dist/api.cjs"
     },
+    "./extensions": {
+      "import": "./dist/extensions.mjs",
+      "require": "./dist/extensions.cjs"
+    },
     "./transformers": {
       "import": "./dist/transformers.mjs",
       "require": "./dist/transformers.cjs"
@@ -65,10 +72,10 @@
     "dist"
   ],
   "dependencies": {
-    "@sanity/eventsource": "^5.0.0",
-    "@types/marked": "^5.0.1",
+    "@sanity/eventsource": "^5.0.1",
+    "@types/marked": "^6.0.0",
     "isomorphic-unfetch": "^3.1.0",
-    "marked": "^5.1.2"
+    "marked": "^12.0.0"
   },
   "peerDependenciesMeta": {
     "astro": {
@@ -76,11 +83,11 @@
     }
   },
   "devDependencies": {
-    "astro": "^2.9.2",
-    "unbuild": "^1.2.1",
-    "vite": "^4.4.7"
+    "astro": "^4.3.2",
+    "unbuild": "^2.0.0",
+    "vite": "^5.0.12"
   },
   "peerDependencies": {
-    "astro": "^2.9.2"
+    "astro": "^4.3.2"
   }
 }

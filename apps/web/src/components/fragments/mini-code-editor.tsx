@@ -11,7 +11,7 @@ import {
 import { nanoid } from "nanoid";
 import clsx from "clsx";
 import { mdiCheckCircleOutline } from "@mdi/js";
-import type { monaco } from "#lib/monaco";
+import { monaco } from "#lib/monaco";
 import { createRef } from "#lib/utils";
 import { useAppearance } from "#context";
 import { IconButton } from "#components/primitives";
@@ -36,9 +36,6 @@ const MiniCodeEditor: Component<MiniCodeEditorProps> = (props) => {
   const { codeEditorTheme = () => "dark" } = useAppearance() || {};
   const [editorContainerRef, setEditorContainerRef] = createRef<HTMLElement | null>(null);
   const [currentCode, setCurrentCode] = createSignal(props.code || "");
-  const [codeEditor, setCodeEditor] = createSignal<monaco.editor.IStandaloneCodeEditor | null>(
-    null
-  );
   const getUri = (): monaco.Uri => {
     if (props.fileName) {
       return props.monaco.Uri.file(props.fileName);
@@ -86,8 +83,6 @@ const MiniCodeEditor: Component<MiniCodeEditorProps> = (props) => {
         }
       });
 
-      setCodeEditor(codeEditor);
-
       if (typeof props.setHeight !== "boolean" || props.setHeight) {
         codeEditor.onDidContentSizeChange(() => updateEditorHeight(codeEditor));
       }
@@ -106,6 +101,9 @@ const MiniCodeEditor: Component<MiniCodeEditorProps> = (props) => {
       });
       codeEditor.onDidChangeModelContent(() => {
         setCurrentCode(codeEditor.getValue());
+      });
+      createEffect(() => {
+        monaco.editor.setTheme(codeEditorTheme());
       });
       createEffect(
         on(
@@ -151,7 +149,7 @@ const MiniCodeEditor: Component<MiniCodeEditorProps> = (props) => {
       <div
         ref={setEditorContainerRef}
         class={clsx(
-          "w-full bg-gray-100 border-2 not-prose dark:bg-gray-900 rounded-2xl dark:border-gray-700 rounded-editor-2xl customized-editor box-content",
+          "w-full bg-gray-100 border-2 not-prose dark:bg-gray-900 rounded-2xl dark:border-gray-700 rounded-editor-2xl customized-editor",
           props.color === "contrast" && "customized-editor-contrast",
           props.class
         )}

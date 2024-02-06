@@ -1,5 +1,5 @@
 import { extensionsRouter } from "./routes";
-import { publicPlugin, createFastifyContext } from "@vrite/backend";
+import { createPlugin, createFastifyContext } from "@vrite/backend";
 import {
   createOpenApiNodeHttpHandler,
   CreateOpenApiNodeHttpHandlerOptions
@@ -54,7 +54,7 @@ const fastifyTRPCOpenApiPlugin = <TRouter extends AnyRouter>(
   });
   done();
 };
-const extensionsService = publicPlugin(async (fastify) => {
+const extensionsService = createPlugin(async (fastify) => {
   await fastify.register(corsPlugin, {
     methods: ["GET", "DELETE", "PUT", "POST"],
     credentials: true,

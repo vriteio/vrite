@@ -9,6 +9,7 @@ import {
 import { createContext, onCleanup, ParentComponent, useContext } from "solid-js";
 import { Unsubscribable, observable } from "@trpc/server/observable";
 import type * as App from "@vrite/backend";
+import type { inferRouterInputs, inferRouterOutputs } from "@trpc/server";
 import { navigateAndReload } from "#lib/utils";
 
 const refreshTokenLink = (closeConnection: () => void): TRPCLink<App.Router> => {
@@ -90,6 +91,8 @@ const refreshTokenLink = (closeConnection: () => void): TRPCLink<App.Router> => 
 };
 
 type Client = ReturnType<typeof createTRPCProxyClient<App.Router>>;
+type RouterInput = inferRouterInputs<App.Router>;
+type RouterOutput = inferRouterOutputs<App.Router>;
 
 const ClientContext = createContext<Client>();
 const ClientProvider: ParentComponent = (props) => {
@@ -129,4 +132,4 @@ const useClient = (): Client => {
 };
 
 export { ClientProvider, useClient };
-export type { App };
+export type { App, RouterInput, RouterOutput };

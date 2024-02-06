@@ -3,14 +3,14 @@ import { CustomError } from "./errors";
 import { HostConfig } from "./host-config";
 import { initTRPC } from "@trpc/server";
 import { OpenApiMeta } from "trpc-openapi";
-import { TokenPermission, Permission } from "#database";
+import { TokenPermission, Permission } from "#collections";
 
 type Meta = OpenApiMeta & {
   permissions?: { session?: Permission[]; token?: TokenPermission[] };
   requiredConfig?: Array<keyof HostConfig>;
 };
 
-const { router, middleware, procedure, mergeRouters } = initTRPC
+const { router, middleware, procedure } = initTRPC
   .meta<Meta>()
   .context<Context>()
   .create({
@@ -28,5 +28,5 @@ const { router, middleware, procedure, mergeRouters } = initTRPC
     }
   });
 
-export { router, middleware, procedure, mergeRouters };
+export { router, middleware, procedure };
 export type { Meta };

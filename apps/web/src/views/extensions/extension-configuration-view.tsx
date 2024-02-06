@@ -1,16 +1,17 @@
-import { mdiInformation, mdiInformationOutline, mdiTrashCan, mdiTune } from "@mdi/js";
-import {
-  ExtensionSpec,
-  ExtensionConfigurationViewContext,
-  ContextObject,
-  ContextValue
-} from "@vrite/extensions";
+import { mdiInformationOutline, mdiTrashCan, mdiTune } from "@mdi/js";
+import { ExtensionConfigurationViewContext, ContextObject } from "@vrite/sdk/extensions";
 import { Component, createEffect, createSignal, Show } from "solid-js";
 import { createStore } from "solid-js/store";
-import { ExtensionDetails, useConfirmationModal, useClient, useExtensions } from "#context";
-import { ViewContextProvider, ViewRenderer } from "#lib/extensions";
+import {
+  ExtensionDetails,
+  useConfirmationModal,
+  useClient,
+  useExtensions,
+  useNotifications
+} from "#context";
 import { TitledCard } from "#components/fragments";
 import { Tooltip, IconButton, Button } from "#components/primitives";
+import { ExtensionViewRenderer } from "#lib/extensions";
 
 interface ExtensionModalProps {
   extension: ExtensionDetails;
@@ -20,28 +21,22 @@ interface ExtensionModalProps {
 
 const ExtensionConfigurationView: Component<ExtensionModalProps> = (props) => {
   const { confirmDelete } = useConfirmationModal();
+  const { notify } = useNotifications();
+  const { uninstallExtension } = useExtensions();
   const client = useClient();
-  const { callFunction } = useExtensions();
   const [loading, setLoading] = createSignal(false);
   const [extensionInstallation, setExtensionInstallation] = createStore<{
     config: Record<string, any>;
-    extension: Pick<ExtensionSpec, "name" | "displayName" | "permissions">;
+    extension: ExtensionDetails;
   }>({
-    extension: {
-      name: props.extension.spec.name,
-      displayName: props.extension.spec.displayName,
-      permissions: props.extension.spec.permissions || []
-    },
+    extension: props.extension,
     config: props.extension.config || {}
   });
+  const { sandbox } = props.extension;
 
   createEffect(() => {
     setExtensionInstallation({
-      extension: {
-        name: props.extension.spec.name,
-        displayName: props.extension.spec.displayName,
-        permissions: props.extension.spec.permissions || []
-      },
+      extension: props.extension,
       config: props.extension.config || {}
     });
   });
@@ -59,22 +54,7 @@ const ExtensionConfigurationView: Component<ExtensionModalProps> = (props) => {
                   header: "Remove extension",
                   content: "Are you sure you want to remove this extension?",
                   async onConfirm() {
-                    const onUninstallCallback = props.extension.spec.lifecycle?.["on:uninstall"];
-
-                    if (onUninstallCallback) {
-                      await callFunction(props.extension.spec, onUninstallCallback, {
-                        extensionId: props.extension.id || "",
-                        token: props.extension.token || "",
-                        context: () => ({
-                          config: extensionInstallation.config,
-                          spec: props.extension.spec
-                        })
-                      });
-                    }
-
-                    await client.extensions.uninstall.mutate({
-                      id: props.extension.id || ""
-                    });
+                    await uninstallExtension(props.extension);
                     props.close();
                   }
                 });
@@ -82,7 +62,7 @@ const ExtensionConfigurationView: Component<ExtensionModalProps> = (props) => {
             />
           </Tooltip>
         </Show>
-        <Show when={props.extension.spec.configurationView}>
+        <Show when={sandbox?.spec?.configurationView}>
           <Button
             color="primary"
             class="m-0"
@@ -95,17 +75,18 @@ const ExtensionConfigurationView: Component<ExtensionModalProps> = (props) => {
                   config: extensionInstallation.config
                 });
 
-                const onConfigureCallback = props.extension.spec.lifecycle?.["on:configure"];
+                const onConfigureCallback = sandbox?.spec?.onConfigure;
 
                 if (onConfigureCallback) {
-                  await callFunction(props.extension.spec, onConfigureCallback, {
-                    extensionId: props.extension.id || "",
-                    token: props.extension.token || "",
-                    context: () => ({
-                      config: extensionInstallation.config,
-                      spec: props.extension.spec
-                    })
-                  });
+                  await sandbox?.runFunction(
+                    onConfigureCallback,
+                    {
+                      contextFunctions: ["notify"],
+                      usableEnv: { readable: [], writable: [] },
+                      config: extensionInstallation.config
+                    },
+                    { notify }
+                  );
                 }
 
                 setLoading(false);
@@ -128,21 +109,25 @@ const ExtensionConfigurationView: Component<ExtensionModalProps> = (props) => {
           {props.extension.spec.description}
         </p>
       </TitledCard>
-      <Show when={props.extension.spec.configurationView}>
+      <Show when={sandbox?.spec?.configurationView}>
         <TitledCard label="Configuration" icon={mdiTune}>
-          <ViewContextProvider<ExtensionConfigurationViewContext>
-            extension={props.extension}
-            config={extensionInstallation.config}
-            setConfig={(keyOrObject: string | ContextObject, value?: ContextValue) => {
-              if (typeof keyOrObject === "string" && typeof value !== "undefined") {
-                setExtensionInstallation("config", keyOrObject, value);
-              } else if (typeof keyOrObject === "object") {
-                setExtensionInstallation("config", keyOrObject);
-              }
+          <ExtensionViewRenderer<ExtensionConfigurationViewContext>
+            ctx={{
+              contextFunctions: ["notify"],
+              usableEnv: { readable: [], writable: ["config"] },
+              config: extensionInstallation.config
             }}
-          >
-            <ViewRenderer spec={props.extension.spec} view="configurationView" />
-          </ViewContextProvider>
+            extension={extensionInstallation.extension}
+            func={{ notify }}
+            view="configurationView"
+            usableEnvData={{ config: extensionInstallation.config as ContextObject }}
+            onUsableEnvDataUpdate={(envData) => {
+              setExtensionInstallation(
+                "config",
+                (envData as ContextObject).config as ContextObject
+              );
+            }}
+          />
         </TitledCard>
       </Show>
     </>

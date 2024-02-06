@@ -1,7 +1,6 @@
 import { processAuth } from "./auth";
 import { Context } from "./context";
-import * as errors from "./errors";
-import { HostConfig } from "./host-config";
+import { errors } from "./errors";
 import { Meta, middleware } from "./trpc";
 import { ObjectId } from "mongodb";
 
@@ -70,7 +69,7 @@ const isAuthenticatedUser = middleware(async ({ ctx, next, meta }) => {
 const isEnabled = middleware(async ({ ctx, next, meta }) => {
   const requiredConfig = meta?.requiredConfig || [];
 
-  if (requiredConfig.some((property) => !ctx.fastify.hostConfig[property as keyof HostConfig])) {
+  if (requiredConfig.some((property) => !ctx.fastify.hostConfig[property])) {
     throw errors.serverError();
   }
 

@@ -93,7 +93,7 @@ const gfmOutputTransformer = createOutputTransformer<string>((contentNode) => {
           isHeader = true;
         }
 
-        return tableCellWalker.children.map(transformTextNode).join("\n");
+        return transformContentNode(tableCellWalker);
       });
 
       if (rowIndex === tableWalker.children.length - 1) {
@@ -111,7 +111,14 @@ const gfmOutputTransformer = createOutputTransformer<string>((contentNode) => {
   };
   const transformContentNode = (
     nodeWalker: JSONContentNodeWalker<
-      JSONContentNode["listItem" | "taskItem" | "blockquote" | "doc" | "element"]
+      JSONContentNode[
+        | "listItem"
+        | "taskItem"
+        | "blockquote"
+        | "doc"
+        | "element"
+        | "tableCell"
+        | "tableHeader"]
     >
   ): string => {
     return nodeWalker.children
@@ -214,7 +221,9 @@ const gfmOutputTransformer = createOutputTransformer<string>((contentNode) => {
       .join("\n");
   };
 
-  return transformContentNode(contentWalker as JSONContentNodeWalker<JSONContentNode["doc"]>);
+  return transformContentNode(
+    contentWalker as JSONContentNodeWalker<JSONContentNode["doc"]>
+  ).trim();
 });
 const htmlOutputTransformer = createOutputTransformer<string>((contentNode) => {
   const contentWalker = createContentWalker(contentNode);
@@ -371,11 +380,11 @@ const htmlOutputTransformer = createOutputTransformer<string>((contentNode) => {
           .join("")}</tr>`;
       case "tableCell":
         return `<td>${(nodeWalker as JSONContentNodeWalker<JSONContentNode["tableCell"]>).children
-          .flatMap((paragraphNode) => paragraphNode.children.map(transformContentNode))
+          .flatMap(transformContentNode)
           .join("")}</td>`;
       case "tableHeader":
         return `<th>${(nodeWalker as JSONContentNodeWalker<JSONContentNode["tableHeader"]>).children
-          .flatMap((paragraphNode) => paragraphNode.children.map(transformContentNode))
+          .flatMap(transformContentNode)
           .join("")}</th>`;
       default:
         return "";

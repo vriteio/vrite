@@ -2,8 +2,11 @@ import axios from "axios";
 import fastifyOAuth2, { FastifyOAuth2Options, OAuth2Namespace } from "@fastify/oauth2";
 import { ObjectId } from "mongodb";
 import { FastifyInstance } from "fastify";
-import { publicPlugin, generateSalt, createSession, createWorkspace } from "#lib";
-import { getUserSettingsCollection, getUsersCollection } from "#database";
+import { getUserSettingsCollection, getUsersCollection } from "#collections";
+import { generateSalt } from "#lib/hash";
+import { createPlugin } from "#lib/plugin";
+import { createSession } from "#lib/session";
+import { createWorkspace } from "#lib/workspace";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -95,7 +98,7 @@ const registerGitHubOAuth = (fastify: FastifyInstance): void => {
   });
   fastify.register(fastifyOAuth2, oAuthConfig.github);
 };
-const OAuthPlugin = publicPlugin(async (fastify) => {
+const OAuthPlugin = createPlugin(async (fastify) => {
   if (fastify.hostConfig.githubOAuth) {
     registerGitHubOAuth(fastify);
   }

@@ -1,11 +1,13 @@
 import { Extension, onChangePayload, onDisconnectPayload } from "@hocuspocus/server";
 import {
-  createGenericOutputContentProcessor,
+  createOutputContentProcessor,
   docToJSON,
+  getContentPieceVariantsCollection,
   getContentPiecesCollection,
   getGitDataCollection,
   jsonToBuffer,
-  publishGitDataEvent
+  publishGitDataEvent,
+  useGitProvider
 } from "@vrite/backend";
 import { FastifyInstance } from "fastify";
 import { ObjectId } from "mongodb";
@@ -28,6 +30,8 @@ class GitSync implements Extension {
 
   private contentPiecesCollection: ReturnType<typeof getContentPiecesCollection>;
 
+  private contentPieceVariantsCollection: ReturnType<typeof getContentPieceVariantsCollection>;
+
   private debounced: Map<string, { timeout: NodeJS.Timeout; start: number }> = new Map();
 
   public constructor(fastify: FastifyInstance, configuration?: Partial<Configuration>) {
@@ -38,6 +42,7 @@ class GitSync implements Extension {
     };
     this.gitDataCollection = getGitDataCollection(fastify.mongo.db!);
     this.contentPiecesCollection = getContentPiecesCollection(fastify.mongo.db!);
+    this.contentPieceVariantsCollection = getContentPieceVariantsCollection(fastify.mongo.db!);
   }
 
   public async onDisconnect({
@@ -59,9 +64,9 @@ class GitSync implements Extension {
   }: Pick<onChangePayload, "documentName" | "document" | "context">): void {
     if (documentName.startsWith("workspace:")) return;
 
-    const [contentPieceId] = documentName.split(":");
+    const [contentPieceId, variantId = null] = documentName.split(":");
     const update = (): void => {
-      this.updateGitRecord(contentPieceId, {
+      this.updateGitRecord(contentPieceId, variantId, {
         context,
         document
       });
@@ -72,27 +77,35 @@ class GitSync implements Extension {
 
   private async updateGitRecord(
     contentPieceId: string,
+    variantId: string | null,
     details: Pick<onChangePayload, "context" | "document">
   ): Promise<void> {
+    if (variantId) return;
+
+    const ctx = {
+      db: this.fastify.mongo.db!,
+      auth: {
+        workspaceId: new ObjectId(details.context.workspaceId),
+        userId: new ObjectId(details.context.userId)
+      }
+    };
     const gitData = await this.gitDataCollection.findOne({
       workspaceId: new ObjectId(details.context.workspaceId)
     });
+    const gitProvider = useGitProvider(ctx, gitData);
 
-    if (!gitData) return;
+    if (!gitData || !gitProvider) return;
 
     const contentPiece = await this.contentPiecesCollection.findOne({
       _id: new ObjectId(contentPieceId)
     });
+
+    if (!contentPiece) return;
+
     const json = docToJSON(details.document);
-    const outputContentProcessor = await createGenericOutputContentProcessor(
-      {
-        db: this.fastify.mongo.db!,
-        auth: {
-          workspaceId: new ObjectId(details.context.workspaceId),
-          userId: new ObjectId(details.context.userId)
-        }
-      },
-      gitData
+    const outputContentProcessor = await createOutputContentProcessor(
+      ctx,
+      gitProvider.data.transformer
     );
     const output = await outputContentProcessor.process({
       buffer: jsonToBuffer(json),

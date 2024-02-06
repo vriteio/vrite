@@ -10,10 +10,6 @@ interface ContentGroup {
    */
   id: string;
   /**
-   * Is content group edit-locked
-   */
-  locked?: boolean;
-  /**
    * IDs of ancestor content groups, ordered from furthest to closest
    */
   ancestors: string[];
@@ -32,7 +28,7 @@ interface ContentGroupsEndpoints {
     input: Partial<Omit<ContentGroup, "ancestors" | "descendants">> & Pick<ContentGroup, "id">
   ): Promise<void>;
   update(
-    input: Partial<Omit<ContentGroup, "ancestors" | "descendants" | "name" | "locked">> &
+    input: Partial<Omit<ContentGroup, "ancestors" | "descendants" | "name">> &
       Pick<ContentGroup, "id"> & { ancestor?: string }
   ): Promise<void>;
   delete(input: Pick<ContentGroup, "id">): Promise<void>;

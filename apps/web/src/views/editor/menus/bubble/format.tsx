@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { Component, For, createEffect, createSignal } from "solid-js";
+import { Component, For, createSignal } from "solid-js";
 import { SolidEditor } from "@vrite/tiptap-solid";
 import {
   mdiFormatBold,
@@ -11,7 +11,8 @@ import {
   mdiFormatSubscript,
   mdiFormatSuperscript,
   mdiKeyboardCloseOutline,
-  mdiCommentOutline
+  mdiCommentOutline,
+  mdiFormatUnderlineWavy
 } from "@mdi/js";
 import { nanoid } from "nanoid";
 import { Card, IconButton, Tooltip } from "#components/primitives";
@@ -57,7 +58,7 @@ const FormatMenu: Component<{
     icon: mdiKeyboardCloseOutline,
     label: "Close keyboard",
     async onClick() {
-      props.editor.commands.blur?.();
+      props.blur?.();
     }
   };
   const menus = (
@@ -76,6 +77,11 @@ const FormatMenu: Component<{
         icon: mdiFormatStrikethrough,
         mark: "strike",
         label: "Strike"
+      },
+      {
+        icon: mdiFormatUnderlineWavy,
+        mark: "underline",
+        label: "Underline"
       },
       {
         icon: mdiCodeTags,

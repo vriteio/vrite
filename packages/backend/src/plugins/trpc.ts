@@ -1,9 +1,10 @@
 import { fastifyTRPCPlugin } from "@trpc/server/adapters/fastify";
 import { FastifyReply, FastifyRequest } from "fastify";
 import { appRouter } from "#routes";
-import { publicPlugin, createContext } from "#lib";
+import { createPlugin } from "#lib/plugin";
+import { createContext } from "#lib/context";
 
-const trpcPlugin = publicPlugin(async (fastify) => {
+const trpcPlugin = createPlugin(async (fastify) => {
   await fastify.register(fastifyTRPCPlugin, {
     prefix: "/api/v1",
     useWSS: true,

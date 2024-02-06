@@ -1,5 +1,5 @@
 import { Observable } from "@trpc/server/observable";
-import { ContextObject, Extension } from "#database";
+import { ContextObject, Extension } from "#collections";
 import { Context } from "#lib/context";
 import { createEventPublisher, createEventSubscription } from "#lib/pub-sub";
 

@@ -21,6 +21,10 @@ type LinkMark = {
     href: string;
   };
 };
+type UnderlineMark = {
+  type: "underline";
+  attrs: {};
+};
 type HighlightMark = {
   type: "highlight";
   attrs: {};
@@ -46,6 +50,7 @@ type JSONContentMark = {
   code: CodeMark;
   link: LinkMark;
   highlight: HighlightMark;
+  underline: UnderlineMark;
   subscript: SubscriptMark;
   superscript: SuperscriptMark;
   comment: CommentMark;
@@ -60,6 +65,7 @@ type TextNode = {
     | CodeMark
     | LinkMark
     | HighlightMark
+    | UnderlineMark
     | SubscriptMark
     | SuperscriptMark
     | CommentMark
@@ -122,6 +128,7 @@ type ImageNode = {
   attrs?: {
     src?: string;
     alt?: string;
+    caption?: string;
   };
 };
 type CodeBlockNode = {
@@ -202,7 +209,20 @@ type TableRowNode = {
 };
 type TableCellNode = {
   type: "tableCell";
-  content: ParagraphNode[];
+  content: Array<
+    | ParagraphNode
+    | HeadingNode
+    | BlockquoteNode
+    | ElementNode
+    | ImageNode
+    | CodeBlockNode
+    | EmbedNode
+    | BulletListNode
+    | OrderedListNode
+    | TaskListNode
+    | HorizontalRuleNode
+    | TableNode
+  >;
   attrs: {
     colspan: number;
     rowspan: number;
@@ -210,7 +230,20 @@ type TableCellNode = {
 };
 type TableHeaderNode = {
   type: "tableHeader";
-  content: ParagraphNode[];
+  content: Array<
+    | ParagraphNode
+    | HeadingNode
+    | BlockquoteNode
+    | ElementNode
+    | ImageNode
+    | CodeBlockNode
+    | EmbedNode
+    | BulletListNode
+    | OrderedListNode
+    | TaskListNode
+    | HorizontalRuleNode
+    | TableNode
+  >;
   attrs: {
     colspan: number;
     rowspan: number;

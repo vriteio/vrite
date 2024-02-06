@@ -1,11 +1,12 @@
 import { devOutputTransformer } from "./transformer";
-import { procedure, router, zodId, z, errors } from "@vrite/backend";
+import { procedure, router, zodId, errors } from "@vrite/backend";
 import {
   JSONContent,
   createClient,
   ContentPieceWithAdditionalData,
   Extension
 } from "@vrite/sdk/api";
+import { z } from "zod";
 
 const processContent = (content: JSONContent): string => {
   return devOutputTransformer(content);

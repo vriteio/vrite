@@ -4,10 +4,12 @@ import {
   Paragraph,
   Text,
   Bold,
+  Underline,
   Code,
   Italic,
   Blockquote,
   Highlight,
+  History,
   Superscript,
   Subscript,
   Strike,
@@ -60,6 +62,7 @@ const getExtensions = (options: ExtensionOptions): Extensions => {
     Text,
     HardBreak,
     TrailingNode,
+    History,
     ...(options.blocks ? [Heading, Blockquote] : []),
     ...(options.lists ? [BulletList, OrderedList, TaskList, TaskItem, ListItem] : []),
     ...(options.extensions || [])
@@ -68,6 +71,7 @@ const getExtensions = (options: ExtensionOptions): Extensions => {
   if (options.inline) {
     extensions.push(
       Bold,
+      Underline,
       Code,
       Italic,
       Strike,

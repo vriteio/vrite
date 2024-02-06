@@ -8,7 +8,7 @@ interface Profile {
   /**
    * User avatar URL
    */
-  avatar?: boolean;
+  avatar?: string;
   /**
    * Username
    */

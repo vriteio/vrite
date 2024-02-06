@@ -15,7 +15,7 @@ import {
 import { mdiChevronLeft, mdiClose, mdiTune } from "@mdi/js";
 import clsx from "clsx";
 import { Dynamic } from "solid-js/web";
-import { Motion, Presence } from "@motionone/solid";
+import { Motion, Presence } from "solid-motionone";
 import { Card, Heading, IconButton, Loader } from "#components/primitives";
 import { ScrollShadow } from "#components/fragments";
 import { createRef } from "#lib/utils";
@@ -179,7 +179,7 @@ const GitView: Component = () => {
       <div class="flex-col h-full relative flex overflow-hidden">
         <ScrollShadow scrollableContainerRef={scrollableContainerRef} color="contrast" />
         <div
-          class="w-full h-full overflow-x-hidden overflow-y-auto scrollbar-sm-contrast px-5 mb-5"
+          class="w-full h-full overflow-x-hidden overflow-y-auto scrollbar-sm-contrast px-5"
           ref={setScrollableContainerRef}
         >
           <div class="flex justify-start flex-col min-h-full h-full items-start w-full gap-5 relative">
@@ -190,7 +190,7 @@ const GitView: Component = () => {
                   animate={{ opacity: 1, x: "0%" }}
                   exit={{ opacity: 0, x: openedProvider() ? "100%" : "-100%" }}
                   transition={{ duration: 0.35 }}
-                  class="flex justify-start flex-col min-h-[calc(100%-env(safe-area-inset-bottom,0px))] items-start w-full gap-5 absolute"
+                  class="flex justify-start flex-col min-h-[calc(100%-env(safe-area-inset-bottom,0px))] items-start w-full gap-5 absolute pb-5"
                 >
                   <Switch>
                     <Match when={loading()}>

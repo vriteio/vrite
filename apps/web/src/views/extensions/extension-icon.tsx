@@ -1,4 +1,4 @@
-import { ExtensionSpec } from "@vrite/extensions";
+import { ExtensionSpec } from "@vrite/sdk/extensions";
 import clsx from "clsx";
 import { Component, Show } from "solid-js";
 
@@ -13,12 +13,12 @@ const ExtensionIcon: Component<ExtensionIconProps> = (props) => {
       <Show when={props.spec.icon}>
         <img
           src={props.spec.icon}
-          class={clsx("w-8 h-8 mr-2 rounded-lg", props.spec.darkIcon && "dark:hidden")}
+          class={clsx("w-8 h-8 mr-2 rounded-lg", props.spec.iconDark && "dark:hidden")}
         />
       </Show>
-      <Show when={props.spec.darkIcon}>
+      <Show when={props.spec.iconDark}>
         <img
-          src={props.spec.darkIcon}
+          src={props.spec.iconDark}
           class={clsx("w-8 h-8 mr-2 rounded-lg", props.spec.icon && "hidden dark:block")}
         />
       </Show>

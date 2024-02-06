@@ -1,6 +1,6 @@
 import clsx from "clsx";
 import { Component, For } from "solid-js";
-import { Button, Icon } from "#components/primitives";
+import { Button, Card, Icon } from "#components/primitives";
 
 interface MenuItem {
   icon: string;
@@ -20,17 +20,19 @@ const MenuSection: Component<MenuSectionProps> = (props) => {
         <For each={props.sectionMenuItems}>
           {(menuItem) => {
             return (
-              <Button
-                class={clsx(
-                  "h-28 w-full flex flex-col justify-center items-center m-0 disabled:opacity-50",
-                  menuItem.resize && "@lg:col-span-2"
-                )}
-                text="soft"
+              <button
+                class={clsx(menuItem.resize && "@lg:col-span-2")}
                 onClick={() => props.setCurrentSectionId(menuItem.section)}
               >
-                <Icon path={menuItem.icon} class="h-8 w-8" />
-                {menuItem.label}
-              </Button>
+                <Card
+                  class={clsx(
+                    "h-28 w-full flex flex-col justify-center items-center m-0 disabled:opacity-50 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
+                  )}
+                >
+                  <Icon path={menuItem.icon} class="h-8 w-8" />
+                  {menuItem.label}
+                </Card>
+              </button>
             );
           }}
         </For>

@@ -6,6 +6,7 @@ import {
   Heading,
   Link,
   Bold,
+  Underline,
   Code,
   Italic,
   HorizontalRule,
@@ -71,13 +72,13 @@ const createClipboardSerializer = (
         nodes;
       } else if (name === "taskList") {
         nodes.taskItem = base.nodes.taskItem;
-      } else if (name.startsWith("heading")) {
-        nodes.heading = base.nodes.heading;
-
-        return;
       }
 
       nodes[name] = node;
+    } else if (name.startsWith("heading")) {
+      nodes.heading = base.nodes.heading;
+
+      return;
     }
   });
   Object.entries(base.marks).forEach(([name, mark]) => {
@@ -99,6 +100,7 @@ const createExtensions = (
   };
   const marks: Record<App.WorkspaceSettings["marks"][number], MarkExtension> = {
     bold: Bold,
+    underline: Underline,
     italic: Italic,
     strike: Strike,
     code: Code,

@@ -30,8 +30,9 @@ const SlashMenuPlugin = Extension.create<SlashMenuPluginOptions>({
           const selectedNode = selection.$from.node(selection.$from.depth);
 
           return (
-            !editor.isActive("table") &&
-            (selectedNode?.textContent.startsWith("/") || !selectedNode?.textContent)
+            (selectedNode?.textContent.startsWith("/") &&
+              !selectedNode?.textContent.startsWith("/ ")) ||
+            !selectedNode?.textContent
           );
         },
         command({ editor, range, props }) {
@@ -129,7 +130,7 @@ const SlashMenuPlugin = Extension.create<SlashMenuPluginOptions>({
                 return true;
               }
 
-              return component?.state().onKeyDown?.(props);
+              return component?.state().onKeyDown?.(props) ?? false;
             },
 
             onExit() {

@@ -5,7 +5,6 @@ import { Component, createEffect, createMemo, createSignal, on, Show } from "sol
 import { debounce } from "@solid-primitives/scheduled";
 import { Card, IconButton, Input, Tooltip } from "#components/primitives";
 import { useSuggestLanguage, isFormattable } from "#lib/code-editor";
-import { createRef } from "#lib/utils";
 
 interface CodeBlockMenuProps {
   state: SolidNodeViewProps<CodeBlockAttributes>;
@@ -15,8 +14,6 @@ interface CodeBlockMenuProps {
 
 const CodeBlockMenu: Component<CodeBlockMenuProps> = (props) => {
   const [mode, setMode] = createSignal<"title" | "lang">("lang");
-  const [menuRef, setMenuRef] = createRef<HTMLElement | null>(null);
-  const [left, setLeft] = createSignal(0);
   const [suggestions, setSuggestions] = createSignal<string[]>([]);
   const attrs = (): CodeBlockAttributes => props.state.node.attrs;
   const suggestLanguage = useSuggestLanguage();
@@ -38,30 +35,11 @@ const CodeBlockMenu: Component<CodeBlockMenuProps> = (props) => {
       props.changeLanguage(attrs.lang?.split(" ")?.[0] || null);
     })
   );
-  createEffect(
-    on(
-      () => props.state.selected,
-      () => {
-        const element = menuRef();
-
-        if (!element || !element.parentElement) return;
-
-        const { left, width } = element.parentElement.getBoundingClientRect();
-        const right = window.innerWidth - left - width;
-
-        setLeft(-Math.abs((right - left) / 2));
-      }
-    )
-  );
 
   return (
-    <div
-      class="pointer-events-auto flex bg-gray-50 dark:bg-gray-900 !md:bg-transparent border-gray-200 dark:border-gray-700 border-y-2 md:border-0 backdrop-blur-sm md:gap-2 w-screen md:w-auto !md:left-unset relative md:rounded-2xl"
-      style={{ left: `${left()}px` }}
-      ref={setMenuRef}
-    >
-      <Card class="flex py-0 m-0 border-0 md:border-2 px-1 gap-1">
-        <Tooltip text="Title">
+    <div class="pointer-events-auto flex bg-gray-50 dark:bg-gray-900 !md:bg-transparent border-gray-200 dark:border-gray-700 border-y-2 md:border-0 backdrop-blur-sm md:gap-2 w-screen md:flex-1 !md:left-unset relative md:rounded-2xl">
+      <Card class="flex m-0 border-0 md:border-2 p-1 md:p-0 rounded-xl overflow-hidden gap-1 md:gap-0.5">
+        <Tooltip text="Title" class="mt-1" fixed>
           <IconButton
             path={mdiFileOutline}
             color={mode() === "title" ? "primary" : "contrast"}
@@ -73,7 +51,7 @@ const CodeBlockMenu: Component<CodeBlockMenuProps> = (props) => {
             }}
           ></IconButton>
         </Tooltip>
-        <Tooltip text="Language">
+        <Tooltip text="Language" class="mt-1" fixed>
           <IconButton
             path={mdiCodeTags}
             color={mode() === "lang" ? "primary" : "contrast"}
@@ -86,9 +64,9 @@ const CodeBlockMenu: Component<CodeBlockMenuProps> = (props) => {
           ></IconButton>
         </Tooltip>
       </Card>
-      <Card class="flex m-0 border-0 md:border-2 p-1 gap-1 flex-1">
+      <Card class="flex m-0 border-0 md:border-2 px-1 py-1 md:py-0 rounded-xl overflow-hidden flex-1">
         <Input
-          wrapperClass="flex-1 max-w-full md:w-72"
+          wrapperClass="flex-1 min-w-unset w-full md:max-w-96"
           placeholder={mode() === "title" ? "Snippet title" : "Language meta"}
           value={currentValue()}
           suggestions={mode() === "lang" ? suggestions() : []}
@@ -109,9 +87,13 @@ const CodeBlockMenu: Component<CodeBlockMenuProps> = (props) => {
           }}
         />
       </Card>
-      <Card class="flex m-0 border-0 md:border-2 p-1">
+      <Card class="flex m-0 border-0 md:border-2 p-1 md:p-0 rounded-xl overflow-hidden">
         <Show when={props.state.editor.isEditable}>
-          <Tooltip text={formattingAvailable() ? "Format" : "Formatting unavailable"} class="mt-1">
+          <Tooltip
+            text={formattingAvailable() ? "Format" : "Formatting unavailable"}
+            class="mt-1"
+            fixed
+          >
             <IconButton
               path={mdiCodeTagsCheck}
               color="contrast"

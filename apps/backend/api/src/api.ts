@@ -1,4 +1,4 @@
-import { publicPlugin, appRouter, createContext } from "@vrite/backend";
+import { createPlugin, appRouter, createContext } from "@vrite/backend";
 import rateLimitPlugin from "@fastify/rate-limit";
 import {
   createOpenApiNodeHttpHandler,
@@ -54,7 +54,7 @@ const fastifyTRPCOpenApiPlugin = <TRouter extends AnyRouter>(
   });
   done();
 };
-const apiService = publicPlugin(async (fastify) => {
+const apiService = createPlugin(async (fastify) => {
   const originCallback: OriginFunction = (origin, callback) => {
     if (!origin || origin === "null") {
       callback(null, true);

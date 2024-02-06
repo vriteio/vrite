@@ -1,7 +1,5 @@
 # Vrite JavaScript SDK
 
-> Vrite JavaScript SDK, like the entire Vrite product is currently in Beta. Use with caution and report any bugs related to the SDK here in the GitHub Issues or through Vrite Discord server.
-
 [Vrite JavaScript SDK](https://github.com/vriteio/vrite/tree/main/packages/sdk/javascript) is a one-stop-shop when building any kind of Vrite-powered website or web app.
 
 Currently it includes the following parts:
@@ -9,6 +7,7 @@ Currently it includes the following parts:
 - **API client** — for easy access to Vrite API;
 - **Content transformers** — functions used to transform Vrite JSON content into different formats;
 - **Astro integration** — dedicated integration for [Astro](<%5Bhttps://astro.build/%5D(https://astro.build/)>);
+- **Extensions SDK** - for building custom extensions for Vrite;
 
 ## Installation
 

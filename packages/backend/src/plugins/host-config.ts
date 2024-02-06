@@ -1,4 +1,5 @@
-import { HostConfig, publicPlugin } from "#lib";
+import { HostConfig } from "#lib/host-config";
+import { createPlugin } from "#lib/plugin";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -6,7 +7,7 @@ declare module "fastify" {
   }
 }
 
-const hostConfigPlugin = publicPlugin(async (fastify) => {
+const hostConfigPlugin = createPlugin(async (fastify) => {
   const hostConfig: HostConfig = {
     githubOAuth: Boolean(fastify.config.GITHUB_CLIENT_ID && fastify.config.GITHUB_CLIENT_SECRET),
     githubApp: Boolean(

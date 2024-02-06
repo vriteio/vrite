@@ -1,5 +1,5 @@
 import { Observable } from "@trpc/server/observable";
-import { Role } from "#database";
+import { Role } from "#collections";
 import { Context } from "#lib/context";
 import { createEventPublisher, createEventSubscription } from "#lib/pub-sub";
 

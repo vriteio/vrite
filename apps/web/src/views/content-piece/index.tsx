@@ -1,5 +1,4 @@
 import { ContentPieceTitle } from "./title";
-import { ContentPieceDescription } from "./description";
 import { ContentPieceMetadata } from "./metadata";
 import { Component, createEffect, createMemo, createSignal, on, Show } from "solid-js";
 import {
@@ -9,8 +8,6 @@ import {
   mdiLock,
   mdiEye,
   mdiClose,
-  mdiCardsOutline,
-  mdiCards,
   mdiInformationOutline,
   mdiCodeJson,
   mdiPuzzleOutline
@@ -19,60 +16,61 @@ import dayjs from "dayjs";
 import CustomParseFormat from "dayjs/plugin/customParseFormat";
 import { useLocation, useNavigate } from "@solidjs/router";
 import { Image } from "#lib/editor";
-import { Card, IconButton, Dropdown, Loader, Tooltip } from "#components/primitives";
+import { Card, IconButton, Dropdown, Loader } from "#components/primitives";
 import {
   useConfirmationModal,
   App,
   useClient,
   useLocalStorage,
   hasPermission,
-  useCache,
-  useHostConfig
+  useHostConfig,
+  useSharedState,
+  useContentData,
+  useNotifications
 } from "#context";
 import { MiniEditor } from "#components/fragments";
 import { breakpoints } from "#lib/utils";
-import { useOpenedContentPiece } from "#lib/composables";
 
 dayjs.extend(CustomParseFormat);
 
 const ContentPieceView: Component = () => {
   const hostConfig = useHostConfig();
+  const { notify } = useNotifications();
   const sections = [
     { label: "Details", id: "details", icon: mdiInformationOutline },
     { label: "Custom data", id: "custom-data", icon: mdiCodeJson },
-    hostConfig.extensions && { label: "Extensions", id: "extensions", icon: mdiPuzzleOutline },
-    { label: "Variants", id: "variants", icon: mdiCardsOutline }
+    hostConfig.extensions && { label: "Extensions", id: "extensions", icon: mdiPuzzleOutline }
   ].filter(Boolean) as Array<{
     label: string;
     id: string;
     icon: string;
   }>;
-  const cache = useCache();
-  const { contentPiece, setContentPiece, loading, activeVariant, setActiveVariant } = cache(
-    "openedContentPiece",
-    useOpenedContentPiece
-  );
+  const { activeContentPieceId, activeVariantId, contentPieces, contentActions } = useContentData();
   const client = useClient();
   const { setStorage } = useLocalStorage();
   const { confirmDelete } = useConfirmationModal();
   const location = useLocation();
   const navigate = useNavigate();
+  const [loading, setLoading] = createSignal(false);
   const [dropdownMenuOpened, setDropdownMenuOpened] = createSignal(false);
   const [coverInitialValue, setCoverInitialValue] = createSignal("");
   const [titleInitialValue, setTitleInitialValue] = createSignal("");
   const [descriptionInitialValue, setDescriptionInitialValue] = createSignal("");
   const [activeSection, setActiveSection] = createSignal(sections[0]);
   const editable = createMemo(() => {
-    return !contentPiece()?.locked && hasPermission("editMetadata");
+    return hasPermission("editMetadata");
   });
+  const activeContentPiece = (): App.ExtendedContentPieceWithAdditionalData<
+    "order" | "coverWidth"
+  > | null => {
+    return activeContentPieceId() ? contentPieces[activeContentPieceId()!] || null : null;
+  };
   const handleChange = async (
     value: Partial<App.ExtendedContentPieceWithAdditionalData<"coverWidth">>
   ): Promise<void> => {
-    const id = contentPiece()?.id;
+    const id = activeContentPiece()?.id;
 
     if (!id) return;
-
-    setContentPiece(value);
 
     const { tags, members, ...update } = value;
     const contentPieceUpdate: Partial<App.ExtendedContentPiece<"coverWidth">> = {
@@ -89,25 +87,20 @@ const ContentPieceView: Component = () => {
 
     client.contentPieces.update.mutate({
       id,
-      variant: activeVariant()?.id,
+      variant: activeVariantId() || undefined,
       ...contentPieceUpdate
+    });
+    contentActions.updateContentPiece({
+      id,
+      ...update,
+      ...(tags ? { tags } : {}),
+      ...(members ? { members } : {})
     });
   };
 
   createEffect(
-    on([loading, contentPiece], ([loading, contentPiece]) => {
-      if (!loading && !contentPiece) {
-        setStorage((storage) => ({
-          ...storage,
-          sidePanelView: undefined,
-          contentPieceId: undefined
-        }));
-      }
-    })
-  );
-  createEffect(
     on(
-      () => contentPiece()?.title,
+      () => activeContentPiece()?.title,
       (title) => {
         setTitleInitialValue(title || "");
       }
@@ -115,7 +108,7 @@ const ContentPieceView: Component = () => {
   );
   createEffect(
     on(
-      () => contentPiece()?.description,
+      () => activeContentPiece()?.description,
       (description) => {
         setDescriptionInitialValue(description || "");
       }
@@ -124,9 +117,9 @@ const ContentPieceView: Component = () => {
   createEffect(
     on(
       [
-        () => contentPiece()?.coverUrl,
-        () => contentPiece()?.coverAlt,
-        () => contentPiece()?.coverWidth
+        () => activeContentPiece()?.coverUrl,
+        () => activeContentPiece()?.coverAlt,
+        () => activeContentPiece()?.coverWidth
       ],
       ([url, alt, width]) => {
         setCoverInitialValue(`<img src="${url || ""}" alt="${alt || ""}" width="${width || ""}"/>`);
@@ -136,7 +129,7 @@ const ContentPieceView: Component = () => {
 
   return (
     <Show
-      when={!loading() && contentPiece()}
+      when={activeContentPiece()}
       fallback={
         <div class="flex h-full w-full justify-center items-center">
           <Loader />
@@ -175,7 +168,7 @@ const ContentPieceView: Component = () => {
             }}
           />
           <div class="flex-1" />
-          <Show when={location.pathname !== "/editor"}>
+          <Show when={!location.pathname.includes("editor")}>
             <IconButton
               path={editable() ? mdiPencil : mdiEye}
               label={editable() ? "Open in editor" : "Preview content"}
@@ -190,7 +183,7 @@ const ContentPieceView: Component = () => {
                 }
 
                 setDropdownMenuOpened(false);
-                navigate("/editor");
+                navigate(`/editor/${activeContentPieceId() || ""}`);
               }}
             />
           </Show>
@@ -199,7 +192,9 @@ const ContentPieceView: Component = () => {
               placement="bottom-end"
               opened={dropdownMenuOpened()}
               setOpened={setDropdownMenuOpened}
-              activatorButton={() => <IconButton path={mdiDotsVertical} class="m-0" text="soft" />}
+              activatorButton={() => (
+                <IconButton path={mdiDotsVertical} class="m-0" text="soft" loading={loading()} />
+              )}
             >
               <IconButton
                 path={mdiTrashCan}
@@ -218,12 +213,20 @@ const ContentPieceView: Component = () => {
                       </p>
                     ),
                     async onConfirm() {
-                      const id = contentPiece()?.id;
+                      const id = activeContentPiece()?.id;
 
                       if (!id) return;
 
-                      await client.contentPieces.delete.mutate({ id });
-                      setStorage((storage) => ({ ...storage, contentPieceId: undefined }));
+                      try {
+                        setLoading(true);
+                        await client.contentPieces.delete.mutate({ id });
+                        contentActions.deleteContentPiece({ id });
+                        setLoading(false);
+                        notify({ text: "Content piece deleted", type: "success" });
+                      } catch (error) {
+                        notify({ text: "Couldn't delete the content piece", type: "error" });
+                        setLoading(false);
+                      }
                     }
                   });
                 }}
@@ -232,21 +235,6 @@ const ContentPieceView: Component = () => {
           </Show>
         </div>
         <div class="flex-1 border-gray-200 dark:border-gray-700 transition-all p-3 overflow-initial md:overflow-y-auto scrollbar-sm-contrast">
-          <div class="flex justify-start items-center mb-1">
-            <Tooltip text="Active Variant" side="right" class="ml-1">
-              <IconButton
-                class="m-0"
-                size="small"
-                path={mdiCards}
-                color={activeVariant() ? "primary" : "base"}
-                text={activeVariant() ? "primary" : "soft"}
-                label={activeVariant() ? activeVariant()?.label : "Base"}
-                onClick={() => {
-                  setActiveSection(sections[3]);
-                }}
-              />
-            </Tooltip>
-          </div>
           <ContentPieceTitle
             initialTitle={titleInitialValue()}
             editable={editable()}
@@ -255,22 +243,12 @@ const ContentPieceView: Component = () => {
             }}
           />
           <ContentPieceMetadata
-            activeVariant={activeVariant()}
-            setActiveVariant={setActiveVariant}
-            contentPiece={contentPiece()!}
+            contentPiece={activeContentPiece()!}
             setContentPiece={handleChange}
             editable={editable()}
             sections={sections}
             activeSection={activeSection()}
             setActiveSection={setActiveSection}
-          />
-          <ContentPieceDescription
-            descriptionExists={typeof contentPiece()?.description === "string"}
-            initialDescription={descriptionInitialValue()}
-            editable={editable()}
-            setDescription={(description) => {
-              handleChange({ description });
-            }}
           />
         </div>
       </Card>

@@ -1,6 +1,6 @@
 import { ExtensionCard } from "./extension-card";
 import { mdiPuzzle, mdiDownload } from "@mdi/js";
-import { Component, createResource, Show, For } from "solid-js";
+import { Component, Show, For } from "solid-js";
 import { useExtensions } from "#context";
 import { TitledCard } from "#components/fragments";
 import { Loader } from "#components/primitives";
@@ -9,8 +9,12 @@ import { ExtensionDetails } from "#context/extensions";
 const ExtensionsMenuView: Component<{
   setOpenedExtension(extension: ExtensionDetails): void;
 }> = (props) => {
-  const { getAvailableExtensions, installedExtensions } = useExtensions();
-  const [availableExtensions] = createResource(getAvailableExtensions, { initialValue: [] });
+  const {
+    availableExtensions,
+    installedExtensions,
+    loadingAvailableExtensions,
+    loadingInstalledExtensions
+  } = useExtensions();
 
   return (
     <>
@@ -18,7 +22,7 @@ const ExtensionsMenuView: Component<{
         <Show
           when={installedExtensions().length > 0}
           fallback={
-            <Show when={!installedExtensions.loading} fallback={<Loader />}>
+            <Show when={!loadingInstalledExtensions()} fallback={<Loader />}>
               <span class="px-2 w-full text-start text-gray-500 dark:text-gray-400">
                 No extensions installed
               </span>
@@ -44,7 +48,7 @@ const ExtensionsMenuView: Component<{
         <Show
           when={availableExtensions().length > 0}
           fallback={
-            <Show when={!availableExtensions.loading} fallback={<Loader />}>
+            <Show when={!loadingAvailableExtensions()} fallback={<Loader />}>
               <span class="px-2 w-full text-start text-gray-500 dark:text-gray-400">
                 No other extensions available
               </span>

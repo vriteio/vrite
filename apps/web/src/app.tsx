@@ -1,5 +1,5 @@
-import { Component, Match, Show, Switch, lazy } from "solid-js";
-import { Outlet, Route, Routes } from "@solidjs/router";
+import { Component, Match, ParentComponent, Show, Switch, lazy } from "solid-js";
+import { Route, Router } from "@solidjs/router";
 import { StandaloneLayout, SecuredLayout } from "#layout";
 import { isEditorApp } from "#lib/utils";
 import { useHostConfig } from "#context";
@@ -39,32 +39,24 @@ const WorkspacesView = lazy(async () => {
 
   return { default: WorkspacesView };
 });
-const SecuredWrapper: Component = () => {
-  return (
-    <SecuredLayout>
-      <Outlet />
-    </SecuredLayout>
-  );
+const SecuredWrapper: ParentComponent = (props) => {
+  return <SecuredLayout>{props.children}</SecuredLayout>;
 };
-const Wrapper: Component = () => {
+const Wrapper: ParentComponent = (props) => {
   return (
     <div class="flex flex-col flex-1 h-full overflow-hidden scrollbar-contrast justify-center items-center">
-      <Outlet />
+      {props.children}
     </div>
   );
 };
-const StandaloneWrapper: Component = () => {
-  return (
-    <StandaloneLayout>
-      <Outlet />
-    </StandaloneLayout>
-  );
+const StandaloneWrapper: ParentComponent = (props) => {
+  return <StandaloneLayout>{props.children}</StandaloneLayout>;
 };
 const App: Component = () => {
   const hostConfig = useHostConfig();
 
   return (
-    <Routes>
+    <Router preload={false}>
       <Switch>
         <Match when={isEditorApp()}>
           <Route path={["/", "**"]} component={StandaloneWrapper}>
@@ -79,15 +71,15 @@ const App: Component = () => {
             <Route path="/edit" component={EditorView} />
           </Route>
           <Route path={["/", "**"]} component={SecuredWrapper}>
-            <Route path="/editor" component={EditorView} />
+            <Route path={["/", "/*contentPiece"]} component={DashboardView} />
+            <Route path="/editor/*contentPiece" component={EditorView} />
             <Show when={hostConfig.githubApp}>
               <Route path="/conflict" component={ConflictView} />
             </Show>
-            <Route path={["/", "**"]} component={DashboardView} />
           </Route>
         </Match>
       </Switch>
-    </Routes>
+    </Router>
   );
 };
 

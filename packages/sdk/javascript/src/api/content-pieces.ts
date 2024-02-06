@@ -4,13 +4,13 @@ import { Tag } from "./tags";
 
 type JSONContentAttrs = Record<string, string | number | boolean>;
 
-interface JSONContent {
+type JSONContent = {
   type: string;
   content?: JSONContent[];
   text?: string;
   attrs?: JSONContentAttrs;
   marks?: Array<{ type: string; attrs: JSONContentAttrs }>;
-}
+};
 type ContentPiece<
   CustomData extends Record<string, any> = Record<string, any>,
   IncludeContent extends true | false = false
@@ -22,7 +22,7 @@ type ContentPiece<
   /**
    * ISO date
    */
-  date?: string;
+  date?: string | null;
   /**
    * Title
    */
@@ -30,15 +30,15 @@ type ContentPiece<
   /**
    * Content piece description - can be HTML or plain text
    */
-  description?: string;
+  description?: string | null;
   /**
    * URL of the cover image
    */
-  coverUrl?: string;
+  coverUrl?: string | null;
   /**
    * Alt description of the cover image
    */
-  coverAlt?: string;
+  coverAlt?: string | null;
   /**
    * ID of the content group to assign the piece to
    */
@@ -46,11 +46,11 @@ type ContentPiece<
   /**
    * JSON object containing custom metadata
    */
-  customData?: CustomData;
+  customData?: CustomData | null;
   /**
    * Canonical link
    */
-  canonicalLink?: string;
+  canonicalLink?: string | null;
   /**
    * IDs of assigned tags
    */
@@ -66,20 +66,19 @@ type ContentPiece<
   /**
    * Content piece filename
    */
-  filename?: string;
-  /**
-   * Whether content piece assigned to a locked content group
-   */
-  locked: boolean;
+  filename?: string | null;
   /**
    * Cover image width - percentage value string (only meant for resizing image inside Vrite editor)
    */
-  coverWidth: string;
-  /**
-   * JSON content
-   */
-  content: IncludeContent extends true ? JSONContent : undefined;
-};
+  coverWidth?: string;
+} & (IncludeContent extends true
+  ? {
+      /**
+       * JSON content
+       */
+      content: JSONContent;
+    }
+  : {});
 type ContentPieceWithAdditionalData<
   CustomData extends Record<string, any> = Record<string, any>,
   IncludeContent extends true | false = false

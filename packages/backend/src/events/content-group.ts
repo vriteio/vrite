@@ -1,20 +1,22 @@
 import { Observable } from "@trpc/server/observable";
 import { Context } from "#lib/context";
 import { createEventPublisher, createEventSubscription } from "#lib/pub-sub";
-import { ContentGroup } from "#database";
+import { ContentGroup } from "#collections";
 
 type ContentGroupEvent =
   | {
       action: "create";
+      userId: string;
       data: ContentGroup;
     }
   | {
       action: "update";
+      userId: string;
       data: Partial<ContentGroup> & { id: string };
     }
-  | { action: "delete"; data: { id: string } }
-  | { action: "move"; data: ContentGroup }
-  | { action: "reorder"; data: { id: string; index: number } };
+  | { action: "delete"; userId: string; data: { id: string } }
+  | { action: "move"; userId: string; data: ContentGroup }
+  | { action: "reorder"; userId: string; data: { id: string; index: number } };
 
 const publishContentGroupEvent = createEventPublisher<ContentGroupEvent>(
   (workspaceId) => `contentGroups:${workspaceId}`

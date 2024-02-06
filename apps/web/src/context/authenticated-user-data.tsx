@@ -33,7 +33,9 @@ const AuthenticatedUserDataProvider: ParentComponent = (props) => {
   const [currentWorkspaceId] = createResource<string | null>(
     async () => {
       try {
-        return await client.userSettings.getWorkspaceId.query();
+        const { workspaceId } = await client.userSettings.getWorkspaceId.query();
+
+        return workspaceId;
       } catch (error) {
         const clientError = error as App.ClientError;
 

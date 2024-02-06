@@ -2,13 +2,11 @@ import { Editor } from "./editor";
 import { Component, createEffect, createSignal, on, onCleanup, Show } from "solid-js";
 import clsx from "clsx";
 import { Loader } from "#components/primitives";
-import { useAuthenticatedUserData, useCache, useLocalStorage } from "#context";
+import { useAuthenticatedUserData, useContentData, useLocalStorage } from "#context";
 import { createRef } from "#lib/utils";
-import { useOpenedContentPiece } from "#lib/composables";
 
 const EditorView: Component = () => {
-  const cache = useCache();
-  const { contentPiece, loading } = cache("openedContentPiece", useOpenedContentPiece);
+  const { contentPieces, activeContentPieceId } = useContentData();
   const { storage, setStorage } = useLocalStorage();
   const { workspaceSettings } = useAuthenticatedUserData();
   const [syncing, setSyncing] = createSignal(true);
@@ -41,18 +39,26 @@ const EditorView: Component = () => {
     }
   });
   setStorage((storage) => ({ ...storage, toolbarView: "editor" }));
+  createEffect(
+    on(
+      () => contentPieces[activeContentPieceId() || ""],
+      (newContentPiece, previousContentPiece) => {
+        if (newContentPiece !== previousContentPiece) {
+          setSyncing(true);
+        }
+      }
+    )
+  );
 
   return (
     <>
       <Show
-        when={contentPiece()}
+        when={activeContentPieceId()}
         fallback={
           <div class="flex items-center justify-center w-full h-full">
-            <Show when={!loading()}>
-              <span class="text-2xl font-semibold text-gray-500 dark:text-gray-400">
-                To edit, select an article in the dashboard
-              </span>
-            </Show>
+            <span class="text-2xl font-semibold text-gray-500 dark:text-gray-400 text-center">
+              Select article to edit
+            </span>
           </div>
         }
       >
@@ -65,32 +71,39 @@ const EditorView: Component = () => {
         >
           <div
             class={clsx(
-              "flex flex-col justify-center p-2 md:mx-10 w-full md:w-[calc(100%-5rem)]",
+              "p-2 md:mx-10 w-full md:w-[calc(100%-5rem)] flex flex-col",
               storage().zenMode ? "items-center" : "items-start"
             )}
           >
-            <Show when={!loading() && workspaceSettings()} keyed>
-              <Editor
-                editedContentPiece={contentPiece()!}
-                reloaded={reloaded()}
-                reload={async () => {
-                  setReloaded(true);
-                }}
-                onLoad={() => {
-                  setTimeout(() => {
-                    scrollableContainerRef()?.scrollTo({ top: lastScrollTop() });
-                  }, 0);
-                  setSyncing(false);
-                }}
-              />
+            <Show when={workspaceSettings()}>
+              <Show when={contentPieces[activeContentPieceId() || ""]} keyed>
+                <Editor
+                  editedContentPiece={contentPieces[activeContentPieceId() || ""]!}
+                  scrollableContainerRef={scrollableContainerRef}
+                  reloaded={reloaded()}
+                  reload={async () => {
+                    setReloaded(true);
+                  }}
+                  onLoad={() => {
+                    setTimeout(() => {
+                      scrollableContainerRef()?.scrollTo({ top: lastScrollTop() });
+                    }, 0);
+                    setSyncing(false);
+                  }}
+                />
+              </Show>
             </Show>
           </div>
         </div>
-      </Show>
-      <Show when={loading() || (contentPiece() && syncing())}>
-        <div class="flex items-center justify-center w-full h-full bg-gray-100 dark:bg-gray-800 absolute top-0 left-0">
-          <Loader />
-        </div>
+        <Show
+          when={
+            !contentPieces[activeContentPieceId() || ""] || (activeContentPieceId() && syncing())
+          }
+        >
+          <div class="flex items-center justify-center w-full h-full bg-gray-100 dark:bg-gray-800 absolute top-0 left-0">
+            <Loader />
+          </div>
+        </Show>
       </Show>
     </>
   );

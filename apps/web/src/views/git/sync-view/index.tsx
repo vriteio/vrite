@@ -16,7 +16,7 @@ import {
   App,
   hasPermission,
   useClient,
-  useLocalStorage,
+  useContentData,
   useNotifications,
   useSharedState
 } from "#context";
@@ -28,6 +28,7 @@ interface SyncViewProps {
 interface GitConflict {
   path: string;
   contentPieceId: string;
+  variantId?: string;
   currentContent: string;
   pulledContent: string;
   pulledHash: string;
@@ -73,7 +74,7 @@ const InitialSyncCard: Component = () => {
             setLoading(true);
 
             try {
-              await client.git.github.initialSync.mutate();
+              await client.git.initialSync.mutate();
               notify({ text: "Latest content pulled", type: "success" });
             } catch (error) {
               notify({ text: "Couldn't pull content", type: "error" });
@@ -92,7 +93,6 @@ const CommitCard: Component<{ changedRecords: App.GitRecord[] }> = (props) => {
   const client = useClient();
   const navigate = useNavigate();
   const { notify } = useNotifications();
-  const { setStorage } = useLocalStorage();
   const [message, setMessage] = createSignal("");
   const [loading, setLoading] = createSignal(false);
 
@@ -112,9 +112,9 @@ const CommitCard: Component<{ changedRecords: App.GitRecord[] }> = (props) => {
               setLoading(true);
 
               try {
-                const { status } = await client.git.github.commit.mutate({ message: message() });
+                const { status } = await client.git.commit.mutate({ message: message() });
 
-                if (status === "committed") {
+                if (status === "success") {
                   notify({ text: "Changes committed", type: "success" });
                   setMessage("");
                 } else {
@@ -181,11 +181,7 @@ const CommitCard: Component<{ changedRecords: App.GitRecord[] }> = (props) => {
                     disabled={record.currentHash === ""}
                     hover={record.currentHash !== ""}
                     onClick={() => {
-                      setStorage((storage) => ({
-                        ...storage,
-                        contentPieceId: record.contentPieceId
-                      }));
-                      navigate("/editor");
+                      navigate(`/editor/${record.contentPieceId}`);
                     }}
                   />
                   <span
@@ -215,12 +211,12 @@ const CommitCard: Component<{ changedRecords: App.GitRecord[] }> = (props) => {
 };
 const PullCard: Component = () => {
   const client = useClient();
-  const createSharedSignal = useSharedState();
+  const { useSharedSignal } = useSharedState();
   const navigate = useNavigate();
   const { notify } = useNotifications();
   const [loading, setLoading] = createSignal(false);
-  const [conflicts, setConflicts] = createSharedSignal("conflicts", []);
-  const [conflictData, setConflictData] = createSharedSignal("conflictData");
+  const [conflicts, setConflicts] = useSharedSignal("conflicts", []);
+  const [conflictData, setConflictData] = useSharedSignal("conflictData");
 
   return (
     <TitledCard
@@ -236,7 +232,7 @@ const PullCard: Component = () => {
             setLoading(true);
 
             try {
-              const data = await client.git.github.pull.mutate({});
+              const data = await client.git.pull.mutate({});
 
               if (data.status === "conflict") {
                 setConflicts(data.conflicted || []);
@@ -288,7 +284,9 @@ const PullCard: Component = () => {
                       setConflictData({
                         pulledContent: conflict.pulledContent,
                         pulledHash: conflict.pulledHash,
+                        currentContent: conflict.currentContent,
                         contentPieceId: conflict.contentPieceId,
+                        variantId: conflict.variantId,
                         path: conflict.path
                       });
                       navigate("/conflict");

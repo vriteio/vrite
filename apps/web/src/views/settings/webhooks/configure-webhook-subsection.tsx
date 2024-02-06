@@ -1,7 +1,16 @@
 import { webhookEvents } from "./events";
-import { mdiCheck, mdiTune } from "@mdi/js";
+import {
+  mdiCheck,
+  mdiClipboardOutline,
+  mdiInformationOutline,
+  mdiRefresh,
+  mdiShieldLockOutline,
+  mdiTrayFull,
+  mdiTune
+} from "@mdi/js";
 import { Component, Show, createEffect, createMemo, createResource, createSignal } from "solid-js";
 import { createStore } from "solid-js/store";
+import { nanoid } from "nanoid";
 import { InputField, TitledCard } from "#components/fragments";
 import { IconButton, Button, Loader, Tooltip } from "#components/primitives";
 import { App, useClient, useNotifications } from "#context";
@@ -17,6 +26,7 @@ const ConfigureWebhookSubsection: Component<ConfigureWebhookSubsectionProps> = (
   const client = useClient();
   const { notify } = useNotifications();
   const [loading, setLoading] = createSignal(false);
+  const [loadingSecret, setLoadingSecret] = createSignal(false);
   const [webhookData, setWebhookData] = createStore<Omit<App.Webhook, "id">>({
     description: "",
     event: "" as App.WebhookEventName,
@@ -37,6 +47,26 @@ const ConfigureWebhookSubsection: Component<ConfigureWebhookSubsectionProps> = (
         webhookData.url.startsWith("https://")
     );
   });
+  const secretHidden = (): boolean => {
+    return Boolean(props.editedWebhookId && typeof webhookData.secret === "undefined");
+  };
+  const revealSecret = async (): Promise<void> => {
+    if (!props.editedWebhookId) return;
+
+    setLoadingSecret(true);
+
+    try {
+      const { secret } = await client.webhooks.revealSecret.query({ id: props.editedWebhookId! });
+
+      setWebhookData("secret", secret);
+      setLoadingSecret(false);
+    } catch (error) {
+      notify({
+        type: "error",
+        text: "Failed to reveal secret"
+      });
+    }
+  };
   const onClick = async (): Promise<void> => {
     setLoading(true);
 
@@ -106,31 +136,35 @@ const ConfigureWebhookSubsection: Component<ConfigureWebhookSubsectionProps> = (
   });
 
   return (
-    <TitledCard icon={mdiTune} label="Configure">
-      <Show when={!editedWebhookData.loading || !props.editedWebhookId} fallback={<Loader />}>
-        <InputField
-          label="Name"
-          color="contrast"
-          placeholder="Webhook name"
-          type="text"
-          value={webhookData.name || ""}
-          inputProps={{ maxLength: 50 }}
-          setValue={(value) => setWebhookData("name", value)}
-        >
-          Name of the Webhook
-        </InputField>
-        <InputField
-          label="Description"
-          color="contrast"
-          textarea
-          optional
-          placeholder="Webhook description"
-          type="text"
-          value={webhookData.description || ""}
-          setValue={(value) => setWebhookData("description", value)}
-        >
-          Additional details about the Webhook
-        </InputField>
+    <>
+      <TitledCard icon={mdiInformationOutline} label="Details">
+        <Show when={!editedWebhookData.loading || !props.editedWebhookId} fallback={<Loader />}>
+          <InputField
+            label="Name"
+            color="contrast"
+            placeholder="Webhook name"
+            type="text"
+            value={webhookData.name || ""}
+            inputProps={{ maxLength: 50 }}
+            setValue={(value) => setWebhookData("name", value)}
+          >
+            Name of the Webhook
+          </InputField>
+          <InputField
+            label="Description"
+            color="contrast"
+            textarea
+            optional
+            placeholder="Webhook description"
+            type="text"
+            value={webhookData.description || ""}
+            setValue={(value) => setWebhookData("description", value)}
+          >
+            Additional details about the Webhook
+          </InputField>
+        </Show>
+      </TitledCard>
+      <TitledCard icon={mdiTune} label="Configuration">
         <InputField
           label="Target URL"
           color="contrast"
@@ -139,7 +173,7 @@ const ConfigureWebhookSubsection: Component<ConfigureWebhookSubsectionProps> = (
           value={webhookData.url || ""}
           setValue={(value) => setWebhookData("url", value)}
         >
-          Webhook URL must start with <code>https://</code>
+          Webhook URL must start with <code class="!px-1 !py-0.5 !rounded-md">https://</code>
         </InputField>
         <InputField
           placeholder="Event"
@@ -166,8 +200,61 @@ const ConfigureWebhookSubsection: Component<ConfigureWebhookSubsectionProps> = (
             ID of the content group to listen for the event on
           </InputField>
         </Show>
-      </Show>
-    </TitledCard>
+      </TitledCard>
+      <TitledCard
+        icon={mdiShieldLockOutline}
+        label="Security"
+        action={
+          <Show when={secretHidden()}>
+            <Button
+              class="m-0"
+              color="contrast"
+              text="soft"
+              loading={loadingSecret()}
+              onClick={revealSecret}
+            >
+              Reveal secret
+            </Button>
+          </Show>
+        }
+      >
+        <p class="prose text-gray-500 dark:text-gray-400">
+          Provide a secret to sign the payload of your webhook
+        </p>
+        <InputField
+          placeholder="Secret"
+          label="Signing secret"
+          optional
+          color="contrast"
+          type="text"
+          value={props.editedWebhookId ? webhookData.secret || "secret" : webhookData.secret || ""}
+          disabled={Boolean(props.editedWebhookId)}
+          inputProps={{
+            type: secretHidden() ? "password" : "text"
+          }}
+          class="flex items-center gap-1"
+          setValue={(value) => {
+            setWebhookData("secret", value || undefined);
+          }}
+          adornment={() => {
+            return (
+              <Show when={!props.editedWebhookId}>
+                <Tooltip text="Generate secret" class="mt-1">
+                  <IconButton
+                    path={mdiRefresh}
+                    class="m-0"
+                    text="soft"
+                    onClick={() => {
+                      setWebhookData("secret", nanoid());
+                    }}
+                  />
+                </Tooltip>
+              </Show>
+            );
+          }}
+        />
+      </TitledCard>
+    </>
   );
 };
 

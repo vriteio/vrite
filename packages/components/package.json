@@ -4,11 +4,11 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "dependencies": {
-    "@floating-ui/dom": "^1.4.5",
-    "@mdi/js": "^7.2.96",
-    "@solid-primitives/active-element": "^2.0.15",
-    "@solid-primitives/media": "^2.2.3",
-    "clsx": "^2.0.0",
-    "solid-js": "^1.7.8"
+    "@floating-ui/dom": "^1.6.1",
+    "@mdi/js": "^7.4.47",
+    "@solid-primitives/active-element": "^2.0.18",
+    "@solid-primitives/media": "^2.2.6",
+    "clsx": "^2.1.0",
+    "solid-js": "^1.8.14"
   }
 }

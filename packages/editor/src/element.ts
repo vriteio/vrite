@@ -1,5 +1,10 @@
-import { ExtendedRegExpMatchArray, Node, mergeAttributes, wrappingInputRule } from "@tiptap/core";
-import { nodeInputRule } from "#node-input-rule";
+import {
+  ExtendedRegExpMatchArray,
+  Node,
+  mergeAttributes,
+  nodeInputRule,
+  wrappingInputRule
+} from "@tiptap/core";
 
 interface ElementAttributes {
   type?: string;
@@ -46,10 +51,10 @@ const Element = Node.create({
       }
     ];
   },
-  renderHTML({ node, HTMLAttributes }) {
+  renderHTML({ node }) {
     return [
       "div",
-      mergeAttributes(HTMLAttributes, {
+      mergeAttributes({
         "data-element": "true",
         "data-type": node.attrs.type,
         "data-props": JSON.stringify(node.attrs.props)
@@ -68,7 +73,6 @@ const Element = Node.create({
               props: {},
               ...attrs
             }
-            // content: [{ type: "paragraph" }]
           });
         };
       },

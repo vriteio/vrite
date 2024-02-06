@@ -1,5 +1,5 @@
 import { Observable } from "@trpc/server/observable";
-import { Comment, CommentThread, CommentMember } from "#database";
+import { Comment, CommentThread, CommentMember } from "#collections";
 import { Context } from "#lib/context";
 import { createEventPublisher, createEventSubscription } from "#lib/pub-sub";
 

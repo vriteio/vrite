@@ -1,7 +1,14 @@
 import { ExtensionIcon } from "./extension-icon";
 import { mdiTune, mdiDownloadOutline } from "@mdi/js";
-import { Component, Show } from "solid-js";
-import { ExtensionDetails, hasPermission, useClient, useExtensions } from "#context";
+import { Component, Show, createSignal } from "solid-js";
+import {
+  App,
+  ExtensionDetails,
+  hasPermission,
+  useClient,
+  useExtensions,
+  useNotifications
+} from "#context";
 import { Card, Heading, IconButton } from "#components/primitives";
 
 interface ExtensionCardProps {
@@ -11,8 +18,8 @@ interface ExtensionCardProps {
 }
 
 const ExtensionCard: Component<ExtensionCardProps> = (props) => {
-  const client = useClient();
-  const { callFunction } = useExtensions();
+  const { installExtension } = useExtensions();
+  const [loading, setLoading] = createSignal(false);
 
   return (
     <Card class="m-0 gap-1 flex flex-col justify-center items-center" color="contrast">
@@ -28,6 +35,7 @@ const ExtensionCard: Component<ExtensionCardProps> = (props) => {
             color={props.installed ? "base" : "primary"}
             text={props.installed ? "soft" : "primary"}
             label={props.installed ? "Configure" : "Install"}
+            loading={loading()}
             onClick={async () => {
               if (props.extension.id) {
                 props.setOpenedExtension({
@@ -35,27 +43,12 @@ const ExtensionCard: Component<ExtensionCardProps> = (props) => {
                   config: { ...props.extension.config }
                 });
               } else {
-                const { id, token } = await client.extensions.install.mutate({
-                  extension: {
-                    name: props.extension.spec.name,
-                    displayName: props.extension.spec.displayName,
-                    permissions: props.extension.spec.permissions || []
-                  }
-                });
-                const onConfigureCallback = props.extension.spec.lifecycle?.["on:configure"];
+                setLoading(true);
 
-                if (onConfigureCallback) {
-                  await callFunction(props.extension.spec, onConfigureCallback, {
-                    extensionId: id,
-                    token,
-                    context: () => ({
-                      config: {},
-                      spec: props.extension.spec
-                    })
-                  });
-                }
+                const installedExtension = await installExtension(props.extension);
 
-                props.setOpenedExtension({ ...props.extension, config: {}, id, token });
+                setLoading(false);
+                props.setOpenedExtension(installedExtension);
               }
             }}
             class="m-0 my-1"
@@ -63,7 +56,7 @@ const ExtensionCard: Component<ExtensionCardProps> = (props) => {
           />
         </Show>
       </div>
-      <p class="text-gray-500 dark:text-gray-400">{props.extension.spec.description}</p>
+      <p class="text-gray-500 dark:text-gray-400 w-full">{props.extension.spec.description}</p>
     </Card>
   );
 };

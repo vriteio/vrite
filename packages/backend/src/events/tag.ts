@@ -1,7 +1,7 @@
 import { Observable } from "@trpc/server/observable";
 import { Context } from "#lib/context";
 import { createEventPublisher, createEventSubscription } from "#lib/pub-sub";
-import { Tag } from "#database";
+import { Tag } from "#collections";
 
 type TagEvent =
   | { action: "create"; data: Tag }

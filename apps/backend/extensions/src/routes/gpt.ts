@@ -1,5 +1,6 @@
-import { procedure, router, z } from "@vrite/backend";
+import { procedure, router } from "@vrite/backend";
 import { OpenAI } from "openai";
+import { z } from "zod";
 
 const basePath = "/gpt";
 const gptRouter = router({
