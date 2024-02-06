@@ -3,15 +3,13 @@ import {
   Component,
   For,
   Match,
-  ParentComponent,
   Setter,
   Show,
   Switch,
   createEffect,
   createSignal,
   on,
-  onCleanup,
-  useContext
+  onCleanup
 } from "solid-js";
 import {
   mdiChevronRight,

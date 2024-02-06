@@ -5,7 +5,7 @@ import { Component, createMemo, createSignal, Show } from "solid-js";
 import { mdiChevronLeft, mdiClose } from "@mdi/js";
 import clsx from "clsx";
 import { Dynamic } from "solid-js/web";
-import { Motion, Presence } from "@motionone/solid";
+import { Motion, Presence } from "solid-motionone";
 import { Card, Heading, IconButton } from "#components/primitives";
 import { ScrollShadow } from "#components/fragments";
 import { createRef } from "#lib/utils";

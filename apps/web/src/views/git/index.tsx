@@ -15,7 +15,7 @@ import {
 import { mdiChevronLeft, mdiClose, mdiTune } from "@mdi/js";
 import clsx from "clsx";
 import { Dynamic } from "solid-js/web";
-import { Motion, Presence } from "@motionone/solid";
+import { Motion, Presence } from "solid-motionone";
 import { Card, Heading, IconButton, Loader } from "#components/primitives";
 import { ScrollShadow } from "#components/fragments";
 import { createRef } from "#lib/utils";

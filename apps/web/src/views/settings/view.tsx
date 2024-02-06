@@ -26,7 +26,7 @@ import {
   mdiWebhook
 } from "@mdi/js";
 import { Component, createMemo, createSignal, Setter, Show } from "solid-js";
-import { Motion, Presence } from "@motionone/solid";
+import { Motion, Presence } from "solid-motionone";
 import { createRef } from "#lib/utils";
 import { ScrollShadow } from "#components/fragments";
 import { Card, Heading, IconButton } from "#components/primitives";

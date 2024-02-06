@@ -8,7 +8,7 @@ import {
 } from "solid-js";
 import { mdiAlertCircle, mdiCheckCircle } from "@mdi/js";
 import clsx from "clsx";
-import { Presence, Motion } from "@motionone/solid";
+import { Presence, Motion } from "solid-motionone";
 import { createRef } from "#lib/utils";
 import { Card, Icon, Button, Loader } from "#components/primitives";
 

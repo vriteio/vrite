@@ -9,15 +9,15 @@
     "start": "node ./dist/index.js"
   },
   "dependencies": {
-    "@hocuspocus/extension-database": "^2.6.1",
-    "@hocuspocus/extension-redis": "^2.6.1",
-    "@hocuspocus/server": "^2.6.1",
+    "@hocuspocus/extension-database": "^2.11.0",
+    "@hocuspocus/extension-redis": "^2.11.0",
+    "@hocuspocus/server": "^2.11.0",
     "@vrite/backend": "workspace:*",
     "@vrite/sdk": "workspace:*",
-    "fastify": "^4.20.0",
-    "mongodb": "^5.7.0",
-    "y-protocols": "^1.0.5",
-    "yjs": "^13.6.7"
+    "fastify": "^4.26.0",
+    "mongodb": "^6.3.0",
+    "y-protocols": "^1.0.6",
+    "yjs": "^13.6.11"
   },
   "devDependencies": {
     "@vrite/scripts": "workspace:*"

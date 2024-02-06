@@ -14,7 +14,7 @@ import { marked } from "marked";
 import { createStore } from "solid-js/store";
 import { ExtensionElement, ExtensionSpec } from "@vrite/sdk/extensions";
 import { Dynamic } from "solid-js/web";
-import { useExtensions, useNotifications } from "#context";
+import { useNotifications } from "#context";
 import { Button, IconButton, Loader, Tooltip } from "#components/primitives";
 import { InputField } from "#components/fragments";
 import { ContextObject } from "#collections";
@@ -122,11 +122,7 @@ const ComponentRenderer: Component<ComponentRendererProps> = (props) => {
   const { sandbox } = extension;
 
   if (typeof props.view === "string") {
-    return (
-      <span
-        innerHTML={marked.parseInline(props.view, { renderer, mangle: false, headerIds: false })}
-      />
-    );
+    return <span innerHTML={marked.parseInline(props.view, { renderer }) as string} />;
   }
 
   const componentName =
