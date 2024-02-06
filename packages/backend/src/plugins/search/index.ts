@@ -217,9 +217,19 @@ const registerSearch = async (fastify: FastifyInstance): Promise<void> => {
         apiKey: fastify.config.OPENAI_API_KEY,
         organization: fastify.config.OPENAI_ORGANIZATION
       });
+      const stringifiedResults = results.data.Get.Content.map(({ content, breadcrumb }) => {
+        return `${breadcrumb?.join(" > ") || ""}:\n${content}`;
+      });
+
+      let contentLength = stringifiedResults.join("\n\n").length;
+
+      while (contentLength > 12288) {
+        stringifiedResults.pop();
+        contentLength = stringifiedResults.join("\n\n").length;
+      }
 
       return await openai.chat.completions.create({
-        model: "gpt-3.5-turbo",
+        model: "gpt-3.5-turbo-16k",
         stream: true,
         messages: [
           {
@@ -227,9 +237,7 @@ const registerSearch = async (fastify: FastifyInstance): Promise<void> => {
             content: `Please answer the question according to the above context.
 
           ===
-          Context: ${results.data.Get.Content.map(({ content, breadcrumb }) => {
-            return `${breadcrumb?.join(" > ") || ""}:\n${content}`;
-          }).join("\n\n")}
+          Context: ${stringifiedResults.join("\n\n")}
           ===
           Q: ${details.question}
           A:`
