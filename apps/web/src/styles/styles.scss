@@ -371,6 +371,12 @@ kbd {
   :where(p, ul, ol, pre):not(:where(.not-prose, .not-prose *)) {
     margin: 0.375rem 0;
   }
+  :where(h1, h2, h3, h4, h5, h6):not(:where(.not-prose, .not-prose *)) {
+    &:before {
+      display: none;
+    }
+    margin: 0.375rem 0 !important;
+  }
   pre {
     @apply bg-gray-100 dark:bg-gray-800 leading-5 px-3 py-2 whitespace-pre-wrap;
     &::-webkit-scrollbar {
@@ -386,6 +392,9 @@ kbd {
       padding: 0;
       @apply bg-transparent dark:bg-transparent text-gray-500 dark:text-gray-400;
     }
+  }
+  code {
+    @apply bg-gray-100 dark:bg-gray-800 rounded-md px-1;
   }
 }
 @supports (not selector(::-webkit-scrollbar)) {
