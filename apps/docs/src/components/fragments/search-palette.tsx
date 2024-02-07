@@ -67,6 +67,7 @@ const SearchPalette: Component = () => {
   const ask = async (): Promise<void> => {
     let content = "";
 
+    setLoading(true);
     client.useSignal(abortControllerRef()?.signal || null).ask({
       query: query(),
       onError(error) {
@@ -376,7 +377,7 @@ const SearchPalette: Component = () => {
                                   }}
                                 </For>
                               </p>
-                              <p class="prose flex-1 text-sm clamp-2 whitespace-pre-wrap text-gray-500 dark:text-gray-400">
+                              <p class="prose prose-output flex-1 text-sm clamp-2 whitespace-pre-wrap text-gray-500 dark:text-gray-400">
                                 {result.content}
                               </p>
                             </div>
@@ -412,7 +413,7 @@ const SearchPalette: Component = () => {
                     color="base"
                   >
                     <div
-                      class="flex flex-col w-full prose whitespace-pre-wrap"
+                      class="flex flex-col w-full prose whitespace-pre-wrap prose-output"
                       innerHTML={answer()}
                     />
                     <Show when={!loading()}>

@@ -11,7 +11,8 @@ import {
 import type { MarkdownHeading } from "astro";
 import menu from "./menu.json";
 import { Button } from "#components/primitives";
-import { mdiBookOpenBlankVariant, mdiConsoleLine, mdiTextBoxMultiple } from "@mdi/js";
+import { mdiBookOpenBlankVariant, mdiConsoleLine, mdiGithub, mdiTextBoxMultiple } from "@mdi/js";
+import { discordIcon } from "#assets/icons";
 
 const image = "https://docs.vrite.io/meta-image.png";
 const title = "Vrite － developer content platform";
@@ -48,6 +49,18 @@ const sections = [
     link: "https://generator.swagger.io/?url=https://api.vrite.io/swagger.json",
     icon: mdiConsoleLine,
     id: "api"
+  },
+  {
+    label: "GitHub",
+    link: "https://github.com/vriteio/vrite",
+    icon: mdiGithub,
+    id: "github"
+  },
+  {
+    label: "Community",
+    link: "https://discord.gg/yYqDWyKnqE",
+    icon: discordIcon,
+    id: "community"
   }
   /*{
     label: "Recipes",
@@ -82,9 +95,10 @@ type Props = {
   </head>
   <body class="overflow-x-hidden overscroll-none">
     <SVGDefs />
-    <main class="flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-800">
+    <main
+      class="flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-800 min-h-screen"
+    >
       <div class="flex-1 flex justify-center items-center flex-1 w-full max-w-screen-2xl relative">
-        <Header client:load />
         <SideBar
           menu={menu}
           sections={sections}
@@ -93,24 +107,33 @@ type Props = {
           client:load
         />
         <SearchPalette client:load />
-        <div class="flex overflow-hidden w-full relative h-full pt-12">
+        <div class="flex overflow-visible w-full relative h-full">
           <div
-            class="flex-1 flex overflow-y-auto overflow-x-hidden justify-center min-h-[calc(100vh-3rem)]"
+            class="flex-1 flex overflow-visible w-full justify-center min-h-screen"
             id="container"
           >
             <div
-              class="flex-1 prose max-w-screen-md w-full text-lg px-4 md:px-8 pt-4 pb-24 h-fit xl:w-[calc(100%-15rem)]"
+              class="relative flex-1 prose max-w-screen-md w-full text-lg px-4 md:px-8 pb-24 h-fit xl:w-[calc(100%-15rem)]"
             >
-              {
-                (currentEntry?.labels.length || 0) > 1 && (
-                  <Button badge color="primary" variant="text" class="m-0 pl-1 py-0" hover={false}>
-                    {currentEntry?.labels.at(-2)}
-                  </Button>
-                )
-              }
-              <h1>{Astro.props.title}</h1>
-              <slot />
-              <Footer nextEntry={nextEntry} previousEntry={prevEntry} />
+              <div class="sticky top-0 w-full left-0 z-1"><Header client:load /></div>
+              <div class="pt-24">
+                {
+                  (currentEntry?.labels.length || 0) > 1 && (
+                    <Button
+                      badge
+                      color="primary"
+                      variant="text"
+                      class="m-0 pl-1 py-0"
+                      hover={false}
+                    >
+                      {currentEntry?.labels.at(-2)}
+                    </Button>
+                  )
+                }
+                <h1 class="font-extrabold">{Astro.props.title}</h1>
+                <slot />
+                <Footer nextEntry={nextEntry} previousEntry={prevEntry} />
+              </div>
             </div>
             <OnThisPage headings={Astro.props.headings} client:load />
           </div>

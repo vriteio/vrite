@@ -1,10 +1,10 @@
 ---
 import { Card as BaseCard, Heading, IconButton } from "#components/primitives";
-import { Icon } from "astro-icon";
+import { Icon } from "astro-icon/components";
 import clsx from "clsx";
 
 interface Props {
-  icon: string;
+  icon?: string;
   label: string;
   gradient?: boolean;
   link: string;
@@ -19,29 +19,25 @@ const { props } = Astro;
   target={props.link.startsWith("http") ? "_blank" : "_self"}
   ><BaseCard
     class={clsx(
-      "w-full flex flex-col m-0 p-0 gap-2 items-start h-full",
+      "w-full flex flex-col m-0 gap-2 items-start h-full border-0 p-4",
       props.gradient && "hover:bg-gradient-to-bl",
       !props.gradient && "bg-gray-100 dark:bg-gray-900 !hover:bg-gray-200 !dark:hover:bg-gray-700"
     )}
     color={props.gradient ? "primary" : "base"}
   >
-    <div class="flex justify-center items-center pl-3 pr-4 pt-3 w-full">
-      <div class="pr-1 py-1">
-        <Icon
-          name={props.icon}
-          class={clsx("h-6 w-6", props.gradient ? "fill-current" : "fill-[url(#gradient)]")}
-        />
-      </div>
-      <Heading level={2} class="pl-1 flex-1">
+    <div class="flex justify-center items-center w-full">
+      {
+        props.icon && (
+          <div class="pr-1">
+            <Icon name={props.icon} class="h-6 w-6" />
+          </div>
+        )
+      }
+      <Heading level={3} class="pl-1 flex-1 font-bold">
         {props.label}
       </Heading>
     </div>
-    <div
-      class={clsx(
-        "flex flex-col justify-center items-start gap-2 w-full px-4 pb-4",
-        props.gradient ? "" : "text-gray-500 dark:text-gray-400"
-      )}
-    >
+    <div class="flex flex-col justify-center items-start gap-2 w-full">
       <slot />
     </div>
   </BaseCard></a

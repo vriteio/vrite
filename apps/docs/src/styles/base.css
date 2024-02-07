@@ -20,6 +20,7 @@
 html,
 body {
   font-family: "NunitoVariable", sans-serif;
+  @apply min-h-screen;
 }
 html {
   @apply text-gray-700 dark:text-white from-orange-500 to-red-500;
@@ -211,4 +212,10 @@ h2 {
   -webkit-line-clamp: 3;
   line-clamp: 3;
   -webkit-box-orient: vertical;
+}
+.icon-fill-current [data-icon] {
+  fill: currentColor;
+}
+.icon-fill-gradient [data-icon] {
+  fill: url(#gradient);
 }

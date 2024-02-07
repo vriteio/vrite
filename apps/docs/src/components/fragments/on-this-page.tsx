@@ -5,7 +5,8 @@ import {
   onCleanup,
   createSignal,
   createMemo,
-  createEffect
+  createEffect,
+  Show
 } from "solid-js";
 import { mdiListBox } from "@mdi/js";
 import clsx from "clsx";
@@ -117,15 +118,17 @@ const OnThisPage: Component<OnThisPageProps> = (props) => {
           "mr-[max(0px,calc((100%-(1536px))/2))]"
         )}
       >
-        <IconButton
-          text="soft"
-          class="font-bold justify-start m-0"
-          variant="text"
-          badge
-          hover={false}
-          path={mdiListBox}
-          label="On This Page"
-        />
+        <Show when={headings().length}>
+          <IconButton
+            text="soft"
+            class="font-bold justify-start m-0"
+            variant="text"
+            badge
+            hover={false}
+            path={mdiListBox}
+            label="On This Page"
+          />
+        </Show>
         <For each={headings()}>
           {(heading) => {
             return (

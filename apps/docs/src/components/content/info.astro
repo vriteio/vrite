@@ -3,7 +3,7 @@ import { Card, Icon } from "#components/primitives";
 import { mdiInformationSlabCircleOutline } from "@mdi/js";
 ---
 
-<Card class="flex items-center justify-start mx-0 my-4">
-  <Icon path={mdiInformationSlabCircleOutline} class="w-6 h-6 mr-2 fill-[url(#gradient)]" />
+<Card class="flex items-start justify-start mx-0 my-4 p-4 border-0 bg-gray-100 dark:bg-gray-900">
+  <Icon path={mdiInformationSlabCircleOutline} class="w-6 h-6 mr-2" />
   <div class="flex-1 not-prose"><slot /></div>
 </Card>

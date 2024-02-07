@@ -4,6 +4,7 @@ import unocss from "unocss/astro";
 import robotsTxt from "astro-robots-txt";
 import mdx from "@astrojs/mdx";
 import autoImport from "astro-auto-import";
+import icon from "astro-icon";
 
 export default defineConfig({
   markdown: {
@@ -24,6 +25,7 @@ export default defineConfig({
         }
       ]
     }),
+    icon(),
     mdx()
   ],
   build: {

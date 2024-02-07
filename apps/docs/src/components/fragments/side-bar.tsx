@@ -39,26 +39,25 @@ const SideBarNestedMenu: Component<SideBarNestedMenuProps> = (props) => {
 
   return (
     <div class="flex flex-col w-full">
-      <div class="flex justify-center items-center">
-        {props.children}
+      <button
+        class="flex justify-center items-center text-start w-full group"
+        onClick={() => setOpened((opened) => !opened)}
+      >
+        <div class="flex-1">{props.children}</div>
         <IconButton
           path={mdiChevronDown}
-          class="m-0"
+          class="m-0 group-hover:bg-gray-200 group-hover:dark:bg-gray-700"
           variant="text"
+          badge
           iconProps={{
             class: clsx("transform transition-transform duration-100", opened() ? "" : "-rotate-90")
           }}
-          onClick={() => setOpened((opened) => !opened)}
         />
-      </div>
+      </button>
       <div
-        class={clsx(
-          "flex flex-1 w-full pl-3 overflow-hidden",
-          opened() ? "max-h-full mt-2" : "max-h-0"
-        )}
+        class={clsx("flex flex-1 w-full pl-3 overflow-hidden", opened() ? "max-h-full" : "max-h-0")}
       >
-        <div class="w-0.5 bg-gray-200 dark:bg-gray-700 mr-2 rounded-full"></div>
-        <div class="flex-1 flex flex-col gap-2">
+        <div class="flex-1 flex flex-col gap-1">
           <For each={props.menu}>
             {(item) => {
               if (item.menu) {
@@ -109,11 +108,11 @@ const SideBar: Component<SideBarProps> = (props) => {
 
   return (
     <>
-      <div class={clsx("h-full fixed top-0 left-0 z-1", "pl-[max(0px,calc((100%-1536px)/2))]")}>
+      <div class={clsx("h-full fixed top-0 left-0 z-2", "pl-[max(0px,calc((100%-1536px)/2))]")}>
         <Card
           class={clsx(
-            "top-0 h-full z-50 min-w-80 w-full md:max-w-80 m-0 bg-gray-100 dark:bg-gray-900",
-            "flex-col gap-2 justify-start items-start border-0 md:border-r-2 rounded-none flex fixed md:relative",
+            "top-0 h-full z-50 min-w-80 w-full md:max-w-80 m-0  bg-gray-50 dark:bg-gray-800",
+            "flex-col gap-2 justify-start items-start border-0 rounded-none flex fixed md:relative",
             "transform md:transition-transform duration-300 ease-in-out scrollbar-sm-contrast overflow-auto",
             menuOpened() ? "" : "translate-y-[100vh] md:translate-y-0"
           )}
@@ -145,7 +144,7 @@ const SideBar: Component<SideBarProps> = (props) => {
                       path={section.icon}
                       class="m-0 group-hover:bg-gray-300 dark:group-hover:bg-gray-700 h-8 w-8"
                       iconProps={{ class: "h-5 w-5" }}
-                      color={section.id === props.currentSection ? "primary" : "contrast"}
+                      color={section.id === props.currentSection ? "primary" : "base"}
                       text={section.id === props.currentSection ? "primary" : "soft"}
                     />
                     <span class=" ml-2 text-gray-500 dark:text-gray-400">{section.label}</span>
@@ -174,8 +173,8 @@ const SideBar: Component<SideBarProps> = (props) => {
               );
             }}
           </For>
+          <div class="min-h-24 md:hidden" />
         </Card>
-        <div class="bg-gray-100 dark:bg-gray-900 absolute h-screen w-screen top-0 right-0" />
         <IconButton
           path={menuOpened() ? mdiClose : mdiMenu}
           size="large"

@@ -28,6 +28,9 @@ svg > path {
   cursor: col-resize;
 }
 .prose {
+  code {
+    @apply whitespace-pre-wrap;
+  }
   p {
     @apply relative;
   }
@@ -113,7 +116,7 @@ svg > path {
 
   font-kerning: none;
   :where(h1, h2, h3, h4, h5, h6):not(:where(.not-prose, .not-prose *)) {
-    @apply relative;
+    @apply font-bold relative;
     margin: 0 !important;
   }
   :where(h2, h3):not(:where(.not-prose, .not-prose *)) {
@@ -177,29 +180,269 @@ svg > path {
 .form-checkbox {
   @include checkbox;
 }
-.prose {
-  --un-prose-lists: #6b7280;
-  --un-prose-hr: #6b7280;
-  --un-prose-invert-lists: #9ca3af;
-  --un-prose-invert-hr: #9ca3af;
-
-  :where(blockquote):not(:where(.not-prose, .not-prose *)) {
-    @apply border-l-3 pl-5.5 border-solid border-gray-200 dark:border-gray-700 not-italic text-gray-500 dark:text-gray-400;
+.prose-output,
+.prose-editor {
+  p,
+  ul,
+  ol,
+  blockquote {
+    @apply relative;
   }
-
-  :where(mark) {
-    @apply text-gray-700;
+  :where(p, ul, ol, blockquote):hover .ProseMirror-widget[data-widget="draggableText"] {
+    @apply opacity-100;
   }
-  :where(span[data-comment]) {
-    @apply text-primary relative;
+  // Drag handle
+  .ProseMirror-widget[data-widget="draggableText"] {
+    @apply absolute h-full flex justify-center items-start w-10 top-0 -left-10 opacity-0;
+    padding-top: 5px;
 
-    &::after {
-      content: "";
-      @apply bg-primary opacity-20 absolute w-full h-full top-0 left-0 pointer-events-none;
+    > svg {
+      @apply w-full cursor-pointer rounded-full text-gray-500 dark:text-gray-400 h-6 fill-current;
     }
   }
-}
 
+  > * > .ProseMirror {
+    @apply pb-48;
+  }
+  .tableWrapper {
+    @apply overflow-x-scroll pb-2 mb-3;
+    &::-webkit-scrollbar {
+      @apply w-2 h-2 rounded-lg bg-gray-100 dark:bg-gray-800;
+    }
+    &::-webkit-scrollbar-thumb {
+      @apply bg-gray-200 rounded-lg dark:bg-gray-900;
+    }
+  }
+  table {
+    overflow: visible;
+    border-collapse: collapse;
+    border-spacing: 0;
+    margin: 0;
+    table-layout: fixed;
+    width: 100%;
+
+    tbody {
+      width: 100%;
+    }
+
+    tr {
+      @apply border-2 border-gray-300 dark:border-gray-700;
+    }
+    td,
+    th {
+      @apply text-left font-500 border-2 border-gray-300 dark:border-gray-700 relative p-2 vertical-top;
+      min-width: 100px;
+      border-style: none solid solid none;
+      word-break: break-all;
+    }
+    th {
+      @apply bg-gray-50 dark:bg-gray-900;
+    }
+    tr:first-child {
+      td,
+      th {
+        border-top-style: solid;
+      }
+    }
+    tr {
+      td,
+      th {
+        &:first-child {
+          border-left-style: solid;
+        }
+      }
+    }
+    p {
+      @apply p-0 m-0;
+    }
+    .selectedCell:after {
+      @apply bg-primary;
+      opacity: 0.1;
+      content: "";
+      left: 0;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      pointer-events: none;
+      position: absolute;
+      z-index: 2;
+    }
+
+    .column-resize-handle {
+      @apply bg-primary absolute w-1 -bottom-0.5 -top-0.5 -right-0.75 z-10 pointer-events-none;
+    }
+    &.resizing {
+      .code-block-editor {
+        @apply hidden;
+      }
+      .code-block-placeholder {
+        @apply flex;
+      }
+    }
+  }
+
+  font-kerning: none;
+  :where(h1, h2, h3, h4, h5, h6):not(:where(.not-prose, .not-prose *)) {
+    &::before,
+    &::before,
+    &::before,
+    &::before,
+    &::before,
+    &::before,
+    .open-slash-menu > button {
+      @apply font-bold dark:bg-gray-900 dark:border-gray-700;
+      font-family: "JetBrainsMonoVariable", monospace;
+      position: absolute;
+      left: -2.5rem;
+      background: #f9fafb;
+      height: 2rem;
+      width: 2rem;
+      justify-content: center;
+      display: flex;
+      align-items: center;
+      color: #6b7280;
+      border-radius: 25%;
+      font-size: 1rem;
+      line-height: 1rem;
+      text-align: center;
+      top: 50%;
+      transform: translateY(-50%);
+      //border: 2px solid #e5e7eb;
+      @apply border-2;
+      opacity: 1;
+    }
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  .open-slash-menu {
+    @apply m-0 relative;
+    & > button {
+      @apply mt-4;
+    }
+  }
+  .open-slash-menu {
+    button {
+      font-size: 1.25em;
+      line-height: 1.25em;
+      font-weight: 600;
+    }
+  }
+  :where(h1):not(:where(.not-prose, .not-prose *))::before {
+    top: calc(2.25em * 1.25 * 0.5 + 0.25em);
+    content: "H1";
+  }
+  :where(h2):not(:where(.not-prose, .not-prose *))::before {
+    top: calc(1.75em * 1.25 * 0.5 + 0.25em);
+    content: "H2";
+  }
+
+  :where(h3):not(:where(.not-prose, .not-prose *))::before {
+    top: calc(1.375em * 1.25 * 0.5 + 0.25em);
+    content: "H3";
+  }
+  :where(h4):not(:where(.not-prose, .not-prose *)) {
+    line-height: 2.1rem;
+    &::before {
+      top: calc(2.1rem * 0.5);
+      content: "H4";
+    }
+  }
+  :where(h5):not(:where(.not-prose, .not-prose *)) {
+    line-height: 2.1rem;
+    &::before {
+      top: calc(2.1rem * 0.5);
+      content: "H5";
+    }
+  }
+  :where(h6):not(:where(.not-prose, .not-prose *)) {
+    font-size: 0.875em;
+    line-height: 2.1rem;
+    &::before {
+      top: calc(2.1rem * 0.5);
+      content: "H6";
+    }
+  }
+  :where(ul p, ol p):not(:where(.not-prose, .not-prose *)) {
+    @apply m-0;
+  }
+  :where(ul:not([data-type="taskList"]) li > * + *, ol li > * + *):not(
+      :where(.not-prose, .not-prose *)
+    ) {
+    // @apply my-5;
+  }
+  :where(li > ul, li > ol, li > div > ul, li > div > ol):not(:where(.not-prose, .not-prose *)) {
+    //@apply m-0;
+  }
+  :where(ul[data-type="taskList"]):not(:where(.not-prose, .not-prose *)) {
+    padding-left: 0rem;
+    > li {
+      padding-left: 0.5rem;
+      display: flex !important;
+      justify-content: start;
+      align-items: start;
+      min-height: 1.75em;
+      min-width: 1rem;
+      label {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 0.5rem;
+        min-height: 1.75em;
+        input {
+          @include checkbox;
+        }
+      }
+      > div {
+        min-width: 1rem;
+      }
+    }
+  }
+  :where(hr):not(:where(.not-prose, .not-prose *)) {
+    @apply rounded-full border  border-gray-200 dark:border-gray-700;
+    margin: 1.25rem 0;
+    &.ProseMirror-selectednode {
+      @apply border border-primary;
+    }
+  }
+  :where(u) {
+    text-decoration: underline wavy;
+  }
+}
+.prose-output {
+  :where(p, ul, ol, pre):not(:where(.not-prose, .not-prose *)) {
+    margin: 0.375rem 0;
+  }
+  :where(h1, h2, h3, h4, h5, h6):not(:where(.not-prose, .not-prose *)) {
+    &:before {
+      display: none;
+    }
+    margin: 0.375rem 0 !important;
+  }
+  pre {
+    @apply bg-gray-100 dark:bg-gray-800 leading-5 px-3 py-2 whitespace-pre-wrap;
+    &::-webkit-scrollbar {
+      @apply bg-gray-100 dark:bg-gray-800 border rounded-bl-lg rounded-br-lg w-2 h-4;
+    }
+    &::-webkit-scrollbar-thumb {
+      @apply bg-gray-50 dark:bg-gray-900 border-4 border-4 border-solid border-gray-100 dark:border-gray-800 rounded-lg;
+    }
+    &::-webkit-scrollbar-track {
+      @apply mx-2;
+    }
+    code {
+      padding: 0;
+      @apply bg-transparent dark:bg-transparent text-gray-500 dark:text-gray-400;
+    }
+  }
+  code {
+    @apply bg-gray-100 dark:bg-gray-800 rounded-md px-1;
+  }
+}
 .narrow-prose {
   :where(p, ul, ol, pre):not(:where(.not-prose, .not-prose *)) {
     line-height: inherit;

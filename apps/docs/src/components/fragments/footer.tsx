@@ -15,6 +15,7 @@ const Footer: Component<FooterProps> = (props) => {
           <IconButton
             label={props.previousEntry!.label}
             text="soft"
+            variant="text"
             path={mdiChevronLeft}
             iconProps={{ class: "min-w-8" }}
             size="large"
@@ -28,6 +29,7 @@ const Footer: Component<FooterProps> = (props) => {
           <IconButton
             label={<span class="pr-2">{props.nextEntry!.label}</span>}
             text="soft"
+            variant="text"
             path={mdiChevronRight}
             iconProps={{ class: "min-w-8" }}
             size="large"
