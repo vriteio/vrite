@@ -954,6 +954,8 @@ importers:
         specifier: ^4.0.1
         version: 4.0.1
 
+  packages/ee: {}
+
   packages/emails:
     dependencies:
       '@react-email/components':
