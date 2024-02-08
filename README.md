@@ -21,15 +21,15 @@
   </a>
 </p>
 
-Vrite is an open-source, collaborative space to create, manage and deploy product documentation, technical blogs, and knowledge bases. It aims to provide a high-quality, integrated user and developer experience, with features like:
+Vrite is an open-source, collaborative space to create, manage, and deploy product documentation, technical blogs, and knowledge bases. It aims to provide a high-quality, integrated user and developer experience, with features like:
 
-- **Built-in managment dashboard** for managing content production and delivery using Kanban or List view;
+- **Built-in management dashboard** for managing content production and delivery using Kanban or List view;
 - Modern **WYSIWYG** editing experience with support for **Markdown**, integrated **code editor**, code formatting and real-time collaboration;
 - AI-powered **semantic search** for organizing and searching through your content base;
 - Versitile **API** and **Extension System** for customizing your experience and delivering content to any frontend;
 - **Open-source**, with options to both self-host and use [Vrite Cloud](https://app.vrite.io).
 
-Learn more about all features of Vrite and how to use them from the [official Usage Guide](https://docs.vrite.io).
+Learn more about all the features of Vrite and how to use them from the [official Usage Guide](https://docs.vrite.io).
 
 > **Try out:** A simple version of Vrite Editor is available without sign-in at [editor.vrite.io](https://editor.vrite.io). Full Vrite experience available at [app.vrite.io](https://app.vrite.io).
 
