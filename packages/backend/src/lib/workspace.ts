@@ -9,7 +9,7 @@ import {
   getWorkspaceSettingsCollection,
   marks
 } from "#collections/workspace-settings";
-import { getWorkspacesCollection } from "#collections/workspaces";
+import { FullWorkspace, getWorkspacesCollection } from "#collections/workspaces";
 import { getWorkspaceMembershipsCollection } from "#collections/workspace-memberships";
 import { getRolesCollection } from "#collections/roles";
 import { FullUser } from "#collections/users";
@@ -56,8 +56,7 @@ const createWorkspace = async (
       workspaceId
     }
   ];
-
-  await workspacesCollection.insertOne({
+  const workspace: UnderscoreID<FullWorkspace<ObjectId>> = {
     name: config?.name || `${user.username}'s workspace`,
     _id: workspaceId,
     contentGroups: [],
@@ -66,7 +65,8 @@ const createWorkspace = async (
     ...(config?.defaultContent && {
       contentGroups: contentGroups.map(({ _id }) => _id)
     })
-  });
+  };
+
   await workspaceSettingsCollection.insertOne({
     _id: new ObjectId(),
     workspaceId,
@@ -108,6 +108,20 @@ const createWorkspace = async (
   });
   await fastify.search.createTenant(workspaceId);
 
+  if (fastify.hostConfig.billing) {
+    const customerId = await fastify.billing.createCustomer({
+      email: user.email,
+      name: user.username
+    });
+    // TODO: Trial only for the first workspace
+    const subscription = await fastify.billing.startTrial(customerId);
+
+    workspace.customerId = customerId;
+    workspace.subscriptionStatus = subscription.status;
+    workspace.subscriptionPlan = "personal";
+    workspace.subscriptionData = JSON.stringify(subscription);
+  }
+
   if (config?.defaultContent) {
     await contentGroupsCollection.insertMany(contentGroups);
     await contentPiecesCollection.insertOne({
@@ -126,6 +140,8 @@ const createWorkspace = async (
       content: new Binary(jsonToBuffer(initialContent as unknown as DocJSON))
     });
   }
+
+  await workspacesCollection.insertOne(workspace);
 
   return workspaceId;
 };

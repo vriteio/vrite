@@ -17,7 +17,7 @@ interface ConfirmationModalConfig {
   content?: JSX.Element;
   header: string;
   onCancel?(): void;
-  onConfirm?(): void;
+  onConfirm?(): void | Promise<void>;
 }
 interface ConfirmationModalContextData {
   confirmDelete(config: ConfirmationModalConfig): void;
@@ -28,6 +28,7 @@ interface ConfirmationModalContextData {
 const ConfirmationModalContext = createContext<ConfirmationModalContextData>();
 const ConfirmationModalProvider: ParentComponent = (props) => {
   const [config, setConfig] = createSignal<(ConfirmationModalConfig & { input?: string }) | null>();
+  const [loading, setLoading] = createSignal(false);
   const [type, setType] = createSignal<"action" | "delete" | "input" | null>(null);
   const [input, setInput] = createSignal<string>("");
   const filled = createMemo(() => {
@@ -108,8 +109,11 @@ const ConfirmationModalProvider: ParentComponent = (props) => {
                         path={mdiCheck}
                         color="success"
                         label="Confirm"
-                        onClick={() => {
-                          config.onConfirm?.();
+                        loading={loading()}
+                        onClick={async () => {
+                          setLoading(true);
+                          await config.onConfirm?.();
+                          setLoading(false);
                           setConfig(null);
                         }}
                       />

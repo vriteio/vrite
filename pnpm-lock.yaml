@@ -763,6 +763,9 @@ importers:
       saslprep:
         specifier: ^1.0.3
         version: 1.0.3
+      stripe:
+        specifier: ^14.15.0
+        version: 14.15.0
       trpc-openapi:
         specifier: ^1.2.0
         version: 1.2.0(@trpc/server@10.45.0)(zod@3.22.4)
@@ -954,7 +957,11 @@ importers:
         specifier: ^4.0.1
         version: 4.0.1
 
-  packages/ee: {}
+  packages/ee:
+    dependencies:
+      stripe:
+        specifier: ^14.15.0
+        version: 14.15.0
 
   packages/emails:
     dependencies:
@@ -15751,6 +15758,14 @@ packages:
     resolution: {integrity: sha512-6fPc+R4ihwqP6N/aIv2f1gMH8lOVtWQHoqC4yK6oSDVVocumAsfCqjkXnqiYMhmMwS/mEHLp7Vehlt3ql6lEig==}
     engines: {node: '>=8'}
     dev: true
+
+  /stripe@14.15.0:
+    resolution: {integrity: sha512-KPxNcf0iFWA38pkzeJyJklK9qQJo/6FEBDcLsZxDCVHfn8yT+uP9p1JSYiOhIxCyh+6BD5XEVOMnnBJnVeEnfA==}
+    engines: {node: '>=12.*'}
+    dependencies:
+      '@types/node': 20.11.16
+      qs: 6.11.2
+    dev: false
 
   /strnum@1.0.5:
     resolution: {integrity: sha512-J8bbNyKKXl5qYcR36TIO8W3mVGVHrmmxsd5PAItGkmyzwJvybiw2IVq5nqd0i4LSNSkB/sx9VHllbfFdr9k1JA==}

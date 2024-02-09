@@ -43,6 +43,12 @@ const envSchema = z.object({
   // Weaviate (Search)
   WEAVIATE_API_KEY: z.string().optional(),
   WEAVIATE_URL: z.string().optional(),
+  // Stripe (Billing)
+  STRIPE_SECRET_KEY: z.string().optional(),
+  STRIPE_TEAM_PRICE_ID: z.string().optional(),
+  STRIPE_PERSONAL_PRICE_ID: z.string().optional(),
+  STRIPE_API_PRICE_ID: z.string().optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().optional(),
   // Frontend
   PUBLIC_API_URL: z.string(),
   PUBLIC_COLLAB_URL: z.string(),

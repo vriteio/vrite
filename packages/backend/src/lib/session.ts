@@ -1,6 +1,7 @@
 import { Context } from "./context";
 import { UnderscoreID } from "./mongo";
 import { errors } from "./errors";
+import { AuthenticatedContext } from "./middleware";
 import { nanoid } from "nanoid";
 import { ObjectId } from "mongodb";
 import {
@@ -9,7 +10,8 @@ import {
   Permission,
   getRolesCollection,
   getUserSettingsCollection,
-  getWorkspaceMembershipsCollection
+  getWorkspaceMembershipsCollection,
+  getWorkspacesCollection
 } from "#collections";
 
 declare module "node:net" {
@@ -24,6 +26,8 @@ interface SessionData {
   roleId: string;
   permissions: Permission[];
   baseType?: BaseRoleType;
+  subscriptionStatus?: string;
+  subscriptionPlan?: string;
 }
 
 const getSessionId = async (
@@ -72,6 +76,7 @@ const getSessionId = async (
 };
 const loadSessionData = async (ctx: Context, userId: string): Promise<SessionData> => {
   const userSettingsCollection = getUserSettingsCollection(ctx.db);
+  const workspacesCollection = getWorkspacesCollection(ctx.db);
   const workspaceMembershipsCollection = getWorkspaceMembershipsCollection(ctx.db);
   const rolesCollection = getRolesCollection(ctx.db);
   const userSettings = await userSettingsCollection.findOne({
@@ -84,6 +89,9 @@ const loadSessionData = async (ctx: Context, userId: string): Promise<SessionDat
     userId: new ObjectId(userId),
     workspaceId: new ObjectId(userSettings.currentWorkspaceId)
   });
+  const workspace = await workspacesCollection.findOne({
+    _id: new ObjectId(userSettings.currentWorkspaceId)
+  });
 
   let role: UnderscoreID<FullRole<ObjectId>> | null = null;
 
@@ -95,6 +103,8 @@ const loadSessionData = async (ctx: Context, userId: string): Promise<SessionDat
 
   return {
     workspaceId: workspaceMembership ? `${userSettings.currentWorkspaceId}` : "",
+    subscriptionStatus: workspace?.subscriptionStatus,
+    subscriptionPlan: workspace?.subscriptionPlan,
     userId: `${userSettings.userId}`,
     roleId: `${role?._id || ""}`,
     permissions: role?.permissions || [],
@@ -140,8 +150,10 @@ const setSession = async (
   );
   await ctx.fastify.redis.sadd(`role:${sessionData.roleId}:sessions`, sessionId);
   await ctx.fastify.redis.sadd(`user:${sessionData.userId}:sessions`, sessionId);
+  await ctx.fastify.redis.sadd(`workspace:${sessionData.workspaceId}:sessions`, sessionId);
   await ctx.fastify.redis.hset("session:role", sessionId, sessionData.roleId);
   await ctx.fastify.redis.hset("session:user", sessionId, sessionData.userId);
+  await ctx.fastify.redis.hset("session:workspace", sessionId, sessionData.workspaceId);
 };
 const createSession = async (ctx: Context, userId: string): Promise<void> => {
   const sessionId = nanoid();
@@ -187,6 +199,37 @@ const updateSessionUser = async (ctx: Context, userId: string): Promise<void> =>
     await updateSession(ctx, sessionId, userId);
   }
 };
+const updateSessionWorkspace = async (ctx: Context, workspaceId: string): Promise<void> => {
+  const sessionIds = await ctx.fastify.redis.smembers(`workspace:${workspaceId}:sessions`);
+
+  for await (const sessionId of sessionIds) {
+    const userId = await ctx.fastify.redis.hget("session:user", sessionId);
+
+    if (userId) {
+      await updateSession(ctx, sessionId, userId);
+    }
+  }
+};
+const switchWorkspaceSession = async (ctx: AuthenticatedContext): Promise<void> => {
+  const sessionId = await getSessionId(ctx, "accessToken");
+
+  if (!sessionId) return;
+
+  const sessionCache = await ctx.fastify.redis.get(`session:${sessionId}`);
+
+  if (sessionCache) {
+    const sessionData = JSON.parse(sessionCache) as SessionData;
+
+    await ctx.fastify.redis.srem(`role:${sessionData.roleId}:sessions`, sessionId);
+    await ctx.fastify.redis.srem(`user:${sessionData.userId}:sessions`, sessionId);
+    await ctx.fastify.redis.srem(`workspace:${sessionData.workspaceId}:sessions`, sessionId);
+  }
+
+  await ctx.fastify.redis.hdel("session:role", sessionId);
+  await ctx.fastify.redis.hdel("session:user", sessionId);
+  await ctx.fastify.redis.hdel("session:workspace", sessionId);
+  await updateSession(ctx, sessionId, `${ctx.auth.userId}`);
+};
 const deleteSession = async (ctx: Context, sessionId: string): Promise<void> => {
   const sessionCache = await ctx.fastify.redis.get(`session:${sessionId}`);
 
@@ -196,10 +239,12 @@ const deleteSession = async (ctx: Context, sessionId: string): Promise<void> => 
     await ctx.fastify.redis.del(`session:${sessionId}`);
     await ctx.fastify.redis.srem(`role:${sessionData.roleId}:sessions`, sessionId);
     await ctx.fastify.redis.srem(`user:${sessionData.userId}:sessions`, sessionId);
+    await ctx.fastify.redis.srem(`workspace:${sessionData.workspaceId}:sessions`, sessionId);
   }
 
   await ctx.fastify.redis.hdel("session:role", sessionId);
   await ctx.fastify.redis.hdel("session:user", sessionId);
+  await ctx.fastify.redis.hdel("session:workspace", sessionId);
   await ctx.fastify.redis.del(`refreshToken:${sessionId}`);
   ctx.res.clearCookie("refreshToken", {
     path: "/session",
@@ -218,6 +263,8 @@ export {
   updateSession,
   deleteSession,
   updateSessionRole,
-  updateSessionUser
+  updateSessionUser,
+  updateSessionWorkspace,
+  switchWorkspaceSession
 };
 export type { SessionData };

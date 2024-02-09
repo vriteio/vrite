@@ -114,7 +114,7 @@ const WorkspacesView: Component = () => {
         activeContentGroupId: undefined,
         activeVariantId: undefined,
         expandedContentLevels: [],
-        sourceControlConfiguredProvider: undefined
+        sourceControlSection: undefined
       }));
     }
 

@@ -8,6 +8,7 @@ import { TokenPermission, Permission } from "#collections";
 type Meta = OpenApiMeta & {
   permissions?: { session?: Permission[]; token?: TokenPermission[] };
   requiredConfig?: Array<keyof HostConfig>;
+  requiredSubscriptionPlan?: "personal" | "team";
 };
 
 const { router, middleware, procedure } = initTRPC

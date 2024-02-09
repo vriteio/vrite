@@ -9,7 +9,6 @@ import {
 } from "solid-js";
 
 interface StorageData {
-  sourceControlConfiguredProvider: string;
   activeContentGroupId: string;
   activeVariantId: string;
   expandedContentLevels: string[];
@@ -19,6 +18,7 @@ interface StorageData {
   toolbarView: string;
   sidePanelWidth: number;
   settingsSection: string;
+  sourceControlSection: string;
   zenMode: boolean;
   html: string;
   version: string;

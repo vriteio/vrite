@@ -7,7 +7,12 @@ const workspace = z.object({
   name: z.string().min(1).max(50),
   description: z.string().optional(),
   logo: z.string().optional(),
-  contentGroups: z.array(zodId())
+  contentGroups: z.array(zodId()),
+  customerId: z.string().optional(),
+  subscriptionStatus: z.string().optional(),
+  subscriptionPlan: z.string().optional(),
+  subscriptionData: z.string().optional(),
+  subscriptionExpiresAt: z.string().optional()
 });
 
 interface Workspace<ID extends string | ObjectId = string>

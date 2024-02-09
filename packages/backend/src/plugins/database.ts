@@ -15,7 +15,9 @@ import {
   getContentGroupsCollection,
   getContentPieceVariantsCollection,
   getContentVariantsCollection,
-  getVariantsCollection
+  getVariantsCollection,
+  getGitDataCollection,
+  getWorkspacesCollection
 } from "#collections";
 
 const databasePlugin = createPlugin(async (fastify) => {
@@ -42,9 +44,9 @@ const databasePlugin = createPlugin(async (fastify) => {
   const variantsCollection = getVariantsCollection(db);
   const contentPieceVariantsCollection = getContentPieceVariantsCollection(db);
   const contentVariantsCollection = getContentVariantsCollection(db);
-  const gitDataCollection = db.collection("git-data");
-
-  await Promise.all([
+  const gitDataCollection = getGitDataCollection(db);
+  const workspacesCollection = getWorkspacesCollection(db);
+  const createIndexes = [
     contentPiecesCollection.createIndex({ workspaceId: 1 }),
     contentPiecesCollection.createIndex({ contentGroupId: 1 }),
     contentPiecesCollection.createIndex({ tags: 1 }),
@@ -89,7 +91,13 @@ const databasePlugin = createPlugin(async (fastify) => {
     variantsCollection.createIndex({ key: 1 }),
     gitDataCollection.createIndex({ workspaceId: 1 }, { unique: true }),
     gitDataCollection.createIndex({ "records.contentPieceId": 1 })
-  ]);
+  ];
+
+  if (fastify.hostConfig.billing) {
+    createIndexes.push(workspacesCollection.createIndex({ customerId: 1 }, { sparse: true }));
+  }
+
+  await Promise.all(createIndexes);
 });
 
 export { databasePlugin };

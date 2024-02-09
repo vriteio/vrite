@@ -1,8 +1,12 @@
 import { Component, Match, ParentComponent, Show, Switch, lazy } from "solid-js";
 import { Route, Router } from "@solidjs/router";
+import RelativeTimePlugin from "dayjs/plugin/relativeTime";
+import dayjs from "dayjs";
 import { StandaloneLayout, SecuredLayout } from "#layout";
 import { isEditorApp } from "#lib/utils";
 import { useHostConfig } from "#context";
+
+dayjs.extend(RelativeTimePlugin);
 
 const AuthView = lazy(async () => {
   const { AuthView } = await import("#views/auth");

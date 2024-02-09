@@ -10,7 +10,8 @@ import {
   pubSubPlugin,
   searchPlugin,
   sessionPlugin,
-  webhooksPlugin
+  webhooksPlugin,
+  billingPlugin
 } from "@vrite/backend";
 
 (async () => {
@@ -22,6 +23,7 @@ import {
     await server.register(gitSyncPlugin);
     await server.register(searchPlugin);
     await server.register(webhooksPlugin);
+    await server.register(billingPlugin);
   });
 
   await server.register(apiService);
