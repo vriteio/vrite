@@ -15,7 +15,8 @@ const gitRouter = router({
   pull: authenticatedProcedure
     .meta({
       permissions: { session: ["manageGit"] },
-      requiredConfig: ["githubApp"]
+      requiredConfig: ["githubApp"],
+      requiredSubscriptionPlan: "personal"
     })
     .input(pull.inputSchema)
     .output(pull.outputSchema)
@@ -25,7 +26,8 @@ const gitRouter = router({
   commit: authenticatedProcedure
     .meta({
       permissions: { session: ["manageGit"] },
-      requiredConfig: ["githubApp"]
+      requiredConfig: ["githubApp"],
+      requiredSubscriptionPlan: "personal"
     })
     .input(commit.inputSchema)
     .output(commit.outputSchema)
@@ -35,7 +37,8 @@ const gitRouter = router({
   resolveConflict: authenticatedProcedure
     .meta({
       permissions: { session: ["manageGit"] },
-      requiredConfig: ["githubApp"]
+      requiredConfig: ["githubApp"],
+      requiredSubscriptionPlan: "personal"
     })
     .input(resolveConflict.inputSchema)
     .output(z.void())
@@ -45,7 +48,8 @@ const gitRouter = router({
   initialSync: authenticatedProcedure
     .meta({
       permissions: { session: ["manageGit"] },
-      requiredConfig: ["githubApp"]
+      requiredConfig: ["githubApp"],
+      requiredSubscriptionPlan: "personal"
     })
     .input(z.void())
     .output(z.void())
@@ -55,7 +59,8 @@ const gitRouter = router({
   configure: authenticatedProcedure
     .meta({
       permissions: { session: ["manageGit"] },
-      requiredConfig: ["githubApp"]
+      requiredConfig: ["githubApp"],
+      requiredSubscriptionPlan: "personal"
     })
     .input(configure.inputSchema)
     .output(z.void())

@@ -120,6 +120,9 @@ const createWorkspace = async (
     workspace.subscriptionStatus = subscription.status;
     workspace.subscriptionPlan = "personal";
     workspace.subscriptionData = JSON.stringify(subscription);
+    workspace.subscriptionExpiresAt = new Date(
+      subscription.current_period_end * 1000
+    ).toISOString();
   }
 
   if (config?.defaultContent) {

@@ -32,7 +32,8 @@ const hostConfigPlugin = createPlugin(async (fastify) => {
         fastify.config.STRIPE_TEAM_PRICE_ID &&
         fastify.config.STRIPE_PERSONAL_PRICE_ID &&
         fastify.config.STRIPE_API_PRICE_ID &&
-        fastify.config.STRIPE_WEBHOOK_SECRET
+        fastify.config.STRIPE_WEBHOOK_SECRET &&
+        fastify.config.STRIPE_API_COUPON_ID
     )
   };
 

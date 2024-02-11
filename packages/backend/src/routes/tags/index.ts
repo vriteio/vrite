@@ -25,7 +25,8 @@ const tagsRouter = router({
   update: authenticatedProcedure
     .meta({
       openapi: { method: "PUT", path: basePath, protect: true },
-      permissions: { session: ["editMetadata"], token: ["tags:write"] }
+      permissions: { session: ["editMetadata"], token: ["tags:write"] },
+      requiredSubscriptionPlan: "personal"
     })
     .input(updateTag.inputSchema)
     .output(z.void())
@@ -35,7 +36,8 @@ const tagsRouter = router({
   create: authenticatedProcedure
     .meta({
       openapi: { method: "POST", path: basePath, protect: true },
-      permissions: { session: ["editMetadata"], token: ["tags:write"] }
+      permissions: { session: ["editMetadata"], token: ["tags:write"] },
+      requiredSubscriptionPlan: "personal"
     })
     .input(createTag.inputSchema)
     .output(createTag.outputSchema)

@@ -25,7 +25,8 @@ const extensionsRouter = router({
         method: "PUT",
         path: `${basePath}/content-piece-data`
       },
-      requiredConfig: ["extensions"]
+      requiredConfig: ["extensions"],
+      requiredSubscriptionPlan: "personal"
     })
     .input(updateContentPieceData.inputSchema)
     .output(z.void())
@@ -44,7 +45,8 @@ const extensionsRouter = router({
   install: authenticatedProcedure
     .meta({
       permissions: { session: ["manageExtensions"] },
-      requiredConfig: ["extensions"]
+      requiredConfig: ["extensions"],
+      requiredSubscriptionPlan: "personal"
     })
     .input(installExtension.inputSchema)
     .output(installExtension.outputSchema)
@@ -54,7 +56,8 @@ const extensionsRouter = router({
   configure: authenticatedProcedure
     .meta({
       permissions: { session: ["manageExtensions"] },
-      requiredConfig: ["extensions"]
+      requiredConfig: ["extensions"],
+      requiredSubscriptionPlan: "personal"
     })
     .input(configureExtension.inputSchema)
     .output(z.void())

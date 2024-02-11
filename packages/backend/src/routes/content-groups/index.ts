@@ -27,7 +27,8 @@ const contentGroupsRouter = router({
   update: authenticatedProcedure
     .meta({
       openapi: { method: "PUT", path: basePath, protect: true },
-      permissions: { session: ["manageDashboard"], token: ["contentGroups:write"] }
+      permissions: { session: ["manageDashboard"], token: ["contentGroups:write"] },
+      requiredSubscriptionPlan: "personal"
     })
     .input(updateContentGroup.inputSchema)
     .output(z.void())
@@ -37,7 +38,8 @@ const contentGroupsRouter = router({
   create: authenticatedProcedure
     .meta({
       openapi: { method: "POST", path: basePath, protect: true },
-      permissions: { session: ["manageDashboard"], token: ["contentGroups:write"] }
+      permissions: { session: ["manageDashboard"], token: ["contentGroups:write"] },
+      requiredSubscriptionPlan: "personal"
     })
     .input(createContentGroup.inputSchema)
     .output(createContentGroup.outputSchema)
@@ -72,7 +74,8 @@ const contentGroupsRouter = router({
     }),
   move: authenticatedProcedure
     .meta({
-      permissions: { session: ["manageDashboard"] }
+      permissions: { session: ["manageDashboard"] },
+      requiredSubscriptionPlan: "personal"
     })
     .input(moveContentGroup.inputSchema)
     .output(z.void())
@@ -81,7 +84,8 @@ const contentGroupsRouter = router({
     }),
   reorder: authenticatedProcedure
     .meta({
-      permissions: { session: ["manageDashboard"] }
+      permissions: { session: ["manageDashboard"] },
+      requiredSubscriptionPlan: "personal"
     })
     .input(reorderContentGroup.inputSchema)
     .output(z.void())

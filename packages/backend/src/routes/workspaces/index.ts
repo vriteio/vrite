@@ -23,7 +23,8 @@ const workspacesRouter = router({
     }),
   update: authenticatedProcedure
     .meta({
-      permissions: { session: ["manageWorkspace"] }
+      permissions: { session: ["manageWorkspace"] },
+      requiredSubscriptionPlan: "personal"
     })
     .input(updateWorkspace.inputSchema)
     .output(z.void())

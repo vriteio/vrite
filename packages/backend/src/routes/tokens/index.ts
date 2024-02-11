@@ -43,7 +43,8 @@ const tokensRouter = router({
     }),
   update: authenticatedProcedure
     .meta({
-      permissions: { session: ["manageTokens"] }
+      permissions: { session: ["manageTokens"] },
+      requiredSubscriptionPlan: "personal"
     })
     .input(updateToken.inputSchema)
     .output(z.void())
@@ -52,7 +53,8 @@ const tokensRouter = router({
     }),
   regenerate: authenticatedProcedure
     .meta({
-      permissions: { session: ["manageTokens"] }
+      permissions: { session: ["manageTokens"] },
+      requiredSubscriptionPlan: "personal"
     })
     .input(regenerateToken.inputSchema)
     .output(regenerateToken.outputSchema)

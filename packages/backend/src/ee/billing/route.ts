@@ -10,7 +10,7 @@ const billingRouter = router({
     .input(z.void())
     .output(z.object({ url: z.string() }))
     .query(async ({ ctx }) => {
-      const url = await ctx.fastify.billing.checkout("personal");
+      const url = await ctx.fastify.billing.checkout(`${ctx.auth.workspaceId}`, "personal");
 
       return { url };
     }),
@@ -49,18 +49,12 @@ const billingRouter = router({
     }),
   subscription: authenticatedProcedure
     .input(z.void())
-    .output(z.object({ plan: z.string(), expiresAt: z.string(), status: z.string() }))
+    .output(z.object({ plan: z.string().optional(), expiresAt: z.string(), status: z.string() }))
     .query(async ({ ctx }) => {
       const workspacesCollection = getWorkspacesCollection(ctx.db);
       const workspace = await workspacesCollection.findOne({ _id: ctx.auth.workspaceId });
 
-      if (
-        !workspace ||
-        !workspace.subscriptionPlan ||
-        !workspace.subscriptionExpiresAt ||
-        !workspace.subscriptionStatus ||
-        !workspace.subscriptionData
-      ) {
+      if (!workspace || !workspace.subscriptionExpiresAt || !workspace.subscriptionStatus) {
         throw errors.serverError();
       }
 

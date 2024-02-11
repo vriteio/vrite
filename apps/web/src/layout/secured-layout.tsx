@@ -90,7 +90,6 @@ const SecuredLayout: ParentComponent = (props) => {
                       </Show>
                     </div>
                   </div>
-                  S
                 </div>
                 <Show when={!storage().zenMode}>
                   <BottomMenu />

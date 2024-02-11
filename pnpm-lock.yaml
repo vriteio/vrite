@@ -284,6 +284,31 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/scripts
 
+  apps/backend/usage-reporting:
+    dependencies:
+      '@fastify/cors':
+        specifier: ^9.0.1
+        version: 9.0.1
+      '@fastify/rate-limit':
+        specifier: ^9.1.0
+        version: 9.1.0
+      '@trpc/server':
+        specifier: ^10.45.0
+        version: 10.45.0
+      '@vrite/backend':
+        specifier: workspace:*
+        version: link:../../../packages/backend
+      fastify:
+        specifier: ^4.26.0
+        version: 4.26.0
+      trpc-openapi:
+        specifier: ^1.2.0
+        version: 1.2.0(@trpc/server@10.45.0)(zod@3.22.4)
+    devDependencies:
+      '@vrite/scripts':
+        specifier: workspace:*
+        version: link:../../../packages/scripts
+
   apps/docs:
     dependencies:
       '@astrojs/mdx':
@@ -956,12 +981,6 @@ importers:
       url-slug:
         specifier: ^4.0.1
         version: 4.0.1
-
-  packages/ee:
-    dependencies:
-      stripe:
-        specifier: ^14.15.0
-        version: 14.15.0
 
   packages/emails:
     dependencies:

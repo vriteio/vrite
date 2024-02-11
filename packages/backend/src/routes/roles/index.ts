@@ -34,7 +34,8 @@ const rolesRouter = router({
   update: authenticatedProcedure
     .meta({
       openapi: { method: "PUT", path: basePath, protect: true },
-      permissions: { session: ["manageWorkspace"], token: ["roles:write"] }
+      permissions: { session: ["manageWorkspace"], token: ["roles:write"] },
+      requiredSubscriptionPlan: "team"
     })
     .input(updateRole.inputSchema)
     .output(z.void())
@@ -44,7 +45,8 @@ const rolesRouter = router({
   create: authenticatedProcedure
     .meta({
       openapi: { method: "POST", path: basePath, protect: true },
-      permissions: { session: ["manageWorkspace"], token: ["roles:write"] }
+      permissions: { session: ["manageWorkspace"], token: ["roles:write"] },
+      requiredSubscriptionPlan: "team"
     })
     .input(createRole.inputSchema)
     .output(createRole.outputSchema)

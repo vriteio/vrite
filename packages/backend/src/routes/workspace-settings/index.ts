@@ -22,7 +22,8 @@ const workspaceSettingsRouter = router({
   update: authenticatedProcedure
     .meta({
       openapi: { method: "PUT", path: basePath, protect: true },
-      permissions: { session: ["manageWorkspace"], token: ["workspace:write"] }
+      permissions: { session: ["manageWorkspace"], token: ["workspace:write"] },
+      requiredSubscriptionPlan: "personal"
     })
     .input(updateWorkspaceSettings.inputSchema)
     .output(z.void())

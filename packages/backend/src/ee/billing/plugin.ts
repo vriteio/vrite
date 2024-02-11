@@ -16,7 +16,7 @@ declare module "fastify" {
       get(workspaceId: string): Promise<number>;
       getLogs(): Promise<Record<string, number>>;
     };
-    checkout(plan: "team" | "personal"): Promise<string>;
+    checkout(workspaceId: string, plan: "team" | "personal"): Promise<string>;
     createCustomer(customerData: { email: string; name: string }): Promise<string>;
     startTrial(customerId: string): Promise<Stripe.Subscription>;
     portal(customerId: string): Promise<string>;
@@ -115,6 +115,34 @@ const billingPlugin = createPlugin(async (fastify) => {
     );
     updateSessionWorkspace(ctx, `${workspace._id}`);
   };
+  const updateSubscriptionData = async (
+    ctx: Context,
+    data: {
+      customer: string | Stripe.Customer | Stripe.DeletedCustomer;
+      subscription: Stripe.Subscription;
+    }
+  ): Promise<void> => {
+    const workspacesCollection = getWorkspacesCollection(fastify.mongo.db!);
+    const customerId = typeof data.customer === "string" ? data.customer : data.customer.id;
+    const workspace = await workspacesCollection.findOne({ customerId });
+
+    if (!workspace) return;
+
+    await workspacesCollection.updateOne(
+      { _id: workspace._id },
+      {
+        $set: {
+          subscriptionData: JSON.stringify(data.subscription),
+          subscriptionPlan: data.subscription.items.data.reduce((_, item) => {
+            return item.price.id === fastify.config.STRIPE_TEAM_PRICE_ID ? "team" : "personal";
+          }, "personal"),
+          subscriptionStatus: data.subscription.status,
+          subscriptionExpiresAt: new Date(data.subscription.current_period_end * 1000).toISOString()
+        }
+      }
+    );
+    updateSessionWorkspace(ctx, `${workspace._id}`);
+  };
   const revokeAccess = async (
     ctx: Context,
     data: { customer: string | Stripe.Customer | Stripe.DeletedCustomer }
@@ -148,7 +176,12 @@ const billingPlugin = createPlugin(async (fastify) => {
   }
 
   fastify.decorate("billing", {
-    async checkout(plan) {
+    async checkout(workspaceId, plan) {
+      const workspacesCollection = getWorkspacesCollection(fastify.mongo.db!);
+      const workspace = await workspacesCollection.findOne({ _id: new ObjectId(workspaceId) });
+
+      if (!workspace || !workspace.customerId) return null;
+
       const session = await stripe.checkout.sessions.create({
         line_items: [
           {
@@ -158,7 +191,9 @@ const billingPlugin = createPlugin(async (fastify) => {
           { price: fastify.config.STRIPE_API_PRICE_ID || "" }
         ],
         mode: "subscription",
-        customer: "cus_PWdbDx6fOqCYlo",
+        discounts: [{ coupon: fastify.config.STRIPE_API_COUPON_ID || "" }],
+        tax_id_collection: { enabled: true },
+        customer: workspace?.customerId,
         customer_update: { address: "auto", name: "auto", shipping: "auto" },
         success_url: `${fastify.config.PUBLIC_APP_URL}?success=true`,
         cancel_url: `${fastify.config.PUBLIC_APP_URL}?canceled=true`,
@@ -336,8 +371,10 @@ const billingPlugin = createPlugin(async (fastify) => {
           usage += loggedUsage;
         }
 
-        const subscription = JSON.parse(workspace.subscriptionData || "{}") as Stripe.Subscription;
-        const subscriptionAPIUsageItem = subscription.items.data.find((item) => {
+        const subscription =
+          (JSON.parse(workspace.subscriptionData || "null") as Stripe.Subscription | null) ||
+          undefined;
+        const subscriptionAPIUsageItem = subscription?.items.data.find((item) => {
           return item.price.id === fastify.config.STRIPE_API_PRICE_ID;
         });
 
@@ -376,7 +413,7 @@ const billingPlugin = createPlugin(async (fastify) => {
       }
     }
   );
-  fastify.get("/billing/webhook", async (req, res) => {
+  fastify.all("/billing/webhook", async (req, res) => {
     const signature = req.headers["stripe-signature"] || "";
     const ctx: Context = {
       db: fastify.mongo.db!,
@@ -386,6 +423,8 @@ const billingPlugin = createPlugin(async (fastify) => {
     };
 
     let event: Stripe.Event | null = null;
+
+    console.log("Webhook", req.body, signature);
 
     try {
       event = stripe.webhooks.constructEvent(
@@ -401,20 +440,28 @@ const billingPlugin = createPlugin(async (fastify) => {
       return res.status(400).send(message);
     }
 
+    console.log(event.type, event.data.object);
+
     switch (event.type) {
       case "checkout.session.completed":
       case "invoice.paid":
+        console.log(event.data.object);
+
         if (event.data.object.customer && event.data.object.subscription) {
-          enableAccess(ctx, {
+          return enableAccess(ctx, {
             customer: event.data.object.customer,
             subscription: event.data.object.subscription
           });
         }
 
         break;
+      case "customer.subscription.updated":
+        return updateSubscriptionData(ctx, {
+          customer: event.data.object.customer,
+          subscription: event.data.object
+        });
       case "customer.subscription.deleted":
-        revokeAccess(ctx, { customer: event.data.object.customer });
-        break;
+        return revokeAccess(ctx, { customer: event.data.object.customer });
       default:
         break;
     }

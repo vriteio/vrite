@@ -26,6 +26,15 @@ const authMiddleware = async <W extends true | false = true>(
     throw errors.unauthorized();
   }
 
+  if (
+    ctx.fastify.hostConfig.billing &&
+    requiredPlan &&
+    auth.data.subscriptionPlan !== "team" &&
+    auth.data.subscriptionPlan !== requiredPlan
+  ) {
+    throw errors.forbidden();
+  }
+
   if (auth.type === "session") {
     if (
       auth.data.baseType !== "admin" &&
@@ -58,13 +67,7 @@ const authMiddleware = async <W extends true | false = true>(
     throw errors.forbidden();
   }
 
-  if (
-    ctx.fastify.hostConfig.billing &&
-    requiredPlan &&
-    auth.data.subscriptionPlan !== requiredPlan
-  ) {
-    throw errors.forbidden();
-  }
+  ctx.fastify.billing.usage.log(auth.data.workspaceId, 1);
 
   return {
     auth: {

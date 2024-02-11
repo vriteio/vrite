@@ -13,7 +13,8 @@ const variantsRouter = router({
   create: authenticatedProcedure
     .meta({
       openapi: { method: "POST", path: basePath, protect: true },
-      permissions: { session: ["manageVariants"], token: ["variants:write"] }
+      permissions: { session: ["manageVariants"], token: ["variants:write"] },
+      requiredSubscriptionPlan: "personal"
     })
     .input(createVariant.inputSchema)
     .output(createVariant.outputSchema)
@@ -23,7 +24,8 @@ const variantsRouter = router({
   update: authenticatedProcedure
     .meta({
       openapi: { method: "PUT", path: basePath, protect: true },
-      permissions: { session: ["manageVariants"], token: ["variants:write"] }
+      permissions: { session: ["manageVariants"], token: ["variants:write"] },
+      requiredSubscriptionPlan: "personal"
     })
     .input(updateVariant.inputSchema)
     .output(z.void())

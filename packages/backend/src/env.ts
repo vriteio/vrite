@@ -3,8 +3,8 @@ import { z } from "zod";
 const envSchema = z.object({
   NODE_ENV: z.string(),
   SECRET: z.string(),
-  PORT: z.number(),
-  HOST: z.string(),
+  PORT: z.number().optional(),
+  HOST: z.string().optional(),
   VRITE_CLOUD: z.boolean().optional(),
   COOKIE_DOMAIN: z.string().optional(),
   // MongoDB (Database)
@@ -49,6 +49,7 @@ const envSchema = z.object({
   STRIPE_PERSONAL_PRICE_ID: z.string().optional(),
   STRIPE_API_PRICE_ID: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
+  STRIPE_API_COUPON_ID: z.string().optional(),
   // Frontend
   PUBLIC_API_URL: z.string(),
   PUBLIC_COLLAB_URL: z.string(),
