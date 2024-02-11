@@ -1,14 +1,10 @@
 import { z } from "zod";
 import { AuthenticatedContext } from "#lib/middleware";
-import { getUsersCollection } from "#collections";
+import { getUsersCollection, workspace } from "#collections";
 import { createWorkspace } from "#lib/workspace";
 import { errors } from "#lib/errors";
 
-const inputSchema = z.object({
-  name: z.string(),
-  logo: z.string().optional(),
-  description: z.string().optional()
-});
+const inputSchema = workspace.pick({ description: true, logo: true, name: true });
 const outputSchema = z.object({
   workspaceId: z.string()
 });

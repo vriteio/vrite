@@ -17,9 +17,14 @@ declare module "fastify" {
       getLogs(): Promise<Record<string, number>>;
     };
     checkout(workspaceId: string, plan: "team" | "personal"): Promise<string>;
-    createCustomer(customerData: { email: string; name: string }): Promise<string>;
-    startTrial(customerId: string): Promise<Stripe.Subscription>;
-    portal(customerId: string): Promise<string>;
+    createCustomer(customerData: {
+      email: string;
+      name: string;
+      trial?: boolean;
+      plan?: "team" | "personal";
+    }): Promise<{ customerId: string; subscription: Stripe.Subscription | null }>;
+    portal(workspaceId: string): Promise<string>;
+    deleteCustomer(workspaceId: string): Promise<void>;
     switchPlan(workspaceId: string, plan: "team" | "personal"): Promise<void>;
     canSwitchPlan(workspaceId: string, plan: "team" | "personal"): Promise<boolean>;
     updateSeats(workspaceId: string, diff: number): Promise<void>;
@@ -34,10 +39,10 @@ const billingStub = {
     return "";
   },
   async createCustomer() {
-    return "";
+    return { customerId: "", subscription: null };
   },
-  async startTrial() {
-    return {} as Stripe.Subscription;
+  async deleteCustomer() {
+    return;
   },
   async portal() {
     return "";
@@ -100,14 +105,17 @@ const billingPlugin = createPlugin(async (fastify) => {
 
     if (!workspace || !subscription) return;
 
+    const subscriptionPlanItem = subscription.items.data.find((item) => {
+      return item.price.id !== fastify.config.STRIPE_API_PRICE_ID;
+    });
+    const isTeamPlan = subscriptionPlanItem?.price.id === fastify.config.STRIPE_TEAM_PRICE_ID;
+
     await workspacesCollection.updateOne(
       { _id: workspace._id },
       {
         $set: {
           subscriptionData: JSON.stringify(subscription),
-          subscriptionPlan: subscription.items.data.reduce((plan, item) => {
-            return item.price.id === fastify.config.STRIPE_TEAM_PRICE_ID ? "team" : "personal";
-          }, "personal"),
+          subscriptionPlan: isTeamPlan ? "team" : "personal",
           subscriptionStatus: subscription.status,
           subscriptionExpiresAt: new Date(subscription.current_period_end * 1000).toISOString()
         }
@@ -128,14 +136,17 @@ const billingPlugin = createPlugin(async (fastify) => {
 
     if (!workspace) return;
 
+    const subscriptionPlanItem = data.subscription.items.data.find((item) => {
+      return item.price.id !== fastify.config.STRIPE_API_PRICE_ID;
+    });
+    const isTeamPlan = subscriptionPlanItem?.price.id === fastify.config.STRIPE_TEAM_PRICE_ID;
+
     await workspacesCollection.updateOne(
       { _id: workspace._id },
       {
         $set: {
           subscriptionData: JSON.stringify(data.subscription),
-          subscriptionPlan: data.subscription.items.data.reduce((_, item) => {
-            return item.price.id === fastify.config.STRIPE_TEAM_PRICE_ID ? "team" : "personal";
-          }, "personal"),
+          subscriptionPlan: isTeamPlan ? "team" : "personal",
           subscriptionStatus: data.subscription.status,
           subscriptionExpiresAt: new Date(data.subscription.current_period_end * 1000).toISOString()
         }
@@ -205,18 +216,30 @@ const billingPlugin = createPlugin(async (fastify) => {
     async createCustomer(customerData) {
       const customer = await stripe.customers.create(customerData);
 
-      return customer.id;
+      let subscription: Stripe.Subscription | null = null;
+
+      if (customerData.trial) {
+        subscription = await stripe.subscriptions.create({
+          customer: customer.id,
+          trial_period_days: 30,
+          trial_settings: { end_behavior: { missing_payment_method: "cancel" } },
+          coupon: fastify.config.STRIPE_API_COUPON_ID || "",
+          items: [
+            { price: getPriceId(customerData.plan || "personal"), quantity: 1 },
+            { price: fastify.config.STRIPE_API_PRICE_ID || "" }
+          ]
+        });
+      }
+
+      return { customerId: customer.id, subscription };
     },
-    async startTrial(customerId) {
-      return await stripe.subscriptions.create({
-        customer: customerId,
-        trial_period_days: 30,
-        trial_settings: { end_behavior: { missing_payment_method: "cancel" } },
-        items: [
-          { price: fastify.config.STRIPE_PERSONAL_PRICE_ID || "", quantity: 1 },
-          { price: fastify.config.STRIPE_API_PRICE_ID || "" }
-        ]
-      });
+    async deleteCustomer(workspaceId) {
+      const workspacesCollection = getWorkspacesCollection(fastify.mongo.db!);
+      const workspace = await workspacesCollection.findOne({ _id: new ObjectId(workspaceId) });
+
+      if (!workspace || !workspace.customerId) return;
+
+      await stripe.customers.del(workspace.customerId);
     },
     async portal(workspaceId) {
       const workspacesCollection = getWorkspacesCollection(fastify.mongo.db!);
@@ -413,7 +436,7 @@ const billingPlugin = createPlugin(async (fastify) => {
       }
     }
   );
-  fastify.all("/billing/webhook", async (req, res) => {
+  fastify.post("/billing/webhook", async (req, res) => {
     const signature = req.headers["stripe-signature"] || "";
     const ctx: Context = {
       db: fastify.mongo.db!,
@@ -423,8 +446,6 @@ const billingPlugin = createPlugin(async (fastify) => {
     };
 
     let event: Stripe.Event | null = null;
-
-    console.log("Webhook", req.body, signature);
 
     try {
       event = stripe.webhooks.constructEvent(
@@ -440,13 +461,9 @@ const billingPlugin = createPlugin(async (fastify) => {
       return res.status(400).send(message);
     }
 
-    console.log(event.type, event.data.object);
-
     switch (event.type) {
       case "checkout.session.completed":
       case "invoice.paid":
-        console.log(event.data.object);
-
         if (event.data.object.customer && event.data.object.subscription) {
           return enableAccess(ctx, {
             customer: event.data.object.customer,

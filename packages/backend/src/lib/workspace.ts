@@ -30,7 +30,8 @@ const createWorkspace = async (
     name?: string;
     logo?: string;
     description?: string;
-    defaultContent?: boolean;
+    newUser?: boolean;
+    plan?: string;
   }
 ): Promise<ObjectId> => {
   const db = fastify.mongo.db!;
@@ -62,7 +63,7 @@ const createWorkspace = async (
     contentGroups: [],
     ...(config?.logo && { logo: config.logo }),
     ...(config?.description && { description: config.description }),
-    ...(config?.defaultContent && {
+    ...(config?.newUser && {
       contentGroups: contentGroups.map(({ _id }) => _id)
     })
   };
@@ -109,23 +110,29 @@ const createWorkspace = async (
   await fastify.search.createTenant(workspaceId);
 
   if (fastify.hostConfig.billing) {
-    const customerId = await fastify.billing.createCustomer({
+    const { customerId, subscription } = await fastify.billing.createCustomer({
       email: user.email,
-      name: user.username
+      name: user.username,
+      trial: config?.newUser,
+      plan: config?.plan as "personal" | "team" | undefined
     });
-    // TODO: Trial only for the first workspace
-    const subscription = await fastify.billing.startTrial(customerId);
 
     workspace.customerId = customerId;
-    workspace.subscriptionStatus = subscription.status;
-    workspace.subscriptionPlan = "personal";
-    workspace.subscriptionData = JSON.stringify(subscription);
-    workspace.subscriptionExpiresAt = new Date(
-      subscription.current_period_end * 1000
-    ).toISOString();
+
+    if (config?.newUser && subscription) {
+      workspace.subscriptionStatus = subscription?.status;
+      workspace.subscriptionPlan = "personal";
+      workspace.subscriptionData = JSON.stringify(subscription);
+      workspace.subscriptionExpiresAt = new Date(
+        subscription.current_period_end * 1000
+      ).toISOString();
+    } else {
+      workspace.subscriptionStatus = "canceled";
+      workspace.subscriptionExpiresAt = new Date().toISOString();
+    }
   }
 
-  if (config?.defaultContent) {
+  if (config?.newUser) {
     await contentGroupsCollection.insertMany(contentGroups);
     await contentPiecesCollection.insertOne({
       _id: contentPieceId,
@@ -192,6 +199,7 @@ const deleteWorkspace = async (workspaceId: ObjectId, fastify: FastifyInstance):
     contentPieceId: { $in: contentPieceIds }
   });
   await fastify.search.deleteTenant(workspaceId);
+  await fastify.billing.deleteCustomer(`${workspaceId}`);
 };
 
 export { createWorkspace, deleteWorkspace };

@@ -4,7 +4,7 @@ import { createStore } from "solid-js/store";
 import clsx from "clsx";
 import { InputField, TitledCard } from "#components/fragments";
 import { Loader, Button } from "#components/primitives";
-import { useClient, App, useNotifications } from "#context";
+import { useClient, App, useNotifications, useHostConfig } from "#context";
 
 interface ConfigureRoleSubsectionProps {
   editedRoleId?: string;
@@ -14,6 +14,7 @@ interface ConfigureRoleSubsectionProps {
 
 const ConfigureRoleSubsection: Component<ConfigureRoleSubsectionProps> = (props) => {
   const client = useClient();
+  const hostConfig = useHostConfig();
   const { notify } = useNotifications();
   const [loading, setLoading] = createSignal(false);
   const [editedRoleData] = createResource(() => {
@@ -57,11 +58,6 @@ const ConfigureRoleSubsection: Component<ConfigureRoleSubsectionProps> = (props)
       permission: "manageWebhooks"
     },
     {
-      label: "Manage Extensions",
-      description: "Install, configure, and delete Extensions",
-      permission: "manageExtensions"
-    },
-    {
       label: "Manage Variants",
       description: "Create, edit, and delete Variants",
       permission: "manageVariants"
@@ -71,14 +67,33 @@ const ConfigureRoleSubsection: Component<ConfigureRoleSubsectionProps> = (props)
       description:
         "Manage the workspace settings - including its details, members, roles, and editor settings",
       permission: "manageWorkspace"
-    },
-    {
+    }
+  ];
+
+  if (hostConfig.extensions) {
+    permissionsMenu.push({
+      label: "Manage Extensions",
+      description: "Install, configure, and delete Extensions",
+      permission: "manageExtensions"
+    });
+  }
+
+  if (hostConfig.billing) {
+    permissionsMenu.push({
+      label: "Manage billing",
+      description: "Manage the workspace's billing settings",
+      permission: "manageBilling"
+    });
+  }
+
+  if (hostConfig.githubApp) {
+    permissionsMenu.push({
       label: "Manage Git",
       description:
         "Setup and manage Git source control - including commits, pull requests, and provider configuration",
       permission: "manageGit"
-    }
-  ];
+    });
+  }
 
   props.setActionComponent(() => (
     <Button

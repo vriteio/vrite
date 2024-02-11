@@ -26,8 +26,10 @@ const handler = async (
   if (!user) throw errors.notFound("user");
 
   const redirect = await ctx.fastify.redis.get(`user:${user._id}:emailVerificationRedirect`);
+  const plan = await ctx.fastify.redis.get(`user:${user._id}:subscriptionPlan`);
 
   await ctx.fastify.redis.del(`user:${user._id}:emailVerificationRedirect`);
+  await ctx.fastify.redis.del(`user:${user._id}:subscriptionPlan`);
   await users.updateOne(
     {
       _id: user._id
@@ -38,7 +40,10 @@ const handler = async (
   );
 
   try {
-    const workspaceId = await createWorkspace(user, ctx.fastify, { defaultContent: true });
+    const workspaceId = await createWorkspace(user, ctx.fastify, {
+      newUser: true,
+      plan: plan || undefined
+    });
 
     await userSettingsCollection.insertOne({
       _id: new ObjectId(),

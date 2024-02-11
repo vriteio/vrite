@@ -15,7 +15,8 @@ const inputSchema = z.object({
     .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/)
     .min(8)
     .max(128),
-  redirect: z.string().optional()
+  redirect: z.string().optional(),
+  plan: z.string().optional()
 });
 const handler = async (ctx: Context, input: z.infer<typeof inputSchema>): Promise<void> => {
   const users = getUsersCollection(ctx.db);
@@ -40,6 +41,12 @@ const handler = async (ctx: Context, input: z.infer<typeof inputSchema>): Promis
   await ctx.fastify.redis.set(
     `user:${user._id}:emailVerificationRedirect`,
     input.redirect || "/",
+    "EX",
+    60 * 60 * 24
+  );
+  await ctx.fastify.redis.set(
+    `user:${user._id}:subscriptionPlan`,
+    input.plan || "/",
     "EX",
     60 * 60 * 24
   );

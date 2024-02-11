@@ -53,7 +53,11 @@ const PasswordForm: AuthFormComponent = (props) => {
   };
   const register = async (): Promise<void> => {
     try {
-      await client.auth.register.mutate({ ...props.formData, redirect: props.redirect });
+      await client.auth.register.mutate({
+        ...props.formData,
+        redirect: props.redirect,
+        plan: props.plan
+      });
       setLoading(false);
       props.setFormData("formType", "verify-email");
     } catch (error) {

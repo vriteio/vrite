@@ -17,7 +17,14 @@ import {
 } from "solid-js";
 import { mdiAccountMultiple, mdiDotsVertical, mdiTagText, mdiTrashCan } from "@mdi/js";
 import { useNavigate } from "@solidjs/router";
-import { App, hasPermission, useClient, useConfirmationModal } from "#context";
+import {
+  App,
+  hasPermission,
+  useAuthenticatedUserData,
+  useClient,
+  useConfirmationModal,
+  useHostConfig
+} from "#context";
 import { Dropdown, IconButton } from "#components/primitives";
 import { breakpoints } from "#lib/utils";
 
@@ -171,7 +178,9 @@ const useWorkspace = (): {
 const WorkspaceSection: SettingsSectionComponent = (props) => {
   const client = useClient();
   const navigate = useNavigate();
-  const { confirmWithInput } = useConfirmationModal();
+  const hostConfig = useHostConfig();
+  const { confirmWithInput, confirmAction } = useConfirmationModal();
+  const { subscription } = useAuthenticatedUserData();
   const [openedSubsection, setOpenedSubsection] = createSignal<
     "none" | "invite-member" | "configure-role"
   >("none");
@@ -203,21 +212,47 @@ const WorkspaceSection: SettingsSectionComponent = (props) => {
                 class="w-full m-0 justify-start"
                 onClick={() => {
                   setDropdownOpened(false);
-                  confirmWithInput({
-                    header: "Delete workspace",
-                    async onConfirm() {
-                      await client.workspaces.delete.mutate();
-                      navigate("/workspaces");
-                    },
-                    content: (
-                      <p>
-                        The entire workspace (<b>{workspaceData.workspace()?.name}</b>) will be
-                        deleted, including all the content, metadata, members, etc.{" "}
-                        <b class="text-red-500">Proceed with caution!</b>
-                      </p>
-                    ),
-                    input: workspaceData.workspace()?.name || ""
-                  });
+
+                  const confirmDeleteWorkspace = (): void => {
+                    confirmWithInput({
+                      header: "Delete workspace",
+                      async onConfirm() {
+                        await client.workspaces.delete.mutate();
+                        navigate("/workspaces");
+                      },
+                      content: (
+                        <p>
+                          The entire workspace (<b>{workspaceData.workspace()?.name}</b>) will be
+                          deleted, including all the content, metadata, members, etc.{" "}
+                          <b class="text-red-500">Proceed with caution!</b>
+                        </p>
+                      ),
+                      input: workspaceData.workspace()?.name || ""
+                    });
+                  };
+
+                  if (subscription()?.plan) {
+                    confirmAction({
+                      header: `Cancel ${subscription()?.status === "trialing" ? "trial" : "subscription"}`,
+                      type: "danger",
+                      content: (
+                        <p>
+                          You have an{" "}
+                          <b>
+                            active{" "}
+                            {subscription()?.status === "trialing" ? "trial" : "subscription"}
+                          </b>{" "}
+                          connected to this workspace. If you delete this workspace, it will
+                          automatically be canceled.
+                        </p>
+                      ),
+                      onConfirm: () => {
+                        confirmDeleteWorkspace();
+                      }
+                    });
+                  } else {
+                    confirmDeleteWorkspace();
+                  }
                 }}
               />
             </Dropdown>
@@ -234,42 +269,44 @@ const WorkspaceSection: SettingsSectionComponent = (props) => {
           workspace={workspaceData.workspace()}
           workspaceLoading={workspaceData.loading()}
         />
-        <MembersCard
-          roles={rolesData.roles()}
-          members={membersData.members()}
-          rolesLoading={rolesData.loading()}
-          membersLoading={membersData.loading()}
-          moreToLoad={membersData.moreToLoad()}
-          loadMore={membersData.loadMore}
-          openInviteMemberSubsection={() => {
-            setOpenedSubsection("invite-member");
-            props.setSubSection({
-              label: "Invite member",
-              icon: mdiAccountMultiple,
-              goBack() {
-                setOpenedSubsection("none");
-              }
-            });
-          }}
-        />
-        <RolesCard
-          roles={rolesData.roles()}
-          rolesLoading={rolesData.loading()}
-          moreToLoad={rolesData.moreToLoad()}
-          loadMore={rolesData.loadMore}
-          editedRoleId={editedRoleId()}
-          setEditedRoleId={setEditedRoleId}
-          openConfigureRoleSubsection={() => {
-            setOpenedSubsection("configure-role");
-            props.setSubSection({
-              label: editedRoleId() ? "Edit role" : "New role",
-              icon: mdiTagText,
-              goBack() {
-                setOpenedSubsection("none");
-              }
-            });
-          }}
-        />
+        <Show when={!hostConfig.billing || subscription()?.plan === "team"}>
+          <MembersCard
+            roles={rolesData.roles()}
+            members={membersData.members()}
+            rolesLoading={rolesData.loading()}
+            membersLoading={membersData.loading()}
+            moreToLoad={membersData.moreToLoad()}
+            loadMore={membersData.loadMore}
+            openInviteMemberSubsection={() => {
+              setOpenedSubsection("invite-member");
+              props.setSubSection({
+                label: "Invite member",
+                icon: mdiAccountMultiple,
+                goBack() {
+                  setOpenedSubsection("none");
+                }
+              });
+            }}
+          />
+          <RolesCard
+            roles={rolesData.roles()}
+            rolesLoading={rolesData.loading()}
+            moreToLoad={rolesData.moreToLoad()}
+            loadMore={rolesData.loadMore}
+            editedRoleId={editedRoleId()}
+            setEditedRoleId={setEditedRoleId}
+            openConfigureRoleSubsection={() => {
+              setOpenedSubsection("configure-role");
+              props.setSubSection({
+                label: editedRoleId() ? "Edit role" : "New role",
+                icon: mdiTagText,
+                goBack() {
+                  setOpenedSubsection("none");
+                }
+              });
+            }}
+          />
+        </Show>
       </Match>
       <Match when={openedSubsection() === "configure-role"}>
         <ConfigureRoleSubsection

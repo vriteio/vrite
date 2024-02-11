@@ -34,6 +34,7 @@ interface AuthFormComponentProps {
   footer: JSX.Element;
   formData: AuthFormData;
   redirect?: string;
+  plan?: string;
   setFormData: SetStoreFunction<AuthFormData>;
 }
 
@@ -46,6 +47,7 @@ const AuthView: Component = () => {
   const [showForm, setShowForm] = createSignal(false);
   const initialError = new URL(location.href).searchParams.get("error");
   const redirect = new URL(location.href).searchParams.get("redirect") || "/";
+  const plan = new URL(location.href).searchParams.get("plan") || "personal";
   const [formData, setFormData] = createStore<AuthFormData>({
     password: "",
     email: "",
@@ -70,7 +72,7 @@ const AuthView: Component = () => {
   };
   const continueWithGitHub = (): void => {
     setFormData("loading", true);
-    window.location.replace("/login/github");
+    window.location.replace(`/login/github?plan=${plan}`);
   };
 
   onMount(() => {
@@ -117,6 +119,7 @@ const AuthView: Component = () => {
                 formData={formData}
                 setFormData={setFormData}
                 redirect={redirect}
+                plan={plan}
                 footer={
                   <>
                     <Show when={hostConfig.githubOAuth}>

@@ -16,6 +16,7 @@ import { Card, Heading, IconButton, Input, Overlay } from "#components/primitive
 interface ConfirmationModalConfig {
   content?: JSX.Element;
   header: string;
+  type?: "normal" | "danger";
   onCancel?(): void;
   onConfirm?(): void | Promise<void>;
 }
@@ -56,11 +57,11 @@ const ConfirmationModalProvider: ParentComponent = (props) => {
       {props.children}
       <Overlay opened={Boolean(config())} onOverlayClick={cancel}>
         <Show when={config()} keyed>
-          {(config) => {
+          {(currentConfig) => {
             return (
               <Card class="max-w-full p-3 w-88">
                 <div class="flex items-start justify-center">
-                  <Heading class="flex-1">{config.header}</Heading>
+                  <Heading class="flex-1">{currentConfig.header}</Heading>
                   <IconButton
                     path={mdiClose}
                     class="m-0"
@@ -70,13 +71,13 @@ const ConfirmationModalProvider: ParentComponent = (props) => {
                   />
                 </div>
                 <div class={clsx("mt-2", type() === "input" ? "mb-4" : "mb-8")}>
-                  {config.content}
+                  {currentConfig.content}
                 </div>
                 <Show when={type() === "input"}>
                   <div class="mb-4">
                     <Input value={input()} setValue={setInput} class="m-0" color="contrast" />
                     <p class="text-sm">
-                      Please type "<em>{config.input || ""}</em>" to confirm.
+                      Please type "<em>{currentConfig.input || ""}</em>" to confirm.
                     </p>
                   </div>
                 </Show>
@@ -98,7 +99,7 @@ const ConfirmationModalProvider: ParentComponent = (props) => {
                         label="Delete"
                         disabled={!filled()}
                         onClick={() => {
-                          config.onConfirm?.();
+                          currentConfig.onConfirm?.();
                           setConfig(null);
                         }}
                       />
@@ -107,14 +108,17 @@ const ConfirmationModalProvider: ParentComponent = (props) => {
                       <IconButton
                         class="flex-1 text-white"
                         path={mdiCheck}
-                        color="success"
+                        color={currentConfig.type === "danger" ? "danger" : "success"}
                         label="Confirm"
                         loading={loading()}
                         onClick={async () => {
                           setLoading(true);
-                          await config.onConfirm?.();
+                          await currentConfig.onConfirm?.();
                           setLoading(false);
-                          setConfig(null);
+
+                          if (currentConfig.onConfirm === config()?.onConfirm) {
+                            setConfig(null);
+                          }
                         }}
                       />
                     </Match>

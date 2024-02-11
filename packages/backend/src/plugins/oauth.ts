@@ -27,7 +27,15 @@ const registerGitHubOAuth = (fastify: FastifyInstance): void => {
         auth: fastifyOAuth2.GITHUB_CONFIGURATION
       },
       startRedirectPath: "/login/github",
-      callbackUri: `${fastify.config.PUBLIC_APP_URL}/login/github/callback`
+      callbackUri: `${fastify.config.PUBLIC_APP_URL}/login/github/callback`,
+      generateStateFunction: (request) => {
+        const plan = (request.query as Record<string, string>).plan || "personal";
+
+        return `plan:${plan}`;
+      },
+      checkStateFunction: () => {
+        return true;
+      }
     }
   };
 
@@ -35,6 +43,7 @@ const registerGitHubOAuth = (fastify: FastifyInstance): void => {
     try {
       const db = fastify.mongo.db!;
       const github = await fastify.githubOAuth2.getAccessTokenFromAuthorizationCodeFlow(req);
+      const state = (req.query as Record<string, string>).state || "";
       const users = getUsersCollection(db);
       const userSettingsCollection = getUserSettingsCollection(db);
       const client = axios.create({
@@ -75,7 +84,12 @@ const registerGitHubOAuth = (fastify: FastifyInstance): void => {
         await users.insertOne(newUser);
 
         const workspaceId = await createWorkspace(newUser, fastify, {
-          defaultContent: true
+          newUser: true,
+          plan:
+            state
+              .split(";")
+              .find((part) => part.startsWith("plan:"))
+              ?.split(":")[1] || "personal"
         });
 
         await userSettingsCollection.insertOne({

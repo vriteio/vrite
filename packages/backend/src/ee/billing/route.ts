@@ -7,14 +7,16 @@ import { errors } from "#lib/errors";
 const authenticatedProcedure = procedure.use(isAuthenticated);
 const billingRouter = router({
   checkout: authenticatedProcedure
-    .input(z.void())
+    .meta({ permissions: { session: ["manageBilling"] } })
+    .input(z.object({ plan: z.enum(["personal", "team"]) }))
     .output(z.object({ url: z.string() }))
-    .query(async ({ ctx }) => {
-      const url = await ctx.fastify.billing.checkout(`${ctx.auth.workspaceId}`, "personal");
+    .query(async ({ ctx, input }) => {
+      const url = await ctx.fastify.billing.checkout(`${ctx.auth.workspaceId}`, input.plan);
 
       return { url };
     }),
   portal: authenticatedProcedure
+    .meta({ permissions: { session: ["manageBilling"] } })
     .input(z.void())
     .output(z.object({ url: z.string() }))
     .query(async ({ ctx }) => {
@@ -31,6 +33,7 @@ const billingRouter = router({
       return { usage };
     }),
   switchPlan: authenticatedProcedure
+    .meta({ permissions: { session: ["manageBilling"] } })
     .input(z.object({ plan: z.enum(["personal", "team"]) }))
     .output(z.void())
     .mutation(async ({ input, ctx }) => {

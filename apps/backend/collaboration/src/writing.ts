@@ -39,6 +39,10 @@ const writingPlugin = createPlugin(async (fastify) => {
         data.connection.readOnly = true;
       }
 
+      if (fastify.hostConfig.billing && !sessionData.subscriptionPlan) {
+        data.connection.readOnly = true;
+      }
+
       return sessionData;
     },
     extensions: [
