@@ -284,6 +284,31 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/scripts
 
+  apps/backend/usage-reporting:
+    dependencies:
+      '@fastify/cors':
+        specifier: ^9.0.1
+        version: 9.0.1
+      '@fastify/rate-limit':
+        specifier: ^9.1.0
+        version: 9.1.0
+      '@trpc/server':
+        specifier: ^10.45.0
+        version: 10.45.0
+      '@vrite/backend':
+        specifier: workspace:*
+        version: link:../../../packages/backend
+      fastify:
+        specifier: ^4.26.0
+        version: 4.26.0
+      trpc-openapi:
+        specifier: ^1.2.0
+        version: 1.2.0(@trpc/server@10.45.0)(zod@3.22.4)
+    devDependencies:
+      '@vrite/scripts':
+        specifier: workspace:*
+        version: link:../../../packages/scripts
+
   apps/docs:
     dependencies:
       '@astrojs/mdx':
@@ -763,6 +788,9 @@ importers:
       saslprep:
         specifier: ^1.0.3
         version: 1.0.3
+      stripe:
+        specifier: ^14.15.0
+        version: 14.15.0
       trpc-openapi:
         specifier: ^1.2.0
         version: 1.2.0(@trpc/server@10.45.0)(zod@3.22.4)
@@ -15749,6 +15777,14 @@ packages:
     resolution: {integrity: sha512-6fPc+R4ihwqP6N/aIv2f1gMH8lOVtWQHoqC4yK6oSDVVocumAsfCqjkXnqiYMhmMwS/mEHLp7Vehlt3ql6lEig==}
     engines: {node: '>=8'}
     dev: true
+
+  /stripe@14.15.0:
+    resolution: {integrity: sha512-KPxNcf0iFWA38pkzeJyJklK9qQJo/6FEBDcLsZxDCVHfn8yT+uP9p1JSYiOhIxCyh+6BD5XEVOMnnBJnVeEnfA==}
+    engines: {node: '>=12.*'}
+    dependencies:
+      '@types/node': 20.11.16
+      qs: 6.11.2
+    dev: false
 
   /strnum@1.0.5:
     resolution: {integrity: sha512-J8bbNyKKXl5qYcR36TIO8W3mVGVHrmmxsd5PAItGkmyzwJvybiw2IVq5nqd0i4LSNSkB/sx9VHllbfFdr9k1JA==}

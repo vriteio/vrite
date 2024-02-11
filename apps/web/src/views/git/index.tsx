@@ -77,12 +77,11 @@ const GitView: Component = () => {
   const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
   const [subSection, setSubSection] = createSignal<SubSection | null>(null);
   const [actionComponent, setActionComponent] = createSignal<Component<{}> | null>(null);
-  const client = useClient();
-  const openedProvider = (): string => storage().sourceControlConfiguredProvider || "";
+  const openedProvider = (): string => storage().sourceControlSection || "";
   const setOpenedProvider = (providerName: string): void => {
     setStorage((storage) => ({
       ...storage,
-      sourceControlConfiguredProvider: providerName
+      sourceControlSection: providerName
     }));
   };
   const { gitConfig, loading } = useGitConfig();

@@ -11,7 +11,7 @@ import {
   useContext
 } from "solid-js";
 import { useNavigate, useLocation } from "@solidjs/router";
-import { App, useClient } from "#context";
+import { App, useClient, useHostConfig } from "#context";
 
 interface AuthenticatedUserDataContextValue {
   userSettings: Accessor<App.AppearanceSettings | null>;
@@ -21,6 +21,11 @@ interface AuthenticatedUserDataContextValue {
   workspaceSettings: Accessor<App.WorkspaceSettings | null>;
   role: Accessor<App.ExtendedRole<"baseType"> | null>;
   deletedTags: Accessor<string[]>;
+  subscription: Accessor<{
+    status: string;
+    expiresAt: string;
+    plan?: string | undefined;
+  } | null>;
   currentWorkspaceId: Accessor<string | null>;
 }
 
@@ -30,6 +35,16 @@ const AuthenticatedUserDataProvider: ParentComponent = (props) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [deletedTags, setDeletedTags] = createSignal<string[]>([]);
+  const [subscription] = createResource(
+    async () => {
+      try {
+        return await client.billing.subscription.query();
+      } catch (error) {
+        return null;
+      }
+    },
+    { initialValue: null }
+  );
   const [currentWorkspaceId] = createResource<string | null>(
     async () => {
       try {
@@ -91,7 +106,8 @@ const AuthenticatedUserDataProvider: ParentComponent = (props) => {
       membership.loading ||
       workspace.loading ||
       workspaceSettings.loading ||
-      role.loading
+      role.loading ||
+      subscription.loading
     );
   };
 
@@ -218,6 +234,7 @@ const AuthenticatedUserDataProvider: ParentComponent = (props) => {
             profile,
             membership,
             workspace,
+            subscription,
             workspaceSettings,
             role,
             deletedTags,
@@ -233,8 +250,13 @@ const AuthenticatedUserDataProvider: ParentComponent = (props) => {
 const useAuthenticatedUserData = (): AuthenticatedUserDataContextValue => {
   return useContext(AuthenticatedContext)!;
 };
-const hasPermission = (permission: App.Permission): boolean => {
-  const { role } = useAuthenticatedUserData();
+const hasPermission = (permission: App.Permission, ignoreSubscription?: boolean): boolean => {
+  const { role, subscription } = useAuthenticatedUserData();
+  const hostConfig = useHostConfig();
+
+  if (hostConfig.billing && !ignoreSubscription && subscription() && !subscription()?.plan) {
+    return false;
+  }
 
   return role()?.permissions.includes(permission) || role()?.baseType === "admin" || false;
 };

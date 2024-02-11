@@ -10,7 +10,8 @@ const searchRouter = router({
     .meta({
       openapi: { method: "GET", path: `${basePath}`, protect: true },
       requiredConfig: ["search"],
-      permissions: { token: ["contentPieces:read"] }
+      permissions: { token: ["contentPieces:read"] },
+      requiredSubscriptionPlan: "personal"
     })
     .input(search.inputSchema)
     .output(search.outputSchema)
@@ -21,7 +22,8 @@ const searchRouter = router({
     .meta({
       openapi: { method: "GET", path: `${basePath}/ask`, protect: true },
       requiredConfig: ["aiSearch"],
-      permissions: { token: ["contentPieces:read"] }
+      permissions: { token: ["contentPieces:read"] },
+      requiredSubscriptionPlan: "personal"
     })
     .input(ask.inputSchema)
     .output(ask.outputSchema)

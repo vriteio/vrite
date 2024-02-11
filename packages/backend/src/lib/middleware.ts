@@ -19,16 +19,34 @@ const authMiddleware = async <W extends true | false = true>(
 ): Promise<AuthMiddlewareContextExtension<W>> => {
   const requiredSessionPermissions = meta?.permissions?.session || [];
   const requiredTokenPermissions = meta?.permissions?.token || [];
+  const requiredPlan = meta?.requiredSubscriptionPlan;
   const auth = await processAuth(ctx);
 
   if (!auth) {
     throw errors.unauthorized();
   }
 
+  if (
+    ctx.fastify.hostConfig.billing &&
+    requiredPlan &&
+    auth.data.subscriptionPlan !== "team" &&
+    auth.data.subscriptionPlan !== requiredPlan
+  ) {
+    throw errors.forbidden();
+  }
+
   if (auth.type === "session") {
     if (
       auth.data.baseType !== "admin" &&
       requiredSessionPermissions.some((permission) => !auth.data.permissions.includes(permission))
+    ) {
+      throw errors.forbidden();
+    }
+
+    if (
+      ctx.fastify.hostConfig.billing &&
+      requiredPlan &&
+      auth.data.subscriptionPlan !== requiredPlan
     ) {
       throw errors.forbidden();
     }
@@ -48,6 +66,8 @@ const authMiddleware = async <W extends true | false = true>(
   if (requiredTokenPermissions.some((permission) => !auth.data.permissions.includes(permission))) {
     throw errors.forbidden();
   }
+
+  ctx.fastify.billing.usage.log(auth.data.workspaceId, 1);
 
   return {
     auth: {

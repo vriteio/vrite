@@ -7,7 +7,8 @@ const hostConfig = z.object({
   smtp: z.boolean(),
   search: z.boolean(),
   aiSearch: z.boolean(),
-  extensions: z.boolean()
+  extensions: z.boolean(),
+  billing: z.boolean()
 });
 
 interface HostConfig extends z.infer<typeof hostConfig> {}

@@ -18,7 +18,8 @@ const workspaceMembershipsRouter = router({
   update: authenticatedProcedure
     .meta({
       openapi: { method: "PUT", path: basePath, protect: true },
-      permissions: { session: ["manageWorkspace"], token: ["workspaceMemberships:write"] }
+      permissions: { session: ["manageWorkspace"], token: ["workspaceMemberships:write"] },
+      requiredSubscriptionPlan: "personal"
     })
     .input(updateWorkspaceMembership.inputSchema)
     .output(z.void())
@@ -48,7 +49,8 @@ const workspaceMembershipsRouter = router({
   sendInvite: authenticatedProcedure
     .meta({
       openapi: { method: "POST", path: basePath, protect: true },
-      permissions: { session: ["manageWorkspace"], token: ["workspaceMemberships:write"] }
+      permissions: { session: ["manageWorkspace"], token: ["workspaceMemberships:write"] },
+      requiredSubscriptionPlan: "team"
     })
     .input(sendInvite.inputSchema)
     .output(z.void())
@@ -69,7 +71,7 @@ const workspaceMembershipsRouter = router({
   leave: authenticatedProcedure
     .input(z.void())
     .output(z.void())
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ ctx }) => {
       return leaveWorkspace.handler(ctx);
     }),
 

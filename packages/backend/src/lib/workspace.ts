@@ -9,7 +9,7 @@ import {
   getWorkspaceSettingsCollection,
   marks
 } from "#collections/workspace-settings";
-import { getWorkspacesCollection } from "#collections/workspaces";
+import { FullWorkspace, getWorkspacesCollection } from "#collections/workspaces";
 import { getWorkspaceMembershipsCollection } from "#collections/workspace-memberships";
 import { getRolesCollection } from "#collections/roles";
 import { FullUser } from "#collections/users";
@@ -30,7 +30,8 @@ const createWorkspace = async (
     name?: string;
     logo?: string;
     description?: string;
-    defaultContent?: boolean;
+    newUser?: boolean;
+    plan?: string;
   }
 ): Promise<ObjectId> => {
   const db = fastify.mongo.db!;
@@ -56,17 +57,17 @@ const createWorkspace = async (
       workspaceId
     }
   ];
-
-  await workspacesCollection.insertOne({
+  const workspace: UnderscoreID<FullWorkspace<ObjectId>> = {
     name: config?.name || `${user.username}'s workspace`,
     _id: workspaceId,
     contentGroups: [],
     ...(config?.logo && { logo: config.logo }),
     ...(config?.description && { description: config.description }),
-    ...(config?.defaultContent && {
+    ...(config?.newUser && {
       contentGroups: contentGroups.map(({ _id }) => _id)
     })
-  });
+  };
+
   await workspaceSettingsCollection.insertOne({
     _id: new ObjectId(),
     workspaceId,
@@ -108,7 +109,30 @@ const createWorkspace = async (
   });
   await fastify.search.createTenant(workspaceId);
 
-  if (config?.defaultContent) {
+  if (fastify.hostConfig.billing) {
+    const { customerId, subscription } = await fastify.billing.createCustomer({
+      email: user.email,
+      name: user.username,
+      trial: config?.newUser,
+      plan: config?.plan as "personal" | "team" | undefined
+    });
+
+    workspace.customerId = customerId;
+
+    if (config?.newUser && subscription) {
+      workspace.subscriptionStatus = subscription?.status;
+      workspace.subscriptionPlan = "personal";
+      workspace.subscriptionData = JSON.stringify(subscription);
+      workspace.subscriptionExpiresAt = new Date(
+        subscription.current_period_end * 1000
+      ).toISOString();
+    } else {
+      workspace.subscriptionStatus = "canceled";
+      workspace.subscriptionExpiresAt = new Date().toISOString();
+    }
+  }
+
+  if (config?.newUser) {
     await contentGroupsCollection.insertMany(contentGroups);
     await contentPiecesCollection.insertOne({
       _id: contentPieceId,
@@ -126,6 +150,8 @@ const createWorkspace = async (
       content: new Binary(jsonToBuffer(initialContent as unknown as DocJSON))
     });
   }
+
+  await workspacesCollection.insertOne(workspace);
 
   return workspaceId;
 };
@@ -173,6 +199,7 @@ const deleteWorkspace = async (workspaceId: ObjectId, fastify: FastifyInstance):
     contentPieceId: { $in: contentPieceIds }
   });
   await fastify.search.deleteTenant(workspaceId);
+  await fastify.billing.deleteCustomer(`${workspaceId}`);
 };
 
 export { createWorkspace, deleteWorkspace };

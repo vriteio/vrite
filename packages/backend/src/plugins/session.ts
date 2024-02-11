@@ -42,19 +42,36 @@ const sessionPlugin = createPlugin(async (fastify) => {
       return;
     }
   });
+
   /**
-   * Requires Redis config: notify-keyspace-events Ex
+   * Requires Redis config: notify-keyspace-events Egx
    */
-  fastify.pubsub.subscribe("__keyevent@0__:expired", async ({ data }) => {
+  const handleRedisKeyEvent = async ({ data }: { data: any }): Promise<void> => {
     if (data.startsWith("session:")) {
       const [, sessionId] = data.split(":");
       const roleId = await fastify.redis.hget("session:role", sessionId);
       const userId = await fastify.redis.hget("session:user", sessionId);
+      const workspaceId = await fastify.redis.hget("session:workspace", sessionId);
 
-      if (roleId) await fastify.redis.srem(`role:${roleId}:sessions`, sessionId);
-      if (userId) await fastify.redis.srem(`user:${userId}:sessions`, sessionId);
+      if (roleId) {
+        await fastify.redis.srem(`role:${roleId}:sessions`, sessionId);
+        await fastify.redis.hdel(`session:role`, sessionId);
+      }
+
+      if (userId) {
+        await fastify.redis.srem(`user:${userId}:sessions`, sessionId);
+        await fastify.redis.hdel(`session:user`, sessionId);
+      }
+
+      if (workspaceId) {
+        await fastify.redis.srem(`workspace:${workspaceId}:sessions`, sessionId);
+        await fastify.redis.hdel(`session:workspace`, sessionId);
+      }
     }
-  });
+  };
+
+  fastify.pubsub.subscribe("__keyevent@0__:expired", handleRedisKeyEvent);
+  fastify.pubsub.subscribe("__keyevent@0__:del", handleRedisKeyEvent);
 });
 
 export { sessionPlugin };

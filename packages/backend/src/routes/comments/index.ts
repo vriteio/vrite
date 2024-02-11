@@ -34,24 +34,36 @@ const commentsRouter = router({
       return listComments.handler(ctx, input);
     }),
   createThread: authenticatedProcedure
+    .meta({
+      requiredSubscriptionPlan: "personal"
+    })
     .input(createThread.inputSchema)
     .output(createThread.outputSchema)
     .mutation(async ({ input, ctx }) => {
       return createThread.handler(ctx, input);
     }),
   resolveThread: authenticatedProcedure
+    .meta({
+      requiredSubscriptionPlan: "personal"
+    })
     .input(resolveThread.inputSchema)
     .output(z.void())
     .mutation(async ({ ctx, input }) => {
       return resolveThread.handler(ctx, input);
     }),
   createComment: authenticatedProcedure
+    .meta({
+      requiredSubscriptionPlan: "personal"
+    })
     .input(createComment.inputSchema)
     .output(createComment.outputSchema)
     .mutation(async ({ ctx, input }) => {
       return createComment.handler(ctx, input);
     }),
   updateComment: authenticatedProcedure
+    .meta({
+      requiredSubscriptionPlan: "personal"
+    })
     .input(updateComment.inputSchema)
     .output(z.void())
     .mutation(async ({ ctx, input }) => {

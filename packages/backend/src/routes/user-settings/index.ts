@@ -13,7 +13,8 @@ const userSettingsRouter = router({
   update: authenticatedUserProcedure
     .meta({
       openapi: { method: "PUT", path: basePath, protect: true },
-      permissions: { token: ["userSettings:write"] }
+      permissions: { token: ["userSettings:write"] },
+      requiredSubscriptionPlan: "personal"
     })
     .input(updateUserSettings.inputSchema)
     .output(z.void())

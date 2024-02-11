@@ -16,6 +16,7 @@ import {
   mdiCards,
   mdiChevronLeft,
   mdiClose,
+  mdiCreditCard,
   mdiDatabase,
   mdiHexagonSlice6,
   mdiPalette,
@@ -27,10 +28,11 @@ import {
 } from "@mdi/js";
 import { Component, createMemo, createSignal, Setter, Show } from "solid-js";
 import { Motion, Presence } from "solid-motionone";
+import { BillingSection } from "#ee";
 import { createRef } from "#lib/utils";
 import { ScrollShadow } from "#components/fragments";
 import { Card, Heading, IconButton } from "#components/primitives";
-import { useLocalStorage } from "#context";
+import { useHostConfig, useLocalStorage } from "#context";
 
 interface SubSection {
   label: string;
@@ -45,8 +47,15 @@ type SettingsSectionComponent = Component<{
 }>;
 
 const SettingsView: Component = () => {
-  const { setStorage } = useLocalStorage();
-  const [currentSectionId, setCurrentSectionId] = createSignal("menu");
+  const hostConfig = useHostConfig();
+  const { storage, setStorage } = useLocalStorage();
+  const currentSectionId = (): string => storage().settingsSection || "menu";
+  const setCurrentSectionId = (section: string): void => {
+    setStorage((storage) => ({
+      ...storage,
+      settingsSection: section
+    }));
+  };
   const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
   const [subSection, setSubSection] = createSignal<SubSection | null>(null);
   const [actionComponent, setActionComponent] = createSignal<Component<{}> | null>(null);
@@ -74,7 +83,8 @@ const SettingsView: Component = () => {
     },
     { label: "Metadata", resize: true, icon: mdiDatabase, section: "metadata" },
     { label: "Variants", icon: mdiCards, section: "variants" },
-    { label: "Transformers", icon: mdiSwapHorizontalCircle, section: "transformers" }
+    { label: "Transformers", icon: mdiSwapHorizontalCircle, section: "transformers" },
+    ...(hostConfig.billing ? [{ label: "Billing", icon: mdiCreditCard, section: "billing" }] : [])
   ];
   const sections: Record<string, SettingsSectionComponent> = {
     menu() {
@@ -94,7 +104,8 @@ const SettingsView: Component = () => {
     security: SecuritySection,
     metadata: MetadataSection,
     variants: VariantsSection,
-    transformers: TransformersSection
+    transformers: TransformersSection,
+    ...(hostConfig.billing && { billing: BillingSection })
   };
   const currentSection = createMemo(() => {
     const sectionMenuItem = sectionMenuItems.find((menuItem) => {

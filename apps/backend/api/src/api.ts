@@ -55,29 +55,6 @@ const fastifyTRPCOpenApiPlugin = <TRouter extends AnyRouter>(
   done();
 };
 const apiService = createPlugin(async (fastify) => {
-  const originCallback: OriginFunction = (origin, callback) => {
-    if (!origin || origin === "null") {
-      callback(null, true);
-
-      return;
-    }
-
-    const { hostname } = new URL(origin);
-    const appHostname = new URL(fastify.config.PUBLIC_APP_URL).hostname;
-
-    if (
-      hostname === "localhost" ||
-      hostname.endsWith(appHostname) ||
-      (fastify.config.VRITE_CLOUD && hostname.endsWith("swagger.io"))
-    ) {
-      callback(null, true);
-
-      return;
-    }
-
-    callback(new Error("Not allowed"), false);
-  };
-
   await fastify.register(rateLimitPlugin, {
     max: 500,
     timeWindow: "1 minute",

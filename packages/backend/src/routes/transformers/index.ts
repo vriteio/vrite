@@ -12,7 +12,8 @@ const transformersRouter = router({
   create: authenticatedProcedure
     .meta({
       openapi: { method: "POST", path: basePath, protect: true },
-      permissions: { session: ["manageWorkspace"], token: ["workspace:write"] }
+      permissions: { session: ["manageWorkspace"], token: ["workspace:write"] },
+      requiredSubscriptionPlan: "personal"
     })
     .input(createTransformer.inputSchema)
     .output(createTransformer.outputSchema)

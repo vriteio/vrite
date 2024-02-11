@@ -42,7 +42,8 @@ const webhooksRouter = router({
   create: authenticatedProcedure
     .meta({
       openapi: { method: "POST", path: basePath, protect: true },
-      permissions: { session: ["manageWebhooks"], token: ["webhooks:write"] }
+      permissions: { session: ["manageWebhooks"], token: ["webhooks:write"] },
+      requiredSubscriptionPlan: "personal"
     })
     .input(createWebhook.inputSchema)
     .output(createWebhook.outputSchema)
@@ -52,7 +53,8 @@ const webhooksRouter = router({
   update: authenticatedProcedure
     .meta({
       openapi: { method: "PUT", path: basePath, protect: true },
-      permissions: { session: ["manageWebhooks"], token: ["webhooks:write"] }
+      permissions: { session: ["manageWebhooks"], token: ["webhooks:write"] },
+      requiredSubscriptionPlan: "personal"
     })
     .input(updateWebhook.inputSchema)
     .output(z.void())

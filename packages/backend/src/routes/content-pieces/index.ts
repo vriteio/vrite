@@ -36,7 +36,8 @@ const contentPiecesRouter = router({
   create: authenticatedProcedure
     .meta({
       openapi: { method: "POST", path: basePath, protect: true },
-      permissions: { session: ["manageDashboard"], token: ["contentPieces:write"] }
+      permissions: { session: ["manageDashboard"], token: ["contentPieces:write"] },
+      requiredSubscriptionPlan: "personal"
     })
     .input(createContentPiece.inputSchema)
     .output(createContentPiece.outputSchema)
@@ -46,7 +47,8 @@ const contentPiecesRouter = router({
   update: authenticatedProcedure
     .meta({
       openapi: { method: "PUT", path: basePath, protect: true },
-      permissions: { session: ["editMetadata", "manageDashboard"], token: ["contentPieces:write"] }
+      permissions: { session: ["editMetadata", "manageDashboard"], token: ["contentPieces:write"] },
+      requiredSubscriptionPlan: "personal"
     })
     .input(updateContentPiece.inputSchema)
     .output(z.void())
@@ -65,7 +67,8 @@ const contentPiecesRouter = router({
     }),
   move: authenticatedProcedure
     .meta({
-      permissions: { session: ["manageDashboard"] }
+      permissions: { session: ["manageDashboard"] },
+      requiredSubscriptionPlan: "personal"
     })
     .input(moveContentPiece.inputSchema)
     .output(z.void())

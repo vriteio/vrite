@@ -49,7 +49,7 @@ const InviteMemberSubsection: Component<InviteMemberSubsectionProps> = (props) =
           setLoading(false);
           notify({
             type: "error",
-            text: "Failed to create a new role"
+            text: "Couldn't send the invite"
           });
         }
       }}

@@ -24,6 +24,9 @@ const usersRouter = router({
   update: authenticatedProcedure
     .input(updateProfile.inputSchema)
     .output(z.void())
+    .meta({
+      requiredSubscriptionPlan: "personal"
+    })
     .mutation(async ({ ctx, input }) => {
       return updateProfile.handler(ctx, input);
     })

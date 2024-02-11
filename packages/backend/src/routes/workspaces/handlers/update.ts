@@ -4,7 +4,10 @@ import { workspace, getWorkspacesCollection } from "#collections";
 import { publishWorkspaceEvent } from "#events";
 import { errors } from "#lib/errors";
 
-const inputSchema = workspace.omit({ contentGroups: true }).partial().required({ id: true });
+const inputSchema = workspace
+  .pick({ id: true, description: true, logo: true, name: true })
+  .partial()
+  .required({ id: true });
 const handler = async (
   ctx: AuthenticatedContext,
   input: z.infer<typeof inputSchema>

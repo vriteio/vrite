@@ -11,7 +11,8 @@ const permission = z.enum([
   "manageWorkspace",
   "manageExtensions",
   "manageVariants",
-  "manageGit"
+  "manageGit",
+  "manageBilling"
 ]);
 const role = z.object({
   id: zodId(),

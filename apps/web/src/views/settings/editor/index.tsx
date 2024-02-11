@@ -1,19 +1,9 @@
 import { marks, blocks, embeds } from "./options";
 import { SettingsSectionComponent } from "../view";
-import {
-  mdiApplicationBrackets,
-  mdiCodeTagsCheck,
-  mdiCube,
-  mdiFormatText,
-  mdiImage,
-  mdiPlus,
-  mdiPuzzle,
-  mdiTrashCan,
-  mdiTune
-} from "@mdi/js";
-import { Component, For, Match, Show, Switch, createEffect, createSignal, on } from "solid-js";
+import { mdiApplicationBrackets, mdiCodeTagsCheck, mdiFormatText, mdiImage } from "@mdi/js";
+import { For, Match, Switch, createEffect, createSignal, on } from "solid-js";
 import { debounce } from "@solid-primitives/scheduled";
-import { Button, Card, Heading, IconButton, Tooltip } from "#components/primitives";
+import { Heading, IconButton } from "#components/primitives";
 import { MiniCodeEditor, TitledCard } from "#components/fragments";
 import {
   App,

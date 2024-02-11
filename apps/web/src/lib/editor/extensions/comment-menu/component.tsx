@@ -2,11 +2,8 @@ import { CommentThread } from "./comment-thread";
 import { CommentDataProvider } from "./comment-data";
 import { SolidEditor } from "@vrite/tiptap-solid";
 import clsx from "clsx";
-import dayjs from "dayjs";
 import { Component, For, createEffect, createSignal, on, onCleanup } from "solid-js";
-import RelativeTimePlugin from "dayjs/plugin/relativeTime";
-import { createStore } from "solid-js/store";
-import { useContentData, useLocalStorage, useSharedState } from "#context";
+import { useContentData, useLocalStorage } from "#context";
 
 interface BlockActionMenuProps {
   state: {
@@ -24,8 +21,6 @@ interface CommentFragmentData {
   overlap: number;
   pos: number;
 }
-
-dayjs.extend(RelativeTimePlugin);
 
 const CommentMenu: Component<BlockActionMenuProps> = (props) => {
   const { storage } = useLocalStorage();

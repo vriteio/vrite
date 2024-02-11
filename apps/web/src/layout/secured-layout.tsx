@@ -5,7 +5,7 @@ import { BottomMenu } from "./bottom-menu";
 import { SidePanelRight } from "./side-panel-right";
 import { ParentComponent, Show, createEffect } from "solid-js";
 import { useLocation } from "@solidjs/router";
-import { mdiFullscreenExit } from "@mdi/js";
+import { mdiAlertCircle, mdiFullscreenExit } from "@mdi/js";
 import clsx from "clsx";
 import {
   AppearanceProvider,
@@ -15,8 +15,8 @@ import {
   ContentDataProvider,
   useLocalStorage
 } from "#context";
-import { IconButton, Tooltip } from "#components/primitives";
-import { ExplorerView } from "#views/explorer";
+import { Button, Icon, IconButton, Tooltip } from "#components/primitives";
+import { SubscriptionBanner } from "#ee";
 
 const SecuredLayout: ParentComponent = (props) => {
   const { storage, setStorage } = useLocalStorage();
@@ -35,6 +35,7 @@ const SecuredLayout: ParentComponent = (props) => {
           <ContentDataProvider>
             <CommandPaletteProvider>
               <div class="flex flex-col h-full w-full">
+                <SubscriptionBanner />
                 <div
                   class={clsx(
                     "flex-1 flex flex-col-reverse md:flex-row h-[calc(100%-1.5rem)]",

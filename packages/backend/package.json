@@ -49,6 +49,7 @@
     "otpauth": "^9.2.2",
     "prettier": "^3.2.5",
     "saslprep": "^1.0.3",
+    "stripe": "^14.15.0",
     "trpc-openapi": "^1.2.0",
     "typescript": "^5.3.3",
     "url-slug": "^4.0.1",
