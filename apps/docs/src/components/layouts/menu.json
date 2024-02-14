@@ -30,32 +30,6 @@
             {
               "label": "Command Palette",
               "link": "/usage-guide/navigation/command-palette"
-            },
-
-            {
-              "label": "Introduction",
-              "link": "/usage-guide/navigation/introduction"
-            },
-            {
-              "label": "Dashboard",
-              "link": "/usage-guide/navigation/dashboard"
-            },
-            {
-              "label": "Command Palette",
-              "link": "/usage-guide/navigation/command-palette"
-            },
-
-            {
-              "label": "Introduction",
-              "link": "/usage-guide/navigation/introduction"
-            },
-            {
-              "label": "Dashboard",
-              "link": "/usage-guide/navigation/dashboard"
-            },
-            {
-              "label": "Command Palette",
-              "link": "/usage-guide/navigation/command-palette"
             }
           ]
         },
@@ -109,16 +83,6 @@
       ]
     }
   ],
-  "api": [
-    {
-      "label": "API Reference",
-      "menu": [
-        {
-          "label": "Content Pieces",
-          "link": "/api/content-pieces"
-        }
-      ]
-    }
-  ],
+  "api": [],
   "recipes": []
 }

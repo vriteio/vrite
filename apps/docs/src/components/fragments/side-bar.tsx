@@ -123,7 +123,7 @@ const SideBar: Component<SideBarProps> = (props) => {
           class={clsx(
             "top-0 h-full z-50 min-w-64 w-full md:max-w-64 m-0  bg-gray-50 dark:bg-gray-800",
             "flex-col gap-2 justify-start items-start border-0 rounded-none flex fixed md:relative",
-            "transform md:transition-transform duration-300 ease-in-out scrollbar-sm overflow-auto",
+            "transform md:transition-transform duration-300 ease-in-out scrollbar-sm-contrast overflow-auto",
             menuOpened() ? "" : "translate-y-[100vh] md:translate-y-0"
           )}
         >
