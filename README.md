@@ -43,7 +43,3 @@ Learn more about all the features of Vrite and how to use them from the [officia
 - 💬 [**Join Discord**](https://discord.gg/yYqDWyKnqE)
 - 🐦 [**Follow on Twitter**](https://twitter.com/vriteio)
 - 💼 [**Follow on LinkedIn**](https://www.linkedin.com/company/vrite)
-
-## License
-
-Licensed under the [AGPL-3.0 License](https://github.com/vriteio/vrite/blob/main/LICENSE).
