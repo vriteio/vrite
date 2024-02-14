@@ -1,0 +1,237 @@
+---
+import { Code } from "astro:components";
+import { Button, Card } from "#components/primitives";
+import { ParamDescription } from "./param-description";
+import curlString from "curl-string";
+import { OpenAPIV3 } from "openapi-types";
+import Oas from "oas";
+import clsx from "clsx";
+import { processExamples } from "./rehype-examples";
+import { RequestExamples } from "./request-examples";
+import { getSchemaWithProperties, getTypeString } from "./utils";
+import { getOpenAPISpec } from "./openapi-spec";
+import type { HttpMethods } from "oas/dist/types.d.cts";
+
+interface Props {
+  method: string;
+  endpoint: string;
+}
+
+const httpMethodClasses = {
+  GET: "bg-blue-500 text-blue-500 bg-opacity-20",
+  POST: "bg-green-500 text-green-500 bg-opacity-20",
+  PUT: "bg-amber-500 text-amber-500 bg-opacity-20",
+  DELETE: "bg-red-500 text-red-500 bg-opacity-20"
+};
+// Parse the OpenAPI spec
+const spec = await getOpenAPISpec();
+const client = new Oas(spec);
+const operation = client.operation(
+  Astro.props.endpoint,
+  Astro.props.method.toLowerCase() as HttpMethods
+);
+const parameters = operation.getParametersAsJSONSchema();
+const [responseSchema] = operation.getResponseAsJSONSchema(200);
+const querystringSchema = parameters.find((parameter) => parameter.type === "query")?.schema;
+const bodySchema = parameters.find((parameter) => parameter.type === "body")?.schema;
+
+// Process and prepare content of the code examples
+const html = await Astro.slots.render("default");
+const { responseExample, requestExamples } = processExamples(html);
+const body = JSON.stringify(
+  Object.fromEntries(
+    Object.keys(bodySchema?.properties || {})
+      .filter((parameterName) => {
+        return Array.isArray(bodySchema?.required) && bodySchema?.required.includes(parameterName);
+      })
+      .map((parameterName) => {
+        const type = (bodySchema?.properties![parameterName] as OpenAPIV3.SchemaObject).type;
+        let value = `{${parameterName.toUpperCase()}}`;
+
+        if (type === "object") {
+          value = `{ ...${value}... }`;
+        } else if (type === "array") {
+          value = `[${value}]`;
+        }
+
+        return [parameterName, `{${parameterName.toUpperCase()}}`];
+      })
+  ),
+  null,
+  2
+);
+const queryString = Object.keys(querystringSchema?.properties || {})
+  .filter((parameterName) => {
+    return (
+      Array.isArray(querystringSchema?.required) &&
+      querystringSchema?.required.includes(parameterName)
+    );
+  })
+  .map((parameterName) => {
+    return `${parameterName}={${parameterName.toUpperCase()}}`;
+  })
+  .join("&");
+const url = `https://api.vrite.io${Astro.props.endpoint}${queryString ? `?${queryString}` : ""}`;
+const parsedBody = JSON.parse(body);
+const curl = curlString(
+  `"${url}"`,
+  {
+    method: Astro.props.method,
+    headers: {
+      Authorization: `Bearer ${"<TOKEN>"}`,
+      ...(body === "{}"
+        ? {}
+        : {
+            "Content-Type": "application/json"
+          }),
+      Accept: "application/json"
+    },
+    ...(body === "{}"
+      ? {}
+      : {
+          body: parsedBody
+        })
+  },
+  { colorJson: false, jsonIndentWidth: 4 }
+);
+const code = `${curl}\n`;
+---
+
+<Card
+  class="relative p-4 m-0 rounded-3xl flex flex-col my-4 bg-gray-100 dark:bg-gray-900 border-0 endpoint-card @container"
+>
+  <div class="flex gap-8 flex-col @2xl:flex-row">
+    <div class="flex-1 flex flex-col gap-4">
+      <div class="flex justify-start items-center">
+        <Button
+          badge
+          hover={false}
+          class={clsx(
+            "m-0 font-mono font-semibold",
+            httpMethodClasses[Astro.props.method as keyof typeof httpMethodClasses]
+          )}
+        >
+          {Astro.props.method}
+        </Button>
+        <Button
+          badge
+          hover={false}
+          variant="text"
+          text="soft"
+          class="m-0 font-mono font-semibold"
+          color="contrast"
+        >
+          {Astro.props.endpoint}
+        </Button>
+      </div>
+      {
+        querystringSchema && (
+          <div class="flex flex-col parameters-section">
+            <div class="py-2 font-bold">Query Parameters</div>
+            {Object.keys(querystringSchema?.properties || {}).map((parameterName) => {
+              const parameterSchema = querystringSchema!.properties![
+                parameterName
+              ] as OpenAPIV3.SchemaObject;
+              return (
+                <ParamDescription
+                  name={parameterName}
+                  schema={parameterSchema}
+                  required={
+                    Array.isArray(querystringSchema?.required) &&
+                    querystringSchema?.required.includes(parameterName)
+                  }
+                />
+              );
+            })}
+          </div>
+        )
+      }{
+        bodySchema && (
+          <div class="flex flex-col parameters-section">
+            <div class="py-2 font-bold">Body Parameters</div>
+            {Object.keys(bodySchema.properties || {}).map((parameterName) => {
+              const parameterSchema = bodySchema!.properties![
+                parameterName
+              ] as OpenAPIV3.SchemaObject;
+              return (
+                <ParamDescription
+                  name={parameterName}
+                  schema={parameterSchema}
+                  required={
+                    Array.isArray(bodySchema.required) &&
+                    bodySchema.required.includes(parameterName)
+                  }
+                />
+              );
+            })}
+          </div>
+        )
+      }
+
+      <div class="flex flex-col">
+        <div class="py-2 font-bold">
+          Response {
+            getTypeString(responseSchema.schema as OpenAPIV3.SchemaObject) ? (
+              <span class="text-sm font-mono px-2 text-gray-500 dark:text-gray-400 font-medium">
+                {getTypeString(responseSchema.schema as OpenAPIV3.SchemaObject)}
+              </span>
+            ) : (
+              <span class="ml-2 text-sm font-mono px-1.5 py-1 rounded-md text-gray-500 dark:text-gray-400 font-medium text-green-500 dark:text-green-500 bg-green-500 bg-opacity-20">
+                200
+              </span>
+            )
+          }
+        </div>
+        {
+          Object.keys(
+            getSchemaWithProperties(responseSchema.schema as OpenAPIV3.SchemaObject).properties ||
+              {}
+          ).map((parameterName) => {
+            const parameterSchema = getSchemaWithProperties(
+              responseSchema.schema as OpenAPIV3.SchemaObject
+            ).properties![parameterName] as OpenAPIV3.SchemaObject;
+            return (
+              <ParamDescription
+                name={parameterName}
+                schema={parameterSchema}
+                labels={false}
+                client:visible
+              />
+            );
+          })
+        }
+      </div>
+    </div>
+    <div class="code-block-contrast flex-1 @2xl:max-w-[calc(50%-3rem)]">
+      <div class="sticky top-24 not-prose gap-4 flex flex-col">
+        <RequestExamples requestExamples={requestExamples} client:visible>
+          <div class="hidden [&.astro-code]:max-h-80 ![&>.astro-code]:pt-0" data-example="curl">
+            <Code code={code} lang="shell" />
+          </div>
+          {
+            requestExamples.map((requestExample) => {
+              return (
+                <div
+                  class="hidden [&.astro-code]:max-h-80 ![&>.astro-code]:pt-0"
+                  data-example={requestExample.label.toLowerCase()}
+                >
+                  <Fragment set:html={requestExample.html} />
+                </div>
+              );
+            })
+          }
+        </RequestExamples>
+        {
+          responseExample && (
+            <div class="[&>.astro-code]:max-h-80 ![&>.astro-code]:pt-0 bg-gray-800 rounded-2xl">
+              <div class="px-3 pt-2 pb-1 text-white font-semibold flex justify-start items-center leading-8">
+                <span class="flex-1">Response</span>
+              </div>
+              <Fragment set:html={responseExample?.html} />
+            </div>
+          )
+        }
+      </div>
+    </div>
+  </div>
+</Card>

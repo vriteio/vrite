@@ -1,6 +1,6 @@
 import { mdiMenu, mdiClose, mdiChevronDown } from "@mdi/js";
 import clsx from "clsx";
-import { Component, For, JSX, createEffect, createSignal } from "solid-js";
+import { Component, For, JSX, Show, createEffect, createSignal } from "solid-js";
 import { menuOpened, setMenuOpened } from "#lib/state";
 import { Card, Button, IconButton } from "#components/primitives";
 import { logoIcon } from "#assets/icons/logo";
@@ -39,59 +39,69 @@ const SideBarNestedMenu: Component<SideBarNestedMenuProps> = (props) => {
 
   return (
     <div class="flex flex-col w-full">
-      <button
-        class="flex justify-center items-center text-start w-full group"
-        onClick={() => setOpened((opened) => !opened)}
-      >
-        <div class="flex-1">{props.children}</div>
-        <IconButton
-          path={mdiChevronDown}
-          class="m-0 group-hover:bg-gray-200 group-hover:dark:bg-gray-700"
+      <Show when={!props.openedByDefault} fallback={<span>{props.children}</span>}>
+        <Button
+          class="flex justify-center items-center text-start w-full group m-0 px-0"
+          onClick={() => setOpened((opened) => !opened)}
           variant="text"
-          badge
-          iconProps={{
-            class: clsx("transform transition-transform duration-100", opened() ? "" : "-rotate-90")
-          }}
-        />
-      </button>
-      <div
-        class={clsx("flex flex-1 w-full pl-3 overflow-hidden", opened() ? "max-h-full" : "max-h-0")}
-      >
-        <div class="flex-1 flex flex-col gap-1">
-          <For each={props.menu}>
-            {(item) => {
-              if (item.menu) {
-                return (
-                  <SideBarNestedMenu currentPath={props.currentPath} menu={item.menu}>
-                    <Button
-                      variant="text"
-                      class="justify-start w-full font-bold m-0"
-                      badge
-                      hover={false}
-                    >
-                      {item.label}
-                    </Button>
-                  </SideBarNestedMenu>
-                );
-              }
-
-              const active = (): boolean => {
-                return Boolean(item.link && props.currentPath.includes(item.link));
-              };
-
-              return (
-                <Button
-                  variant={active() ? "solid" : "text"}
-                  class="text-start w-full m-0"
-                  text={active() ? "primary" : "soft"}
-                  color={active() ? "primary" : "base"}
-                  link={item.link}
-                >
-                  {item.label}
-                </Button>
-              );
+          text="soft"
+        >
+          <IconButton
+            path={mdiChevronDown}
+            class="m-0 p-0 pl-1"
+            variant="text"
+            text="soft"
+            badge
+            iconProps={{
+              class: clsx(
+                "transform transition-transform duration-100 h-5 w-5",
+                opened() ? "" : "-rotate-90"
+              )
             }}
-          </For>
+          />
+          <div class="flex-1">{props.children}</div>
+        </Button>
+      </Show>
+      <div
+        class={clsx(
+          "flex flex-1 w-full overflow-hidden",
+          !props.openedByDefault && "pl-3.25",
+          opened() ? "max-h-full" : "max-h-0"
+        )}
+      >
+        <div class="pt-1 flex w-full">
+          <Show when={!props.openedByDefault}>
+            <div class="w-2px rounded-full h-full bg-gray-200 dark:bg-gray-700" />
+          </Show>
+          <div class={clsx("flex-1 flex flex-col gap-1", !props.openedByDefault && "pl-1")}>
+            <For each={props.menu}>
+              {(item) => {
+                if (item.menu) {
+                  return (
+                    <SideBarNestedMenu currentPath={props.currentPath} menu={item.menu}>
+                      {item.label}
+                    </SideBarNestedMenu>
+                  );
+                }
+
+                const active = (): boolean => {
+                  return Boolean(item.link && props.currentPath.includes(item.link));
+                };
+
+                return (
+                  <Button
+                    variant={active() ? "solid" : "text"}
+                    class="text-start w-full m-0"
+                    text={active() ? "primary" : "soft"}
+                    color={active() ? "primary" : "base"}
+                    link={item.link}
+                  >
+                    {item.label}
+                  </Button>
+                );
+              }}
+            </For>
+          </div>
         </div>
       </div>
     </div>
@@ -100,9 +110,9 @@ const SideBarNestedMenu: Component<SideBarNestedMenuProps> = (props) => {
 const SideBar: Component<SideBarProps> = (props) => {
   createEffect(() => {
     if (menuOpened()) {
-      document.body.style.overflow = "hidden";
+      document.body.style.overflowY = "hidden";
     } else {
-      document.body.style.overflow = "auto";
+      document.body.style.overflowY = "auto";
     }
   });
 
@@ -111,20 +121,20 @@ const SideBar: Component<SideBarProps> = (props) => {
       <div class={clsx("h-full fixed top-0 left-0 z-2", "pl-[max(0px,calc((100%-1536px)/2))]")}>
         <Card
           class={clsx(
-            "top-0 h-full z-50 min-w-80 w-full md:max-w-80 m-0  bg-gray-50 dark:bg-gray-800",
+            "top-0 h-full z-50 min-w-64 w-full md:max-w-64 m-0  bg-gray-50 dark:bg-gray-800",
             "flex-col gap-2 justify-start items-start border-0 rounded-none flex fixed md:relative",
-            "transform md:transition-transform duration-300 ease-in-out scrollbar-sm-contrast overflow-auto",
+            "transform md:transition-transform duration-300 ease-in-out scrollbar-sm overflow-auto",
             menuOpened() ? "" : "translate-y-[100vh] md:translate-y-0"
           )}
         >
-          <div class="flex items-center justify-start px-1 pb-4 pt-2">
+          <div class="flex items-center justify-start px-2 w-[calc(100%+0.25rem)] -ml-1 py-2 rounded-xl sticky top-0 relative z-1 bg-gray-50 dark:bg-gray-800 bg-opacity-50 dark:bg-opacity-50 backdrop-blur-lg">
             <IconButton
               path={logoIcon}
               color="primary"
               link="/"
               class="bg-gradient-to-tr from-red-500 to-orange-500 m-0 mr-1"
             />
-            <span class="flex-1 text-2xl font-extrabold text-gray-600 dark:text-gray-200">
+            <span class="text-start text-2xl font-extrabold text-gray-600 dark:text-gray-200">
               rite
             </span>
             <span class="text-gray-500 dark:text-gray-400 font-semibold border-l-2 pl-2 ml-2 leading-8 border-gray-200 dark:border-gray-700">
@@ -173,7 +183,20 @@ const SideBar: Component<SideBarProps> = (props) => {
               );
             }}
           </For>
-          <div class="min-h-24 md:hidden" />
+          <div class="min-h-24 md:min-h-unset md:flex-1" />
+          <div class="flex sticky bottom-0">
+            <IconButton
+              path={logoIcon}
+              variant="text"
+              text="soft"
+              size="small"
+              class="m-0 w-full justify-start flex gap-1 pr-1 bg-gray-50 dark:bg-gray-800 bg-opacity-50 dark:bg-opacity-50 backdrop-blur-lg"
+              iconProps={{ class: "h-4 w-4 ml-0.5" }}
+              link="https://vrite.io"
+              target="_blank"
+              label="Powered by Vrite"
+            />
+          </div>
         </Card>
         <IconButton
           path={menuOpened() ? mdiClose : mdiMenu}
@@ -186,7 +209,7 @@ const SideBar: Component<SideBarProps> = (props) => {
           }}
         />
       </div>
-      <div class="min-w-80 hidden md:block" />
+      <div class="min-w-64 hidden md:block" />
     </>
   );
 };

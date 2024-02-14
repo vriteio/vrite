@@ -6,24 +6,27 @@ import {
   SVGDefs,
   OnThisPage,
   Footer,
-  SearchPalette
+  SearchPalette,
+  ScrollbarWidth
 } from "#components/fragments";
 import type { MarkdownHeading } from "astro";
 import menu from "./menu.json";
 import { Button } from "#components/primitives";
-import { mdiBookOpenBlankVariant, mdiConsoleLine, mdiGithub, mdiTextBoxMultiple } from "@mdi/js";
+import { mdiBookOpenBlankVariant, mdiConsoleLine, mdiGithub } from "@mdi/js";
 import { discordIcon } from "#assets/icons";
+
+interface MenuLevel {
+  label: string;
+  link?: string;
+  menu?: MenuLevel[];
+}
 
 const image = "https://docs.vrite.io/meta-image.png";
 const title = "Vrite － developer content platform";
 const description =
   "Open-Source, collaborative developer content platform for documentation, technical blogs, and more.";
 const flattenMenu = (
-  menu: Array<{
-    label: string;
-    link?: string;
-    menu?: Array<{ label: string; link: string }>;
-  }>,
+  menu: MenuLevel[],
   section: string,
   labels: string[]
 ): Array<{ label: string; link: string; section: string; labels: string[] }> => {
@@ -71,7 +74,8 @@ const sections = [
 ];
 const flatMenu = [
   ...flattenMenu(menu.docs, "docs", []),
-  ...flattenMenu(menu.recipes, "recipes", [])
+  ...flattenMenu(menu.recipes, "recipes", []),
+  ...flattenMenu(menu.api, "api", [])
 ];
 const currentEntry = flatMenu.find((item) => Astro.url.pathname.includes(item.link));
 const nextEntry = currentEntry ? flatMenu[flatMenu.indexOf(currentEntry) + 1] : null;
@@ -81,6 +85,7 @@ type Props = {
   headings: MarkdownHeading[];
   title: string;
   description?: string;
+  hideOnThisPage?: boolean;
 };
 ---
 
@@ -93,8 +98,9 @@ type Props = {
       image={image}
     />
   </head>
-  <body class="overflow-x-hidden overscroll-none">
+  <body class="overscroll-none overflow-x-hidden">
     <SVGDefs />
+    <ScrollbarWidth client:only />
     <main
       class="flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-800 min-h-screen"
     >
@@ -107,13 +113,13 @@ type Props = {
           client:load
         />
         <SearchPalette client:load />
-        <div class="flex overflow-visible w-full relative h-full">
+        <div class="flex overflow-visible w-full relative h-full md:max-w-[calc(100%-16rem)]">
           <div
             class="flex-1 flex overflow-visible w-full justify-center min-h-screen"
             id="container"
           >
             <div
-              class="relative flex-1 prose max-w-screen-md w-full text-lg px-4 md:px-8 pb-24 h-fit xl:w-[calc(100%-15rem)]"
+              class="relative flex-1 prose !md:max-w-unset !xl:max-w-screen-md w-full text-lg px-4 md:px-8 pb-24 h-fit"
             >
               <div class="sticky top-0 w-full left-0 z-1"><Header client:load /></div>
               <div class="pt-24">
@@ -135,7 +141,11 @@ type Props = {
                 <Footer nextEntry={nextEntry} previousEntry={prevEntry} />
               </div>
             </div>
-            <OnThisPage headings={Astro.props.headings} client:load />
+            <OnThisPage
+              headings={Astro.props.headings}
+              hide={Astro.props.hideOnThisPage}
+              client:load
+            />
           </div>
         </div>
       </div>

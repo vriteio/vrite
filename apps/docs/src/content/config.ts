@@ -7,6 +7,13 @@ const docsCollection = defineCollection({
     description: z.string().optional()
   })
 });
+const apiCollection = defineCollection({
+  type: "content",
+  schema: z.object({
+    title: z.string().optional(),
+    description: z.string().optional()
+  })
+});
 const recipesCollection = defineCollection({
   type: "content",
   schema: z.object({
@@ -16,6 +23,7 @@ const recipesCollection = defineCollection({
 });
 const collections = {
   docs: docsCollection,
+  api: apiCollection,
   recipes: recipesCollection
 };
 

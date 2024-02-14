@@ -16,6 +16,7 @@ import { Button, IconButton } from "#components/primitives";
 
 interface OnThisPageProps {
   headings: MarkdownHeading[];
+  hide?: boolean;
 }
 
 const OnThisPage: Component<OnThisPageProps> = (props) => {
@@ -114,42 +115,44 @@ const OnThisPage: Component<OnThisPageProps> = (props) => {
     <>
       <div
         class={clsx(
-          "w-56 flex-col justify-start top-0 pt-24 xl:fixed right-0 hidden xl:flex gap-2",
+          "w-64 flex-col justify-start top-0 pt-24 xl:fixed right-0 hidden xl:flex gap-2",
           "mr-[max(0px,calc((100%-(1536px))/2))]"
         )}
       >
-        <Show when={headings().length}>
-          <IconButton
-            text="soft"
-            class="font-bold justify-start m-0"
-            variant="text"
-            badge
-            hover={false}
-            path={mdiListBox}
-            label="On This Page"
-          />
+        <Show when={props.hide !== true}>
+          <Show when={headings().length}>
+            <IconButton
+              text="soft"
+              class="font-bold justify-start m-0"
+              variant="text"
+              badge
+              hover={false}
+              path={mdiListBox}
+              label="On This Page"
+            />
+          </Show>
+          <For each={headings()}>
+            {(heading) => {
+              return (
+                <Button
+                  variant="text"
+                  text={activeHeading() === heading.slug ? "base" : "soft"}
+                  color={activeHeading() === heading.slug ? "primary" : "base"}
+                  class={clsx("text-start m-0", heading.depth === 3 && "ml-6")}
+                  size={heading.depth === 2 ? "medium" : "small"}
+                  onClick={() => {
+                    setActiveHeading(heading.slug);
+                    scrollToActiveHeading();
+                  }}
+                >
+                  {heading.text}
+                </Button>
+              );
+            }}
+          </For>
         </Show>
-        <For each={headings()}>
-          {(heading) => {
-            return (
-              <Button
-                variant="text"
-                text={activeHeading() === heading.slug ? "base" : "soft"}
-                color={activeHeading() === heading.slug ? "primary" : "base"}
-                class={clsx("text-start m-0", heading.depth === 3 && "ml-6")}
-                size={heading.depth === 2 ? "medium" : "small"}
-                onClick={() => {
-                  setActiveHeading(heading.slug);
-                  scrollToActiveHeading();
-                }}
-              >
-                {heading.text}
-              </Button>
-            );
-          }}
-        </For>
       </div>
-      <div class="min-w-56 hidden xl:flex" />
+      <div class="min-w-64 hidden xl:flex" />
     </>
   );
 };

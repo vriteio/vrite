@@ -1,0 +1,193 @@
+---
+title: Content Pieces
+category: API Documentation
+slug: api/content-pieces
+---
+
+**Content pieces** are at the heart of Vrite - all content you create, as well as all the related metadata is stored across many content pieces.
+
+## Retrieve Full Content Piece
+
+Retrieves detailed information on a single, content piece, including detailed tags information and, optionally, its full JSON content.
+
+<EndpointCard method="GET" endpoint="/content-pieces">
+  <ResponseExample>
+  ```json
+  {
+    "id": "32eed715b7ec5fdc6588cf79",
+    "date": "string",
+    "title": "string",
+    "description": "string",
+    "coverUrl": "string",
+    "coverAlt": "string",
+    "contentGroupId": "ff549328f8ddc86a6071a66c",
+    "customData": "string",
+    "canonicalLink": "string",
+    "slug": "string",
+    "filename": "string",
+    "members": [
+      {
+        "id": "2c6d1ef2b736d8e24996e2ea",
+        "profile": {
+          "id": "b2c84b51045d974366558744",
+          "avatar": "string",
+          "username": "string",
+          "fullName": "string",
+          "email": "user@example.com"
+        }
+      }
+    ],
+    "tags": [
+      {
+        "id": "ab4b45559ecc2fe1ceb64801",
+        "label": "string",
+        "color": "gray"
+      }
+    ],
+    "coverWidth": "string",
+    "content": {
+      "additionalProp1": "string",
+      "additionalProp2": "string",
+      "additionalProp3": "string"
+    }
+  }
+  ```
+  </ResponseExample>
+  <RequestExample label="JavaScript">
+  ```javascript
+  const client = createClient({
+    token: "<API_TOKEN>"
+  });
+  const result = await client.contentPieces.get();
+  ```
+  </RequestExample>
+</EndpointCard>
+
+## Retrieve Multiple Content Pieces
+
+Retrieves basic information about multiple content pieces with pagination and optional filtering by [content group](/docs#using-api-content-groups) or/and [tag](/docs#using-api-tags).
+
+<EndpointCard method="GET" endpoint="/content-pieces/list">
+<ResponseExample>
+  ```json
+  {
+    "id": "32eed715b7ec5fdc6588cf79",
+    "date": "string",
+    "title": "string",
+    "description": "string",
+    "coverUrl": "string",
+    "coverAlt": "string",
+    "contentGroupId": "ff549328f8ddc86a6071a66c",
+    "customData": "string",
+    "canonicalLink": "string",
+    "slug": "string",
+    "filename": "string",
+    "members": [
+      {
+        "id": "2c6d1ef2b736d8e24996e2ea",
+        "profile": {
+          "id": "b2c84b51045d974366558744",
+          "avatar": "string",
+          "username": "string",
+          "fullName": "string",
+          "email": "user@example.com"
+        }
+      }
+    ],
+    "tags": [
+      {
+        "id": "ab4b45559ecc2fe1ceb64801",
+        "label": "string",
+        "color": "gray"
+      }
+    ],
+    "coverWidth": "string",
+    "content": {
+      "additionalProp1": "string",
+      "additionalProp2": "string",
+      "additionalProp3": "string"
+    }
+  }
+  ```
+  </ResponseExample>
+  <RequestExample label="JavaScript">
+  ```javascript
+  const client = createClient({
+    token: "<API_TOKEN>"
+  });
+  const result = await client.contentPieces.get();
+  ```
+  </RequestExample>
+  </EndpointCard>
+
+## Create or Update Content Piece
+
+Provided an ID, updates the matching content piece' metadata with given information. If no matching content piece is found or
+no ID is provided, a new content piece is created.
+
+<EndpointCard
+  
+  method="PUT"
+  endpoint="/content-pieces"
+  body={{
+    schema: "workspace-settings/schemas/prettier",
+    example: {
+      title: "New article",
+      tags: [],
+      coverUrl: "",
+      coverAlt: "",
+      coverWidth: "",
+      customData: {},
+      contentGroupId: "63efc451cf034ba9ca007e47"
+    }
+  }}
+  responseExamples={[
+    { data: { id: "63efc451cf034ba9ca007e47" }, name: "Success", id: "success" },
+    {data: {
+  "message": "Input validation failed",
+  "code": "BAD_REQUEST",
+  "issues": [
+    {
+      "code": "custom",
+      "message": "contentGroupId required when creating new content piece",
+      "path": []
+    }
+  ]
+}
+
+,name:"Bad request", id:"bad-request"}
+]}
+
+/>
+
+## Delete Content Piece
+
+Provided an ID, deletes content and metadata of the matching piece and returns its ID. If no matching content piece is found (and deleted)
+it returns `null`.
+
+<EndpointCard
+  
+  method="DELETE"
+  endpoint="/content-pieces"
+  responseExamples={[{ data: { id: "63efc451cf034ba9ca007e47" }, name: "Success", id: "success" }, {name:"Bad request",id:"bad request",data:{
+  "message": "Input validation failed",
+  "code": "BAD_REQUEST",
+  "issues": [
+    {
+      "code": "invalid_type",
+      "expected": "string",
+      "received": "undefined",
+      "path": [
+        "id"
+      ],
+      "message": "Required"
+    }
+  ]
+}
+
+}]}
+parameters={[
+{ name: "id", schema: {type:"string"}, description: "ID of the content piece to delete", required: true }
+]}
+
+/>

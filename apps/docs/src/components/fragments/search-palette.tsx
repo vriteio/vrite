@@ -70,6 +70,7 @@ const SearchPalette: Component = () => {
     setLoading(true);
     client.useSignal(abortControllerRef()?.signal || null).ask({
       query: query(),
+      contentGroupId: "652566dd5a7449450eeae7ef",
       onError(error) {
         setLoading(false);
         throw error;
@@ -101,7 +102,7 @@ const SearchPalette: Component = () => {
     try {
       const search = await client
         .useSignal(abortControllerRef()?.signal || null)
-        .search({ query: query() });
+        .search({ query: query(), contentGroupId: "652566dd5a7449450eeae7ef" });
 
       setSearchResults(search);
       setLoading(false);
@@ -225,9 +226,9 @@ const SearchPalette: Component = () => {
   });
   createEffect(() => {
     if (searchPaletteOpened()) {
-      document.body.style.overflow = "hidden";
+      document.body.style.overflowY = "hidden";
     } else {
-      document.body.style.overflow = "auto";
+      document.body.style.overflowY = "auto";
     }
   });
 

@@ -28,7 +28,7 @@ svg > path {
   cursor: col-resize;
 }
 .prose {
-  code {
+  :where(code):not(:where(.not-prose, .not-prose *)) {
     @apply whitespace-pre-wrap;
   }
   p {

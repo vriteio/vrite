@@ -14,7 +14,19 @@ export default defineConfig({
   },
   integrations: [
     autoImport({
-      imports: [{ "#components/content": ["Card", "CardGrid", "Important", "Info"] }]
+      imports: [
+        {
+          "#components/content": [
+            "Card",
+            "CardGrid",
+            "Important",
+            "Info",
+            "EndpointCard",
+            "RequestExample",
+            "ResponseExample"
+          ]
+        }
+      ]
     }),
     unocss({ injectReset: true }),
     solidJs(),

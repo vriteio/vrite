@@ -17,6 +17,9 @@
     U+2C60-2C7F, U+A720-A7FF;
 }
 
+:root {
+  --scrollbar-width: 0px;
+}
 html,
 body {
   font-family: "NunitoVariable", sans-serif;
@@ -150,16 +153,19 @@ h2 {
   }
 }
 .astro-code {
-  @apply !rounded-2xl !bg-gray-800 dark:border-2 dark:border-gray-700 !dark:bg-gray-900 !py-4 !px-6;
+  @apply !rounded-2xl !bg-gray-800 !py-3 !px-4;
 }
 .astro-code::-webkit-scrollbar {
   @apply w-2 h-2 rounded-lg bg-transparent;
 }
 .astro-code::-webkit-scrollbar-track {
-  @apply mx-3;
+  @apply m-3;
 }
 .astro-code::-webkit-scrollbar-thumb {
-  @apply rounded-lg bg-gray-900;
+  @apply rounded-lg bg-gray-700;
+}
+.astro-code::-webkit-scrollbar-corner {
+  @apply bg-transparent;
 }
 .astro-code code {
   font-family: "Fira Code", monospace !important;
@@ -218,4 +224,12 @@ h2 {
 }
 .icon-fill-gradient [data-icon] {
   fill: url(#gradient);
+}
+@screen xl {
+  .endpoint-card {
+    width: calc(
+      100% + 2rem + 16rem + (min(1536px, (100vw - var(--scrollbar-width))) - 16rem - 16rem - 768px) /
+        2
+    );
+  }
 }

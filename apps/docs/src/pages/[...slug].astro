@@ -8,22 +8,32 @@ if (slug === undefined) {
   return Astro.redirect("/getting-started/introduction");
 }
 
-const { entry } = Astro.props;
+const { entry, type } = Astro.props;
 const { Content, headings } = await entry.render();
 
 export const prerender = true;
 export async function getStaticPaths() {
   const docsEntries = await getCollection("docs");
+  const apiEntries = await getCollection("api");
   // const recipesEntries = await getCollection("recipes");
   return [
+    ...apiEntries.map((entry) => ({
+      params: { slug: entry.slug },
+      props: { entry, type: "api" }
+    })),
     ...docsEntries.map((entry) => ({
       params: { slug: entry.slug },
-      props: { entry }
+      props: { entry, type: "docs" }
     }))
   ];
 }
 ---
 
-<DefaultLayout headings={headings} title={entry.data.title} description={entry.data.description}>
+<DefaultLayout
+  headings={headings}
+  title={entry.data.title || ""}
+  description={entry.data.description}
+  hideOnThisPage={type === "api"}
+>
   <Content />
 </DefaultLayout>

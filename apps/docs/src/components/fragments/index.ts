@@ -7,3 +7,4 @@ export * from "./svg-defs";
 export * from "./footer";
 export * from "./search-palette";
 export * from "./footer";
+export * from "./scrollbar-width";
