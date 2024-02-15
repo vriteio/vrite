@@ -6,11 +6,11 @@ import { zodId } from "#lib/mongo";
 
 const inputSchema = z.object({
   query: z.string().describe("Query to search"),
-  limit: z.number().optional().describe("Limit of results to return"),
-  variantId: zodId().optional().describe("ID of the variant to search in"),
-  contentPieceId: zodId().optional().describe("ID of the content piece to search in"),
-  contentGroupId: zodId().optional().describe("ID of the content group to search in"),
-  byTitle: z.boolean().optional().describe("Whether to search only by the title")
+  limit: z.number().describe("Limit of results to return").optional(),
+  variantId: zodId().describe("ID of the variant to search in").optional(),
+  contentPieceId: zodId().describe("ID of the content piece to search in").optional(),
+  contentGroupId: zodId().describe("ID of the content group to search in").optional(),
+  byTitle: z.boolean().describe("Whether to search only by the title").optional()
 });
 const outputSchema = z.array(
   z.object({

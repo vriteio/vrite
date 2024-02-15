@@ -29,14 +29,14 @@ const inputSchema = z.object({
         .regex(/^[a-z0-9_]*$/)
     )
     .optional(),
-  slug: z.string().optional().describe("Slug of the content piece"),
-  tagId: zodId().optional().describe("ID of the tag"),
+  slug: z.string().describe("Slug of the content piece").optional(),
+  tagId: zodId().describe("ID of the tag").optional(),
   lastOrder: z
     .string()
-    .optional()
-    .describe("Last order identifier to start fetching content pieces from"),
-  perPage: z.number().default(20).describe("Number of content pieces per page"),
-  page: z.number().default(1).describe("Page number to fetch")
+    .describe("Last order identifier to start fetching content pieces from")
+    .optional(),
+  perPage: z.number().describe("Number of content pieces per page").default(20),
+  page: z.number().describe("Page number to fetch").default(1)
 });
 const outputSchema = z.array(
   contentPiece.omit({ tags: true }).extend({

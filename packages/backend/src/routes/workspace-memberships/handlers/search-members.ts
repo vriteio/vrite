@@ -11,7 +11,7 @@ import { UnderscoreID } from "#lib/mongo";
 import { stringToRegex } from "#lib/utils";
 
 const inputSchema = z.object({
-  query: z.string().optional().describe("Query to search usernames by")
+  query: z.string().describe("Query to search usernames by").optional()
 });
 const outputSchema = z.array(contentPieceMember);
 const handler = async (

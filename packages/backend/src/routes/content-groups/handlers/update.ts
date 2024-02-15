@@ -23,7 +23,7 @@ const inputSchema = contentGroup
   .partial()
   .required({ id: true })
   .extend({
-    ancestor: zodId().optional().describe("ID of the new ancestor for the content group")
+    ancestor: zodId().describe("ID of the new ancestor for the content group").optional()
   });
 const handler = async (
   ctx: AuthenticatedContext,

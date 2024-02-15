@@ -8,19 +8,19 @@ import { UnderscoreID } from "#lib/mongo";
 import { Context } from "#lib/context";
 
 const inputSchema = z.object({
-  email: z.string().email().max(320).describe("Email address"),
+  email: z.string().describe("Email address").email().max(320),
   username: z
     .string()
-    .regex(/^[a-z0-9_]*$/)
-    .describe("Username"),
+    .describe("Username")
+    .regex(/^[a-z0-9_]*$/),
   password: z
     .string()
+    .describe("Password")
     .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/)
     .min(8)
-    .max(128)
-    .describe("Password"),
-  redirect: z.string().optional().describe("Redirect URL for after email verification"),
-  plan: z.string().optional().describe("Identifier for the selected subscription plan")
+    .max(128),
+  redirect: z.string().describe("Redirect URL for after email verification").optional(),
+  plan: z.string().describe("Identifier for the selected subscription plan").optional()
 });
 const handler = async (ctx: Context, input: z.infer<typeof inputSchema>): Promise<void> => {
   const users = getUsersCollection(ctx.db);

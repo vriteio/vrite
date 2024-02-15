@@ -8,7 +8,7 @@ import { zodId } from "#lib/mongo";
 
 const inputSchema = z.object({
   contentPieceId: zodId().describe("ID of the content piece"),
-  extensionId: zodId().optional().describe("ID of the extension"),
+  extensionId: zodId().describe("ID of the extension").optional(),
   data: z.any().describe("Custom data to set")
 });
 const handler = async (

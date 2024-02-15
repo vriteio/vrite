@@ -16,8 +16,8 @@ const permission = z.enum([
 ]);
 const role = z.object({
   id: zodId().describe("ID of the role"),
-  name: z.string().min(1).max(20).describe("Name of the role"),
-  description: z.string().optional().describe("Description of the role"),
+  name: z.string().describe("Name of the role").min(1).max(20),
+  description: z.string().describe("Description of the role").optional(),
   permissions: z.array(permission).describe("Permissions assigned to the role")
 });
 const baseRoleType = z.enum(["viewer", "admin"]);

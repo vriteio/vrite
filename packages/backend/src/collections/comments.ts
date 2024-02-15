@@ -10,7 +10,7 @@ const comment = z.object({
   content: z.string().describe("HTML content of the comment"),
   date: z.string().describe("Date the comment was created"),
   contentPieceId: zodId().describe("ID of the content piece the comment is associated with"),
-  variantId: zodId().optional().describe("ID of the variant the comment is associated with")
+  variantId: zodId().describe("ID of the variant the comment is associated with").optional()
 });
 const commentMember = z.object({
   id: zodId(),

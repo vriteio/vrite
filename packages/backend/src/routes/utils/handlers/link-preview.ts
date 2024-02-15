@@ -47,11 +47,11 @@ interface PreviewData extends z.infer<typeof previewData> {}
 const inputSchema = z.object({
   url: z.string().describe("URL to fetch preview data for"),
   variantId: zodId()
-    .optional()
-    .describe("ID of the variant in which to look for internal link data"),
+    .describe("ID of the variant in which to look for internal link data")
+    .optional(),
   workspaceId: zodId()
-    .optional()
     .describe("ID of the workspace in which to look for internal link data")
+    .optional()
 });
 const outputSchema = previewData;
 const handler = async (

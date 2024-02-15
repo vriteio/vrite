@@ -11,7 +11,7 @@ import { errors } from "#lib/errors";
 
 const inputSchema = role.pick({ id: true }).partial().default({});
 const outputSchema = role.extend({
-  baseType: baseRoleType.optional().describe("Type of the base role")
+  baseType: baseRoleType.describe("Type of the base role").optional()
 });
 const handler = async (
   ctx: AuthenticatedContext,

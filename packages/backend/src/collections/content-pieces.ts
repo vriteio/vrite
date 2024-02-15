@@ -8,19 +8,19 @@ const contentPiece = z.object({
   id: zodId().describe("ID of the content piece"),
   date: z
     .string()
+    .describe("ISO-formatted date metadata of the content piece")
     .optional()
-    .nullable()
-    .describe("ISO-formatted date metadata of the content piece"),
+    .nullable(),
   title: z.string().describe("Title of the content piece"),
-  description: z.string().optional().nullable().describe("Description of the content piece"),
+  description: z.string().describe("Description of the content piece").optional().nullable(),
   tags: z.array(zodId()).describe("IDs of the tags assigned to the content piece"),
-  coverUrl: z.string().optional().nullable().describe("URL of the cover image"),
-  coverAlt: z.string().optional().nullable().describe("Alt text of the cover image"),
+  coverUrl: z.string().describe("URL of the cover image").optional().nullable(),
+  coverAlt: z.string().describe("Alt text of the cover image").optional().nullable(),
   contentGroupId: zodId().describe("ID of the content group the piece is directly assigned to"),
-  customData: z.any().optional().nullable().describe("Custom JSON data of the content piece"),
-  canonicalLink: z.string().optional().nullable().describe("Canonical link of the content piece"),
+  customData: z.any().describe("Custom JSON data of the content piece").optional().nullable(),
+  canonicalLink: z.string().describe("Canonical link of the content piece").optional().nullable(),
   slug: z.string().describe("Slug of the content piece"),
-  filename: z.string().optional().nullable().describe("Filename of the content piece"),
+  filename: z.string().describe("Filename of the content piece").optional().nullable(),
   members: z.array(zodId()).describe("IDs of the workspace members assigned to the content piece")
 });
 const contentPieceMember = z.object({

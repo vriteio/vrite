@@ -6,14 +6,14 @@ import { zodId } from "#lib/mongo";
 
 const inputSchema = z
   .object({
-    perPage: z.number().default(20).describe("Number of tokens to return per page"),
-    page: z.number().default(1).describe("Page number to fetch"),
-    lastId: zodId().optional().describe("Last token ID to starting fetching tokens from")
+    perPage: z.number().describe("Number of tokens to return per page").default(20),
+    page: z.number().describe("Page number to fetch").default(1),
+    lastId: zodId().describe("Last token ID to starting fetching tokens from").optional()
   })
   .default({});
 const outputSchema = z.array(
   token.extend({
-    extension: z.boolean().optional().describe("Whether the token is associated with an extension")
+    extension: z.boolean().describe("Whether the token is associated with an extension").optional()
   })
 );
 const handler = async (

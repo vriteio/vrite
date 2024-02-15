@@ -35,11 +35,11 @@ declare module "fastify" {
 }
 
 const inputSchema = contentPiece.omit({ id: true, slug: true }).extend({
-  content: z.string().optional().describe("HTML content"),
+  content: z.string().describe("HTML content").optional(),
   referenceId: zodId()
-    .optional()
-    .describe("ID of the reference content piece to order the content piece after"),
-  slug: z.string().optional().describe("Slug of the content piece")
+    .describe("ID of the reference content piece to order the content piece after")
+    .optional(),
+  slug: z.string().describe("Slug of the content piece").optional()
 });
 const outputSchema = z.object({ id: zodId() });
 const handler = async (

@@ -34,8 +34,8 @@ const metadataSettings = z
       .describe("Pattern for auto-generating canonical link for content pieces"),
     enabledFields: z
       .array(metadataField)
-      .optional()
       .describe("Enabled content piece metadata fields")
+      .optional()
   })
   .partial();
 const marks = [
@@ -79,12 +79,12 @@ const workspaceSettings = z.object({
             width: z.number().describe("Width of the column in the table view")
           })
         )
-        .optional()
         .describe("Configuration for the table view")
+        .optional()
     })
-    .optional()
-    .describe("Configuration for the dashboard views"),
-  metadata: metadataSettings.optional().describe("Content piece metadata settings"),
+    .describe("Configuration for the dashboard views")
+    .optional(),
+  metadata: metadataSettings.describe("Content piece metadata settings").optional(),
   marks: z.array(z.enum(marks)).describe("Enabled inline formatting options"),
   blocks: z.array(z.enum(blocks)).describe("Enabled block content types"),
   embeds: z.array(z.enum(embeds)).describe("Enabled embeds")

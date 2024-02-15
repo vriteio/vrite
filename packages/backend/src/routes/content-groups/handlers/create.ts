@@ -23,7 +23,7 @@ declare module "fastify" {
 }
 
 const inputSchema = contentGroup.omit({ descendants: true, ancestors: true, id: true }).extend({
-  ancestor: zodId().optional().describe("ID of the content group to be the direct ancestor")
+  ancestor: zodId().describe("ID of the content group to be the direct ancestor").optional()
 });
 const outputSchema = contentGroup.pick({ id: true });
 const handler = async (

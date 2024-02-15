@@ -12,9 +12,9 @@ import { zodId } from "#lib/mongo";
 
 const inputSchema = z
   .object({
-    perPage: z.number().default(20).describe("Number of workspaces to return per page"),
-    page: z.number().default(1).describe("Page number to fetch"),
-    lastId: zodId().optional().describe("Last workspace ID to starting fetching workspaces from")
+    perPage: z.number().describe("Number of workspaces to return per page").default(20),
+    page: z.number().describe("Page number to fetch").default(1),
+    lastId: zodId().describe("Last workspace ID to starting fetching workspaces from").optional()
   })
   .default({});
 const outputSchema = z.array(

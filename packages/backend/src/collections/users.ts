@@ -4,28 +4,28 @@ import { UnderscoreID, zodId } from "#lib/mongo";
 
 const user = z.object({
   id: zodId().describe("ID of the user"),
-  username: z.string().min(1).max(20).describe("Short username"),
-  email: z.string().email().max(320).describe("Email address"),
+  username: z.string().describe("Short username").min(1).max(20),
+  email: z.string().describe("Email address").email().max(320),
   external: z
     .object({
       github: z
         .object({
           id: z.string().describe("GitHub user ID")
         })
-        .optional()
         .describe("Data associated with GitHub OAuth authentication")
+        .optional()
     })
-    .optional()
-    .describe("Data associated with external authentication providers"),
-  avatar: z.string().optional().describe("URL of the user's profile image"),
-  bio: z.string().optional().describe("User's bio"),
-  fullName: z.string().max(50).optional().describe("User's full name"),
-  emailVerificationCode: z.string().optional().describe("Code used to verify the user's email"),
+    .describe("Data associated with external authentication providers")
+    .optional(),
+  avatar: z.string().describe("URL of the user's profile image").optional(),
+  bio: z.string().describe("User's bio").optional(),
+  fullName: z.string().describe("User's full name").max(50).optional(),
+  emailVerificationCode: z.string().describe("Code used to verify the user's email").optional(),
   emailVerificationCodeExpiresAt: z
     .string()
-    .optional()
-    .describe("Date when the email verification code expires"),
-  totpSecret: z.string().optional().describe("Secret used for TOTP two-factor authentication")
+    .describe("Date when the email verification code expires")
+    .optional(),
+  totpSecret: z.string().describe("Secret used for TOTP two-factor authentication").optional()
 });
 const verificationDetails = z.object({
   newEmailChangeInVerification: z

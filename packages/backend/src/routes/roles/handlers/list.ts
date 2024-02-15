@@ -6,13 +6,13 @@ import { zodId } from "#lib/mongo";
 
 const inputSchema = z
   .object({
-    perPage: z.number().default(20).describe("Number of roles per page"),
-    page: z.number().default(1).describe("Page number to fetch"),
-    lastId: zodId().optional().describe("Last role ID to start fetching roles from")
+    perPage: z.number().describe("Number of roles per page").default(20),
+    page: z.number().describe("Page number to fetch").default(1),
+    lastId: zodId().describe("Last role ID to start fetching roles from").optional()
   })
   .default({});
 const outputSchema = z.array(
-  role.extend({ baseType: baseRoleType.optional().describe("Type of the base role") })
+  role.extend({ baseType: baseRoleType.describe("Type of the base role").optional() })
 );
 const handler = async (
   ctx: AuthenticatedContext,

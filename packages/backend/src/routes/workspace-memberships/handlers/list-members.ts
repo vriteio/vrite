@@ -11,9 +11,9 @@ import { zodId } from "#lib/mongo";
 
 const inputSchema = z
   .object({
-    perPage: z.number().default(20).describe("Number of members to return per page"),
-    page: z.number().default(1).describe("Page number to fetch"),
-    lastId: zodId().optional().describe("Last member ID to starting fetching members from")
+    perPage: z.number().describe("Number of members to return per page").default(20),
+    page: z.number().describe("Page number to fetch").default(1),
+    lastId: zodId().describe("Last member ID to starting fetching members from").optional()
   })
   .default({});
 const outputSchema = z.array(

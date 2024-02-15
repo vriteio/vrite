@@ -8,11 +8,11 @@ type OutgoingHttpHeaders = NodeJS.Dict<OutgoingHttpHeader>;
 
 const inputSchema = z.object({
   query: z.string().describe("Query to ask"),
-  variantId: zodId().optional().describe("ID of the variant to search for references in"),
+  variantId: zodId().describe("ID of the variant to search for references in").optional(),
   contentGroupId: zodId()
-    .optional()
-    .describe("ID of the content group to search for references in"),
-  contentPieceId: zodId().optional().describe("ID of the content piece to search for references in")
+    .describe("ID of the content group to search for references in")
+    .optional(),
+  contentPieceId: zodId().describe("ID of the content piece to search for references in").optional()
 });
 const outputSchema = z.any().describe("SSE stream of output");
 const handler = async (

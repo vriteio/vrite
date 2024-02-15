@@ -20,10 +20,10 @@ const webhookMetadata = z.object({
 const webhook = z.object({
   id: zodId().describe("ID of the webhook"),
   url: z.string().describe("URL for the webhook to send data to"),
-  name: z.string().min(1).max(50).describe("Name of the webhook"),
-  description: z.string().optional().describe("Description of the webhook"),
-  secret: z.string().optional().describe("Secret for signing webhook payload"),
-  metadata: webhookMetadata.optional().describe("Additional details for the webhook"),
+  name: z.string().describe("Name of the webhook").min(1).max(50),
+  description: z.string().describe("Description of the webhook").optional(),
+  secret: z.string().describe("Secret for signing webhook payload").optional(),
+  metadata: webhookMetadata.describe("Additional details for the webhook").optional(),
   event: webhookEventName.describe("Event that triggers the webhook")
 });
 

@@ -4,7 +4,7 @@ import { tag, getTagsCollection } from "#collections";
 import { stringToRegex } from "#lib/utils";
 
 const inputSchema = z.object({
-  query: z.string().optional().describe("Query to search tag values by")
+  query: z.string().describe("Query to search tag values by").optional()
 });
 const outputSchema = z.array(tag);
 const handler = async (

@@ -34,7 +34,7 @@ interface PulledRecords {
 }
 
 const inputSchema = z.object({
-  force: z.boolean().optional().describe("Force pull")
+  force: z.boolean().describe("Force pull").optional()
 });
 const outputSchema = z.object({
   status: z.enum(["pulled", "conflict"]).describe("Status of the pull operation"),

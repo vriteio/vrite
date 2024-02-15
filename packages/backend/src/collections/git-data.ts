@@ -28,14 +28,14 @@ const gitDirectory = z.object({
 const gitData = z.object({
   id: zodId().describe("ID of the Git sync configuration data"),
   provider: z.enum(["github"]).describe("Name of the used Git provider"),
-  github: githubData.optional().describe("GitHub-specific provider configuration data"),
+  github: githubData.describe("GitHub-specific provider configuration data").optional(),
   records: z.array(gitRecord).describe("Git sync records"),
   directories: z.array(gitDirectory).describe("Git sync directories"),
   contentGroupId: zodId()
-    .optional()
-    .describe("ID of the top-level content group connected with Git sync"),
-  lastCommitDate: z.string().optional().describe("Date of the last commit"),
-  lastCommitId: z.string().optional().describe("ID of the last commit")
+    .describe("ID of the top-level content group connected with Git sync")
+    .optional(),
+  lastCommitDate: z.string().describe("Date of the last commit").optional(),
+  lastCommitId: z.string().describe("ID of the last commit").optional()
 });
 
 interface GitRecord<ID extends string | ObjectId = string>

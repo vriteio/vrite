@@ -4,10 +4,10 @@ import { UnderscoreID, zodId } from "#lib/mongo";
 
 const transformer = z.object({
   id: zodId().describe("ID of the transformer"),
-  label: z.string().min(1).max(50).describe("Label assigned to the transformer"),
-  input: z.string().url().describe("URL of the input transformer"),
-  output: z.string().url().describe("URL of the output transformer"),
-  maxBatchSize: z.number().min(1).max(1000).describe("Maximum batch size for the transformer")
+  label: z.string().describe("Label assigned to the transformer").min(1).max(50),
+  input: z.string().describe("URL of the input transformer").url(),
+  output: z.string().describe("URL of the output transformer").url(),
+  maxBatchSize: z.number().describe("Maximum batch size for the transformer").min(1).max(1000)
 });
 
 interface Transformer<ID extends string | ObjectId = string>

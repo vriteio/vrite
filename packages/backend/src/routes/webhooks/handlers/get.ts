@@ -5,14 +5,9 @@ import { webhook, getWebhooksCollection, Webhook } from "#collections";
 import { errors } from "#lib/errors";
 
 const inputSchema = webhook.pick({ id: true });
-const outputSchema = webhook
-  .omit({ secret: true })
-  .extend({
-    extension: z
-      .boolean()
-      .optional()
-      .describe("Whether the webhook is associated with an extension")
-  });
+const outputSchema = webhook.omit({ secret: true }).extend({
+  extension: z.boolean().describe("Whether the webhook is associated with an extension").optional()
+});
 const handler = async (
   ctx: AuthenticatedContext,
   input: z.infer<typeof inputSchema>

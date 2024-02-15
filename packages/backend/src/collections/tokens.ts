@@ -25,7 +25,7 @@ const tokenPermission = z.enum([
 ]);
 const token = z.object({
   id: zodId().describe("ID of the token"),
-  name: z.string().min(1).max(50).describe("Name of the token"),
+  name: z.string().describe("Name of the token").min(1).max(50),
   description: z.string().describe("Description of the token"),
   permissions: z.array(tokenPermission).describe("Permissions assigned to the token")
 });

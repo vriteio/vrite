@@ -4,11 +4,11 @@ import { getGitDataCollection, getTransformersCollection, transformer } from "#c
 
 const outputSchema = z.array(
   transformer.extend({
-    inUse: z.boolean().optional().describe("Whether the transformer is in use with Git sync"),
+    inUse: z.boolean().describe("Whether the transformer is in use with Git sync").optional(),
     extension: z
       .boolean()
-      .optional()
       .describe("Whether the transformer is associated with an extension")
+      .optional()
   })
 );
 const handler = async (ctx: AuthenticatedContext): Promise<z.infer<typeof outputSchema>> => {

@@ -4,27 +4,27 @@ import { UnderscoreID, zodId } from "#lib/mongo";
 
 const workspace = z.object({
   id: zodId().describe("ID of the workspace"),
-  name: z.string().min(1).max(50).describe("Name of the workspace"),
-  description: z.string().optional().describe("Description of the workspace"),
-  logo: z.string().optional().describe("URL of the workspace logo"),
+  name: z.string().describe("Name of the workspace").min(1).max(50),
+  description: z.string().describe("Description of the workspace").optional(),
+  logo: z.string().describe("URL of the workspace logo").optional(),
   contentGroups: z.array(zodId()).describe("IDs of the top-level content groups in the workspace"),
   customerId: z
     .string()
-    .optional()
-    .describe("ID of the Stripe customer associated with the workspace"),
-  subscriptionStatus: z.string().optional().describe("Status of the workspace's subscription"),
+    .describe("ID of the Stripe customer associated with the workspace")
+    .optional(),
+  subscriptionStatus: z.string().describe("Status of the workspace's subscription").optional(),
   subscriptionPlan: z
     .string()
-    .optional()
-    .describe("Identifier of the workspace's subscription plan"),
+    .describe("Identifier of the workspace's subscription plan")
+    .optional(),
   subscriptionData: z
     .string()
-    .optional()
-    .describe("JSON-stringified Stripe subscription data associated with the workspace"),
+    .describe("JSON-stringified Stripe subscription data associated with the workspace")
+    .optional(),
   subscriptionExpiresAt: z
     .string()
-    .optional()
     .describe("Expiration date of the current workspace's billing cycle")
+    .optional()
 });
 
 interface Workspace<ID extends string | ObjectId = string>

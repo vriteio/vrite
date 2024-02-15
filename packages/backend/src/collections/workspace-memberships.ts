@@ -4,21 +4,21 @@ import { UnderscoreID, zodId } from "#lib/mongo";
 
 const workspaceMembership = z.object({
   id: zodId().describe("ID of the workspace member"),
-  userId: zodId().optional().describe("ID of the associated user"),
+  userId: zodId().describe("ID of the associated user").optional(),
   roleId: zodId().describe("ID of the member's role in the workspace"),
-  email: z.string().email().max(320).optional().describe("Email of the invited member"),
-  name: z.string().max(50).optional().describe("Temporary name of the invited member")
+  email: z.string().describe("Email of the invited member").email().max(320).optional(),
+  name: z.string().describe("Temporary name of the invited member").max(50).optional()
 });
 const workspaceInviteCodeDetails = z.object({
   inviteVerificationCode: z
     .string()
-    .optional()
-    .describe("Verification code for the workspace invite"),
-  inviteVerificationCodeSalt: z.string().optional().describe("Salt for the verification code"),
+    .describe("Verification code for the workspace invite")
+    .optional(),
+  inviteVerificationCodeSalt: z.string().describe("Salt for the verification code").optional(),
   inviteVerificationCodeExpireAt: z
     .string()
-    .optional()
     .describe("Expiration date for the verification code")
+    .optional()
 });
 
 interface WorkspaceMembership<ID extends string | ObjectId = string>

@@ -35,14 +35,14 @@ declare module "fastify" {
 const inputSchema = z.object({
   id: zodId().describe("ID of the content piece to move"),
   contentGroupId: zodId()
-    .optional()
-    .describe("ID of the content group to move the content piece to"),
+    .describe("ID of the content group to move the content piece to")
+    .optional(),
   nextReferenceId: zodId()
-    .optional()
-    .describe("ID of the content piece to order the content piece after"),
+    .describe("ID of the content piece to order the content piece after")
+    .optional(),
   previousReferenceId: zodId()
-    .optional()
     .describe("ID of the content piece to order the content piece before")
+    .optional()
 });
 const handler = async (
   ctx: AuthenticatedContext,

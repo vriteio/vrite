@@ -23,7 +23,7 @@ import {
 
 const inputSchema = z.object({
   id: zodId().describe("ID of the content piece"),
-  content: z.boolean().default(false).describe("Whether to fetch the JSON content"),
+  content: z.boolean().describe("Whether to fetch the JSON content").default(false),
   variant: zodId()
     .describe("ID or key of the variant")
     .or(
@@ -34,14 +34,14 @@ const inputSchema = z.object({
         .regex(/^[a-z0-9_]*$/)
     )
     .optional(),
-  description: z.enum(["html", "text"]).default("html").describe("Format of the description")
+  description: z.enum(["html", "text"]).describe("Format of the description").default("html")
 });
 const outputSchema = contentPiece.omit({ tags: true }).extend({
   tags: z.array(tag).describe("Tags assigned to the content piece"),
   members: z.array(contentPieceMember).describe("Members assigned to the content piece"),
   slug: z.string().describe("Slug of the content piece"),
-  coverWidth: z.string().optional().describe("Width of the cover image"),
-  content: z.record(z.string(), z.any()).optional().describe("JSON content of the piece")
+  coverWidth: z.string().describe("Width of the cover image").optional(),
+  content: z.record(z.string(), z.any()).describe("JSON content of the piece").optional()
 });
 const handler = async (
   ctx: AuthenticatedContext,
