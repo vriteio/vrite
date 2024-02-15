@@ -5,13 +5,13 @@ import { UnderscoreID, zodId } from "#lib/mongo";
 const theme = z.enum(["light", "dark", "auto"]);
 const accentColor = z.enum(["energy", "neon", "sublime", "sunrise", "flow"]);
 const appearanceSettings = z.object({
-  uiTheme: theme,
-  codeEditorTheme: theme,
-  accentColor
+  uiTheme: theme.describe("User's UI theme"),
+  codeEditorTheme: theme.describe("User's code editor theme"),
+  accentColor: accentColor.describe("User's UI accent color")
 });
 const userSettings = appearanceSettings.extend({
-  id: zodId(),
-  currentWorkspaceId: z.string()
+  id: zodId().describe("ID of the user settings"),
+  currentWorkspaceId: z.string().describe("ID of the workspace the user is currently in")
 });
 
 type Theme = z.infer<typeof theme>;

@@ -3,10 +3,12 @@ import { Collection, Db, ObjectId } from "mongodb";
 import { UnderscoreID, zodId } from "#lib/mongo";
 
 const contentGroup = z.object({
-  id: zodId(),
-  name: z.string(),
-  ancestors: z.array(zodId()),
-  descendants: z.array(zodId())
+  id: zodId().describe("ID of the content group"),
+  name: z.string().describe("Name of the content group"),
+  ancestors: z
+    .array(zodId())
+    .describe("IDs of the content group's ancestors - from furthest to closest"),
+  descendants: z.array(zodId()).describe("IDs of the content group's direct descendants")
 });
 
 interface ContentGroup<ID extends string | ObjectId = string>

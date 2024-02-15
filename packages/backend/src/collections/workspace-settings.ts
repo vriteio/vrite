@@ -29,8 +29,13 @@ const prettierConfig = z
 const metadataField = z.enum(["slug", "canonical-link", "date", "tags", "members", "filename"]);
 const metadataSettings = z
   .object({
-    canonicalLinkPattern: z.string(),
-    enabledFields: z.array(metadataField).optional()
+    canonicalLinkPattern: z
+      .string()
+      .describe("Pattern for auto-generating canonical link for content pieces"),
+    enabledFields: z
+      .array(metadataField)
+      .optional()
+      .describe("Enabled content piece metadata fields")
   })
   .partial();
 const marks = [
@@ -63,24 +68,26 @@ const blocks = [
 ] as const;
 const embeds = ["codepen", "codesandbox", "youtube"] as const;
 const workspaceSettings = z.object({
-  id: zodId(),
-  prettierConfig: z.string(),
+  id: zodId().describe("ID of the workspace settings"),
+  prettierConfig: z.string().describe("JSON-stringified Prettier configuration"),
   dashboardViews: z
     .object({
       table: z
         .array(
           z.object({
-            id: z.string(),
-            width: z.number()
+            id: z.string().describe("ID of the column in the table view"),
+            width: z.number().describe("Width of the column in the table view")
           })
         )
         .optional()
+        .describe("Configuration for the table view")
     })
-    .optional(),
-  metadata: metadataSettings.optional(),
-  marks: z.array(z.enum(marks)),
-  blocks: z.array(z.enum(blocks)),
-  embeds: z.array(z.enum(embeds))
+    .optional()
+    .describe("Configuration for the dashboard views"),
+  metadata: metadataSettings.optional().describe("Content piece metadata settings"),
+  marks: z.array(z.enum(marks)).describe("Enabled inline formatting options"),
+  blocks: z.array(z.enum(blocks)).describe("Enabled block content types"),
+  embeds: z.array(z.enum(embeds)).describe("Enabled embeds")
 });
 
 interface WorkspaceSettings<ID extends string | ObjectId = string>

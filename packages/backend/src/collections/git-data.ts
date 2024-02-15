@@ -3,35 +3,39 @@ import { z } from "zod";
 import { UnderscoreID, zodId } from "#lib/mongo";
 
 const commonGitProviderData = z.object({
-  baseDirectory: z.string(),
-  matchPattern: z.string(),
-  transformer: z.string()
+  baseDirectory: z.string().describe("Base directory to sync from"),
+  matchPattern: z.string().describe("Pattern to match files to sync"),
+  transformer: z.string().describe("Name or ID of the content transformer to use")
 });
 const githubData = commonGitProviderData.extend({
-  installationId: z.number(),
-  repositoryName: z.string(),
-  repositoryOwner: z.string(),
-  branchName: z.string()
+  installationId: z.number().describe("ID of the GitHub App installation"),
+  repositoryName: z.string().describe("Name of the repository"),
+  repositoryOwner: z.string().describe("Owner (GitHub user or organization) of the repository"),
+  branchName: z.string().describe("Name of the branch to sync from")
 });
 const gitRecord = z.object({
-  contentPieceId: zodId(),
-  syncedHash: z.string(),
-  currentHash: z.string(),
-  path: z.string()
+  contentPieceId: zodId().describe("ID of the content piece the record is associated with"),
+  syncedHash: z.string().describe("Last-synced hash of the content piece"),
+  currentHash: z.string().describe("Current hash of the content piece"),
+  path: z.string().describe("Path of the file in the repository, relative to the base directory")
 });
 const gitDirectory = z.object({
-  path: z.string(),
-  contentGroupId: zodId()
+  path: z
+    .string()
+    .describe("Path of the directory in the repository, relative to the base directory"),
+  contentGroupId: zodId().describe("ID of the content group the directory is associated with")
 });
 const gitData = z.object({
-  id: zodId(),
-  provider: z.enum(["github"]),
-  github: githubData.optional(),
-  records: z.array(gitRecord),
-  directories: z.array(gitDirectory),
-  contentGroupId: zodId().optional(),
-  lastCommitDate: z.string().optional(),
-  lastCommitId: z.string().optional()
+  id: zodId().describe("ID of the Git sync configuration data"),
+  provider: z.enum(["github"]).describe("Name of the used Git provider"),
+  github: githubData.optional().describe("GitHub-specific provider configuration data"),
+  records: z.array(gitRecord).describe("Git sync records"),
+  directories: z.array(gitDirectory).describe("Git sync directories"),
+  contentGroupId: zodId()
+    .optional()
+    .describe("ID of the top-level content group connected with Git sync"),
+  lastCommitDate: z.string().optional().describe("Date of the last commit"),
+  lastCommitId: z.string().optional().describe("ID of the last commit")
 });
 
 interface GitRecord<ID extends string | ObjectId = string>

@@ -19,9 +19,9 @@ const tagColor = z.enum([
   "emerald"
 ]);
 const tag = z.object({
-  id: zodId(),
-  label: z.string().min(1).max(20),
-  color: tagColor.default("gray")
+  id: zodId().describe("ID of the tag"),
+  label: z.string().min(1).max(20).describe("Label assigned to the tag"),
+  color: tagColor.default("gray").describe("Color assigned to the tag")
 });
 
 interface Tag<ID extends string | ObjectId = string> extends Omit<z.infer<typeof tag>, "id"> {

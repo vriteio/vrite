@@ -19,11 +19,11 @@ const contextValue: z.ZodType<ContextValue> = z.union([
 ]);
 const contextObject = z.record(contextValue);
 const extension = z.object({
-  id: zodId(),
-  name: z.string(),
-  url: z.string(),
-  config: contextObject,
-  token: z.string()
+  id: zodId().describe("ID of the extension installation"),
+  name: z.string().describe("Name of the extension"),
+  url: z.string().describe("URL of the extension"),
+  config: contextObject.describe("Configuration of the extension"),
+  token: z.string().describe("API Token of the extension")
 });
 
 interface Extension<ID extends string | ObjectId = string>

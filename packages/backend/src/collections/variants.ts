@@ -3,10 +3,14 @@ import { z } from "zod";
 import { UnderscoreID, zodId } from "#lib/mongo";
 
 const variant = z.object({
-  id: zodId(),
-  label: z.string().min(1).max(50),
-  description: z.string().optional(),
-  key: z.string().min(1).max(50)
+  id: zodId().describe("ID of the variant"),
+  label: z.string().min(1).max(50).describe("Label assigned to the variant"),
+  description: z.string().optional().describe("Description of the variant"),
+  key: z
+    .string()
+    .min(1)
+    .max(50)
+    .describe("Short, unique key for the variant (for use with the API)")
 });
 
 interface Variant<ID extends string | ObjectId = string>

@@ -3,16 +3,22 @@ import { Collection, Db, ObjectId } from "mongodb";
 import { UnderscoreID, zodId } from "#lib/mongo";
 
 const workspaceMembership = z.object({
-  id: zodId(),
-  userId: zodId().optional(),
-  roleId: zodId(),
-  email: z.string().email().max(320).optional(),
-  name: z.string().max(50).optional()
+  id: zodId().describe("ID of the workspace member"),
+  userId: zodId().optional().describe("ID of the associated user"),
+  roleId: zodId().describe("ID of the member's role in the workspace"),
+  email: z.string().email().max(320).optional().describe("Email of the invited member"),
+  name: z.string().max(50).optional().describe("Name of the invited member")
 });
 const workspaceInviteCodeDetails = z.object({
-  inviteVerificationCode: z.string().optional(),
-  inviteVerificationCodeSalt: z.string().optional(),
-  inviteVerificationCodeExpireAt: z.string().optional()
+  inviteVerificationCode: z
+    .string()
+    .optional()
+    .describe("Verification code for the workspace invite"),
+  inviteVerificationCodeSalt: z.string().optional().describe("Salt for the verification code"),
+  inviteVerificationCodeExpireAt: z
+    .string()
+    .optional()
+    .describe("Expiration date for the verification code")
 });
 
 interface WorkspaceMembership<ID extends string | ObjectId = string>

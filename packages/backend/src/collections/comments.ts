@@ -4,13 +4,13 @@ import { z } from "zod";
 import { UnderscoreID, zodId } from "#lib/mongo";
 
 const comment = z.object({
-  id: zodId(),
-  memberId: zodId(),
-  threadId: zodId(),
-  content: z.string(),
-  date: z.string(),
-  contentPieceId: zodId(),
-  variantId: zodId().optional()
+  id: zodId().describe("ID of the comment"),
+  memberId: zodId().describe("ID of the workspace member who made the comment"),
+  threadId: zodId().describe("ID of the thread the comment is a part of"),
+  content: z.string().describe("HTML content of the comment"),
+  date: z.string().describe("Date the comment was created"),
+  contentPieceId: zodId().describe("ID of the content piece the comment is associated with"),
+  variantId: zodId().optional().describe("ID of the variant the comment is associated with")
 });
 const commentMember = z.object({
   id: zodId(),

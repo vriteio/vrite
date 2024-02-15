@@ -24,10 +24,10 @@ const tokenPermission = z.enum([
   "variants:write"
 ]);
 const token = z.object({
-  id: zodId(),
-  name: z.string().min(1).max(50),
-  description: z.string(),
-  permissions: z.array(tokenPermission)
+  id: zodId().describe("ID of the token"),
+  name: z.string().min(1).max(50).describe("Name of the token"),
+  description: z.string().describe("Description of the token"),
+  permissions: z.array(tokenPermission).describe("Permissions assigned to the token")
 });
 
 type TokenPermission = z.infer<typeof tokenPermission>;

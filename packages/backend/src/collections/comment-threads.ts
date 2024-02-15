@@ -3,13 +3,15 @@ import { z } from "zod";
 import { UnderscoreID, zodId } from "#lib/mongo";
 
 const commentThread = z.object({
-  id: zodId(),
-  comments: z.array(zodId()),
-  resolved: z.boolean(),
-  fragment: z.string(),
-  contentPieceId: zodId(),
-  variantId: zodId().optional(),
-  date: z.string()
+  id: zodId().describe("ID of the comment thread"),
+  comments: z.array(zodId()).describe("IDs of the comments in the thread"),
+  resolved: z.boolean().describe("Whether the thread has been resolved"),
+  fragment: z
+    .string()
+    .describe("ID marking a fragment of content that the thread is associated with"),
+  contentPieceId: zodId().describe("ID of the content piece that the thread is associated with"),
+  variantId: zodId().optional().describe("ID of the variant that the thread is associated with"),
+  date: z.string().describe("Date the thread was created")
 });
 
 interface CommentThread<ID extends string | ObjectId = string>

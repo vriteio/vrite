@@ -5,23 +5,27 @@ import { z } from "zod";
 import { UnderscoreID, zodId } from "#lib/mongo";
 
 const contentPiece = z.object({
-  id: zodId(),
-  date: z.string().optional().nullable(),
-  title: z.string(),
-  description: z.string().optional().nullable(),
-  tags: z.array(zodId()),
-  coverUrl: z.string().optional().nullable(),
-  coverAlt: z.string().optional().nullable(),
-  contentGroupId: zodId(),
-  customData: z.any().optional().nullable(),
-  canonicalLink: z.string().optional().nullable(),
-  slug: z.string(),
-  filename: z.string().optional().nullable(),
-  members: z.array(zodId())
+  id: zodId().describe("ID of the content piece"),
+  date: z
+    .string()
+    .optional()
+    .nullable()
+    .describe("ISO-formatted date metadata of the content piece"),
+  title: z.string().describe("Title of the content piece"),
+  description: z.string().optional().nullable().describe("Description of the content piece"),
+  tags: z.array(zodId()).describe("IDs of the tags assigned to the content piece"),
+  coverUrl: z.string().optional().nullable().describe("URL of the cover image"),
+  coverAlt: z.string().optional().nullable().describe("Alt text of the cover image"),
+  contentGroupId: zodId().describe("ID of the content group the piece is directly assigned to"),
+  customData: z.any().optional().nullable().describe("Custom JSON data of the content piece"),
+  canonicalLink: z.string().optional().nullable().describe("Canonical link of the content piece"),
+  slug: z.string().describe("Slug of the content piece"),
+  filename: z.string().optional().nullable().describe("Filename of the content piece"),
+  members: z.array(zodId()).describe("IDs of the workspace members assigned to the content piece")
 });
 const contentPieceMember = z.object({
-  id: zodId(),
-  profile: profile.omit({ bio: true })
+  id: zodId().describe("ID of the workspace member"),
+  profile: profile.omit({ bio: true }).describe("Profile data of the user")
 });
 
 interface ContentPieceMember<ID extends string | ObjectId = string> {
