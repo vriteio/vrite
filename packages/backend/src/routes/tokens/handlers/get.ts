@@ -4,7 +4,7 @@ import { AuthenticatedContext } from "#lib/middleware";
 import { getTokensCollection, token } from "#collections";
 import { errors } from "#lib/errors";
 
-const inputSchema = z.object({ id: z.string() });
+const inputSchema = token.pick({ id: true });
 const outputSchema = token;
 const handler = async (
   ctx: AuthenticatedContext,

@@ -8,7 +8,7 @@ import { zodId } from "#lib/mongo";
 
 const inputSchema = z
   .object({
-    ancestor: zodId().optional()
+    ancestor: zodId().optional().describe("ID of the content group to list descendants for")
   })
   .optional();
 const outputSchema = z.array(contentGroup);

@@ -24,9 +24,9 @@ declare module "fastify" {
 }
 
 const inputSchema = z.object({
-  email: z.string().email().max(320),
-  name: z.string(),
-  roleId: zodId()
+  email: z.string().email().max(320).describe("Email to send invite to"),
+  name: z.string().describe("Temporary name of the invited member"),
+  roleId: zodId().describe("ID of the role to assign to the invited member")
 });
 const handler = async (
   ctx: AuthenticatedContext,

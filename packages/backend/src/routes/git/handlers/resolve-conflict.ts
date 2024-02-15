@@ -11,10 +11,10 @@ import { AuthenticatedContext } from "#lib/middleware";
 import { createInputContentProcessor, useGitProvider } from "#lib/git-sync";
 
 const inputSchema = z.object({
-  contentPieceId: z.string(),
-  content: z.string(),
-  syncedHash: z.string(),
-  path: z.string()
+  contentPieceId: z.string().describe("ID of the content piece"),
+  content: z.string().describe("Content to update"),
+  hash: z.string().describe("New hash of the content"),
+  path: z.string().describe("Path of the record, relative to the base directory")
 });
 const handler = async (
   ctx: AuthenticatedContext,
@@ -73,7 +73,7 @@ const handler = async (
     );
   }
 
-  if (!currentHash && !input.syncedHash) {
+  if (!currentHash && !input.hash) {
     await gitDataCollection.updateOne(
       {
         workspaceId: ctx.auth.workspaceId
@@ -92,7 +92,7 @@ const handler = async (
       },
       {
         $set: {
-          "records.$.syncedHash": input.syncedHash,
+          "records.$.syncedHash": input.hash,
           "records.$.currentHash": currentHash
         }
       }
@@ -108,7 +108,7 @@ const handler = async (
             return {
               ...record,
               contentPieceId: `${record.contentPieceId}`,
-              syncedHash: input.syncedHash,
+              syncedHash: input.hash,
               currentHash
             };
           }

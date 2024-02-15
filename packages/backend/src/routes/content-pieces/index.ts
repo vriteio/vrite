@@ -61,7 +61,7 @@ const contentPiecesRouter = router({
       permissions: { session: ["manageDashboard"], token: ["contentPieces:read"] }
     })
     .input(deleteContentPiece.inputSchema)
-    .output(deleteContentPiece.outputSchema)
+    .output(z.void())
     .mutation(async ({ ctx, input }) => {
       return deleteContentPiece.handler(ctx, input);
     }),

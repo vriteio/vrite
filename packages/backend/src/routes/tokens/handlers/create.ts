@@ -1,12 +1,13 @@
 import { z } from "zod";
 import { AuthenticatedContext } from "#lib/middleware";
 import { token } from "#collections";
-import { zodId } from "#lib/mongo";
 import { publishTokenEvent } from "#events";
 import { createToken } from "#lib/utils";
 
 const inputSchema = token.omit({ id: true });
-const outputSchema = z.object({ value: z.string(), id: zodId() });
+const outputSchema = token.pick({ id: true }).extend({
+  value: z.string().describe("Value of the token")
+});
 const handler = async (
   ctx: AuthenticatedContext,
   input: z.infer<typeof inputSchema>

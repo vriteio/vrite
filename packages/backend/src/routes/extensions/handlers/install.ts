@@ -1,18 +1,18 @@
 import { z } from "zod";
 import { ObjectId } from "mongodb";
 import { AuthenticatedContext } from "#lib/middleware";
-import { getExtensionsCollection, tokenPermission } from "#collections";
+import { extension, getExtensionsCollection, tokenPermission } from "#collections";
 import { publishExtensionEvent } from "#events";
 import { errors } from "#lib/errors";
 import { zodId } from "#lib/mongo";
 import { createToken } from "#lib/utils";
 
 const inputSchema = z.object({
-  extension: z.object({
-    name: z.string(),
-    url: z.string(),
-    permissions: z.array(tokenPermission),
-    displayName: z.string()
+  extension: extension.pick({ name: true, url: true }).extend({
+    permissions: z
+      .array(tokenPermission)
+      .describe("The permissions to assign to the extensions' token"),
+    displayName: z.string().describe("The display name of the extension")
   })
 });
 const outputSchema = z.object({

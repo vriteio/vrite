@@ -4,7 +4,7 @@ import { getWorkspacesCollection, getWorkspaceMembershipsCollection } from "#col
 import { errors } from "#lib/errors";
 
 const outputSchema = z.object({
-  workspaceId: z.string()
+  workspaceId: z.string().describe("ID of the workspace the user is currently signed-into")
 });
 const handler = async (ctx: AuthenticatedContext): Promise<z.infer<typeof outputSchema>> => {
   const workspacesCollection = getWorkspacesCollection(ctx.db);

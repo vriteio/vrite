@@ -18,8 +18,9 @@ import {
 } from "#lib/utils";
 
 const inputSchema = z.object({
-  contentGroupId: zodId(),
+  contentGroupId: zodId().describe("ID of the content group which contains the content pieces"),
   variant: zodId()
+    .describe("ID or key of the variant")
     .or(
       z
         .string()
@@ -28,11 +29,14 @@ const inputSchema = z.object({
         .regex(/^[a-z0-9_]*$/)
     )
     .optional(),
-  slug: z.string().optional(),
-  tagId: zodId().optional(),
-  lastOrder: z.string().optional(),
-  perPage: z.number().default(20),
-  page: z.number().default(1)
+  slug: z.string().optional().describe("Slug of the content piece"),
+  tagId: zodId().optional().describe("ID of the tag"),
+  lastOrder: z
+    .string()
+    .optional()
+    .describe("Last order identifier to start fetching content pieces from"),
+  perPage: z.number().default(20).describe("Number of content pieces per page"),
+  page: z.number().default(1).describe("Page number to fetch")
 });
 const outputSchema = z.array(
   contentPiece.omit({ tags: true }).extend({

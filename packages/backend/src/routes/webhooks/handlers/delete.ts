@@ -1,12 +1,11 @@
 import { z } from "zod";
 import { ObjectId } from "mongodb";
 import { AuthenticatedContext } from "#lib/middleware";
-import { getWebhooksCollection } from "#collections";
+import { getWebhooksCollection, webhook } from "#collections";
 import { publishWebhookEvent } from "#events";
 import { errors } from "#lib/errors";
-import { zodId } from "#lib/mongo";
 
-const inputSchema = z.object({ id: zodId() });
+const inputSchema = webhook.pick({ id: true });
 const handler = async (
   ctx: AuthenticatedContext,
   input: z.infer<typeof inputSchema>

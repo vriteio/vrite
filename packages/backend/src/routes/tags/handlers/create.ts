@@ -3,10 +3,9 @@ import { ObjectId } from "mongodb";
 import { AuthenticatedContext } from "#lib/middleware";
 import { tag, getTagsCollection } from "#collections";
 import { publishTagEvent } from "#events";
-import { zodId } from "#lib/mongo";
 
 const inputSchema = tag.omit({ id: true });
-const outputSchema = z.object({ id: zodId() });
+const outputSchema = tag.pick({ id: true });
 const handler = async (
   ctx: AuthenticatedContext,
   input: z.infer<typeof inputSchema>

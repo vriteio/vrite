@@ -8,11 +8,12 @@ import {
   getContentsCollection,
   getContentPieceVariantsCollection,
   getContentVariantsCollection,
-  FullContentGroup
+  FullContentGroup,
+  contentGroup
 } from "#collections";
 import { publishContentGroupEvent } from "#events";
 import { errors } from "#lib/errors";
-import { UnderscoreID, zodId } from "#lib/mongo";
+import { UnderscoreID } from "#lib/mongo";
 
 declare module "fastify" {
   interface RouteCallbacks {
@@ -26,9 +27,7 @@ declare module "fastify" {
   }
 }
 
-const inputSchema = z.object({
-  id: zodId()
-});
+const inputSchema = contentGroup.pick({ id: true });
 const handler = async (
   ctx: AuthenticatedContext,
   input: z.infer<typeof inputSchema>

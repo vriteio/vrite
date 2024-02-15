@@ -5,7 +5,10 @@ import { getUsersCollection } from "#collections";
 import { errors } from "#lib/errors";
 import { verifyValue, hashValue } from "#lib/hash";
 
-const inputSchema = z.object({ newPassword: z.string(), oldPassword: z.string() });
+const inputSchema = z.object({
+  newPassword: z.string().describe("The new password"),
+  oldPassword: z.string().describe("The old password for verification")
+});
 const handler = async (
   ctx: AuthenticatedContext,
   input: z.infer<typeof inputSchema>

@@ -7,9 +7,9 @@ import { createSession } from "#lib/session";
 import { Context } from "#lib/context";
 
 const inputSchema = z.object({
-  email: z.string().email().max(320),
-  password: z.string().min(8).max(128),
-  totpToken: z.string().optional()
+  email: z.string().email().max(320).describe("Email address"),
+  password: z.string().min(8).max(128).describe("Password"),
+  totpToken: z.string().optional().describe("TOTP token (if 2FA is enabled)")
 });
 const handler = async (ctx: Context, input: z.infer<typeof inputSchema>): Promise<void> => {
   const users = getUsersCollection(ctx.db);

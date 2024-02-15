@@ -1,12 +1,11 @@
 import { z } from "zod";
 import { ObjectId } from "mongodb";
 import { AuthenticatedContext } from "#lib/middleware";
-import { getExtensionsCollection, getTokensCollection } from "#collections";
-import { zodId } from "#lib/mongo";
+import { extension, getExtensionsCollection, getTokensCollection } from "#collections";
 import { publishExtensionEvent } from "#events";
 import { errors } from "#lib/errors";
 
-const inputSchema = z.object({ id: zodId() });
+const inputSchema = extension.pick({ id: true });
 const handler = async (
   ctx: AuthenticatedContext,
   input: z.infer<typeof inputSchema>

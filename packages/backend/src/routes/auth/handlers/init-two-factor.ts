@@ -7,7 +7,7 @@ import { getUsersCollection } from "#collections";
 import { errors } from "#lib/errors";
 
 const outputSchema = z.object({
-  totp: z.string()
+  totp: z.string().describe("The TOTP URI")
 });
 const handler = async (ctx: AuthenticatedContext): Promise<z.infer<typeof outputSchema>> => {
   const usersCollection = getUsersCollection(ctx.db);

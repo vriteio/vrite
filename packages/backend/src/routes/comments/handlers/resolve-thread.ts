@@ -1,10 +1,10 @@
 import { z } from "zod";
 import { AuthenticatedContext } from "#lib/middleware";
-import { getCommentThreadsCollection } from "#collections";
+import { commentThread, getCommentThreadsCollection } from "#collections";
 import { publishCommentEvent } from "#events";
 import { errors } from "#lib/errors";
 
-const inputSchema = z.object({ fragment: z.string() });
+const inputSchema = commentThread.pick({ fragment: true });
 const handler = async (
   ctx: AuthenticatedContext,
   input: z.infer<typeof inputSchema>

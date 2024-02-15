@@ -1,15 +1,18 @@
 import { z } from "zod";
 import { ObjectId } from "mongodb";
 import { AuthenticatedContext } from "#lib/middleware";
-import { getContentGroupsCollection, getWorkspacesCollection } from "#collections";
+import { contentGroup, getContentGroupsCollection, getWorkspacesCollection } from "#collections";
 import { publishContentGroupEvent } from "#events";
 import { errors } from "#lib/errors";
 import { zodId } from "#lib/mongo";
 
-const inputSchema = z.object({
-  id: zodId(),
-  index: z.number()
-});
+const inputSchema = contentGroup
+  .pick({
+    id: true
+  })
+  .extend({
+    index: z.number().describe("The new index of the content group")
+  });
 const handler = async (
   ctx: AuthenticatedContext,
   input: z.infer<typeof inputSchema>

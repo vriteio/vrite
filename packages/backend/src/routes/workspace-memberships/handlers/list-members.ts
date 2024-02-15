@@ -4,28 +4,22 @@ import { AuthenticatedContext } from "#lib/middleware";
 import {
   getUsersCollection,
   getWorkspaceMembershipsCollection,
+  profile,
   workspaceMembership
 } from "#collections";
 import { zodId } from "#lib/mongo";
 
 const inputSchema = z
   .object({
-    perPage: z.number().default(20),
-    page: z.number().default(1),
-    lastId: zodId().optional()
+    perPage: z.number().default(20).describe("Number of members to return per page"),
+    page: z.number().default(1).describe("Page number to fetch"),
+    lastId: zodId().optional().describe("Last member ID to starting fetching members from")
   })
   .default({});
 const outputSchema = z.array(
   workspaceMembership.extend({
-    pendingInvite: z.boolean(),
-    profile: z
-      .object({
-        fullName: z.string(),
-        username: z.string(),
-        avatar: z.string()
-      })
-      .partial()
-      .optional()
+    pendingInvite: z.boolean().describe("Whether the member has a pending invite"),
+    profile: profile.pick({ fullName: true, username: true, avatar: true }).optional()
   })
 );
 const handler = async (
@@ -59,18 +53,20 @@ const handler = async (
   return workspaceMemberships.map((workspaceMembership) => {
     let profile: {
       fullName?: string;
-      username?: string;
+      username: string;
       avatar?: string;
     } | null = null;
 
     if (workspaceMembership.userId) {
       const user = users.find(({ _id }) => _id.equals(workspaceMembership.userId!)) || null;
 
-      profile = {
-        fullName: user?.fullName,
-        username: user?.username,
-        avatar: user?.avatar
-      };
+      if (user) {
+        profile = {
+          fullName: user?.fullName,
+          username: user?.username,
+          avatar: user?.avatar
+        };
+      }
     }
 
     return {

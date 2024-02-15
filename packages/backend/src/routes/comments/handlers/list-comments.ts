@@ -7,14 +7,17 @@ import {
   commentMember,
   getCommentThreadsCollection,
   Comment,
-  getCommentsCollection
+  getCommentsCollection,
+  commentThread
 } from "#collections";
 import { errors } from "#lib/errors";
 import { UnderscoreID } from "#lib/mongo";
 
-const inputSchema = z.object({ fragment: z.string() });
+const inputSchema = commentThread.pick({ fragment: true });
 const outputSchema = z.array(
-  comment.omit({ memberId: true }).extend({ member: commentMember.or(z.null()) })
+  comment.omit({ memberId: true }).extend({
+    member: commentMember.describe("Workspace member who created the comment").or(z.null())
+  })
 );
 const handler = async (
   ctx: AuthenticatedContext,

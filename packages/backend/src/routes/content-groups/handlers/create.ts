@@ -22,10 +22,10 @@ declare module "fastify" {
   }
 }
 
-const inputSchema = contentGroup
-  .omit({ descendants: true, ancestors: true, id: true })
-  .extend({ ancestor: zodId().optional() });
-const outputSchema = z.object({ id: zodId() });
+const inputSchema = contentGroup.omit({ descendants: true, ancestors: true, id: true }).extend({
+  ancestor: zodId().optional().describe("ID of the content group to be the direct ancestor")
+});
+const outputSchema = contentGroup.pick({ id: true });
 const handler = async (
   ctx: AuthenticatedContext,
   input: z.infer<typeof inputSchema>

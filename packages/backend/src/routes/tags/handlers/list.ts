@@ -3,8 +3,8 @@ import { AuthenticatedContext } from "#lib/middleware";
 import { getTagsCollection, tag } from "#collections";
 
 const inputSchema = z.object({
-  perPage: z.number().default(20),
-  page: z.number().default(1)
+  perPage: z.number().default(20).describe("The number of tags to return per page"),
+  page: z.number().default(1).describe("The page number to fetch")
 });
 const outputSchema = z.array(tag);
 const handler = async (

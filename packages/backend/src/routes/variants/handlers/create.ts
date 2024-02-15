@@ -3,10 +3,9 @@ import { ObjectId } from "mongodb";
 import { AuthenticatedContext } from "#lib/middleware";
 import { variant, getVariantsCollection } from "#collections";
 import { publishVariantEvent } from "#events";
-import { zodId } from "#lib/mongo";
 
 const inputSchema = variant.omit({ id: true });
-const outputSchema = z.object({ id: zodId() });
+const outputSchema = variant.pick({ id: true });
 const handler = async (
   ctx: AuthenticatedContext,
   input: z.infer<typeof inputSchema>

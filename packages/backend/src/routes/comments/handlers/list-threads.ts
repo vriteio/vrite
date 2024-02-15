@@ -10,15 +10,14 @@ import {
   CommentThread,
   CommentWithAdditionalData
 } from "#collections";
-import { zodId } from "#lib/mongo";
 
-const inputSchema = z.object({ contentPieceId: zodId() });
+const inputSchema = commentThread.pick({ contentPieceId: true });
 const outputSchema = z.array(
   commentThread.omit({ comments: true }).extend({
     firstComment: comment
       .omit({ memberId: true })
       .extend({
-        member: commentMember.or(z.null())
+        member: commentMember.describe("Member who created the comment").or(z.null())
       })
       .or(z.null())
   })

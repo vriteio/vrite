@@ -2,12 +2,12 @@ import { z } from "zod";
 import { ObjectId } from "mongodb";
 import { nanoid } from "nanoid";
 import { AuthenticatedContext } from "#lib/middleware";
-import { getTokensCollection } from "#collections";
+import { getTokensCollection, token } from "#collections";
 import { errors } from "#lib/errors";
 import { hashValue } from "#lib/hash";
 
-const inputSchema = z.object({ id: z.string() });
-const outputSchema = z.object({ value: z.string() });
+const inputSchema = token.pick({ id: true });
+const outputSchema = z.object({ value: z.string().describe("Value of the token") });
 const handler = async (
   ctx: AuthenticatedContext,
   input: z.infer<typeof inputSchema>

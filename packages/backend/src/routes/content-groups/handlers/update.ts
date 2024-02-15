@@ -22,7 +22,9 @@ const inputSchema = contentGroup
   .omit({ ancestors: true, descendants: true })
   .partial()
   .required({ id: true })
-  .extend({ ancestor: zodId().optional() });
+  .extend({
+    ancestor: zodId().optional().describe("ID of the new ancestor for the content group")
+  });
 const handler = async (
   ctx: AuthenticatedContext,
   input: z.infer<typeof inputSchema>

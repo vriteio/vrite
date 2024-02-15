@@ -3,7 +3,7 @@ import { z } from "zod";
 import { ObjectId } from "mongodb";
 import { AuthenticatedContext } from "#lib/middleware";
 import { UnderscoreID, zodId } from "#lib/mongo";
-import { FullWorkspaceMembership } from "#collections";
+import { FullWorkspaceMembership, workspaceMembership } from "#collections";
 
 declare module "fastify" {
   interface RouteCallbacks {
@@ -16,7 +16,7 @@ declare module "fastify" {
   }
 }
 
-const inputSchema = z.object({ id: zodId() });
+const inputSchema = workspaceMembership.pick({ id: true });
 const handler = async (
   ctx: AuthenticatedContext,
   input: z.infer<typeof inputSchema>

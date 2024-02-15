@@ -34,20 +34,21 @@ interface PulledRecords {
 }
 
 const inputSchema = z.object({
-  force: z.boolean().optional()
+  force: z.boolean().optional().describe("Force pull")
 });
 const outputSchema = z.object({
-  status: z.enum(["pulled", "conflict"]),
+  status: z.enum(["pulled", "conflict"]).describe("Status of the pull operation"),
   conflicted: z
     .array(
       z.object({
-        path: z.string(),
-        contentPieceId: zodId(),
-        currentContent: z.string(),
-        pulledContent: z.string(),
-        pulledHash: z.string()
+        path: z.string().describe("Path of the conflicted record, relative to the base directory"),
+        contentPieceId: zodId().describe("ID of the associated content piece"),
+        currentContent: z.string().describe("Current content"),
+        pulledContent: z.string().describe("Pulled content"),
+        pulledHash: z.string().describe("Hash of the pulled content")
       })
     )
+    .describe("Conflicted records")
     .optional()
 });
 const processPulledRecords = async ({

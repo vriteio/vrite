@@ -7,7 +7,7 @@ import { errors } from "#lib/errors";
 import { verifyValue } from "#lib/hash";
 
 const inputSchema = z.object({
-  code: z.string()
+  code: z.string().describe("Verification code")
 });
 const handler = async (
   ctx: AuthenticatedContext,

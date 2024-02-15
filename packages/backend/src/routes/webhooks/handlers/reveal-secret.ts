@@ -4,7 +4,7 @@ import { AuthenticatedContext } from "#lib/middleware";
 import { webhook, getWebhooksCollection } from "#collections";
 import { errors } from "#lib/errors";
 
-const inputSchema = z.object({ id: z.string() });
+const inputSchema = webhook.pick({ id: true });
 const outputSchema = webhook.pick({ secret: true });
 const handler = async (
   ctx: AuthenticatedContext,

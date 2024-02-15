@@ -4,11 +4,11 @@ import { AuthenticatedContext } from "#lib/middleware";
 import {
   getVariantsCollection,
   getContentPieceVariantsCollection,
-  getContentVariantsCollection
+  getContentVariantsCollection,
+  variant
 } from "#collections";
 import { publishVariantEvent } from "#events";
 import { errors } from "#lib/errors";
-import { zodId } from "#lib/mongo";
 
 declare module "fastify" {
   interface RouteCallbacks {
@@ -21,7 +21,7 @@ declare module "fastify" {
   }
 }
 
-const inputSchema = z.object({ id: zodId() });
+const inputSchema = variant.pick({ id: true });
 const handler = async (
   ctx: AuthenticatedContext,
   input: z.infer<typeof inputSchema>

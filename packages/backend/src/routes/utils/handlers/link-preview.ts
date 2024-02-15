@@ -33,21 +33,25 @@ const extractPreviewDataFromOpenGraph = (input: OgObject): string => {
 };
 const previewData = z
   .object({
-    image: z.string(),
-    icon: z.string(),
-    description: z.string(),
-    title: z.string(),
-    url: z.string(),
-    type: z.enum(["internal", "external"])
+    image: z.string().describe("Preview image for the URL"),
+    icon: z.string().describe("Favicon for the URL"),
+    description: z.string().describe("Description of the URL"),
+    title: z.string().describe("Title of the URL"),
+    url: z.string().describe("URL of the preview"),
+    type: z.enum(["internal", "external"]).describe("Type of the URL")
   })
   .partial();
 
 interface PreviewData extends z.infer<typeof previewData> {}
 
 const inputSchema = z.object({
-  url: z.string(),
-  variantId: zodId().optional(),
-  workspaceId: zodId().optional()
+  url: z.string().describe("URL to fetch preview data for"),
+  variantId: zodId()
+    .optional()
+    .describe("ID of the variant in which to look for internal link data"),
+  workspaceId: zodId()
+    .optional()
+    .describe("ID of the workspace in which to look for internal link data")
 });
 const outputSchema = previewData;
 const handler = async (

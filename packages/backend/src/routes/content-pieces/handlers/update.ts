@@ -40,9 +40,10 @@ declare module "fastify" {
 
 const inputSchema = contentPiece
   .extend({
-    coverWidth: z.string(),
-    content: z.string(),
+    coverWidth: z.string().describe("Width of the cover image"),
+    content: z.string().describe("HTML content"),
     variant: zodId()
+      .describe("ID or key of the variant to update")
       .or(
         z
           .string()

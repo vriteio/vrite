@@ -4,8 +4,8 @@ import { extension, getExtensionsCollection } from "#collections";
 
 const inputSchema = z
   .object({
-    perPage: z.number().default(20),
-    page: z.number().default(1)
+    perPage: z.number().default(20).describe("Number of extensions per page"),
+    page: z.number().default(1).describe("Page number to fetch")
   })
   .default({});
 const outputSchema = z.array(extension);

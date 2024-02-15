@@ -15,10 +15,10 @@ import {
 } from "#lib/git-sync";
 
 const inputSchema = z.object({
-  message: z.string()
+  message: z.string().describe("Commit message")
 });
 const outputSchema = z.object({
-  status: z.enum(["stale", "success"])
+  status: z.enum(["stale", "success"]).describe("Status of the commit operation")
 });
 const handler = async (
   ctx: AuthenticatedContext,

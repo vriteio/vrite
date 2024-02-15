@@ -5,22 +5,23 @@ import {
   workspace,
   getWorkspaceMembershipsCollection,
   getWorkspacesCollection,
-  getRolesCollection
+  getRolesCollection,
+  role
 } from "#collections";
 import { zodId } from "#lib/mongo";
 
 const inputSchema = z
   .object({
-    perPage: z.number().default(20),
-    page: z.number().default(1),
-    lastId: zodId().optional()
+    perPage: z.number().default(20).describe("Number of workspaces to return per page"),
+    page: z.number().default(1).describe("Page number to fetch"),
+    lastId: zodId().optional().describe("Last workspace ID to starting fetching workspaces from")
   })
   .default({});
 const outputSchema = z.array(
   z.object({
-    id: zodId(),
+    id: zodId().describe("Workspace member ID"),
     workspace: workspace.omit({ contentGroups: true }),
-    role: z.object({ name: z.string(), id: zodId() }).optional()
+    role: role.pick({ name: true, id: true }).optional()
   })
 );
 const handler = async (

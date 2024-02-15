@@ -4,10 +4,10 @@ import { AuthenticatedContext } from "#lib/middleware";
 import { webhook, getWebhooksCollection, FullWebhook } from "#collections";
 import { publishWebhookEvent } from "#events";
 import { errors } from "#lib/errors";
-import { zodId, UnderscoreID } from "#lib/mongo";
+import { UnderscoreID } from "#lib/mongo";
 
 const inputSchema = webhook.omit({ id: true });
-const outputSchema = z.object({ id: zodId() });
+const outputSchema = webhook.pick({ id: true });
 const handler = async (
   ctx: AuthenticatedContext,
   input: z.infer<typeof inputSchema>

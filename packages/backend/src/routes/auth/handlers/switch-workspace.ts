@@ -6,7 +6,7 @@ import { errors } from "#lib/errors";
 import { switchWorkspaceSession } from "#lib/session";
 
 const inputSchema = z.object({
-  workspaceId: z.string()
+  workspaceId: z.string().describe("The ID of the workspace to switch to")
 });
 const handler = async (
   ctx: AuthenticatedContext,

@@ -9,10 +9,7 @@ import {
 import { publishWorkspaceSettingsEvent } from "#events";
 import { errors } from "#lib/errors";
 
-const inputSchema = workspaceSettings
-  .partial()
-  .omit({ id: true, prettierConfig: true })
-  .extend({ prettierConfig: z.string().optional() });
+const inputSchema = workspaceSettings.partial().omit({ id: true });
 const handler = async (
   ctx: AuthenticatedContext,
   input: z.infer<typeof inputSchema>

@@ -3,9 +3,8 @@ import { ObjectId } from "mongodb";
 import { AuthenticatedContext } from "#lib/middleware";
 import { commentThread, getCommentThreadsCollection } from "#collections";
 import { publishCommentEvent } from "#events";
-import { zodId } from "#lib/mongo";
 
-const inputSchema = z.object({ contentPieceId: zodId(), fragment: z.string() });
+const inputSchema = commentThread.pick({ contentPieceId: true, fragment: true });
 const outputSchema = commentThread.pick({ id: true });
 const handler = async (
   ctx: AuthenticatedContext,

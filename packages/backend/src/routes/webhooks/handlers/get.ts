@@ -4,8 +4,15 @@ import { AuthenticatedContext } from "#lib/middleware";
 import { webhook, getWebhooksCollection, Webhook } from "#collections";
 import { errors } from "#lib/errors";
 
-const inputSchema = z.object({ id: z.string() });
-const outputSchema = webhook.omit({ secret: true }).extend({ extension: z.boolean().optional() });
+const inputSchema = webhook.pick({ id: true });
+const outputSchema = webhook
+  .omit({ secret: true })
+  .extend({
+    extension: z
+      .boolean()
+      .optional()
+      .describe("Whether the webhook is associated with an extension")
+  });
 const handler = async (
   ctx: AuthenticatedContext,
   input: z.infer<typeof inputSchema>

@@ -3,7 +3,7 @@ import { AuthenticatedContext } from "#lib/middleware";
 import { commentThread, getCommentThreadsCollection } from "#collections";
 import { errors } from "#lib/errors";
 
-const inputSchema = z.object({ fragment: z.string() });
+const inputSchema = commentThread.pick({ fragment: true });
 const outputSchema = commentThread.omit({ comments: true });
 const handler = async (
   ctx: AuthenticatedContext,

@@ -4,6 +4,7 @@ import { ObjectId } from "mongodb";
 import { AuthenticatedContext } from "#lib/middleware";
 import {
   FullContentGroup,
+  contentGroup,
   getContentGroupsCollection,
   getWorkspacesCollection
 } from "#collections";
@@ -23,10 +24,13 @@ declare module "fastify" {
   }
 }
 
-const inputSchema = z.object({
-  id: zodId(),
-  ancestor: zodId().or(z.null())
-});
+const inputSchema = contentGroup
+  .pick({
+    id: true
+  })
+  .extend({
+    ancestor: zodId().describe("ID of the new ancestor for the content group").or(z.null())
+  });
 const handler = async (
   ctx: AuthenticatedContext,
   input: z.infer<typeof inputSchema>

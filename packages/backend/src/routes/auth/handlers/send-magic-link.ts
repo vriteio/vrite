@@ -7,9 +7,9 @@ import { hashValue } from "#lib/hash";
 import { Context } from "#lib/context";
 
 const inputSchema = z.object({
-  email: z.string().email().max(320),
-  totpToken: z.string().optional(),
-  redirect: z.string().optional()
+  email: z.string().email().max(320).describe("Email address"),
+  totpToken: z.string().optional().describe("TOTP token (if 2FA is enabled)"),
+  redirect: z.string().optional().describe("Redirect URL for after magic link verification")
 });
 const handler = async (ctx: Context, input: z.infer<typeof inputSchema>): Promise<void> => {
   const users = getUsersCollection(ctx.db);

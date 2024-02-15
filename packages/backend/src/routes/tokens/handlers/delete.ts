@@ -1,11 +1,11 @@
 import { z } from "zod";
 import { ObjectId } from "mongodb";
 import { AuthenticatedContext } from "#lib/middleware";
-import { getTokensCollection } from "#collections";
+import { getTokensCollection, token } from "#collections";
 import { publishTokenEvent } from "#events";
 import { errors } from "#lib/errors";
 
-const inputSchema = z.object({ id: z.string() });
+const inputSchema = token.pick({ id: true });
 const handler = async (
   ctx: AuthenticatedContext,
   input: z.infer<typeof inputSchema>

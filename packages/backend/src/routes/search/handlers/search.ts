@@ -5,19 +5,21 @@ import { contentPiece, getContentPiecesCollection } from "#collections";
 import { zodId } from "#lib/mongo";
 
 const inputSchema = z.object({
-  query: z.string(),
-  limit: z.number().optional(),
-  variantId: zodId().optional(),
-  contentPieceId: zodId().optional(),
-  contentGroupId: zodId().optional(),
-  byTitle: z.boolean().optional()
+  query: z.string().describe("Query to search"),
+  limit: z.number().optional().describe("Limit of results to return"),
+  variantId: zodId().optional().describe("ID of the variant to search in"),
+  contentPieceId: zodId().optional().describe("ID of the content piece to search in"),
+  contentGroupId: zodId().optional().describe("ID of the content group to search in"),
+  byTitle: z.boolean().optional().describe("Whether to search only by the title")
 });
 const outputSchema = z.array(
   z.object({
-    contentPieceId: z.string(),
+    contentPieceId: z.string().describe("ID of the content piece"),
     contentPiece,
-    breadcrumb: z.array(z.string()),
-    content: z.string()
+    breadcrumb: z
+      .array(z.string())
+      .describe("Breadcrumb leading to the result fragment (title + headings)"),
+    content: z.string().describe("Raw text of the result")
   })
 );
 const handler = async (

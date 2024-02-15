@@ -1,12 +1,11 @@
 import { z } from "zod";
 import { ObjectId } from "mongodb";
 import { AuthenticatedContext } from "#lib/middleware";
-import { getRolesCollection, getUsersCollection } from "#collections";
+import { getRolesCollection, getUsersCollection, role } from "#collections";
 import { publishRoleEvent } from "#events";
 import { errors } from "#lib/errors";
-import { zodId } from "#lib/mongo";
 
-const inputSchema = z.object({ id: zodId() });
+const inputSchema = role.pick({ id: true });
 const handler = async (
   ctx: AuthenticatedContext,
   input: z.infer<typeof inputSchema>

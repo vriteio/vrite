@@ -5,9 +5,7 @@ import { createWorkspace } from "#lib/workspace";
 import { errors } from "#lib/errors";
 
 const inputSchema = workspace.pick({ description: true, logo: true, name: true });
-const outputSchema = z.object({
-  workspaceId: z.string()
-});
+const outputSchema = workspace.pick({ id: true });
 const handler = async (
   ctx: AuthenticatedContext,
   input: z.infer<typeof inputSchema>
@@ -21,7 +19,7 @@ const handler = async (
 
   const workspaceId = await createWorkspace(user, ctx.fastify, input);
 
-  return { workspaceId: `${workspaceId}` };
+  return { id: `${workspaceId}` };
 };
 
 export { inputSchema, outputSchema, handler };

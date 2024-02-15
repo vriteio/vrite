@@ -6,10 +6,9 @@ import {
   getWorkspaceMembershipsCollection,
   workspaceMembership
 } from "#collections";
-import { zodId } from "#lib/mongo";
 import { errors } from "#lib/errors";
 
-const inputSchema = z.object({ userId: zodId() }).or(z.void());
+const inputSchema = workspaceMembership.pick({ userId: true }).or(z.void());
 const outputSchema = workspaceMembership;
 const handler = async (
   ctx: AuthenticatedContext,

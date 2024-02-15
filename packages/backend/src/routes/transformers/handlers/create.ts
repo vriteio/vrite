@@ -3,10 +3,9 @@ import { ObjectId } from "mongodb";
 import { AuthenticatedContext } from "#lib/middleware";
 import { getTransformersCollection, transformer } from "#collections";
 import { publishTransformerEvent } from "#events";
-import { zodId } from "#lib/mongo";
 
 const inputSchema = transformer.omit({ id: true });
-const outputSchema = z.object({ id: zodId() });
+const outputSchema = transformer.pick({ id: true });
 const handler = async (
   ctx: AuthenticatedContext,
   input: z.infer<typeof inputSchema>

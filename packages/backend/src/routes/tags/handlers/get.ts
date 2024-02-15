@@ -3,9 +3,8 @@ import { ObjectId } from "mongodb";
 import { AuthenticatedContext } from "#lib/middleware";
 import { tag, getTagsCollection } from "#collections";
 import { errors } from "#lib/errors";
-import { zodId } from "#lib/mongo";
 
-const inputSchema = z.object({ id: zodId() });
+const inputSchema = tag.pick({ id: true });
 const outputSchema = tag;
 const handler = async (
   ctx: AuthenticatedContext,

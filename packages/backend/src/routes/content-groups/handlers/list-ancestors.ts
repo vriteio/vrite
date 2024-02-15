@@ -7,7 +7,7 @@ import { errors } from "#lib/errors";
 import { zodId } from "#lib/mongo";
 
 const inputSchema = z.object({
-  contentGroupId: zodId()
+  contentGroupId: zodId().describe("ID of the content group to list ancestors for")
 });
 const outputSchema = z.array(contentGroup);
 const handler = async (

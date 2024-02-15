@@ -2,12 +2,9 @@ import { z } from "zod";
 import { ObjectId } from "mongodb";
 import { AuthenticatedContext } from "#lib/middleware";
 import { contentGroup, getContentGroupsCollection } from "#collections";
-import { zodId } from "#lib/mongo";
 import { errors } from "#lib/errors";
 
-const inputSchema = z.object({
-  id: zodId()
-});
+const inputSchema = contentGroup.pick({ id: true });
 const outputSchema = contentGroup;
 const handler = async (
   ctx: AuthenticatedContext,

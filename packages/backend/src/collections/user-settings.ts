@@ -11,7 +11,7 @@ const appearanceSettings = z.object({
 });
 const userSettings = appearanceSettings.extend({
   id: zodId().describe("ID of the user settings"),
-  currentWorkspaceId: z.string().describe("ID of the workspace the user is currently in")
+  currentWorkspaceId: z.string().describe("ID of the workspace the user is currently signed-into")
 });
 
 type Theme = z.infer<typeof theme>;

@@ -1,16 +1,16 @@
 import { z } from "zod";
 import { ObjectId } from "mongodb";
 import { AuthenticatedContext } from "#lib/middleware";
-import { getWorkspaceMembershipsCollection, getRolesCollection } from "#collections";
+import {
+  getWorkspaceMembershipsCollection,
+  getRolesCollection,
+  workspaceMembership
+} from "#collections";
 import { publishWorkspaceMembershipEvent } from "#events";
 import { errors } from "#lib/errors";
-import { zodId } from "#lib/mongo";
 import { updateSessionUser } from "#lib/session";
 
-const inputSchema = z.object({
-  id: z.string(),
-  roleId: zodId()
-});
+const inputSchema = workspaceMembership.pick({ id: true, roleId: true });
 const handler = async (
   ctx: AuthenticatedContext,
   input: z.infer<typeof inputSchema>

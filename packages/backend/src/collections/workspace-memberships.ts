@@ -7,7 +7,7 @@ const workspaceMembership = z.object({
   userId: zodId().optional().describe("ID of the associated user"),
   roleId: zodId().describe("ID of the member's role in the workspace"),
   email: z.string().email().max(320).optional().describe("Email of the invited member"),
-  name: z.string().max(50).optional().describe("Name of the invited member")
+  name: z.string().max(50).optional().describe("Temporary name of the invited member")
 });
 const workspaceInviteCodeDetails = z.object({
   inviteVerificationCode: z

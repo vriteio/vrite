@@ -1,14 +1,13 @@
 import { z } from "zod";
 import { ObjectId } from "mongodb";
 import { AuthenticatedContext } from "#lib/middleware";
-import { contextObject, getExtensionsCollection } from "#collections";
+import { extension, getExtensionsCollection } from "#collections";
 import { publishExtensionEvent } from "#events";
 import { errors } from "#lib/errors";
-import { zodId } from "#lib/mongo";
 
-const inputSchema = z.object({
-  id: zodId(),
-  config: contextObject
+const inputSchema = extension.pick({
+  id: true,
+  config: true
 });
 const handler = async (
   ctx: AuthenticatedContext,

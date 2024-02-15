@@ -8,10 +8,11 @@ import {
   getWorkspaceMembershipsCollection
 } from "#collections";
 import { errors } from "#lib/errors";
-import { zodId } from "#lib/mongo";
 
-const inputSchema = z.object({ id: zodId().optional() }).default({});
-const outputSchema = role.extend({ id: zodId(), baseType: baseRoleType.optional() });
+const inputSchema = role.pick({ id: true }).partial().default({});
+const outputSchema = role.extend({
+  baseType: baseRoleType.optional().describe("Type of the base role")
+});
 const handler = async (
   ctx: AuthenticatedContext,
   input: z.infer<typeof inputSchema>

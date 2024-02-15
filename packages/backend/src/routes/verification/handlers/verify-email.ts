@@ -7,11 +7,11 @@ import { createWorkspace } from "#lib/workspace";
 import { Context } from "#lib/context";
 
 const inputSchema = z.object({
-  code: z.string(),
-  userId: z.string()
+  code: z.string().describe("Verification code"),
+  userId: z.string().describe("ID of the user to verify the email for")
 });
 const outputSchema = z.object({
-  redirect: z.string()
+  redirect: z.string().describe("Redirect URL for after the email verification")
 });
 const handler = async (
   ctx: Context,

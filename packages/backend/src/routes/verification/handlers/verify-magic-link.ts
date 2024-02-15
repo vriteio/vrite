@@ -7,10 +7,12 @@ import { createSession } from "#lib/session";
 import { Context } from "#lib/context";
 
 const inputSchema = z.object({
-  code: z.string(),
-  userId: z.string()
+  code: z.string().describe("Verification code"),
+  userId: z.string().describe("ID of the user to verify the magic link for")
 });
-const outputSchema = z.object({ redirect: z.string() });
+const outputSchema = z.object({
+  redirect: z.string().describe("Redirect URL for after the magic link verification")
+});
 const handler = async (
   ctx: Context,
   input: z.infer<typeof inputSchema>

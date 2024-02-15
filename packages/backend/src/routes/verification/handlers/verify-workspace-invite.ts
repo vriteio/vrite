@@ -22,8 +22,13 @@ declare module "fastify" {
   }
 }
 
-const inputSchema = z.object({ code: z.string(), membershipId: z.string() });
-const outputSchema = z.object({ workspaceId: z.string() });
+const inputSchema = z.object({
+  code: z.string().describe("Verification code"),
+  membershipId: z.string().describe("ID of the workspace member to verify the invite for")
+});
+const outputSchema = z.object({
+  workspaceId: z.string().describe("ID of the workspace the member accepted an invite to")
+});
 const handler = async (
   ctx: AuthenticatedContext,
   input: z.infer<typeof inputSchema>

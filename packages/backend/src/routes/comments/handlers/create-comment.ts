@@ -8,7 +8,7 @@ import { errors } from "#lib/errors";
 
 const inputSchema = comment
   .omit({ id: true, date: true, threadId: true })
-  .extend({ fragment: z.string() });
+  .extend({ fragment: z.string().describe("ID marking a fragment of content") });
 const outputSchema = comment.pick({ id: true });
 const handler = async (
   ctx: AuthenticatedContext,
