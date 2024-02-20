@@ -489,6 +489,9 @@ importers:
       shiki:
         specifier: ^0.14.4
         version: 0.14.4
+      simple-icons:
+        specifier: ^11.5.0
+        version: 11.5.0
       solid-js:
         specifier: ^1.8.11
         version: 1.8.14
@@ -15947,6 +15950,11 @@ packages:
       once: 1.4.0
       simple-concat: 1.0.1
     optional: true
+
+  /simple-icons@11.5.0:
+    resolution: {integrity: sha512-HNuUUsQmjMvjam5FDzB/45vRTwekQUc42mVbKE5WY/KI2/78VmOyZzn499sGzRUhEBI6WUIrYSCVRsyB9V5fXQ==}
+    engines: {node: '>=0.12.18'}
+    dev: false
 
   /simple-oauth2@5.0.0:
     resolution: {integrity: sha512-8291lo/z5ZdpmiOFzOs1kF3cxn22bMj5FFH+DNUppLJrpoIlM1QnFiE7KpshHu3J3i21TVcx4yW+gXYjdCKDLQ==}

@@ -11,9 +11,13 @@ import { PricingPlans } from "./pricing-plans";
   </div>
   <div class="flex gap-8 flex-col">
     <div
-      class="flex justify-center items-start xl:items-center mt-12 xl:mt-24 flex-col xl:flex-row"
+      class="flex justify-center items-start xl:items-center mt-24 xl:mt-24 flex-col xl:flex-row"
     >
-      <SectionHeadline title="Pricing" subtitle="Simple plans that scale with your needs" />
+      <SectionHeadline
+        title="Pricing"
+        subtitle="Simple plans that scale with your needs"
+        size="lg"
+      />
       <Observed
         client:load
         as="span"
@@ -21,7 +25,7 @@ import { PricingPlans } from "./pricing-plans";
         outOfViewClass="invisible translate-x-4 opacity-0"
         immediate
       >
-        <p class="text-xl md:text-2xl z-1 relative">
+        <p class="text-xl md:text-2xl z-1 relative mt-4 md:mt-0">
           Sign up for 30-day free trial.<br /> No credit card required.
         </p>
       </Observed>

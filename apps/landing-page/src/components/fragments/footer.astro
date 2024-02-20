@@ -1,6 +1,8 @@
 ---
-import { mdiEmail, mdiGithub, mdiLinkedin, mdiTwitter } from "@mdi/js";
 import { IconButton, Button } from "#components/primitives";
+import { siGithub, siX } from "simple-icons";
+import { linkedinIcon } from "#icons/linkedin";
+import { mdiAt } from "@mdi/js";
 ---
 
 <div
@@ -12,22 +14,23 @@ import { IconButton, Button } from "#components/primitives";
     <div class="flex w-full flex-col md:flex-row">
       <div class="flex justify-center md:justify-start items-start md:items-center gap-1 md:gap-2">
         <IconButton
-          path={mdiEmail}
+          path={mdiAt}
           variant="text"
           class="m-0"
           text="soft"
           link="mailto:hello@vrite.io"
         />
         <IconButton
-          path={mdiTwitter}
+          path={siX.path}
+          iconProps={{ class: "h-5 w-5" }}
           variant="text"
-          class="m-0"
+          class="m-0 h-8 w-8"
           text="soft"
           link="https://twitter.com/vriteio"
           target="_blank"
         />
         <IconButton
-          path={mdiLinkedin}
+          path={linkedinIcon}
           variant="text"
           class="m-0"
           text="soft"
@@ -35,7 +38,7 @@ import { IconButton, Button } from "#components/primitives";
           target="_blank"
         />
         <IconButton
-          path={mdiGithub}
+          path={siGithub.path}
           variant="text"
           text="soft"
           class="m-0"
