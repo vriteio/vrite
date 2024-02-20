@@ -468,6 +468,9 @@ importers:
       astro:
         specifier: ^2.10.15
         version: 2.10.15
+      atropos:
+        specifier: ^2.0.2
+        version: 2.0.2
       clsx:
         specifier: ^2.0.0
         version: 2.0.0
@@ -7967,6 +7970,11 @@ packages:
   /atomic-sleep@1.0.0:
     resolution: {integrity: sha512-kNOjDqAh7px0XWNI+4QbzoiR/nTkHAWNud2uvnJquD1/x5a7EQZMJT0AczqK0Qn67oY/TTQ1LbUKajZpp3I9tQ==}
     engines: {node: '>=8.0.0'}
+    dev: false
+
+  /atropos@2.0.2:
+    resolution: {integrity: sha512-8f0u0hEOlBTWTSvzY17TcHuQjxUIpkTBq70/I4+UF5B43ORtOoRjm8TPBYEgLM8Ba9AWf6PDtkagbYoybdjaKg==}
+    engines: {node: '>= 12.0.0'}
     dev: false
 
   /autoprefixer@10.4.16(postcss@8.4.32):

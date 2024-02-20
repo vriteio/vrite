@@ -1,22 +1,21 @@
 ---
-import { Image } from "#components/primitives";
-interface Props {
-  imageSrc: string;
-  imageSrcDark: string;
-  imageAlt: string;
-  title: string;
-}
+import { Observed } from "./observed";
 
-const { imageAlt, imageSrc, imageSrcDark, title } = Astro.props;
+interface Props {
+  title: string;
+  subtitle: string;
+}
 ---
 
-<div class="flex flex-col gap-8 md:gap-12 pb-4">
-  <div class="flex-[2]">
-    <h2 class="text-4xl md:text-5xl !font-bold">{title}</h2>
-  </div>
-  <div
-    class="flex-[2] max-h-[28rem] gradient-image-mask border-2 rounded-2xl border-gray-200 dark:border-gray-700"
-  >
-    <Image alt={imageAlt} srcDark={imageSrcDark} srcLight={imageSrc} class="rounded-2xl" />
-  </div>
-</div>
+<Observed
+  client:visible
+  as="span"
+  class="transition-all delay-250 duration-500 ease-out inline-block"
+  outOfViewClass="invisible -translate-x-4 opacity-0"
+>
+  <h2 class="text-2xl md:text-5xl !font-extrabold md:max-w-2/3 z-1 relative">
+    <span class="bg-gradient-to-r text-transparent bg-clip-text">{Astro.props.title}</span><br />{
+      Astro.props.subtitle
+    }
+  </h2>
+</Observed>

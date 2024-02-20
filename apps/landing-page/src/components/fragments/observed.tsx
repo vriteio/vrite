@@ -1,5 +1,6 @@
 import clsx from "clsx";
-import { createSignal, JSX, onMount, ParentComponent } from "solid-js";
+import { createEffect, createSignal, JSX, on, onMount, ParentComponent } from "solid-js";
+import { Dynamic } from "solid-js/web";
 import { createRef } from "#lib/ref";
 
 interface ObservedProps {
@@ -8,17 +9,20 @@ interface ObservedProps {
   inViewClass?: string;
   outOfViewClass?: string;
   immediate?: boolean;
+  as?: string;
+  onInView?: () => void;
+  onOutOfView?: () => void;
 }
 
 const Observed: ParentComponent<ObservedProps> = (props) => {
   const [containerRef, setContainerRef] = createRef<HTMLElement | null>(null);
-  const [showed, setShowed] = createSignal(false);
+  const [inView, setInView] = createSignal(false);
 
   onMount(() => {
     const container = containerRef();
 
     if (props.immediate) {
-      setShowed(true);
+      setInView(true);
 
       return;
     }
@@ -27,7 +31,7 @@ const Observed: ParentComponent<ObservedProps> = (props) => {
       new IntersectionObserver(([entry], observer) => {
         const intersecting = entry?.isIntersecting || false;
 
-        setShowed(intersecting);
+        setInView(intersecting);
 
         if (intersecting) {
           observer.unobserve(container);
@@ -36,15 +40,29 @@ const Observed: ParentComponent<ObservedProps> = (props) => {
       }).observe(container);
     }
   });
+  createEffect(
+    on(
+      [inView],
+      () => {
+        if (inView()) {
+          props.onInView?.();
+        } else {
+          props.onOutOfView?.();
+        }
+      },
+      { defer: true }
+    )
+  );
 
   return (
-    <div
+    <Dynamic
+      component={props.as || "div"}
       ref={setContainerRef}
-      class={clsx(props.class, showed() ? props.inViewClass : props.outOfViewClass)}
+      class={clsx(props.class, inView() ? props.inViewClass : props.outOfViewClass)}
       style={props.style}
     >
       {props.children}
-    </div>
+    </Dynamic>
   );
 };
 

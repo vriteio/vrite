@@ -1,0 +1,103 @@
+---
+import { Section, Observed } from "#components/fragments";
+import { mdiBookOpenBlankVariant, mdiLoginVariant } from "@mdi/js";
+import heroImageDark from "#assets/images/dark/hero.png";
+import heroImageLight from "#assets/images/light/hero.png";
+import { IconButton, Image } from "#components/primitives";
+import { ScrollIndicator } from "./scroll-indicator";
+---
+
+<Section>
+  <div
+    class="bg-gradient-to-tr opacity-30 absolute top-[25vmin] xl:-top-[50vmin] -left-[50vmin] h-[100vmin] w-[100vmin] flex justify-center items-center rounded-full -z-1 blur-2xl"
+  >
+    <div class="h-[60vmin] w-[60vmin] bg-gray-50 dark:bg-gray-800 absolute rounded-full"></div>
+  </div>
+  <div
+    class="sticky top-0 flex flex-col-reverse items-center justify-center w-full -mt-16 xl:flex-row max-w-screen-2xl min-h-screen"
+  >
+    <div class="w-[60rem] max-w-full flex flex-1 flex-col justify-center items-center">
+      <div class="flex justify-center items-center flex-col">
+        <div
+          class="flex mt-36 mb-8 xl:mt-48 xl:mb-24 xl:gap-32 flex-col xl:flex-row w-full items-start justify-center xl:items-center"
+        >
+          <h1 class="text-5xl md:text-7xl text-start !font-extrabold">
+            <Observed
+              client:load
+              as="span"
+              class="transition-all duration-500 ease-out inline-block"
+              outOfViewClass="invisible translate-y-4 opacity-0"
+              immediate
+            >
+              Developer
+            </Observed>
+            <br />
+            <Observed
+              client:load
+              as="span"
+              class="transition-all delay-125 duration-500 ease-out inline-block"
+              outOfViewClass="invisible translate-y-4 opacity-0"
+              immediate
+            >
+              <span class="bg-clip-text text-transparent bg-gradient-to-tr md:whitespace-nowrap"
+                >Content Platform</span
+              >
+            </Observed>
+          </h1>
+          <Observed
+            client:load
+            as="span"
+            class="mt-4 transition-all delay-250 duration-500 ease-out md:mt-0 inline-block"
+            outOfViewClass="invisible translate-x-4 opacity-0"
+            immediate
+          >
+            <p class="max-w-2xl text-xl md:text-2xl text-start">
+              Open-source, collaborative space to create, manage and deploy product documentation,
+              technical blogs, and knowledge bases.
+            </p>
+            <div class="items-center justify-start w-full mt-4 gap-2 flex">
+              <IconButton
+                color="primary"
+                class="flex items-center justify-center m-0 whitespace-nowrap"
+                link="https://app.vrite.io"
+                path={mdiLoginVariant}
+                label="Get started"
+                target="_blank"
+              />
+              <IconButton
+                class="flex items-center justify-center m-0 whitespace-nowrap"
+                link="https://docs.vrite.io"
+                text="soft"
+                path={mdiBookOpenBlankVariant}
+                label="Documentation"
+                target="_blank"
+              />
+            </div>
+          </Observed>
+        </div>
+        <div class="relative">
+          <div class="grid-background tilt-lg -z-1 !h-[150%] !w-[200%] !-top-[25%] !-left-[50%]">
+          </div>
+          <Observed
+            client:load
+            class="transition-all duration-2000 ease-out"
+            outOfViewClass="invisible tilt-lg opacity-0"
+            immediate
+          >
+            <div
+              class="h-full w-full top-0 left-0 absolute bg-gray-50 dark:bg-gray-800 rounded-2xl"
+            >
+            </div>
+            <Image
+              class="gradient-image-mask max-h-full right-0 rounded-2xl overflow-hidden -top-16 shadow-2xl rounded-2xl border-2 border-gray-200 dark:border-gray-700 overflow-hidden"
+              srcDark={heroImageDark}
+              srcLight={heroImageLight}
+              alt="Vrite Platform"
+            />
+          </Observed>
+        </div>
+      </div>
+    </div>
+  </div>
+  <ScrollIndicator client:idle />
+</Section>

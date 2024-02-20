@@ -1,44 +1,15 @@
 ---
-import { Header, Headline, Footer, BaseHead } from "#components/fragments";
+import { Header, Footer, BaseHead } from "#components/fragments";
+import { SVGDefs } from "#components/fragments";
 import {
-  mdiCogOutline,
-  mdiHexagonMultipleOutline,
-  mdiWeb,
-  mdiLockOpenVariantOutline,
-  mdiCodeBrackets,
-  mdiCardsOutline,
-  mdiDatabaseOutline,
-  mdiHexagonSlice6,
-  mdiHeadSnowflakeOutline,
-  mdiPuzzleOutline,
-  mdiTransitConnectionVariant
-} from "@mdi/js";
-import {
-  Section,
-  CTACard,
-  SectionHeadline,
-  FeatureCard,
-  SecondaryFeatureCard,
-  SVGDefs
-} from "#components/fragments";
-import dashboardGraphicDark from "#assets/graphics/dark/dashboard.png";
-import dashboardGraphicLight from "#assets/graphics/light/dashboard.png";
-import collaborationGraphicDark from "#assets/graphics/dark/collaboration.png";
-import collaborationGraphicLight from "#assets/graphics/light/collaboration.png";
-import editorImageDark from "#assets/images/dark/editor.png";
-import editorImageLight from "#assets/images/light/editor.png";
-import dashboardImageDark from "#assets/images/dark/dashboard.png";
-import dashboardImageLight from "#assets/images/light/dashboard.png";
-import searchImageDark from "#assets/images/dark/search.png";
-import searchImageLight from "#assets/images/light/search.png";
-import gitImageDark from "#assets/images/dark/git.png";
-import gitImageLight from "#assets/images/light/git.png";
-import editorGraphicDark from "#assets/graphics/dark/editor.png";
-import editorGraphicLight from "#assets/graphics/light/editor.png";
-import codeEditorGraphicDark from "#assets/graphics/dark/code-editor.png";
-import codeEditorGraphicLight from "#assets/graphics/light/code-editor.png";
-import apiIntegrationGraphicDark from "#assets/graphics/dark/api-integration.png";
-import apiIntegrationGraphicLight from "#assets/graphics/light/api-integration.png";
+  CustomizeSection,
+  EditorSection,
+  GetStartedSection,
+  HeadlessSection,
+  HeroSection,
+  ManageSection,
+  SearchSection
+} from "#components/sections";
 
 const image = "https://vrite.io/meta-image.png";
 const title = "Vrite － developer content platform";
@@ -49,188 +20,24 @@ export const prerender = true;
 ---
 
 <!DOCTYPE html>
-<html lang="en" class="bg-gray-100 dark:bg-gray-800">
+<html lang="en" class="bg-gray-50 dark:bg-gray-800">
   <head>
     <BaseHead description={description} title={title} image={image} />
   </head>
-  <body class="overflow-x-hidden overscroll-none">
+  <body class="overflow-hidden overscroll-none">
     <SVGDefs />
-    <main class="flex flex-col items-center justify-center gap-8 p-4 pb-0">
-      <div class="h-[100vh] w-full flex justify-center items-start max-w-screen-xl">
-        <Header client:idle />
-        <div
-          class="sticky top-0 flex flex-col-reverse items-center justify-center w-full h-screen -mt-16 md:flex-row max-w-screen-2xl"
-        >
-          <div class="w-[60rem] max-w-full flex flex-1 flex-col justify-center items-center">
-            <Headline />
-          </div>
-        </div>
-
-        <div class="icon-scroll"></div>
-      </div>
-      <Section>
-        <SectionHeadline
-          imageAlt="Git integration"
-          imageSrcDark={gitImageDark}
-          imageSrc={gitImageLight}
-          title="Jump Right In"
-        />
-        <div class="grid max-w-screen-xl grid-cols-1 gap-4 md:gap-4 md:grid-cols-1">
-          <FeatureCard
-            imageDark={codeEditorGraphicDark}
-            imageLight={codeEditorGraphicLight}
-            header="Git Integration"
-            imageAlt="Code editor"
-            gradient
-            reverse
-          >
-            Docs-as-code in a new way. Connect Vrite with your GitHub repository and easily sync
-            your content. It's familar Git push & pull with modern WYSIWYG experience on top!
-          </FeatureCard>
-          <div class="grid grid-cols-1 gap-4 md:gap-4 lg:grid-cols-3">
-            <SecondaryFeatureCard icon={mdiHexagonMultipleOutline} title="Versatile">
-              Markdown, MDX, Markdoc - doesn't matter. With custom transformers you can work with
-              any format!
-            </SecondaryFeatureCard>
-            <SecondaryFeatureCard icon={mdiWeb} title="Headless">
-              Use Vrite's powerful API to automate import, export, publishing, and more in just a
-              few LOCs!
-            </SecondaryFeatureCard>
-            <SecondaryFeatureCard icon={mdiLockOpenVariantOutline} title="Open">
-              Vrite is fully open-source with no lock-in to be found. You can host it yourself or
-              use our Cloud.
-            </SecondaryFeatureCard>
-          </div>
-        </div>
-      </Section>
-      <Section>
-        <SectionHeadline
-          title="Write and Code the Way You Like"
-          imageAlt="Vrite content editor"
-          imageSrcDark={editorImageDark}
-          imageSrc={editorImageLight}
-        />
-        <div class="grid max-w-screen-xl grid-cols-1 gap-4 md:gap-4 md:grid-cols-1">
-          <div class="flex gap-4 flex-col md:flex-row">
-            <FeatureCard
-              imageDark={editorGraphicDark}
-              imageLight={editorGraphicLight}
-              header="Modern Editing Experience"
-              imageAlt="Content editor"
-              gradient
-              reverse
-              vertical
-            >
-              Easily write and format your content any way you like. Use Markdown or keyboard
-              shortcut along with modern editing toolbars and menus to create your next amazing
-              content piece.
-            </FeatureCard>
-            <div class="flex justify-start items-center flex-col gap-4">
-              <SecondaryFeatureCard icon={mdiCodeBrackets} title="Code Editor">
-                Syntax highlighting, autocompletion, formatting, and more - right inside Vrite.
-              </SecondaryFeatureCard><SecondaryFeatureCard
-                icon={mdiCogOutline}
-                title="Customization"
-              >
-                Ensure consistent writing style, configuring everything from Prettier config to
-                block content and formating options.
-              </SecondaryFeatureCard>
-              <SecondaryFeatureCard icon={mdiCardsOutline} title="Variants">
-                Manage internalization, A/B testing and others with ease by switching between
-                different content variants.
-              </SecondaryFeatureCard>
-            </div>
-          </div>
-        </div>
-      </Section>
-      <Section>
-        <SectionHeadline
-          title="Scale and Collaborate With ease"
-          imageAlt="Vrite Kanban dashboard"
-          imageSrcDark={dashboardImageDark}
-          imageSrc={dashboardImageLight}
-        >
-          Scalable content production with separate workspaces for all your projects and integrated
-          Kanban dashboard to manage your content.
-        </SectionHeadline>
-        <div class="grid max-w-screen-xl grid-cols-1 gap-4 md:gap-4 md:grid-cols-1">
-          <FeatureCard
-            imageDark={dashboardGraphicDark}
-            imageLight={dashboardGraphicLight}
-            header="Integrated Dashboard"
-            imageAlt="Kanban dashboard"
-            gradient
-            reverse
-          >
-            With multi-view, integrated dashboard, you can manage in way that's best for your
-            workflow. Control content production with Kanban or structure Git-sourced files in List
-            view.
-          </FeatureCard>
-          <div class="grid grid-cols-1 gap-4 md:gap-4 lg:grid-cols-3">
-            <SecondaryFeatureCard icon={mdiDatabaseOutline} title="Customizable Metadata">
-              Assigned members, tags, deadlines, and even custom JSON - Vrite lets you store and
-              manage all kinds of metadata.
-            </SecondaryFeatureCard><SecondaryFeatureCard icon={mdiHexagonSlice6} title="Workspaces">
-              Switch between different projects, teams or even entire companies with ease, thanks to
-              separate Workspaces.
-            </SecondaryFeatureCard>
-            <SecondaryFeatureCard icon={mdiHeadSnowflakeOutline} title="AI-powered Search">
-              Built-in semantic search with AI Q&A lets you find an answer in your content to any
-              question you may have.
-            </SecondaryFeatureCard>
-          </div>
-
-          <FeatureCard
-            imageDark={collaborationGraphicDark}
-            imageLight={collaborationGraphicLight}
-            header="Real-Time Collaboration"
-            imageAlt="Collaboration"
-          >
-            Edit, comment, and collaborate in real-time across Vrite. Grow your team, nevery
-            worrying about security, thanks to advanced access control with permissions and roles.
-          </FeatureCard>
-        </div>
-      </Section>
-      <Section>
-        <SectionHeadline
-          title="Build to Your Heart’s Content"
-          imageAlt="Search palette"
-          imageSrcDark={searchImageDark}
-          imageSrc={searchImageLight}
-        >
-          Scalable content production with separate workspaces for all your projects and integrated
-          Kanban dashboard to manage your content.
-        </SectionHeadline>
-        <div>
-          <div class="grid max-w-screen-xl grid-cols-1 gap-4 md:gap-4 md:grid-cols-1">
-            <FeatureCard
-              imageDark={apiIntegrationGraphicDark}
-              imageLight={apiIntegrationGraphicLight}
-              header="Powerful API"
-              imageAlt="API Integration"
-              gradient
-              reverse
-            >
-              Integrate Vrite's features into your own website, thanks to powerful API. From content
-              management and processing to AI-powered search - access it all in a few API requests.
-            </FeatureCard>
-            <div class="grid grid-cols-1 gap-4 md:gap-4 lg:grid-cols-2">
-              <SecondaryFeatureCard icon={mdiTransitConnectionVariant} title="JavaScript SDK">
-                Simplify API integration with Vrite's JS SDK. With simple API client, powerful
-                Content Transformers and dedicated integrations for popular frameworks - you'll
-                integrate Vrite in no time.
-              </SecondaryFeatureCard><SecondaryFeatureCard
-                icon={mdiPuzzleOutline}
-                title="Extensions"
-              >
-                Extend the capabilities of Vrite with custom extensions. From publishing
-                integrations, to custom actions, editing blocks, and more - the sky is the limit.
-              </SecondaryFeatureCard>
-            </div>
-          </div>
-        </div>
-      </Section>
-      <CTACard />
+    <Header client:idle />
+    <main
+      class="flex flex-col items-center justify-center p-4 pb-0 bg-gray-50 dark:bg-gray-800 bg-opacity-50 dark:bg-opacity-50 gap-24"
+    >
+      <HeroSection />
+      <EditorSection />
+      <HeadlessSection />
+      <SearchSection />
+      <CustomizeSection />
+      <ManageSection />
+      <GetStartedSection />
+      <div></div>
       <Footer />
     </main>
   </body>

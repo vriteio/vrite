@@ -37,7 +37,7 @@ h2 {
 }
 
 ::-webkit-scrollbar {
-  @apply w-4 bg-gray-100 dark:bg-gray-800;
+  @apply w-3 bg-gray-50 dark:bg-gray-800;
 }
 ::-webkit-scrollbar-thumb {
   @apply bg-gray-200 rounded-lg dark:bg-gray-900;
@@ -46,22 +46,14 @@ h2 {
   mask-image: linear-gradient(to bottom, black, transparent);
   -webkit-mask-image: linear-gradient(to bottom, black, transparent);
 }
-.hero-image {
-  transform: perspective(100rem) rotate3d(0.5, 0, 0, 30deg) scale(1.1);
+.tilt-lg {
+  transform: perspective(100rem) rotate3d(0.5, 0, 0, 30deg);
 }
-.hero-image-initial {
-  transform: translate(0, 100%);
+.tilt-md {
+  transform: perspective(100rem) rotate3d(0.5, 0, 0, 15deg);
 }
-.hero-image-variant {
-  transition: clip-path;
-  transition-duration: 0.5s;
-  transition-timing-function: ease-in-out;
-}
-
-@screen md {
-  .hover\:hero-image:hover {
-    transform: perspective(100rem) rotate3d(1, 1, 0, 25deg);
-  }
+.hover\:tilt-none:hover {
+  transform: perspective(100rem) rotate3d(0.5, 0, 0, -30deg);
 }
 
 .icon-scroll,
@@ -131,5 +123,115 @@ h2 {
 @media (prefers-color-scheme: dark) {
   .headline-overlay {
     background: linear-gradient(0deg, rgba(31, 41, 55, 0.4) 80%, transparent);
+  }
+}
+
+.grid-background {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  background-image: linear-gradient(#e5e7eb 2px, transparent 0),
+    linear-gradient(to right, #e5e7eb 2px, transparent 0);
+  background-size: 24px 24px;
+  background-position: center center;
+  mask-position: center center;
+  mask-repeat: no-repeat;
+  mask-image: radial-gradient(ellipse at center, rgba(0, 0, 0, 1), transparent 65%);
+  animation: uncover 1s ease-out forwards;
+}
+.grid-background-2 {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  background-image: linear-gradient(#e5e7eb 2px, transparent 0),
+    linear-gradient(to right, #e5e7eb 2px, transparent 0);
+  background-size: 24px 24px;
+  background-position: center center;
+  mask-position: center center;
+  mask-repeat: no-repeat;
+  z-index: -2;
+  mask-image: radial-gradient(ellipse at center, rgba(0, 0, 0, 1), transparent 90%);
+  animation: uncover 1s ease-out forwards;
+}
+
+@media (prefers-color-scheme: dark) {
+  .grid-background {
+    background-image: linear-gradient(#4b5563 2px, transparent 0),
+      linear-gradient(to right, #4b5563 2px, transparent 0);
+  }
+  .grid-background-2 {
+    background-image: linear-gradient(#4b5563 2px, transparent 0),
+      linear-gradient(to right, #4b5563 2px, transparent 0);
+  }
+}
+@keyframes uncover {
+  from {
+    opacity: 0;
+    mask-size: 0% 0%;
+  }
+  to {
+    opacity: 1;
+    mask-size: 100% 100%;
+  }
+}
+@keyframes animated-gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+.animated-gradient {
+  background-size: 400% 400%;
+  animation: animated-gradient 5s ease infinite;
+}
+
+.feature-highlight .atropos-highlight {
+  background-image: radial-gradient(circle at 50%, rgb(0, 0, 0, 0.1), transparent 70%) !important;
+}
+
+.feature-highlight .atropos-shadow {
+  @apply !bg-gray-300;
+}
+@media (prefers-color-scheme: dark) {
+  .feature-highlight .atropos-highlight {
+    background-image: radial-gradient(
+      circle at 50%,
+      rgb(255, 255, 255, 0.1),
+      transparent 70%
+    ) !important;
+  }
+  .feature-highlight .atropos-shadow {
+    @apply !bg-gray-900;
+  }
+}
+
+.testimonial-mask {
+  mask-position: center center;
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 2rem,
+    black calc(100% - 2rem),
+    transparent
+  );
+}
+@media (min-width: 768px) {
+  .testimonial-mask {
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      black 16rem,
+      black calc(100% - 16rem),
+      transparent
+    );
   }
 }

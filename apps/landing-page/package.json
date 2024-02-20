@@ -21,6 +21,7 @@
     "@vrite/components": "workspace:*",
     "@vrite/sdk": "workspace:*",
     "astro": "^2.10.15",
+    "atropos": "^2.0.2",
     "clsx": "^2.0.0",
     "date-fns": "^2.30.0",
     "html-to-text": "^9.0.5",

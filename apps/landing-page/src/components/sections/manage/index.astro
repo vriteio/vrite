@@ -1,0 +1,62 @@
+---
+import { Observed, Section, SectionHeadline } from "#components/fragments";
+import { Image } from "#components/primitives";
+import { mdiPlayCircle } from "@mdi/js";
+import { IconButton } from "#components/primitives";
+import tableViewImageDark from "#assets/images/dark/table-view.png";
+import tableViewImageLight from "#assets/images/light/table-view.png";
+import explorerImageDark from "#assets/images/dark/explorer.png";
+import explorerImageLight from "#assets/images/light/explorer.png";
+---
+
+<Section>
+  <SectionHeadline
+    title="Manage & scale"
+    subtitle="Manage and publish content with Vrite's built-in dashboard."
+  />
+  <div class="relative md:pr-16">
+    <div class="grid-background -z-1 !h-[150%] !w-[200%] !-top-[25%] !-left-[50%]"></div>
+
+    <Observed
+      client:visible
+      class="transition-all duration-500 ease-out"
+      outOfViewClass="invisible translate-y-16 opacity-0"
+      immediate
+    >
+      <div
+        class="h-full w-[calc(100%-4rem)] top-0 left-0 absolute bg-gray-50 dark:bg-gray-800 rounded-2xl"
+      >
+      </div>
+      <Image
+        alt="Vrite search palette"
+        srcDark={tableViewImageDark}
+        srcLight={tableViewImageLight}
+        class="rounded-2xl border-2 border-gray-200 dark:border-gray-700 gradient-image-mask"
+      />
+    </Observed>
+    <Observed
+      client:visible
+      class="transition-all delay-250 duration-500 ease-out rounded-2xl absolute -bottom-32 -right-4 w-1/2 xl:-right-16 md:w-1/3"
+      outOfViewClass="invisible translate-y-16 opacity-0"
+      immediate
+    >
+      <div class="absolute top-0 left-0 h-full w-full bg-gray-50 dark:bg-gray-800 rounded-2xl">
+      </div>
+      <Image
+        alt="Vrite explorer panel"
+        srcDark={explorerImageDark}
+        srcLight={explorerImageLight}
+        class="rounded-2xl border-2 border-gray-200 dark:border-gray-700 gradient-image-mask max-h-[25rem] xl:max-h-[40rem]"
+      />
+    </Observed>
+  </div>
+  <div
+    class="text-lg md:text-2xl text-gray-600 dark:text-gray-200 md:max-w-1/2 pt-0 z-1 mt-12 md:-mt-12"
+  >
+    <p>
+      Whether your organizing content schedule in kanban, managing due dates in a table, or
+      switching through different pieces while writing docs - Vrite has views and panels to help you
+      manage your content the way you like.
+    </p>
+  </div>
+</Section>
