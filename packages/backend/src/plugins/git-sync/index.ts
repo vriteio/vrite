@@ -30,23 +30,31 @@ const registerGitHubApp = (fastify: FastifyInstance): void => {
   });
 
   fastify.decorate("github", app);
-  fastify.get("/github/authorize", (req, res) => {
-    const { url } = app.oauth.getWebFlowAuthorizationUrl({});
+  fastify.get<{
+    Querystring: {
+      path: string;
+    };
+  }>("/github/authorize", (req, res) => {
+    const { path } = req.query;
+    const { url } = app.oauth.getWebFlowAuthorizationUrl({
+      state: encodeURIComponent(path)
+    });
 
     res.redirect(url);
   });
   fastify.get<{
     Querystring: {
       code: string;
+      state: string;
     };
   }>("/github/callback", async (req, res) => {
-    const { code } = req.query;
+    const { code, state } = req.query;
     const { authentication } = await app.oauth.createToken({
-      code: code as string,
-      state: ""
+      code: code as string
     });
+    const path = decodeURIComponent(state);
 
-    res.redirect(`/?token=${authentication.token}`);
+    res.redirect(`${path}?token=${authentication.token}`);
   });
 };
 const gitSyncPlugin = createPlugin(async (fastify) => {

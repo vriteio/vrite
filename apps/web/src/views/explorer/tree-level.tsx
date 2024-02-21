@@ -160,7 +160,7 @@ const TreeLevel: Component<{
         <For
           each={contentLevels[props.parentId || ""]?.groups || []}
           fallback={
-            <Show when={!props.parentId}>
+            <Show when={!props.parentId && !contentLevels[props.parentId || ""]?.loading}>
               <NewGroupButton />
             </Show>
           }

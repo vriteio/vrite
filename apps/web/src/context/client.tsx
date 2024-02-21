@@ -106,7 +106,7 @@ const ClientProvider: ParentComponent = (props) => {
       }),
       splitLink({
         condition(op) {
-          return !op.path.startsWith("auth") && !op.path.startsWith("verification");
+          return op.type === "subscription";
         },
         true: wsLink({ client: wsClient }),
         false: httpBatchLink({

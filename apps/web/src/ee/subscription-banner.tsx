@@ -1,11 +1,15 @@
 import { mdiAlertCircleOutline } from "@mdi/js";
 import { Icon } from "@vrite/components";
-import { Component, Match, Show, Switch } from "solid-js";
+import { Component, Match, Show, Switch, createMemo } from "solid-js";
+import dayjs from "dayjs";
 import { useAuthenticatedUserData, useLocalStorage } from "#context";
 
 const SubscriptionBanner: Component = () => {
   const { subscription } = useAuthenticatedUserData();
   const { setStorage } = useLocalStorage();
+  const remainingBillingPeriod = createMemo(() => {
+    return dayjs(subscription()?.expiresAt).diff(dayjs(), "days");
+  });
   const goToBilling = (): void => {
     setStorage((storage) => ({
       ...storage,
@@ -39,7 +43,19 @@ const SubscriptionBanner: Component = () => {
               class="font-semibold underline inline-flex justify-center items-center"
               onClick={goToBilling}
             >
-              Verify your payment method.
+              Verify your payment method to continue using Vrite.
+            </button>
+          </Match>
+          <Match when={subscription()?.status === "trialing" && remainingBillingPeriod() <= 7}>
+            <span class="pl-1 pr-2">
+              Your trial ends in {remainingBillingPeriod()} day
+              {remainingBillingPeriod() > 1 ? "s" : ""}.
+            </span>
+            <button
+              class="font-semibold underline inline-flex justify-center items-center"
+              onClick={goToBilling}
+            >
+              Add your payment method to continue using Vrite.
             </button>
           </Match>
         </Switch>

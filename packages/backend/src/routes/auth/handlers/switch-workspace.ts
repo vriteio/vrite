@@ -20,7 +20,7 @@ const handler = async (
 
   if (!matchedCount) throw errors.notFound("userSettings");
 
-  switchWorkspaceSession(ctx);
+  await switchWorkspaceSession(ctx);
 };
 
 export { inputSchema, handler };

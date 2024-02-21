@@ -385,6 +385,12 @@ const processPulledRecords = async ({
           }
         }))
       ];
+    const bulkUpsertEntries: Array<{
+      contentPiece: UnderscoreID<FullContentPiece<ObjectId>>;
+      contentGroup?: UnderscoreID<FullContentGroup<ObjectId>>;
+      content: Buffer;
+      variantId?: string | ObjectId;
+    }> = [];
 
     if (contentPiecesChanges.length) await contentPiecesCollection.bulkWrite(contentPiecesChanges);
     if (contentsChanges.length) await contentsCollection.bulkWrite(contentsChanges);
@@ -403,6 +409,40 @@ const processPulledRecords = async ({
         }
       }
     );
+
+    const affectedContentGroups = [...newContentGroups, ...updatedContentGroups];
+    const affectedContents = [...newContents, ...updatedContents];
+    const affectedContentPieceIds = [...newContentPieces, ...updatedContentPieces].map(
+      ({ _id }) => _id
+    );
+    const affectedContentPieces = await contentPiecesCollection
+      .find({
+        _id: affectedContentPieceIds
+      })
+      .toArray();
+
+    affectedContentPieces.forEach((contentPiece) => {
+      const { content } =
+        affectedContents.find(({ contentPieceId }) => {
+          return contentPieceId.equals(contentPiece._id);
+        }) || {};
+
+      if (content) {
+        bulkUpsertEntries.push({
+          contentPiece,
+          content: Buffer.from(content.buffer),
+          variantId: "base"
+        });
+      }
+    });
+    ctx.fastify.search.content.delete({
+      contentPieceId: [...removedContentData.map(({ contentPieceId }) => contentPieceId)],
+      workspaceId: ctx.auth.workspaceId
+    });
+    ctx.fastify.search.content.bulkUpsert({
+      entries: bulkUpsertEntries,
+      workspaceId: ctx.auth.workspaceId
+    });
   };
 
   return {

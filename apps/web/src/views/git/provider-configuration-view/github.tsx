@@ -4,6 +4,7 @@ import { Octokit, RestEndpointMethodTypes } from "@octokit/rest";
 import { Button, Heading, IconButton, Input, Tooltip } from "#components/primitives";
 import { App, hasPermission, useClient, useConfirmationModal } from "#context";
 import { InputField, TitledCard, SearchableSelect } from "#components/fragments";
+import { navigateAndReload } from "#lib/utils";
 
 interface GitHubConfigurationViewProps {
   gitData: App.GitData | null;
@@ -207,7 +208,9 @@ const GitHubConfigurationView: Component<GitHubConfigurationViewProps> = (props)
                   label="Continue with GitHub"
                   color="contrast"
                   onClick={() => {
-                    window.location.replace("github/authorize");
+                    navigateAndReload(
+                      `/github/authorize?path=${encodeURIComponent(location.pathname)}`
+                    );
                   }}
                 />
               </>

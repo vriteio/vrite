@@ -83,6 +83,13 @@ const billingPlugin = createPlugin(async (fastify) => {
 
     return fastify.config.STRIPE_PERSONAL_PRICE_ID || "";
   };
+  const getCouponId = (plan: "team" | "personal"): string => {
+    if (plan === "team") {
+      return fastify.config.STRIPE_TEAM_API_COUPON_ID || "";
+    }
+
+    return fastify.config.STRIPE_PERSONAL_API_COUPON_ID || "";
+  };
   const getSubscription = async (subscriptionId: string): Promise<Stripe.Subscription> => {
     return await stripe.subscriptions.retrieve(subscriptionId);
   };
@@ -202,7 +209,7 @@ const billingPlugin = createPlugin(async (fastify) => {
           { price: fastify.config.STRIPE_API_PRICE_ID || "" }
         ],
         mode: "subscription",
-        discounts: [{ coupon: fastify.config.STRIPE_API_COUPON_ID || "" }],
+        discounts: [{ coupon: getCouponId(plan) }],
         tax_id_collection: { enabled: true },
         customer: workspace?.customerId,
         customer_update: { address: "auto", name: "auto", shipping: "auto" },
@@ -223,7 +230,7 @@ const billingPlugin = createPlugin(async (fastify) => {
           customer: customer.id,
           trial_period_days: 30,
           trial_settings: { end_behavior: { missing_payment_method: "cancel" } },
-          coupon: fastify.config.STRIPE_API_COUPON_ID || "",
+          coupon: getCouponId(customerData.plan || "personal"),
           items: [
             { price: getPriceId(customerData.plan || "personal"), quantity: 1 },
             { price: fastify.config.STRIPE_API_PRICE_ID || "" }

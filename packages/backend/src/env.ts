@@ -49,7 +49,8 @@ const envSchema = z.object({
   STRIPE_PERSONAL_PRICE_ID: z.string().optional(),
   STRIPE_API_PRICE_ID: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
-  STRIPE_API_COUPON_ID: z.string().optional(),
+  STRIPE_PERSONAL_API_COUPON_ID: z.string().optional(),
+  STRIPE_TEAM_API_COUPON_ID: z.string().optional(),
   // Frontend
   PUBLIC_API_URL: z.string(),
   PUBLIC_COLLAB_URL: z.string(),
