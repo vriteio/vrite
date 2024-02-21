@@ -9,6 +9,7 @@ jobs:
     name: Publish to Cloudflare Pages
     env:
       PUBLIC_VRITE_SEARCH_TOKEN: F0OCwgqqI3aYDXehlhNBo:dt4OCRw5OsXtU_VcTB9o-
+      PUBLIC_VRITE_SEARCH_CONTENT_GROUP: 65d5f9a25a6b29a3ac69c65c
     steps:
       - name: Checkout
         uses: actions/checkout@v3

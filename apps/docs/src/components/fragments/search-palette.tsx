@@ -70,7 +70,7 @@ const SearchPalette: Component = () => {
     setLoading(true);
     client.useSignal(abortControllerRef()?.signal || null).ask({
       query: query(),
-      contentGroupId: "652566dd5a7449450eeae7ef",
+      contentGroupId: import.meta.env.PUBLIC_VRITE_SEARCH_CONTENT_GROUP,
       onError(error) {
         setLoading(false);
         throw error;
@@ -102,7 +102,10 @@ const SearchPalette: Component = () => {
     try {
       const search = await client
         .useSignal(abortControllerRef()?.signal || null)
-        .search({ query: query(), contentGroupId: "652566dd5a7449450eeae7ef" });
+        .search({
+          query: query(),
+          contentGroupId: import.meta.env.PUBLIC_VRITE_SEARCH_CONTENT_GROUP
+        });
 
       setSearchResults(search);
       setLoading(false);
