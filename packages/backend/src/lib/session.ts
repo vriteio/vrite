@@ -8,6 +8,8 @@ import {
   BaseRoleType,
   FullRole,
   Permission,
+  Workspace,
+  WorkspaceMembership,
   getRolesCollection,
   getUserSettingsCollection,
   getWorkspaceMembershipsCollection,
@@ -79,33 +81,40 @@ const loadSessionData = async (ctx: Context, userId: string): Promise<SessionDat
   const workspacesCollection = getWorkspacesCollection(ctx.db);
   const workspaceMembershipsCollection = getWorkspaceMembershipsCollection(ctx.db);
   const rolesCollection = getRolesCollection(ctx.db);
-  const userSettings = await userSettingsCollection.findOne({
-    userId: new ObjectId(userId)
-  });
-
-  if (!userSettings) throw errors.notFound("userSettings");
-
-  const workspaceMembership = await workspaceMembershipsCollection.findOne({
-    userId: new ObjectId(userId),
-    workspaceId: new ObjectId(userSettings.currentWorkspaceId)
-  });
-  const workspace = await workspacesCollection.findOne({
-    _id: new ObjectId(userSettings.currentWorkspaceId)
-  });
 
   let role: UnderscoreID<FullRole<ObjectId>> | null = null;
+  let workspaceMembership: UnderscoreID<WorkspaceMembership<ObjectId>> | null = null;
+  let workspace: UnderscoreID<Workspace<ObjectId>> | null = null;
 
-  if (workspaceMembership) {
-    role = await rolesCollection.findOne({
-      _id: workspaceMembership.roleId
+  try {
+    const userSettings = await userSettingsCollection.findOne({
+      userId: new ObjectId(userId)
     });
+
+    if (!userSettings) throw errors.notFound("userSettings");
+
+    workspaceMembership = await workspaceMembershipsCollection.findOne({
+      userId: new ObjectId(userId),
+      workspaceId: new ObjectId(userSettings.currentWorkspaceId)
+    });
+    workspace = await workspacesCollection.findOne({
+      _id: new ObjectId(userSettings.currentWorkspaceId)
+    });
+
+    if (workspaceMembership) {
+      role = await rolesCollection.findOne({
+        _id: workspaceMembership.roleId
+      });
+    }
+  } catch (error) {
+    ctx.fastify.log.error(error);
   }
 
   return {
-    workspaceId: workspaceMembership ? `${userSettings.currentWorkspaceId}` : "",
+    workspaceId: workspace && workspaceMembership ? `${workspace?._id}` : "",
     subscriptionStatus: workspace?.subscriptionStatus,
     subscriptionPlan: workspace?.subscriptionPlan,
-    userId: `${userSettings.userId}`,
+    userId: `${userId}`,
     roleId: `${role?._id || ""}`,
     permissions: role?.permissions || [],
     baseType: role?.baseType
