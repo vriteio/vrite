@@ -2,9 +2,10 @@ import { mdiPoll } from "@mdi/js";
 import { Button } from "@vrite/components";
 import { Component, Show, createResource } from "solid-js";
 import { TitledCard } from "#components/fragments";
-import { useClient } from "#context";
+import { useAuthenticatedUserData, useClient } from "#context";
 
 const APIUsageCard: Component = () => {
+  const { subscription } = useAuthenticatedUserData();
   const client = useClient();
   const [usage] = createResource(
     async () => {
@@ -55,13 +56,15 @@ const APIUsageCard: Component = () => {
           </span>
           <span class="opacity-50 mx-0.5">/</span>
           <span class="text-base text-gray-500 dark:text-gray-400">
-            {numberFormatter.format(5000)}
+            {numberFormatter.format(subscription()?.plan === "team" ? 10000 : 5000)}
           </span>
         </div>
       </Button>
       <p class="prose text-gray-500 dark:text-gray-400 w-full">
-        Your plan includes <b>{numberFormatter.format(5000)}</b> API requests per month. Additional
-        requests are billed at <b>{currencyFormatter.format(0.001)}</b> per request.
+        Your plan includes{" "}
+        <b>{numberFormatter.format(subscription()?.plan === "team" ? 10000 : 5000)}</b> API requests
+        per month. Additional requests are billed at <b>{currencyFormatter.format(0.001)}</b> per
+        request.
       </p>
     </TitledCard>
   );

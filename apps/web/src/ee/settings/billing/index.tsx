@@ -109,8 +109,8 @@ const BillingSection: SettingsSectionComponent = (props) => {
             </div>
           </Button>
           <p class="prose text-gray-500 dark:text-gray-400 w-full">
-            Each plan includes <b>5,000</b> API requests per month. Additional requests are billed
-            at <b>$0.001</b> per request.
+            Personal plan includes <b>5,000</b> API requests per month, while Team plan -{" "}
+            <b>10,000</b>. Additional requests are billed at <b>$0.001</b> per request.
           </p>
         </Show>
         <Show when={subscription()?.plan && hasPermission("manageBilling")}>
