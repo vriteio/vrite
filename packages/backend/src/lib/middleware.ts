@@ -46,6 +46,7 @@ const authMiddleware = async <W extends true | false = true>(
     if (
       ctx.fastify.hostConfig.billing &&
       requiredPlan &&
+      auth.data.subscriptionPlan !== "team" &&
       auth.data.subscriptionPlan !== requiredPlan
     ) {
       throw errors.forbidden();
