@@ -24,6 +24,7 @@ const envSchema = z.object({
   // Email
   SENDER_EMAIL: z.string(),
   SENDER_NAME: z.string(),
+  BLOCK_DISPOSABLE_EMAILS: z.boolean().optional(),
   // SMTP (Email)
   SMTP_HOST: z.string().optional(),
   SMTP_PORT: z.number().optional(),

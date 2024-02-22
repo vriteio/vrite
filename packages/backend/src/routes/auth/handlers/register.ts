@@ -1,12 +1,21 @@
 import { z } from "zod";
 import { ObjectId } from "mongodb";
 import { nanoid } from "nanoid";
+import blacklistDomains from "disposable-email-domains";
+import blacklistWildcardDomains from "disposable-email-domains/wildcard";
 import { getUsersCollection, FullUser } from "#collections";
 import { errors } from "#lib/errors";
 import { generateSalt, hashValue } from "#lib/hash";
 import { UnderscoreID } from "#lib/mongo";
 import { Context } from "#lib/context";
 
+const emailDomainBlacklist = [
+  ...blacklistDomains,
+  ...blacklistWildcardDomains,
+  "massefm.com",
+  "cashbenties.com"
+];
+const emailDomainWhitelist: string[] = [];
 const inputSchema = z.object({
   email: z.string().describe("Email address").email().max(320),
   username: z
@@ -29,6 +38,13 @@ const handler = async (ctx: Context, input: z.infer<typeof inputSchema>): Promis
   const existingUser = await users.findOne({ email: input.email });
 
   if (existingUser) throw errors.alreadyExists("user");
+
+  if (ctx.fastify.config.BLOCK_DISPOSABLE_EMAILS) {
+    const whiteListedEmail = emailDomainWhitelist.some((domain) => input.email.endsWith(domain));
+    const blackListedEmail = emailDomainBlacklist.some((domain) => input.email.endsWith(domain));
+
+    if (blackListedEmail && !whiteListedEmail) throw errors.unauthorized("disposableEmail");
+  }
 
   const emailVerificationCode = nanoid();
   const user: UnderscoreID<FullUser<ObjectId>> = {

@@ -21,13 +21,12 @@ const APIUsageCard: Component = () => {
   const currencyFormatter = new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 3
+    minimumFractionDigits: 2
   });
   const estimatedUsagePrice = (): number => {
     if (!usage()) return 0;
 
-    return Math.max((usage()! - 10000) * 0.001, 0);
+    return Math.max((usage()! - (subscription()?.plan === "team" ? 10000 : 5000)) * 0.001, 0);
   };
 
   return (

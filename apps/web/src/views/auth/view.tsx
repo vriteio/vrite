@@ -27,7 +27,7 @@ interface AuthFormData {
   password: string;
   username: string;
   email: string;
-  error: string;
+  error: JSX.Element;
   loading: boolean;
 }
 interface AuthFormComponentProps {

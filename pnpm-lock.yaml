@@ -779,6 +779,9 @@ importers:
       axios:
         specifier: ^1.6.7
         version: 1.6.7
+      disposable-email-domains:
+        specifier: ^1.0.62
+        version: 1.0.62
       fastify:
         specifier: ^4.26.0
         version: 4.26.0
@@ -849,6 +852,9 @@ importers:
         specifier: ^3.22.4
         version: 3.22.4(zod@3.22.4)
     devDependencies:
+      '@types/disposable-email-domains':
+        specifier: ^1.0.6
+        version: 1.0.6
       '@types/node':
         specifier: 20.4.5
         version: 20.4.5
@@ -6476,6 +6482,10 @@ packages:
     dependencies:
       '@types/ms': 0.7.34
 
+  /@types/disposable-email-domains@1.0.6:
+    resolution: {integrity: sha512-+jHw0Q4ERuVYIChlUaoSm/VEuuNFeW7JgUU8Rwa9V1ym6q+gkGmBK5sGTDKqlfmsSdI5bFMHKlEatirPFvd8Xw==}
+    dev: true
+
   /@types/dom-view-transitions@1.0.4:
     resolution: {integrity: sha512-oDuagM6G+xPLrLU4KeCKlr1oalMF5mJqV5pDPMDVIEaa8AkUW00i6u+5P02XCjdEEUQJC9dpnxqSLsZeAciSLQ==}
     dev: false
@@ -9092,6 +9102,10 @@ packages:
   /direction@2.0.1:
     resolution: {integrity: sha512-9S6m9Sukh1cZNknO1CWAr2QAWsbKLafQiyM5gZ7VgXHeuaoUwffKN4q6NC4A/Mf9iiPlOXQEKW/Mv/mh9/3YFA==}
     hasBin: true
+    dev: false
+
+  /disposable-email-domains@1.0.62:
+    resolution: {integrity: sha512-LBQvhRw7mznQTPoyZbsmYeNOZt1pN5aCsx4BAU/3siVFuiM9f2oyKzUaB8v1jbxFjE3aYqYiMo63kAL4pHgfWQ==}
     dev: false
 
   /dlv@1.1.3:
