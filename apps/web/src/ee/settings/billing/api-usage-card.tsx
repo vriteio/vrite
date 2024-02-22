@@ -62,8 +62,7 @@ const APIUsageCard: Component = () => {
       <p class="prose text-gray-500 dark:text-gray-400 w-full">
         Your plan includes{" "}
         <b>{numberFormatter.format(subscription()?.plan === "team" ? 10000 : 5000)}</b> API requests
-        per month. Additional requests are billed at <b>{currencyFormatter.format(0.001)}</b> per
-        request.
+        per month. Additional requests are billed at <b>$0.001</b> per request.
       </p>
     </TitledCard>
   );
