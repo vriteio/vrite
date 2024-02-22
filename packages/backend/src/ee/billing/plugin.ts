@@ -221,7 +221,10 @@ const billingPlugin = createPlugin(async (fastify) => {
       return session.url;
     },
     async createCustomer(customerData) {
-      const customer = await stripe.customers.create(customerData);
+      const customer = await stripe.customers.create({
+        email: customerData.email,
+        name: customerData.name
+      });
 
       let subscription: Stripe.Subscription | null = null;
 
