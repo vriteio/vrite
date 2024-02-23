@@ -260,9 +260,28 @@ const filterRecords = (
   records: GitRecord<ObjectId>[],
   commonGitProviderData: CommonGitProviderData
 ): GitRecord<ObjectId>[] => {
-  return records.filter((record) => {
-    return minimatch(record.path, commonGitProviderData.matchPattern);
+  const recordsByPath = new Map<string, Array<GitRecord<ObjectId>>>();
+  const filteredRecords: Array<GitRecord<ObjectId>> = [];
+
+  for (const record of records) {
+    if (!recordsByPath.has(record.path)) recordsByPath.set(record.path, []);
+
+    recordsByPath.get(record.path)!.push(record);
+  }
+
+  recordsByPath.forEach((records) => {
+    let [record] = records;
+
+    if (records.length > 1) {
+      record = records.find((record) => record.currentHash) || record;
+    }
+
+    if (record && minimatch(record.path, commonGitProviderData.matchPattern)) {
+      filteredRecords.push(record);
+    }
   });
+
+  return filteredRecords;
 };
 
 export { createInputContentProcessor, createOutputContentProcessor, filterRecords };
