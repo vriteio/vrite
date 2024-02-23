@@ -1,0 +1,143 @@
+---
+slug: "api/content-groups"
+title: "Content Groups"
+---
+
+**Content groups** help you manage your content by grouping content pieces and nesting different groups inside each other. The API gives you full control over them.
+
+## Retrieve Content Group
+
+Retrieves details of a single content group, by specified ID.
+
+<EndpointCard method="GET" endpoint="/content-groups">
+  <ResponseExample>
+    ```json
+    {
+      "id": "d9b18d9c09e366bbe649215e",
+      "name": "string",
+      "ancestors": [
+        "0953ab1168879e1e6f001bde"
+      ],
+      "descendants": [
+        "4744416c628dce71abc72087"
+      ]
+    }
+    ```
+  </ResponseExample>
+  
+  <RequestExample label="JavaScript">
+    ```javascript
+    const client = createClient({
+      token: "<API_TOKEN>"
+    });
+    const result = await client.contentGroups.get({
+      id: "d9b18d9c09e366bbe649215e"
+    });
+    ```
+  </RequestExample>
+</EndpointCard>
+
+## List Content Groups
+
+By default, lists all top-level content groups. When an ancestor ID is specified, lists all content groups that are its direct descendants.
+
+<EndpointCard
+  method="GET"
+  endpoint="/content-groups/list"
+>
+  <ResponseExample>
+    ```json
+    [
+      {
+        "id": "73307c760d5998414947f942",
+        "name": "string",
+        "ancestors": [
+          "8bf9f4bf93f700e1a6863d9f"
+        ],
+        "descendants": [
+          "ef690a99e9cc09eed46a2419"
+        ]
+      }
+    ]
+    ```
+  </ResponseExample>
+  
+  <RequestExample label="JavaScript">
+    ```javascript
+    const client = createClient({
+      token: "<API_TOKEN>"
+    });
+    const result = await client.contentGroups.list({
+      // Optional
+      ancestor: "8bf9f4bf93f700e1a6863d9f"
+    });
+    ```
+  </RequestExample>
+</EndpointCard>
+
+## Create Content Group
+
+Creates a content group with the specified name, either top-level or nested inside the ancestor specified by ID.
+
+<EndpointCard method="POST" endpoint="/content-groups">
+  <ResponseExample>
+    ```json
+    {
+      "id": "c3d507504db761ab7bcbf25a"
+    }
+    ```
+  </ResponseExample>
+  
+  <RequestExample label="JavaScript">
+    ```javascript
+    const client = createClient({
+      token: "<API_TOKEN>",
+    });
+    const result = await client.contentGroups.create({
+      name: "test",
+      // Optional
+      ancestor: "8bf9f4bf93f700e1a6863d9f",
+    });
+    ```
+  </RequestExample>
+</EndpointCard>
+
+## Update Content Group
+
+Updates the content group specified by ID. If an ancestor is specified by an ID, the content group will be moved to be nested inside it.
+
+<EndpointCard method="PUT" endpoint="/content-groups">
+  <RequestExample label="JavaScript">
+    ```javascript
+    const client = createClient({
+      token: "<API_TOKEN>",
+    });
+    
+    await client.contentGroups.update({
+      id: "8f30880079d4ec05a3831e8c",
+      // Optional
+      name: "string",
+      // Optional
+      ancestor: "c153d112c3b6361836ffce76",
+    });
+    ```
+  </RequestExample>
+</EndpointCard>
+
+## Delete Content Group
+
+Deletes the content group specified by ID, together with all the content groups and content pieces inside it down to the lowest level.
+
+<EndpointCard method="DELETE" endpoint="/content-groups">
+  <RequestExample label="JavaScript">
+    ```javascript
+    const client = createClient({
+      token: "<API_TOKEN>",
+    });
+    
+    await client.contentGroups.delete({
+      id: "8f30880079d4ec05a3831e8c",
+    });
+    ```
+  </RequestExample>
+</EndpointCard>
