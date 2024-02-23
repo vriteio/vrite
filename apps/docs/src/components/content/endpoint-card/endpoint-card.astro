@@ -32,8 +32,8 @@ const operation = client.operation(
 );
 const parameters = operation.getParametersAsJSONSchema();
 const [responseSchema] = operation.getResponseAsJSONSchema(200);
-const querystringSchema = parameters.find((parameter) => parameter.type === "query")?.schema;
-const bodySchema = parameters.find((parameter) => parameter.type === "body")?.schema;
+const querystringSchema = parameters?.find((parameter) => parameter.type === "query")?.schema;
+const bodySchema = parameters?.find((parameter) => parameter.type === "body")?.schema;
 
 // Process and prepare content of the code examples
 const html = await Astro.slots.render("default");

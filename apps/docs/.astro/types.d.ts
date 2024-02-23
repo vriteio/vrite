@@ -184,9 +184,30 @@ declare module 'astro:content' {
 
 	type ContentEntryMap = {
 		"api": {
+"authentication.md": {
+	id: "authentication.md";
+  slug: "api/authentication";
+  body: string;
+  collection: "api";
+  data: InferEntrySchema<"api">
+} & { render(): Render[".md"] };
+"content-groups.mdx": {
+	id: "content-groups.mdx";
+  slug: "api/content-groups";
+  body: string;
+  collection: "api";
+  data: InferEntrySchema<"api">
+} & { render(): Render[".mdx"] };
 "content-pieces.mdx": {
 	id: "content-pieces.mdx";
   slug: "api/content-pieces";
+  body: string;
+  collection: "api";
+  data: InferEntrySchema<"api">
+} & { render(): Render[".mdx"] };
+"profile.mdx": {
+	id: "profile.mdx";
+  slug: "api/profile";
   body: string;
   collection: "api";
   data: InferEntrySchema<"api">
