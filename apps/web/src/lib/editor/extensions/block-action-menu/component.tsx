@@ -4,9 +4,18 @@ import { Node as PMNode } from "@tiptap/pm/model";
 import { ExtensionBlockActionViewContext, ExtensionSpec } from "@vrite/sdk/extensions";
 import { SolidEditor } from "@vrite/tiptap-solid";
 import clsx from "clsx";
-import { Component, For, Show, createEffect, createMemo, createSignal, on } from "solid-js";
+import {
+  Component,
+  For,
+  Show,
+  createEffect,
+  createMemo,
+  createSignal,
+  on,
+  onCleanup
+} from "solid-js";
 import { createRef } from "#lib/utils";
-import { ExtensionDetails, useExtensions, useNotifications } from "#context";
+import { ExtensionDetails, useExtensions, useLocalStorage, useNotifications } from "#context";
 import { Button, Dropdown, Tooltip } from "#components/primitives";
 import { ScrollShadow } from "#components/fragments";
 import { ExtensionViewRenderer } from "#lib/extensions";
@@ -16,6 +25,7 @@ interface BlockActionMenuProps {
     editor: SolidEditor;
     range: Range | null;
     node: PMNode | null;
+    repositionMenu: () => void;
   };
 }
 interface ExtensionBlockActionSpec {
@@ -52,12 +62,14 @@ const ExtensionIcon: Component<ExtensionIconProps> = (props) => {
 const BlockActionMenu: Component<BlockActionMenuProps> = (props) => {
   const { notify } = useNotifications();
   const { installedExtensions } = useExtensions();
+  const { storage } = useLocalStorage();
   const [computeDropdownPosition, setComputeDropdownPosition] = createRef(() => {});
   const [containerRef, setContainerRef] = createRef<HTMLDivElement | null>(null);
   const [range, setRange] = createSignal<Range | null>(props.state.range);
   const [node, setNode] = createSignal<PMNode | null>(props.state.node);
   const [locked, setLocked] = createSignal(false);
   const [opened, setOpened] = createSignal(false);
+  const { repositionMenu } = props.state;
   const unlock = debounce(() => {
     setLocked(false);
   }, 250);
@@ -104,10 +116,17 @@ const BlockActionMenu: Component<BlockActionMenuProps> = (props) => {
       }
     )
   );
+  createEffect(
+    on([() => storage().sidePanelWidth, () => storage().rightPanelWidth], repositionMenu)
+  );
+  window.addEventListener("resize", repositionMenu);
   props.state.editor.on("blur", () => {
     if (document.activeElement?.contains(containerRef()) || locked()) return;
 
     setOpened(false);
+  });
+  onCleanup(() => {
+    window.removeEventListener("resize", repositionMenu);
   });
 
   return (

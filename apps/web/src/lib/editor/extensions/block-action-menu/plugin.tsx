@@ -3,6 +3,7 @@ import { Extension, Range } from "@tiptap/core";
 import { SolidEditor, SolidRenderer } from "@vrite/tiptap-solid";
 import { TextSelection } from "@tiptap/pm/state";
 import { ResolvedPos, Node as PMNode } from "@tiptap/pm/model";
+import { debounce } from "@solid-primitives/scheduled";
 
 const box = document.createElement("div");
 
@@ -10,6 +11,7 @@ let component: SolidRenderer<{
   editor: SolidEditor;
   node: PMNode | null;
   range: Range | null;
+  repositionMenu: () => void;
 }> | null = null;
 
 const findParentAtDepth = (
@@ -39,15 +41,83 @@ const getBlockParent = (node: Node): HTMLElement | null => {
 
   return null;
 };
+const repositionMenu = (editor: SolidEditor): void => {
+  const { selection } = editor.state;
+  const isTextSelection = selection instanceof TextSelection;
+  const selectedNode = selection.$from.node(1) || selection.$from.nodeAfter;
+
+  if (!selectedNode) {
+    box.style.display = "none";
+
+    return;
+  }
+
+  const { view } = editor;
+  const node =
+    view.nodeDOM(selection.$from.pos) ||
+    view.nodeDOM(selection.$from.pos - selection.$from.parentOffset) ||
+    view.domAtPos(selection.$from.pos)?.node;
+
+  if (!node) return;
+
+  const blockParent = getBlockParent(node);
+  const parentPos = document.getElementById("pm-container")?.getBoundingClientRect();
+  const childPos = blockParent?.getBoundingClientRect();
+
+  if (!parentPos || !childPos) return;
+
+  const relativePos = {
+    top: childPos.top - parentPos.top,
+    right: childPos.right - parentPos.right,
+    bottom: childPos.bottom - parentPos.bottom,
+    left: childPos.left - parentPos.left
+  };
+
+  let rangeFrom = selection.$from.pos;
+  let rangeTo = selection.$to.pos;
+
+  box.style.top = `${relativePos.top}px`;
+  box.style.left = `${relativePos.left + parentPos.width}px`;
+  box.style.display = "block";
+
+  if (isTextSelection) {
+    try {
+      const p = findParentAtDepth(selection.$from, 1);
+
+      rangeFrom = p.start - 1;
+      rangeTo = p.start + p.node.nodeSize - 1;
+    } catch (error) {
+      box.style.display = "none";
+    }
+  }
+
+  component?.setState({
+    range: {
+      from: rangeFrom,
+      to: rangeTo
+    },
+    node: selectedNode,
+    editor,
+    repositionMenu: component.state().repositionMenu || (() => {})
+  });
+};
 const BlockActionMenuPlugin = Extension.create({
   name: "blockActionMenu",
   onCreate() {
+    const debouncedRepositionMenu = debounce(() => {
+      repositionMenu(this.editor as SolidEditor);
+    }, 250);
+
     component = new SolidRenderer(BlockActionMenu, {
       editor: this.editor as SolidEditor,
       state: {
         editor: this.editor as SolidEditor,
         node: null as PMNode | null,
-        range: null as Range | null
+        range: null as Range | null,
+        repositionMenu: () => {
+          box.style.display = "none";
+          debouncedRepositionMenu();
+        }
       }
     });
     box.style.position = "absolute";
@@ -67,63 +137,7 @@ const BlockActionMenuPlugin = Extension.create({
     box.style.display = "block";
   },
   onSelectionUpdate() {
-    const { selection } = this.editor.state;
-    const isTextSelection = selection instanceof TextSelection;
-    const selectedNode = selection.$from.node(1) || selection.$from.nodeAfter;
-
-    if (!selectedNode) {
-      box.style.display = "none";
-
-      return;
-    }
-
-    const { view } = this.editor;
-    const node =
-      view.nodeDOM(selection.$from.pos) ||
-      view.nodeDOM(selection.$from.pos - selection.$from.parentOffset) ||
-      view.domAtPos(selection.$from.pos)?.node;
-
-    if (!node) return;
-
-    const blockParent = getBlockParent(node);
-    const parentPos = document.getElementById("pm-container")?.getBoundingClientRect();
-    const childPos = blockParent?.getBoundingClientRect();
-
-    if (!parentPos || !childPos) return;
-
-    const relativePos = {
-      top: childPos.top - parentPos.top,
-      right: childPos.right - parentPos.right,
-      bottom: childPos.bottom - parentPos.bottom,
-      left: childPos.left - parentPos.left
-    };
-
-    let rangeFrom = selection.$from.pos;
-    let rangeTo = selection.$to.pos;
-
-    box.style.top = `${relativePos.top}px`;
-    box.style.left = `${relativePos.left + parentPos.width}px`;
-    box.style.display = "block";
-
-    if (isTextSelection) {
-      try {
-        const p = findParentAtDepth(selection.$from, 1);
-
-        rangeFrom = p.start - 1;
-        rangeTo = p.start + p.node.nodeSize - 1;
-      } catch (error) {
-        box.style.display = "none";
-      }
-    }
-
-    component?.setState({
-      range: {
-        from: rangeFrom,
-        to: rangeTo
-      },
-      node: selectedNode,
-      editor: this.editor as SolidEditor
-    });
+    repositionMenu(this.editor as SolidEditor);
   }
 });
 
