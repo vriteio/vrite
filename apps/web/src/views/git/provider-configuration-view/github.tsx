@@ -2,7 +2,7 @@ import { mdiFileTree, mdiGithub, mdiRefresh, mdiSourceBranch } from "@mdi/js";
 import { Component, Match, Show, Switch, createMemo, createResource, createSignal } from "solid-js";
 import { Octokit, RestEndpointMethodTypes } from "@octokit/rest";
 import { Button, Heading, IconButton, Input, Tooltip } from "#components/primitives";
-import { App, hasPermission, useClient, useConfirmationModal } from "#context";
+import { App, hasPermission, useClient, useConfirmationModal, useSharedState } from "#context";
 import { InputField, TitledCard, SearchableSelect } from "#components/fragments";
 import { navigateAndReload } from "#lib/utils";
 
@@ -10,6 +10,11 @@ interface GitHubConfigurationViewProps {
   gitData: App.GitData | null;
   setActionComponent(component: Component<{}> | null): void;
   setOpenedProvider(provider: string): void;
+}
+declare module "#context" {
+  interface SharedState {
+    gitHubToken: string;
+  }
 }
 
 type Installation =
@@ -22,13 +27,14 @@ const GitHubConfigurationView: Component<GitHubConfigurationViewProps> = (props)
   const client = useClient();
   const { confirmAction } = useConfirmationModal();
   const [loading, setLoading] = createSignal(false);
+  const { useSharedSignal } = useSharedState();
   const [selectedInstallation, setSelectedInstallation] = createSignal<Installation | null>(null);
   const [selectedRepository, setSelectedRepository] = createSignal<Repository | null>(null);
   const [selectedBranch, setSelectedBranch] = createSignal<Branch | null>(null);
   const [baseDirectory, setBaseDirectory] = createSignal("/");
   const [matchPattern, setMatchPattern] = createSignal("**/*.md");
   const [transformer, setTransformer] = createSignal("markdown");
-  const [token, setToken] = createSignal("");
+  const [token, setToken] = useSharedSignal("gitHubToken", "");
   const savedGitHubConfig = (): App.GitHubData | null => props.gitData?.github || null;
   const octokit = createMemo(() => {
     return new Octokit({ auth: token() });
@@ -62,11 +68,17 @@ const GitHubConfigurationView: Component<GitHubConfigurationViewProps> = (props)
     async () => {
       if (!token()) return [];
 
-      const response = await octokit().apps.listInstallationsForAuthenticatedUser({
-        per_page: 100
-      });
+      try {
+        const response = await octokit().apps.listInstallationsForAuthenticatedUser({
+          per_page: 100
+        });
 
-      return response.data.installations;
+        return response.data.installations;
+      } catch (error) {
+        setToken("");
+
+        return [];
+      }
     },
     { initialValue: [] }
   );
@@ -75,12 +87,18 @@ const GitHubConfigurationView: Component<GitHubConfigurationViewProps> = (props)
     async (installation) => {
       if (!token() || !installation) return [];
 
-      const response = await octokit().apps.listInstallationReposForAuthenticatedUser({
-        installation_id: installation.id,
-        per_page: 100
-      });
+      try {
+        const response = await octokit().apps.listInstallationReposForAuthenticatedUser({
+          installation_id: installation.id,
+          per_page: 100
+        });
 
-      return response.data.repositories;
+        return response.data.repositories;
+      } catch (error) {
+        setToken("");
+
+        return [];
+      }
     },
     { initialValue: [] }
   );
@@ -89,12 +107,18 @@ const GitHubConfigurationView: Component<GitHubConfigurationViewProps> = (props)
     async (repository) => {
       if (!token() || !repository) return [];
 
-      const response = await octokit().repos.listBranches({
-        owner: repository.owner.login,
-        repo: repository.name
-      });
+      try {
+        const response = await octokit().repos.listBranches({
+          owner: repository.owner.login,
+          repo: repository.name
+        });
 
-      return response.data;
+        return response.data;
+      } catch (error) {
+        setToken("");
+
+        return [];
+      }
     },
     { initialValue: [] }
   );
