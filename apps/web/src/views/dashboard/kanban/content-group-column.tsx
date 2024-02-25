@@ -206,6 +206,9 @@ const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
             opened={dropdownOpened()}
             class="ml-1 mr-3"
             setOpened={setDropdownOpened}
+            autoPlacement
+            fixed
+            alternativePlacements={["bottom-start", "bottom-end"]}
             activatorButton={() => (
               <IconButton
                 path={mdiDotsVertical}
@@ -216,7 +219,7 @@ const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
               />
             )}
           >
-            <div class="w-full flex flex-col">
+            <div class="w-full flex flex-col overflow-hidden">
               <For each={menuOptions()}>
                 {(item) => {
                   return (
@@ -226,6 +229,7 @@ const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
                       variant="text"
                       text="soft"
                       color={item.color}
+                      iconProps={{ class: "h-6 min-w-6" }}
                       class={clsx("justify-start whitespace-nowrap w-full m-0", item.class)}
                       onClick={item.onClick}
                     />

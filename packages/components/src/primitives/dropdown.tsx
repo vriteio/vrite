@@ -255,7 +255,7 @@ const Dropdown: Component<DropdownProps> = (props) => {
         <Card
           {...(props.cardProps || {})}
           class={clsx(
-            `:base-2: z-50 flex flex-col p-2 overflow-hidden transform shadow-2xl duration-250`,
+            `:base-2: z-50 flex flex-col p-2 overflow-hidden transform shadow-2xl duration-250 min-w-fit`,
             !md() &&
               "fixed !left-0 w-full !max-w-full !max-h-full m-0 p-0 pb-1 border-0 border-t-2 shadow-none rounded-none !top-unset bottom-0 h-unset",
             props.fixed ? "fixed" : "absolute",
@@ -273,7 +273,10 @@ const Dropdown: Component<DropdownProps> = (props) => {
             <div class="h-1.5 w-16 rounded-full bg-gray-200 dark:bg-gray-700"></div>
           </div>
           <div
-            class={clsx("overflow-auto scrollbar-sm flex-1", props.overflowContainerClass)}
+            class={clsx(
+              "overflow-auto scrollbar-sm flex-1 min-w-fit",
+              props.overflowContainerClass
+            )}
             style={{ "min-height": `${minHeight()}px` }}
           >
             {props.children}
