@@ -88,8 +88,8 @@ const handler = async (
     deletions
   });
 
-  if (!commit) throw errors.serverError();
   if (status === "stale") return { status: "stale" };
+  if (!commit) throw errors.serverError();
 
   const outputRecords = gitData.records
     .filter((record) => {
