@@ -53,7 +53,7 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
           when={breakpoints.md()}
           fallback={
             <>
-              <Button color="primary" link="https://app.vrite.io" class="m-0">
+              <Button color="primary" link="https://app.vrite.io" class="m-0 whitespace-nowrap">
                 Sign in
               </Button>
               <Dropdown
@@ -76,7 +76,7 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
                     onClick={() => {
                       setStorage((storage) => ({ ...storage, zenMode: true }));
                     }}
-                    class="m-0 justify-start w-full"
+                    class="m-0 justify-start w-full whitespace-nowrap"
                     variant="text"
                     text="soft"
                     path={mdiFullscreen}
@@ -84,7 +84,7 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
                   />
                   <IconButton
                     path={mdiBookOpenBlankVariant}
-                    class="m-0 justify-start w-full"
+                    class="m-0 justify-start w-full whitespace-nowrap"
                     variant="text"
                     text="soft"
                     label="Usage guide"
@@ -92,7 +92,7 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
                     target="_blank"
                   />
                   <IconButton
-                    class="m-0 justify-start w-full"
+                    class="m-0 justify-start w-full whitespace-nowrap"
                     link="https://github.com/vriteio/vrite"
                     path={mdiGithub}
                     variant="text"
@@ -113,7 +113,7 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
               onClick={() => {
                 setStorage((storage) => ({ ...storage, zenMode: true }));
               }}
-              class="m-0"
+              class="m-0 whitespace-nowrap"
               variant="text"
               text="soft"
               path={mdiFullscreen}
@@ -122,7 +122,7 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
             <Tooltip text="Usage guide" class="mt-1">
               <IconButton
                 path={mdiBookOpenBlankVariant}
-                class="m-0"
+                class="m-0 whitespace-nowrap"
                 variant="text"
                 text="soft"
                 link="https://docs.vrite.io/usage-guide/content-editor"
@@ -132,7 +132,7 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
 
             <Tooltip text="Star on GitHub" class="mt-1">
               <IconButton
-                class="m-0"
+                class="m-0 whitespace-nowrap"
                 link="https://github.com/vriteio/vrite"
                 path={mdiGithub}
                 variant="text"
@@ -140,7 +140,7 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
                 target="_blank"
               ></IconButton>
             </Tooltip>
-            <Button color="primary" link="https://app.vrite.io" class="m-0">
+            <Button color="primary" link="https://app.vrite.io" class="m-0 whitespace-nowrap">
               Sign in
             </Button>
           </div>
@@ -179,7 +179,7 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
           <div class="flex-1" />
           <Button
             color="primary"
-            class="m-0"
+            class="m-0 whitespace-nowrap"
             loading={loading()}
             onClick={async () => {
               try {
@@ -260,7 +260,7 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
                       setMenuOpened(false);
                       setStorage((storage) => ({ ...storage, zenMode: true }));
                     }}
-                    class="m-0 w-full md:w-auto justify-start md:justify-center"
+                    class="m-0 w-full md:w-auto justify-start md:justify-center whitespace-nowrap"
                     variant="text"
                     text="soft"
                     path={mdiFullscreen}
@@ -277,7 +277,7 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
               onClick={() => {
                 setStorage((storage) => ({ ...storage, zenMode: true }));
               }}
-              class="m-0 w-full md:w-auto justify-start md:justify-center"
+              class="m-0 w-full md:w-auto justify-start md:justify-center whitespace-nowrap"
               variant="text"
               text="soft"
               path={mdiFullscreen}
@@ -328,7 +328,7 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
             return (
               <IconButton
                 path={view() === "kanban" ? mdiViewDashboard : mdiViewList}
-                class="m-0"
+                class="m-0 whitespace-nowrap"
                 label={view() === "kanban" ? "Kanban" : "Table"}
                 text="soft"
               />
@@ -342,7 +342,7 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
                 setViewSelectorOpened(false);
               }}
               path={mdiViewDashboard}
-              class="w-full m-0 justify-start"
+              class="w-full m-0 justify-start whitespace-nowrap"
               label="Kanban"
               variant="text"
               text={view() === "kanban" ? "base" : "soft"}
@@ -354,7 +354,7 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
                 setViewSelectorOpened(false);
               }}
               path={mdiViewList}
-              class="w-full m-0 justify-start"
+              class="w-full m-0 justify-start whitespace-nowrap"
               label="Table"
               variant="text"
               text={view() === "table" ? "base" : "soft"}
@@ -370,7 +370,9 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
           path={hostConfig.search ? mdiMagnify : mdiConsoleLine}
           label={
             <div class="flex w-full items-center">
-              <span class="pl-1 flex-1 text-start">{hostConfig.search ? "Search" : "Command"}</span>
+              <span class="pl-1 flex-1 text-start whitespace-nowrap">
+                {hostConfig.search ? "Search" : "Command"}
+              </span>
               <kbd class="bg-gray-300 dark:bg-gray-700 group-hover:bg-gray-200 dark:group-hover:bg-gray-800 flex justify-center items-center rounded-md px-1 h-5 text-sm">
                 {isAppleDevice() ? (
                   <Icon path={mdiAppleKeyboardCommand} class="h-3 w-3" />
