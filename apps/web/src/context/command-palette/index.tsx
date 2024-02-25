@@ -118,6 +118,7 @@ const CommandPalette: Component<CommandPaletteProps> = (props) => {
     Array<{ content: string; breadcrumb: string[]; contentPieceId: string }>
   >([]);
   const [answer, setAnswer] = createSignal<string>("");
+  const [answering, setAnswering] = createSignal(false);
   const [loading, setLoading] = createSignal(false);
   const [scrollableContainerRef, setScrollableContainerRef] = createSignal<HTMLDivElement | null>(
     null
@@ -128,6 +129,10 @@ const CommandPalette: Component<CommandPaletteProps> = (props) => {
   const ask = async (): Promise<void> => {
     let content = "";
 
+    if (abortControllerRef()) abortControllerRef()?.abort();
+
+    setAbortControllerRef(new AbortController());
+    setAnswering(true);
     await fetchEventSource(
       `${window.env.PUBLIC_API_URL}/search/ask/?query=${query()}${
         activeVariantId() ? `&variantId=${activeVariantId}` : ""
@@ -142,6 +147,7 @@ const CommandPalette: Component<CommandPaletteProps> = (props) => {
         signal: abortControllerRef()?.signal,
         onerror(error) {
           setLoading(false);
+          setAnswering(false);
           throw error;
         },
         onmessage(event) {
@@ -165,10 +171,12 @@ const CommandPalette: Component<CommandPaletteProps> = (props) => {
         },
         onclose() {
           setLoading(false);
+          setAnswering(false);
         }
       }
     );
     setLoading(false);
+    setAnswering(false);
   };
   const search = debounce(async () => {
     setSearchResults([]);
@@ -240,12 +248,12 @@ const CommandPalette: Component<CommandPaletteProps> = (props) => {
     props.setOpened(false);
   };
   const unsubscribeTinykeys = tinykeys(window, {
-    "$mod+KeyK": (event) => {
+    "$mod+KeyK": () => {
       props.setMode(hostConfig.search ? "search" : "command");
       props.setOpenedCommand(null);
       props.setOpened(!props.opened);
     },
-    "escape": (event) => {
+    "escape": () => {
       if (!props.opened) return;
 
       props.setOpened(false);
@@ -334,6 +342,8 @@ const CommandPalette: Component<CommandPaletteProps> = (props) => {
     on(
       () => props.mode,
       () => {
+        if (abortControllerRef()) abortControllerRef()?.abort();
+
         setMouseHoverEnabled(false);
         setSelectedIndex(0);
         setLoading(false);
@@ -418,6 +428,7 @@ const CommandPalette: Component<CommandPaletteProps> = (props) => {
             wrapperClass="flex-1 m-0"
             id="command-palette-input"
             class="m-0 bg-transparent"
+            disabled={answering()}
             onEnter={() => {
               if (props.mode === "ask" && hostConfig.aiSearch) {
                 setLoading(true);
@@ -441,6 +452,18 @@ const CommandPalette: Component<CommandPaletteProps> = (props) => {
             }}
             adornment={() => (
               <Show when={(props.mode === "search" || props.mode === "ask") && hostConfig.aiSearch}>
+                <Show when={answering()}>
+                  <Button
+                    size="small"
+                    text="soft"
+                    onClick={() => {
+                      abortControllerRef()?.abort();
+                      setAnswering(false);
+                    }}
+                  >
+                    Stop
+                  </Button>
+                </Show>
                 <Tooltip text="Ask" side="left" class="-ml-1">
                   <IconButton
                     path={mdiCreationOutline}
