@@ -51,7 +51,8 @@ const handler = async (
   const contentPieceVariantsCollection = getContentPieceVariantsCollection(ctx.db);
   const { variantId, variantKey } = await getVariantDetails(ctx.db, input.variant);
   const baseContentPiece = await contentPiecesCollection.findOne({
-    _id: new ObjectId(input.id)
+    _id: new ObjectId(input.id),
+    workspaceId: ctx.auth.workspaceId
   });
 
   if (!baseContentPiece) throw errors.notFound("contentPiece");

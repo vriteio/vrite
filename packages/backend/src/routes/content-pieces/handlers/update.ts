@@ -77,7 +77,8 @@ const handler = async (
   const contentVariantsCollection = getContentVariantsCollection(ctx.db);
   const { variantId, variantKey } = await getVariantDetails(ctx.db, variant);
   const baseContentPiece = await contentPiecesCollection.findOne({
-    _id: new ObjectId(id)
+    _id: new ObjectId(id),
+    workspaceId: ctx.auth.workspaceId
   });
 
   if (!baseContentPiece) throw errors.notFound("contentPiece");
@@ -124,7 +125,8 @@ const handler = async (
 
   if (updatedContentGroupId) {
     const newContentGroup = await contentGroupsCollection.findOne({
-      _id: new ObjectId(updatedContentGroupId)
+      _id: new ObjectId(updatedContentGroupId),
+      workspaceId: ctx.auth.workspaceId
     });
 
     if (!newContentGroup) throw errors.notFound("contentGroup");

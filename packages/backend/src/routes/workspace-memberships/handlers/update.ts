@@ -25,7 +25,8 @@ const handler = async (
   if (!membership) throw errors.notFound("workspaceMembership");
 
   const role = await rolesCollection.findOne({
-    _id: new ObjectId(input.roleId)
+    _id: new ObjectId(input.roleId),
+    workspaceId: ctx.auth.workspaceId
   });
 
   if (!role) throw errors.notFound("role");

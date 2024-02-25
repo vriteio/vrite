@@ -57,7 +57,8 @@ const handler = async (
   const contentsCollection = getContentsCollection(ctx.db);
   const contentGroupsCollection = getContentGroupsCollection(ctx.db);
   const contentGroup = await contentGroupsCollection.findOne({
-    _id: new ObjectId(contentGroupId)
+    _id: new ObjectId(contentGroupId),
+    workspaceId: ctx.auth.workspaceId
   });
   const contentPiece: UnderscoreID<FullContentPiece<ObjectId>> = {
     ...create,
@@ -80,7 +81,8 @@ const handler = async (
 
   if (referenceId) {
     referenceContentPiece = await contentPiecesCollection.findOne({
-      _id: new ObjectId(referenceId)
+      _id: new ObjectId(referenceId),
+      workspaceId: ctx.auth.workspaceId
     });
 
     if (!referenceContentPiece) {

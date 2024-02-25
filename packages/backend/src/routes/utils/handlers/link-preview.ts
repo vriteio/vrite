@@ -88,7 +88,8 @@ const handler = async (
     if (!contentPieceId) throw errors.serverError();
 
     const baseContentPiece = await contentPiecesCollection.findOne({
-      _id: contentPieceId
+      _id: contentPieceId,
+      workspaceId: new ObjectId(input.workspaceId)
     });
 
     if (!baseContentPiece) throw errors.serverError();

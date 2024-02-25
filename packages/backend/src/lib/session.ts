@@ -103,7 +103,8 @@ const loadSessionData = async (ctx: Context, userId: string): Promise<SessionDat
 
     if (workspaceMembership) {
       role = await rolesCollection.findOne({
-        _id: workspaceMembership.roleId
+        _id: workspaceMembership.roleId,
+        workspaceId: workspace?._id
       });
     }
   } catch (error) {

@@ -44,7 +44,8 @@ const handler = async (
 
   for await (const record of changedRecords) {
     const baseContentPiece = await contentPiecesCollection.findOne({
-      _id: record.contentPieceId
+      _id: record.contentPieceId,
+      workspaceId: ctx.auth.workspaceId
     });
     const contentPiece = baseContentPiece;
     const content =

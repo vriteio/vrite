@@ -4,7 +4,6 @@ import { AuthenticatedContext } from "#lib/middleware";
 import { contentGroup, getContentGroupsCollection, getWorkspacesCollection } from "#collections";
 import { publishContentGroupEvent } from "#events";
 import { errors } from "#lib/errors";
-import { zodId } from "#lib/mongo";
 
 const inputSchema = contentGroup
   .pick({
@@ -20,14 +19,16 @@ const handler = async (
   const contentGroupsCollection = getContentGroupsCollection(ctx.db);
   const workspacesCollection = getWorkspacesCollection(ctx.db);
   const contentGroup = await contentGroupsCollection.findOne({
-    _id: new ObjectId(input.id)
+    _id: new ObjectId(input.id),
+    workspaceId: ctx.auth.workspaceId
   });
 
   if (!contentGroup) throw errors.notFound("contentGroup");
 
   if (contentGroup.ancestors.length > 0) {
     const ancestor = await contentGroupsCollection.findOne({
-      _id: contentGroup.ancestors[contentGroup.ancestors.length - 1]
+      _id: contentGroup.ancestors[contentGroup.ancestors.length - 1],
+      workspaceId: ctx.auth.workspaceId
     });
 
     if (!ancestor) throw errors.notFound("contentGroup");

@@ -51,7 +51,8 @@ const handler = async (
   const contentPiecesCollection = getContentPiecesCollection(ctx.db);
   const contentGroupsCollection = getContentGroupsCollection(ctx.db);
   const contentPiece = await contentPiecesCollection.findOne({
-    _id: new ObjectId(input.id)
+    _id: new ObjectId(input.id),
+    workspaceId: ctx.auth.workspaceId
   });
   const contentGroup = await contentGroupsCollection.findOne({
     _id: new ObjectId(input.contentGroupId || contentPiece?.contentGroupId),
@@ -66,13 +67,15 @@ const handler = async (
 
   if (input.nextReferenceId) {
     nextReferenceContentPiece = await contentPiecesCollection.findOne({
-      _id: new ObjectId(input.nextReferenceId)
+      _id: new ObjectId(input.nextReferenceId),
+      workspaceId: ctx.auth.workspaceId
     });
   }
 
   if (input.previousReferenceId) {
     previousReferenceContentPiece = await contentPiecesCollection.findOne({
-      _id: new ObjectId(input.previousReferenceId)
+      _id: new ObjectId(input.previousReferenceId),
+      workspaceId: ctx.auth.workspaceId
     });
   }
 

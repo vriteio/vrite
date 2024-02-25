@@ -56,7 +56,8 @@ const runWebhooks = async (
 
       if (!directMatch) {
         const contentGroup = await contentGroupsCollection.findOne({
-          _id: new ObjectId(payload.contentGroupId)
+          _id: new ObjectId(payload.contentGroupId),
+          workspaceId: ctx.auth.workspaceId
         });
         const nested = (contentGroup?.ancestors || []).find((ancestor) => {
           return ancestor.equals(webhook.metadata?.contentGroupId!);

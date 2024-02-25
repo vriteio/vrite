@@ -85,19 +85,20 @@ class GitSync implements Extension {
     const ctx = {
       db: this.fastify.mongo.db!,
       auth: {
-        workspaceId: new ObjectId(details.context.workspaceId),
-        userId: new ObjectId(details.context.userId)
+        workspaceId: new ObjectId(`${details.context.workspaceId}`),
+        userId: new ObjectId(`${details.context.userId}`)
       }
     };
     const gitData = await this.gitDataCollection.findOne({
-      workspaceId: new ObjectId(details.context.workspaceId)
+      workspaceId: new ObjectId(`${details.context.workspaceId}`)
     });
     const gitProvider = useGitProvider(ctx, gitData);
 
     if (!gitData || !gitProvider) return;
 
     const contentPiece = await this.contentPiecesCollection.findOne({
-      _id: new ObjectId(contentPieceId)
+      _id: new ObjectId(contentPieceId),
+      workspaceId: new ObjectId(`${details.context.workspaceId}`)
     });
 
     if (!contentPiece) return;

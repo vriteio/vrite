@@ -24,7 +24,8 @@ const removeMemberFromWorkspace = async (
   if (!workspaceMembership) throw errors.notFound("workspaceMembership");
 
   const role = await rolesCollection.findOne({
-    _id: workspaceMembership.roleId
+    _id: workspaceMembership.roleId,
+    workspaceId: ctx.auth.workspaceId
   });
 
   if (role?.baseType === "admin") {
