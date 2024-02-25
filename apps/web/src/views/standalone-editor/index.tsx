@@ -1,25 +1,10 @@
 import { Editor } from "./editor";
-import { Component, createEffect, onCleanup } from "solid-js";
+import { Component } from "solid-js";
 import clsx from "clsx";
 import { useLocalStorage } from "#context";
 
 const StandaloneEditorView: Component = () => {
   const { storage, setStorage } = useLocalStorage();
-
-  createEffect(() => {
-    if (storage().zenMode) {
-      const escapeHandler = (event: KeyboardEvent): void => {
-        if (event.key === "Escape") {
-          setStorage((storage) => ({ ...storage, zenMode: false }));
-        }
-      };
-
-      document.addEventListener("keyup", escapeHandler);
-      onCleanup(() => {
-        document.removeEventListener("keyup", escapeHandler);
-      });
-    }
-  });
 
   return (
     <div

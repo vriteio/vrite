@@ -1,5 +1,5 @@
 import { Editor } from "./editor";
-import { Component, createEffect, createSignal, on, onCleanup, Show } from "solid-js";
+import { Component, createEffect, createSignal, on, Show } from "solid-js";
 import clsx from "clsx";
 import { Loader } from "#components/primitives";
 import { useAuthenticatedUserData, useContentData, useLocalStorage } from "#context";
@@ -24,20 +24,6 @@ const EditorView: Component = () => {
       { defer: true }
     )
   );
-  createEffect(() => {
-    if (storage().zenMode) {
-      const escapeHandler = (event: KeyboardEvent): void => {
-        if (event.key === "Escape") {
-          setStorage((storage) => ({ ...storage, zenMode: false }));
-        }
-      };
-
-      document.addEventListener("keyup", escapeHandler);
-      onCleanup(() => {
-        document.removeEventListener("keyup", escapeHandler);
-      });
-    }
-  });
   setStorage((storage) => ({ ...storage, toolbarView: "editor" }));
   createEffect(
     on(
