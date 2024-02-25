@@ -1,7 +1,12 @@
 import { z } from "zod";
-import { ObjectId } from "mongodb";
+import { AnyBulkWriteOperation, ObjectId } from "mongodb";
 import { AuthenticatedContext } from "#lib/middleware";
-import { FullContentGroup, contentGroup, getContentGroupsCollection } from "#collections";
+import {
+  FullContentGroup,
+  contentGroup,
+  getContentGroupsCollection,
+  getWorkspacesCollection
+} from "#collections";
 import { publishContentGroupEvent } from "#events";
 import { errors } from "#lib/errors";
 import { UnderscoreID, zodId } from "#lib/mongo";
@@ -23,7 +28,10 @@ const inputSchema = contentGroup
   .partial()
   .required({ id: true })
   .extend({
-    ancestor: zodId().describe("ID of the new ancestor for the content group").optional()
+    ancestor: zodId()
+      .or(z.null())
+      .describe("ID of the new ancestor for the content group")
+      .optional()
   });
 const handler = async (
   ctx: AuthenticatedContext,
@@ -31,6 +39,7 @@ const handler = async (
 ): Promise<void> => {
   const { id, ...update } = input;
   const contentGroupsCollection = getContentGroupsCollection(ctx.db);
+  const workspacesCollection = getWorkspacesCollection(ctx.db);
   const contentGroupId = new ObjectId(id);
   const contentGroup = await contentGroupsCollection.findOne({
     _id: contentGroupId,
@@ -39,14 +48,18 @@ const handler = async (
 
   if (!contentGroup) throw errors.notFound("contentGroup");
 
-  const ancestorContentGroup =
-    "ancestor" in input &&
-    (await contentGroupsCollection.findOne({
+  const ancestorChanged = "ancestor" in input;
+
+  let ancestorContentGroup: UnderscoreID<FullContentGroup<ObjectId>> | null = null;
+
+  if (input.ancestor) {
+    ancestorContentGroup = await contentGroupsCollection.findOne({
       _id: new ObjectId(input.ancestor),
       workspaceId: ctx.auth.workspaceId
-    }));
+    });
 
-  if ("ancestor" in input && !ancestorContentGroup) throw errors.notFound("contentGroup");
+    if (!ancestorContentGroup) throw errors.notFound("contentGroup");
+  }
 
   await contentGroupsCollection.updateOne(
     {
@@ -56,6 +69,9 @@ const handler = async (
     {
       $set: {
         ...update,
+        ...(ancestorChanged && {
+          ancestors: []
+        }),
         ...(ancestorContentGroup && {
           ancestors: [...ancestorContentGroup.ancestors, ancestorContentGroup._id]
         })
@@ -63,29 +79,54 @@ const handler = async (
     }
   );
 
-  if (ancestorContentGroup) {
+  if (ancestorChanged) {
     const descendants = await contentGroupsCollection
       .find({
         ancestors: contentGroup._id
       })
       .toArray();
 
-    await contentGroupsCollection.bulkWrite([
-      {
-        updateOne: {
-          filter: { _id: contentGroup.ancestors[contentGroup.ancestors.length - 1] },
-          update: { $pull: { descendants: contentGroupId } }
+    if (contentGroup.ancestors.length === 0) {
+      await workspacesCollection.updateOne(
+        { _id: ctx.auth.workspaceId },
+        { $pull: { contentGroups: contentGroup._id } }
+      );
+    }
+
+    if (!ancestorContentGroup) {
+      await workspacesCollection.updateOne(
+        { _id: ctx.auth.workspaceId },
+        { $push: { contentGroups: contentGroup._id } }
+      );
+    }
+
+    const contentGroupOperations: Array<
+      AnyBulkWriteOperation<UnderscoreID<FullContentGroup<ObjectId>>>
+    > = [
+      // Remove content group from previous ancestor
+      ...((contentGroup.ancestors.length > 0 && [
+        {
+          updateOne: {
+            filter: { _id: contentGroup.ancestors[contentGroup.ancestors.length - 1] },
+            update: { $pull: { descendants: contentGroupId } }
+          }
         }
-      },
-      {
-        updateOne: {
-          filter: { _id: ancestorContentGroup._id },
-          update: { $push: { descendants: contentGroupId } }
+      ]) ||
+        []),
+      // Add content group to new ancestor
+      ...((ancestorContentGroup && [
+        {
+          updateOne: {
+            filter: { _id: ancestorContentGroup._id },
+            update: { $push: { descendants: contentGroupId } }
+          }
         }
-      },
+      ]) ||
+        []),
+      // Update descendants
       ...descendants.map((descendant) => {
         const descendantAncestors = [
-          ...ancestorContentGroup.ancestors,
+          ...(ancestorContentGroup?.ancestors || []),
           ...descendant.ancestors.slice(
             descendant.ancestors.findIndex((_id) => contentGroup._id.equals(_id))
           )
@@ -98,7 +139,11 @@ const handler = async (
           }
         };
       })
-    ]);
+    ];
+
+    if (contentGroupOperations.length > 0) {
+      await contentGroupsCollection.bulkWrite(contentGroupOperations);
+    }
   }
 
   publishContentGroupEvent(ctx, `${ctx.auth.workspaceId}`, {
@@ -111,8 +156,10 @@ const handler = async (
     updatedContentGroup: {
       ...contentGroup,
       ...update,
-      ...(ancestorContentGroup && {
-        ancestors: [...ancestorContentGroup.ancestors, ancestorContentGroup._id]
+      ...(ancestorChanged && {
+        ancestors:
+          (ancestorContentGroup && [...ancestorContentGroup.ancestors, ancestorContentGroup._id]) ||
+          []
       })
     }
   });
