@@ -105,6 +105,8 @@ const BlockActionMenuPlugin = Extension.create({
   name: "blockActionMenu",
   onCreate() {
     const debouncedRepositionMenu = debounce(() => {
+      if (this.editor.isDestroyed) return;
+
       repositionMenu(this.editor as SolidEditor);
     }, 250);
 

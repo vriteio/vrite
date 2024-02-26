@@ -3,10 +3,16 @@ import clsx from "clsx";
 import { Component, For, Show, createEffect, createResource, createSignal, on } from "solid-js";
 import { SolidEditor } from "@vrite/tiptap-solid";
 import { scrollTo } from "seamless-scroll-polyfill";
-import { Card, Input, IconButton } from "#components/primitives";
+import { Card, Input, IconButton, Select } from "#components/primitives";
 import { createRef } from "#lib/utils";
-import { App, useClient } from "#context";
+import { App, useClient, useSharedState } from "#context";
 import { ScrollShadow } from "#components/fragments";
+
+declare module "#context" {
+  interface SharedState {
+    linkType: string;
+  }
+}
 
 const LinkMenu: Component<{
   class?: string;
@@ -15,10 +21,12 @@ const LinkMenu: Component<{
   editor: SolidEditor;
   setMode(mode: string): void;
 }> = (props) => {
+  const { useSharedSignal } = useSharedState();
   const client = useClient();
   const [link, setLink] = createSignal("");
   const [loading, setLoading] = createSignal(false);
   const [selectedIndex, setSelectedIndex] = createSignal(0);
+  const [linkType, setLinkType] = useSharedSignal("linkType");
   const [linkInputRef, setLinkInputRef] = createRef<HTMLInputElement | null>(null);
   const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLDivElement | null>(
     null
@@ -32,11 +40,27 @@ const LinkMenu: Component<{
     return client.git.config.query();
   });
   const getLink = (contentPiece: App.ContentPiece): string => {
-    return `/${
-      gitData()?.records.find((record) => {
-        return record.contentPieceId === contentPiece.id;
-      })?.path || contentPiece.id
-    }`;
+    if (linkType() === "git") {
+      return `/${
+        gitData()?.records.find((record) => {
+          return record.contentPieceId === contentPiece.id;
+        })?.path || contentPiece.id
+      }`;
+    }
+
+    if (linkType() === "slug") {
+      let { slug } = contentPiece;
+
+      if (slug.startsWith("/")) slug = slug.slice(1);
+
+      return `/${slug || contentPiece.id}`;
+    }
+
+    if (linkType() === "canonical") {
+      return contentPiece.canonicalLink || `/${contentPiece.id}`;
+    }
+
+    return contentPiece.id;
   };
   const scrollView = (): void => {
     const scrollableContainer = scrollableContainerRef();
@@ -128,6 +152,29 @@ const LinkMenu: Component<{
 
   return (
     <div class="relative">
+      <Show when={searchResults().length}>
+        <Card
+          class={clsx(
+            "absolute -top-12 left-0 flex p-0 m-0 overflow-x-auto scrollbar-hidden md:overflow-initial not-prose rounded-xl",
+            props.class
+          )}
+        >
+          <Select
+            options={[
+              { label: "Git file paths", value: "git" },
+              {
+                label: "Slugs",
+                value: "slug"
+              },
+              { label: "Canonical links", value: "canonical" },
+              { label: "IDs", value: "id" }
+            ]}
+            setValue={setLinkType}
+            value={linkType()}
+            class="!bg-transparent m-0"
+          />
+        </Card>
+      </Show>
       <Card
         class={clsx(
           "relative flex flex-col m-0 p-0 overflow-x-auto scrollbar-hidden md:overflow-initial not-prose",
@@ -192,51 +239,53 @@ const LinkMenu: Component<{
       </Card>
       <Show when={searchResults().length}>
         <Card class="flex flex-col w-full m-0 top-[calc(2.5rem+2px)] absolute rounded-t-0 border-t-0 p-1 overflow-hidden">
-          <ScrollShadow scrollableContainerRef={scrollableContainerRef} />
-          <div
-            class="flex flex-col max-h-56 overflow-auto scrollbar-sm"
-            ref={setScrollableContainerRef}
-          >
-            <For each={searchResults()}>
-              {(result, index) => {
-                return (
-                  <IconButton
-                    path={mdiFileDocumentOutline}
-                    hover={false}
-                    class={clsx(
-                      "items-start",
-                      selectedIndex() === index() && "bg-gray-300 dark:bg-gray-700",
-                      selectedIndex() !== index() && "bg-transparent"
-                    )}
-                    onPointerEnter={() => {
-                      setSelectedIndex(index());
-                    }}
-                    onClick={() => {
-                      const selectedResult = searchResults()[selectedIndex()];
+          <div class="relative">
+            <ScrollShadow scrollableContainerRef={scrollableContainerRef} />
+            <div
+              class="flex flex-col max-h-56 overflow-auto scrollbar-sm"
+              ref={setScrollableContainerRef}
+            >
+              <For each={searchResults()}>
+                {(result, index) => {
+                  return (
+                    <IconButton
+                      path={mdiFileDocumentOutline}
+                      hover={false}
+                      class={clsx(
+                        "items-start",
+                        selectedIndex() === index() && "bg-gray-300 dark:bg-gray-700",
+                        selectedIndex() !== index() && "bg-transparent"
+                      )}
+                      onPointerEnter={() => {
+                        setSelectedIndex(index());
+                      }}
+                      onClick={() => {
+                        const selectedResult = searchResults()[selectedIndex()];
 
-                      props.editor
-                        .chain()
-                        .unsetLink()
-                        .setLink({ href: getLink(selectedResult) })
-                        .focus()
-                        .run();
-                      props.setMode("format");
-                    }}
-                    data-index={index()}
-                    label={
-                      <div class="flex flex-col flex-1 justify-start items-start pl-1 text-left">
-                        <span class="flex-1 text-start font-semibold clamp-1 break-all">
-                          {result.title}
-                        </span>
-                        <span class="text-xs text-gray-500 dark:text-gray-400 font-mono clamp-1 break-all">
-                          {getLink(result)}
-                        </span>
-                      </div>
-                    }
-                  />
-                );
-              }}
-            </For>
+                        props.editor
+                          .chain()
+                          .unsetLink()
+                          .setLink({ href: getLink(selectedResult) })
+                          .focus()
+                          .run();
+                        props.setMode("format");
+                      }}
+                      data-index={index()}
+                      label={
+                        <div class="flex flex-col flex-1 justify-start items-start pl-1 text-left">
+                          <span class="flex-1 text-start font-semibold clamp-1 break-all">
+                            {result.title}
+                          </span>
+                          <span class="text-xs text-gray-500 dark:text-gray-400 font-mono clamp-1 break-all">
+                            {getLink(result)}
+                          </span>
+                        </div>
+                      }
+                    />
+                  );
+                }}
+              </For>
+            </div>
           </div>
         </Card>
       </Show>

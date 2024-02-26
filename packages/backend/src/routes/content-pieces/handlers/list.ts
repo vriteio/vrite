@@ -18,7 +18,9 @@ import {
 } from "#lib/utils";
 
 const inputSchema = z.object({
-  contentGroupId: zodId().describe("ID of the content group which contains the content pieces"),
+  contentGroupId: zodId()
+    .describe("ID of the content group which contains the content pieces")
+    .optional(),
   variant: zodId()
     .describe("ID or key of the variant")
     .or(
@@ -52,12 +54,11 @@ const handler = async (
 ): Promise<z.infer<typeof outputSchema>> => {
   const contentPiecesCollection = getContentPiecesCollection(ctx.db);
   const contentPieceVariantsCollection = getContentPieceVariantsCollection(ctx.db);
-  const contentGroupId = new ObjectId(input.contentGroupId);
   const { variantId, variantKey } = await getVariantDetails(ctx.db, input.variant);
   const cursor = contentPiecesCollection
     .find({
       workspaceId: ctx.auth.workspaceId,
-      contentGroupId,
+      ...(input.contentGroupId ? { contentGroupId: new ObjectId(input.contentGroupId) } : {}),
       ...(input.tagId ? { tags: new ObjectId(input.tagId) } : {}),
       ...(input.slug ? { slug: stringToRegex(input.slug) } : {}),
       ...(input.lastOrder ? { order: { $lt: input.lastOrder } } : {})

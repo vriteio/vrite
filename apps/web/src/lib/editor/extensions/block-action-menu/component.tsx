@@ -117,7 +117,9 @@ const BlockActionMenu: Component<BlockActionMenuProps> = (props) => {
     )
   );
   createEffect(
-    on([() => storage().sidePanelWidth, () => storage().rightPanelWidth], repositionMenu)
+    on([() => storage().sidePanelWidth, () => storage().rightPanelWidth], repositionMenu, {
+      defer: true
+    })
   );
   window.addEventListener("resize", repositionMenu);
   props.state.editor.on("blur", () => {

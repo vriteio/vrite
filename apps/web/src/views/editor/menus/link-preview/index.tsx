@@ -51,6 +51,11 @@ const LinkPreviewMenu: Component<LinkPreviewMenuProps> = (props) => {
 
     return data.icon || "";
   });
+  const href = createMemo((): string => {
+    const isInternal = previewData()?.type === "internal" || props.link().startsWith("/");
+
+    return `${isInternal ? "/editor" : ""}${previewData()?.url || props.link()}`;
+  });
 
   return (
     <div
@@ -60,7 +65,7 @@ const LinkPreviewMenu: Component<LinkPreviewMenuProps> = (props) => {
       )}
     >
       <a
-        href={`/editor${previewData()?.url || props.link()}`}
+        href={href()}
         class="no-underline"
         {...(previewData()?.type === "internal" ? {} : { target: "_blank" })}
       >

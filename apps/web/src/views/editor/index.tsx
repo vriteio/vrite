@@ -83,7 +83,9 @@ const EditorView: Component = () => {
         </div>
         <Show
           when={
-            !contentPieces[activeContentPieceId() || ""] || (activeContentPieceId() && syncing())
+            activeContentPieceId.loading ||
+            !contentPieces[activeContentPieceId() || ""] ||
+            (activeContentPieceId() && syncing())
           }
         >
           <div class="flex items-center justify-center w-full h-full bg-gray-100 dark:bg-gray-800 absolute top-0 left-0">

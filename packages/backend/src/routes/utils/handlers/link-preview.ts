@@ -11,6 +11,7 @@ import {
   getGitDataCollection
 } from "#collections";
 import { zodId } from "#lib/mongo";
+import { stringToRegex } from "#lib/utils";
 
 const extractPreviewDataFromOpenGraph = (input: OgObject): string => {
   if (input.ogImage) {
@@ -73,15 +74,27 @@ const handler = async (
     if (ObjectId.isValid(urlFragments[0])) {
       contentPieceId = new ObjectId(urlFragments[0]);
     } else {
-      const gitData = await gitDataCollection.findOne({
-        workspaceId: new ObjectId(input.workspaceId)
-      });
-      const record = gitData?.records.find(
-        (record) => record.path.split(".")[0] === urlFragments.join("/")
-      );
+      const contentPiecesBySlug = await contentPiecesCollection
+        .find({
+          slug: stringToRegex(urlFragments.join("/")),
+          workspaceId: new ObjectId(input.workspaceId)
+        })
+        .limit(1)
+        .toArray();
 
-      if (record) {
-        contentPieceId = new ObjectId(record.contentPieceId);
+      if (contentPiecesBySlug.length) {
+        contentPieceId = contentPiecesBySlug[0]._id;
+      } else {
+        const gitData = await gitDataCollection.findOne({
+          workspaceId: new ObjectId(input.workspaceId)
+        });
+        const record = gitData?.records.find(
+          (record) => record.path.split(".")[0] === urlFragments.join("/")
+        );
+
+        if (record) {
+          contentPieceId = new ObjectId(record.contentPieceId);
+        }
       }
     }
 

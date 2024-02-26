@@ -1,6 +1,12 @@
 import { ContentActions, createContentActions } from "./actions";
 import { ContentLoader, createContentLoader } from "./loader";
-import { createContext, createResource, ParentComponent, useContext } from "solid-js";
+import {
+  createContext,
+  createResource,
+  InitializedResource,
+  ParentComponent,
+  useContext
+} from "solid-js";
 import { createEffect, on, onCleanup } from "solid-js";
 import { createStore, reconcile } from "solid-js/store";
 import { useNavigate, useParams } from "@solidjs/router";
@@ -23,8 +29,8 @@ interface ContentDataContextData {
   variants: Record<string, App.Variant | undefined>;
   contentActions: ContentActions;
   contentLoader: ContentLoader;
+  activeContentPieceId: InitializedResource<string | null>;
   activeContentGroupId(): string | null;
-  activeContentPieceId(): string | null;
   activeVariantId(): string | null;
   expandedContentLevels(): string[];
   setActiveContentGroupId(contentGroupId: string | null): void;
@@ -43,9 +49,6 @@ const ContentDataProvider: ParentComponent = (props) => {
   const [contentLevels, setContentLevels] = createStore<Record<string, ContentLevel | undefined>>(
     {}
   );
-  const [gitData] = createResource(() => {
-    return client.git.config.query();
-  });
   const [contentGroups, setContentGroups] = createStore<
     Record<string, App.ContentGroup | undefined>
   >({});
@@ -58,23 +61,42 @@ const ContentDataProvider: ParentComponent = (props) => {
   const activeContentGroupId = (): string | null => {
     return storage().activeContentGroupId || null;
   };
-  const activeContentPieceId = (): string | null => {
-    const contentPieceParam = params.contentPiece;
+  const [activeContentPieceId] = createResource(
+    () => params.contentPiece,
+    async (contentPieceParam) => {
+      const idRegex = /^[a-f\d]{24}$/i;
 
-    if (contentPieceParam) {
-      if (contentPieceParam.includes("/")) {
-        const record = gitData()?.records.find((record) => {
+      if (idRegex.test(contentPieceParam)) {
+        return contentPieceParam;
+      }
+
+      const gitData = await client.git.config.query();
+      const contentPiecesBySlug = await client.contentPieces.list.query({
+        slug: params.contentPiece
+      });
+
+      if (contentPieceParam) {
+        const [contentPieceBySlug] = contentPiecesBySlug;
+
+        if (contentPieceBySlug) {
+          return contentPieceBySlug.id;
+        }
+
+        const record = gitData.records.find((record) => {
           return record.path === contentPieceParam.split("/").filter(Boolean).join("/");
         });
 
-        return record?.contentPieceId || null;
+        if (record) {
+          return record?.contentPieceId || null;
+        }
+
+        return contentPieceParam || null;
       }
 
-      return contentPieceParam || null;
-    }
-
-    return null;
-  };
+      return null;
+    },
+    { initialValue: params.contentPiece || null }
+  );
   const setActiveVariantId = (variantId: string | null): void => {
     setStorage((storage) => ({
       ...storage,

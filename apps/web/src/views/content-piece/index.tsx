@@ -129,7 +129,7 @@ const ContentPieceView: Component = () => {
 
   return (
     <Show
-      when={activeContentPiece()}
+      when={!activeContentPieceId.loading && activeContentPiece()}
       fallback={
         <div class="flex h-full w-full justify-center items-center">
           <Loader />
