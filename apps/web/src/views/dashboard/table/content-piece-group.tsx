@@ -14,6 +14,7 @@ import {
 } from "@mdi/js";
 import clsx from "clsx";
 import { Component, For, Show, createEffect, createMemo, createSignal } from "solid-js";
+import { useNavigate } from "@solidjs/router";
 import {
   IconButton,
   Dropdown,
@@ -47,18 +48,22 @@ interface AddContentPieceGroupProps {
 }
 
 const AddContentPieceGroup: Component<AddContentPieceGroupProps> = (props) => {
+  const [loading, setLoading] = createSignal(false);
   const client = useClient();
   const { notify } = useNotifications();
   const { activeContentGroupId } = useContentData();
   const { registerCommand } = useCommandPalette();
   const createNewContentGroup = async (): Promise<void> => {
     try {
+      setLoading(true);
       await client.contentGroups.create.mutate({
         name: "",
         ancestor: activeContentGroupId() || undefined
       });
+      setLoading(false);
       notify({ text: "New content group created", type: "success" });
     } catch (error) {
+      setLoading(false);
       notify({ text: "Couldn't create new content group", type: "error" });
     }
   };
@@ -77,8 +82,16 @@ const AddContentPieceGroup: Component<AddContentPieceGroupProps> = (props) => {
         props.class
       )}
       onClick={createNewContentGroup}
+      disabled={loading()}
     >
-      <IconButton path={mdiPlus} class="m-0" variant="text" />
+      <IconButton
+        badge
+        hover={false}
+        path={mdiPlus}
+        class="m-0"
+        variant="text"
+        loading={loading()}
+      />
       <Heading level={3}>Add content group</Heading>
     </button>
   );
@@ -97,6 +110,7 @@ const ContentPieceGroup: Component<ContentPieceGroupProps> = (props) => {
   const [expanded, setExpanded] = createSignal(true);
   const [loading, setLoading] = createSignal(false);
   const [dropdownOpened, setDropdownOpened] = createSignal(false);
+  const navigate = useNavigate();
   const client = useClient();
   const columnContentLevel = (): ContentLevel => {
     return (
@@ -147,18 +161,23 @@ const ContentPieceGroup: Component<ContentPieceGroupProps> = (props) => {
                 members: [],
                 title: ""
               };
-              const { id } = await client.contentPieces.create.mutate(newContentPieceData);
 
               setDropdownOpened(false);
+              setLoading(true);
+
+              const { id } = await client.contentPieces.create.mutate(newContentPieceData);
+
+              setLoading(false);
               notify({ text: "New content piece created", type: "success" });
               setStorage((storage) => ({
                 ...storage,
                 sidePanelView: "contentPiece",
-                sidePanelWidth: storage.sidePanelWidth || 375,
-                contentPieceId: id
+                sidePanelWidth: storage.sidePanelWidth || 375
               }));
+              navigate(`/${id}`);
             } catch (error) {
               notify({ text: "Couldn't create the content piece", type: "error" });
+              setLoading(false);
             }
           }
         },
@@ -182,7 +201,7 @@ const ContentPieceGroup: Component<ContentPieceGroupProps> = (props) => {
 
                 try {
                   setLoading(true);
-                  // await client.contentGroups.delete.mutate({ id: props.contentGroup.id });
+                  await client.contentGroups.delete.mutate({ id: props.contentGroup.id });
                   contentActions.deleteContentGroup({ id: props.contentGroup.id });
                   setLoading(false);
                   notify({ text: "Content group deleted", type: "success" });
@@ -249,9 +268,12 @@ const ContentPieceGroup: Component<ContentPieceGroupProps> = (props) => {
             </div>
             <Dropdown
               placement="bottom-start"
+              alternativePlacements={["bottom-start", "top-start"]}
+              autoPlacement
               opened={dropdownOpened()}
               fixed
               class="ml-1 mr-4"
+              cardProps={{ class: "min-h-29" }}
               setOpened={setDropdownOpened}
               activatorButton={() => (
                 <IconButton

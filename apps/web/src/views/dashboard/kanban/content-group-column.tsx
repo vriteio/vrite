@@ -10,6 +10,7 @@ import {
   mdiTrashCan
 } from "@mdi/js";
 import clsx from "clsx";
+import { useNavigate } from "@solidjs/router";
 import { Card, IconButton, Sortable, Dropdown, Loader, Icon } from "#components/primitives";
 import { MiniEditor, ScrollShadow, createScrollShadowController } from "#components/fragments";
 import {
@@ -38,18 +39,22 @@ interface AddContentGroupColumnProps {
 }
 
 const AddContentGroupColumn: Component<AddContentGroupColumnProps> = (props) => {
+  const [loading, setLoading] = createSignal(false);
   const client = useClient();
   const { notify } = useNotifications();
   const { activeContentGroupId } = useContentData();
   const { registerCommand } = useCommandPalette();
   const createNewContentGroup = async (): Promise<void> => {
     try {
+      setLoading(true);
       await client.contentGroups.create.mutate({
         name: "",
         ancestor: activeContentGroupId() || undefined
       });
+      setLoading(false);
       notify({ text: "New content group created", type: "success" });
     } catch (error) {
+      setLoading(false);
       notify({ text: "Couldn't create new content group", type: "error" });
     }
   };
@@ -62,21 +67,30 @@ const AddContentGroupColumn: Component<AddContentGroupColumnProps> = (props) => 
   });
 
   return (
-    <div
+    <button
       class={clsx(
         "px-2.5 pb-2.5 last:pr-5 first:pl-5 md:last:pr-0 md:first:pl-0 h-full snap-center",
         props.class
       )}
+      disabled={loading()}
+      onClick={createNewContentGroup}
     >
       <Card
         class="flex-col flex justify-center items-center w-full h-full m-0 mb-1 bg-transparent border-2 rounded-2xl dark:border-gray-700 text-gray-500 dark:text-gray-400 @hover-bg-gray-300 dark:@hover-bg-gray-700 @hover:cursor-pointer"
         color="contrast"
-        onClick={createNewContentGroup}
       >
-        <Icon path={mdiFolderPlus} class="h-6 w-6" />
+        <IconButton
+          badge
+          hover={false}
+          path={mdiFolderPlus}
+          variant="text"
+          text="soft"
+          class="m-0"
+          loading={loading()}
+        />
         <span>New group</span>
       </Card>
-    </div>
+    </button>
   );
 };
 const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
@@ -89,7 +103,9 @@ const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
   const scrollShadowController = createScrollShadowController();
   const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
   const [dropdownOpened, setDropdownOpened] = createSignal(false);
+  const [addingNewContentPiece, setAddingNewContentPiece] = createSignal(false);
   const [loading, setLoading] = createSignal(false);
+  const navigate = useNavigate();
   const client = useClient();
   const menuOptions = createMemo(() => {
     const menuOptions: Array<{
@@ -380,6 +396,7 @@ const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
               path={mdiFileDocumentPlusOutline}
               text="soft"
               label="New content piece"
+              loading={addingNewContentPiece()}
               onClick={async () => {
                 const newContentPieceData = {
                   contentGroupId: props.contentGroup.id,
@@ -388,15 +405,24 @@ const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
                   members: [],
                   title: ""
                 };
-                const { id } = await client.contentPieces.create.mutate(newContentPieceData);
 
-                notify({ type: "success", text: "New content piece created" });
-                setStorage((storage) => ({
-                  ...storage,
-                  sidePanelView: "contentPiece",
-                  sidePanelWidth: storage.sidePanelWidth || 375,
-                  contentPieceId: id
-                }));
+                try {
+                  setAddingNewContentPiece(true);
+
+                  const { id } = await client.contentPieces.create.mutate(newContentPieceData);
+
+                  setAddingNewContentPiece(false);
+                  notify({ type: "success", text: "New content piece created" });
+                  setStorage((storage) => ({
+                    ...storage,
+                    sidePanelView: "contentPiece",
+                    sidePanelWidth: storage.sidePanelWidth || 375
+                  }));
+                  navigate(`/${id}`);
+                } catch (e) {
+                  setAddingNewContentPiece(false);
+                  notify({ type: "error", text: "Couldn't create new content piece" });
+                }
               }}
             />
           </Card>
