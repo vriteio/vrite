@@ -30,7 +30,7 @@ interface ContentPieceRowProps {
 }
 
 const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
-  const { activeContentPieceId, contentActions } = useContentData();
+  const { activeContentPieceId, activeVariantId, contentActions } = useContentData();
   const {
     setActiveDraggableContentPieceId,
     activeDraggableContentGroupId,
@@ -188,6 +188,7 @@ const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
 
                 client.contentPieces.update.mutate({
                   id: props.contentPiece.id,
+                  variant: activeVariantId() || undefined,
                   title
                 });
                 contentActions.updateContentPiece({ id: props.contentPiece.id, title });
@@ -198,6 +199,7 @@ const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
 
                 client.contentPieces.update.mutate({
                   id: props.contentPiece.id,
+                  variant: activeVariantId() || undefined,
                   title
                 });
                 contentActions.updateContentPiece({ id: props.contentPiece.id, title });

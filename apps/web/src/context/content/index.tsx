@@ -201,7 +201,7 @@ const ContentDataProvider: ParentComponent = (props) => {
             const contentPiecesSubscription = client.contentPieces.changes.subscribe(
               { contentGroupId },
               {
-                onData({ action, data, userId }) {
+                onData({ action, data }) {
                   if (action === "update") {
                     contentActions.updateContentPiece(data);
                   } else if (action === "create") {
