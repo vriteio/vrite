@@ -22,7 +22,7 @@ import {
   createMemo
 } from "solid-js";
 import { createStore } from "solid-js/store";
-import { App, useClient } from "#context";
+import { App, useClient, useNotifications } from "#context";
 import { Heading, IconButton, Input, Tooltip, Icon, Button } from "#components/primitives";
 import { ScrollShadow } from "#components/fragments";
 import { tagColorClasses } from "#lib/utils";
@@ -36,8 +36,11 @@ interface TagsDropdownProps {
 
 const TagsDropdown: Component<TagsDropdownProps> = (props) => {
   const client = useClient();
+  const { notify } = useNotifications();
   const [view, setView] = createSignal<"select" | "create">("select");
   const [scrollableListRef, setScrollableListRef] = createSignal<HTMLElement | null>(null);
+  const [creatingTag, setCreatingTag] = createSignal(false);
+  const [deletingTag, setDeletingTag] = createSignal(false);
   const [currentTag, setCurrentTag] = createStore<Omit<App.Tag, "id"> & { id?: string }>({
     color: "gray",
     label: ""
@@ -114,9 +117,24 @@ const TagsDropdown: Component<TagsDropdownProps> = (props) => {
                 color="contrast"
                 variant="text"
                 class="m-0"
+                loading={deletingTag()}
                 onClick={async () => {
-                  await client.tags.delete.mutate({ id: currentTag.id! });
-                  setView("select");
+                  try {
+                    setDeletingTag(true);
+                    await client.tags.delete.mutate({ id: currentTag.id! });
+                    setDeletingTag(false);
+                    setView("select");
+                    notify({
+                      type: "success",
+                      text: "Tag deleted"
+                    });
+                  } catch {
+                    setDeletingTag(false);
+                    notify({
+                      type: "error",
+                      text: "Couldn't delete the tag"
+                    });
+                  }
                 }}
               />
             </Show>
@@ -242,9 +260,24 @@ const TagsDropdown: Component<TagsDropdownProps> = (props) => {
                 path={currentTag.id ? mdiTagCheckOutline : mdiTagPlusOutline}
                 color="primary"
                 class="m-0"
+                loading={creatingTag()}
                 onClick={async () => {
-                  await createTag();
-                  props.setOpened(false);
+                  try {
+                    setCreatingTag(true);
+                    await createTag();
+                    props.setOpened(false);
+                    setCreatingTag(false);
+                    notify({
+                      type: "success",
+                      text: "New tag created"
+                    });
+                  } catch {
+                    setCreatingTag(false);
+                    notify({
+                      type: "error",
+                      text: "Couldn't create new tag"
+                    });
+                  }
                 }}
               />
             </Tooltip>
