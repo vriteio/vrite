@@ -76,7 +76,7 @@ const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
     setStorage((storage) => ({ ...storage, rightPanelWidth: storage.rightPanelWidth ? 0 : 375 }));
   };
   const pathnameData = createMemo(() => {
-    const pathRegex = /^\/(?:editor\/)?([a-f\d]{24})?$/i;
+    const pathRegex = /^\/(?:editor\/?)?([a-f\d]{24})?$/i;
     const match = location.pathname.match(pathRegex);
 
     if (!match) return {};

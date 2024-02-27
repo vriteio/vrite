@@ -67,9 +67,11 @@ const handler = async (
     });
 
     if (contentPieceVariant) {
+      const { _id, contentPieceId, variantId, workspaceId, ...variantData } = contentPieceVariant;
+
       contentPiece = {
         ...contentPiece,
-        ...contentPieceVariant
+        ...variantData
       };
     }
   }

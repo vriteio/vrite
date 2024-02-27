@@ -1,7 +1,12 @@
 import { z } from "zod";
 import { ObjectId } from "mongodb";
 import { AuthenticatedContext } from "#lib/middleware";
-import { getContentPiecesCollection, getTagsCollection, tag } from "#collections";
+import {
+  getContentPieceVariantsCollection,
+  getContentPiecesCollection,
+  getTagsCollection,
+  tag
+} from "#collections";
 import { errors } from "#lib/errors";
 import { publishTagEvent } from "#events";
 
@@ -12,6 +17,7 @@ const handler = async (
 ): Promise<void> => {
   const tagsCollection = getTagsCollection(ctx.db);
   const contentPiecesCollection = getContentPiecesCollection(ctx.db);
+  const contentPieceVariantsCollection = getContentPieceVariantsCollection(ctx.db);
   const tagId = new ObjectId(input.id);
   const { deletedCount } = await tagsCollection.deleteOne({
     workspaceId: ctx.auth.workspaceId,
@@ -21,6 +27,17 @@ const handler = async (
   if (!deletedCount) throw errors.notFound("tag");
 
   await contentPiecesCollection.updateMany(
+    {
+      workspaceId: ctx.auth.workspaceId,
+      tags: tagId
+    },
+    {
+      $pull: {
+        tags: tagId
+      }
+    }
+  );
+  await contentPieceVariantsCollection.updateMany(
     {
       workspaceId: ctx.auth.workspaceId,
       tags: tagId

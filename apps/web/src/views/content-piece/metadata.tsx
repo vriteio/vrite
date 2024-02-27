@@ -1,8 +1,8 @@
 import { DetailsSection, CustomDataSection, ExtensionsSection } from "./sections";
 import { ContentPieceDescription } from "./description";
 import { mdiMenu } from "@mdi/js";
-import { Component, createSignal, For, Switch, Match, onMount } from "solid-js";
-import { App, useHostConfig } from "#context";
+import { Component, createSignal, For, onMount } from "solid-js";
+import { App } from "#context";
 import { Dropdown, IconButton, Heading } from "#components/primitives";
 import { createRef } from "#lib/utils";
 
