@@ -156,7 +156,8 @@ const fragmentedContentProcessor = (
       nodeType === "orderedList" ||
       nodeType === "taskList" ||
       nodeType === "table" ||
-      nodeType === "codeBlock"
+      nodeType === "codeBlock" ||
+      nodeType === "element"
     ) {
       paragraphs.push(child.node);
     }
