@@ -7,8 +7,7 @@ import { UnderscoreID } from "#lib/mongo";
 const handleContentPieceUpdated = createGitSyncHandler<{
   contentPiece: UnderscoreID<FullContentPiece<ObjectId>>;
 }>(async ({ ctx, directories, records, outputContentProcessor, gitData }, data) => {
-  let newRecords = [...records];
-
+  const newRecords = [...records];
   const contentsCollection = getContentsCollection(ctx.db);
   const existingRecord = records.find((record) => {
     return record.contentPieceId.equals(data.contentPiece._id) && record.currentHash;
@@ -18,7 +17,26 @@ const handleContentPieceUpdated = createGitSyncHandler<{
   });
 
   // Content piece outside of Git-synced content group
-  if (!existingRecord || !existingDirectory) return { directories, records };
+
+  if (!existingDirectory) {
+    if (existingRecord) {
+      return {
+        directories,
+        records: newRecords.map((record) => {
+          if (record.contentPieceId.equals(data.contentPiece._id)) {
+            return {
+              ...record,
+              currentHash: ""
+            };
+          }
+
+          return record;
+        })
+      };
+    } else {
+      return { directories, records };
+    }
+  }
 
   const content =
     (
@@ -40,35 +58,51 @@ const handleContentPieceUpdated = createGitSyncHandler<{
     .filter(Boolean)
     .join("/");
 
-  newRecords = records.flatMap((record) => {
-    if (record === existingRecord) {
-      if (existingRecord.path !== newRecordPath) {
-        return [
-          {
-            ...record,
-            currentHash: ""
-          },
-          {
-            ...record,
-            path: newRecordPath,
-            currentHash: contentHash,
-            syncedHash: ""
+  if (existingRecord) {
+    return {
+      directories,
+      records: records.flatMap((record) => {
+        if (record === existingRecord) {
+          if (existingRecord.path !== newRecordPath) {
+            return [
+              {
+                ...record,
+                currentHash: ""
+              },
+              {
+                ...record,
+                path: newRecordPath,
+                currentHash: contentHash,
+                syncedHash: ""
+              }
+            ];
           }
-        ];
-      }
 
-      return [
-        {
-          ...record,
-          currentHash: contentHash
+          return [
+            {
+              ...record,
+              currentHash: contentHash
+            }
+          ];
         }
-      ];
-    }
 
-    return [record];
-  });
-
-  return { directories, records: newRecords };
+        return [record];
+      })
+    };
+  } else {
+    return {
+      directories,
+      records: [
+        ...newRecords,
+        {
+          path: newRecordPath,
+          contentPieceId: data.contentPiece._id,
+          currentHash: contentHash,
+          syncedHash: ""
+        }
+      ]
+    };
+  }
 });
 
 export { handleContentPieceUpdated };
