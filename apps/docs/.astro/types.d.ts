@@ -212,6 +212,13 @@ declare module 'astro:content' {
   collection: "api";
   data: InferEntrySchema<"api">
 } & { render(): Render[".mdx"] };
+"tags.mdx": {
+	id: "tags.mdx";
+  slug: "api/tags";
+  body: string;
+  collection: "api";
+  data: InferEntrySchema<"api">
+} & { render(): Render[".mdx"] };
 };
 "docs": {
 "getting-started/concepts.mdx": {

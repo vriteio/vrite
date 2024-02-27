@@ -132,12 +132,6 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   background: url(data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22%23fff%22%20d%3D%22M12%2C20A8%2C8%200%200%2C0%2020%2C12A8%2C8%200%200%2C0%2012%2C4A8%2C8%200%200%2C0%204%2C12A8%2C8%200%200%2C0%2012%2C20M12%2C2A10%2C10%200%200%2C1%2022%2C12A10%2C10%200%200%2C1%2012%2C22C6.47%2C22%202%2C17.5%202%2C12A10%2C10%200%200%2C1%2012%2C2M12.5%2C7V12.25L17%2C14.92L16.25%2C16.15L11%2C13V7H12.5Z%22%20%2F%3E%3C%2Fsvg%3E)
     no-repeat;
 }
-button:focus-visible {
-  outline: none !important;
-}
-button:focus {
-  outline: none !important;
-}
 #dropdowns {
   @apply transform w-full absolute overflow-hidden z-60 transition-all duration-500 pointer-events-none;
   height: calc(100% - 3.625rem - env(safe-area-inset-bottom, 0px));

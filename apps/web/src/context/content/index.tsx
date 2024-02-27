@@ -249,7 +249,7 @@ const ContentDataProvider: ParentComponent = (props) => {
     const id = activeContentPieceId();
     const variantId = activeVariantId();
 
-    if (!id || contentPieces[id]) return;
+    if (!id || activeContentPieceId.loading || contentPieces[id]) return;
 
     client.contentPieces.get
       .query({

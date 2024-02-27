@@ -354,7 +354,7 @@ const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
     <div
       class={clsx(
         "relative rounded-2xl text-base leading-4 not-prose overflow-hidden min-w-64",
-        selected() && "ring ring-primary ring-2"
+        selected() && !codeEditorActive() && "ring ring-primary ring-2"
       )}
       contentEditable={selected() ? false : undefined}
       draggable={false}

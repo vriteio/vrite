@@ -8,10 +8,15 @@ import {
   Show,
   Switch,
   Match,
-  createMemo
+  createMemo,
+  onMount,
+  createEffect,
+  on
 } from "solid-js";
 import clsx from "clsx";
+import { tinykeys } from "tinykeys";
 import { Card, Heading, IconButton, Input, Overlay } from "#components/primitives";
+import { createRef } from "#lib/utils";
 
 interface ConfirmationModalConfig {
   content?: JSX.Element;
@@ -32,6 +37,8 @@ const ConfirmationModalProvider: ParentComponent = (props) => {
   const [loading, setLoading] = createSignal(false);
   const [type, setType] = createSignal<"action" | "delete" | "input" | null>(null);
   const [input, setInput] = createSignal<string>("");
+  const [cancelButtonRef, setCancelButtonRef] = createRef<HTMLButtonElement | null>(null);
+  const [confirmButtonRef, setConfirmButtonRef] = createRef<HTMLButtonElement | null>(null);
   const filled = createMemo(() => {
     return type() !== "input" || input() === config()?.input;
   });
@@ -51,6 +58,24 @@ const ConfirmationModalProvider: ParentComponent = (props) => {
     config()?.onCancel?.();
     setConfig();
   };
+  const handleArrowKey = (): void => {
+    if (document.activeElement === cancelButtonRef()) {
+      confirmButtonRef()?.focus();
+    } else {
+      cancelButtonRef()?.focus();
+    }
+  };
+
+  createEffect(
+    on(config, (config) => {
+      if (config) {
+        return tinykeys(window, {
+          ArrowRight: handleArrowKey,
+          ArrowLeft: handleArrowKey
+        });
+      }
+    })
+  );
 
   return (
     <ConfirmationModalContext.Provider value={{ confirmDelete, confirmAction, confirmWithInput }}>
@@ -58,6 +83,16 @@ const ConfirmationModalProvider: ParentComponent = (props) => {
       <Overlay opened={Boolean(config())} onOverlayClick={cancel}>
         <Show when={config()} keyed>
           {(currentConfig) => {
+            const handleConfirmButtonClick = async (): Promise<void> => {
+              setLoading(true);
+              await currentConfig.onConfirm?.();
+              setLoading(false);
+
+              if (currentConfig.onConfirm === config()?.onConfirm) {
+                setConfig(null);
+              }
+            };
+
             return (
               <Card class="max-w-full p-3 w-88">
                 <div class="flex items-start justify-center">
@@ -89,6 +124,11 @@ const ConfirmationModalProvider: ParentComponent = (props) => {
                     color="contrast"
                     text="soft"
                     onClick={cancel}
+                    focusable
+                    ref={(cancelButtonRef) => {
+                      setCancelButtonRef(cancelButtonRef);
+                      setTimeout(() => cancelButtonRef?.focus(), 150);
+                    }}
                   />
                   <Switch>
                     <Match when={type() === "delete" || type() === "input"}>
@@ -98,10 +138,10 @@ const ConfirmationModalProvider: ParentComponent = (props) => {
                         color="danger"
                         label="Delete"
                         disabled={!filled()}
-                        onClick={() => {
-                          currentConfig.onConfirm?.();
-                          setConfig(null);
-                        }}
+                        ref={setConfirmButtonRef}
+                        loading={loading()}
+                        focusable
+                        onClick={handleConfirmButtonClick}
                       />
                     </Match>
                     <Match when={type() === "action"}>
@@ -111,15 +151,9 @@ const ConfirmationModalProvider: ParentComponent = (props) => {
                         color={currentConfig.type === "danger" ? "danger" : "success"}
                         label="Confirm"
                         loading={loading()}
-                        onClick={async () => {
-                          setLoading(true);
-                          await currentConfig.onConfirm?.();
-                          setLoading(false);
-
-                          if (currentConfig.onConfirm === config()?.onConfirm) {
-                            setConfig(null);
-                          }
-                        }}
+                        ref={setConfirmButtonRef}
+                        focusable
+                        onClick={handleConfirmButtonClick}
                       />
                     </Match>
                   </Switch>

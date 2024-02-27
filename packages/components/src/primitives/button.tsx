@@ -5,18 +5,18 @@ import { Component, ComponentProps, JSX, mergeProps, Show, splitProps, createMem
 import { Dynamic } from "solid-js/web";
 
 const buttonColors = {
-  base: `:base: bg-gray-200 fill-current dark:bg-gray-900`,
-  contrast: `:base: bg-gray-200 fill-current dark:bg-gray-800`,
-  danger: `:base: bg-red-500 fill-current dark:bg-red-500 disabled:opacity-70`,
-  success: `:base: bg-green-500 fill-current dark:bg-green-500 disabled:opacity-70`,
-  primary: `:base: bg-gradient-to-tr fill-[url(#gradient)] disabled:opacity-70`
+  base: `:base: bg-gray-200 fill-current dark:bg-gray-900 outline-gray-200 dark:outline-gray-900`,
+  contrast: `:base: bg-gray-200 fill-current dark:bg-gray-800 outline-gray-200 dark:outline-gray-800`,
+  danger: `:base: bg-red-500 fill-current dark:bg-red-500 disabled:opacity-70 outline-red-500 dark:outline-red-500`,
+  success: `:base: bg-green-500 fill-current dark:bg-green-500 disabled:opacity-70 outline-green-500 dark:outline-green-500`,
+  primary: `:base: bg-gradient-to-tr fill-[url(#gradient)] disabled:opacity-70 outline-primary dark:outline-primary`
 };
 const buttonColorsHover = {
-  base: `:base: @hover-bg-gray-300 dark:@hover-bg-gray-700`,
-  contrast: `:base: @hover-bg-gray-300 dark:@hover-bg-gray-700`,
-  danger: `:base: @hover-bg-red-600 dark:@hover-bg-red-600 @hover-fill-current`,
-  success: `:base: @hover-bg-green-600 dark:@hover-bg-green-600 @hover-fill-current`,
-  primary: `:base: @hover-bg-gradient-to-bl @hover-fill-current`
+  base: `:base: @hover-bg-gray-300 dark:@hover-bg-gray-700 @hover-outline-gray-300 dark:@hover-outline-gray-700`,
+  contrast: `:base: @hover-bg-gray-300 dark:@hover-bg-gray-700 @hover-outline-gray-300 dark:@hover-outline-gray-700`,
+  danger: `:base: @hover-bg-red-600 dark:@hover-bg-red-600 @hover-fill-current @hover-outline-red-600 dark:@hover-outline-red-600`,
+  success: `:base: @hover-bg-green-600 dark:@hover-bg-green-600 @hover-fill-current @hover-outline-green-600 dark:@hover-outline-green-600`,
+  primary: `:base: @hover-bg-gradient-to-bl @hover-fill-current @hover-outline-primary dark:@hover-outline-primary`
 };
 const textColors = {
   base: `:base: text-gray-700 dark:text-gray-100`,
@@ -78,6 +78,7 @@ interface ButtonProps extends JSX.ButtonHTMLAttributes<HTMLButtonElement> {
   text?: ButtonTextColor;
   loading?: boolean;
   target?: string;
+  focusable?: boolean;
 }
 interface IconButtonProps extends ButtonProps {
   path?: string;
@@ -112,12 +113,20 @@ const Button: Component<ButtonProps> = (providedProps) => {
 
     return "button";
   });
+  const tabIndex = createMemo(() => {
+    if (typeof props.tabIndex !== "undefined") return props.tabIndex;
+    if (props.focusable) return -1;
+
+    return undefined;
+  });
 
   return (
     <Dynamic
       component={component()}
       class={clsx(
-        `:base: transition relative duration-150 !outline-none !ring-0 focus:!outline-none focus:!ring-0`,
+        `:base: transition relative duration-150 !ring-0 !focus:ring-0`,
+        !props.focusable && ":base: !outline-none !focus:outline-none",
+        props.focusable && ":base: outline-0 !focus:outline-2 !focus:outline !outline-offset-2",
         !props.badge && ":base: cursor-pointer",
         buttonVariants[props.variant],
         buttonSizes[props.size],
@@ -138,6 +147,7 @@ const Button: Component<ButtonProps> = (providedProps) => {
         props.class
       )}
       disabled={props.disabled || props.loading}
+      tabIndex={tabIndex()}
       href={props.link}
       {...passedProps}
     >
