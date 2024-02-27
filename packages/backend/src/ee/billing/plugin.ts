@@ -193,6 +193,11 @@ const billingPlugin = createPlugin(async (fastify) => {
     return;
   }
 
+  await fastify.register(import("fastify-raw-body"), {
+    global: false,
+    encoding: false,
+    runFirst: true
+  });
   fastify.decorate("billing", {
     async checkout(workspaceId, plan) {
       const workspacesCollection = getWorkspacesCollection(fastify.mongo.db!);
@@ -435,18 +440,7 @@ const billingPlugin = createPlugin(async (fastify) => {
       }
     }
   } as BillingPlugin);
-  fastify.addContentTypeParser(
-    "application/json",
-    { parseAs: "buffer" },
-    function (_req, body, done) {
-      try {
-        done(null, body);
-      } catch (error) {
-        done(error as Error | null, undefined);
-      }
-    }
-  );
-  fastify.post("/billing/webhook", async (req, res) => {
+  fastify.post("/billing/webhook", { config: { rawBody: true } }, async (req, res) => {
     const signature = req.headers["stripe-signature"] || "";
     const ctx: Context = {
       db: fastify.mongo.db!,
@@ -459,7 +453,7 @@ const billingPlugin = createPlugin(async (fastify) => {
 
     try {
       event = stripe.webhooks.constructEvent(
-        req.body as string,
+        req.rawBody as Buffer,
         signature,
         fastify.config.STRIPE_WEBHOOK_SECRET || ""
       );

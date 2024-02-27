@@ -785,6 +785,9 @@ importers:
       fastify:
         specifier: ^4.26.0
         version: 4.26.0
+      fastify-raw-body:
+        specifier: ^4.3.0
+        version: 4.3.0
       html-to-text:
         specifier: ^9.0.5
         version: 9.0.5
@@ -10444,6 +10447,15 @@ packages:
 
   /fastify-plugin@4.5.1:
     resolution: {integrity: sha512-stRHYGeuqpEZTL1Ef0Ovr2ltazUT9g844X5z/zEBFLG8RYlpDiOCIG+ATvYEp+/zmc7sN29mcIMp8gvYplYPIQ==}
+    dev: false
+
+  /fastify-raw-body@4.3.0:
+    resolution: {integrity: sha512-F4o8ZIMVx4YoxGfwrZys6wyjl40gF3Yv6AWWRy62ozFAyZBSS831/uyyCAqKYw3tR73g180ryG98yih6To1PUQ==}
+    engines: {node: '>= 10'}
+    dependencies:
+      fastify-plugin: 4.5.1
+      raw-body: 2.5.2
+      secure-json-parse: 2.7.0
     dev: false
 
   /fastify@4.26.0:

@@ -37,6 +37,7 @@
     "axios": "^1.6.7",
     "disposable-email-domains": "^1.0.62",
     "fastify": "^4.26.0",
+    "fastify-raw-body": "^4.3.0",
     "html-to-text": "^9.0.5",
     "lexorank": "^1.0.5",
     "marked": "^12.0.0",

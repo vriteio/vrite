@@ -90,7 +90,11 @@ const createClient = (config: ClientConfig): Client => {
       const source = new PolyfilledEventSource(
         `${getConfig().baseURL}/search/ask?query=${encodeURIComponent(input.query)}`,
         {
-          headers: { Authorization: `Bearer ${getConfig().token}` }
+          headers: {
+            "Authorization": `Bearer ${getConfig().token}`,
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          }
         }
       );
 
