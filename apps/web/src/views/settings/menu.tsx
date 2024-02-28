@@ -1,6 +1,6 @@
 import clsx from "clsx";
 import { Component, For } from "solid-js";
-import { Button, Card, Icon } from "#components/primitives";
+import { Card, Icon } from "#components/primitives";
 
 interface MenuItem {
   icon: string;

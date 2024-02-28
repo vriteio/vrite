@@ -58,7 +58,7 @@ const BillingSection: SettingsSectionComponent = (props) => {
 
   return (
     <div class="flex justify-center flex-col items-start w-full gap-5">
-      <TitledCard icon={mdiInformation} label={subscription()?.plan ? "Active Plan" : "Subscribe"}>
+      <TitledCard icon={mdiInformation} label={subscription()?.plan ? "Active plan" : "Subscribe"}>
         <Button
           size="large"
           class="m-0 w-full flex items-center rounded-xl min-h-11 flex-col items-start"

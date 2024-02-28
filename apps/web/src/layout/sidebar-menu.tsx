@@ -177,8 +177,17 @@ const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
         label: "Extensions",
         inMenu: true,
         active: () => storage().sidePanelView === "extensions",
-        onClick: async () => {
+        onClick: () => {
           setSidePanelView("extensions");
+        }
+      },
+      {
+        icon: mdiHelpCircle,
+        label: "Help",
+        inMenu: true,
+        active: () => storage().sidePanelView === "default",
+        onClick: () => {
+          setSidePanelView("default");
         }
       }
     ].filter((value) => value !== false) as Array<MenuItem | null>;
@@ -195,20 +204,6 @@ const ProfileMenu: Component<{ close(): void }> = (props) => {
         <Heading level={2} class="flex-1">
           Profile
         </Heading>
-        <IconButton
-          path={mdiHelpCircle}
-          class="m-0"
-          text="soft"
-          variant="text"
-          onClick={() => {
-            props.close();
-            setStorage((storage) => ({
-              ...storage,
-              sidePanelWidth: storage.sidePanelWidth || 375,
-              sidePanelView: "default"
-            }));
-          }}
-        />
       </div>
       <Card class="flex gap-3 justify-start items-center m-0" color="contrast">
         <Show

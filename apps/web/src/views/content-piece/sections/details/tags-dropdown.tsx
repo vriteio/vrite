@@ -166,7 +166,7 @@ const TagsDropdown: Component<TagsDropdownProps> = (props) => {
               }}
             />
             <Show when={(tags()?.length || 0) > 0}>
-              <Tooltip text="Create tag" side="left" class="-ml-1">
+              <Tooltip text="Create tag" side="left" fixed class="-ml-1">
                 <IconButton
                   path={mdiPlus}
                   color="primary"
