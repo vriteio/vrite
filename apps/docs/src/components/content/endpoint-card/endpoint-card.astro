@@ -15,6 +15,8 @@ import type { HttpMethods } from "oas/dist/types.d.cts";
 interface Props {
   method: string;
   endpoint: string;
+  curl?: boolean;
+  headers?: Record<string, string>;
 }
 
 const httpMethodClasses = {
@@ -84,7 +86,8 @@ const curl = curlString(
         : {
             "Content-Type": "application/json"
           }),
-      Accept: "application/json"
+      Accept: "application/json",
+      ...(Astro.props.headers || {})
     },
     ...(body === "{}"
       ? {}
@@ -204,8 +207,14 @@ const code = `${curl}\n`;
     </div>
     <div class="code-block-contrast flex-1 @2xl:max-w-[calc(50%-3rem)]">
       <div class="sticky top-24 not-prose gap-4 flex flex-col">
-        <RequestExamples requestExamples={requestExamples} client:visible>
-          <div class="hidden [&.astro-code]:max-h-80 ![&>.astro-code]:pt-0" data-example="curl">
+        <RequestExamples curl={Astro.props.curl} requestExamples={requestExamples} client:load>
+          <div
+            class={clsx(
+              "hidden [&.astro-code]:max-h-80 ![&>.astro-code]:pt-0",
+              Astro.props.curl === false && "!hidden"
+            )}
+            data-example="curl"
+          >
             <Code code={code} lang="shell" />
           </div>
           {

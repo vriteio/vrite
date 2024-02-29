@@ -83,6 +83,82 @@
       ]
     }
   ],
-  "api": [],
+  "api": [
+    {
+      "label": "Getting Started",
+      "menu": [
+        {
+          "label": "Authentication",
+          "link": "/api/authentication"
+        },
+        {
+          "label": "Swagger",
+          "link": "https://generator.swagger.io/?url=https://api.vrite.io/swagger.json"
+        }
+      ]
+    },
+    {
+      "label": "Endpoints",
+      "menu": [
+        {
+          "label": "Content Groups",
+          "link": "/api/content-groups"
+        },
+        {
+          "label": "Content Pieces",
+          "link": "/api/content-pieces"
+        },
+        {
+          "label": "Tags",
+          "link": "/api/tags"
+        },
+        {
+          "label": "Profile",
+          "link": "/api/profile"
+        },
+        {
+          "label": "Search",
+          "link": "/api/search"
+        },
+        {
+          "label": "Variants",
+          "link": "/api/variants"
+        },
+        {
+          "label": "Webhooks",
+          "link": "/api/webhooks"
+        },
+        {
+          "label": "User Settings",
+          "link": "/api/user-settings"
+        },
+        {
+          "label": "Roles",
+          "link": "/api/roles"
+        },
+        {
+          "label": "Workspace",
+          "link": "/api/workspace"
+        },
+        {
+          "label": "Workspace Memberships",
+          "link": "/api/workspace-memberships"
+        },
+        {
+          "label": "Workspace Settings",
+          "link": "/api/workspace-settings"
+        },
+
+        {
+          "label": "Transformers",
+          "link": "/api/transformers"
+        },
+        {
+          "label": "Extension",
+          "link": "/api/extension"
+        }
+      ]
+    }
+  ],
   "recipes": []
 }

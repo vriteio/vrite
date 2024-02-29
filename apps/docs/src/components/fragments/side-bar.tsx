@@ -85,7 +85,10 @@ const SideBarNestedMenu: Component<SideBarNestedMenuProps> = (props) => {
                 }
 
                 const active = (): boolean => {
-                  return Boolean(item.link && props.currentPath.includes(item.link));
+                  const currentPath = props.currentPath.replace(/(^\/)|(\/$)/g, "");
+                  const link = (item.link || "").replace(/(^\/)|(\/$)/g, "");
+
+                  return Boolean(item.link && currentPath === link);
                 };
 
                 return (
@@ -95,6 +98,7 @@ const SideBarNestedMenu: Component<SideBarNestedMenuProps> = (props) => {
                     text={active() ? "primary" : "soft"}
                     color={active() ? "primary" : "base"}
                     link={item.link}
+                    target={item.link?.startsWith("http") ? "_blank" : "_self"}
                   >
                     {item.label}
                   </Button>
