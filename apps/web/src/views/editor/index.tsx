@@ -61,7 +61,7 @@ const EditorView: Component = () => {
               storage().zenMode ? "items-center" : "items-start"
             )}
           >
-            <Show when={workspaceSettings()}>
+            <Show when={workspaceSettings()} keyed>
               <Show when={contentPieces[activeContentPieceId() || ""]} keyed>
                 <Editor
                   editedContentPiece={contentPieces[activeContentPieceId() || ""]!}
