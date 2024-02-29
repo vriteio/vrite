@@ -6,7 +6,7 @@ import { Component, Show } from "solid-js";
 import { mdiFolder } from "@mdi/js";
 import { createRef } from "#lib/utils";
 import { Icon, Sortable } from "#components/primitives";
-import { ContentLevel, hasPermission, useClient, useContentData } from "#context";
+import { App, ContentLevel, hasPermission, useClient, useContentData } from "#context";
 import { ScrollShadow } from "#components/fragments";
 
 const Table: Component = () => {
@@ -88,10 +88,14 @@ const Table: Component = () => {
             }}
           >
             {(contentGroupId, index, dataProps) => {
-              if (contentGroupId && contentGroups[contentGroupId]) {
-                return (
+              const contentGroup = (): App.ContentGroup | null => {
+                return contentGroups[contentGroupId || ""] || null;
+              };
+
+              return (
+                <Show when={contentGroup()}>
                   <ContentPieceGroup
-                    contentGroup={contentGroups[contentGroupId]!}
+                    contentGroup={contentGroup()!}
                     dataProps={dataProps()}
                     index={index()}
                     remove={(id) => {
@@ -100,8 +104,8 @@ const Table: Component = () => {
                       }
                     }}
                   />
-                );
-              }
+                </Show>
+              );
             }}
           </Sortable>
         </div>

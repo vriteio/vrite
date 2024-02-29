@@ -415,15 +415,21 @@ const ContentPieceGroup: Component<ContentPieceGroupProps> = (props) => {
           }}
         >
           {(contentPieceId, index, dataProps) => {
-            if (contentPieces[contentPieceId]) {
-              return (
+            const contentPiece = (): App.ExtendedContentPieceWithAdditionalData<
+              "coverWidth" | "order"
+            > | null => {
+              return contentPieces[contentPieceId] || null;
+            };
+
+            return (
+              <Show when={contentPiece()}>
                 <ContentPieceRow
-                  contentPiece={contentPieces[contentPieceId]!}
+                  contentPiece={contentPiece()!}
                   dataProps={dataProps()}
                   index={index()}
                 />
-              );
-            }
+              </Show>
+            );
           }}
         </Sortable>
       </div>
