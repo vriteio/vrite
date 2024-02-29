@@ -20,12 +20,12 @@ const sectionMenuItems = [
   {
     label: "Product Documentation",
     icon: mdiBookOpenBlankVariant,
-    link: "https://docs.vrite.io"
+    link: "https://docs.vrite.io/getting-started/introduction/"
   },
   {
-    label: "API Documentation",
+    label: "API Reference",
     icon: apiIcon,
-    link: "https://generator.swagger.io/?url=https://api.vrite.io/swagger.json"
+    link: "https://docs.vrite.io/api/authentication/"
   },
   { label: "Star on GitHub", icon: mdiGithub, link: "https://github.com/vriteio/vrite" },
   { label: "Join Discord", icon: discordIcon, link: "https://discord.gg/yYqDWyKnqE" }
