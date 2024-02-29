@@ -90,10 +90,6 @@
         {
           "label": "Authentication",
           "link": "/api/authentication"
-        },
-        {
-          "label": "Swagger",
-          "link": "https://generator.swagger.io/?url=https://api.vrite.io/swagger.json"
         }
       ]
     },
@@ -156,6 +152,15 @@
         {
           "label": "Extension",
           "link": "/api/extension"
+        }
+      ]
+    },
+    {
+      "label": "Resources",
+      "menu": [
+        {
+          "label": "Swagger",
+          "link": "https://generator.swagger.io/?url=https://api.vrite.io/swagger.json"
         }
       ]
     }
