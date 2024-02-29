@@ -205,6 +205,13 @@ declare module 'astro:content' {
   collection: "api";
   data: InferEntrySchema<"api">
 } & { render(): Render[".mdx"] };
+"extension.mdx": {
+	id: "extension.mdx";
+  slug: "api/extension";
+  body: string;
+  collection: "api";
+  data: InferEntrySchema<"api">
+} & { render(): Render[".mdx"] };
 "profile.mdx": {
 	id: "profile.mdx";
   slug: "api/profile";
@@ -212,9 +219,72 @@ declare module 'astro:content' {
   collection: "api";
   data: InferEntrySchema<"api">
 } & { render(): Render[".mdx"] };
+"roles.mdx": {
+	id: "roles.mdx";
+  slug: "api/roles";
+  body: string;
+  collection: "api";
+  data: InferEntrySchema<"api">
+} & { render(): Render[".mdx"] };
+"search.mdx": {
+	id: "search.mdx";
+  slug: "api/search";
+  body: string;
+  collection: "api";
+  data: InferEntrySchema<"api">
+} & { render(): Render[".mdx"] };
 "tags.mdx": {
 	id: "tags.mdx";
   slug: "api/tags";
+  body: string;
+  collection: "api";
+  data: InferEntrySchema<"api">
+} & { render(): Render[".mdx"] };
+"transformers.mdx": {
+	id: "transformers.mdx";
+  slug: "api/transformers";
+  body: string;
+  collection: "api";
+  data: InferEntrySchema<"api">
+} & { render(): Render[".mdx"] };
+"user-settings.mdx": {
+	id: "user-settings.mdx";
+  slug: "api/user-settings";
+  body: string;
+  collection: "api";
+  data: InferEntrySchema<"api">
+} & { render(): Render[".mdx"] };
+"variants.mdx": {
+	id: "variants.mdx";
+  slug: "api/variants";
+  body: string;
+  collection: "api";
+  data: InferEntrySchema<"api">
+} & { render(): Render[".mdx"] };
+"webhooks.mdx": {
+	id: "webhooks.mdx";
+  slug: "api/webhooks";
+  body: string;
+  collection: "api";
+  data: InferEntrySchema<"api">
+} & { render(): Render[".mdx"] };
+"workspace-memberships.mdx": {
+	id: "workspace-memberships.mdx";
+  slug: "api/workspace-memberships";
+  body: string;
+  collection: "api";
+  data: InferEntrySchema<"api">
+} & { render(): Render[".mdx"] };
+"workspace-settings.mdx": {
+	id: "workspace-settings.mdx";
+  slug: "api/workspace-settings";
+  body: string;
+  collection: "api";
+  data: InferEntrySchema<"api">
+} & { render(): Render[".mdx"] };
+"workspace.mdx": {
+	id: "workspace.mdx";
+  slug: "api/workspace";
   body: string;
   collection: "api";
   data: InferEntrySchema<"api">
