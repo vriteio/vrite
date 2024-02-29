@@ -306,10 +306,15 @@ const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
         state().editor.commands.focus();
       }
     });
-    codeEditor.addCommand(props.monaco.KeyMod.CtrlCmd | props.monaco.KeyCode.KeyS, async () => {
-      await format();
-      state().editor.commands.setNodeSelection(state().getPos());
-      state().editor.commands.focus();
+    codeEditor.addAction({
+      id: "prettier-format",
+      label: "Format with Prettier",
+      keybindings: [props.monaco.KeyMod.CtrlCmd | props.monaco.KeyCode.KeyS],
+      run: async () => {
+        await format();
+        state().editor.commands.setNodeSelection(state().getPos());
+        state().editor.commands.focus();
+      }
     });
     createEffect(() => {
       props.monaco.editor.setTheme(codeEditorTheme());

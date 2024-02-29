@@ -90,8 +90,13 @@ const MiniCodeEditor: Component<MiniCodeEditorProps> = (props) => {
       codeEditor.setModel(
         props.monaco.editor.createModel(props.code || "", props.language || "json", getUri())
       );
-      codeEditor.addCommand(props.monaco.KeyMod.CtrlCmd | props.monaco.KeyCode.KeyS, async () => {
-        props.onSave?.(codeEditor.getValue());
+      codeEditor.addAction({
+        id: "save",
+        label: "Save",
+        keybindings: [props.monaco.KeyMod.CtrlCmd | props.monaco.KeyCode.KeyS],
+        run: () => {
+          props.onSave?.(codeEditor.getValue());
+        }
       });
 
       const messageContribution = codeEditor.getContribution("editor.contrib.messageController");

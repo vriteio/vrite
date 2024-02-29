@@ -65,7 +65,10 @@ const appService = createPlugin(async (fastify) => {
     try {
       const auth = await processAuth({ db: fastify.mongo.db!, fastify, req, res });
       const data = await req.file();
-      const key = `${auth?.data.workspaceId || "vrite-editor"}/${nanoid()}.${
+
+      if (!auth) throw errors.unauthorized();
+
+      const key = `${auth.data.workspaceId}/${nanoid()}.${
         mime.extension(data?.mimetype || "") || ""
       }`;
       const buffer = await data?.toBuffer();
