@@ -1,0 +1,77 @@
+---
+slug: "api/extension"
+title: "Extension"
+---
+
+**Vrite Extensions** have access to dedicated API endpoints, meant primarly for building backends for your custom extensions.
+
+<Info>
+  To use any of the following endpoints, make sure to provide a `x-vrite-extension-id` header or `extensionId` when creating an API client.
+  
+  Vrite provides the extension ID to you via the `x-vrite-extension-id` header in a webhook callback, and you can always access it in the extension’s frontend for use with custom requests.
+</Info>
+
+## Retrieve Extension Details
+
+Retrieves details of the extension — including its current configuration and custom access token.
+
+<EndpointCard
+  method="GET"
+  endpoint="/extension"
+  headers={{
+    "x-vrite-extension-id": "c7fa11eeee2a85f5c9293561"
+  }}
+>
+  <ResponseExample>
+    ```json
+    {
+      "id": "1bcb56b03f4d6f8371bf7712",
+      "name": "string",
+      "url": "string",
+      "config": {
+        "additionalProp1": "string",
+        "additionalProp2": "string",
+        "additionalProp3": "string"
+      },
+      "token": "string"
+    }
+    ```
+  </ResponseExample>
+  
+  <RequestExample label="JavaScript">
+    ```javascript
+    const client = createClient({
+      token: "<API_TOKEN>",
+      extensionId: "c7fa11eeee2a85f5c9293561",
+    });
+    const result = await client.extension.get();
+    ```
+  </RequestExample>
+</EndpointCard>
+
+## Update Extension-Related Content Piece Data
+
+Utility endpoint for setting custom, extension-related JSON metadata of the content piece specified by ID. The data set will be available at `[EXTENSION_NAME]` on `customData.__extensions__` property.
+
+<EndpointCard
+  method="PUT"
+  endpoint="/extension/content-piece-data"
+  headers={{
+    "x-vrite-extension-id": "c7fa11eeee2a85f5c9293561"
+  }}
+>
+  <RequestExample label="JavaScript">
+    ```javascript
+    const client = createClient({
+      token: "<API_TOKEN>",
+      extensionId: "c7fa11eeee2a85f5c9293561",
+    });
+    const result = await client.extension.updateContentPieceData({
+      contentPieceId: "2bdf5a36ff1fa059cd732fb4",
+      data: {
+        /* ... */
+      },
+    });
+    ```
+  </RequestExample>
+</EndpointCard>

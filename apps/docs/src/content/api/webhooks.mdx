@@ -1,0 +1,160 @@
+---
+slug: "api/webhooks"
+title: "Webhooks"
+---
+
+**Webhooks** allow you to integrate more deeply with Vrite and automate various tasks like publishing. They serve as customizable HTML callbacks that are triggered in response to various events, like a content piece being moved or a new member being added to the workspace. The API lets you create and manage webhooks associated with your workspace.
+
+## Retrieve Webhook
+
+Retrieves details of the webhook specified by ID.
+
+<EndpointCard method="GET" endpoint="/webhooks">
+  <ResponseExample>
+    ```json
+    {
+      "id": "1b396703e04491a752262178",
+      "url": "string",
+      "name": "string",
+      "description": "string",
+      "metadata": {
+        "contentGroupId": "4398d64edb8ac4db90de0f36"
+      },
+      "event": "contentPieceUpdated",
+      "extension": true
+    }
+    ```
+  </ResponseExample>
+  
+  <RequestExample label="JavaScript">
+    ```javascript
+    const client = createClient({
+      token: "<API_TOKEN>",
+    });
+    const result = await client.webhook.get({
+      id: "1b396703e04491a752262178"
+    });
+    ```
+  </RequestExample>
+</EndpointCard>
+
+## List Webhooks
+
+Lists existing webhooks. Supports pagination and filtering for webhooks associated with extensions.
+
+<EndpointCard method="GET" endpoint="/webhooks/list">
+  <ResponseExample>
+    ```json
+    [
+      {
+        "id": "de2fb21ad4bbb929cf73ee5a",
+        "url": "string",
+        "name": "string",
+        "description": "string",
+        "metadata": {
+          "contentGroupId": "ef69f28cc9538e5cb1580ea5"
+        },
+        "event": "contentPieceUpdated",
+        "extension": true
+      }
+    ]
+    ```
+  </ResponseExample>
+  
+  <RequestExample label="JavaScript">
+    ```javascript
+    const client = createClient({
+      token: "<API_TOKEN>"
+    });
+    const result = await client.webhooks.list({
+      // Optional
+      page: 1,
+      // Optional
+      perPage: 20,
+      // Optional
+      extensionOnly: true
+    });
+    ```
+  </RequestExample>
+</EndpointCard>
+
+## Create Webhook
+
+Creates a webhook for the specified event with provided data.
+
+<EndpointCard method="POST" endpoint="/webhooks">
+  <ResponseExample>
+    ```json
+    {
+      "id": "98ed3f1f2b861cd31f9cef16"
+    }
+    ```
+  </ResponseExample>
+  
+  <RequestExample label="JavaScript">
+    ```javascript
+    const client = createClient({
+      token: "<API_TOKEN>",
+    });
+    const result = await client.webhooks.create({
+      url: "string",
+      name: "string",
+      // Optional
+      description: "string",
+      // Optional
+      secret: "string",
+      // Optional
+      metadata: {
+        // Required for webhooks for "contentPiece*" events
+        contentGroupId: "a70a17453ad260deb43e5192",
+      },
+      event: "contentPieceUpdated",
+    });
+    ```
+  </RequestExample>
+</EndpointCard>
+
+## Update Webhook
+
+Updates the webhook (including the event it’s registered for) with the provided data.
+
+<Info>
+  All properties except the _secret_ of the webhook can be updated.
+</Info>
+
+<EndpointCard method="PUT" endpoint="/webhooks">
+  <RequestExample label="JavaScript">
+    ```javascript
+    const client = createClient({
+      token: "<API_TOKEN>",
+    });
+    await client.webhooks.update({
+      id: "2294b5fd7eb27ec7c61675e1",
+      url: "string",
+      name: "string",
+      description: "string",
+      metadata: {
+        contentGroupId: "636e825f62661160fb170413",
+      },
+      event: "contentPieceUpdated",
+    });
+    ```
+  </RequestExample>
+</EndpointCard>
+
+## Delete Webhook
+
+Deletes the webhook specified by ID.
+
+<EndpointCard method="DELETE" endpoint="/webhook">
+  <RequestExample label="JavaScript">
+    ```javascript
+    const client = createClient({
+      token: "<API_TOKEN>",
+    });
+    await client.webhooks.delete({
+      id: "2294b5fd7eb27ec7c61675e1",
+    });
+    ```
+  </RequestExample>
+</EndpointCard>

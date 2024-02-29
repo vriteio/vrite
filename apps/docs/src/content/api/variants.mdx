@@ -1,0 +1,102 @@
+---
+slug: "api/variants"
+title: "Variants"
+---
+
+**Variants** help you manage things like internalization or A/B testing, i.e. when there are multiple versions of basically the same content piece involved.
+
+## List Variants
+
+Lists the details of all registered variants.
+
+<EndpointCard method="GET" endpoint="/variants/list">
+  <ResponseExample>
+    ```json
+    [
+      {
+        "id": "739628be6176d13031e46ca6",
+        "label": "string",
+        "description": "string",
+        "key": "string"
+      }
+    ]
+    ```
+  </ResponseExample>
+  
+  <RequestExample label="JavaScript">
+    ```javascript
+    const client = createClient({
+      token: "<API_TOKEN>",
+    });
+    const result = await client.variants.list();
+    ```
+  </RequestExample>
+</EndpointCard>
+
+## Create Variant
+
+Creates a new variant with a specified label, key, and optional description.
+
+<EndpointCard method="POST" endpoint="/variants">
+  <ResponseExample>
+    ```json
+    {
+      "id": "911517baba7e3e30320c231b"
+    }
+    ```
+  </ResponseExample>
+  
+  <RequestExample label="JavaScript">
+    ```javascript
+    const client = createClient({
+      token: "<API_TOKEN>",
+    });
+    const result = await client.variants.create({
+      label: "string",
+      key: "string",
+      // Optional
+      description: "string",
+    });
+    ```
+  </RequestExample>
+</EndpointCard>
+
+## Update Variant
+
+Updates the label, key, and description of the variant matched by ID, using the specified data.
+
+<EndpointCard method="PUT" endpoint="/variants">
+  <RequestExample label="JavaScript">
+    ```javascript
+    const client = createClient({
+      token: "<API_TOKEN>",
+    });
+    await client.variants.update({
+      id: "50a84b1e854474a50eb34c53",
+      // Optional
+      label: "string",
+      // Optional
+      description: "string",
+      // Optional
+      key: "string",
+    });
+    ```
+  </RequestExample>
+</EndpointCard>
+
+## Delete Variant
+
+Deletes the variant specified by ID, removing all associated content pieces variants.
+
+<EndpointCard method="DELETE" endpoint="/variants">
+  <RequestExample label="JavaScript">
+    ```javascript
+    const client = createClient({
+      token: "<API_TOKEN>",
+    });
+    await client.variants.delete({
+      id: "50a84b1e854474a50eb34c53",
+    });
+    ```
+  </RequestExample>
+</EndpointCard>

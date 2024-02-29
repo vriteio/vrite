@@ -122,7 +122,7 @@ List content pieces assigned to the content group specified by ID. Supports pagi
   <RequestExample label="JavaScript">
     ```javascript
     const client = createClient({
-      token: "<API_TOKEN>"
+      token: "<API_TOKEN>",
     });
     const result = await client.contentPieces.list({
       contentGroupId: "283cb91a14c716723edeb5f8",
@@ -131,7 +131,11 @@ List content pieces assigned to the content group specified by ID. Supports pagi
       // Optional
       slug: "blog/post",
       // Optional
-      variant: "bf75ef612ccfdccb6e2d1fce"
+      variant: "bf75ef612ccfdccb6e2d1fce",
+      // Optional
+      page: 1,
+      // Optional
+      perPage: 20,
     });
     ```
   </RequestExample>

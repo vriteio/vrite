@@ -1,0 +1,141 @@
+---
+slug: "api/roles"
+title: "Roles"
+---
+
+**Roles** as the core part of Vrite’s _Role-Based Access Control_ (RBAC) model, help you manage users and their permissions in a workspace. With the API you can create and manage available roles.
+
+## Retrieve Role
+
+Retrieves details of the role specified by ID.
+
+<EndpointCard method="GET" endpoint="/roles">
+  <ResponseExample>
+    ```json
+    {
+      "id": "62c23534d77c31b2e067f5dc",
+      "name": "string",
+      "description": "string",
+      "permissions": [
+        "editContent"
+      ],
+      "baseType": "viewer"
+    }
+    ```
+  </ResponseExample>
+  
+  <RequestExample label="JavaScript">
+    ```javascript
+    const client = createClient({
+      token: "<API_TOKEN>",
+    });
+    const result = await client.roles.get({
+      id: "62c23534d77c31b2e067f5dc",
+    });
+    ```
+  </RequestExample>
+</EndpointCard>
+
+## List Roles
+
+Lists existing roles. Supports pagination.
+
+<EndpointCard method="GET" endpoint="/roles/list">
+  <ResponseExample>
+    ```json
+    [
+      {
+        "id": "ea8522a23602d1511c6aa164",
+        "name": "string",
+        "description": "string",
+        "permissions": [
+          "editContent"
+        ],
+        "baseType": "viewer"
+      }
+    ]
+    ```
+  </ResponseExample>
+  
+  <RequestExample label="JavaScript">
+    ```javascript
+    const client = createClient({
+      token: "<API_TOKEN>"
+    });
+    const result = await client.roles.list({
+      // Optional
+      page: 1,
+      // Optional
+      perPage: 20,
+    });
+    ```
+  </RequestExample>
+</EndpointCard>
+
+## Create Role
+
+Creates a role with the specified name, description, and permissions set.
+
+<EndpointCard method="POST" endpoint="/roles">
+  <ResponseExample>
+    ```json
+    {
+      "id": "3bbab29594c80288094e35c0"
+    }
+    ```
+  </ResponseExample>
+  
+  <RequestExample label="JavaScript">
+    ```javascript
+    const client = createClient({
+      token: "<API_TOKEN>",
+    });
+    const result = await client.roles.create({
+      name: "string",
+      permissions: ["editContent"],
+      // Optional
+      description: "string",
+    });
+    ```
+  </RequestExample>
+</EndpointCard>
+
+## Update Role
+
+Updates the name, description, and permissions of the role matched by ID, using the provided data.
+
+<EndpointCard method="PUT" endpoint="/roles">
+  <RequestExample label="JavaScript">
+    ```javascript
+    const client = createClient({
+      token: "<API_TOKEN>",
+    });
+    await client.roles.update({
+      id: "b7ab40990fbc00927aef8c8f",
+      // Optional
+      name: "string",
+      // Optional
+      description: "string",
+      // Optional
+      permissions: ["editContent"],
+    });
+    ```
+  </RequestExample>
+</EndpointCard>
+
+## Delete Role
+
+Deletes the role specified by ID. Any member of the workspace that was assigned this role will be converted to the base _Viewer_ role.
+
+<EndpointCard method="DELETE" endpoint="/roles">
+  <RequestExample label="JavaScript">
+    ```javascript
+    const client = createClient({
+      token: "<API_TOKEN>",
+    });
+    await client.roles.delete({
+      id: "b7ab40990fbc00927aef8c8f",
+    });
+    ```
+  </RequestExample>
+</EndpointCard>

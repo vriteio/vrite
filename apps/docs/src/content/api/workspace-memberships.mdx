@@ -1,0 +1,160 @@
+---
+slug: "api/workspace-memberships"
+title: "Workspace Memberships"
+---
+
+In Vrite, each user can be a member of multiple workspaces. Such relationships are called **workspace memberships**. You can use the API to manage memberships and use them to retrieve relational data, like all workspaces the user belongs to.
+
+## List Memberships for the Workspace
+
+Lists the details of memberships in the workspace, including limited information on associated users’ profiles. Supports pagination.
+
+<EndpointCard
+  method="GET"
+  endpoint="/workspace-memberships/list-members"
+>
+  <ResponseExample>
+    ```json
+    [
+      {
+        "id": "b895ab04036fd70b3d8c4598",
+        "userId": "0777762a619a456a4c0e796c",
+        "roleId": "9011d2bb12acb7cda4bb7218",
+        "email": "user@example.com",
+        "name": "string",
+        "pendingInvite": true,
+        "profile": {
+          "fullName": "string",
+          "username": "string",
+          "avatar": "string"
+        }
+      }
+    ]
+    ```
+  </ResponseExample>
+  
+  <RequestExample label="JavaScript">
+    ```javascript
+    const client = createClient({
+      token: "<API_TOKEN>"
+    });
+    const result = await client.workspaceMemberships.listMembers({
+      // Optional
+      page: 1,
+      // Optional
+      perPage: 20,
+    });
+    ```
+  </RequestExample>
+</EndpointCard>
+
+## List Workspaces for the User
+
+Lists the details of workspaces the user associated with the token belongs to, including limited information on the workspaces and roles assigned to the user. Supports pagination.
+
+<EndpointCard
+  method="GET"
+  endpoint="/workspace-memberships/list-workspaces"
+>
+  <ResponseExample>
+    ```json
+    [
+      {
+        "id": "78040f3aed26dcf292f8927c",
+        "workspace": {
+          "id": "0687f2a972f2ce9194879649",
+          "name": "string",
+          "description": "string",
+          "logo": "string",
+          "customerId": "string",
+          "subscriptionStatus": "string",
+          "subscriptionPlan": "string",
+          "subscriptionData": "string",
+          "subscriptionExpiresAt": "string"
+        },
+        "role": {
+          "name": "string",
+          "id": "03777db4eaab4f91df6c615a"
+        }
+      }
+    ]
+    ```
+  </ResponseExample>
+  
+  <RequestExample label="JavaScript">
+    ```javascript
+    const client = createClient({
+      token: "<API_TOKEN>"
+    });
+    const result = await client.workspaceMemberships.listWorkspaces({
+      // Optional
+      page: 1,
+      // Optional
+      perPage: 20,
+    });
+    ```
+  </RequestExample>
+</EndpointCard>
+
+## Invite User to Workspace
+
+Invites a new user to the workspace, using the provided data to compose and send an email invite.
+
+<EndpointCard
+  method="POST"
+  endpoint="/workspace-memberships"
+>
+  <RequestExample label="JavaScript">
+    ```javascript
+    const client = createClient({
+      token: "<API_TOKEN>",
+    });
+    await client.workspaceMemberships.create({
+      email: "user@example.com",
+      name: "string",
+      roleId: "8ba44cc614a9750ea4df6ba2",
+    });
+    ```
+  </RequestExample>
+</EndpointCard>
+
+## Update the Role of the Membership
+
+Updates the role assigned to the membership (user) specified by ID.
+
+<EndpointCard
+  method="PUT"
+  endpoint="/workspace-memberships"
+>
+  <RequestExample label="JavaScript">
+    ```javascript
+    const client = createClient({
+      token: "<API_TOKEN>",
+    });
+    await client.workspaceMemberships.update({
+      "id": "609baaeb641c2acd5318f7fb",
+      "roleId": "9e4169ffd0a0a99ae4751569"
+    });
+    ```
+  </RequestExample>
+</EndpointCard>
+
+## Delete Member from the Workspace
+
+Deletes the membership (user) from the workspace.
+
+<EndpointCard
+  method="DELETE"
+  endpoint="/workspace-memberships"
+>
+  <RequestExample label="JavaScript">
+    ```javascript
+    const client = createClient({
+      token: "<API_TOKEN>",
+    });
+    await client.workspaceMemberships.delete({
+      id: "b7ab40990fbc00927aef8c8f",
+    });
+    ```
+  </RequestExample>
+</EndpointCard>

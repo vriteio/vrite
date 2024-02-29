@@ -1,0 +1,32 @@
+---
+slug: "api/workspace"
+title: "Workspace"
+---
+
+In Vrite, each **workspace** has details like name or logo URL associated directly with them, for easier identification. You can change them in the [workspace settings](https://docs.vrite.io/usage-guide/configuring-vrite/#managing-workspace) panel.
+
+## Retrieve Workspace Details
+
+Retrieves details of the workspace associated with the token.
+
+<EndpointCard method="GET" endpoint="/workspace">
+  <ResponseExample>
+    ```json
+    {
+      "id": "db8f177949c42b24896d4db4",
+      "name": "string",
+      "logo": "string",
+      "description": "string"
+    }
+    ```
+  </ResponseExample>
+  
+  <RequestExample label="JavaScript">
+    ```javascript
+    const client = createClient({
+      token: "<API_TOKEN>"
+    });
+    const result = await client.workspace.get();
+    ```
+  </RequestExample>
+</EndpointCard>

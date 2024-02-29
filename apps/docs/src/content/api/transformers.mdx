@@ -1,0 +1,82 @@
+---
+slug: "api/transformers"
+title: "Transformers"
+---
+
+(**Remote**)** Transformers** are meant specifically for Git sync integration. They allow you to use remote endpoints to process the content in a custom way, in and out of Vrite. This way Vrite can support all kinds of content formats, including Markdown, MDX, Markdoc, etc. The API allows you to retrieve and manage transformers.
+
+## List Transformers
+
+Lists the details of all registered transformers.
+
+<EndpointCard method="GET" endpoint="/transformers/list">
+  <ResponseExample>
+    ```json
+    [
+      {
+        "id": "28c17701360e74c880edd4f5",
+        "label": "string",
+        "input": "string",
+        "output": "string",
+        "maxBatchSize": 1000,
+        "inUse": true,
+        "extension": true
+      }
+    ]
+    ```
+  </ResponseExample>
+  
+  <RequestExample label="JavaScript">
+    ```javascript
+    const client = createClient({
+      token: "<API_TOKEN>",
+    });
+    const result = await client.transformers.list();
+    ```
+  </RequestExample>
+</EndpointCard>
+
+## Create Transformer
+
+Creates a new transformer with the specified input and output transformer endpoints, label, and max batch size.
+
+<EndpointCard method="POST" endpoint="/transformers">
+  <ResponseExample>
+    ```json
+    {
+      "id": "91d43435abf71aa34d3ab602"
+    }
+    ```
+  </ResponseExample>
+  
+  <RequestExample label="JavaScript">
+    ```javascript
+    const client = createClient({
+      token: "<API_TOKEN>",
+    });
+    const result = await client.transformers.create({
+      label: "string",
+      input: "string",
+      output: "string",
+      maxBatchSize: 1000,
+    });
+    ```
+  </RequestExample>
+</EndpointCard>
+
+## Delete Transformer
+
+Deletes the transformer specified by ID. If the transformer is _in use_ (configured in the current Git sync configuration) it throws an error.
+
+<EndpointCard method="DELETE" endpoint="/transformers">
+  <RequestExample label="JavaScript">
+    ```javascript
+    const client = createClient({
+      token: "<API_TOKEN>",
+    });
+    await client.transformers.delete({
+      id: "50a84b1e854474a50eb34c53",
+    });
+    ```
+  </RequestExample>
+</EndpointCard>

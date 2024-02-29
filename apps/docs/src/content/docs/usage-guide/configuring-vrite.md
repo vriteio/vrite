@@ -1,6 +1,6 @@
 ---
-title: "Configuring Vrite"
 slug: "usage-guide/configuring-vrite"
+title: "Configuring Vrite"
 ---
 
 Everything related to configuring Vrite can be done from the settings side panel. From managing API tokens to customizing the editing experience — all can be managed in the settings.
