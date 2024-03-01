@@ -11,7 +11,8 @@ const inputSchema = z.object({
   userId: z.string().describe("ID of the user to verify the email for")
 });
 const outputSchema = z.object({
-  redirect: z.string().describe("Redirect URL for after the email verification")
+  redirect: z.string().describe("Redirect URL for after the email verification"),
+  contentPieceId: z.string().optional().describe("ID of the content piece to redirect to")
 });
 const handler = async (
   ctx: Context,
@@ -40,7 +41,7 @@ const handler = async (
   );
 
   try {
-    const workspaceId = await createWorkspace(user, ctx.fastify, {
+    const { workspaceId, contentPieceId } = await createWorkspace(user, ctx.fastify, {
       newUser: true,
       plan: plan || undefined
     });
@@ -54,6 +55,8 @@ const handler = async (
       currentWorkspaceId: workspaceId
     });
     await createSession(ctx, `${user._id}`);
+
+    return { redirect: redirect || `/`, contentPieceId: `${contentPieceId || ""}` };
   } catch (error) {
     // eslint-disable-next-line no-console
     ctx.fastify.log.error(error);

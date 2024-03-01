@@ -10,9 +10,39 @@
       "content": [
         {
           "type": "text",
-          "text": "Welcome to Vrite Editor 🚀"
+          "text": "Welcome to "
+        },
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "link",
+              "attrs": {
+                "href": "https://vrite.io",
+                "target": "_blank",
+                "rel": "noopener noreferrer nofollow",
+                "class": null
+              }
+            }
+          ],
+          "text": "Vrite"
+        },
+        {
+          "type": "text",
+          "text": "!"
         }
       ]
+    },
+    {
+      "type": "image",
+      "attrs": {
+        "src": "https://assets.vrite.io/65017ed7b0e627e259623b8a/-R7ZANANzebSVDyqVtB_K.png",
+        "alt": "Vrite landing page",
+        "caption": null,
+        "width": "100%",
+        "aspectRatio": "1.6",
+        "uploading": null
+      }
     },
     {
       "type": "paragraph",
@@ -20,6 +50,10 @@
         "autoDir": "auto"
       },
       "content": [
+        {
+          "type": "text",
+          "text": "Vrite is an "
+        },
         {
           "type": "text",
           "marks": [
@@ -33,11 +67,55 @@
               }
             }
           ],
-          "text": "Open-source"
+          "text": "open-source"
         },
         {
           "type": "text",
-          "text": ", minimalistic WYSIWYG Markdown editor."
+          "text": ", collaborative, "
+        },
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "bold"
+            }
+          ],
+          "text": "developer content platform"
+        },
+        {
+          "type": "text",
+          "text": " for creating, managing, and deploying product documentation, knowledge bases, and technical blogs."
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "attrs": {
+        "autoDir": "auto"
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "With an extensible, collaborative editor, content management dashboard, and built-in features like semantic search, GitHub sync, and more — all accessible via "
+        },
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "link",
+              "attrs": {
+                "href": "https://docs.vrite.io/api/authentication",
+                "target": "_blank",
+                "rel": "noopener noreferrer nofollow",
+                "class": null
+              }
+            }
+          ],
+          "text": "powerful API"
+        },
+        {
+          "type": "text",
+          "text": " — Vrite aims to provide an all-in-one experience for creating, managing, and publishing all kinds of technical content."
         }
       ]
     },
@@ -50,24 +128,723 @@
       "content": [
         {
           "type": "text",
-          "text": "Features"
+          "text": "Get to Know Vrite editor"
         }
       ]
     },
     {
-      "type": "paragraph",
+      "type": "blockquote",
       "attrs": {
         "autoDir": "auto"
       },
       "content": [
         {
-          "type": "text",
-          "marks": [
+          "type": "paragraph",
+          "attrs": {
+            "autoDir": "auto"
+          },
+          "content": [
             {
-              "type": "bold"
+              "type": "text",
+              "text": "Most options can be enabled/disabled in the settings ("
+            },
+            {
+              "type": "text",
+              "marks": [
+                {
+                  "type": "italic"
+                }
+              ],
+              "text": "Settings → Editor"
+            },
+            {
+              "type": "text",
+              "text": ") to tailor your experience."
             }
-          ],
-          "text": "Integrated Monaco editor and Prettier for code snippets"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "orderedList",
+      "attrs": {
+        "autoDir": "auto",
+        "start": 1
+      },
+      "content": [
+        {
+          "type": "listItem",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "autoDir": "auto"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Various formatting options"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "bulletList",
+      "attrs": {
+        "autoDir": "auto"
+      },
+      "content": [
+        {
+          "type": "listItem",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "autoDir": "auto"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "bold"
+                    }
+                  ],
+                  "text": "Bold"
+                },
+                {
+                  "type": "text",
+                  "text": " — "
+                },
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "code"
+                    }
+                  ],
+                  "text": "**markdown**"
+                },
+                {
+                  "type": "text",
+                  "text": " — "
+                },
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "code"
+                    }
+                  ],
+                  "text": "Ctrl B"
+                },
+                {
+                  "type": "text",
+                  "text": "/"
+                },
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "code"
+                    }
+                  ],
+                  "text": "⌘B"
+                },
+                {
+                  "type": "text",
+                  "text": ";"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "listItem",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "autoDir": "auto"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "italic"
+                    }
+                  ],
+                  "text": "Italic"
+                },
+                {
+                  "type": "text",
+                  "text": " — "
+                },
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "code"
+                    }
+                  ],
+                  "text": "*markdown*"
+                },
+                {
+                  "type": "text",
+                  "text": " — "
+                },
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "code"
+                    }
+                  ],
+                  "text": "Ctrl I"
+                },
+                {
+                  "type": "text",
+                  "text": "/"
+                },
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "code"
+                    }
+                  ],
+                  "text": "⌘I"
+                },
+                {
+                  "type": "text",
+                  "text": ";"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "listItem",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "autoDir": "auto"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "strike"
+                    }
+                  ],
+                  "text": "Strikethrough"
+                },
+                {
+                  "type": "text",
+                  "text": " — "
+                },
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "code"
+                    }
+                  ],
+                  "text": "~~markdown~~"
+                },
+                {
+                  "type": "text",
+                  "text": " — "
+                },
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "code"
+                    }
+                  ],
+                  "text": "Ctrl Shift X"
+                },
+                {
+                  "type": "text",
+                  "text": "/"
+                },
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "code"
+                    }
+                  ],
+                  "text": "⌘ Shift X"
+                },
+                {
+                  "type": "text",
+                  "text": ";"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "listItem",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "autoDir": "auto"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "code"
+                    }
+                  ],
+                  "text": "Inline code"
+                },
+                {
+                  "type": "text",
+                  "text": " — "
+                },
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "code"
+                    }
+                  ],
+                  "text": "markdown"
+                },
+                {
+                  "type": "text",
+                  "text": " — "
+                },
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "code"
+                    }
+                  ],
+                  "text": "Ctrl E"
+                },
+                {
+                  "type": "text",
+                  "text": "/"
+                },
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "code"
+                    }
+                  ],
+                  "text": "⌘E"
+                },
+                {
+                  "type": "text",
+                  "text": ";"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "listItem",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "autoDir": "auto"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "highlight"
+                    }
+                  ],
+                  "text": "Highlight"
+                },
+                {
+                  "type": "text",
+                  "text": " — "
+                },
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "code"
+                    }
+                  ],
+                  "text": "==markdown=="
+                },
+                {
+                  "type": "text",
+                  "text": " — "
+                },
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "code"
+                    }
+                  ],
+                  "text": "Ctrl Shift H"
+                },
+                {
+                  "type": "text",
+                  "text": "/"
+                },
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "code"
+                    }
+                  ],
+                  "text": "⌘ Shift H"
+                },
+                {
+                  "type": "text",
+                  "text": ";"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "listItem",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "autoDir": "auto"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "underline"
+                    }
+                  ],
+                  "text": "Underline"
+                },
+                {
+                  "type": "text",
+                  "text": " — "
+                },
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "code"
+                    }
+                  ],
+                  "text": "Ctrl U"
+                },
+                {
+                  "type": "text",
+                  "text": "/"
+                },
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "code"
+                    }
+                  ],
+                  "text": "⌘U"
+                },
+                {
+                  "type": "text",
+                  "text": ";"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "listItem",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "autoDir": "auto"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "subscript"
+                    }
+                  ],
+                  "text": "Superscript"
+                },
+                {
+                  "type": "text",
+                  "text": " — "
+                },
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "code"
+                    }
+                  ],
+                  "text": "Ctrl ,"
+                },
+                {
+                  "type": "text",
+                  "text": "/"
+                },
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "code"
+                    }
+                  ],
+                  "text": "⌘,"
+                },
+                {
+                  "type": "text",
+                  "text": ";"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "listItem",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "autoDir": "auto"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "superscript"
+                    }
+                  ],
+                  "text": "Subscript"
+                },
+                {
+                  "type": "text",
+                  "text": " — "
+                },
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "code"
+                    }
+                  ],
+                  "text": "Ctrl ."
+                },
+                {
+                  "type": "text",
+                  "text": "/"
+                },
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "code"
+                    }
+                  ],
+                  "text": "⌘."
+                },
+                {
+                  "type": "text",
+                  "text": ";"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "listItem",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "autoDir": "auto"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "link",
+                      "attrs": {
+                        "href": "https://vrite.io/",
+                        "target": "_blank",
+                        "rel": "noopener noreferrer nofollow",
+                        "class": null
+                      }
+                    }
+                  ],
+                  "text": "Link"
+                },
+                {
+                  "type": "text",
+                  "text": " — "
+                },
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "code"
+                    }
+                  ],
+                  "text": "[markdown](link)"
+                },
+                {
+                  "type": "text",
+                  "text": " — you can also "
+                },
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "code"
+                    }
+                  ],
+                  "text": "Ctrl V"
+                },
+                {
+                  "type": "text",
+                  "text": "/"
+                },
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "code"
+                    }
+                  ],
+                  "text": "⌘V"
+                },
+                {
+                  "type": "text",
+                  "text": " the URL to link the selected text fragment;"
+                }
+              ]
+            },
+            {
+              "type": "blockquote",
+              "attrs": {
+                "autoDir": "auto"
+              },
+              "content": [
+                {
+                  "type": "paragraph",
+                  "attrs": {
+                    "autoDir": "auto"
+                  },
+                  "content": [
+                    {
+                      "type": "text",
+                      "marks": [
+                        {
+                          "type": "bold"
+                        }
+                      ],
+                      "text": "Tip"
+                    },
+                    {
+                      "type": "text",
+                      "text": ": Move you "
+                    },
+                    {
+                      "type": "text",
+                      "marks": [
+                        {
+                          "type": "bold"
+                        }
+                      ],
+                      "text": "inside a link"
+                    },
+                    {
+                      "type": "text",
+                      "text": " to see its preview!"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "listItem",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "autoDir": "auto"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Integrated "
+                },
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "link",
+                      "attrs": {
+                        "href": "https://microsoft.github.io/monaco-editor/",
+                        "target": "_blank",
+                        "rel": "noopener noreferrer nofollow",
+                        "class": null
+                      }
+                    }
+                  ],
+                  "text": "Monaco Editor"
+                },
+                {
+                  "type": "text",
+                  "text": " and "
+                },
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "link",
+                      "attrs": {
+                        "href": "https://prettier.io/",
+                        "target": "_blank",
+                        "rel": "noopener noreferrer nofollow",
+                        "class": null
+                      }
+                    }
+                  ],
+                  "text": "Prettier"
+                },
+                {
+                  "type": "text",
+                  "text": " for code blocks:"
+                }
+              ]
+            }
+          ]
         }
       ]
     },
@@ -81,24 +858,33 @@
       "content": [
         {
           "type": "text",
-          "text": "console.log(\"Hello World!\");"
+          "text": "const sayHello = () => {\n  console.log(\"Hello World!\");\n};\n\nsayHello();"
         }
       ]
     },
     {
-      "type": "paragraph",
+      "type": "orderedList",
       "attrs": {
-        "autoDir": "auto"
+        "autoDir": "auto",
+        "start": 3
       },
       "content": [
         {
-          "type": "text",
-          "marks": [
+          "type": "listItem",
+          "content": [
             {
-              "type": "bold"
+              "type": "paragraph",
+              "attrs": {
+                "autoDir": "auto"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Tables"
+                }
+              ]
             }
-          ],
-          "text": "Tables! 🎉"
+          ]
         }
       ]
     },
@@ -392,99 +1178,275 @@
       ]
     },
     {
-      "type": "paragraph",
+      "type": "orderedList",
       "attrs": {
-        "autoDir": "auto"
+        "autoDir": "auto",
+        "start": 3
       },
       "content": [
         {
-          "type": "text",
-          "marks": [
+          "type": "listItem",
+          "content": [
             {
-              "type": "bold"
+              "type": "paragraph",
+              "attrs": {
+                "autoDir": "auto"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Images"
+                }
+              ]
             }
-          ],
-          "text": "Embeds 🎥"
+          ]
         }
       ]
     },
     {
-      "type": "embed",
+      "type": "image",
       "attrs": {
-        "embed": "youtube",
-        "input": "https://www.youtube.com/embed/dQw4w9WgXcQ",
-        "src": "https://www.youtube.com/embed/dQw4w9WgXcQ"
+        "src": "https://assets.vrite.io/65017ed7b0e627e259623b8a/-R7ZANANzebSVDyqVtB_K.png",
+        "alt": "Vrite landing page",
+        "caption": null,
+        "width": "100%",
+        "aspectRatio": "1.6",
+        "uploading": null
       }
     },
     {
-      "type": "paragraph",
+      "type": "orderedList",
       "attrs": {
-        "autoDir": "auto"
+        "autoDir": null,
+        "start": 4
       },
       "content": [
         {
-          "type": "text",
-          "marks": [
+          "type": "listItem",
+          "content": [
             {
-              "type": "bold"
+              "type": "paragraph",
+              "attrs": {
+                "autoDir": "auto"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Custom elements"
+                }
+              ]
             }
-          ],
-          "text": "Zen mode"
-        },
-        {
-          "type": "text",
-          "text": ", "
-        },
-        {
-          "type": "text",
-          "marks": [
-            {
-              "type": "bold"
-            }
-          ],
-          "text": "Markdown/HTML export"
-        },
-        {
-          "type": "text",
-          "text": ", "
-        },
-        {
-          "type": "text",
-          "marks": [
-            {
-              "type": "bold"
-            }
-          ],
-          "text": "Stats"
+          ]
         }
       ]
     },
     {
-      "type": "paragraph",
+      "type": "element",
       "attrs": {
-        "autoDir": "auto"
+        "props": {
+          "myProp": 1
+        },
+        "type": "Element"
       },
       "content": [
         {
-          "type": "text",
-          "text": "Check out the top-right corner!"
+          "type": "paragraph",
+          "attrs": {
+            "autoDir": "auto"
+          },
+          "content": [
+            {
+              "type": "text",
+              "text": "Hello World from inside the "
+            },
+            {
+              "type": "text",
+              "marks": [
+                {
+                  "type": "code"
+                }
+              ],
+              "text": "element"
+            },
+            {
+              "type": "text",
+              "text": "."
+            }
+          ]
         }
       ]
     },
     {
-      "type": "paragraph",
+      "type": "orderedList",
+      "attrs": {
+        "autoDir": null,
+        "start": 5
+      },
+      "content": [
+        {
+          "type": "listItem",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "autoDir": "auto"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Other features"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "bulletList",
       "attrs": {
         "autoDir": "auto"
       },
       "content": [
         {
-          "type": "text",
-          "marks": [
+          "type": "listItem",
+          "content": [
             {
-              "type": "bold"
+              "type": "paragraph",
+              "attrs": {
+                "autoDir": "auto"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Built-in, interactive embeds ("
+                },
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "link",
+                      "attrs": {
+                        "href": "https://assets.vrite.io/65017ed7b0e627e259623b8a/-R7ZANANzebSVDyqVtB_K.png",
+                        "target": "_blank",
+                        "rel": "noopener noreferrer nofollow",
+                        "class": null
+                      }
+                    }
+                  ],
+                  "text": "CodePen"
+                },
+                {
+                  "type": "text",
+                  "text": ", "
+                },
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "link",
+                      "attrs": {
+                        "href": "https://codesandbox.io/",
+                        "target": "_blank",
+                        "rel": "noopener noreferrer nofollow",
+                        "class": null
+                      }
+                    }
+                  ],
+                  "text": "CodeSandbox"
+                },
+                {
+                  "type": "text",
+                  "text": ", YouTube)"
+                }
+              ]
             }
-          ],
-          "text": "A lot more stuff!"
+          ]
+        },
+        {
+          "type": "listItem",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "autoDir": "auto"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Zen mode (in the toolbar, top-right corner);"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "listItem",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "autoDir": "auto"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "MDX, MD, HTML, and JSON exports (easy to copy-paste);"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "listItem",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "autoDir": "auto"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Stats (in the bottom menu, bottom-right corner)"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "listItem",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "autoDir": "auto"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Real-time collaboration & commenting (select some text to add a comment)"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "listItem",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "autoDir": "auto"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "text": "…"
+                }
+              ]
+            }
+          ]
         }
       ]
     },
@@ -524,7 +1486,7 @@
       "content": [
         {
           "type": "text",
-          "text": "What is Vrite?"
+          "text": "Content Management in Vrite"
         }
       ]
     },
@@ -536,41 +1498,20 @@
       "content": [
         {
           "type": "text",
-          "marks": [
-            {
-              "type": "link",
-              "attrs": {
-                "href": "https://vrite.io",
-                "target": "_blank",
-                "rel": "noopener noreferrer nofollow",
-                "class": null
-              }
-            }
-          ],
-          "text": "Vrite"
-        },
+          "text": "Vrite provides multiple ways for you to manage your content."
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "attrs": {
+        "autoDir": "auto",
+        "level": 3
+      },
+      "content": [
         {
           "type": "text",
-          "text": " is an "
-        },
-        {
-          "type": "text",
-          "marks": [
-            {
-              "type": "link",
-              "attrs": {
-                "href": "https://github.com/vriteio/vrite",
-                "target": "_blank",
-                "rel": "noopener noreferrer nofollow",
-                "class": null
-              }
-            }
-          ],
-          "text": "open-source"
-        },
-        {
-          "type": "text",
-          "text": ", collaborative, developer content platform for documentation, knowledge bases, and technical blogs."
+          "text": "Vrite dashboard"
         }
       ]
     },
@@ -582,19 +1523,133 @@
       "content": [
         {
           "type": "text",
-          "text": "With an extensible, collaborative editor, content management dashboard, and features like semantic search, GitHub sync, and more — all accessible via powerful API — Vrite aims to provide an all-in-one experience for creating, managing, and publishing all kinds of technical content. "
+          "text": "The "
+        },
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "link",
+              "attrs": {
+                "href": "https://app.vrite.io/",
+                "target": "_blank",
+                "rel": "noopener noreferrer nofollow",
+                "class": null
+              }
+            }
+          ],
+          "text": "dashboard"
+        },
+        {
+          "type": "text",
+          "text": " is focused solely on content management. Here you can organize your content and edit metadata using one of two views:"
+        }
+      ]
+    },
+    {
+      "type": "orderedList",
+      "attrs": {
+        "autoDir": "auto",
+        "start": 1
+      },
+      "content": [
+        {
+          "type": "listItem",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "autoDir": "auto"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "bold"
+                    }
+                  ],
+                  "text": "Kanban"
+                },
+                {
+                  "type": "text",
+                  "text": " — great for working in teams and managing complex content production process"
+                }
+              ]
+            }
+          ]
         }
       ]
     },
     {
       "type": "image",
       "attrs": {
-        "src": "http://localhost:8888/65017ed7b0e627e259623b8a/q0HUeyQ1aeElfzaZkdNWn.png",
-        "alt": "Vrite Kanban dashboard",
+        "src": "https://assets.vrite.io/65017ed7b0e627e259623b8a/FoiCt-qOuTEahp4qKJiIH.png",
+        "alt": "Vrite dashboard - kanban view",
+        "caption": null,
         "width": "100%",
-        "aspectRatio": "1.5855758880516684",
+        "aspectRatio": "1.6",
         "uploading": null
       }
+    },
+    {
+      "type": "orderedList",
+      "attrs": {
+        "autoDir": "auto",
+        "start": 2
+      },
+      "content": [
+        {
+          "type": "listItem",
+          "content": [
+            {
+              "type": "paragraph",
+              "attrs": {
+                "autoDir": "auto"
+              },
+              "content": [
+                {
+                  "type": "text",
+                  "marks": [
+                    {
+                      "type": "bold"
+                    }
+                  ],
+                  "text": "Table"
+                },
+                {
+                  "type": "text",
+                  "text": " — optimized for viewing all kinds of metadata at a glance"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "image",
+      "attrs": {
+        "src": "https://assets.vrite.io/65017ed7b0e627e259623b8a/KAts4bTozSr7mKaZ0nTca.png",
+        "alt": "Vrite dashboard - table view",
+        "caption": null,
+        "width": "100%",
+        "aspectRatio": "1.6",
+        "uploading": null
+      }
+    },
+    {
+      "type": "heading",
+      "attrs": {
+        "autoDir": "auto",
+        "level": 3
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "Explorer"
+        }
+      ]
     },
     {
       "type": "paragraph",
@@ -604,7 +1659,81 @@
       "content": [
         {
           "type": "text",
-          "text": "Some links to check out:"
+          "text": "Aside from the dashboard, Vrite provides an "
+        },
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "bold"
+            }
+          ],
+          "text": "Explorer"
+        },
+        {
+          "type": "text",
+          "text": " panel, easily accessible on the right of both the dashboard and the editor."
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "attrs": {
+        "autoDir": "auto"
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "Explorer is your go-to when writing/managing “nested” content like "
+        },
+        {
+          "type": "text",
+          "marks": [
+            {
+              "type": "bold"
+            }
+          ],
+          "text": "documentation"
+        },
+        {
+          "type": "text",
+          "text": ". Select a content group to view its contents in the dashboard or a content piece to open it immediately in the editor."
+        }
+      ]
+    },
+    {
+      "type": "image",
+      "attrs": {
+        "src": "https://assets.vrite.io/65017ed7b0e627e259623b8a/XgzCLAMTGTNPl_Sk0Nnw6.png",
+        "alt": "Vrite explorer panel",
+        "caption": null,
+        "width": "100%",
+        "aspectRatio": "1.6",
+        "uploading": null
+      }
+    },
+    {
+      "type": "heading",
+      "attrs": {
+        "autoDir": "auto",
+        "level": 2
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "Many Other Features"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "attrs": {
+        "autoDir": "auto"
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "Check out the following resources to learn more:"
         }
       ]
     },

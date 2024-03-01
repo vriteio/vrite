@@ -7,6 +7,7 @@ import {
   createSignal,
   useContext
 } from "solid-js";
+import { breakpoints } from "#lib/utils";
 
 interface StorageData {
   activeContentGroupId: string;
@@ -36,6 +37,7 @@ const LocalStorageProvider: ParentComponent = (props) => {
     toolbarView: "default",
     sidePanelView: "default",
     sidePanelWidth: 375,
+    rightPanelWidth: breakpoints.md() ? 375 : 0,
     version: currentVersion
   };
 

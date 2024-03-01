@@ -70,6 +70,8 @@ const registerGitHubOAuth = (fastify: FastifyInstance): void => {
 
       if (existingUser) {
         await createSession({ req, res, db, fastify }, `${user._id}`);
+
+        return res.redirect("/");
       } else {
         const newUser = {
           _id: new ObjectId(),
@@ -83,7 +85,7 @@ const registerGitHubOAuth = (fastify: FastifyInstance): void => {
 
         await users.insertOne(newUser);
 
-        const workspaceId = await createWorkspace(newUser, fastify, {
+        const { workspaceId, contentPieceId } = await createWorkspace(newUser, fastify, {
           newUser: true,
           plan:
             state
@@ -101,9 +103,9 @@ const registerGitHubOAuth = (fastify: FastifyInstance): void => {
           currentWorkspaceId: workspaceId
         });
         await createSession({ req, res, db, fastify }, `${newUser._id}`);
-      }
 
-      return res.redirect("/");
+        return res.redirect(`/${contentPieceId ? "editor/" : ""}${contentPieceId || ""}`);
+      }
     } catch (error) {
       fastify.log.error(error);
 

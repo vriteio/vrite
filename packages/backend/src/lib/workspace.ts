@@ -33,7 +33,7 @@ const createWorkspace = async (
     newUser?: boolean;
     plan?: string;
   }
-): Promise<ObjectId> => {
+): Promise<{ workspaceId: ObjectId; contentPieceId?: ObjectId }> => {
   const db = fastify.mongo.db!;
   const workspacesCollection = getWorkspacesCollection(db);
   const workspaceSettingsCollection = getWorkspaceSettingsCollection(db);
@@ -153,7 +153,7 @@ const createWorkspace = async (
 
   await workspacesCollection.insertOne(workspace);
 
-  return workspaceId;
+  return { workspaceId, ...(config?.newUser && { contentPieceId }) };
 };
 const deleteWorkspace = async (workspaceId: ObjectId, fastify: FastifyInstance): Promise<void> => {
   const db = fastify.mongo.db!;

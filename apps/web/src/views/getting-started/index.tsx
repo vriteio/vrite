@@ -87,7 +87,11 @@ const GettingStartedView: Component = () => {
                       class="w-full"
                       onClick={() => {
                         if (url) {
-                          setActiveWalkthrough(url);
+                          if (activeWalkthrough() === url) {
+                            setActiveWalkthrough(null);
+                          } else {
+                            setActiveWalkthrough(url);
+                          }
                         }
                       }}
                     >
@@ -109,7 +113,7 @@ const GettingStartedView: Component = () => {
                   );
                 }}
               </For>
-              </TitledCard>*/}
+            </TitledCard>*/}
             <TitledCard label="Resources" icon={mdiFormatListBulleted}>
               <div class="flex flex-col gap-2 w-full">
                 <For each={sectionMenuItems}>

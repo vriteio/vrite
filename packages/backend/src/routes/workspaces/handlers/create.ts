@@ -17,7 +17,7 @@ const handler = async (
 
   if (!user) throw errors.notFound("user");
 
-  const workspaceId = await createWorkspace(user, ctx.fastify, input);
+  const { workspaceId } = await createWorkspace(user, ctx.fastify, input);
 
   return { id: `${workspaceId}` };
 };

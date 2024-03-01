@@ -3,7 +3,7 @@ import { useNavigate } from "@solidjs/router";
 import { Component, Match, Show, Switch, createMemo, createSignal } from "solid-js";
 import { App, useClient, useLocalStorage } from "#context";
 import { Button, Card, Heading, Icon, Loader } from "#components/primitives";
-import { navigateAndReload } from "#lib/utils";
+import { breakpoints, navigateAndReload } from "#lib/utils";
 
 const VerifyView: Component = () => {
   const client = useClient();
@@ -11,6 +11,7 @@ const VerifyView: Component = () => {
   const [verified, setVerified] = createSignal(false);
   const [navigating, setNavigating] = createSignal(false);
   const [newWorkspaceId, setNewWorkspaceId] = createSignal<string | null>(null);
+  const [newContentPieceId, setNewContentPieceId] = createSignal<string | null>(null);
   const [error, setError] = createSignal<"invalid" | "unauthorized" | null>(null);
   const navigate = useNavigate();
   const params = new URLSearchParams(window.location.search);
@@ -35,7 +36,14 @@ const VerifyView: Component = () => {
     }
   });
   const verifyEmail = async (): Promise<void> => {
-    const { redirect } = await client.verification.verifyEmail.mutate({ code: code!, userId: id });
+    const { redirect, contentPieceId } = await client.verification.verifyEmail.mutate({
+      code: code!,
+      userId: id
+    });
+
+    if (contentPieceId) {
+      setNewContentPieceId(contentPieceId);
+    }
 
     setRedirect(redirect);
     setVerified(true);
@@ -147,15 +155,27 @@ const VerifyView: Component = () => {
 
               const workspaceId = newWorkspaceId();
 
+              setStorage({
+                toolbarView: "default",
+                sidePanelView: "default",
+                sidePanelWidth: 375,
+                rightPanelWidth: breakpoints.md() ? 375 : 0,
+                version: "0.4"
+              });
+
               if (workspaceId) {
                 await client.auth.switchWorkspace.mutate({ workspaceId });
-                setStorage((storage) => ({
-                  sidePanelWidth: storage.sidePanelWidth
-                }));
-                navigate("/");
+                navigate(`/${newContentPieceId() ? "editor/" : ""}${newContentPieceId() || ""}`);
               }
 
-              navigateAndReload(redirect());
+              if (newContentPieceId()) {
+                navigateAndReload(
+                  `/${newContentPieceId() ? "editor/" : ""}${newContentPieceId() || ""}`
+                );
+              } else {
+                navigateAndReload(redirect());
+              }
+
               setNavigating(false);
             }}
           >
