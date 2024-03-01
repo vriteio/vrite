@@ -236,7 +236,7 @@ const billingPlugin = createPlugin(async (fastify) => {
       if (customerData.trial) {
         subscription = await stripe.subscriptions.create({
           customer: customer.id,
-          trial_period_days: 30,
+          trial_period_days: 14,
           trial_settings: { end_behavior: { missing_payment_method: "cancel" } },
           coupon: getCouponId(customerData.plan || "personal"),
           items: [

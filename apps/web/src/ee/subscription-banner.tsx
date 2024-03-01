@@ -1,10 +1,11 @@
-import { mdiAlertCircleOutline } from "@mdi/js";
+import { mdiAlertCircleOutline, mdiClose } from "@mdi/js";
 import { Icon } from "@vrite/components";
-import { Component, Match, Show, Switch, createMemo } from "solid-js";
+import { Component, Match, Show, Switch, createMemo, createSignal } from "solid-js";
 import dayjs from "dayjs";
 import { useAuthenticatedUserData, useLocalStorage } from "#context";
 
 const SubscriptionBanner: Component = () => {
+  const [visible, setVisible] = createSignal(true);
   const { subscription } = useAuthenticatedUserData();
   const { setStorage } = useLocalStorage();
   const remainingBillingPeriod = createMemo(() => {
@@ -22,7 +23,9 @@ const SubscriptionBanner: Component = () => {
   return (
     <Show
       when={
-        subscription()?.status && !["active", "trialing"].includes(subscription()?.status || "")
+        /* subscription()?.status &&
+           !["active", "trialing"].includes(subscription()?.status || "") && */
+        visible()
       }
     >
       <div class="h-8 bg-gradient-to-tr w-full flex justify-center items-center px-1 text-white z-30">
@@ -59,6 +62,16 @@ const SubscriptionBanner: Component = () => {
             </button>
           </Match>
         </Switch>
+        <Show when={!["canceled", "unpaid"].includes(subscription()?.status || "")}>
+          <button
+            class="rounded-md hover:bg-white hover:bg-opacity-20"
+            onClick={() => {
+              setVisible(false);
+            }}
+          >
+            <Icon path={mdiClose} class="h-6 w-6" />
+          </button>
+        </Show>
       </div>
     </Show>
   );
