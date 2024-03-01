@@ -23,8 +23,8 @@ const SubscriptionBanner: Component = () => {
   return (
     <Show
       when={
-        /* subscription()?.status &&
-           !["active", "trialing"].includes(subscription()?.status || "") && */
+        subscription()?.status &&
+        !["active", "trialing"].includes(subscription()?.status || "") &&
         visible()
       }
     >
