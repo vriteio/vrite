@@ -74,8 +74,10 @@ const appService = createPlugin(async (fastify) => {
       const buffer = await data?.toBuffer();
 
       if (!buffer) throw errors.badRequest();
-
-      const sanitizedBuffer = await sharp(buffer).toBuffer();
+      console.log(data?.mimetype);
+      const sanitizedBuffer = await sharp(buffer, {
+        animated: data?.mimetype === "image/gif"
+      }).toBuffer();
       const command = new PutObjectCommand({
         Bucket: fastify.config.S3_BUCKET,
         Body: sanitizedBuffer,
