@@ -998,7 +998,7 @@
   __export(api_exports, {
     createClient: () => M
   });
-  var import_eventsource, l, U, E, S, f, h, L, m, D, O, R, T, x, C, I, u, v, k, j, q, G, A, b, z, y, B, M;
+  var import_eventsource, l, U, E, S, f, h, L, m, D, O, R, T, C, j, x, u, I, k, v, q, G, A, b, z, y, B, M;
   var init_api = __esm({
     "../../packages/sdk/javascript/dist/api.mjs"() {
       "use strict";
@@ -1039,13 +1039,13 @@
       O = "/profile";
       R = (t) => ({ get: () => t("GET", `${O}`) });
       T = "/webhooks";
-      x = (t) => ({ get: (e) => t("GET", `${T}`, { params: e }), create: (e) => t("POST", `${T}`, { body: e }), update: (e) => t("PUT", `${T}`, { body: e }), delete: (e) => t("DELETE", `${T}`, { params: e }), list: (e) => t("GET", `${T}/list`, { params: e }) });
-      C = "/workspace";
-      I = (t) => ({ get: () => t("GET", `${C}`) });
+      C = (t) => ({ get: (e) => t("GET", `${T}`, { params: e }), create: (e) => t("POST", `${T}`, { body: e }), update: (e) => t("PUT", `${T}`, { body: e }), delete: (e) => t("DELETE", `${T}`, { params: e }), list: (e) => t("GET", `${T}/list`, { params: e }) });
+      j = "/workspace";
+      x = (t) => ({ get: () => t("GET", `${j}`) });
       u = "/roles";
-      v = (t) => ({ get: (e) => t("GET", `${u}`, { params: e }), create: (e) => t("POST", `${u}`, { body: e }), update: (e) => t("PUT", `${u}`, { body: e }), delete: (e) => t("DELETE", `${u}`, { params: e }), list: (e) => t("GET", `${u}/list`, { params: e }) });
+      I = (t) => ({ get: (e) => t("GET", `${u}`, { params: e }), create: (e) => t("POST", `${u}`, { body: e }), update: (e) => t("PUT", `${u}`, { body: e }), delete: (e) => t("DELETE", `${u}`, { params: e }), list: (e) => t("GET", `${u}/list`, { params: e }) });
       k = "/workspace-settings";
-      j = (t) => ({ get: () => t("GET", `${k}`), update: (e) => t("PUT", `${k}`, { body: e }) });
+      v = (t) => ({ get: () => t("GET", `${k}`), update: (e) => t("PUT", `${k}`, { body: e }) });
       q = (t) => ({ listMembers: (e) => t("GET", "/workspace-memberships/list-members", { params: e }), listWorkspaces: (e) => t("GET", "/workspace-memberships/list-workspaces", { params: e }), create: (e) => t("POST", "/workspace-memberships", { body: e }), update: (e) => t("PUT", "/workspace-memberships", { body: e }), delete: (e) => t("DELETE", "/workspace-memberships", { params: e }) });
       G = "/extension";
       A = (t) => ({ get: () => t("GET", `${G}`), updateContentPieceData: (e) => t("POST", `${G}/content-piece-data`, { body: e }) });
@@ -1054,11 +1054,11 @@
       y = "/transformers";
       B = (t) => ({ create: (e) => t("POST", `${y}`, { body: e }), delete: (e) => t("DELETE", `${y}`, { params: e }), list: () => t("GET", `${y}/list`) });
       M = (t) => {
-        const { sendRequest: e, reconfigure: c, getConfig: i, getSignal: $, useSignal: p } = f(t), s = { contentGroups: U(e), contentPieces: S(e), tags: D(e), profile: R(e), userSettings: L(e), webhooks: x(e), workspace: I(e), roles: v(e), workspaceSettings: j(e), workspaceMemberships: q(e), extension: A(e), variants: z(e), transformers: B(e), search(a) {
+        const { sendRequest: e, reconfigure: c, getConfig: i, getSignal: $, useSignal: p } = f(t), s = { contentGroups: U(e), contentPieces: S(e), tags: D(e), profile: R(e), userSettings: L(e), webhooks: C(e), workspace: x(e), roles: I(e), workspaceSettings: v(e), workspaceMemberships: q(e), extension: A(e), variants: z(e), transformers: B(e), search(a) {
           return e("GET", "/search", { params: a });
         }, async ask(a) {
           let n = "";
-          const o = new import_eventsource.default(`${i().baseURL}/search/ask?query=${encodeURIComponent(a.query)}`, { headers: { Authorization: `Bearer ${i().token}` } });
+          const o = new import_eventsource.default(`${i().baseURL}/search/ask?query=${encodeURIComponent(a.query)}`, { headers: { Authorization: `Bearer ${i().token}`, "Content-Type": "application/json", Accept: "application/json" } });
           o.addEventListener("error", (d) => {
             const r = d;
             return r.message ? a.onError?.(r.message) : (o.close(), a.onEnd?.(n));
