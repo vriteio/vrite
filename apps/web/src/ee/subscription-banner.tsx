@@ -23,15 +23,20 @@ const SubscriptionBanner: Component = () => {
   return (
     <Show
       when={
-        subscription()?.status &&
-        !["active", "trialing"].includes(subscription()?.status || "") &&
+        (!subscription()?.status ||
+          !["active", "trialing"].includes(subscription()?.status || "")) &&
         visible()
       }
     >
       <div class="h-8 bg-gradient-to-tr w-full flex justify-center items-center px-1 text-white z-30">
         <Icon path={mdiAlertCircleOutline} class="h-6 w-6" />
         <Switch>
-          <Match when={["canceled", "unpaid"].includes(subscription()?.status || "")}>
+          <Match
+            when={
+              !subscription()?.status ||
+              ["canceled", "unpaid"].includes(subscription()?.status || "")
+            }
+          >
             <span class="pl-1 pr-2">This workspace is read-only.</span>
             <button
               class="font-semibold underline inline-flex justify-center items-center"
