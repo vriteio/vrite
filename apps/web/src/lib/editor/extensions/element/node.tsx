@@ -1,3 +1,4 @@
+import { ElementSelection, isElementSelection, isElementSelectionActive } from "./selection";
 import { Element as BaseElement, ElementAttributes } from "@vrite/editor";
 import { SolidEditor, SolidRenderer } from "@vrite/tiptap-solid";
 import { NodeView } from "@tiptap/core";
@@ -5,8 +6,15 @@ import { keymap } from "@tiptap/pm/keymap";
 import { Node } from "@tiptap/pm/model";
 import { EditorState } from "@tiptap/pm/state";
 import { Node as PMNode } from "@tiptap/pm/model";
-import { Component } from "solid-js";
 import { formatCode } from "#lib/code-editor";
+
+declare module "@tiptap/core" {
+  interface Commands<ReturnType> {
+    element: {
+      setElementSelection: (position: number, active?: boolean) => ReturnType;
+    };
+  }
+}
 
 const getOpeningTag = async (node: PMNode): Promise<string> => {
   const keyValueProps = Object.entries(node.attrs.props).map(([key, value]) => {
@@ -27,16 +35,6 @@ const getOpeningTag = async (node: PMNode): Promise<string> => {
   return formattedCode.replace(/ *?\/>;/gm, node.content.size ? ">" : "/>").trim();
 };
 const getClosingTag = (node: PMNode): string => node.attrs.type;
-const registeredComponent: Record<string, Component> = {
-  /* Important: () => {
-    return (
-      <Card class="flex items-center justify-start m-0 my-4" color="primary">
-        <Icon path={mdiAlertCircleOutline} class="w-6 h-6 mr-2" />
-        <div class="flex-1 not-prose" data-content="true"></div>
-      </Card>
-    );
-  }*/
-};
 const Element = BaseElement.extend({
   addProseMirrorPlugins() {
     const handleDeleteElement = (state: EditorState): boolean => {
@@ -86,42 +84,28 @@ const Element = BaseElement.extend({
       })
     ];
   },
+  addCommands() {
+    return {
+      setElementSelection(position, active) {
+        return ({ tr, dispatch }) => {
+          if (dispatch) {
+            const { doc } = tr;
+            const from = Math.max(position, 0);
+            const selection = ElementSelection.create(doc, from, active);
+
+            tr.setSelection(selection);
+          }
+
+          return true;
+        };
+      }
+    };
+  },
   addNodeView() {
     return (props) => {
       const referenceView = new NodeView(() => {}, props);
 
       let node = props.node as Node;
-
-      const customNodeType = node.attrs.type;
-
-      if (customNodeType && registeredComponent[customNodeType]) {
-        const component = new SolidRenderer(registeredComponent[customNodeType], {
-          editor: this.editor as SolidEditor,
-          state: {}
-        });
-
-        return {
-          dom: component.element,
-          contentDOM: component.element.querySelector("[data-content=true]") as HTMLElement,
-          ignoreMutation(mutation: MutationRecord | { type: "selection"; target: Element }) {
-            if (mutation.type === "selection") {
-              return true;
-            }
-
-            return referenceView.ignoreMutation(mutation);
-          },
-          stopEvent(event) {
-            return referenceView.stopEvent(event);
-          },
-          update(newNode) {
-            if (newNode.type.name !== "element") return false;
-
-            node = newNode as Node;
-
-            return true;
-          }
-        };
-      }
 
       const editor = this.editor as SolidEditor;
       const dom = document.createElement("div");
@@ -134,8 +118,7 @@ const Element = BaseElement.extend({
       const bottomCodeEnd = document.createElement("span");
       const handleCodeClick = (event: MouseEvent): void => {
         if (typeof props.getPos === "function") {
-          editor.commands.setTextSelection(props.getPos());
-          editor.commands.setNodeSelection(props.getPos());
+          editor.commands.setElementSelection(props.getPos(), true);
         }
 
         event.preventDefault();
@@ -146,7 +129,7 @@ const Element = BaseElement.extend({
       bottomCodeKey.textContent = getClosingTag(node);
       contentContainer.setAttribute(
         "class",
-        "px-3 w-full border-gray-300 dark:border-gray-700 border-l-2 ml-1 py-0 content"
+        "px-3 w-full border-gray-300 dark:border-gray-700 border-l-2 ml-1 py-[2px] content"
       );
       dom.setAttribute("class", "flex flex-col justify-center items-center relative");
       dom.setAttribute("data-element", "true");
@@ -159,7 +142,7 @@ const Element = BaseElement.extend({
       );
       bottomCode.setAttribute(
         "class",
-        "block w-full !p-0 leading-[26px] min-h-6.5 !rounded-0 !bg-transparent !text-gray-400 !dark:text-gray-400 cursor-pointer"
+        "block w-full !p-0 leading-[26px] min-h-6.5 !rounded-0 !bg-transparent !text-gray-400 !dark:text-gray-400 cursor-pointer select-none"
       );
       code.contentEditable = "false";
       bottomCode.contentEditable = "false";
@@ -173,6 +156,40 @@ const Element = BaseElement.extend({
         bottomCode.classList.add("!hidden");
       }
 
+      const update = (): void => {
+        const pos = typeof props.getPos === "function" ? props.getPos() : null;
+        const { selection } = this.editor.state;
+        const selectionPos = selection.$from.pos;
+
+        if (pos === null) return;
+
+        if (
+          pos === selectionPos &&
+          isElementSelection(selection) &&
+          isElementSelectionActive(selection)
+        ) {
+          code.classList.add("selected-element-code");
+          bottomCodeKey.classList.add("selected-element-bottom-code");
+          bottomCode.classList.remove("!text-gray-400", "!dark:text-gray-400");
+          bottomCode.classList.add("!text-[#000000]", "!dark:text-[#DCDCDC]");
+          bottomCodeKey.classList.add("!text-[#008080]", "!dark:text-[#3dc9b0]");
+        } else if (isElementSelection(selection) && !isElementSelectionActive(selection)) {
+          contentContainer.classList.add("!border-primary");
+          code.classList.remove("selected-element-code");
+          bottomCodeKey.classList.remove("selected-element-bottom-code");
+          bottomCode.classList.add("!text-gray-400", "!dark:text-gray-400");
+          bottomCode.classList.remove("!text-[#000000]", "!dark:text-[#DCDCDC]");
+          bottomCodeKey.classList.remove("!text-[#008080]", "!dark:text-[#3dc9b0]");
+        } else {
+          contentContainer.classList.remove("!border-primary");
+          code.classList.remove("selected-element-code");
+          bottomCodeKey.classList.remove("selected-element-bottom-code");
+          bottomCode.classList.add("!text-gray-400", "!dark:text-gray-400");
+          bottomCode.classList.remove("!text-[#000000]", "!dark:text-[#DCDCDC]");
+          bottomCodeKey.classList.remove("!text-[#008080]", "!dark:text-[#3dc9b0]");
+        }
+      };
+
       return {
         dom,
         contentDOM: content,
@@ -184,18 +201,13 @@ const Element = BaseElement.extend({
           return referenceView.ignoreMutation(mutation);
         },
         selectNode() {
-          contentContainer.classList.add("!border-primary");
-          code.classList.add("selected-element-tag");
-          bottomCode.classList.remove("!text-gray-400", "!dark:text-gray-400");
-          bottomCode.classList.add("!text-[#000000]", "!dark:text-[#DCDCDC]");
-          bottomCodeKey.classList.add("!text-[#008080]", "!dark:text-[#3dc9b0]");
+          editor.on("update", update);
+          editor.on("selectionUpdate", update);
         },
         deselectNode() {
-          contentContainer.classList.remove("!border-primary");
-          code.classList.remove("selected-element-tag");
-          bottomCode.classList.add("!text-gray-400", "!dark:text-gray-400");
-          bottomCode.classList.remove("!text-[#000000]", "!dark:text-[#DCDCDC]");
-          bottomCodeKey.classList.remove("!text-[#008080]", "!dark:text-[#3dc9b0]");
+          update();
+          editor.off("update", update);
+          editor.off("selectionUpdate", update);
         },
         stopEvent(event) {
           return referenceView.stopEvent(event);

@@ -74,7 +74,7 @@ const appService = createPlugin(async (fastify) => {
       const buffer = await data?.toBuffer();
 
       if (!buffer) throw errors.badRequest();
-      console.log(data?.mimetype);
+
       const sanitizedBuffer = await sharp(buffer, {
         animated: data?.mimetype === "image/gif"
       }).toBuffer();

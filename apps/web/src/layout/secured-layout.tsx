@@ -24,9 +24,12 @@ const SecuredLayout: ParentComponent = (props) => {
   const { storage, setStorage } = useLocalStorage();
   const location = useLocation();
 
-  posthog.init("phc_m9JcBa51gXCkGdLFtqeMZXFfJkuSTg8C9iDMun0sZgg", {
-    api_host: "https://app.posthog.com"
-  });
+  if (import.meta.env.PROD) {
+    posthog.init("phc_m9JcBa51gXCkGdLFtqeMZXFfJkuSTg8C9iDMun0sZgg", {
+      api_host: "https://app.posthog.com"
+    });
+  }
+
   createEffect(() => {
     if (location.pathname !== "/editor") {
       setStorage((storage) => ({ ...storage, zenMode: false }));

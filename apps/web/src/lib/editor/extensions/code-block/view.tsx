@@ -14,6 +14,7 @@ import { useAppearance, useAuthenticatedUserData, useNotifications } from "#cont
 
 interface CodeBlockViewProps {
   monaco: typeof monaco;
+  contentHeight: number;
   codeEditorRef(): monaco.editor.IStandaloneCodeEditor | null;
   updatingRef(): boolean | null;
   setCodeEditorRef(value: monaco.editor.IStandaloneCodeEditor): void;
@@ -54,9 +55,6 @@ const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
   const [currentModelValue, setCurrentModelValue] = createRef("");
   const selected = (): boolean => {
     return state().selected;
-  };
-  const isTopLevel = (): boolean => {
-    return state().editor.state.doc.resolve(state().getPos()).parent.type.name === "doc";
   };
   const repositionMenu = (): void => {
     const referenceContainer = editorContainerRef();
@@ -328,13 +326,6 @@ const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
       }
     }).observe(editorContainer);
   });
-  createEffect(
-    on(codeEditorActive, (active) => {
-      if (active) {
-        state().editor.commands.setNodeSelection(state().getPos());
-      }
-    })
-  );
   createEffect(
     on(selected, (selected) => {
       if (!selected) return;

@@ -1,15 +1,23 @@
 import { ElementMenuEditor } from "./editor";
+import {
+  ElementSelection,
+  isElementSelection,
+  isElementSelectionActive
+} from "../element/selection";
 import { SolidEditor } from "@vrite/tiptap-solid";
 import { Component, Show, createEffect, createSignal } from "solid-js";
 import { Node as PMNode } from "@tiptap/pm/model";
 
+interface ElementMenuState {
+  pos: number;
+  node: PMNode | null;
+  container: HTMLElement | null;
+  editor: SolidEditor;
+  active: boolean;
+}
 interface ElementMenuProps {
-  state: {
-    pos: number;
-    node: PMNode | null;
-    container: HTMLElement | null;
-    editor: SolidEditor;
-    active: boolean;
+  state: ElementMenuState & {
+    setState(state: ElementMenuState): void;
   };
 }
 
@@ -65,6 +73,7 @@ const ElementMenu: Component<ElementMenuProps> = (props) => {
               props.state.editor.commands.command(({ tr, dispatch }) => {
                 if (!dispatch) return false;
 
+                const lastSelection = props.state.editor.state.selection;
                 const lastPos = props.state.pos;
 
                 if (lastPos !== null) {
@@ -81,12 +90,24 @@ const ElementMenu: Component<ElementMenuProps> = (props) => {
                     tr.delete(lastPos + 1, lastPos + props.state.node!.content.size + 1);
                   }
 
+                  if (isElementSelection(lastSelection) && props.state.editor.isFocused) {
+                    tr.setSelection(
+                      ElementSelection.create(tr.doc, lastSelection.$from.pos, false)
+                    );
+                  }
+
                   return true;
                 }
 
                 return false;
               });
             }
+          }}
+          setState={(value) => {
+            props.state.setState({
+              ...props.state,
+              ...value
+            });
           }}
         />
       </div>

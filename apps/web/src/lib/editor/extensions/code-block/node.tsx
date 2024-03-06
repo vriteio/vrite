@@ -48,6 +48,9 @@ const CodeBlock = BaseCodeBlock.extend<CodeBlockOptions>({
       () => {
         const { state } = useSolidNodeView();
         const [loading, setLoading] = createSignal(true);
+        const contentHeight = (): number => {
+          return state().node.textContent.split("\n").length * 20 + 4;
+        };
 
         onMount(async () => {
           const unbind = emitter.on("focus", () => {
@@ -75,18 +78,18 @@ const CodeBlock = BaseCodeBlock.extend<CodeBlockOptions>({
         });
 
         return (
-          <NodeViewWrapper
-            style={{
-              "min-height": `${state().node.textContent.split("\n").length * 20 + 4}px`
-            }}
-          >
-            <Show when={!loading()}>
+          <NodeViewWrapper>
+            <Show
+              when={!loading()}
+              fallback={<div style={{ "min-height": `${contentHeight()}px` }} />}
+            >
               <CodeBlockView
                 monaco={monacoRef()!}
                 updatingRef={updatingRef}
                 codeEditorRef={codeEditorRef}
                 setUpdatingRef={setUpdatingRef}
                 setCodeEditorRef={setCodeEditorRef}
+                contentHeight={contentHeight()}
               />
             </Show>
           </NodeViewWrapper>

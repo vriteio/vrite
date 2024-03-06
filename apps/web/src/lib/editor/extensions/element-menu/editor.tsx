@@ -1,3 +1,4 @@
+import { isElementSelection, isElementSelectionActive } from "../element/selection";
 import {
   createEffect,
   createMemo,
@@ -12,21 +13,32 @@ import { createRef } from "@vrite/components/src/ref";
 import clsx from "clsx";
 import { nanoid } from "nanoid";
 import { SolidEditor } from "@vrite/tiptap-solid";
-import { scrollIntoView } from "seamless-scroll-polyfill";
+import { Node as PMNode } from "@tiptap/pm/model";
 import { monaco } from "#lib/monaco";
 import { useAppearance } from "#context";
 import { formatCode } from "#lib/code-editor";
 
+interface ElementMenuState {
+  type: string;
+  active: boolean;
+  props: Record<string, any>;
+  editor: SolidEditor;
+  contentSize: number;
+  removeElement(): void;
+  setElement(element: { type: string; props: Record<string, any>; content: boolean }): void;
+}
+
 interface ElementMenuEditorProps {
-  state: {
-    type: string;
-    active: boolean;
-    props: Record<string, any>;
-    editor: SolidEditor;
-    contentSize: number;
-    removeElement(): void;
-    setElement(element: { type: string; props: Record<string, any>; content: boolean }): void;
-  };
+  state: ElementMenuState;
+  setState: (
+    state: Partial<{
+      pos: number;
+      node: PMNode | null;
+      container: HTMLElement | null;
+      editor: SolidEditor;
+      active: boolean;
+    }>
+  ) => void;
 }
 
 const codeEditorOptions: monaco.editor.IStandaloneEditorConstructionOptions = {
@@ -174,27 +186,49 @@ const ElementMenuEditor = lazy(async () => {
 
         codeEditor.onDidContentSizeChange(updateEditorHeight);
         codeEditor.onDidChangeModelContent(() => {
-          const element = document.querySelector(".selected-element-tag") as HTMLElement;
+          const code = document.querySelector(".selected-element-code") as HTMLElement;
+          const bottomCode = document.querySelector(".selected-element-bottom-code") as HTMLElement;
+          const value = codeEditor.getValue() || "";
 
-          if (element) {
-            element.textContent = codeEditor.getValue() || "";
-            element.style.minHeight = `${codeEditor.getContentHeight()}px`;
+          if (code) {
+            code.textContent = value;
+            code.style.minHeight = `${codeEditor.getContentHeight()}px`;
+          }
+
+          if (bottomCode) {
+            const tag = value.match(/^<(\w+?)(?:\s|\n|\/|>)/)?.[1] || "";
+
+            bottomCode.textContent = tag || "";
           }
         });
         codeEditor.onDidBlurEditorText(async () => {
-          const element = document.querySelector(".selected-element-tag") as HTMLElement;
+          const code = document.querySelector(".selected-element-code") as HTMLElement;
+          const bottomCode = document.querySelector(".selected-element-bottom-code") as HTMLElement;
+          const value = await processCode(editorCode());
 
-          if (element) {
-            element.textContent = await processCode(editorCode());
+          if (code) {
+            code.textContent = value;
+          }
+
+          if (bottomCode) {
+            const tag = value.match(/^<(\w+?)(?:\s|\n|\/|>)/)?.[1] || "";
+
+            bottomCode.textContent = tag || "";
           }
 
           await onSave(codeEditor.getValue());
         });
-        codeEditor.onKeyDown((event) => {
-          if (event.code === "Escape") {
-            props.state.editor.commands.focus();
-            event.preventDefault();
-            event.stopPropagation();
+        codeEditor.addAction({
+          id: "save",
+          label: "Save",
+          keybindings: [monaco.KeyCode.Escape],
+          run() {
+            // props.setState({ active: false });
+            props.state.editor
+              .chain()
+              .setElementSelection(props.state.editor.state.selection.$from.pos, false)
+              .focus()
+              .run();
           }
         });
         codeEditor.setModel(
@@ -209,55 +243,40 @@ const ElementMenuEditor = lazy(async () => {
         });
         createEffect(
           on(
-            () => props.state.active,
+            () => {
+              return (
+                isElementSelection(props.state.editor.state.selection) &&
+                isElementSelectionActive(props.state.editor.state.selection)
+              );
+            },
             (active) => {
+              setVisible(false);
               setTimeout(() => {
                 const element: HTMLElement | null = document.querySelector(
-                  ".selected-element-tag"
+                  ".selected-element-code"
                 ) as HTMLElement;
 
                 if (!element) return;
 
                 if (active) {
+                  codeEditor.setValue(element?.textContent || "");
+                  setVisible(true);
+
+                  const { position } =
+                    codeEditor?.getTargetAtClientPoint(coords().x, coords().y) || {};
+
+                  if (position) {
+                    codeEditor?.setSelection(monaco.Range.fromPositions(position, position));
+                  }
+
+                  codeEditor?.focus();
                   element.style.minHeight = `${codeEditor.getContentHeight()}px`;
                 } else {
                   element.style.minHeight = "unset";
                 }
-              }, 200);
+              }, 0);
             }
           )
-        );
-        createEffect(
-          on(editorCode, async (code) => {
-            if (code === "<>") return codeEditor.setValue("");
-
-            const selection = codeEditor.getSelection();
-            const formattedCode = await processCode(code);
-
-            codeEditor.setValue(formattedCode);
-            if (selection) codeEditor.setSelection(selection);
-          })
-        );
-        createEffect(
-          on(type, (type, _previousType, handle) => {
-            if (typeof handle === "number") clearTimeout(handle);
-
-            if (type) {
-              return window.setTimeout(() => {
-                setVisible(true);
-
-                const { position } =
-                  codeEditor?.getTargetAtClientPoint(coords().x, coords().y) || {};
-
-                if (position) {
-                  codeEditor?.setSelection(monaco.Range.fromPositions(position, position));
-                }
-
-                scrollIntoView(editorContainer, { behavior: "smooth", block: "nearest" });
-                codeEditor?.focus();
-              }, 100);
-            }
-          })
         );
         onCleanup(() => {
           codeEditor.getModel()?.dispose();
@@ -278,7 +297,7 @@ const ElementMenuEditor = lazy(async () => {
         <div
           class={clsx(
             "w-full flex items-center justify-start",
-            !visible() && "opacity-0 transition-opacity duration-200"
+            !visible() && "hidden opacity-0 pointer-events-none transition-opacity duration-200"
           )}
           contentEditable={false}
         >

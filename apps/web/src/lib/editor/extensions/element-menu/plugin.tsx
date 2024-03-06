@@ -1,28 +1,32 @@
 import { ElementMenu } from "./component";
+import { isElementSelection, isElementSelectionActive } from "../element/selection";
 import { Extension } from "@tiptap/core";
 import { SolidEditor, SolidRenderer } from "@vrite/tiptap-solid";
-import { CellSelection } from "@tiptap/pm/tables";
 import { createNanoEvents } from "nanoevents";
-import { NodeSelection } from "@tiptap/pm/state";
 import { Node as PMNode } from "@tiptap/pm/model";
 
 const emitter = createNanoEvents();
 const generalMenuContainer = document.createElement("div");
 
-let generalMenu: SolidRenderer<{
+interface GeneralMenuState {
   editor: SolidEditor;
   pos: number;
   node: PMNode | null;
   container: HTMLElement | null;
   active: boolean;
-}> | null = null;
+}
+
+let generalMenu: SolidRenderer<
+  GeneralMenuState & {
+    setState: (state: GeneralMenuState) => void;
+  }
+> | null = null;
 
 const handleUpdate = (editor: SolidEditor): void => {
   const { selection } = editor.state;
   const selectedNode = selection.$from.nodeAfter;
-  const isNodeSelection = selection instanceof NodeSelection;
 
-  if (!isNodeSelection || !selectedNode || selectedNode.type.name !== "element") {
+  if (!isElementSelection(selection) || !selectedNode || selectedNode.type.name !== "element") {
     generalMenuContainer.style.display = "none";
     generalMenu?.setState((state) => ({ ...state, active: false }));
 
@@ -52,14 +56,17 @@ const handleUpdate = (editor: SolidEditor): void => {
     top: `${relativePos.top}px`,
     left: `${relativePos.left}px`,
     position: "absolute",
-    display: "block"
+    display: isElementSelectionActive(selection) ? "block" : "none"
   });
   generalMenu?.setState(() => ({
     pos: selection.$from.pos,
     node: selectedNode,
     container: blockParent,
     editor,
-    active: true
+    active: isElementSelectionActive(selection),
+    setState: (value) => {
+      generalMenu?.setState((state) => ({ ...state, ...value }));
+    }
   }));
 };
 const ElementMenuPlugin = Extension.create({
@@ -72,7 +79,10 @@ const ElementMenuPlugin = Extension.create({
         node: null as PMNode | null,
         container: null as HTMLElement | null,
         editor: this.editor as SolidEditor,
-        active: false as boolean
+        active: false as boolean,
+        setState: (value) => {
+          generalMenu?.setState((state) => ({ ...state, ...value }));
+        }
       }
     });
     generalMenuContainer.appendChild(generalMenu.element);
@@ -87,9 +97,9 @@ const ElementMenuPlugin = Extension.create({
     }
   },
   onFocus() {
-    const isCellSelection = this.editor.state.selection instanceof CellSelection;
+    const { selection } = this.editor.state;
 
-    if (this.editor.isActive("element") && !isCellSelection) {
+    if (isElementSelection(selection) && isElementSelectionActive(selection)) {
       generalMenuContainer.style.display = "block";
       generalMenu?.setState((state) => ({ ...state, active: true }));
     }
