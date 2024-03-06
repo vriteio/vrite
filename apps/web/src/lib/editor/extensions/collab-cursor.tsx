@@ -105,7 +105,7 @@ const CollabCursor = (provider: HocuspocusProvider): Extension => {
             keyed
             fallback={
               <span class={clsx("relative ring-1", selectionClasses[color].cursor)}>
-                \u2060
+                {"\u2060"}
                 <div
                   class={clsx(
                     "absolute group -top-px -right-px h-2px w-2px flex justify-center items-center ring-2 hover:ring-0 transition-shadow duration-100",
@@ -124,7 +124,7 @@ const CollabCursor = (provider: HocuspocusProvider): Extension => {
                     {user.name}
                   </div>
                 </div>
-                \u2060
+                {"\u2060"}
               </span>
             }
           >
