@@ -88,6 +88,11 @@ interface ExtensionBlockActionViewContext<C extends ContextObject = ContextObjec
   replaceContent(contentHTML: string): Promise<void>;
   refreshContent(): Promise<void>;
 }
+interface ExtensionElementViewContext<C extends ContextObject = ContextObject>
+  extends ExtensionBaseViewContext<C> {
+  [__usableEnv]: UsableEnv<{ [__value]: any }, { props: Record<string, any> }>;
+  content: ExtensionElement;
+}
 
 // eslint-disable-next-line init-declarations
 declare const __brand: unique symbol;
@@ -145,6 +150,10 @@ interface ExtensionRuntimeSpec {
     id: string;
     label: string;
     blocks: string[];
+    view: string;
+  }>;
+  elements?: Array<{
+    type: string;
     view: string;
   }>;
 }
@@ -211,6 +220,14 @@ interface ExtensionBaseComponents {
     },
     "click"
   >;
+  Card: ExtensionBaseComponent<{
+    color: "base" | "contrast" | "primary";
+    class: string;
+  }>;
+  Icon: ExtensionBaseComponent<{
+    path: string;
+    class: string;
+  }>;
   IconButton: ExtensionBaseComponent<
     {
       color: "base" | "contrast" | "primary";
@@ -249,6 +266,10 @@ interface ExtensionRuntimeConfig<C extends ContextObject = ContextObject> {
     label: string;
     blocks: string[];
     view: View<ExtensionBlockActionViewContext<C>>;
+  }>;
+  elements?: Array<{
+    type: string;
+    view: View<ExtensionElementViewContext<C>>;
   }>;
 }
 
@@ -425,6 +446,10 @@ const createRuntime = <C extends ContextObject = ContextObject>(
         blockActions: runtimeConfig.blockActions?.map((blockAction) => ({
           ...blockAction,
           view: blockAction.view[__id]
+        })),
+        elements: runtimeConfig.elements?.map((element) => ({
+          ...element,
+          view: element.view[__id]
         }))
       };
     },
@@ -489,6 +514,7 @@ export type {
   ExtensionBlockActionViewContext,
   ExtensionContentPieceViewContext,
   ExtensionConfigurationViewContext,
+  ExtensionElementViewContext,
   ExtensionElement,
   ContextObject,
   ContextValue,

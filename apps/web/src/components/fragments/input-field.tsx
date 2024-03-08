@@ -1,5 +1,4 @@
 import { Switch, Match, JSX, Show, Component } from "solid-js";
-import clsx from "clsx";
 import { Input, Select, Checkbox, Heading } from "#components/primitives";
 
 type InputFieldType = "text" | "select" | "checkbox";

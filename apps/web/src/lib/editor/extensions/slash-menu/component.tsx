@@ -1,7 +1,7 @@
 import { SolidEditor } from "@vrite/tiptap-solid";
 import { SuggestionKeyDownProps, SuggestionProps } from "@tiptap/suggestion";
 import { Component, createEffect, createSignal, For, on, onMount, Show } from "solid-js";
-import { Editor, Range } from "@tiptap/core";
+import { Range } from "@tiptap/core";
 import clsx from "clsx";
 import { scrollIntoView } from "seamless-scroll-polyfill";
 import { Ref, breakpoints } from "#lib/utils";

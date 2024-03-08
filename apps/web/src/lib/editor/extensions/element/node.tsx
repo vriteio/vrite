@@ -6,7 +6,11 @@ import { keymap } from "@tiptap/pm/keymap";
 import { Node } from "@tiptap/pm/model";
 import { EditorState } from "@tiptap/pm/state";
 import { Node as PMNode } from "@tiptap/pm/model";
+import { ExtensionElementViewContext } from "@vrite/sdk/extensions";
+import { createEffect } from "solid-js";
 import { formatCode } from "#lib/code-editor";
+import { ExtensionDetails, ExtensionsContextData, useExtensions, useNotifications } from "#context";
+import { ExtensionViewRenderer } from "#lib/extensions";
 
 declare module "@tiptap/core" {
   interface Commands<ReturnType> {
@@ -14,6 +18,11 @@ declare module "@tiptap/core" {
       setElementSelection: (position: number, active?: boolean) => ReturnType;
     };
   }
+}
+
+interface ExtensionElementSpec {
+  type: string;
+  view: string;
 }
 
 const getOpeningTag = async (node: PMNode): Promise<string> => {
@@ -35,7 +44,10 @@ const getOpeningTag = async (node: PMNode): Promise<string> => {
   return formattedCode.replace(/ *?\/>;/gm, node.content.size ? ">" : "/>").trim();
 };
 const getClosingTag = (node: PMNode): string => node.attrs.type;
-const Element = BaseElement.extend({
+const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
+  addOptions() {
+    return {};
+  },
   addProseMirrorPlugins() {
     const handleDeleteElement = (state: EditorState): boolean => {
       if (this.editor.isActive("element")) {
@@ -104,8 +116,105 @@ const Element = BaseElement.extend({
   addNodeView() {
     return (props) => {
       const referenceView = new NodeView(() => {}, props);
+      const { installedExtensions } = this.options;
 
       let node = props.node as Node;
+
+      const customNodeType = node.attrs.type.toLowerCase();
+      const customElements = (): Record<
+        string,
+        {
+          element: ExtensionElementSpec;
+          extension: ExtensionDetails;
+        }
+      > => {
+        const elements: Record<
+          string,
+          {
+            element: ExtensionElementSpec;
+            extension: ExtensionDetails;
+          }
+        > = {};
+
+        installedExtensions?.().forEach((extension) => {
+          if (!extension.id) return;
+
+          const spec = extension.sandbox?.spec;
+
+          if (spec?.elements) {
+            spec.elements.forEach((element) => {
+              elements[element.type.toLowerCase()] = {
+                element,
+                extension
+              };
+            });
+          }
+        });
+
+        return elements;
+      };
+
+      if (customNodeType && customElements()[customNodeType]) {
+        const contentDOM = document.createElement("div");
+        const { element, extension } = customElements()[customNodeType];
+        const component = new SolidRenderer(
+          () => {
+            const { notify } = useNotifications();
+
+            return (
+              <ExtensionViewRenderer<ExtensionElementViewContext>
+                viewId={element.view}
+                extension={extension}
+                ctx={{
+                  contextFunctions: ["notify"],
+                  usableEnv: { readable: [], writable: ["props"] },
+                  config: extension.config || {},
+                  content: {
+                    props: { "data-content": "true" },
+                    component: "View",
+                    slot: []
+                  }
+                }}
+                func={{
+                  notify
+                }}
+                usableEnvData={{ props: node.attrs.props }}
+                onInitiated={() => {
+                  component.element.querySelector("[data-content=true]")?.append(contentDOM);
+                }}
+              />
+            );
+          },
+          {
+            editor: this.editor as SolidEditor,
+            state: {}
+          }
+        );
+
+        contentDOM.setAttribute("class", "content relative flex");
+
+        return {
+          dom: component.element,
+          contentDOM,
+          ignoreMutation(mutation: MutationRecord | { type: "selection"; target: Element }) {
+            if (mutation.type === "selection") {
+              return true;
+            }
+
+            return referenceView.ignoreMutation(mutation);
+          },
+          stopEvent(event) {
+            return referenceView.stopEvent(event);
+          },
+          update(newNode) {
+            if (newNode.type.name !== "element") return false;
+
+            node = newNode as Node;
+
+            return true;
+          }
+        };
+      }
 
       const editor = this.editor as SolidEditor;
       const dom = document.createElement("div");
@@ -214,6 +323,7 @@ const Element = BaseElement.extend({
         },
         update(newNode) {
           if (newNode.type.name !== "element") return false;
+          if (newNode.attrs.type !== node.attrs.type) return false;
 
           node = newNode as Node;
           getOpeningTag(node).then((openingTag) => (code.textContent = openingTag));

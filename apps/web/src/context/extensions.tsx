@@ -25,7 +25,8 @@ const officialExtensions = [
   "https://raw.githubusercontent.com/vriteio/extensions/main/vrite/mdx-transformer/build/spec.json",
   "https://raw.githubusercontent.com/vriteio/extensions/main/vrite/publish-dev/build/spec.json",
   "https://raw.githubusercontent.com/vriteio/extensions/main/vrite/publish-medium/build/spec.json",
-  "https://raw.githubusercontent.com/vriteio/extensions/main/vrite/publish-hashnode/build/spec.json"
+  "https://raw.githubusercontent.com/vriteio/extensions/main/vrite/publish-hashnode/build/spec.json",
+  "http://localhost:5500/vrite/editor-important/build/spec.json"
 ];
 const getAbsoluteSpecPath = (url: string, specPath: string): string => {
   if (specPath.startsWith("http://") || specPath.startsWith("https://")) {
@@ -301,5 +302,11 @@ const ExtensionsProvider: ParentComponent = (props) => {
 };
 const useExtensions = (): ExtensionsContextData => useContext(ExtensionsContext)!;
 
-export { ExtensionsProvider, ExtensionsContext, useExtensions, isOfficialExtension };
+export {
+  ExtensionsProvider,
+  ExtensionsContext,
+  ExtensionsContextData,
+  useExtensions,
+  isOfficialExtension
+};
 export type { ExtensionDetails };

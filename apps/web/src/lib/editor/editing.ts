@@ -47,7 +47,7 @@ import {
   mdiCubeOutline
 } from "@mdi/js";
 import { createRef } from "#lib/utils";
-import { App } from "#context";
+import { App, ExtensionsContextData } from "#context";
 import { codeSandboxIcon } from "#assets/icons";
 
 const createClipboardSerializer = (
@@ -90,6 +90,7 @@ const createClipboardSerializer = (
   return new DOMSerializer(nodes, marks);
 };
 const createExtensions = (
+  extensionsContext: ExtensionsContextData,
   settings: App.WorkspaceSettings,
   provider: HocuspocusProvider
 ): Array<MarkExtension | NodeExtension> => {
@@ -117,10 +118,10 @@ const createExtensions = (
     orderedList: OrderedList,
     taskList: TaskList,
     blockquote: Blockquote,
-    codeBlock: CodeBlock.configure({ provider }),
     horizontalRule: HorizontalRule,
     image: Image,
-    element: Element,
+    codeBlock: CodeBlock.configure({ provider }),
+    element: Element.configure({ ...extensionsContext }),
     table: [Table, TableCell, TableHeader, TableRow]
   };
   const getHeadingLevels = (settings: App.WorkspaceSettings): Level[] => {

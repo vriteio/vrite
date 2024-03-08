@@ -2,12 +2,13 @@ import { Editor } from "./editor";
 import { Component, createEffect, createSignal, on, Show } from "solid-js";
 import clsx from "clsx";
 import { Loader } from "#components/primitives";
-import { useAuthenticatedUserData, useContentData, useLocalStorage } from "#context";
+import { useAuthenticatedUserData, useContentData, useExtensions, useLocalStorage } from "#context";
 import { createRef } from "#lib/utils";
 
 const EditorView: Component = () => {
   const { contentPieces, activeContentPieceId } = useContentData();
   const { storage, setStorage } = useLocalStorage();
+  const { loadingInstalledExtensions } = useExtensions();
   const { workspaceSettings } = useAuthenticatedUserData();
   const [syncing, setSyncing] = createSignal(true);
   const [lastScrollTop, setLastScrollTop] = createSignal(0);
@@ -61,7 +62,7 @@ const EditorView: Component = () => {
               storage().zenMode ? "items-center" : "items-start"
             )}
           >
-            <Show when={workspaceSettings()} keyed>
+            <Show when={workspaceSettings() && !loadingInstalledExtensions()} keyed>
               <Show when={contentPieces[activeContentPieceId() || ""]} keyed>
                 <Editor
                   editedContentPiece={contentPieces[activeContentPieceId() || ""]!}
@@ -83,6 +84,7 @@ const EditorView: Component = () => {
         </div>
         <Show
           when={
+            loadingInstalledExtensions() ||
             activeContentPieceId.loading ||
             !contentPieces[activeContentPieceId() || ""] ||
             (activeContentPieceId() && syncing())

@@ -20,7 +20,9 @@ import { Icon, Loader } from "#components/primitives";
 
 type ExtensionViewRendererProps<O> = {
   extension: ExtensionDetails;
-  view: "configurationView" | "contentPieceView" | `blockActionView:${string}`;
+  view?: "configurationView" | "contentPieceView" | `blockActionView:${string}`;
+  viewId?: string;
+  onInitiated?(): void;
 } & O;
 
 interface ExtensionViewContextData {
@@ -42,7 +44,7 @@ const ExtensionViewRenderer = <C extends ExtensionBaseViewContext>(
   const { sandbox } = props.extension;
   const spec = sandbox?.spec;
 
-  let viewId = "";
+  let viewId = props.viewId || "";
   let error: Error | null = null;
   let view: ExtensionElement | null = null;
 
@@ -75,7 +77,7 @@ const ExtensionViewRenderer = <C extends ExtensionBaseViewContext>(
     } else if (props.view === "contentPieceView") {
       viewId = spec?.contentPieceView || "";
     } else {
-      const [, blockActionId] = props.view.split(":");
+      const [, blockActionId] = (props.view || ":").split(":");
       const blockAction = spec?.blockActions?.find((blockAction) => {
         return blockAction.id === blockActionId;
       });
@@ -91,6 +93,7 @@ const ExtensionViewRenderer = <C extends ExtensionBaseViewContext>(
         .then((generatedView) => {
           view = generatedView;
           setInitiated(true);
+          props.onInitiated?.();
         })
         .catch((caughtError) => {
           error = caughtError;

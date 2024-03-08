@@ -15,7 +15,7 @@ import { createStore } from "solid-js/store";
 import { ExtensionElement, ExtensionSpec } from "@vrite/sdk/extensions";
 import { Dynamic } from "solid-js/web";
 import { useNotifications } from "#context";
-import { Button, IconButton, Loader, Tooltip } from "#components/primitives";
+import { Button, Card, Icon, IconButton, Loader, Tooltip } from "#components/primitives";
 import { InputField } from "#components/fragments";
 import { ContextObject } from "#collections";
 
@@ -64,6 +64,16 @@ const components = {
       </Button>
     );
   },
+  Card: (props: RenderedComponentProps<ComponentProps<typeof Card>>) => {
+    return (
+      <Card color={props.color} class={props.class}>
+        {props.children}
+      </Card>
+    );
+  },
+  Icon: (props: RenderedComponentProps<ComponentProps<typeof Icon>>) => {
+    return <Icon path={props.path} class={props.class} />;
+  },
   Tooltip: (props: RenderedComponentProps<ComponentProps<typeof Tooltip>>) => {
     return (
       <Tooltip text={props.text} side={props.side} fixed={props.fixed} class={props.class}>
@@ -96,8 +106,23 @@ const components = {
   Match: (props: RenderedComponentProps<{ when: boolean }>) => {
     return <Match when={props.when}>{props.children}</Match>;
   },
-  View: (props: RenderedComponentProps<{ class?: string }>) => {
-    return <div class={props.class}>{props.children}</div>;
+  View: (
+    props: RenderedComponentProps<{
+      [dataKey: `data-${string}`]: string;
+      class?: string;
+    }>
+  ) => {
+    const dataProps = Object.fromEntries(
+      Object.entries(props).filter(([propKey]) => {
+        return propKey.startsWith("data-");
+      })
+    );
+
+    return (
+      <div class={props.class} {...dataProps}>
+        {props.children}
+      </div>
+    );
   },
   Fragment: (props: RenderedComponentProps) => {
     return <>{props.children}</>;

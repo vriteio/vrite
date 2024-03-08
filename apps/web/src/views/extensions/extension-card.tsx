@@ -1,6 +1,7 @@
 import { ExtensionIcon } from "./extension-icon";
 import { mdiTune, mdiDownloadOutline } from "@mdi/js";
 import { Component, Show, createSignal } from "solid-js";
+import { marked } from "marked";
 import {
   App,
   ExtensionDetails,
@@ -20,6 +21,18 @@ interface ExtensionCardProps {
 const ExtensionCard: Component<ExtensionCardProps> = (props) => {
   const { installExtension } = useExtensions();
   const [loading, setLoading] = createSignal(false);
+  const renderer = new marked.Renderer();
+  const linkRenderer = renderer.link;
+
+  renderer.link = (href, title, text) => {
+    const html = linkRenderer.call(renderer, href, title, text);
+
+    if (href === text && title == null) {
+      return href;
+    }
+
+    return html.replace(/^<a /, '<a target="_blank" rel="nofollow" ');
+  };
 
   return (
     <Card class="m-0 gap-1 flex flex-col justify-center items-center" color="contrast">
@@ -56,7 +69,10 @@ const ExtensionCard: Component<ExtensionCardProps> = (props) => {
           />
         </Show>
       </div>
-      <p class="text-gray-500 dark:text-gray-400 w-full">{props.extension.spec.description}</p>
+      <p
+        class="text-gray-500 dark:text-gray-400 w-full"
+        innerHTML={marked.parseInline(props.extension.spec.description, { renderer }) as string}
+      />
     </Card>
   );
 };
