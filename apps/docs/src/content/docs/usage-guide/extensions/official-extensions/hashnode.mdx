@@ -1,0 +1,58 @@
+---
+slug: "/usage-guide/extensions/official/hashnode"
+title: "Hashnode"
+---
+
+The Hashnode extension allows you to easily publish content from Vrite to the [Hashnode](https://hashnode.com/) platform.
+
+## Installation
+
+From the _Extensions_ side panel, in the _Available_ section, find _Hashnode_ and click **Install**.
+
+![Vrite Hashnode extension](https://assets.vrite.io/65017ed7b0e627e259623b8a/dZ504mN1BG5Iwh48_lBMC.png)
+
+## Configuration
+
+The Hashnode extension has a few options you have to configure to activate it.
+
+### Access Token
+
+To retrieve your Hashnode Personal Access Token, go to the Developer Settings section of your Hashnode account ([https://hashnode.com/settings/developer](https://hashnode.com/settings/developer)) and click _Generate new token_.
+
+![Generating Personal Access Token on Hashnode](https://assets.vrite.io/65017ed7b0e627e259623b8a/4dcmpAQ22AOmMO68FhqJV.png)
+
+### Publication ID
+
+You can find it by going to your Hashnode **Blog Dashboard** and copying the publication ID from the URL:
+
+![Navigating to Blog Dashboard using Hashnode menu](https://assets.vrite.io/65017ed7b0e627e259623b8a/Mg3-yWKwbEaJ0eekOnlwX.png)
+
+```
+https://hashnode.com/[ID]/dashboard
+```
+
+### Content Group ID
+
+The content group you want to automatically publish from. Once a content piece is moved directly to this content group, it’ll trigger a Webhook that’ll auto-publish the content piece on Hashnode.
+
+You can copy the content group ID from the content group menu in either the dashboard or the explorer.
+
+![Copying the content group ID from Kanban dashboard](https://assets.vrite.io/65017ed7b0e627e259623b8a/N5l7xhJcxGW95WUf0PmKG.png)
+
+### Require Canonical Link
+
+When checked, the auto-publishing won’t trigger if the content piece doesn’t have a **canonical link** assigned. Useful when cross-posting the content to e.g. Hashnode and your own blog.
+
+### Auto-publish
+
+Whether to enable auto-publishing for all content pieces by default.
+
+## Usage
+
+With auto-publish enabled, once ready, simply move the content piece from e.g. _Drafts_ content group to the one configured e.g. _Published_. You should see the article published on Hashnode shortly after.
+
+The extension also provides a content piece view (available from the _Extensions_ section of the _Content piece_ side panel.
+
+From here, you can customize the _Auto-publish_ option per the given content piece, and easily publish the article “manually” using the _Publish_ button.
+
+![Hashnode extension's content piece view](https://assets.vrite.io/65017ed7b0e627e259623b8a/EVZ9vwzm52gPbxbKXvamO.png)

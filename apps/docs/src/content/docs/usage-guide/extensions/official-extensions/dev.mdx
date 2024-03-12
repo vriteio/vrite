@@ -1,0 +1,66 @@
+---
+slug: "/usage-guide/extensions/official/dev"
+title: "Dev.to"
+---
+
+The Dev.to extension allows you to easily publish content from Vrite to the [Dev.to](https://dev.to/) platform.
+
+## Installation
+
+From the _Extensions_ side panel, in the _Available_ section, find _Dev.to_ and click **Install**.
+
+![Vrite Dev.to extension](https://assets.vrite.io/65017ed7b0e627e259623b8a/EWm77fQwgi_tXL9Lj11dt.png)
+
+## Configuration
+
+The Dev.to extension has a few options you have to configure to activate it.
+
+### API Key
+
+To retrieve your Dev.to API key, go to the bottom of the _Extensions_ section in the DEV _Settings_: [https://dev.to/settings/extensions](https://dev.to/settings/extensions)
+
+Here, add a description and _Generate API Key_.
+
+![DEV API key generation](https://assets.vrite.io/65017ed7b0e627e259623b8a/PglPIDqhQtIg-heHYdAF7.png)
+
+### Organization ID (optional)
+
+If you want to publish the posts as an organization, you have to provide your _Organization ID_.
+
+You can find it by going to your DEV dashboard ([https://dev.to/dashboard](https://dev.to/dashboard)) then switching from _Personal_ to your organization view using the selection menu above the posts list and copying the organization ID from the URL:
+
+```
+https://dev.to/dashboard/organization/[ID]
+```
+
+### Content Group ID
+
+The content group you want to automatically publish from. Once a content piece is moved directly to this content group, it’ll trigger a Webhook that’ll auto-publish the content piece on Dev.to.
+
+You can copy the content group ID from the content group menu in either the dashboard or the explorer.
+
+![Copying the content group ID from Kanban dashboard](https://assets.vrite.io/65017ed7b0e627e259623b8a/N5l7xhJcxGW95WUf0PmKG.png)
+
+### Require Canonical Link
+
+When checked, the auto-publishing won’t trigger if the content piece doesn’t have a **canonical link** assigned. Useful when cross-posting the content to e.g. Dev.to and your own blog.
+
+### Auto-publish
+
+Whether to enable auto-publishing for all content pieces by default.
+
+### Draft
+
+Whether the Dev.to article should be marked as a draft on the platform (not publically visible).
+
+## Usage
+
+With auto-publish enabled, once ready, simply move the content piece from e.g. _Drafts_ content group to the one configured e.g. _Published_. You should see the article published on Dev.to shortly after.
+
+The extension also provides a content piece view (available from the _Extensions_ section of the _Content piece_ side panel.
+
+From here, you can customize the _Auto-publish_ and _Draft_ per the given content piece, and also set a _Series name_ to associate the article with, once it’s published on DEV.
+
+Finally, with or without the auto-publishing enabled, you can easily publish “manually” using the _Publish_ button.
+
+![Dev.to extension's content piece view](https://assets.vrite.io/65017ed7b0e627e259623b8a/i6uXC8V_LHlhfvva3y-Y9.png)
