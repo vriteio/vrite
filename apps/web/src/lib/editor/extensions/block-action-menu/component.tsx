@@ -14,6 +14,7 @@ import {
   on,
   onCleanup
 } from "solid-js";
+import { JSONContent } from "@vrite/sdk/api";
 import { createRef } from "#lib/utils";
 import { ExtensionDetails, useExtensions, useLocalStorage, useNotifications } from "#context";
 import { Button, Dropdown, Tooltip } from "#components/primitives";
@@ -98,6 +99,9 @@ const BlockActionMenu: Component<BlockActionMenuProps> = (props) => {
 
     return blockActions;
   });
+  const usableEnvData = (): { content: JSONContent } => {
+    return { content: node()?.toJSON() || { type: "doc", content: [] } };
+  };
 
   createEffect(
     on(opened, (opened) => {
@@ -239,7 +243,7 @@ const BlockActionMenu: Component<BlockActionMenuProps> = (props) => {
                     }
                   }}
                   view={`blockActionView:${blockAction.id}`}
-                  usableEnvData={{ content: node()?.toJSON() || { type: "doc", content: [] } }}
+                  usableEnvData={usableEnvData()}
                 />
               </div>
             </Dropdown>
