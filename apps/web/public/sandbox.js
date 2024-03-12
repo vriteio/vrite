@@ -1236,6 +1236,12 @@
           envData: serializeEnvData()
         };
       },
+      updateEnvData: (envData) => {
+        updateEnvData(envData);
+        return {
+          envData: serializeEnvData()
+        };
+      },
       removeScope: (id) => {
         extension?.removeScope(id);
         return {

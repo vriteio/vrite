@@ -61,6 +61,15 @@ const ExtensionsSection: Component<ExtensionsSectionProps> = (props) => {
       }
     })
   );
+  createEffect(
+    on(activeExtension, () => {
+      setData(
+        reconcile(
+          props.contentPiece.customData?.__extensions__?.[activeExtension()?.spec.name || ""] || {}
+        )
+      );
+    })
+  );
 
   return (
     <Show

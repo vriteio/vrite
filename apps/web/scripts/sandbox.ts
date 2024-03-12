@@ -227,6 +227,13 @@ type SerializedContext<C extends ExtensionBaseContext> = Omit<
         envData: serializeEnvData()
       };
     },
+    updateEnvData: (envData: SerializedEnvData) => {
+      updateEnvData(envData);
+
+      return {
+        envData: serializeEnvData()
+      };
+    },
     removeScope: (id: string) => {
       extension?.removeScope(id);
 

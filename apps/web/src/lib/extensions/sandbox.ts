@@ -8,7 +8,7 @@ import {
   ExtensionBaseViewContext,
   ExtensionMetadata
 } from "@vrite/sdk/extensions";
-import { Accessor, Setter, createSignal } from "solid-js";
+import { Accessor, Setter, createEffect, createSignal, on } from "solid-js";
 import { createRef } from "#lib/utils";
 
 type KeysOfType<T, V> = { [K in keyof T]-?: T[K] extends V ? K : never }[keyof T];
@@ -117,7 +117,10 @@ const loadExtensionSandbox = async (
       ...runtimeSpec
     },
     envData,
-    setEnvData,
+    setEnvData(...args: Parameters<typeof setEnvData>) {
+      setEnvData(...args);
+      sandbox.connection?.remote.updateEnvData(envData());
+    },
     destroy: () => sandbox.destroy(),
     generateView: async <C extends ExtensionBaseViewContext>(
       id: string,
