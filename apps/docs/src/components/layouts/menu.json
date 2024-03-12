@@ -28,6 +28,10 @@
               "link": "/usage-guide/navigation/dashboard"
             },
             {
+              "label": "Explorer Panel",
+              "link": "/usage-guide/navigation/explorer"
+            },
+            {
               "label": "Command Palette",
               "link": "/usage-guide/navigation/command-palette"
             }
@@ -51,12 +55,33 @@
           "link": "/usage-guide/configuring-vrite"
         },
         {
-          "label": "Publishing content",
-          "link": "/usage-guide/publishing"
-        },
-        {
           "label": "Vrite Extensions",
-          "link": "/usage-guide/vrite-extensions"
+          "menu": [
+            {
+              "label": "Introduction",
+              "link": "/usage-guide/extensions/introduction"
+            },
+            {
+              "label": "Dev.to",
+              "link": "/usage-guide/extensions/official/dev"
+            },
+            {
+              "label": "Hashnode",
+              "link": "/usage-guide/extensions/official/hashnode"
+            },
+            {
+              "label": "Medium",
+              "link": "/usage-guide/extensions/official/medium"
+            },
+            {
+              "label": "GPT-3.5",
+              "link": "/usage-guide/extensions/official/gpt"
+            },
+            {
+              "label": "MDX",
+              "link": "/usage-guide/extensions/official/mdx"
+            }
+          ]
         }
       ]
     },

@@ -340,6 +340,48 @@ declare module 'astro:content' {
   collection: "docs";
   data: InferEntrySchema<"docs">
 } & { render(): Render[".md"] };
+"usage-guide/extensions/introduction.mdx": {
+	id: "usage-guide/extensions/introduction.mdx";
+  slug: "/usage-guide/extensions/introduction";
+  body: string;
+  collection: "docs";
+  data: InferEntrySchema<"docs">
+} & { render(): Render[".mdx"] };
+"usage-guide/extensions/official-extensions/dev.mdx": {
+	id: "usage-guide/extensions/official-extensions/dev.mdx";
+  slug: "/usage-guide/extensions/official/dev";
+  body: string;
+  collection: "docs";
+  data: InferEntrySchema<"docs">
+} & { render(): Render[".mdx"] };
+"usage-guide/extensions/official-extensions/gpt.mdx": {
+	id: "usage-guide/extensions/official-extensions/gpt.mdx";
+  slug: "/usage-guide/extensions/official/gpt";
+  body: string;
+  collection: "docs";
+  data: InferEntrySchema<"docs">
+} & { render(): Render[".mdx"] };
+"usage-guide/extensions/official-extensions/hashnode.mdx": {
+	id: "usage-guide/extensions/official-extensions/hashnode.mdx";
+  slug: "/usage-guide/extensions/official/hashnode";
+  body: string;
+  collection: "docs";
+  data: InferEntrySchema<"docs">
+} & { render(): Render[".mdx"] };
+"usage-guide/extensions/official-extensions/mdx.mdx": {
+	id: "usage-guide/extensions/official-extensions/mdx.mdx";
+  slug: "/usage-guide/extensions/official/mdx";
+  body: string;
+  collection: "docs";
+  data: InferEntrySchema<"docs">
+} & { render(): Render[".mdx"] };
+"usage-guide/extensions/official-extensions/medium.mdx": {
+	id: "usage-guide/extensions/official-extensions/medium.mdx";
+  slug: "/usage-guide/extensions/official/medium";
+  body: string;
+  collection: "docs";
+  data: InferEntrySchema<"docs">
+} & { render(): Render[".mdx"] };
 "usage-guide/metadata.md": {
 	id: "usage-guide/metadata.md";
   slug: "/usage-guide/metadata";
@@ -361,6 +403,13 @@ declare module 'astro:content' {
   collection: "docs";
   data: InferEntrySchema<"docs">
 } & { render(): Render[".md"] };
+"usage-guide/navigation/explorer.md": {
+	id: "usage-guide/navigation/explorer.md";
+  slug: "/usage-guide/navigation/explorer";
+  body: string;
+  collection: "docs";
+  data: InferEntrySchema<"docs">
+} & { render(): Render[".md"] };
 "usage-guide/navigation/navigation.mdx": {
 	id: "usage-guide/navigation/navigation.mdx";
   slug: "/usage-guide/navigation/introduction";
@@ -368,20 +417,6 @@ declare module 'astro:content' {
   collection: "docs";
   data: InferEntrySchema<"docs">
 } & { render(): Render[".mdx"] };
-"usage-guide/publishing.md": {
-	id: "usage-guide/publishing.md";
-  slug: "/usage-guide/publishing";
-  body: string;
-  collection: "docs";
-  data: InferEntrySchema<"docs">
-} & { render(): Render[".md"] };
-"usage-guide/vrite-extensions.md": {
-	id: "usage-guide/vrite-extensions.md";
-  slug: "/usage-guide/vrite-extensions";
-  body: string;
-  collection: "docs";
-  data: InferEntrySchema<"docs">
-} & { render(): Render[".md"] };
 };
 
 	};
