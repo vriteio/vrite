@@ -119,7 +119,7 @@ const loadExtensionSandbox = async (
     envData,
     setEnvData(...args: Parameters<typeof setEnvData>) {
       setEnvData(...args);
-      sandbox.connection?.remote.updateEnvData(envData());
+      sandbox.connection?.remote.updateEnvData(JSON.parse(JSON.stringify(envData())));
     },
     destroy: () => sandbox.destroy(),
     generateView: async <C extends ExtensionBaseViewContext>(
