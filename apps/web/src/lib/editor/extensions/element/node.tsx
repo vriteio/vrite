@@ -170,7 +170,7 @@ const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
                   usableEnv: { readable: [], writable: ["props"] },
                   config: extension.config || {},
                   content: {
-                    props: { "data-content": "true" },
+                    props: { "data-content": "true", "class": "w-full" },
                     component: "View",
                     slot: []
                   }
@@ -191,7 +191,7 @@ const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
           }
         );
 
-        contentDOM.setAttribute("class", "content relative flex");
+        contentDOM.setAttribute("class", "content relative contents items-start");
 
         return {
           dom: component.element,
@@ -240,7 +240,7 @@ const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
         "class",
         "px-3 w-full border-gray-300 dark:border-gray-700 border-l-2 ml-1 py-[2px] content"
       );
-      dom.setAttribute("class", "flex flex-col justify-center items-center relative");
+      dom.setAttribute("class", "flex flex-col justify-center items-center relative w-full");
       dom.setAttribute("data-element", "true");
       content.setAttribute("class", "relative content");
       contentContainer.append(content);

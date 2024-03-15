@@ -2,6 +2,7 @@ import { mdiInformationOutline, mdiTrashCan, mdiTune } from "@mdi/js";
 import { ExtensionConfigurationViewContext, ContextObject } from "@vrite/sdk/extensions";
 import { Component, createEffect, createSignal, Show } from "solid-js";
 import { createStore } from "solid-js/store";
+import { marked } from "marked";
 import {
   ExtensionDetails,
   useConfirmationModal,
@@ -33,7 +34,18 @@ const ExtensionConfigurationView: Component<ExtensionModalProps> = (props) => {
     config: props.extension.config || {}
   });
   const { sandbox } = props.extension;
+  const renderer = new marked.Renderer();
+  const linkRenderer = renderer.link;
 
+  renderer.link = (href, title, text) => {
+    const html = linkRenderer.call(renderer, href, title, text);
+
+    if (href === text && title == null) {
+      return href;
+    }
+
+    return html.replace(/^<a /, '<a target="_blank" rel="nofollow" ');
+  };
   createEffect(() => {
     setExtensionInstallation({
       extension: props.extension,
@@ -105,9 +117,10 @@ const ExtensionConfigurationView: Component<ExtensionModalProps> = (props) => {
   return (
     <>
       <TitledCard label="Description" icon={mdiInformationOutline}>
-        <p class="prose text-gray-500 dark:text-gray-400 w-full">
-          {props.extension.spec.description}
-        </p>
+        <p
+          class="prose text-gray-500 dark:text-gray-400 w-full"
+          innerHTML={marked.parseInline(props.extension.spec.description, { renderer }) as string}
+        />
       </TitledCard>
       <Show when={sandbox?.spec?.configurationView}>
         <TitledCard label="Configuration" icon={mdiTune}>

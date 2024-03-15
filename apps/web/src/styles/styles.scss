@@ -559,16 +559,16 @@ kbd {
   }
 }
 .customized-editor-contrast {
-  --customized-editor-background: #f3f4f6;
+  --customized-editor-background: #f3f4f600;
   --customized-editor-widget-background: #f9fafb;
 }
 .dark {
   .customized-editor {
-    --customized-editor-background: #111827;
+    --customized-editor-background: #11182700;
     --customized-editor-widget-background: #1f2937;
   }
   .customized-editor-contrast {
-    --customized-editor-background: #1f2937;
+    --customized-editor-background: #1f293700;
     --customized-editor-widget-background: #111827;
   }
 }
