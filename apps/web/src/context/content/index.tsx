@@ -64,13 +64,23 @@ const ContentDataProvider: ParentComponent = (props) => {
   const [activeContentPieceId] = createResource(
     () => params.contentPiece,
     async (contentPieceParam) => {
+      if (!contentPieceParam.trim()) return null;
+
       const idRegex = /^[a-f\d]{24}$/i;
 
       if (idRegex.test(contentPieceParam)) {
         return contentPieceParam;
       }
 
-      const gitData = await client.git.config.query();
+      let gitData: Pick<App.GitData, "records"> = { records: [] };
+
+      try {
+        gitData = await client.git.config.query();
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error(error);
+      }
+
       const contentPiecesBySlug = await client.contentPieces.list.query({
         slug: params.contentPiece
       });
