@@ -67,7 +67,7 @@ kbd {
   }
 
   > * > .ProseMirror {
-    @apply pb-48;
+    @apply pt-4 pb-48;
   }
   .tableWrapper {
     @apply overflow-x-scroll pb-2 mb-3;

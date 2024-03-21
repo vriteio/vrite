@@ -202,6 +202,18 @@ interface ExtensionBaseComponents {
       disabled: boolean;
       placeholder: string;
       optional: boolean;
+      options?: Array<{ label: string; value: string }>;
+    },
+    "change"
+  >;
+  Select: ExtensionBaseComponent<
+    {
+      options: Array<{ label: string; value: string }>;
+      value?: string;
+      class?: string;
+      placeholder?: string;
+      color?: "base" | "contrast";
+      wrapperClass?: string;
     },
     "change"
   >;

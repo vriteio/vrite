@@ -3,8 +3,8 @@ import { Element as BaseElement, ElementAttributes } from "@vrite/editor";
 import { SolidEditor, SolidRenderer } from "@vrite/tiptap-solid";
 import { NodeView } from "@tiptap/core";
 import { keymap } from "@tiptap/pm/keymap";
-import { Node } from "@tiptap/pm/model";
-import { EditorState } from "@tiptap/pm/state";
+import { Node, Slice } from "@tiptap/pm/model";
+import { EditorState, NodeSelection, Plugin, PluginKey, TextSelection } from "@tiptap/pm/state";
 import { Node as PMNode } from "@tiptap/pm/model";
 import { ExtensionElementViewContext } from "@vrite/sdk/extensions";
 import { createEffect } from "solid-js";
@@ -25,6 +25,7 @@ interface ExtensionElementSpec {
   view: string;
 }
 
+const i = 0;
 const getOpeningTag = async (node: PMNode): Promise<string> => {
   const keyValueProps = Object.entries(node.attrs.props).map(([key, value]) => {
     if (value === true) return key;
@@ -115,6 +116,7 @@ const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
   },
   addNodeView() {
     return (props) => {
+      const { getPos } = props;
       const referenceView = new NodeView(() => {}, props);
       const { installedExtensions } = this.options;
 
@@ -158,13 +160,20 @@ const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
         const contentDOM = document.createElement("div");
         const { element, extension } = customElements()[customNodeType];
         const component = new SolidRenderer(
-          () => {
+          (props: {
+            state: {
+              editor: SolidEditor;
+              pos: number;
+              props: Record<string, any>;
+            };
+          }) => {
             const { notify } = useNotifications();
 
             return (
               <ExtensionViewRenderer<ExtensionElementViewContext>
                 viewId={element.view}
                 extension={extension}
+                contentEditable={false}
                 ctx={{
                   contextFunctions: ["notify"],
                   usableEnv: { readable: [], writable: ["props"] },
@@ -178,7 +187,20 @@ const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
                 func={{
                   notify
                 }}
-                usableEnvData={{ props: node.attrs.props }}
+                usableEnvData={{ props: props.state.props }}
+                onUsableEnvDataUpdate={(data) => {
+                  props.state.editor.commands.command(({ tr, dispatch }) => {
+                    if (!dispatch) return false;
+
+                    const node = props.state.editor.view.state.doc.nodeAt(props.state.pos);
+
+                    if (node && node.type.name === "element") {
+                      tr.setNodeAttribute(props.state.pos, "props", data.props);
+                    }
+
+                    return true;
+                  });
+                }}
                 onInitiated={() => {
                   component.element.querySelector("[data-content=true]")?.append(contentDOM);
                 }}
@@ -187,15 +209,21 @@ const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
           },
           {
             editor: this.editor as SolidEditor,
-            state: {}
+            state: {
+              props: node.attrs.props,
+              editor: props.editor as SolidEditor,
+              pos: typeof props.getPos === "function" ? props.getPos() : 0
+            }
           }
         );
 
+        component.element.setAttribute("class", "!m-0");
+        component.element.setAttribute("data-element", "true");
         contentDOM.setAttribute("class", "content relative contents items-start");
 
         return {
           dom: component.element,
-          contentDOM,
+          contentDOM: element.type === "Severity" ? null : contentDOM,
           ignoreMutation(mutation: MutationRecord | { type: "selection"; target: Element }) {
             if (mutation.type === "selection") {
               return true;
@@ -203,13 +231,98 @@ const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
 
             return referenceView.ignoreMutation(mutation);
           },
+          selectNode() {
+            if (element.type !== "Severity") {
+              props.editor.commands.setTextSelection(props.getPos() + 1);
+            }
+          },
           stopEvent(event) {
             return referenceView.stopEvent(event);
           },
           update(newNode) {
             if (newNode.type.name !== "element") return false;
 
+            const imageNodes: Array<{ node: PMNode; pos: number }> = [];
+
+            newNode.content.descendants((node, pos) => {
+              if (node.type.name === "image") {
+                imageNodes.push({ node, pos });
+              }
+            });
+
+            const basePos = typeof props.getPos === "function" ? props.getPos() : 0;
+
+            /* if (basePos && newNode.childCount < node.childCount) {
+              const oldNode = node;
+
+              // if (i > 0) return;
+
+              requestAnimationFrame(() => {
+                const lastPos = basePos;
+                const { state } = props.editor.view;
+                const { selection } = state;
+                const tr = state.tr
+                  .setSelection(NodeSelection.create(state.doc, lastPos))
+                  .replaceSelection(
+                    Slice.fromJSON(state.schema, { type: "doc", content: [oldNode.toJSON()] })
+                  );
+
+                props.editor.view.dispatch(tr);
+              });
+            }*/
+
+            /* if (basePos) {
+              if (!newNode.content.size) {
+                requestAnimationFrame(() => {
+                  const lastPos = basePos;
+                  const { state } = props.editor.view;
+                  const tr = state.tr.replaceWith(
+                    lastPos + 1,
+                    lastPos + 1,
+                    props.editor.schema.node("paragraph")
+                  );
+
+                  props.editor.view.dispatch(tr);
+                });
+              } else if (imageNodes.length) {
+                requestAnimationFrame(() => {
+                  const { state } = props.editor.view;
+
+                  let { tr } = state;
+
+                  imageNodes.forEach(({ node, pos }) => {
+                    const lastPos = basePos + pos;
+
+                    tr = tr
+                      .deleteRange(lastPos + 1, lastPos + node.nodeSize + 1)
+                      .setSelection(TextSelection.create(tr.doc, lastPos));
+                  });
+                  props.editor.view.dispatch(tr);
+                });
+              } else if (newNode.content.childCount > 1) {
+                /* requestAnimationFrame(() => {
+                  const lastPos = basePos;
+                  const { state } = props.editor.view;
+
+                  let { tr } = state;
+
+                  tr = tr
+                    .deleteRange(
+                      lastPos + newNode.child(0).nodeSize + 1,
+                      lastPos + newNode.content.size + 1
+                    )
+                    .setSelection(TextSelection.create(tr.doc, lastPos));
+                  props.editor.view.dispatch(tr);
+                });
+              }
+            }*/
+
             node = newNode as Node;
+            component.setState((state) => ({
+              ...state,
+              props: node.attrs.props,
+              pos: typeof props.getPos === "function" ? props.getPos() : 0
+            }));
 
             return true;
           }

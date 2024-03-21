@@ -15,11 +15,12 @@ import {
   useContext
 } from "solid-js";
 import { mdiAlertCircle } from "@mdi/js";
-import { ExtensionDetails, useExtensions } from "#context";
+import { ExtensionDetails } from "#context";
 import { Icon, Loader } from "#components/primitives";
 
 type ExtensionViewRendererProps<O> = {
   extension: ExtensionDetails;
+  contentEditable?: boolean;
   view?: "configurationView" | "contentPieceView" | `blockActionView:${string}`;
   viewId?: string;
   onInitiated?(): void;
@@ -128,7 +129,11 @@ const ExtensionViewRenderer = <C extends ExtensionBaseViewContext>(
           </div>
         }
       >
-        <ComponentRenderer spec={props.extension.spec} view={view!} />
+        <ComponentRenderer
+          spec={props.extension.spec}
+          contentEditable={props.contentEditable}
+          view={view!}
+        />
       </Show>
     </ExtensionViewContext.Provider>
   );
