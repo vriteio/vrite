@@ -139,7 +139,7 @@ const ExtensionsSection: Component<ExtensionsSectionProps> = (props) => {
                 }}
                 extension={activeExtension()!}
                 func={{ notify }}
-                view="contentPieceView"
+                viewId={activeExtension()?.sandbox?.spec.contentPieceView}
                 usableEnvData={{
                   contentPiece: props.contentPiece,
                   data

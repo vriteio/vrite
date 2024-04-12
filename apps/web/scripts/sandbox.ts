@@ -6,7 +6,8 @@ import {
   Extension,
   ExtensionBaseViewContext,
   ExtensionBaseContext,
-  Val
+  Val,
+  generateId
 } from "@vrite/sdk/extensions";
 
 // eslint-disable-next-line init-declarations
@@ -92,9 +93,10 @@ type SerializedContext<C extends ExtensionBaseContext> = Omit<
 
     return output;
   };
-  const createExtensionContext = <C extends ExtensionBaseViewContext = ExtensionBaseViewContext>(
+  const createExtensionContext = <C extends ExtensionBaseContext = ExtensionBaseContext>(
     ctx: SerializedContext<C>,
-    scopeId: string
+    scopeId: string,
+    options?: { addCSSString?(css: string): void }
   ): C => {
     return new Proxy(
       {},
@@ -119,8 +121,19 @@ type SerializedContext<C extends ExtensionBaseContext> = Omit<
             };
           }
 
+          if (key === "css") {
+            return (strings: TemplateStringsArray) => {
+              if (options?.addCSSString) {
+                options.addCSSString(strings.join(" "));
+              }
+
+              return strings.join(" ");
+            };
+          }
+
           if (key === "use") {
-            return (path: string) => {
+            return (inputPath: string) => {
+              const path = `${scopeId.split(":")[1] || ""}.${inputPath}`;
               const parts = path.split(".");
               const getVal = (): Val => {
                 return parts.slice(1).reduce((currentVal, part, index) => {
@@ -151,9 +164,9 @@ type SerializedContext<C extends ExtensionBaseContext> = Omit<
               });
               Object.defineProperty(getter, metadata!.__id, { value: path });
 
-              if (ctx.usableEnv.readable.includes(parts[0])) {
+              if (ctx.usableEnv.readable.includes(parts[1])) {
                 return getter;
-              } else if (ctx.usableEnv.writable.includes(parts[0])) {
+              } else if (ctx.usableEnv.writable.includes(parts[1])) {
                 const setter = (value: any): void => {
                   getVal()[metadata!.__value] = wrapInVal(value, path)[metadata!.__value];
                 };
@@ -198,29 +211,40 @@ type SerializedContext<C extends ExtensionBaseContext> = Omit<
     generateView: async <C extends ExtensionBaseViewContext = ExtensionBaseViewContext>(
       id: string,
       envData: SerializedEnvData,
-      serializedContext: SerializedContext<C>
+      serializedContext: SerializedContext<C>,
+      uid = generateId()
     ) => {
       updateEnvData(envData);
 
+      let css = "";
+
       const view = await extension?.generateView<C>(
         id,
-        createExtensionContext<C>(serializedContext, `view:${id}`)
+        createExtensionContext<C>(serializedContext, `view:${uid}`, {
+          addCSSString(cssString) {
+            css = `${css} ${cssString}`.trim();
+          }
+        }),
+        uid
       );
 
       return {
         view,
+        css,
         envData: serializeEnvData()
       };
     },
     runFunction: async <C extends ExtensionBaseContext | never = never>(
       id: string,
       envData: SerializedEnvData,
-      serializedContext: SerializedContext<C>
+      serializedContext: SerializedContext<C>,
+      uid = generateId()
     ) => {
       updateEnvData(envData);
       await extension?.runFunction<C>(
         id,
-        createExtensionContext<C>(serializedContext, `func:${id}`)
+        createExtensionContext<C>(serializedContext, `func:${uid}`),
+        uid
       );
 
       return {

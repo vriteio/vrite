@@ -28,6 +28,7 @@
             ]
           }
         ],
+        "max-params": ["warn", 4],
         "camelcase": "off",
         "no-undefined": "off",
         "max-lines-per-function": "off",

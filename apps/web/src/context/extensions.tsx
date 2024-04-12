@@ -93,7 +93,7 @@ const ExtensionsProvider: ParentComponent = (props) => {
           }
         };
 
-        extensionSandboxes.set(spec.name, await loadExtensionSandbox(extensionDetails));
+        extensionSandboxes.set(spec.name, await loadExtensionSandbox(extensionDetails, client));
         result.push(extensionDetails);
       }
     }
@@ -157,11 +157,14 @@ const ExtensionsProvider: ParentComponent = (props) => {
         url: extensionDetails.url
       }
     });
-    const sandbox = await loadExtensionSandbox({
-      id,
-      token,
-      spec: extensionDetails.spec
-    });
+    const sandbox = await loadExtensionSandbox(
+      {
+        id,
+        token,
+        spec: extensionDetails.spec
+      },
+      client
+    );
     const onConfigureCallback = sandbox.spec.onConfigure;
 
     extensionSandboxes.set(extensionDetails.spec.name, sandbox);
@@ -238,7 +241,7 @@ const ExtensionsProvider: ParentComponent = (props) => {
                 return extensionSandboxes.get(spec.name) || null;
               }
             };
-            const sandbox = await loadExtensionSandbox(extensionDetails);
+            const sandbox = await loadExtensionSandbox(extensionDetails, client);
 
             extensionSandboxes.set(extensionDetails.spec.name, sandbox);
             setInstalledExtensions((extensions) => {

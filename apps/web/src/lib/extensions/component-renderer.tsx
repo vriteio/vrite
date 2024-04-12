@@ -3,33 +3,35 @@ import {
   Component,
   ComponentProps,
   createEffect,
+  createMemo,
   For,
   JSX,
   Match,
   on,
+  onMount,
   Show,
   Switch
 } from "solid-js";
 import { marked } from "marked";
 import { createStore } from "solid-js/store";
-import { ExtensionElement, ExtensionSpec } from "@vrite/sdk/extensions";
+import { ExtensionElement, ExtensionSpec, ContextObject } from "@vrite/sdk/extensions";
 import { Dynamic } from "solid-js/web";
 import { useNotifications } from "#context";
 import { Button, Card, Icon, IconButton, Loader, Select, Tooltip } from "#components/primitives";
 import { InputField } from "#components/fragments";
-import { ContextObject } from "#collections";
 
 interface ComponentRendererProps {
   view: ExtensionElement | string;
   spec: ExtensionSpec;
   contentEditable?: boolean;
+  components?: Record<string, Component<any>>;
 }
 type RenderedComponentProps<O = Record<string, any>> = {
   contentEditable?: boolean;
   children: JSX.Element;
 } & O;
 
-const components = {
+const baseComponents = {
   Field: (props: RenderedComponentProps<ComponentProps<typeof InputField>>) => {
     return (
       <InputField
@@ -124,7 +126,7 @@ const components = {
   Switch: (props: RenderedComponentProps) => {
     return <Switch>{props.children}</Switch>;
   },
-  Match: (props: RenderedComponentProps<{ when: boolean }>) => {
+  Match: (props: RenderedComponentProps<{ when?: boolean }>) => {
     return <Match when={props.when}>{props.children}</Match>;
   },
   View: (
@@ -133,21 +135,15 @@ const components = {
       class?: string;
     }>
   ) => {
-    const dataProps = Object.fromEntries(
-      Object.entries(props).filter(([propKey]) => {
-        return propKey.startsWith("data-");
-      })
-    );
-
-    return (
-      <div class={props.class} {...dataProps}>
-        {props.children}
-      </div>
-    );
+    return <div class={props.class}>{props.children}</div>;
   },
   Fragment: (props: RenderedComponentProps) => {
     return <>{props.children}</>;
-  }
+  },
+  Content: () => {
+    return <div data-content="true" class="w-full" />;
+  },
+  Element: (props: RenderedComponentProps) => <>{props.children}</>
 };
 const renderer = new marked.Renderer();
 const linkRenderer = renderer.link;
@@ -163,6 +159,10 @@ renderer.link = (href, title, text) => {
 };
 
 const ComponentRenderer: Component<ComponentRendererProps> = (props) => {
+  const components = createMemo<Record<string, Component<any>>>(() => ({
+    ...baseComponents,
+    ...props.components
+  }));
   const { notify } = useNotifications();
   const { envData, setEnvData, extension } = useViewContext();
   const { sandbox } = extension;
@@ -176,8 +176,7 @@ const ComponentRenderer: Component<ComponentRendererProps> = (props) => {
     );
   }
 
-  const componentName =
-    (props.view.component.match(/^(.+?)(?:\[|\.|$)/)?.[1] as keyof typeof components) || "";
+  const componentName = props.view.component.match(/^(.+?)(?:\[|\.|$)/)?.[1] || "";
   const [componentProps, setComponentProps] = createStore<Record<string, any>>({});
   const viewProps = props.view.props || {};
 
@@ -208,14 +207,17 @@ const ComponentRenderer: Component<ComponentRendererProps> = (props) => {
       );
       setComponentProps(`set${bindKey[0].toUpperCase()}${bindKey.slice(1)}`, () => {
         return (value: any) => {
-          setEnvData((currentValue) => {
-            const newValue = { ...(currentValue as ContextObject) };
+          setEnvData((envData) => {
+            const newValue = { ...(envData as ContextObject) };
 
             let currentObject = newValue;
 
             pathParts.forEach((part, index) => {
               if (index === pathParts.length - 1) {
                 currentObject[part] = value;
+              } else if (index === 0) {
+                currentObject[part] = { ...(currentObject[part] as ContextObject) };
+                currentObject = currentObject[part] as ContextObject;
               } else {
                 currentObject = currentObject[part] as ContextObject;
               }
@@ -252,17 +254,19 @@ const ComponentRenderer: Component<ComponentRendererProps> = (props) => {
 
   return (
     <Dynamic
-      component={components[componentName]}
-      {...componentProps}
+      component={components()[componentName]}
       contentEditable={props.contentEditable}
+      view={props.view}
+      {...componentProps}
     >
-      <For each={Array.isArray(props.view.slot) ? props.view.slot : [props.view.slot]}>
+      <For each={props.view.slot}>
         {(view) => {
           return (
             <ComponentRenderer
               view={view}
               spec={props.spec}
               contentEditable={props.contentEditable}
+              components={props.components}
             />
           );
         }}

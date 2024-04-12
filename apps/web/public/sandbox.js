@@ -633,10 +633,10 @@
         var clampDuration = function(n) {
           return Math.min(Math.max(n, MINIMUM_DURATION), MAXIMUM_DURATION);
         };
-        var fire = function(that, f2, event) {
+        var fire = function(that, f3, event) {
           try {
-            if (typeof f2 === "function") {
-              f2.call(that, event);
+            if (typeof f3 === "function") {
+              f3.call(that, event);
             }
           } catch (e) {
             throwError(e);
@@ -880,8 +880,8 @@
             if (url.slice(0, 5) !== "data:" && url.slice(0, 5) !== "blob:") {
               if (lastEventId !== "") {
                 var i = url.indexOf("?");
-                requestURL = i === -1 ? url : url.slice(0, i + 1) + url.slice(i + 1).replace(/(?:^|&)([^=&]*)(?:=[^&]*)?/g, function(p, paramName) {
-                  return paramName === lastEventIdQueryParameterName ? "" : p;
+                requestURL = i === -1 ? url : url.slice(0, i + 1) + url.slice(i + 1).replace(/(?:^|&)([^=&]*)(?:=[^&]*)?/g, function(p2, paramName) {
+                  return paramName === lastEventIdQueryParameterName ? "" : p2;
                 });
                 requestURL += (url.indexOf("?") === -1 ? "?" : "&") + lastEventIdQueryParameterName + "=" + encodeURIComponent(lastEventId);
               }
@@ -957,30 +957,30 @@
     "../../node_modules/.pnpm/unfetch@4.2.0/node_modules/unfetch/dist/unfetch.js"(exports, module) {
       module.exports = function(e, n) {
         return n = n || {}, new Promise(function(t, r) {
-          var s = new XMLHttpRequest(), o = [], u2 = [], i = {}, a = function() {
-            return { ok: 2 == (s.status / 100 | 0), statusText: s.statusText, status: s.status, url: s.responseURL, text: function() {
-              return Promise.resolve(s.responseText);
+          var s2 = new XMLHttpRequest(), o = [], u3 = [], i = {}, a2 = function() {
+            return { ok: 2 == (s2.status / 100 | 0), statusText: s2.statusText, status: s2.status, url: s2.responseURL, text: function() {
+              return Promise.resolve(s2.responseText);
             }, json: function() {
-              return Promise.resolve(s.responseText).then(JSON.parse);
+              return Promise.resolve(s2.responseText).then(JSON.parse);
             }, blob: function() {
-              return Promise.resolve(new Blob([s.response]));
-            }, clone: a, headers: { keys: function() {
+              return Promise.resolve(new Blob([s2.response]));
+            }, clone: a2, headers: { keys: function() {
               return o;
             }, entries: function() {
-              return u2;
+              return u3;
             }, get: function(e2) {
               return i[e2.toLowerCase()];
             }, has: function(e2) {
               return e2.toLowerCase() in i;
             } } };
           };
-          for (var l2 in s.open(n.method || "get", e, true), s.onload = function() {
-            s.getAllResponseHeaders().replace(/^(.*?):[^\S\n]*([\s\S]*?)$/gm, function(e2, n2, t2) {
-              o.push(n2 = n2.toLowerCase()), u2.push([n2, t2]), i[n2] = i[n2] ? i[n2] + "," + t2 : t2;
-            }), t(a());
-          }, s.onerror = r, s.withCredentials = "include" == n.credentials, n.headers)
-            s.setRequestHeader(l2, n.headers[l2]);
-          s.send(n.body || null);
+          for (var l2 in s2.open(n.method || "get", e, true), s2.onload = function() {
+            s2.getAllResponseHeaders().replace(/^(.*?):[^\S\n]*([\s\S]*?)$/gm, function(e2, n2, t2) {
+              o.push(n2 = n2.toLowerCase()), u3.push([n2, t2]), i[n2] = i[n2] ? i[n2] + "," + t2 : t2;
+            }), t(a2());
+          }, s2.onerror = r, s2.withCredentials = "include" == n.credentials, n.headers)
+            s2.setRequestHeader(l2, n.headers[l2]);
+          s2.send(n.body || null);
         });
       };
     }
@@ -998,7 +998,7 @@
   __export(api_exports, {
     createClient: () => M
   });
-  var import_eventsource, l, U, E, S, f, h, L, m, D, O, R, T, C, j, x, u, I, k, v, q, G, A, b, z, y, B, M;
+  var import_eventsource, l, U, E, S, f2, h, L, m, D, O, R, T, C, j, x, u2, I, k, v, q, G, A, b, z, y, B, M;
   var init_api = __esm({
     "../../packages/sdk/javascript/dist/api.mjs"() {
       "use strict";
@@ -1007,30 +1007,30 @@
       U = (t) => ({ get: (e) => t("GET", `${l}`, { params: e }), list: (e) => t("GET", `${l}/list`, { params: e }), create: (e) => t("POST", `${l}`, { body: e }), update: (e) => t("PUT", `${l}`, { body: e }), delete: (e) => t("DELETE", `${l}`, { params: e }) });
       E = "/content-pieces";
       S = (t) => ({ get: (e) => t("GET", `${E}`, { params: e }), create: (e) => t("POST", `${E}`, { body: e }), update: (e) => t("PUT", `${E}`, { body: e }), delete: (e) => t("DELETE", `${E}`, { params: e }), list: (e) => t("GET", `${E}/list`, { params: e }) });
-      f = (t) => {
-        let e = t.baseURL || "https://api.vrite.io", c = t.extensionId || "", i = t.headers || {}, $ = null, { token: p } = t;
-        return { sendRequest: async (s, a, n) => {
+      f2 = (t) => {
+        let e = t.baseURL || "https://api.vrite.io", c = t.extensionId || "", i = t.headers || {}, $ = null, { token: p2 } = t;
+        return { sendRequest: async (s2, a2, n) => {
           try {
-            const { default: o } = await Promise.resolve().then(() => __toESM(require_browser2(), 1)), d = await o(`${e}${a}/?${encodeURI(Object.entries(n?.params || {}).filter(([, g]) => g).map(([g, w]) => `${g}=${w}`).join("&"))}`, { headers: { Authorization: `Bearer ${p}`, Accept: "application/json", ...n?.body ? { "Content-Type": "application/json" } : {}, ...c ? { "X-Vrite-Extension-ID": c } : {}, ...i }, body: n?.body ? JSON.stringify(n.body) : null, signal: $, method: s });
+            const { default: o } = await Promise.resolve().then(() => __toESM(require_browser2(), 1)), d2 = await o(`${e}${a2}/?${encodeURI(Object.entries(n?.params || {}).filter(([, g]) => g).map(([g, w]) => `${g}=${w}`).join("&"))}`, { headers: { Authorization: `Bearer ${p2}`, Accept: "application/json", ...n?.body ? { "Content-Type": "application/json" } : {}, ...c ? { "X-Vrite-Extension-ID": c } : {}, ...i }, body: n?.body ? JSON.stringify(n.body) : null, signal: $, method: s2 });
             $ = null;
             let r = null;
             try {
-              if (r = await d.json(), !r)
+              if (r = await d2.json(), !r)
                 return;
             } catch {
               return;
             }
-            if (!d.ok)
+            if (!d2.ok)
               throw r;
             return r;
           } catch (o) {
             throw console.error(o), o;
           }
-        }, reconfigure: (s) => {
-          e = s.baseURL || e, p = s.token || p, c = s.extensionId || c, i = s.headers || i;
-        }, useSignal: (s) => {
-          $ = s;
-        }, getConfig: () => ({ baseURL: e, token: p, extensionId: c, headers: i }), getSignal: () => $ };
+        }, reconfigure: (s2) => {
+          e = s2.baseURL || e, p2 = s2.token || p2, c = s2.extensionId || c, i = s2.headers || i;
+        }, useSignal: (s2) => {
+          $ = s2;
+        }, getConfig: () => ({ baseURL: e, token: p2, extensionId: c, headers: i }), getSignal: () => $ };
       };
       h = "/user-settings";
       L = (t) => ({ get: () => t("GET", `${h}`), update: (e) => t("PUT", `${h}`, { body: e }) });
@@ -1042,8 +1042,8 @@
       C = (t) => ({ get: (e) => t("GET", `${T}`, { params: e }), create: (e) => t("POST", `${T}`, { body: e }), update: (e) => t("PUT", `${T}`, { body: e }), delete: (e) => t("DELETE", `${T}`, { params: e }), list: (e) => t("GET", `${T}/list`, { params: e }) });
       j = "/workspace";
       x = (t) => ({ get: () => t("GET", `${j}`) });
-      u = "/roles";
-      I = (t) => ({ get: (e) => t("GET", `${u}`, { params: e }), create: (e) => t("POST", `${u}`, { body: e }), update: (e) => t("PUT", `${u}`, { body: e }), delete: (e) => t("DELETE", `${u}`, { params: e }), list: (e) => t("GET", `${u}/list`, { params: e }) });
+      u2 = "/roles";
+      I = (t) => ({ get: (e) => t("GET", `${u2}`, { params: e }), create: (e) => t("POST", `${u2}`, { body: e }), update: (e) => t("PUT", `${u2}`, { body: e }), delete: (e) => t("DELETE", `${u2}`, { params: e }), list: (e) => t("GET", `${u2}/list`, { params: e }) });
       k = "/workspace-settings";
       v = (t) => ({ get: () => t("GET", `${k}`), update: (e) => t("PUT", `${k}`, { body: e }) });
       q = (t) => ({ listMembers: (e) => t("GET", "/workspace-memberships/list-members", { params: e }), listWorkspaces: (e) => t("GET", "/workspace-memberships/list-workspaces", { params: e }), create: (e) => t("POST", "/workspace-memberships", { body: e }), update: (e) => t("PUT", "/workspace-memberships", { body: e }), delete: (e) => t("DELETE", "/workspace-memberships", { params: e }) });
@@ -1054,29 +1054,41 @@
       y = "/transformers";
       B = (t) => ({ create: (e) => t("POST", `${y}`, { body: e }), delete: (e) => t("DELETE", `${y}`, { params: e }), list: () => t("GET", `${y}/list`) });
       M = (t) => {
-        const { sendRequest: e, reconfigure: c, getConfig: i, getSignal: $, useSignal: p } = f(t), s = { contentGroups: U(e), contentPieces: S(e), tags: D(e), profile: R(e), userSettings: L(e), webhooks: C(e), workspace: x(e), roles: I(e), workspaceSettings: v(e), workspaceMemberships: q(e), extension: A(e), variants: z(e), transformers: B(e), search(a) {
-          return e("GET", "/search", { params: a });
-        }, async ask(a) {
+        const { sendRequest: e, reconfigure: c, getConfig: i, getSignal: $, useSignal: p2 } = f2(t), s2 = { contentGroups: U(e), contentPieces: S(e), tags: D(e), profile: R(e), userSettings: L(e), webhooks: C(e), workspace: x(e), roles: I(e), workspaceSettings: v(e), workspaceMemberships: q(e), extension: A(e), variants: z(e), transformers: B(e), search(a2) {
+          return e("GET", "/search", { params: a2 });
+        }, async ask(a2) {
           let n = "";
-          const o = new import_eventsource.default(`${i().baseURL}/search/ask?query=${encodeURIComponent(a.query)}`, { headers: { Authorization: `Bearer ${i().token}`, "Content-Type": "application/json", Accept: "application/json" } });
-          o.addEventListener("error", (d) => {
-            const r = d;
-            return r.message ? a.onError?.(r.message) : (o.close(), a.onEnd?.(n));
-          }), o.addEventListener("message", (d) => {
-            const r = decodeURIComponent(d.data);
-            n += r, a.onChunk?.(r, n);
+          const o = new import_eventsource.default(`${i().baseURL}/search/ask?query=${encodeURIComponent(a2.query)}`, { headers: { Authorization: `Bearer ${i().token}`, "Content-Type": "application/json", Accept: "application/json" } });
+          o.addEventListener("error", (d2) => {
+            const r = d2;
+            return r.message ? a2.onError?.(r.message) : (o.close(), a2.onEnd?.(n));
+          }), o.addEventListener("message", (d2) => {
+            const r = decodeURIComponent(d2.data);
+            n += r, a2.onChunk?.(r, n);
           }), $()?.addEventListener("abort", () => {
             o.close();
-          }), p(null);
-        }, useSignal(a) {
-          return p(a), s;
-        }, reconfigure(a) {
-          return c(a), s;
+          }), p2(null);
+        }, useSignal(a2) {
+          return p2(a2), s2;
+        }, reconfigure(a2) {
+          return c(a2), s2;
         } };
-        return s;
+        return s2;
       };
     }
   });
+
+  // ../../packages/sdk/javascript/dist/extensions.mjs
+  var f = Symbol("usableEnv");
+  var u = Symbol("value");
+  var a = Symbol("id");
+  var s = Symbol("componentName");
+  var p = () => `_${Math.random().toString(36).substring(2, 9)}`;
+  var d = new Proxy({}, { get(c, e) {
+    const n = () => {
+    };
+    return Object.defineProperty(n, s, { value: e }), n;
+  } });
 
   // scripts/sandbox.ts
   (async () => {
@@ -1131,7 +1143,7 @@
       });
       return output;
     };
-    const createExtensionContext = (ctx, scopeId) => {
+    const createExtensionContext = (ctx, scopeId, options) => {
       return new Proxy(
         {},
         {
@@ -1154,8 +1166,17 @@
                 return Websandbox.connection?.remote.flush(serializeEnvData());
               };
             }
+            if (key === "css") {
+              return (strings) => {
+                if (options?.addCSSString) {
+                  options.addCSSString(strings.join(" "));
+                }
+                return strings.join(" ");
+              };
+            }
             if (key === "use") {
-              return (path) => {
+              return (inputPath) => {
+                const path = `${scopeId.split(":")[1] || ""}.${inputPath}`;
                 const parts = path.split(".");
                 const getVal = () => {
                   return parts.slice(1).reduce((currentVal, part, index) => {
@@ -1180,9 +1201,9 @@
                   }
                 });
                 Object.defineProperty(getter, metadata.__id, { value: path });
-                if (ctx.usableEnv.readable.includes(parts[0])) {
+                if (ctx.usableEnv.readable.includes(parts[1])) {
                   return getter;
-                } else if (ctx.usableEnv.writable.includes(parts[0])) {
+                } else if (ctx.usableEnv.writable.includes(parts[1])) {
                   const setter = (value) => {
                     getVal()[metadata.__value] = wrapInVal(value, path)[metadata.__value];
                   };
@@ -1215,22 +1236,30 @@
         client.reconfigure({ token, extensionId });
         return extension?.generateRuntimeSpec() || null;
       },
-      generateView: async (id, envData, serializedContext) => {
+      generateView: async (id, envData, serializedContext, uid = p()) => {
         updateEnvData(envData);
+        let css = "";
         const view = await extension?.generateView(
           id,
-          createExtensionContext(serializedContext, `view:${id}`)
+          createExtensionContext(serializedContext, `view:${uid}`, {
+            addCSSString(cssString) {
+              css = `${css} ${cssString}`.trim();
+            }
+          }),
+          uid
         );
         return {
           view,
+          css,
           envData: serializeEnvData()
         };
       },
-      runFunction: async (id, envData, serializedContext) => {
+      runFunction: async (id, envData, serializedContext, uid = p()) => {
         updateEnvData(envData);
         await extension?.runFunction(
           id,
-          createExtensionContext(serializedContext, `func:${id}`)
+          createExtensionContext(serializedContext, `func:${uid}`),
+          uid
         );
         return {
           envData: serializeEnvData()

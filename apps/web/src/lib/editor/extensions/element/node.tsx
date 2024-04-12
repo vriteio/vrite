@@ -1,16 +1,22 @@
-import { ElementSelection, isElementSelection, isElementSelectionActive } from "./selection";
+import { ElementSelection } from "./selection";
+import { xmlNodeView } from "./xml-node-view";
+import { customNodeView } from "./custom-node-view";
 import { Element as BaseElement, ElementAttributes } from "@vrite/editor";
-import { SolidEditor, SolidRenderer } from "@vrite/tiptap-solid";
+import { SolidEditor } from "@vrite/tiptap-solid";
 import { NodeView } from "@tiptap/core";
 import { keymap } from "@tiptap/pm/keymap";
-import { Node, Slice } from "@tiptap/pm/model";
-import { EditorState, NodeSelection, Plugin, PluginKey, TextSelection } from "@tiptap/pm/state";
-import { Node as PMNode } from "@tiptap/pm/model";
-import { ExtensionElementViewContext } from "@vrite/sdk/extensions";
-import { createEffect } from "solid-js";
-import { formatCode } from "#lib/code-editor";
-import { ExtensionDetails, ExtensionsContextData, useExtensions, useNotifications } from "#context";
-import { ExtensionViewRenderer } from "#lib/extensions";
+import { Fragment, Node, ResolvedPos } from "@tiptap/pm/model";
+import { EditorState, NodeSelection, Plugin, TextSelection, Transaction } from "@tiptap/pm/state";
+import {
+  ExtensionElement,
+  ExtensionElementSpec,
+  ExtensionElementViewContext
+} from "@vrite/sdk/extensions";
+import { NodeView as PMNodeView } from "@tiptap/pm/view";
+import { nanoid } from "nanoid";
+import { JSONContent } from "@vrite/sdk/api";
+import { GapCursor } from "@tiptap/pm/gapcursor";
+import { ExtensionDetails, ExtensionsContextData } from "#context";
 
 declare module "@tiptap/core" {
   interface Commands<ReturnType> {
@@ -20,31 +26,210 @@ declare module "@tiptap/core" {
   }
 }
 
-interface ExtensionElementSpec {
+type StructureNode = { element?: string; content?: string | StructureNode[] };
+type CustomView = {
   type: string;
-  view: string;
-}
-
-const i = 0;
-const getOpeningTag = async (node: PMNode): Promise<string> => {
-  const keyValueProps = Object.entries(node.attrs.props).map(([key, value]) => {
-    if (value === true) return key;
-
-    const useBrackets = typeof value !== "string" || value.includes("\n") || value.includes(`"`);
-
-    return `${key}=${useBrackets ? "{" : ""}${JSON.stringify(value)}${useBrackets ? "}" : ""}`;
-  });
-  const c = `<${node.attrs.type}${keyValueProps.length ? " " : ""}${keyValueProps.join(" ")}>`;
-  const codeTagClosed = c.trim().replace(/>$/, "/>") || "";
-  const formattedCode = await formatCode(codeTagClosed, "typescript", {
-    printWidth: 60,
-    trailingComma: "none",
-    singleQuote: false
-  });
-
-  return formattedCode.replace(/ *?\/>;/gm, node.content.size ? ">" : "/>").trim();
+  extension: ExtensionDetails;
+  views: Array<{ path: string[]; view: ExtensionElement }>;
+  structure: StructureNode;
+  getPos(): number;
+  node(): Node;
 };
-const getClosingTag = (node: PMNode): string => node.attrs.type;
+
+const getCustomElements = (
+  installedExtensions?: () => ExtensionDetails[]
+): Record<
+  string,
+  {
+    element: ExtensionElementSpec;
+    extension: ExtensionDetails;
+  }
+> => {
+  const elements: Record<
+    string,
+    {
+      element: ExtensionElementSpec;
+      extension: ExtensionDetails;
+    }
+  > = {};
+
+  installedExtensions?.().forEach((extension) => {
+    if (!extension.id) return;
+
+    const spec = extension.sandbox?.spec;
+
+    if (spec?.elements) {
+      spec.elements.forEach((element) => {
+        elements[element.type.toLowerCase()] = {
+          element,
+          extension
+        };
+      });
+    }
+  });
+
+  return elements;
+};
+const customViews = new Map<string, CustomView>();
+const loaders = new Map<string, Promise<void>>();
+const registerCustomElementView = async (
+  elementSpec: ExtensionElementSpec,
+  extension: ExtensionDetails,
+  getters: Pick<CustomView, "getPos" | "node">
+): Promise<string> => {
+  const uid = nanoid();
+  const generatedViewData = await extension.sandbox?.generateView<ExtensionElementViewContext>(
+    elementSpec.view,
+    {
+      contextFunctions: ["notify"],
+      usableEnv: { readable: [], writable: ["props"] },
+      config: extension.config || {}
+    },
+    { notify: () => {} },
+    uid
+  );
+
+  if (!generatedViewData) return "";
+
+  const views: Array<{ path: string[]; view: ExtensionElement }> = [
+    { path: [elementSpec.type.toLowerCase()], view: generatedViewData.view }
+  ];
+  const structure: StructureNode = { element: elementSpec.type.toLowerCase(), content: [] };
+  // TODO: Implement structure
+  const registerSubElement = (
+    parentPath: string[],
+    element: ExtensionElement,
+    index: number
+  ): any => {
+    /* parentElement.slot?.forEach((childElement, index) => {
+      if (
+        typeof childElement === "object" &&
+        childElement.component === "Element" &&
+        childElement.props?.type
+      ) {
+        const path = [...parentPath, `${childElement.props.type}#${index}`.toLowerCase()];
+        const structureContent: JSONContent[] = [];
+        const structurePart: JSONContent = {
+          type: "element",
+          attrs: { type: childElement.props.type },
+          content: structureContent
+        };
+
+        views.push({
+          view: { component: "Fragment", slot: childElement.slot },
+          path
+        });
+        structure.push(structurePart);
+        registerSubElement(childElement, path, structureContent);
+        if (structurePart.content?.length === 0) delete structurePart.content;
+      } else if (typeof childElement === "object" && childElement.component === "Content") {
+        if (childElement.slot.length) {
+        }
+
+        if (childElement.props?.content) {
+          // TODO: Implement allowed content
+          structure.content = childElement.props.content || [];
+        }
+
+        registerSubElement(childElement, parentPath, structure);
+      } else if (typeof childElement === "object") {
+        registerSubElement(childElement, parentPath, structure);
+      }
+    });*/
+  };
+
+  // registerSubElement([], {element: generatedViewData.view}, structure);
+  customViews.set(uid, {
+    type: elementSpec.type.toLowerCase(),
+    extension,
+    views,
+    structure,
+    ...getters
+  });
+
+  return uid;
+};
+const getElementPath = (
+  resolvedPos: ResolvedPos,
+  customElements: Record<
+    string,
+    {
+      element: ExtensionElementSpec;
+      extension: ExtensionDetails;
+    }
+  >
+): string[] => {
+  let path: string[] = [];
+
+  for (let i = 0; i <= resolvedPos.depth; i++) {
+    const node = resolvedPos.node(i);
+    const index = resolvedPos.index(i);
+
+    if (node.type.name === "element") {
+      const type = `${node.attrs.type || "element"}`.toLowerCase();
+
+      if (!path.length) {
+        path = [type];
+      } else if (customElements[type]) {
+        path = [type];
+      } else {
+        path.push(`${type}#${index}`);
+      }
+    }
+  }
+
+  if (path.length) {
+    path.push(
+      `${resolvedPos.nodeAfter?.attrs.type || "element"}#${resolvedPos.index()}`.toLowerCase()
+    );
+  } else {
+    path = [`${resolvedPos.nodeAfter?.attrs.type || "element"}`.toLowerCase()];
+  }
+
+  return path;
+};
+const applyStructure = (fragment: Fragment, structure: JSONContent[]): JSONContent[] => {
+  const currentContent = fragment.toJSON() as JSONContent[];
+  const applyStructureLevel = (
+    currentContentLevel: JSONContent[],
+    structureLevel: JSONContent[]
+  ): JSONContent[] => {
+    const output: JSONContent[] = [];
+
+    for (let i = 0; i < structureLevel.length; i++) {
+      const structureElement = structureLevel[i];
+      const currentElement = currentContentLevel[i];
+
+      if (
+        structureElement?.type === currentElement?.type &&
+        (structureElement?.type !== "element" ||
+          structureElement.attrs?.type === currentElement.attrs?.type)
+      ) {
+        let { content } = currentElement;
+
+        if (structureElement.content?.length) {
+          content = applyStructureLevel(
+            currentElement.content || [],
+            structureElement.content || []
+          );
+        }
+
+        output.push({
+          ...currentElement,
+          content
+        });
+
+        continue;
+      }
+
+      output.push(structureElement);
+    }
+
+    return output;
+  };
+
+  return applyStructureLevel(currentContent, structure);
+};
 const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
   addOptions() {
     return {};
@@ -89,11 +274,88 @@ const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
 
       return false;
     };
+    const { installedExtensions } = this.options;
+    const editor = this.editor as SolidEditor;
+
+    let customElements = getCustomElements(installedExtensions);
+
+    requestAnimationFrame(() => {
+      customElements = getCustomElements(installedExtensions);
+    });
 
     return [
       keymap({
         Delete: handleDeleteElement,
         Backspace: handleDeleteElement
+      }),
+      new Plugin({
+        filterTransaction(tr) {
+          if (!tr.docChanged) return true;
+
+          const entries: Array<{ node: Node; pos: number }> = [];
+
+          tr.doc.descendants((node, pos) => {
+            if (node.type.name === "element" && customElements[node.attrs.type.toLowerCase()]) {
+              entries.push({ node, pos });
+
+              return false;
+            }
+          });
+
+          for (const entry of entries) {
+            const activeElementNode = entry.node;
+            const activePos = entry.pos;
+            const uid = (editor.view.nodeDOM(activePos) as HTMLElement)?.getAttribute("data-uid");
+
+            if (!uid) continue;
+
+            const customView = customViews.get(uid);
+
+            if (
+              JSON.stringify(applyStructure(activeElementNode.content, customView?.structure!)) !==
+              JSON.stringify(activeElementNode.content.toJSON())
+            ) {
+              return false;
+            }
+          }
+
+          return true;
+        },
+        appendTransaction(_, oldState, newState) {
+          const setTextSelection = (tr: Transaction, position: number, dir = 1): Transaction => {
+            const nextSelection = TextSelection.findFrom(tr.doc.resolve(position), dir, true);
+
+            if (nextSelection) {
+              return tr.setSelection(nextSelection);
+            }
+
+            return tr;
+          };
+
+          if (newState.selection instanceof NodeSelection) {
+            const node = newState.selection.$from.nodeAfter;
+
+            if (node?.type.name === "element") {
+              if (node?.content.size) {
+                if (oldState.tr.selection.$to.pos >= newState.selection.$to.pos) {
+                  return setTextSelection(
+                    newState.tr,
+                    newState.selection.$from.pos + (node.content.size || 0),
+                    -1
+                  );
+                } else {
+                  return setTextSelection(newState.tr, newState.selection.$from.pos + 2);
+                }
+              } else if (oldState.selection.$to.pos === newState.selection.$to.pos) {
+                return newState.tr.setSelection(new GapCursor(newState.selection.$from));
+              } else {
+                return newState.tr.setSelection(new GapCursor(newState.selection.$to));
+              }
+            }
+          }
+
+          return null;
+        }
       })
     ];
   },
@@ -116,305 +378,130 @@ const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
   },
   addNodeView() {
     return (props) => {
-      const { getPos } = props;
       const referenceView = new NodeView(() => {}, props);
-      const { installedExtensions } = this.options;
+      const wrapper = document.createElement("div");
+      const contentWrapper = document.createElement("div");
+      const loadingId = nanoid();
 
-      let node = props.node as Node;
+      let { node } = props;
+      let selected = false;
+      let view: Partial<PMNodeView> | null = null;
+      let resolveLoader = (): void => {};
 
-      const customNodeType = node.attrs.type.toLowerCase();
-      const customElements = (): Record<
-        string,
-        {
-          element: ExtensionElementSpec;
-          extension: ExtensionDetails;
+      wrapper.setAttribute("data-element", "true");
+      wrapper.setAttribute("data-loading-id", loadingId);
+      loaders.set(
+        loadingId,
+        new Promise<void>((resolve) => {
+          resolveLoader = resolve;
+        }).then(() => {
+          loaders.delete(loadingId);
+          wrapper.removeAttribute("data-loading-id");
+        })
+      );
+      // Determine view
+      requestAnimationFrame(async () => {
+        if (typeof props.getPos !== "function") return;
+
+        const { installedExtensions } = this.options;
+        const editor = this.editor as SolidEditor;
+        const customNodeType = node.attrs.type.toLowerCase();
+        const customElements = getCustomElements(installedExtensions);
+        const customElement = customNodeType ? customElements[customNodeType] : null;
+        const resolvedPos = props.editor.state.doc.resolve(props.getPos());
+        const parentPos = props.getPos() - resolvedPos.parentOffset - 1;
+        const path = getElementPath(resolvedPos, customElements);
+
+        if (parentPos >= 0) {
+          const parentElement = props.editor.view.nodeDOM(parentPos) as HTMLElement;
+          const parentLoadingId = parentElement.getAttribute("data-loading-id");
+
+          if (parentLoadingId) {
+            await loaders.get(parentLoadingId);
+          }
         }
-      > => {
-        const elements: Record<
-          string,
-          {
-            element: ExtensionElementSpec;
-            extension: ExtensionDetails;
-          }
-        > = {};
 
-        installedExtensions?.().forEach((extension) => {
-          if (!extension.id) return;
+        let uid = "";
 
-          const spec = extension.sandbox?.spec;
+        if (customElement) {
+          uid = await registerCustomElementView(
+            customElement.element,
+            customElement.extension,
+            props.getPos as () => number,
+            () => node,
+            () => selected
+          );
 
-          if (spec?.elements) {
-            spec.elements.forEach((element) => {
-              elements[element.type.toLowerCase()] = {
-                element,
-                extension
-              };
-            });
-          }
-        });
+          const customView = customViews.get(uid);
+          const content = applyStructure(node.content, customView?.structure!);
 
-        return elements;
-      };
+          editor.commands.insertContentAt(
+            { from: props.getPos() + 1, to: props.getPos() + node.content.size },
+            content
+          );
+        } else if (parentPos >= 0) {
+          const parentElement = props.editor.view.nodeDOM(parentPos) as HTMLElement;
 
-      if (customNodeType && customElements()[customNodeType]) {
-        const contentDOM = document.createElement("div");
-        const { element, extension } = customElements()[customNodeType];
-        const component = new SolidRenderer(
-          (props: {
-            state: {
-              editor: SolidEditor;
-              pos: number;
-              props: Record<string, any>;
-            };
-          }) => {
-            const { notify } = useNotifications();
+          uid = parentElement.getAttribute("data-uid") || "";
+        }
 
-            return (
-              <ExtensionViewRenderer<ExtensionElementViewContext>
-                viewId={element.view}
-                extension={extension}
-                contentEditable={false}
-                ctx={{
-                  contextFunctions: ["notify"],
-                  usableEnv: { readable: [], writable: ["props"] },
-                  config: extension.config || {},
-                  content: {
-                    props: { "data-content": "true", "class": "w-full" },
-                    component: "View",
-                    slot: []
+        if (uid) {
+          const customView = customViews.get(uid);
+          const matchedView = customView?.views.find((view) => {
+            return view.path.join(".") === path.join(".");
+          });
+
+          if (customView) {
+            view = customNodeView({
+              props,
+              editor,
+              uid,
+              view: matchedView?.view!,
+              extension: customView.extension,
+              contentWrapper,
+              wrapper,
+              getProps() {
+                return customView.node().attrs.props || {};
+              },
+              getSelected() {
+                return selected;
+              },
+              updateProps(newProps) {
+                const pos = customView.getPos();
+
+                if (typeof pos !== "number" || pos > editor.view.state.doc.nodeSize) return;
+
+                editor.commands.command(({ tr, dispatch }) => {
+                  if (!dispatch) return false;
+
+                  const pos = customView.getPos();
+                  const node = customView.node();
+
+                  if (typeof pos !== "number" || pos > editor.view.state.doc.nodeSize) {
+                    return false;
                   }
-                }}
-                func={{
-                  notify
-                }}
-                usableEnvData={{ props: props.state.props }}
-                onUsableEnvDataUpdate={(data) => {
-                  props.state.editor.commands.command(({ tr, dispatch }) => {
-                    if (!dispatch) return false;
 
-                    const node = props.state.editor.view.state.doc.nodeAt(props.state.pos);
+                  if (node && node.type.name === "element") {
+                    dispatch(tr.setNodeAttribute(pos, "props", { ...newProps }));
+                  }
 
-                    if (node && node.type.name === "element") {
-                      tr.setNodeAttribute(props.state.pos, "props", data.props);
-                    }
-
-                    return true;
-                  });
-                }}
-                onInitiated={() => {
-                  component.element.querySelector("[data-content=true]")?.append(contentDOM);
-                }}
-              />
-            );
-          },
-          {
-            editor: this.editor as SolidEditor,
-            state: {
-              props: node.attrs.props,
-              editor: props.editor as SolidEditor,
-              pos: typeof props.getPos === "function" ? props.getPos() : 0
-            }
-          }
-        );
-
-        component.element.setAttribute("class", "!m-0");
-        component.element.setAttribute("data-element", "true");
-        contentDOM.setAttribute("class", "content relative contents items-start");
-
-        return {
-          dom: component.element,
-          contentDOM: element.type === "Severity" ? null : contentDOM,
-          ignoreMutation(mutation: MutationRecord | { type: "selection"; target: Element }) {
-            if (mutation.type === "selection") {
-              return true;
-            }
-
-            return referenceView.ignoreMutation(mutation);
-          },
-          selectNode() {
-            if (element.type !== "Severity") {
-              props.editor.commands.setTextSelection(props.getPos() + 1);
-            }
-          },
-          stopEvent(event) {
-            return referenceView.stopEvent(event);
-          },
-          update(newNode) {
-            if (newNode.type.name !== "element") return false;
-
-            const imageNodes: Array<{ node: PMNode; pos: number }> = [];
-
-            newNode.content.descendants((node, pos) => {
-              if (node.type.name === "image") {
-                imageNodes.push({ node, pos });
+                  return true;
+                });
               }
             });
+            resolveLoader();
 
-            const basePos = typeof props.getPos === "function" ? props.getPos() : 0;
-
-            /* if (basePos && newNode.childCount < node.childCount) {
-              const oldNode = node;
-
-              // if (i > 0) return;
-
-              requestAnimationFrame(() => {
-                const lastPos = basePos;
-                const { state } = props.editor.view;
-                const { selection } = state;
-                const tr = state.tr
-                  .setSelection(NodeSelection.create(state.doc, lastPos))
-                  .replaceSelection(
-                    Slice.fromJSON(state.schema, { type: "doc", content: [oldNode.toJSON()] })
-                  );
-
-                props.editor.view.dispatch(tr);
-              });
-            }*/
-
-            /* if (basePos) {
-              if (!newNode.content.size) {
-                requestAnimationFrame(() => {
-                  const lastPos = basePos;
-                  const { state } = props.editor.view;
-                  const tr = state.tr.replaceWith(
-                    lastPos + 1,
-                    lastPos + 1,
-                    props.editor.schema.node("paragraph")
-                  );
-
-                  props.editor.view.dispatch(tr);
-                });
-              } else if (imageNodes.length) {
-                requestAnimationFrame(() => {
-                  const { state } = props.editor.view;
-
-                  let { tr } = state;
-
-                  imageNodes.forEach(({ node, pos }) => {
-                    const lastPos = basePos + pos;
-
-                    tr = tr
-                      .deleteRange(lastPos + 1, lastPos + node.nodeSize + 1)
-                      .setSelection(TextSelection.create(tr.doc, lastPos));
-                  });
-                  props.editor.view.dispatch(tr);
-                });
-              } else if (newNode.content.childCount > 1) {
-                /* requestAnimationFrame(() => {
-                  const lastPos = basePos;
-                  const { state } = props.editor.view;
-
-                  let { tr } = state;
-
-                  tr = tr
-                    .deleteRange(
-                      lastPos + newNode.child(0).nodeSize + 1,
-                      lastPos + newNode.content.size + 1
-                    )
-                    .setSelection(TextSelection.create(tr.doc, lastPos));
-                  props.editor.view.dispatch(tr);
-                });
-              }
-            }*/
-
-            node = newNode as Node;
-            component.setState((state) => ({
-              ...state,
-              props: node.attrs.props,
-              pos: typeof props.getPos === "function" ? props.getPos() : 0
-            }));
-
-            return true;
+            return;
           }
-        };
-      }
-
-      const editor = this.editor as SolidEditor;
-      const dom = document.createElement("div");
-      const contentContainer = document.createElement("div");
-      const content = document.createElement("div");
-      const code = document.createElement("code");
-      const bottomCode = document.createElement("code");
-      const bottomCodeStart = document.createElement("span");
-      const bottomCodeKey = document.createElement("span");
-      const bottomCodeEnd = document.createElement("span");
-      const handleCodeClick = (event: MouseEvent): void => {
-        if (typeof props.getPos === "function") {
-          editor.commands.setElementSelection(props.getPos(), true);
         }
 
-        event.preventDefault();
-        event.stopPropagation();
-      };
-
-      getOpeningTag(props.node).then((openingTag) => (code.textContent = openingTag));
-      bottomCodeKey.textContent = getClosingTag(node);
-      contentContainer.setAttribute(
-        "class",
-        "px-3 w-full border-gray-300 dark:border-gray-700 border-l-2 ml-1 py-[2px] content"
-      );
-      dom.setAttribute("class", "flex flex-col justify-center items-center relative w-full");
-      dom.setAttribute("data-element", "true");
-      content.setAttribute("class", "relative content");
-      contentContainer.append(content);
-      dom.append(code, contentContainer, bottomCode);
-      code.setAttribute(
-        "class",
-        "!whitespace-pre-wrap leading-[26px] min-h-6.5 block w-full !p-0 !bg-transparent !rounded-0 !text-gray-400 !dark:text-gray-400 cursor-pointer"
-      );
-      bottomCode.setAttribute(
-        "class",
-        "block w-full !p-0 leading-[26px] min-h-6.5 !rounded-0 !bg-transparent !text-gray-400 !dark:text-gray-400 cursor-pointer select-none"
-      );
-      code.contentEditable = "false";
-      bottomCode.contentEditable = "false";
-      bottomCode.append(bottomCodeStart, bottomCodeKey, bottomCodeEnd);
-      bottomCodeStart.textContent = "</";
-      bottomCodeEnd.textContent = ">";
-      code.addEventListener("click", handleCodeClick);
-      bottomCode.addEventListener("click", handleCodeClick);
-
-      if (!node.content.size) {
-        bottomCode.classList.add("!hidden");
-      }
-
-      const update = (): void => {
-        const pos = typeof props.getPos === "function" ? props.getPos() : null;
-        const { selection } = this.editor.state;
-        const selectionPos = selection.$from.pos;
-
-        if (pos === null) return;
-
-        if (
-          pos === selectionPos &&
-          isElementSelection(selection) &&
-          isElementSelectionActive(selection)
-        ) {
-          code.classList.add("selected-element-code");
-          bottomCodeKey.classList.add("selected-element-bottom-code");
-          bottomCode.classList.remove("!text-gray-400", "!dark:text-gray-400");
-          bottomCode.classList.add("!text-[#000000]", "!dark:text-[#DCDCDC]");
-          bottomCodeKey.classList.add("!text-[#008080]", "!dark:text-[#3dc9b0]");
-        } else if (isElementSelection(selection) && !isElementSelectionActive(selection)) {
-          contentContainer.classList.add("!border-primary");
-          code.classList.remove("selected-element-code");
-          bottomCodeKey.classList.remove("selected-element-bottom-code");
-          bottomCode.classList.add("!text-gray-400", "!dark:text-gray-400");
-          bottomCode.classList.remove("!text-[#000000]", "!dark:text-[#DCDCDC]");
-          bottomCodeKey.classList.remove("!text-[#008080]", "!dark:text-[#3dc9b0]");
-        } else {
-          contentContainer.classList.remove("!border-primary");
-          code.classList.remove("selected-element-code");
-          bottomCodeKey.classList.remove("selected-element-bottom-code");
-          bottomCode.classList.add("!text-gray-400", "!dark:text-gray-400");
-          bottomCode.classList.remove("!text-[#000000]", "!dark:text-[#DCDCDC]");
-          bottomCodeKey.classList.remove("!text-[#008080]", "!dark:text-[#3dc9b0]");
-        }
-      };
+        view = xmlNodeView({ props, editor, wrapper, contentWrapper });
+        resolveLoader();
+      });
 
       return {
-        dom,
-        contentDOM: content,
+        dom: wrapper,
+        contentDOM: contentWrapper,
         ignoreMutation(mutation: MutationRecord | { type: "selection"; target: Element }) {
           if (mutation.type === "selection") {
             return true;
@@ -423,30 +510,23 @@ const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
           return referenceView.ignoreMutation(mutation);
         },
         selectNode() {
-          editor.on("update", update);
-          editor.on("selectionUpdate", update);
+          selected = true;
+          view?.selectNode?.();
         },
         deselectNode() {
-          update();
-          editor.off("update", update);
-          editor.off("selectionUpdate", update);
+          selected = false;
+          view?.deselectNode?.();
         },
         stopEvent(event) {
           return referenceView.stopEvent(event);
         },
-        update(newNode) {
+        update(newNode, decorations, innerDecorations) {
+          view?.update?.(newNode, decorations, innerDecorations);
           if (newNode.type.name !== "element") return false;
           if (newNode.attrs.type !== node.attrs.type) return false;
+          if (Boolean(newNode.content.size) !== Boolean(node.content.size)) return false;
 
-          node = newNode as Node;
-          getOpeningTag(node).then((openingTag) => (code.textContent = openingTag));
-          bottomCodeKey.textContent = getClosingTag(node);
-
-          if (node.content.size) {
-            bottomCode.classList.remove("!hidden");
-          } else {
-            bottomCode.classList.add("!hidden");
-          }
+          node = newNode;
 
           return true;
         }

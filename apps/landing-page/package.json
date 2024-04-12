@@ -17,7 +17,7 @@
     "@mdi/js": "^7.2.96",
     "@sendgrid/client": "^7.7.0",
     "@types/html-to-text": "^9.0.1",
-    "@unocss/reset": "^0.55.7",
+    "@unocss/reset": "^0.59.0",
     "@vrite/components": "workspace:*",
     "@vrite/sdk": "workspace:*",
     "astro": "^2.10.15",
@@ -31,7 +31,7 @@
     "simple-icons": "^11.5.0",
     "solid-js": "^1.8.11",
     "typescript": "^5.2.2",
-    "unocss": "^0.55.7",
+    "unocss": "^0.59.0",
     "vite": "^4.4.9"
   },
   "devDependencies": {

@@ -71,7 +71,9 @@ interface ExtensionBaseContext<C extends ContextObject = ContextObject> {
   notify(message: { text: string; type: "success" | "error" }): Promise<void>;
 }
 interface ExtensionBaseViewContext<C extends ContextObject = ContextObject>
-  extends ExtensionBaseContext<C> {}
+  extends ExtensionBaseContext<C> {
+  css(strings: TemplateStringsArray, ...values: Array<ContextValue>): string;
+}
 interface ExtensionConfigurationViewContext<C extends ContextObject = ContextObject>
   extends ExtensionBaseViewContext<C> {
   [__usableEnv]: UsableEnv<{ [__value]: any }, { config: C }>;
@@ -88,10 +90,11 @@ interface ExtensionBlockActionViewContext<C extends ContextObject = ContextObjec
   replaceContent(contentHTML: string): Promise<void>;
   refreshContent(): Promise<void>;
 }
-interface ExtensionElementViewContext<C extends ContextObject = ContextObject>
-  extends ExtensionBaseViewContext<C> {
-  [__usableEnv]: UsableEnv<{ [__value]: any }, { props: Record<string, any> }>;
-  content: ExtensionElement;
+interface ExtensionElementViewContext<
+  C extends ContextObject = ContextObject,
+  P extends Record<string, any> = Record<string, any>
+> extends ExtensionBaseViewContext<C> {
+  [__usableEnv]: UsableEnv<{ [__value]: any }, { props: P }>;
 }
 
 // eslint-disable-next-line init-declarations
@@ -119,7 +122,7 @@ interface ExtensionEnvironment {
   data: Record<string, Val>;
   func: Record<string, Func<any>>;
   views: Record<string, View<any>>;
-  currentScope: { func: string[]; temp: string[] } | null;
+  currentScope: { func: string[]; temp: string[]; uid: string } | null;
 }
 interface ExtensionMetadata {
   __value: typeof __value;
@@ -141,21 +144,23 @@ interface ExtensionSpec {
   icon: string;
   iconDark?: string;
 }
+interface ExtensionBlockActionSpec {
+  id: string;
+  label: string;
+  blocks: string[];
+  view: string;
+}
+interface ExtensionElementSpec {
+  type: string;
+  view: string;
+}
 interface ExtensionRuntimeSpec {
   onUninstall?: string;
   onConfigure?: string;
   configurationView?: string;
   contentPieceView?: string;
-  blockActions?: Array<{
-    id: string;
-    label: string;
-    blocks: string[];
-    view: string;
-  }>;
-  elements?: Array<{
-    type: string;
-    view: string;
-  }>;
+  blockActions?: ExtensionBlockActionSpec[];
+  elements?: ExtensionElementSpec[];
 }
 interface Extension {
   getMetadata: () => ExtensionMetadata;
@@ -163,12 +168,14 @@ interface Extension {
   generateRuntimeSpec: () => ExtensionRuntimeSpec;
   generateView: <C extends ExtensionBaseViewContext>(
     id: string,
-    context: C
+    context: C,
+    uid: string
   ) => Promise<ExtensionElement>;
   removeScope: (id: string) => void;
   runFunction: <C extends ExtensionBaseContext | never = never>(
     id: string,
-    context: C
+    context: C,
+    uid: string
   ) => Promise<void>;
 }
 type BaseProps<P extends Record<string, any>> = {
@@ -189,6 +196,9 @@ interface ExtensionBaseComponent<
   [__props]: P;
 }
 interface ExtensionBaseComponents {
+  // Element Components
+  Content: ExtensionBaseComponent<{ content?: string }>;
+  Element: ExtensionBaseComponent<{ type: string }>;
   // Layout Components
   View: ExtensionBaseComponent<{ class: string }>;
   // UI Components
@@ -254,7 +264,7 @@ interface ExtensionBaseComponents {
   // Control Components
   Switch: ExtensionBaseComponent<{}>;
   Match: ExtensionBaseComponent<{
-    when: ContextValue;
+    when?: ContextValue;
   }>;
   Show: ExtensionBaseComponent<{
     when: ContextValue;
@@ -273,16 +283,16 @@ interface ExtensionRuntimeConfig<C extends ContextObject = ContextObject> {
   onConfigure?: Func<ExtensionBaseContext<C>>;
   configurationView?: View<ExtensionConfigurationViewContext<C>>;
   contentPieceView?: View<ExtensionContentPieceViewContext<C>>;
-  blockActions?: Array<{
-    id: string;
-    label: string;
-    blocks: string[];
-    view: View<ExtensionBlockActionViewContext<C>>;
-  }>;
-  elements?: Array<{
-    type: string;
-    view: View<ExtensionElementViewContext<C>>;
-  }>;
+  blockActions?: Array<
+    Omit<ExtensionBlockActionSpec, "view"> & {
+      view: View<ExtensionBlockActionViewContext<C>>;
+    }
+  >;
+  elements?: Array<
+    Omit<ExtensionElementSpec, "view"> & {
+      view: View<ExtensionElementViewContext<C, any>>;
+    }
+  >;
 }
 
 const env: ExtensionEnvironment = {
@@ -293,7 +303,7 @@ const env: ExtensionEnvironment = {
 };
 const scopes: Record<string, { func: string[]; temp: string[] }> = {};
 const generateId = (): string => {
-  return `_${Math.random().toString(36).substr(2, 9)}`;
+  return `_${Math.random().toString(36).substring(2, 9)}`;
 };
 const Components = new Proxy({} as ExtensionBaseComponents, {
   get(_, key) {
@@ -465,18 +475,23 @@ const createRuntime = <C extends ContextObject = ContextObject>(
         }))
       };
     },
-    generateView: async <C extends ExtensionBaseViewContext>(id: string, context: C) => {
+    generateView: async <C extends ExtensionBaseViewContext>(
+      id: string,
+      context: C,
+      uid: string
+    ) => {
       const runView = env.views[id]?.[__value];
 
       if (runView) {
         env.currentScope = {
           func: [],
-          temp: []
+          temp: [],
+          uid
         };
 
         const element = await runView(context);
 
-        scopes[`view:${id}`] = env.currentScope;
+        scopes[`view:${uid}`] = env.currentScope;
         env.currentScope = null;
 
         return element;
@@ -487,18 +502,23 @@ const createRuntime = <C extends ContextObject = ContextObject>(
         slot: []
       };
     },
-    runFunction: async <C extends ExtensionBaseContext | never = never>(id: string, context: C) => {
+    runFunction: async <C extends ExtensionBaseContext | never = never>(
+      id: string,
+      context: C,
+      uid: string
+    ) => {
       const runFunc = env.func[id];
 
       if (runFunc) {
         env.currentScope = {
           func: [],
-          temp: []
+          temp: [],
+          uid
         };
         await runFunc(context);
-        scopes[`func:${id}`] = env.currentScope;
+        scopes[`func:${uid}`] = env.currentScope;
         env.currentScope = null;
-        removeScope(`func:${id}`);
+        removeScope(`func:${uid}`);
       }
     },
     removeScope
@@ -512,7 +532,8 @@ export {
   createFunction,
   createElement,
   createFragment,
-  createRuntime
+  createRuntime,
+  generateId
 };
 export type {
   Extension,
@@ -520,6 +541,8 @@ export type {
   ExtensionMetadata,
   ExtensionSpec,
   ExtensionRuntimeSpec,
+  ExtensionBlockActionSpec,
+  ExtensionElementSpec,
   ExtensionBaseComponents,
   ExtensionBaseViewContext,
   ExtensionBaseContext,

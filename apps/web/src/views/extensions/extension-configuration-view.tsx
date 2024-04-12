@@ -132,7 +132,7 @@ const ExtensionConfigurationView: Component<ExtensionModalProps> = (props) => {
             }}
             extension={extensionInstallation.extension}
             func={{ notify }}
-            view="configurationView"
+            viewId={sandbox?.spec?.configurationView}
             usableEnvData={{ config: extensionInstallation.config as ContextObject }}
             onUsableEnvDataUpdate={(envData) => {
               setExtensionInstallation(
