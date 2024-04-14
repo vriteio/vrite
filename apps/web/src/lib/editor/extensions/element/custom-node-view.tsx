@@ -1,16 +1,10 @@
 import { NodeViewRendererProps } from "@tiptap/core";
 import { Node as PMNode } from "@tiptap/pm/model";
 import { SolidEditor, SolidRenderer } from "@vrite/tiptap-solid";
-import {
-  ExtensionElementViewContext,
-  ExtensionElement,
-  ContextObject
-} from "@vrite/sdk/extensions";
+import { ExtensionElementViewContext, ExtensionElement } from "@vrite/sdk/extensions";
 import { NodeView as PMNodeView } from "@tiptap/pm/view";
-import { createSignal } from "solid-js";
-import { createNanoEvents } from "nanoevents";
 import { useNotifications } from "#context";
-import { ExtensionDetails, ExtensionViewRenderer, UsableEnvData } from "#lib/extensions";
+import { ExtensionDetails, ExtensionViewRenderer } from "#lib/extensions";
 
 const customSubTrees = new Map<string, Promise<ExtensionElement | null>>();
 const customNodeView = ({
@@ -22,8 +16,7 @@ const customNodeView = ({
   contentWrapper,
   wrapper,
   updateProps,
-  getProps,
-  getSelected
+  getProps
 }: {
   props: NodeViewRendererProps;
   editor: SolidEditor;

@@ -17,6 +17,7 @@ import { nanoid } from "nanoid";
 import { JSONContent } from "@vrite/sdk/api";
 import { GapCursor } from "@tiptap/pm/gapcursor";
 import { ExtensionDetails, ExtensionsContextData } from "#context";
+import { getCustomElements } from "./utils";
 
 declare module "@tiptap/core" {
   interface Commands<ReturnType> {
@@ -36,40 +37,6 @@ type CustomView = {
   node(): Node;
 };
 
-const getCustomElements = (
-  installedExtensions?: () => ExtensionDetails[]
-): Record<
-  string,
-  {
-    element: ExtensionElementSpec;
-    extension: ExtensionDetails;
-  }
-> => {
-  const elements: Record<
-    string,
-    {
-      element: ExtensionElementSpec;
-      extension: ExtensionDetails;
-    }
-  > = {};
-
-  installedExtensions?.().forEach((extension) => {
-    if (!extension.id) return;
-
-    const spec = extension.sandbox?.spec;
-
-    if (spec?.elements) {
-      spec.elements.forEach((element) => {
-        elements[element.type.toLowerCase()] = {
-          element,
-          extension
-        };
-      });
-    }
-  });
-
-  return elements;
-};
 const customViews = new Map<string, CustomView>();
 const loaders = new Map<string, Promise<void>>();
 const registerCustomElementView = async (
@@ -92,53 +59,62 @@ const registerCustomElementView = async (
   if (!generatedViewData) return "";
 
   const views: Array<{ path: string[]; view: ExtensionElement }> = [
-    { path: [elementSpec.type.toLowerCase()], view: generatedViewData.view }
+    {
+      path: [elementSpec.type.toLowerCase()],
+      view: generatedViewData.view
+    }
   ];
-  const structure: StructureNode = { element: elementSpec.type.toLowerCase(), content: [] };
-  // TODO: Implement structure
-  const registerSubElement = (
+  const structure: StructureNode = { element: elementSpec.type };
+  const processElementTree = (
     parentPath: string[],
+    parentStructureNode: StructureNode,
     element: ExtensionElement,
-    index: number
-  ): any => {
-    /* parentElement.slot?.forEach((childElement, index) => {
-      if (
-        typeof childElement === "object" &&
-        childElement.component === "Element" &&
-        childElement.props?.type
-      ) {
-        const path = [...parentPath, `${childElement.props.type}#${index}`.toLowerCase()];
-        const structureContent: JSONContent[] = [];
-        const structurePart: JSONContent = {
-          type: "element",
-          attrs: { type: childElement.props.type },
-          content: structureContent
-        };
+    index?: number
+  ): void => {
+    if (element.component === "Element") {
+      const path = [
+        ...parentPath,
+        `${element.props?.type || ""}${typeof index === "number" ? `#${index}` : ""}`.toLowerCase()
+      ];
+      const view = { path, view: { component: "Fragment", slot: element.slot } };
+      const structure = { element: `${element.props?.type || ""}` };
 
-        views.push({
-          view: { component: "Fragment", slot: childElement.slot },
-          path
+      views.push(view);
+      parentStructureNode.content = [
+        ...(Array.isArray(parentStructureNode.content) ? parentStructureNode.content : []),
+        structure
+      ];
+      element.slot?.forEach((childElement, index) => {
+        if (typeof childElement === "object") {
+          processElementTree(path, structure, childElement, index);
+        }
+      });
+      return;
+    }
+    if (element.component === "Content") {
+      if (element.slot.length) {
+        element.slot?.forEach((childElement, index) => {
+          if (typeof childElement === "object") {
+            processElementTree(parentPath, parentStructureNode, childElement, index);
+          }
         });
-        structure.push(structurePart);
-        registerSubElement(childElement, path, structureContent);
-        if (structurePart.content?.length === 0) delete structurePart.content;
-      } else if (typeof childElement === "object" && childElement.component === "Content") {
-        if (childElement.slot.length) {
-        }
 
-        if (childElement.props?.content) {
-          // TODO: Implement allowed content
-          structure.content = childElement.props.content || [];
-        }
-
-        registerSubElement(childElement, parentPath, structure);
-      } else if (typeof childElement === "object") {
-        registerSubElement(childElement, parentPath, structure);
+        return;
       }
-    });*/
-  };
+      if (element.props?.content) {
+        parentStructureNode.content = `${element.props.content}`;
+      }
 
-  // registerSubElement([], {element: generatedViewData.view}, structure);
+      return;
+    }
+
+    element.slot?.forEach((childElement, index) => {
+      if (typeof childElement === "object") {
+        processElementTree(parentPath, parentStructureNode, childElement, index);
+      }
+    });
+  };
+  processElementTree([elementSpec.type.toLowerCase()], structure, generatedViewData.view);
   customViews.set(uid, {
     type: elementSpec.type.toLowerCase(),
     extension,
@@ -188,47 +164,40 @@ const getElementPath = (
 
   return path;
 };
-const applyStructure = (fragment: Fragment, structure: JSONContent[]): JSONContent[] => {
-  const currentContent = fragment.toJSON() as JSONContent[];
-  const applyStructureLevel = (
-    currentContentLevel: JSONContent[],
-    structureLevel: JSONContent[]
-  ): JSONContent[] => {
-    const output: JSONContent[] = [];
+const applyStructure = (node: Node, structure: StructureNode): JSONContent => {
+  const nodeJSON = node.toJSON() as JSONContent;
+  const applyStructureToNode = (
+    nodeJSON: JSONContent | null,
+    structureNode: StructureNode
+  ): JSONContent | null => {
+    if (typeof structureNode.content === "string") {
+      // TODO: Apply string content structure
+      return {
+        type: "element",
+        attrs: { ...nodeJSON?.attrs, type: `${structureNode.element}` },
+        content: nodeJSON?.content || [{ type: "paragraph", content: [] }]
+      };
+    } else if (structureNode.content) {
+      return {
+        type: "element",
+        attrs: { ...nodeJSON?.attrs, type: `${structureNode.element}` },
+        content: structureNode.content
+          .map((childStructureNode, index) => {
+            const childNodeJSON = nodeJSON?.content?.[index];
 
-    for (let i = 0; i < structureLevel.length; i++) {
-      const structureElement = structureLevel[i];
-      const currentElement = currentContentLevel[i];
-
-      if (
-        structureElement?.type === currentElement?.type &&
-        (structureElement?.type !== "element" ||
-          structureElement.attrs?.type === currentElement.attrs?.type)
-      ) {
-        let { content } = currentElement;
-
-        if (structureElement.content?.length) {
-          content = applyStructureLevel(
-            currentElement.content || [],
-            structureElement.content || []
-          );
-        }
-
-        output.push({
-          ...currentElement,
-          content
-        });
-
-        continue;
-      }
-
-      output.push(structureElement);
+            return applyStructureToNode(childNodeJSON || null, childStructureNode);
+          })
+          .filter(Boolean) as JSONContent[]
+      };
     }
 
-    return output;
+    return {
+      type: "element",
+      attrs: { ...nodeJSON?.attrs, type: `${structureNode.element}` }
+    };
   };
 
-  return applyStructureLevel(currentContent, structure);
+  return applyStructureToNode(nodeJSON, structure)!;
 };
 const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
   addOptions() {
@@ -312,8 +281,8 @@ const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
             const customView = customViews.get(uid);
 
             if (
-              JSON.stringify(applyStructure(activeElementNode.content, customView?.structure!)) !==
-              JSON.stringify(activeElementNode.content.toJSON())
+              JSON.stringify(applyStructure(activeElementNode, customView?.structure!)) !==
+              JSON.stringify(activeElementNode.toJSON())
             ) {
               return false;
             }
@@ -424,20 +393,17 @@ const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
         let uid = "";
 
         if (customElement) {
-          uid = await registerCustomElementView(
-            customElement.element,
-            customElement.extension,
-            props.getPos as () => number,
-            () => node,
-            () => selected
-          );
+          uid = await registerCustomElementView(customElement.element, customElement.extension, {
+            getPos: props.getPos,
+            node: () => node
+          });
 
           const customView = customViews.get(uid);
-          const content = applyStructure(node.content, customView?.structure!);
+          const content = applyStructure(node, customView?.structure!);
 
           editor.commands.insertContentAt(
             { from: props.getPos() + 1, to: props.getPos() + node.content.size },
-            content
+            content.content || []
           );
         } else if (parentPos >= 0) {
           const parentElement = props.editor.view.nodeDOM(parentPos) as HTMLElement;
