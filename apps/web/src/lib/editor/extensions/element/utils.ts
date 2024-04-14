@@ -1,5 +1,6 @@
-import { ExtensionDetails } from "#context";
 import { ExtensionElementSpec } from "@vrite/sdk/extensions";
+import { ResolvedPos, Node as PMNode } from "@tiptap/pm/model";
+import { ExtensionDetails } from "#context";
 
 const getCustomElements = (
   installedExtensions?: () => ExtensionDetails[]
@@ -35,5 +36,42 @@ const getCustomElements = (
 
   return elements;
 };
+const getElementPath = (
+  resolvedPos: ResolvedPos,
+  customElements: Record<
+    string,
+    {
+      element: ExtensionElementSpec;
+      extension: ExtensionDetails;
+    }
+  >
+): string[] => {
+  let path: string[] = [];
 
-export { getCustomElements };
+  const appendToPath = (node: PMNode, index: number): void => {
+    if (node.type.name === "element") {
+      const type = `${node.attrs.type || "element"}`.toLowerCase();
+
+      if (!path.length) {
+        path = [type];
+      } else if (customElements[type]) {
+        path = [type];
+      } else {
+        path.push(`${type}#${index}`);
+      }
+    }
+  };
+
+  for (let i = 0; i <= resolvedPos.depth; i++) {
+    const node = resolvedPos.node(i);
+    const index = resolvedPos.index(i);
+
+    appendToPath(node, index);
+  }
+
+  appendToPath(resolvedPos.nodeAfter!, resolvedPos.index());
+
+  return path;
+};
+
+export { getCustomElements, getElementPath };

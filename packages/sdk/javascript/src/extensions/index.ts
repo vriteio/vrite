@@ -33,6 +33,20 @@ type UsableEnv<R extends ContextObject = ContextObject, W extends ContextObject 
   readable: R;
   writable: W;
 };
+type JSONContentNodeType =
+  | "paragraph"
+  | "heading"
+  | "blockquote"
+  | "element"
+  | "image"
+  | "codeBlock"
+  | "embed"
+  | "bulletList"
+  | "orderedList"
+  | "taskList"
+  | "horizontalRule"
+  | "table"
+  | "block";
 type UseEnv<C extends ExtensionBaseContext> = C[typeof __usableEnv] extends UsableEnv
   ? <
       K extends
@@ -197,7 +211,7 @@ interface ExtensionBaseComponent<
 }
 interface ExtensionBaseComponents {
   // Element Components
-  Content: ExtensionBaseComponent<{ content?: string }>;
+  Content: ExtensionBaseComponent<{ allowed?: JSONContentNodeType[] }>;
   Element: ExtensionBaseComponent<{ type: string }>;
   // Layout Components
   View: ExtensionBaseComponent<{ class: string }>;

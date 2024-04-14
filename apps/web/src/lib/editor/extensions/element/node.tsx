@@ -1,6 +1,7 @@
 import { ElementSelection } from "./selection";
 import { xmlNodeView } from "./xml-node-view";
 import { customNodeView } from "./custom-node-view";
+import { getCustomElements, getElementPath } from "./utils";
 import { Element as BaseElement, ElementAttributes } from "@vrite/editor";
 import { SolidEditor } from "@vrite/tiptap-solid";
 import { NodeView } from "@tiptap/core";
@@ -17,7 +18,6 @@ import { nanoid } from "nanoid";
 import { JSONContent } from "@vrite/sdk/api";
 import { GapCursor } from "@tiptap/pm/gapcursor";
 import { ExtensionDetails, ExtensionsContextData } from "#context";
-import { getCustomElements } from "./utils";
 
 declare module "@tiptap/core" {
   interface Commands<ReturnType> {
@@ -27,7 +27,7 @@ declare module "@tiptap/core" {
   }
 }
 
-type StructureNode = { element?: string; content?: string | StructureNode[] };
+type StructureNode = { element?: string; content?: true | StructureNode[]; allowed?: string[] };
 type CustomView = {
   type: string;
   extension: ExtensionDetails;
@@ -71,6 +71,14 @@ const registerCustomElementView = async (
     element: ExtensionElement,
     index?: number
   ): void => {
+    const processSlot = (parentPath: string[], parentStructureNode: StructureNode): void => {
+      element.slot?.forEach((childElement, index) => {
+        if (typeof childElement === "object") {
+          processElementTree(parentPath, parentStructureNode, childElement, index);
+        }
+      });
+    };
+
     if (element.component === "Element") {
       const path = [
         ...parentPath,
@@ -84,36 +92,27 @@ const registerCustomElementView = async (
         ...(Array.isArray(parentStructureNode.content) ? parentStructureNode.content : []),
         structure
       ];
-      element.slot?.forEach((childElement, index) => {
-        if (typeof childElement === "object") {
-          processElementTree(path, structure, childElement, index);
-        }
-      });
+      processSlot(path, structure);
+
       return;
     }
+
     if (element.component === "Content") {
       if (element.slot.length) {
-        element.slot?.forEach((childElement, index) => {
-          if (typeof childElement === "object") {
-            processElementTree(parentPath, parentStructureNode, childElement, index);
-          }
-        });
+        processSlot(parentPath, parentStructureNode);
 
         return;
       }
-      if (element.props?.content) {
-        parentStructureNode.content = `${element.props.content}`;
-      }
+
+      parentStructureNode.content = true;
+      parentStructureNode.allowed = element.props?.allowed as any as string[];
 
       return;
     }
 
-    element.slot?.forEach((childElement, index) => {
-      if (typeof childElement === "object") {
-        processElementTree(parentPath, parentStructureNode, childElement, index);
-      }
-    });
+    processSlot(parentPath, parentStructureNode);
   };
+
   processElementTree([elementSpec.type.toLowerCase()], structure, generatedViewData.view);
   customViews.set(uid, {
     type: elementSpec.type.toLowerCase(),
@@ -125,57 +124,31 @@ const registerCustomElementView = async (
 
   return uid;
 };
-const getElementPath = (
-  resolvedPos: ResolvedPos,
-  customElements: Record<
-    string,
-    {
-      element: ExtensionElementSpec;
-      extension: ExtensionDetails;
-    }
-  >
-): string[] => {
-  let path: string[] = [];
-
-  for (let i = 0; i <= resolvedPos.depth; i++) {
-    const node = resolvedPos.node(i);
-    const index = resolvedPos.index(i);
-
-    if (node.type.name === "element") {
-      const type = `${node.attrs.type || "element"}`.toLowerCase();
-
-      if (!path.length) {
-        path = [type];
-      } else if (customElements[type]) {
-        path = [type];
-      } else {
-        path.push(`${type}#${index}`);
-      }
-    }
-  }
-
-  if (path.length) {
-    path.push(
-      `${resolvedPos.nodeAfter?.attrs.type || "element"}#${resolvedPos.index()}`.toLowerCase()
-    );
-  } else {
-    path = [`${resolvedPos.nodeAfter?.attrs.type || "element"}`.toLowerCase()];
-  }
-
-  return path;
-};
 const applyStructure = (node: Node, structure: StructureNode): JSONContent => {
   const nodeJSON = node.toJSON() as JSONContent;
   const applyStructureToNode = (
     nodeJSON: JSONContent | null,
     structureNode: StructureNode
   ): JSONContent | null => {
-    if (typeof structureNode.content === "string") {
-      // TODO: Apply string content structure
+    if (typeof structureNode.content === "boolean") {
+      let defaultNodeType = "paragraph";
+
+      if (
+        structureNode.allowed &&
+        !structureNode.allowed.includes("paragraph") &&
+        !structureNode.allowed.includes("block")
+      ) {
+        defaultNodeType = structureNode.allowed[0] || "";
+      }
+
       return {
         type: "element",
         attrs: { ...nodeJSON?.attrs, type: `${structureNode.element}` },
-        content: nodeJSON?.content || [{ type: "paragraph", content: [] }]
+        ...((nodeJSON?.content?.length || defaultNodeType) && {
+          content: nodeJSON?.content?.filter((content) => {
+            return !structureNode.allowed || structureNode.allowed.includes(content.type);
+          }) || [{ type: defaultNodeType, content: [] }]
+        })
       };
     } else if (structureNode.content) {
       return {
@@ -228,14 +201,21 @@ const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
           node.content.firstChild?.type.name === "paragraph" &&
           typeof pos === "number"
         ) {
-          this.editor
-            .chain()
-            .deleteRange({
+          const chain = this.editor.chain();
+
+          if (state.doc.resolve(pos).parent.childCount === 1) {
+            chain.insertContentAt(
+              { from: pos, to: pos + node.nodeSize },
+              { type: "paragraph", content: [] }
+            );
+          } else {
+            chain.deleteRange({
               from: pos,
               to: pos + node.nodeSize
-            })
-            .focus()
-            .run();
+            });
+          }
+
+          chain.focus().run();
 
           return true;
         }
@@ -267,7 +247,7 @@ const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
             if (node.type.name === "element" && customElements[node.attrs.type.toLowerCase()]) {
               entries.push({ node, pos });
 
-              return false;
+              return true;
             }
           });
 
@@ -417,7 +397,7 @@ const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
             return view.path.join(".") === path.join(".");
           });
 
-          if (customView) {
+          if (customView && matchedView) {
             view = customNodeView({
               props,
               editor,

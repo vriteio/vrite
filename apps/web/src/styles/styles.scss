@@ -290,7 +290,7 @@ kbd {
   --highlighted-thread: "";
   :where([aria-expanded] > .ProseMirror, .content, blockquote, li, td, th) {
     &
-      > :where(div, ul, ol, p, blockquote, hr):not(.ProseMirror-gapcursor, .ProseMirror-widget)
+      > :where(div, ul, ol, p, blockquote, hr):not(.ProseMirror-gapcursor)
       + :where(div, ul, ol, p, blockquote, hr, h1, h2, h3, h4, h5, h6):not(
         [data-element="true"],
         .ProseMirror-widget
