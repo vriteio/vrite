@@ -1,5 +1,4 @@
 import { NodeViewRendererProps } from "@tiptap/core";
-import { Node as PMNode } from "@tiptap/pm/model";
 import { SolidEditor, SolidRenderer } from "@vrite/tiptap-solid";
 import { ExtensionElementViewContext, ExtensionElement } from "@vrite/sdk/extensions";
 import { NodeView as PMNodeView } from "@tiptap/pm/view";
@@ -13,6 +12,7 @@ const customNodeView = ({
   extension,
   uid,
   view,
+  top,
   contentWrapper,
   wrapper,
   updateProps,
@@ -22,23 +22,15 @@ const customNodeView = ({
   editor: SolidEditor;
   uid: string;
   view: ExtensionElement;
+  top?: boolean;
   extension: ExtensionDetails;
   contentWrapper: HTMLElement;
   wrapper: HTMLElement;
   updateProps(newProps: Record<string, any>): void;
   getProps(): Record<string, any>;
-  getSelected(): boolean;
 }): Partial<PMNodeView> => {
-  let node = props.node as PMNode;
-
   const component = new SolidRenderer(
-    (props: {
-      state: {
-        editor: SolidEditor;
-        pos: number;
-        node: PMNode;
-      };
-    }) => {
+    () => {
       const { notify } = useNotifications();
 
       return (
@@ -63,44 +55,27 @@ const customNodeView = ({
               updateProps(data.props);
             }
           }}
-          onInitiated={(view) => {
-            setTimeout(() => {
-              component.element.querySelector("[data-content=true]")?.append(contentWrapper);
-            }, 500);
-          }}
         />
       );
     },
     {
       editor,
-      state: {
-        node,
-        editor: props.editor as SolidEditor,
-        pos: typeof props.getPos === "function" ? props.getPos() : 0
-      }
+      state: {}
     }
   );
 
+  component.element.querySelector("[data-content=true]")?.append(contentWrapper);
+  contentWrapper.setAttribute("class", "content relative");
   wrapper.setAttribute("class", "!m-0");
   wrapper.setAttribute("data-uid", uid);
   wrapper.setAttribute("data-initialized", "true");
-  contentWrapper.setAttribute("class", "content relative");
   wrapper.append(component.element);
 
-  return {
-    update(newNode) {
-      if (newNode.type.name !== "element") return false;
+  if (top) {
+    wrapper.setAttribute("data-custom-node-view", "true");
+  }
 
-      node = newNode;
-      component.setState((state) => ({
-        ...state,
-        node,
-        pos: typeof props.getPos === "function" ? props.getPos() : 0
-      }));
-
-      return true;
-    }
-  };
+  return {};
 };
 
 export { customNodeView, customSubTrees };

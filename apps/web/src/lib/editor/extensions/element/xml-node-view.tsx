@@ -59,7 +59,7 @@ const xmlNodeView = ({
   bottomCodeKey.textContent = getClosingTag(node);
   contentContainer.setAttribute(
     "class",
-    "px-3 w-full border-gray-300 dark:border-gray-700 border-l-2 ml-1 py-[2px] content"
+    "px-3 py-[2px] w-full border-gray-300 dark:border-gray-700 border-l-2 ml-1 content"
   );
   wrapper.setAttribute("class", "flex flex-col justify-center items-center relative w-full");
   contentWrapper.setAttribute("class", "relative content");
@@ -83,6 +83,7 @@ const xmlNodeView = ({
 
   if (!node.content.size) {
     bottomCode.classList.add("!hidden");
+    contentContainer.classList.remove("border-l-2", "px-3", "py-[2px]");
   }
 
   const update = (): void => {
@@ -139,8 +140,10 @@ const xmlNodeView = ({
 
       if (node.content.size) {
         bottomCode.classList.remove("!hidden");
+        contentContainer.classList.add("border-l-2", "px-3", "py-[2px]");
       } else {
         bottomCode.classList.add("!hidden");
+        contentContainer.classList.remove("border-l-2", "px-3", "py-[2px]");
       }
 
       return true;

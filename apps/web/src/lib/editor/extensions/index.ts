@@ -15,4 +15,5 @@ export * from "./block-paste";
 export * from "./table-menu";
 export * from "./element";
 export * from "./auto-dir";
-export * from "./element-menu";
+export * from "./xml-node-menu";
+export * from "./custom-node-menu";

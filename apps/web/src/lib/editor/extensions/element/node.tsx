@@ -1,23 +1,24 @@
-import { ElementSelection } from "./selection";
+import { ElementSelection, isElementSelection } from "./selection";
 import { xmlNodeView } from "./xml-node-view";
 import { customNodeView } from "./custom-node-view";
-import { getCustomElements, getElementPath } from "./utils";
+import {
+  CustomView,
+  applyStructure,
+  createCustomView,
+  getCustomElements,
+  getElementPath
+} from "./utils";
 import { Element as BaseElement, ElementAttributes } from "@vrite/editor";
 import { SolidEditor } from "@vrite/tiptap-solid";
 import { NodeView } from "@tiptap/core";
 import { keymap } from "@tiptap/pm/keymap";
-import { Fragment, Node, ResolvedPos } from "@tiptap/pm/model";
+import { Node } from "@tiptap/pm/model";
 import { EditorState, NodeSelection, Plugin, TextSelection, Transaction } from "@tiptap/pm/state";
-import {
-  ExtensionElement,
-  ExtensionElementSpec,
-  ExtensionElementViewContext
-} from "@vrite/sdk/extensions";
 import { NodeView as PMNodeView } from "@tiptap/pm/view";
 import { nanoid } from "nanoid";
-import { JSONContent } from "@vrite/sdk/api";
 import { GapCursor } from "@tiptap/pm/gapcursor";
-import { ExtensionDetails, ExtensionsContextData } from "#context";
+import { createSignal } from "solid-js";
+import { ExtensionsContextData } from "#context";
 
 declare module "@tiptap/core" {
   interface Commands<ReturnType> {
@@ -27,151 +28,8 @@ declare module "@tiptap/core" {
   }
 }
 
-type StructureNode = { element?: string; content?: true | StructureNode[]; allowed?: string[] };
-type CustomView = {
-  type: string;
-  extension: ExtensionDetails;
-  views: Array<{ path: string[]; view: ExtensionElement }>;
-  structure: StructureNode;
-  getPos(): number;
-  node(): Node;
-};
-
 const customViews = new Map<string, CustomView>();
 const loaders = new Map<string, Promise<void>>();
-const registerCustomElementView = async (
-  elementSpec: ExtensionElementSpec,
-  extension: ExtensionDetails,
-  getters: Pick<CustomView, "getPos" | "node">
-): Promise<string> => {
-  const uid = nanoid();
-  const generatedViewData = await extension.sandbox?.generateView<ExtensionElementViewContext>(
-    elementSpec.view,
-    {
-      contextFunctions: ["notify"],
-      usableEnv: { readable: [], writable: ["props"] },
-      config: extension.config || {}
-    },
-    { notify: () => {} },
-    uid
-  );
-
-  if (!generatedViewData) return "";
-
-  const views: Array<{ path: string[]; view: ExtensionElement }> = [
-    {
-      path: [elementSpec.type.toLowerCase()],
-      view: generatedViewData.view
-    }
-  ];
-  const structure: StructureNode = { element: elementSpec.type };
-  const processElementTree = (
-    parentPath: string[],
-    parentStructureNode: StructureNode,
-    element: ExtensionElement,
-    index?: number
-  ): void => {
-    const processSlot = (parentPath: string[], parentStructureNode: StructureNode): void => {
-      element.slot?.forEach((childElement, index) => {
-        if (typeof childElement === "object") {
-          processElementTree(parentPath, parentStructureNode, childElement, index);
-        }
-      });
-    };
-
-    if (element.component === "Element") {
-      const path = [
-        ...parentPath,
-        `${element.props?.type || ""}${typeof index === "number" ? `#${index}` : ""}`.toLowerCase()
-      ];
-      const view = { path, view: { component: "Fragment", slot: element.slot } };
-      const structure = { element: `${element.props?.type || ""}` };
-
-      views.push(view);
-      parentStructureNode.content = [
-        ...(Array.isArray(parentStructureNode.content) ? parentStructureNode.content : []),
-        structure
-      ];
-      processSlot(path, structure);
-
-      return;
-    }
-
-    if (element.component === "Content") {
-      if (element.slot.length) {
-        processSlot(parentPath, parentStructureNode);
-
-        return;
-      }
-
-      parentStructureNode.content = true;
-      parentStructureNode.allowed = element.props?.allowed as any as string[];
-
-      return;
-    }
-
-    processSlot(parentPath, parentStructureNode);
-  };
-
-  processElementTree([elementSpec.type.toLowerCase()], structure, generatedViewData.view);
-  customViews.set(uid, {
-    type: elementSpec.type.toLowerCase(),
-    extension,
-    views,
-    structure,
-    ...getters
-  });
-
-  return uid;
-};
-const applyStructure = (node: Node, structure: StructureNode): JSONContent => {
-  const nodeJSON = node.toJSON() as JSONContent;
-  const applyStructureToNode = (
-    nodeJSON: JSONContent | null,
-    structureNode: StructureNode
-  ): JSONContent | null => {
-    if (typeof structureNode.content === "boolean") {
-      let defaultNodeType = "paragraph";
-
-      if (
-        structureNode.allowed &&
-        !structureNode.allowed.includes("paragraph") &&
-        !structureNode.allowed.includes("block")
-      ) {
-        defaultNodeType = structureNode.allowed[0] || "";
-      }
-
-      return {
-        type: "element",
-        attrs: { ...nodeJSON?.attrs, type: `${structureNode.element}` },
-        ...((nodeJSON?.content?.length || defaultNodeType) && {
-          content: nodeJSON?.content?.filter((content) => {
-            return !structureNode.allowed || structureNode.allowed.includes(content.type);
-          }) || [{ type: defaultNodeType, content: [] }]
-        })
-      };
-    } else if (structureNode.content) {
-      return {
-        type: "element",
-        attrs: { ...nodeJSON?.attrs, type: `${structureNode.element}` },
-        content: structureNode.content
-          .map((childStructureNode, index) => {
-            const childNodeJSON = nodeJSON?.content?.[index];
-
-            return applyStructureToNode(childNodeJSON || null, childStructureNode);
-          })
-          .filter(Boolean) as JSONContent[]
-      };
-    }
-
-    return {
-      type: "element",
-      attrs: { ...nodeJSON?.attrs, type: `${structureNode.element}` }
-    };
-  };
-
-  return applyStructureToNode(nodeJSON, structure)!;
-};
 const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
   addOptions() {
     return {};
@@ -254,7 +112,8 @@ const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
           for (const entry of entries) {
             const activeElementNode = entry.node;
             const activePos = entry.pos;
-            const uid = (editor.view.nodeDOM(activePos) as HTMLElement)?.getAttribute("data-uid");
+            const element = editor.view.nodeDOM(activePos) as HTMLElement;
+            const uid = element instanceof HTMLElement ? element?.getAttribute("data-uid") : null;
 
             if (!uid) continue;
 
@@ -281,7 +140,10 @@ const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
             return tr;
           };
 
-          if (newState.selection instanceof NodeSelection) {
+          if (
+            newState.selection instanceof NodeSelection &&
+            !isElementSelection(newState.selection)
+          ) {
             const node = newState.selection.$from.nodeAfter;
 
             if (node?.type.name === "element") {
@@ -327,13 +189,17 @@ const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
   },
   addNodeView() {
     return (props) => {
+      const [elementPropsJSON, setElementPropsJSON] = createSignal(
+        JSON.stringify(props.node.attrs.props || {})
+      );
+
+      let { node } = props;
+
       const referenceView = new NodeView(() => {}, props);
       const wrapper = document.createElement("div");
       const contentWrapper = document.createElement("div");
       const loadingId = nanoid();
 
-      let { node } = props;
-      let selected = false;
       let view: Partial<PMNodeView> | null = null;
       let resolveLoader = (): void => {};
 
@@ -348,7 +214,6 @@ const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
           wrapper.removeAttribute("data-loading-id");
         })
       );
-      // Determine view
       requestAnimationFrame(async () => {
         if (typeof props.getPos !== "function") return;
 
@@ -373,12 +238,20 @@ const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
         let uid = "";
 
         if (customElement) {
-          uid = await registerCustomElementView(customElement.element, customElement.extension, {
-            getPos: props.getPos,
-            node: () => node
-          });
+          const customView = await createCustomView(
+            customElement.element,
+            customElement.extension,
+            {
+              getPos: props.getPos,
+              node: () => node
+            }
+          );
 
-          const customView = customViews.get(uid);
+          if (customView) {
+            uid = uid || customView.uid;
+            customViews.set(customView.uid, customView);
+          }
+
           const content = applyStructure(node, customView?.structure!);
 
           editor.commands.insertContentAt(
@@ -403,32 +276,31 @@ const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
               editor,
               uid,
               view: matchedView?.view!,
+              top: matchedView.top,
               extension: customView.extension,
               contentWrapper,
               wrapper,
               getProps() {
-                return customView.node().attrs.props || {};
-              },
-              getSelected() {
-                return selected;
+                return JSON.parse(elementPropsJSON());
               },
               updateProps(newProps) {
                 const pos = customView.getPos();
+                const node = customView.node();
 
                 if (typeof pos !== "number" || pos > editor.view.state.doc.nodeSize) return;
 
                 editor.commands.command(({ tr, dispatch }) => {
                   if (!dispatch) return false;
 
-                  const pos = customView.getPos();
-                  const node = customView.node();
-
                   if (typeof pos !== "number" || pos > editor.view.state.doc.nodeSize) {
                     return false;
                   }
 
                   if (node && node.type.name === "element") {
-                    dispatch(tr.setNodeAttribute(pos, "props", { ...newProps }));
+                    tr.setNodeMarkup(pos, node.type, {
+                      props: { ...newProps },
+                      type: node.attrs.type
+                    });
                   }
 
                   return true;
@@ -456,11 +328,9 @@ const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
           return referenceView.ignoreMutation(mutation);
         },
         selectNode() {
-          selected = true;
           view?.selectNode?.();
         },
         deselectNode() {
-          selected = false;
           view?.deselectNode?.();
         },
         stopEvent(event) {
@@ -472,6 +342,7 @@ const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
           if (newNode.attrs.type !== node.attrs.type) return false;
           if (Boolean(newNode.content.size) !== Boolean(node.content.size)) return false;
 
+          setElementPropsJSON(JSON.stringify(newNode.attrs.props || {}));
           node = newNode;
 
           return true;
