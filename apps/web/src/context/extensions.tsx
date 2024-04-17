@@ -84,24 +84,29 @@ const ExtensionsProvider: ParentComponent = (props) => {
     const result: ExtensionDetails[] = [];
 
     for await (const extension of extensions) {
-      const response = await fetch(extension.url);
+      try {
+        const response = await fetch(extension.url);
 
-      if (response.ok) {
-        const spec = await response.json();
-        const extensionDetails = {
-          url: extension.url,
-          id: extension.id,
-          // @ts-ignore
-          config: extension.config,
-          token: extension.token,
-          spec: processSpec(extension.url, spec),
-          get sandbox() {
-            return extensionSandboxes.get(spec.name) || null;
-          }
-        };
+        if (response.ok) {
+          const spec = await response.json();
+          const extensionDetails = {
+            url: extension.url,
+            id: extension.id,
+            // @ts-ignore
+            config: extension.config,
+            token: extension.token,
+            spec: processSpec(extension.url, spec),
+            get sandbox() {
+              return extensionSandboxes.get(spec.name) || null;
+            }
+          };
 
-        extensionSandboxes.set(spec.name, await loadExtensionSandbox(extensionDetails, client));
-        result.push(extensionDetails);
+          extensionSandboxes.set(spec.name, await loadExtensionSandbox(extensionDetails, client));
+          result.push(extensionDetails);
+        }
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error(e);
       }
     }
 
@@ -133,18 +138,23 @@ const ExtensionsProvider: ParentComponent = (props) => {
           continue;
         }
 
-        const response = await fetch(url);
+        try {
+          const response = await fetch(url);
 
-        if (response.ok) {
-          const spec = await response.json();
+          if (response.ok) {
+            const spec = await response.json();
 
-          result.push({
-            url,
-            spec: processSpec(url, spec),
-            get sandbox() {
-              return extensionSandboxes.get(spec.name) || null;
-            }
-          });
+            result.push({
+              url,
+              spec: processSpec(url, spec),
+              get sandbox() {
+                return extensionSandboxes.get(spec.name) || null;
+              }
+            });
+          }
+        } catch (e) {
+          // eslint-disable-next-line no-console
+          console.error(e);
         }
       }
 
