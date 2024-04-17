@@ -47,18 +47,27 @@ type UsableEnvData<C extends ExtensionBaseContext> = {
     ? C[ExtensionMetadata["__usableEnv"]]["readable"][K]
     : C[ExtensionMetadata["__usableEnv"]]["writable"][K];
 };
+type AsyncSetter<in out T> = {
+  <U extends T>(
+    ...args: undefined extends T ? [] : [value: (prev: T) => U]
+  ): undefined extends T ? Promise<undefined> : Promise<U>;
+  <U extends T>(value: (prev: T) => U): Promise<U>;
+  <U extends T>(value: Exclude<U, Function>): Promise<U>;
+  <U extends T>(value: Exclude<U, Function> | ((prev: T) => U)): Promise<U>;
+};
 
 interface ExtensionSandbox {
   spec: ExtensionSpec & ExtensionRuntimeSpec;
   envData: Accessor<ContextObject>;
   setEnvData: Setter<ContextObject>;
+  setEnvDataAsync: AsyncSetter<ContextObject>;
   destroy(): void;
   generateView<C extends ExtensionBaseViewContext>(
     id: string,
     ctx: SerializedContext<C>,
     func: ContextFunctions<C>,
     uid?: string
-  ): Promise<{ view: ExtensionElement; css: string } | null>;
+  ): Promise<{ view: ExtensionElement; css: string; envData: ContextObject } | null>;
   runFunction<C extends ExtensionBaseContext>(
     id: string,
     ctx: SerializedContext<C>,
@@ -128,6 +137,10 @@ const loadExtensionSandbox = async (
       setEnvData(...args);
       sandbox.connection?.remote.updateEnvData(JSON.parse(JSON.stringify(envData())));
     },
+    async setEnvDataAsync(...args: Parameters<typeof setEnvData>) {
+      setEnvData(...args);
+      await sandbox.connection?.remote.updateEnvData(JSON.parse(JSON.stringify(envData())));
+    },
     destroy: () => sandbox.destroy(),
     generateView: async <C extends ExtensionBaseViewContext>(
       id: string,
@@ -153,7 +166,7 @@ const loadExtensionSandbox = async (
 
         document.head.insertAdjacentHTML("beforeend", `<style data-uid="${uid}">${css}</style>`);
 
-        return { view: result.view, css };
+        return { view: result.view, css, envData: result.envData };
       }
 
       return null;

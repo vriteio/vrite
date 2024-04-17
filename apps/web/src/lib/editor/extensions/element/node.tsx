@@ -6,7 +6,8 @@ import {
   applyStructure,
   createCustomView,
   getCustomElements,
-  getElementPath
+  getElementPath,
+  updateElementProps
 } from "./utils";
 import { Element as BaseElement, ElementAttributes } from "@vrite/editor";
 import { SolidEditor } from "@vrite/tiptap-solid";
@@ -242,6 +243,7 @@ const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
           const customView = await createCustomView(
             customElement.element,
             customElement.extension,
+            editor,
             {
               getPos: props.getPos,
               node: () => node
@@ -285,27 +287,7 @@ const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
                 return JSON.parse(elementPropsJSON());
               },
               updateProps(newProps) {
-                const pos = customView.getPos();
-                const node = customView.node();
-
-                if (typeof pos !== "number" || pos > editor.view.state.doc.nodeSize) return;
-
-                editor.commands.command(({ tr, dispatch }) => {
-                  if (!dispatch) return false;
-
-                  if (typeof pos !== "number" || pos > editor.view.state.doc.nodeSize) {
-                    return false;
-                  }
-
-                  if (node && node.type.name === "element") {
-                    tr.setNodeMarkup(pos, node.type, {
-                      props: { ...newProps },
-                      type: node.attrs.type
-                    });
-                  }
-
-                  return true;
-                });
+                updateElementProps(newProps, editor, customView);
               }
             });
             resolveLoader();

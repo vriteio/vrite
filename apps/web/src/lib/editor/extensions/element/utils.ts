@@ -6,7 +6,9 @@ import {
 import { ResolvedPos, Node as PMNode } from "@tiptap/pm/model";
 import { nanoid } from "nanoid";
 import { JSONContent } from "@vrite/sdk/api";
+import { SolidEditor } from "@vrite/tiptap-solid";
 import { ExtensionDetails } from "#context";
+import { ContextObject } from "#collections";
 
 type StructureNode = { element?: string; content?: true | StructureNode[]; allowed?: string[] };
 type CustomView = {
@@ -90,12 +92,50 @@ const getElementPath = (
 
   return path;
 };
+const updateElementProps = (
+  newProps: Record<string, any>,
+  editor: SolidEditor,
+  getters: Pick<CustomView, "getPos" | "node">
+): void => {
+  const pos = getters.getPos();
+  const node = getters.node();
+
+  if (typeof pos !== "number" || pos > editor.view.state.doc.nodeSize) return;
+
+  editor.commands.command(({ tr, dispatch }) => {
+    if (!dispatch) return false;
+
+    if (typeof pos !== "number" || pos > editor.view.state.doc.nodeSize) {
+      return false;
+    }
+
+    if (node && node.type.name === "element") {
+      tr.setNodeMarkup(pos, node.type, {
+        props: { ...newProps },
+        type: node.attrs.type
+      });
+    }
+
+    return true;
+  });
+};
 const createCustomView = async (
   elementSpec: ExtensionElementSpec,
   extension: ExtensionDetails,
+  editor: SolidEditor,
   getters: Pick<CustomView, "getPos" | "node">
 ): Promise<CustomView | null> => {
   const uid = nanoid();
+
+  await extension.sandbox?.setEnvDataAsync((envData) => {
+    return {
+      ...envData,
+      [uid]: {
+        props: getters.node().attrs.props || {}
+      }
+    };
+  });
+
   const generatedViewData = await extension.sandbox?.generateView<ExtensionElementViewContext>(
     elementSpec.view,
     {
@@ -166,6 +206,11 @@ const createCustomView = async (
   };
 
   processElementTree([elementSpec.type.toLowerCase()], structure, generatedViewData.view);
+  updateElementProps(
+    ((generatedViewData.envData[uid] as ContextObject).props as ContextObject) || {},
+    editor,
+    getters
+  );
 
   return {
     uid,
@@ -225,5 +270,5 @@ const applyStructure = (node: PMNode, structure: StructureNode): JSONContent => 
   return applyStructureToNode(nodeJSON, structure)!;
 };
 
-export { getCustomElements, getElementPath, createCustomView, applyStructure };
+export { getCustomElements, getElementPath, createCustomView, applyStructure, updateElementProps };
 export type { CustomView, StructureNode };
