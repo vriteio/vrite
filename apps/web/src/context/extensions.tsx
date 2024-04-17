@@ -8,8 +8,15 @@ import {
   useContext
 } from "solid-js";
 import { ExtensionSpec } from "@vrite/sdk/extensions";
-import { App, useClient, useHostConfig, useNotifications } from "#context";
+import {
+  App,
+  useAuthenticatedUserData,
+  useClient,
+  useHostConfig,
+  useNotifications
+} from "#context";
 import { ExtensionDetails, ExtensionSandbox, loadExtensionSandbox } from "#lib/extensions";
+import { user } from "#collections";
 
 interface ExtensionsContextData {
   installedExtensions: Accessor<ExtensionDetails[]>;
@@ -63,6 +70,7 @@ const ExtensionsProvider: ParentComponent = (props) => {
   const client = useClient();
   const hostConfig = useHostConfig();
   const { notify } = useNotifications();
+  const { profile } = useAuthenticatedUserData();
   const extensionSandboxes = new Map<string, ExtensionSandbox>();
   const [installedExtensions, setInstalledExtensions] = createSignal<ExtensionDetails[]>([]);
   const [availableExtensions, setAvailableExtensions] = createSignal<ExtensionDetails[]>([]);
@@ -76,24 +84,29 @@ const ExtensionsProvider: ParentComponent = (props) => {
     const result: ExtensionDetails[] = [];
 
     for await (const extension of extensions) {
-      const response = await fetch(extension.url);
+      try {
+        const response = await fetch(extension.url);
 
-      if (response.ok) {
-        const spec = await response.json();
-        const extensionDetails = {
-          url: extension.url,
-          id: extension.id,
-          // @ts-ignore
-          config: extension.config,
-          token: extension.token,
-          spec: processSpec(extension.url, spec),
-          get sandbox() {
-            return extensionSandboxes.get(spec.name) || null;
-          }
-        };
+        if (response.ok) {
+          const spec = await response.json();
+          const extensionDetails = {
+            url: extension.url,
+            id: extension.id,
+            // @ts-ignore
+            config: extension.config,
+            token: extension.token,
+            spec: processSpec(extension.url, spec),
+            get sandbox() {
+              return extensionSandboxes.get(spec.name) || null;
+            }
+          };
 
-        extensionSandboxes.set(spec.name, await loadExtensionSandbox(extensionDetails));
-        result.push(extensionDetails);
+          extensionSandboxes.set(spec.name, await loadExtensionSandbox(extensionDetails, client));
+          result.push(extensionDetails);
+        }
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error(e);
       }
     }
 
@@ -112,7 +125,7 @@ const ExtensionsProvider: ParentComponent = (props) => {
         const installedExtension = installed.find((extension) => {
           return extension.url === url;
         });
-        const availableExtensions = available.find((extension) => {
+        const availableExtension = available.find((extension) => {
           return extension.url === url;
         });
 
@@ -120,23 +133,28 @@ const ExtensionsProvider: ParentComponent = (props) => {
           continue;
         }
 
-        if (availableExtensions) {
-          result.push(availableExtensions);
+        if (availableExtension) {
+          result.push(availableExtension);
           continue;
         }
 
-        const response = await fetch(url);
+        try {
+          const response = await fetch(url);
 
-        if (response.ok) {
-          const spec = await response.json();
+          if (response.ok) {
+            const spec = await response.json();
 
-          result.push({
-            url,
-            spec: processSpec(url, spec),
-            get sandbox() {
-              return extensionSandboxes.get(spec.name) || null;
-            }
-          });
+            result.push({
+              url,
+              spec: processSpec(url, spec),
+              get sandbox() {
+                return extensionSandboxes.get(spec.name) || null;
+              }
+            });
+          }
+        } catch (e) {
+          // eslint-disable-next-line no-console
+          console.error(e);
         }
       }
 
@@ -148,22 +166,26 @@ const ExtensionsProvider: ParentComponent = (props) => {
   const installExtension = async (
     extensionDetails: ExtensionDetails
   ): Promise<ExtensionDetails> => {
+    const spec = processSpec(extensionDetails.url, extensionDetails.spec);
     const { id, token } = await client.extensions.install.mutate({
       extension: {
-        name: extensionDetails.spec.name,
-        displayName: extensionDetails.spec.displayName,
-        permissions: (extensionDetails.spec.permissions || []) as App.TokenPermission[],
+        name: spec.name,
+        displayName: spec.displayName,
+        permissions: (spec.permissions || []) as App.TokenPermission[],
         url: extensionDetails.url
       }
     });
-    const sandbox = await loadExtensionSandbox({
-      id,
-      token,
-      spec: extensionDetails.spec
-    });
+    const sandbox = await loadExtensionSandbox(
+      {
+        id,
+        token,
+        spec
+      },
+      client
+    );
     const onConfigureCallback = sandbox.spec.onConfigure;
 
-    extensionSandboxes.set(extensionDetails.spec.name, sandbox);
+    extensionSandboxes.set(spec.name, sandbox);
 
     if (onConfigureCallback) {
       try {
@@ -182,17 +204,23 @@ const ExtensionsProvider: ParentComponent = (props) => {
       }
     }
 
-    return {
+    const fullExtensionDetails = {
       ...extensionDetails,
       id,
       token,
       // @ts-ignore
       config: {},
-      spec: processSpec(extensionDetails.url, extensionDetails.spec),
+      spec,
       get sandbox() {
-        return extensionSandboxes.get(extensionDetails.spec.name) || null;
+        return extensionSandboxes.get(spec.name) || null;
       }
     };
+
+    setInstalledExtensions((extensions) => {
+      return [fullExtensionDetails, ...extensions];
+    });
+
+    return fullExtensionDetails;
   };
   const uninstallExtension = async (extensionDetails: ExtensionDetails): Promise<void> => {
     const onUninstallCallback = extensionDetails.sandbox?.spec?.onUninstall;
@@ -217,12 +245,17 @@ const ExtensionsProvider: ParentComponent = (props) => {
     await client.extensions.uninstall.mutate({
       id: extensionDetails.id || ""
     });
+    setInstalledExtensions((extensions) => {
+      return extensions.filter((extension) => {
+        return extension.id !== extensionDetails.id;
+      });
+    });
   };
 
   if (hostConfig.extensions) {
     client.extensions.changes.subscribe(undefined, {
-      async onData({ action, data }) {
-        if (action === "create") {
+      async onData({ action, data, userId }) {
+        if (action === "create" && userId !== profile()?.id) {
           try {
             const response = await fetch(data.url);
             const spec = await response.json();
@@ -237,11 +270,11 @@ const ExtensionsProvider: ParentComponent = (props) => {
                 return extensionSandboxes.get(spec.name) || null;
               }
             };
-            const sandbox = await loadExtensionSandbox(extensionDetails);
+            const sandbox = await loadExtensionSandbox(extensionDetails, client);
 
             extensionSandboxes.set(extensionDetails.spec.name, sandbox);
             setInstalledExtensions((extensions) => {
-              return [...extensions, extensionDetails];
+              return [extensionDetails, ...extensions];
             });
           } catch (e) {
             // eslint-disable-next-line no-console
@@ -301,5 +334,11 @@ const ExtensionsProvider: ParentComponent = (props) => {
 };
 const useExtensions = (): ExtensionsContextData => useContext(ExtensionsContext)!;
 
-export { ExtensionsProvider, ExtensionsContext, useExtensions, isOfficialExtension };
+export {
+  ExtensionsProvider,
+  ExtensionsContext,
+  ExtensionsContextData,
+  useExtensions,
+  isOfficialExtension
+};
 export type { ExtensionDetails };

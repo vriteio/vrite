@@ -19,7 +19,7 @@
     "@solid-primitives/scheduled": "^1.4.0",
     "@types/hast": "^3.0.4",
     "@types/marked": "^5.0.1",
-    "@unocss/reset": "^0.55.7",
+    "@unocss/reset": "^0.59.0",
     "@vrite/components": "workspace:*",
     "@vrite/sdk": "workspace:*",
     "astro": "^3.1.0",
@@ -41,7 +41,7 @@
     "tinykeys": "^2.1.0",
     "typescript": "^5.2.2",
     "unist-util-visit": "^5.0.0",
-    "unocss": "^0.55.7",
+    "unocss": "^0.59.0",
     "url-slug": "^4.0.1",
     "vfile": "^6.0.1",
     "vite": "^4.4.9"

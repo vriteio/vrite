@@ -25,6 +25,7 @@ const handler = async (
   });
   publishExtensionEvent(ctx, `${ctx.auth.workspaceId}`, {
     action: "delete",
+    userId: `${ctx.auth.userId}`,
     data: { id: input.id }
   });
 };

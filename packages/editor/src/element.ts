@@ -28,6 +28,7 @@ const Element = Node.create({
   isolating: true,
   defining: true,
   selectable: true,
+  atom: true,
   addAttributes() {
     return {
       props: {

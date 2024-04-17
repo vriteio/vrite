@@ -242,7 +242,7 @@ const BlockActionMenu: Component<BlockActionMenuProps> = (props) => {
                       unlock();
                     }
                   }}
-                  view={`blockActionView:${blockAction.id}`}
+                  viewId={blockAction.view}
                   usableEnvData={usableEnvData()}
                 />
               </div>

@@ -15,16 +15,18 @@ import {
   ExtensionsProvider,
   CommandPaletteProvider,
   ContentDataProvider,
-  useLocalStorage
+  useLocalStorage,
+  useHostConfig
 } from "#context";
 import { IconButton, Tooltip } from "#components/primitives";
 import { SubscriptionBanner } from "#ee";
 
 const SecuredLayout: ParentComponent = (props) => {
   const { storage, setStorage } = useLocalStorage();
+  const hostConfig = useHostConfig();
   const location = useLocation();
 
-  if (import.meta.env.PROD) {
+  if (import.meta.env.PROD && hostConfig.analytics) {
     posthog.init("phc_m9JcBa51gXCkGdLFtqeMZXFfJkuSTg8C9iDMun0sZgg", {
       api_host: "https://app.posthog.com"
     });

@@ -8,7 +8,12 @@ import {
 } from "@vrite/tiptap-solid";
 import { Component, createEffect, createSignal, on, onCleanup } from "solid-js";
 import { HardBreak, Paragraph, Text } from "@vrite/editor";
-import { Extension, isTextSelection } from "@tiptap/core";
+import {
+  Extension,
+  isTextSelection,
+  Node as NodeExtension,
+  Mark as MarkExtension
+} from "@tiptap/core";
 import { Gapcursor } from "@tiptap/extension-gapcursor";
 import { Dropcursor } from "@tiptap/extension-dropcursor";
 import { Typography } from "@tiptap/extension-typography";
@@ -39,13 +44,15 @@ import {
   TableMenuPlugin,
   ElementMenuPlugin,
   CommentMenuPlugin,
-  AutoDir
+  AutoDir,
+  CustomNodeMenuPlugin
 } from "#lib/editor";
 import {
   App,
   hasPermission,
   useAuthenticatedUserData,
   useContentData,
+  useExtensions,
   useHostConfig,
   useSharedState
 } from "#context";
@@ -125,12 +132,20 @@ const Editor: Component<EditorProps> = (props) => {
   const [showBlockBubbleMenu, setShowBlockBubbleMenu] = createSignal(false);
   const [isNodeSelection, setIsNodeSelection] = createSignal(false);
   const { workspaceSettings } = useAuthenticatedUserData();
+  const extensionsContext = useExtensions();
   const updateBubbleMenuPlacement = debounce(() => {
     bubbleMenuInstance()?.setProps({ placement: isNodeSelection() ? "top-start" : "top" });
   }, 250);
 
   let el: HTMLElement | null = null;
 
+  const getEditorExtensions = (): Array<MarkExtension | NodeExtension> => {
+    if (workspaceSettings()) {
+      return createExtensions(extensionsContext, workspaceSettings()!, provider);
+    }
+
+    return [];
+  };
   const editor = useEditor({
     onCreate({ editor }) {
       if (workspaceSettings()) {
@@ -147,7 +162,7 @@ const Editor: Component<EditorProps> = (props) => {
       Text,
       HardBreak,
       Typography,
-      ...(workspaceSettings() ? createExtensions(workspaceSettings()!, provider) : []),
+      ...getEditorExtensions(),
       TrailingNode,
       DraggableText,
       CharacterCount,
@@ -158,6 +173,7 @@ const Editor: Component<EditorProps> = (props) => {
         menuItems: workspaceSettings() ? createBlockMenuOptions(workspaceSettings()!) : []
       }),
       hostConfig.extensions && BlockActionMenuPlugin,
+      CustomNodeMenuPlugin,
       TableMenuPlugin,
       ElementMenuPlugin,
       CommentMenuPlugin,
@@ -228,9 +244,7 @@ const Editor: Component<EditorProps> = (props) => {
     const { state, view } = editor;
     const { selection } = state;
     const { $anchor, empty } = selection;
-    const isRootDepth =
-      $anchor.depth === 1 ||
-      ["element", "blockquote"].includes($anchor.node($anchor.depth - 1)?.type?.name);
+    const isRootDepth = $anchor.depth === 1;
     const isEmptyTextBlock =
       $anchor.parent.isTextblock &&
       !$anchor.parent.type.spec.code &&

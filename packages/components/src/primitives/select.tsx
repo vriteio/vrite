@@ -31,6 +31,10 @@ const Select = <V extends string = string>(props: SelectProps<V>): JSX.Element =
   const handleChange: JSX.EventHandlerUnion<HTMLSelectElement, Event> = (event) => {
     props.setValue(event.currentTarget.value as V);
     event.currentTarget.value = props.value;
+
+    if (typeof props.onChange === "function") {
+      props.onChange?.(event as any);
+    }
   };
 
   return (

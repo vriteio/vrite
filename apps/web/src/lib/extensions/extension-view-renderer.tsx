@@ -3,8 +3,10 @@ import { ContextFunctions, SerializedContext, UsableEnvData } from "./sandbox";
 import { ContextObject, ExtensionBaseViewContext, ExtensionElement } from "@vrite/sdk/extensions";
 import {
   Accessor,
+  Component,
   createContext,
   createEffect,
+  createMemo,
   createSignal,
   JSX,
   on,
@@ -15,12 +17,17 @@ import {
   useContext
 } from "solid-js";
 import { mdiAlertCircle } from "@mdi/js";
-import { ExtensionDetails, useExtensions } from "#context";
+import { nanoid } from "nanoid";
+import { ExtensionDetails } from "#context";
 import { Icon, Loader } from "#components/primitives";
 
 type ExtensionViewRendererProps<O> = {
   extension: ExtensionDetails;
-  view: "configurationView" | "contentPieceView" | `blockActionView:${string}`;
+  contentEditable?: boolean;
+  view?: ExtensionElement;
+  viewId?: string;
+  uid?: string;
+  onInitiated?(view: ExtensionElement, uid: string): void;
 } & O;
 
 interface ExtensionViewContextData {
@@ -29,79 +36,88 @@ interface ExtensionViewContextData {
   setEnvData: Setter<ContextObject>;
 }
 
+const registeredEffects = new Set<string>();
 const ExtensionViewContext = createContext<ExtensionViewContextData>();
 const ExtensionViewRenderer = <C extends ExtensionBaseViewContext>(
   props: ExtensionViewRendererProps<{
     ctx: SerializedContext<C>;
     func: ContextFunctions<C>;
     usableEnvData: UsableEnvData<C>;
+    components?: Record<string, Component<any>>;
+    uid?: string;
     onUsableEnvDataUpdate?(usableEnvData: UsableEnvData<C>): void;
   }>
 ): JSX.Element => {
   const [initiated, setInitiated] = createSignal(false);
   const { sandbox } = props.extension;
-  const spec = sandbox?.spec;
+  const uid = props.uid || nanoid();
+  const viewId = props.viewId || "";
+  const uidEnvData = createMemo(() => {
+    return sandbox!.envData()[uid] as ContextObject;
+  });
 
-  let viewId = "";
   let error: Error | null = null;
-  let view: ExtensionElement | null = null;
+  let view: ExtensionElement | null = props.view || null;
 
-  createEffect(
-    on(
-      () => props.usableEnvData,
-      () => {
-        sandbox?.setEnvData((envData) => {
-          return {
-            ...envData,
-            ...props.usableEnvData
-          };
-        });
-      }
-    )
-  );
-  createEffect(
-    on(sandbox!.envData, (value) => {
-      if (value !== props.usableEnvData) {
+  if (!registeredEffects.has(uid)) {
+    createEffect(
+      on(
+        () => props.usableEnvData,
+        (usableEnvData) => {
+          sandbox?.setEnvData((envData) => {
+            return {
+              ...envData,
+              [uid]: {
+                ...(typeof envData[uid] === "object" ? (envData[uid] as ContextObject) : {}),
+                ...usableEnvData
+              }
+            };
+          });
+        }
+      )
+    );
+    createEffect(
+      on(uidEnvData, (value) => {
         props.onUsableEnvDataUpdate?.({
           ...props.usableEnvData,
           ...value
         });
-      }
-    })
-  );
+      })
+    );
+    registeredEffects.add(uid);
+  }
+
   onMount(() => {
-    if (props.view === "configurationView") {
-      viewId = spec?.configurationView || "";
-    } else if (props.view === "contentPieceView") {
-      viewId = spec?.contentPieceView || "";
-    } else {
-      const [, blockActionId] = props.view.split(":");
-      const blockAction = spec?.blockActions?.find((blockAction) => {
-        return blockAction.id === blockActionId;
-      });
-
-      if (blockAction) {
-        viewId = blockAction.view || "";
-      }
-    }
-
-    if (viewId && sandbox && props.extension.id && props.extension.token) {
+    if (!view && viewId && sandbox && props.extension.id && props.extension.token) {
       sandbox
-        .generateView<C>(viewId, props.ctx, props.func)
-        .then((generatedView) => {
-          view = generatedView;
+        .generateView<C>(viewId, props.ctx, props.func, uid)
+        .then((generatedViewData) => {
+          view = generatedViewData?.view || null;
           setInitiated(true);
+
+          if (generatedViewData?.view) {
+            props.onInitiated?.(generatedViewData.view, uid);
+          }
         })
         .catch((caughtError) => {
           error = caughtError;
+          // eslint-disable-next-line no-console
+          console.error(error);
           setInitiated(true);
         });
+    } else if (view) {
+      setInitiated(true);
+      props.onInitiated?.(view, uid);
     } else {
+      error = new Error("No view or viewId");
+      // eslint-disable-next-line no-console
+      console.error(error);
       setInitiated(true);
     }
   });
   onCleanup(() => {
-    sandbox?.removeScope(`view:${viewId}`);
+    registeredEffects.delete(uid);
+    sandbox?.removeScope(`view:${uid}`);
   });
 
   return (
@@ -125,7 +141,12 @@ const ExtensionViewRenderer = <C extends ExtensionBaseViewContext>(
           </div>
         }
       >
-        <ComponentRenderer spec={props.extension.spec} view={view!} />
+        <ComponentRenderer
+          spec={props.extension.spec}
+          contentEditable={props.contentEditable}
+          components={props.components}
+          view={view!}
+        />
       </Show>
     </ExtensionViewContext.Provider>
   );

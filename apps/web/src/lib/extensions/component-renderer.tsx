@@ -3,31 +3,35 @@ import {
   Component,
   ComponentProps,
   createEffect,
+  createMemo,
   For,
   JSX,
   Match,
   on,
+  onMount,
   Show,
   Switch
 } from "solid-js";
 import { marked } from "marked";
 import { createStore } from "solid-js/store";
-import { ExtensionElement, ExtensionSpec } from "@vrite/sdk/extensions";
+import { ExtensionElement, ExtensionSpec, ContextObject } from "@vrite/sdk/extensions";
 import { Dynamic } from "solid-js/web";
 import { useNotifications } from "#context";
-import { Button, IconButton, Loader, Tooltip } from "#components/primitives";
+import { Button, Card, Icon, IconButton, Loader, Select, Tooltip } from "#components/primitives";
 import { InputField } from "#components/fragments";
-import { ContextObject } from "#collections";
 
 interface ComponentRendererProps {
   view: ExtensionElement | string;
   spec: ExtensionSpec;
+  contentEditable?: boolean;
+  components?: Record<string, Component<any>>;
 }
 type RenderedComponentProps<O = Record<string, any>> = {
+  contentEditable?: boolean;
   children: JSX.Element;
 } & O;
 
-const components = {
+const baseComponents = {
   Field: (props: RenderedComponentProps<ComponentProps<typeof InputField>>) => {
     return (
       <InputField
@@ -46,8 +50,27 @@ const components = {
       </InputField>
     );
   },
-  Text: (props: { content: string; class?: string }) => {
-    return <span class={props.class}>{props.content}</span>;
+  Select: (props: RenderedComponentProps<ComponentProps<typeof Select>>) => {
+    return (
+      <Select
+        value={props.value}
+        setValue={props.setValue}
+        class={props.class}
+        color={props.color}
+        options={props.options}
+        placeholder={props.placeholder}
+        wrapperClass={props.wrapperClass}
+      >
+        {props.children}
+      </Select>
+    );
+  },
+  Text: (props: { content: string; class?: string; contentEditable?: boolean }) => {
+    return (
+      <span class={props.class} contentEditable={props.contentEditable}>
+        {props.content}
+      </span>
+    );
   },
   Button: (props: RenderedComponentProps<ComponentProps<typeof Button>>) => {
     return (
@@ -63,6 +86,16 @@ const components = {
         {props.children}
       </Button>
     );
+  },
+  Card: (props: RenderedComponentProps<ComponentProps<typeof Card>>) => {
+    return (
+      <Card color={props.color} class={props.class}>
+        {props.children}
+      </Card>
+    );
+  },
+  Icon: (props: RenderedComponentProps<ComponentProps<typeof Icon>>) => {
+    return <Icon path={props.path} class={props.class} />;
   },
   Tooltip: (props: RenderedComponentProps<ComponentProps<typeof Tooltip>>) => {
     return (
@@ -93,15 +126,24 @@ const components = {
   Switch: (props: RenderedComponentProps) => {
     return <Switch>{props.children}</Switch>;
   },
-  Match: (props: RenderedComponentProps<{ when: boolean }>) => {
+  Match: (props: RenderedComponentProps<{ when?: boolean }>) => {
     return <Match when={props.when}>{props.children}</Match>;
   },
-  View: (props: RenderedComponentProps<{ class?: string }>) => {
+  View: (
+    props: RenderedComponentProps<{
+      [dataKey: `data-${string}`]: string;
+      class?: string;
+    }>
+  ) => {
     return <div class={props.class}>{props.children}</div>;
   },
   Fragment: (props: RenderedComponentProps) => {
     return <>{props.children}</>;
-  }
+  },
+  Content: () => {
+    return <div data-content="true" class="w-full" />;
+  },
+  Element: (props: RenderedComponentProps) => <>{props.children}</>
 };
 const renderer = new marked.Renderer();
 const linkRenderer = renderer.link;
@@ -117,16 +159,24 @@ renderer.link = (href, title, text) => {
 };
 
 const ComponentRenderer: Component<ComponentRendererProps> = (props) => {
+  const components = createMemo<Record<string, Component<any>>>(() => ({
+    ...baseComponents,
+    ...props.components
+  }));
   const { notify } = useNotifications();
   const { envData, setEnvData, extension } = useViewContext();
   const { sandbox } = extension;
 
   if (typeof props.view === "string") {
-    return <span innerHTML={marked.parseInline(props.view, { renderer }) as string} />;
+    return (
+      <span
+        innerHTML={marked.parseInline(props.view, { renderer }) as string}
+        contentEditable={props.contentEditable}
+      />
+    );
   }
 
-  const componentName =
-    (props.view.component.match(/^(.+?)(?:\[|\.|$)/)?.[1] as keyof typeof components) || "";
+  const componentName = props.view.component.match(/^(.+?)(?:\[|\.|$)/)?.[1] || "";
   const [componentProps, setComponentProps] = createStore<Record<string, any>>({});
   const viewProps = props.view.props || {};
 
@@ -157,14 +207,17 @@ const ComponentRenderer: Component<ComponentRendererProps> = (props) => {
       );
       setComponentProps(`set${bindKey[0].toUpperCase()}${bindKey.slice(1)}`, () => {
         return (value: any) => {
-          setEnvData((currentValue) => {
-            const newValue = { ...(currentValue as ContextObject) };
+          setEnvData((envData) => {
+            const newValue = { ...(envData as ContextObject) };
 
             let currentObject = newValue;
 
             pathParts.forEach((part, index) => {
               if (index === pathParts.length - 1) {
                 currentObject[part] = value;
+              } else if (index === 0) {
+                currentObject[part] = { ...(currentObject[part] as ContextObject) };
+                currentObject = currentObject[part] as ContextObject;
               } else {
                 currentObject = currentObject[part] as ContextObject;
               }
@@ -200,10 +253,22 @@ const ComponentRenderer: Component<ComponentRendererProps> = (props) => {
   });
 
   return (
-    <Dynamic component={components[componentName]} {...componentProps}>
-      <For each={Array.isArray(props.view.slot) ? props.view.slot : [props.view.slot]}>
+    <Dynamic
+      component={components()[componentName]}
+      contentEditable={props.contentEditable}
+      view={props.view}
+      {...componentProps}
+    >
+      <For each={props.view.slot}>
         {(view) => {
-          return <ComponentRenderer view={view} spec={props.spec} />;
+          return (
+            <ComponentRenderer
+              view={view}
+              spec={props.spec}
+              contentEditable={props.contentEditable}
+              components={props.components}
+            />
+          );
         }}
       </For>
     </Dynamic>

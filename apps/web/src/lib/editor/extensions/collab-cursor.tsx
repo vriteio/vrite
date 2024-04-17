@@ -1,35 +1,67 @@
 import { HocuspocusProvider } from "@hocuspocus/provider";
 import { CollaborationCursor } from "@tiptap/extension-collaboration-cursor";
-import { createSignal, JSX, onMount, Show } from "solid-js";
+import { Accessor, createMemo, createSignal, JSX, onMount, Setter, Show } from "solid-js";
 import { render } from "solid-js/web";
 import { Extension } from "@tiptap/core";
 import { yCursorPlugin } from "y-prosemirror";
 import clsx from "clsx";
+import { GapCursor } from "@tiptap/pm/gapcursor";
 import { useAuthenticatedUserData } from "#context";
 import { getSelectionColor, selectionClasses, selectionColors } from "#lib/utils";
 
-const awarenessStatesToArray = (
-  states: Map<number, Record<string, any>>
-): Array<{ clientId: number } & Record<string, any>> => {
-  return Array.from(states.entries()).map(([key, value]) => {
+type AwarenessUser = { name: string; avatar: string; id: string; selectionColor: string };
+type AwarenessState = { clientId: number } & AwarenessUser & { fields: Record<string, any> };
+type CollabCursorStorage = {
+  users: Accessor<AwarenessState[]>;
+  setUsers: Setter<AwarenessState[]>;
+};
+type CollabCursorOptions = {
+  provider: HocuspocusProvider;
+  user: AwarenessUser;
+  render(this: { storage: CollabCursorStorage }, user: AwarenessUser): HTMLElement;
+};
+
+const awarenessStatesToArray = (states: Map<number, Record<string, any>>): AwarenessState[] => {
+  return Array.from(states.entries()).map(([key, { user, ...fields }]) => {
     return {
       clientId: key,
-      ...value.user
+      fields,
+      ...user
     };
   });
 };
 const CollabCursor = (provider: HocuspocusProvider): Extension => {
   const { profile } = useAuthenticatedUserData();
 
-  return CollaborationCursor.extend({
+  return CollaborationCursor.extend<CollabCursorOptions, CollabCursorStorage>({
+    onSelectionUpdate() {
+      this.options.provider.awareness?.setLocalStateField(
+        "gapcursor",
+        this.editor.state.selection instanceof GapCursor
+      );
+    },
+    addStorage() {
+      const [users, setUsers] = createSignal<AwarenessState[]>([]);
+
+      return {
+        users,
+        setUsers
+      };
+    },
     addProseMirrorPlugins() {
       return [
         yCursorPlugin(
           (() => {
+            if (!this.options.provider.awareness) {
+              throw new Error("Provider awareness is not defined");
+            }
+
             this.options.provider.awareness.setLocalStateField("user", this.options.user);
-            this.storage.users = awarenessStatesToArray(this.options.provider.awareness.states);
+            this.storage.setUsers(awarenessStatesToArray(this.options.provider.awareness.states));
             this.options.provider.awareness.on("update", () => {
-              this.storage.users = awarenessStatesToArray(this.options.provider.awareness.states);
+              this.storage.setUsers(
+                awarenessStatesToArray(this.options.provider.awareness!.states)
+              );
             });
 
             return this.options.provider.awareness;
@@ -42,7 +74,7 @@ const CollabCursor = (provider: HocuspocusProvider): Extension => {
                 class: clsx("bg-opacity-40 dark:bg-opacity-40", selectionClasses[color].label)
               };
             },
-            cursorBuilder: this.options.render
+            cursorBuilder: this.options.render.bind(this)
           }
         )
       ];
@@ -65,6 +97,11 @@ const CollabCursor = (provider: HocuspocusProvider): Extension => {
           top: number;
           display: string;
         }>(null);
+        const userState = createMemo(() => {
+          return this.storage.users().find((state) => {
+            return state.id === user.id && state.clientId !== provider.awareness?.clientID;
+          });
+        });
 
         onMount(() => {
           if (
@@ -94,14 +131,13 @@ const CollabCursor = (provider: HocuspocusProvider): Extension => {
               w: rect.width,
               display: isElement ? "none" : "block",
               top: rect.top - parentPos.top
-              //  - parseFloat(window.getComputedStyle(container.previousElementSibling!).marginTop)
             });
           }
         });
 
         return (
           <Show
-            when={blockSelection()}
+            when={blockSelection() || userState()?.fields.gapcursor}
             keyed
             fallback={
               <span class={clsx("relative ring-1", selectionClasses[color].cursor)}>
@@ -130,28 +166,30 @@ const CollabCursor = (provider: HocuspocusProvider): Extension => {
           >
             {(blockSelection) => {
               return (
-                <div
-                  style={{
-                    height: `${blockSelection.h}px`,
-                    width: `${blockSelection.w}px`,
-                    top: `${blockSelection.top}px`,
-                    display: blockSelection.display
-                  }}
-                  class={clsx(
-                    "absolute border-2 rounded-[18px] pointer-events-none",
-                    selectionClasses[color].outline
-                  )}
-                >
+                <Show when={!userState()?.fields.gapcursor}>
                   <div
+                    style={{
+                      height: `${blockSelection.h}px`,
+                      width: `${blockSelection.w}px`,
+                      top: `${blockSelection.top}px`,
+                      display: blockSelection.display
+                    }}
                     class={clsx(
-                      "absolute pointer-events-none left-3 -top-5 font-bold not-italic text-white dark:text-white",
-                      "leading-none py-0.5 px-1 whitespace-nowrap rounded-b-none rounded-md border-0 text-base",
-                      selectionClasses[color].label
+                      "absolute border-2 rounded-[18px] pointer-events-none",
+                      selectionClasses[color].outline
                     )}
                   >
-                    {user.name}
+                    <div
+                      class={clsx(
+                        "absolute pointer-events-none left-3 -top-5 font-bold not-italic text-white dark:text-white",
+                        "leading-none py-0.5 px-1 whitespace-nowrap rounded-b-none rounded-md border-0 text-base",
+                        selectionClasses[color].label
+                      )}
+                    >
+                      {user.name}
+                    </div>
                   </div>
-                </div>
+                </Show>
               );
             }}
           </Show>
@@ -159,7 +197,7 @@ const CollabCursor = (provider: HocuspocusProvider): Extension => {
       };
 
       container.classList.add("contents");
-      setTimeout(() => {
+      requestAnimationFrame(() => {
         render(component, container);
       });
 

@@ -6,10 +6,12 @@ import {
   ContextObject,
   ExtensionElement,
   ExtensionBaseViewContext,
-  ExtensionMetadata
+  ExtensionMetadata,
+  generateId
 } from "@vrite/sdk/extensions";
 import { Accessor, Setter, createEffect, createSignal, on } from "solid-js";
 import { createRef } from "#lib/utils";
+import { useClient } from "#context";
 
 type KeysOfType<T, V> = { [K in keyof T]-?: T[K] extends V ? K : never }[keyof T];
 type SerializedContext<C extends ExtensionBaseContext> = Omit<
@@ -27,10 +29,12 @@ type SerializedContext<C extends ExtensionBaseContext> = Omit<
         readable: Array<keyof C[ExtensionMetadata["__usableEnv"]]["readable"]>;
         writable: Array<keyof C[ExtensionMetadata["__usableEnv"]]["writable"]>;
       };
-  contextFunctions: KeysOfType<Omit<C, "use" | "flush">, Function>[];
+  contextFunctions: KeysOfType<Omit<C, "use" | "flush" | "css">, Function>[];
 };
 type ContextFunctions<C extends ExtensionBaseContext> = {
-  [K in KeysOfType<Omit<C, "use" | "flush">, Function>]: C[K] extends (...args: infer A) => infer R
+  [K in KeysOfType<Omit<C, "use" | "flush" | "css">, Function>]: C[K] extends (
+    ...args: infer A
+  ) => infer R
     ? (...args: A) => R | Awaited<R>
     : never;
 };
@@ -52,12 +56,14 @@ interface ExtensionSandbox {
   generateView<C extends ExtensionBaseViewContext>(
     id: string,
     ctx: SerializedContext<C>,
-    func: ContextFunctions<C>
-  ): Promise<ExtensionElement>;
+    func: ContextFunctions<C>,
+    uid?: string
+  ): Promise<{ view: ExtensionElement; css: string } | null>;
   runFunction<C extends ExtensionBaseContext>(
     id: string,
     ctx: SerializedContext<C>,
-    func: ContextFunctions<C>
+    func: ContextFunctions<C>,
+    uid?: string
   ): Promise<void>;
   removeScope(id: string): Promise<void>;
 }
@@ -71,7 +77,8 @@ interface ExtensionDetails {
 }
 
 const loadExtensionSandbox = async (
-  extensionDetails: Required<Pick<ExtensionDetails, "spec" | "token" | "id">>
+  extensionDetails: Required<Pick<ExtensionDetails, "spec" | "token" | "id">>,
+  client: ReturnType<typeof useClient>
 ): Promise<ExtensionSandbox> => {
   const [resolveRef, setResolveRef] = createRef(() => {});
   const [envData, setEnvData] = createSignal<ContextObject>({});
@@ -125,22 +132,28 @@ const loadExtensionSandbox = async (
     generateView: async <C extends ExtensionBaseViewContext>(
       id: string,
       ctx: SerializedContext<C>,
-      func: ContextFunctions<C>
+      func: ContextFunctions<C>,
+      uid = generateId()
     ) => {
-      scopes.set(`view:${id}`, {
+      scopes.set(`view:${uid}`, {
         func: func as Record<string, (...args: any[]) => void>
       });
 
       const result = await sandbox.connection?.remote.generateView(
         id,
         JSON.parse(JSON.stringify(envData())),
-        JSON.parse(JSON.stringify(ctx))
+        JSON.parse(JSON.stringify(ctx)),
+        uid
       );
 
       if (result) {
         setEnvData(result.envData);
 
-        return result.view;
+        const { css } = await client.utils.generateCSS.query({ cssString: result.css, uid });
+
+        document.head.insertAdjacentHTML("beforeend", `<style data-uid="${uid}">${css}</style>`);
+
+        return { view: result.view, css };
       }
 
       return null;
@@ -148,28 +161,31 @@ const loadExtensionSandbox = async (
     runFunction: async <C extends ExtensionBaseContext>(
       id: string,
       ctx: SerializedContext<C>,
-      func: ContextFunctions<C>
+      func: ContextFunctions<C>,
+      uid = generateId()
     ) => {
-      scopes.set(`func:${id}`, {
+      scopes.set(`func:${uid}`, {
         func: func as Record<string, (...args: any[]) => void>
       });
 
       const result = await sandbox.connection?.remote.runFunction(
         id,
         JSON.parse(JSON.stringify(envData())),
-        JSON.parse(JSON.stringify(ctx))
+        JSON.parse(JSON.stringify(ctx)),
+        uid
       );
 
-      scopes.delete(`func:${id}`);
+      scopes.delete(`func:${uid}`);
 
       if (result) {
         setEnvData(result.envData);
       }
     },
-    removeScope: async (id) => {
-      const result = await sandbox.connection?.remote.removeScope(id);
+    removeScope: async (uid) => {
+      const result = await sandbox.connection?.remote.removeScope(uid);
 
-      scopes.delete(`view:${id}`);
+      scopes.delete(`view:${uid}`);
+      document.head.querySelector(`style[data-uid="${uid}"]`)?.remove();
 
       if (result) {
         setEnvData(result.envData);

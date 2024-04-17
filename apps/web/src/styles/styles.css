@@ -1,6 +1,12 @@
 .ProseMirror > * + * {
   margin-top: 0;
 }
+.ProseMirror p:first-child {
+  margin-top: 0;
+}
+.ProseMirror p:last-child {
+  margin-bottom: 0;
+}
 .ProseMirror p.is-empty:first-child::before {
   content: attr(data-placeholder);
   float: left;
@@ -18,7 +24,7 @@
 }
 
 .ProseMirror-gapcursor {
-  @apply !w-full !m-0;
+  @apply !w-full !m-0 !relative;
 }
 .ProseMirror-gapcursor::after {
   @apply !border-primary !w-full !z-1 !my-0 !top-0;
