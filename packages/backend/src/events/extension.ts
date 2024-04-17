@@ -4,9 +4,9 @@ import { Context } from "#lib/context";
 import { createEventPublisher, createEventSubscription } from "#lib/pub-sub";
 
 type ExtensionEvent =
-  | { action: "delete"; data: { id: string } }
-  | { action: "create"; data: Extension & { id: string } }
-  | { action: "update"; data: { id: string; config: ContextObject } };
+  | { action: "delete"; data: { id: string }; userId: string }
+  | { action: "create"; data: Extension & { id: string }; userId: string }
+  | { action: "update"; data: { id: string; config: ContextObject }; userId: string };
 
 const publishExtensionEvent = createEventPublisher<ExtensionEvent>((workspaceId) => {
   return `extensions:${workspaceId}`;

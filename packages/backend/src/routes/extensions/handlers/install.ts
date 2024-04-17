@@ -54,6 +54,7 @@ const handler = async (
   });
   publishExtensionEvent(ctx, `${ctx.auth.workspaceId}`, {
     action: "create",
+    userId: `${ctx.auth.userId}`,
     data: {
       config: {},
       url: input.extension.url,

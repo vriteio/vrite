@@ -29,6 +29,7 @@ const handler = async (
 
   publishExtensionEvent(ctx, `${ctx.auth.workspaceId}`, {
     action: "update",
+    userId: `${ctx.auth.userId}`,
     data: {
       id: input.id,
       config: input.config

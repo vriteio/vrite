@@ -8,6 +8,7 @@ const hostConfig = z.object({
   search: z.boolean().describe("Whether Weaviate is configured for search"),
   aiSearch: z.boolean().describe("Whether Weaviate and OpenAI is configured for Q&A search"),
   extensions: z.boolean().describe("Whether extensions are enabled"),
+  analytics: z.boolean().describe("Whether analytics are enabled"),
   billing: z.boolean().describe("Whether subscription billing is enabled")
 });
 

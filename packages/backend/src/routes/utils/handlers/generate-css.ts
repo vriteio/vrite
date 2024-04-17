@@ -15,7 +15,10 @@ const handler = async (
   const generator = createGenerator({
     postprocess: [
       (obj) => {
-        obj.selector = `${input.uid ? `[data-uid="${input.uid}"]` : ""} ${obj.selector}`.trim();
+        const darkSubSelectorIndex = obj.selector.indexOf(".dark ");
+
+        obj.selector =
+          `${darkSubSelectorIndex >= 0 ? ".dark " : ""}${input.uid ? `[data-uid="${input.uid}"]` : ""} ${darkSubSelectorIndex >= 0 ? obj.selector.substring(darkSubSelectorIndex + 6) : obj.selector}`.trim();
       }
     ],
     layers: {

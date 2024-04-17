@@ -1,12 +1,13 @@
 import { ExtensionIcon } from "./extension-icon";
 import { ExtensionsMenuView } from "./extensions-menu-view";
 import { ExtensionConfigurationView } from "./extension-configuration-view";
-import { Component, createMemo, createSignal, Show } from "solid-js";
-import { mdiChevronLeft, mdiClose } from "@mdi/js";
+import { ExtensionsURLInstallView } from "./extensions-url-install-view";
+import { Component, createMemo, createSignal, Match, Show, Switch } from "solid-js";
+import { mdiChevronLeft, mdiClose, mdiDotsVertical, mdiLinkVariant } from "@mdi/js";
 import clsx from "clsx";
 import { Dynamic } from "solid-js/web";
 import { Motion, Presence } from "solid-motionone";
-import { Card, Heading, IconButton } from "#components/primitives";
+import { Button, Card, Dropdown, Heading, Icon, IconButton } from "#components/primitives";
 import { ScrollShadow } from "#components/fragments";
 import { createRef } from "#lib/utils";
 import { ExtensionDetails } from "#context/extensions";
@@ -20,6 +21,8 @@ interface SubSection {
 
 const ExtensionsView: Component = () => {
   const { setStorage } = useLocalStorage();
+  const [installFromURL, setInstallFromURL] = createSignal(false);
+  const [dropdownOpened, setDropdownOpened] = createSignal(false);
   const [openedExtension, setOpenedExtension] = createSignal<ExtensionDetails | null>(null);
   const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
   const [subSection, setSubSection] = createSignal<SubSection | null>(null);
@@ -42,14 +45,16 @@ const ExtensionsView: Component = () => {
     >
       <div
         class={clsx(
-          "flex justify-start items-start mb-4 px-5 flex-col",
-          openedExtension() ? "pt-2" : "pt-5"
+          "flex justify-start items-start mb-4 px-5 flex-col py-1",
+          openedExtension() || installFromURL() ? "pt-1" : "pt-6"
         )}
       >
         <IconButton
           variant="text"
-          class={clsx("m-0 h-6 -mb-1", !openedExtension() && "hidden")}
+          class={clsx("m-0 h-6 -mb-1", !openedExtension() && !installFromURL() && "hidden")}
           onClick={() => {
+            setInstallFromURL(false);
+
             if (subSection()) {
               subSection()?.goBack();
               setSubSection(null);
@@ -62,11 +67,10 @@ const ExtensionsView: Component = () => {
           size="small"
           path={mdiChevronLeft}
         ></IconButton>
-
         <Show
           when={openedExtension()}
           fallback={
-            <div class="flex justify-center items-center">
+            <div class="flex justify-center items-center w-full">
               <IconButton
                 path={mdiClose}
                 text="soft"
@@ -79,9 +83,40 @@ const ExtensionsView: Component = () => {
                   }));
                 }}
               />
-              <Heading level={1} class="py-1">
-                {currentSection().label}
-              </Heading>
+              {installFromURL() ? (
+                <>
+                  <Icon class="w-8 h-8 p-0.5 mr-1" path={mdiLinkVariant} />
+                  <Heading level={2} class="flex-1">
+                    Install from URL
+                  </Heading>
+                </>
+              ) : (
+                <Heading level={1} class="flex-1">
+                  {currentSection().label}
+                </Heading>
+              )}
+              <Dropdown
+                placement="bottom-end"
+                overlay={false}
+                fixed
+                activatorButton={() => (
+                  <IconButton path={mdiDotsVertical} text="soft" class="m-0" />
+                )}
+                opened={dropdownOpened()}
+                setOpened={setDropdownOpened}
+              >
+                <IconButton
+                  variant="text"
+                  text="soft"
+                  class="m-0"
+                  label="Install from URL"
+                  path={mdiLinkVariant}
+                  onClick={() => {
+                    setDropdownOpened(false);
+                    setInstallFromURL(true);
+                  }}
+                />
+              </Dropdown>
             </div>
           }
         >
@@ -114,16 +149,21 @@ const ExtensionsView: Component = () => {
                   transition={{ duration: 0.35 }}
                   class="flex justify-start flex-col min-h-[calc(100%-env(safe-area-inset-bottom,0px))] items-start w-full gap-5 absolute pb-5"
                 >
-                  <Show
-                    when={openedExtension()}
-                    fallback={<ExtensionsMenuView setOpenedExtension={setOpenedExtension} />}
-                  >
-                    <ExtensionConfigurationView
-                      close={() => setOpenedExtension(null)}
-                      extension={openedExtension()!}
-                      setActionComponent={(component) => setActionComponent(() => component)}
-                    />
-                  </Show>
+                  <Switch>
+                    <Match when={openedExtension()}>
+                      <ExtensionConfigurationView
+                        close={() => setOpenedExtension(null)}
+                        extension={openedExtension()!}
+                        setActionComponent={(component) => setActionComponent(() => component)}
+                      />
+                    </Match>
+                    <Match when={installFromURL()}>
+                      <ExtensionsURLInstallView setOpenedExtension={setOpenedExtension} />
+                    </Match>
+                    <Match when={true}>
+                      <ExtensionsMenuView setOpenedExtension={setOpenedExtension} />
+                    </Match>
+                  </Switch>
                 </Motion.div>
               </Show>
             </Presence>

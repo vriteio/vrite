@@ -8,8 +8,15 @@ import {
   useContext
 } from "solid-js";
 import { ExtensionSpec } from "@vrite/sdk/extensions";
-import { App, useClient, useHostConfig, useNotifications } from "#context";
+import {
+  App,
+  useAuthenticatedUserData,
+  useClient,
+  useHostConfig,
+  useNotifications
+} from "#context";
 import { ExtensionDetails, ExtensionSandbox, loadExtensionSandbox } from "#lib/extensions";
+import { user } from "#collections";
 
 interface ExtensionsContextData {
   installedExtensions: Accessor<ExtensionDetails[]>;
@@ -25,8 +32,7 @@ const officialExtensions = [
   "https://raw.githubusercontent.com/vriteio/extensions/main/vrite/mdx-transformer/build/spec.json",
   "https://raw.githubusercontent.com/vriteio/extensions/main/vrite/publish-dev/build/spec.json",
   "https://raw.githubusercontent.com/vriteio/extensions/main/vrite/publish-medium/build/spec.json",
-  "https://raw.githubusercontent.com/vriteio/extensions/main/vrite/publish-hashnode/build/spec.json",
-  "http://localhost:5500/vrite/editor-important/build/spec.json"
+  "https://raw.githubusercontent.com/vriteio/extensions/main/vrite/publish-hashnode/build/spec.json"
 ];
 const getAbsoluteSpecPath = (url: string, specPath: string): string => {
   if (specPath.startsWith("http://") || specPath.startsWith("https://")) {
@@ -64,6 +70,7 @@ const ExtensionsProvider: ParentComponent = (props) => {
   const client = useClient();
   const hostConfig = useHostConfig();
   const { notify } = useNotifications();
+  const { profile } = useAuthenticatedUserData();
   const extensionSandboxes = new Map<string, ExtensionSandbox>();
   const [installedExtensions, setInstalledExtensions] = createSignal<ExtensionDetails[]>([]);
   const [availableExtensions, setAvailableExtensions] = createSignal<ExtensionDetails[]>([]);
@@ -113,7 +120,7 @@ const ExtensionsProvider: ParentComponent = (props) => {
         const installedExtension = installed.find((extension) => {
           return extension.url === url;
         });
-        const availableExtensions = available.find((extension) => {
+        const availableExtension = available.find((extension) => {
           return extension.url === url;
         });
 
@@ -121,8 +128,8 @@ const ExtensionsProvider: ParentComponent = (props) => {
           continue;
         }
 
-        if (availableExtensions) {
-          result.push(availableExtensions);
+        if (availableExtension) {
+          result.push(availableExtension);
           continue;
         }
 
@@ -149,11 +156,12 @@ const ExtensionsProvider: ParentComponent = (props) => {
   const installExtension = async (
     extensionDetails: ExtensionDetails
   ): Promise<ExtensionDetails> => {
+    const spec = processSpec(extensionDetails.url, extensionDetails.spec);
     const { id, token } = await client.extensions.install.mutate({
       extension: {
-        name: extensionDetails.spec.name,
-        displayName: extensionDetails.spec.displayName,
-        permissions: (extensionDetails.spec.permissions || []) as App.TokenPermission[],
+        name: spec.name,
+        displayName: spec.displayName,
+        permissions: (spec.permissions || []) as App.TokenPermission[],
         url: extensionDetails.url
       }
     });
@@ -161,13 +169,13 @@ const ExtensionsProvider: ParentComponent = (props) => {
       {
         id,
         token,
-        spec: extensionDetails.spec
+        spec
       },
       client
     );
     const onConfigureCallback = sandbox.spec.onConfigure;
 
-    extensionSandboxes.set(extensionDetails.spec.name, sandbox);
+    extensionSandboxes.set(spec.name, sandbox);
 
     if (onConfigureCallback) {
       try {
@@ -186,17 +194,23 @@ const ExtensionsProvider: ParentComponent = (props) => {
       }
     }
 
-    return {
+    const fullExtensionDetails = {
       ...extensionDetails,
       id,
       token,
       // @ts-ignore
       config: {},
-      spec: processSpec(extensionDetails.url, extensionDetails.spec),
+      spec,
       get sandbox() {
-        return extensionSandboxes.get(extensionDetails.spec.name) || null;
+        return extensionSandboxes.get(spec.name) || null;
       }
     };
+
+    setInstalledExtensions((extensions) => {
+      return [fullExtensionDetails, ...extensions];
+    });
+
+    return fullExtensionDetails;
   };
   const uninstallExtension = async (extensionDetails: ExtensionDetails): Promise<void> => {
     const onUninstallCallback = extensionDetails.sandbox?.spec?.onUninstall;
@@ -221,12 +235,17 @@ const ExtensionsProvider: ParentComponent = (props) => {
     await client.extensions.uninstall.mutate({
       id: extensionDetails.id || ""
     });
+    setInstalledExtensions((extensions) => {
+      return extensions.filter((extension) => {
+        return extension.id !== extensionDetails.id;
+      });
+    });
   };
 
   if (hostConfig.extensions) {
     client.extensions.changes.subscribe(undefined, {
-      async onData({ action, data }) {
-        if (action === "create") {
+      async onData({ action, data, userId }) {
+        if (action === "create" && userId !== profile()?.id) {
           try {
             const response = await fetch(data.url);
             const spec = await response.json();
@@ -245,7 +264,7 @@ const ExtensionsProvider: ParentComponent = (props) => {
 
             extensionSandboxes.set(extensionDetails.spec.name, sandbox);
             setInstalledExtensions((extensions) => {
-              return [...extensions, extensionDetails];
+              return [extensionDetails, ...extensions];
             });
           } catch (e) {
             // eslint-disable-next-line no-console
