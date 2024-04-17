@@ -172,6 +172,7 @@ const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
   },
   addCommands() {
     return {
+      ...this.parent?.(),
       setElementSelection(position, active) {
         return ({ tr, dispatch }) => {
           if (dispatch) {

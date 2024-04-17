@@ -9,7 +9,7 @@ import {
   ExtensionMetadata,
   generateId
 } from "@vrite/sdk/extensions";
-import { Accessor, Setter, createSignal } from "solid-js";
+import { Accessor, Setter, createEffect, createSignal, on } from "solid-js";
 import { createRef } from "#lib/utils";
 import { useClient } from "#context";
 

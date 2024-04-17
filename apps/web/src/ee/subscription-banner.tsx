@@ -24,12 +24,16 @@ const SubscriptionBanner: Component = () => {
     <Show
       when={
         (!subscription()?.status ||
-          !["active", "trialing"].includes(subscription()?.status || "")) &&
+          !["active", "trialing"].includes(subscription()?.status || "") ||
+          (subscription()?.status === "trialing" && remainingBillingPeriod() <= 7)) &&
         visible()
       }
     >
-      <div class="h-8 bg-gradient-to-tr w-full flex justify-center items-center px-1 text-white z-30">
-        <Icon path={mdiAlertCircleOutline} class="h-6 w-6" />
+      <div class="md:h-8 text-sm md:text-base flex-wrap bg-gradient-to-tr w-full flex justify-center items-center md:relative p-1 text-white z-30 fixed top-0 h-unset">
+        <Icon
+          path={mdiAlertCircleOutline}
+          class="h-6 w-6 absolute sm:relative top-1 left-1 sm:top-0 sm:left-0"
+        />
         <Switch>
           <Match
             when={
@@ -69,7 +73,7 @@ const SubscriptionBanner: Component = () => {
         </Switch>
         <Show when={!["canceled", "unpaid"].includes(subscription()?.status || "")}>
           <button
-            class="rounded-md hover:bg-white hover:bg-opacity-20"
+            class="rounded-md hover:bg-white hover:bg-opacity-20 absolute top-1 right-1 sm:top-0 sm:left-0 sm:relative ml-1"
             onClick={() => {
               setVisible(false);
             }}

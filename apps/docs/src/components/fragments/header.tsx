@@ -35,7 +35,7 @@ const Header: Component = () => {
       class="top-0 md:px-8 h-16 bg-gray-50 dark:bg-gray-800 backdrop-blur-md z-1 items-center justify-center flex w-full md:w-[calc(100%+4rem)] absolute left-1/2 -translate-x-1/2 shadow-2xl shadow-gray-50 dark:shadow-gray-800"
       id="header"
     >
-      <div class="top-0 absolute w-screen bg-gray-50 dark:bg-gray-800 h-full" />
+      <div class="top-0 absolute max-w-full bg-gray-50 dark:bg-gray-800 h-full w-screen xl:max-w-screen" />
       <div
         class={clsx(
           "hidden lg:block pointer-events-none absolute z-1 to-transparent duration-150 transition-opacity w-screen",

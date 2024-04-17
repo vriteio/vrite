@@ -10,7 +10,7 @@ const handler = async (ctx: AuthenticatedContext): Promise<z.infer<typeof output
   const gitData = await gitDataCollection.findOne({ workspaceId: ctx.auth.workspaceId });
   const gitProvider = useGitProvider(ctx, gitData);
 
-  if (!gitData || !gitProvider) throw errors.serverError();
+  if (!gitData || !gitProvider) throw errors.notFound();
 
   const records = filterRecords(gitData.records, gitProvider.data);
 
