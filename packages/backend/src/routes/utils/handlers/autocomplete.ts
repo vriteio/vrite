@@ -17,12 +17,11 @@ const handler = async (
     apiKey: ctx.fastify.config.OPENAI_API_KEY,
     organization: ctx.fastify.config.OPENAI_ORGANIZATION
   });
-  const prompt = `Briefly and concisely autocomplete the sentence to fit the provided context. RESPOND WITH EMPTY STRING IF YOU CANNOT PROVIDE AN AUTOCOMPLETION. DO NOT INCLUDE THE SENTENCE IN THE OUTPUT.\nContext: ${input.context || ""}\nSentence: ${input.paragraph}\nAutocompletion:`;
+  const prompt = `Briefly and concisely autocomplete the sentence to fit the provided context. DO NOT INCLUDE THE SENTENCE IN THE OUTPUT.\nContext: ${input.context || ""}\nSentence: ${input.paragraph}\nAutocompletion:`;
   const result = await openai.chat.completions.create({
     model: "gpt-3.5-turbo",
     temperature: 0,
     max_tokens: 32,
-
     messages: [
       {
         role: "user",
@@ -32,16 +31,19 @@ const handler = async (
   });
 
   let autocompletion = result.choices[0].message.content || "";
+
   console.log(JSON.stringify({ prompt, autocompletion }, null, 2));
 
   if (autocompletion.toLowerCase().startsWith("i'm sorry")) {
     autocompletion = "";
   }
+
   if (input.paragraph.endsWith(" ")) {
     autocompletion = autocompletion.trim();
   }
 
   autocompletion = autocompletion.replace(input.paragraph, "");
+
   return { autocompletion };
 };
 
