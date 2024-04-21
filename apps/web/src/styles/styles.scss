@@ -47,6 +47,9 @@ kbd {
 }
 .prose-output,
 .prose-editor {
+  img.ProseMirror-separator {
+    display: none !important;
+  }
   p,
   ul,
   ol,
