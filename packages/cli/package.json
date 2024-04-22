@@ -1,6 +1,6 @@
 {
   "name": "@vrite/cli",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "private": false,
   "description": "CLI for Vrite - open-source developer content platform",
   "license": "MIT",
