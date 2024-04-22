@@ -162,7 +162,7 @@ const loadExtensionSandbox = async (
       if (result) {
         setEnvData(result.envData);
 
-        const { css } = await client.utils.generateCSS.query({ cssString: result.css, uid });
+        const { css } = await client.utils.generateCSS.mutate({ cssString: result.css, uid });
 
         document.head.insertAdjacentHTML("beforeend", `<style data-uid="${uid}">${css}</style>`);
 

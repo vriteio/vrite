@@ -44,6 +44,9 @@ const baseComponents = {
         disabled={"disabled" in props ? props.disabled : false}
         textarea={"textarea" in props ? props.textarea : false}
         placeholder={"placeholder" in props ? props.placeholder : ""}
+        inputProps={{
+          contentEditable: props.contentEditable
+        }}
         {...("options" in props ? { options: props.options } : {})}
       >
         {props.children}
@@ -60,6 +63,7 @@ const baseComponents = {
         options={props.options}
         placeholder={props.placeholder}
         wrapperClass={props.wrapperClass}
+        contentEditable={props.contentEditable}
       >
         {props.children}
       </Select>
@@ -82,6 +86,7 @@ const baseComponents = {
         text={props.text}
         disabled={"disabled" in props ? props.disabled : false}
         loading={"loading" in props ? props.loading : false}
+        contentEditable={props.contentEditable}
       >
         {props.children}
       </Button>
@@ -116,6 +121,7 @@ const baseComponents = {
         text={props.text}
         disabled={"disabled" in props ? props.disabled : false}
         loading={"loading" in props ? props.loading : false}
+        contentEditable={props.contentEditable}
       />
     );
   },
