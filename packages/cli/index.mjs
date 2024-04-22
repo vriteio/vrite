@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import { Command } from "commander";
 import { context } from "esbuild";
 import chalk from "chalk";
