@@ -21,7 +21,7 @@ const utilsRouter = router({
   generateCSS: authenticatedProcedure
     .input(generateCSS.inputSchema)
     .output(generateCSS.outputSchema)
-    .query(async ({ ctx, input }) => {
+    .mutation(async ({ ctx, input }) => {
       return generateCSS.handler(ctx, input);
     }),
   autocomplete: authenticatedProcedure

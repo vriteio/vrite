@@ -98,7 +98,7 @@ const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
       }),
       new Plugin({
         filterTransaction(tr) {
-          if (!tr.docChanged) return true;
+          if (!tr.docChanged || tr.getMeta("customView")) return true;
 
           const entries: Array<{ node: Node; pos: number }> = [];
 
@@ -257,10 +257,14 @@ const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
 
           const content = applyStructure(node, customView?.structure!);
 
-          editor.commands.insertContentAt(
-            { from: props.getPos() + 1, to: props.getPos() + node.content.size },
-            content.content || []
-          );
+          editor
+            .chain()
+            .setMeta("customView", true)
+            .insertContentAt(
+              { from: props.getPos() + 1, to: props.getPos() + node.content.size + 1 },
+              content.content || []
+            )
+            .run();
         } else if (parentPos >= 0) {
           const parentElement = props.editor.view.nodeDOM(parentPos) as HTMLElement;
 
