@@ -276,7 +276,7 @@ const ProfileMenu: Component<{ close(): void }> = (props) => {
   );
 };
 const SidebarMenu: Component = () => {
-  const { profile = () => null } = useAuthenticatedUserData() || {};
+  const { profile } = useAuthenticatedUserData();
   const { storage } = useLocalStorage();
   const { registerCommand } = useCommandPalette();
   const activeElement = createActiveElement();

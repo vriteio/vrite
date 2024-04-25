@@ -9,9 +9,6 @@ const escapeHTML = (input: string): string => {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 };
-const isEditorApp = (): boolean => {
-  return window.env.PUBLIC_APP_TYPE === "editor";
-};
 const isAppleDevice = (): boolean => {
   const platform = typeof navigator === "object" ? navigator.platform : "";
   const appleDeviceRegex = /Mac|iPod|iPhone|iPad/;
@@ -19,4 +16,4 @@ const isAppleDevice = (): boolean => {
   return appleDeviceRegex.test(platform);
 };
 
-export { navigateAndReload, escapeHTML, isEditorApp, isAppleDevice };
+export { navigateAndReload, escapeHTML, isAppleDevice };

@@ -2,8 +2,7 @@ import { Component, Match, ParentComponent, Show, Switch, lazy } from "solid-js"
 import { Route, Router } from "@solidjs/router";
 import RelativeTimePlugin from "dayjs/plugin/relativeTime";
 import dayjs from "dayjs";
-import { StandaloneLayout, SecuredLayout } from "#layout";
-import { isEditorApp } from "#lib/utils";
+import { SecuredLayout } from "#layout";
 import { useHostConfig } from "#context";
 
 dayjs.extend(RelativeTimePlugin);
@@ -17,11 +16,6 @@ const VerifyView = lazy(async () => {
   const { VerifyView } = await import("#views/verify");
 
   return { default: VerifyView };
-});
-const StandaloneEditorView = lazy(async () => {
-  const { StandaloneEditorView } = await import("#views/standalone-editor");
-
-  return { default: StandaloneEditorView };
 });
 const ConflictView = lazy(async () => {
   const { ConflictView } = await import("#views/conflict");
@@ -53,36 +47,24 @@ const Wrapper: ParentComponent = (props) => {
     </div>
   );
 };
-const StandaloneWrapper: ParentComponent = (props) => {
-  return <StandaloneLayout>{props.children}</StandaloneLayout>;
-};
 const App: Component = () => {
   const hostConfig = useHostConfig();
 
   return (
     <Router preload={false}>
-      <Switch>
-        <Match when={isEditorApp()}>
-          <Route path={["/", "**"]} component={StandaloneWrapper}>
-            <Route path={["/", "**"]} component={StandaloneEditorView} />
-          </Route>
-        </Match>
-        <Match when={!isEditorApp()}>
-          <Route path={["/", "**"]} component={Wrapper}>
-            <Route path="/auth" component={AuthView} />
-            <Route path="/verify" component={VerifyView} />
-            <Route path="/workspaces" component={WorkspacesView} />
-            <Route path="/edit" component={EditorView} />
-          </Route>
-          <Route path={["/", "**"]} component={SecuredWrapper}>
-            <Route path={["/", "/*contentPiece"]} component={DashboardView} />
-            <Route path="/editor/*contentPiece" component={EditorView} />
-            <Show when={hostConfig.githubApp}>
-              <Route path="/conflict" component={ConflictView} />
-            </Show>
-          </Route>
-        </Match>
-      </Switch>
+      <Route path={["/", "**"]} component={Wrapper}>
+        <Route path="/auth" component={AuthView} />
+        <Route path="/verify" component={VerifyView} />
+        <Route path="/workspaces" component={WorkspacesView} />
+        <Route path="/edit" component={EditorView} />
+      </Route>
+      <Route path={["/", "**"]} component={SecuredWrapper}>
+        <Route path={["/", "/*contentPiece"]} component={DashboardView} />
+        <Route path="/editor/*contentPiece" component={EditorView} />
+        <Show when={hostConfig.githubApp}>
+          <Route path="/conflict" component={ConflictView} />
+        </Show>
+      </Route>
     </Router>
   );
 };

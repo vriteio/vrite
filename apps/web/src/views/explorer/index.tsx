@@ -5,7 +5,8 @@ import { mdiClose, mdiHexagonSlice6 } from "@mdi/js";
 import { createRef } from "@vrite/components/src/ref";
 import { useNavigate } from "@solidjs/router";
 import SortableLib from "sortablejs";
-import { Heading, IconButton } from "#components/primitives";
+import clsx from "clsx";
+import { Heading, Icon, IconButton } from "#components/primitives";
 import { useAuthenticatedUserData, useContentData, useLocalStorage } from "#context";
 import { ScrollShadow } from "#components/fragments";
 
@@ -53,7 +54,7 @@ const ExplorerTree: Component = () => {
 
   return (
     <div class="relative overflow-hidden w-full pl-3 flex flex-col">
-      <div class={"flex justify-start items-start mb-2 px-2 pr-5 flex-col pt-5"}>
+      <div class={"flex justify-start items-start mb-1 px-2 pr-5 flex-col pt-5"}>
         <div class="flex justify-center items-center w-full">
           <IconButton
             path={mdiClose}
@@ -80,54 +81,7 @@ const ExplorerTree: Component = () => {
               disabled: true
             });
           }}
-        >
-          <IconButton
-            class="m-0 py-0 !font-normal"
-            path={mdiHexagonSlice6}
-            variant={colored() ? "solid" : "text"}
-            text={colored() ? "primary" : "soft"}
-            color={colored() ? "primary" : "base"}
-            size="small"
-            onClick={() => {
-              setActiveContentGroupId(null);
-              navigate(`/${activeContentPieceId() || ""}`);
-            }}
-            label={<span class="flex-1 clamp-1 ml-1">{workspace()?.name}</span>}
-            data-content-group-id={""}
-            onDragEnter={(event) => {
-              handleHighlight(event, "");
-            }}
-            onDragLeave={(event) => {
-              if (
-                event.relatedTarget instanceof HTMLElement &&
-                !event.currentTarget.contains(event.relatedTarget)
-              ) {
-                setHighlight((highlight) => (highlight === "" ? "" : highlight));
-              }
-            }}
-            onTouchMove={(event) => {
-              const x = event.touches[0].clientX;
-              const y = event.touches[0].clientY;
-              const elementAtTouchPoint = document.elementFromPoint(x, y);
-              const closestLevel = elementAtTouchPoint?.closest(
-                "[data-content-group-id]"
-              ) as HTMLElement | null;
-
-              if (closestLevel) {
-                const contentGroup = contentGroups[closestLevel.dataset.contentGroupId!];
-
-                if (contentGroup) {
-                  handleHighlight(event, contentGroup.id);
-                }
-              }
-            }}
-            onPointerLeave={(event) => {
-              if (activeDraggableContentGroupId()) {
-                setHighlight((highlight) => (highlight === "" ? "" : highlight));
-              }
-            }}
-          />
-        </div>
+        ></div>
       </div>
       <div class="relative overflow-hidden flex-1">
         <div
@@ -135,7 +89,74 @@ const ExplorerTree: Component = () => {
           ref={setScrollableContainerRef}
         >
           <ScrollShadow color="contrast" scrollableContainerRef={scrollableContainerRef} />
-          <div>
+          <div class="pl-2">
+            <div
+              class={clsx(
+                "pl-0.5 h-7 flex items-center rounded-l-md",
+                !activeDraggableContentGroupId() &&
+                  !active() &&
+                  "@hover:bg-gray-200 dark:@hover-bg-gray-700"
+              )}
+            >
+              <button
+                class="flex flex-1"
+                onClick={() => {
+                  setActiveContentGroupId(null);
+                  navigate(`/${activeContentPieceId() || ""}`);
+                }}
+                data-content-group-id={""}
+                onDragEnter={(event) => {
+                  handleHighlight(event, "");
+                }}
+                onDragLeave={(event) => {
+                  if (
+                    event.relatedTarget instanceof HTMLElement &&
+                    !event.currentTarget.contains(event.relatedTarget)
+                  ) {
+                    setHighlight((highlight) => (highlight === "" ? "" : highlight));
+                  }
+                }}
+                onTouchMove={(event) => {
+                  const x = event.touches[0].clientX;
+                  const y = event.touches[0].clientY;
+                  const elementAtTouchPoint = document.elementFromPoint(x, y);
+                  const closestLevel = elementAtTouchPoint?.closest(
+                    "[data-content-group-id]"
+                  ) as HTMLElement | null;
+
+                  if (closestLevel) {
+                    const contentGroup = contentGroups[closestLevel.dataset.contentGroupId!];
+
+                    if (contentGroup) {
+                      handleHighlight(event, contentGroup.id);
+                    }
+                  }
+                }}
+                onPointerLeave={(event) => {
+                  if (activeDraggableContentGroupId()) {
+                    setHighlight((highlight) => (highlight === "" ? "" : highlight));
+                  }
+                }}
+              >
+                <Icon
+                  class={clsx(
+                    "h-6 w-6 mr-1",
+                    colored() ? "fill-[url(#gradient)]" : "text-gray-500 dark:text-gray-400"
+                  )}
+                  path={mdiHexagonSlice6}
+                />
+                <span
+                  class={clsx(
+                    "!text-base inline-flex text-start flex-1 overflow-x-auto content-group-name scrollbar-hidden select-none clamp-1",
+                    highlighted() ||
+                      (colored() && "text-transparent bg-clip-text bg-gradient-to-tr")
+                  )}
+                  title={workspace()?.name}
+                >
+                  {workspace()?.name}
+                </span>
+              </button>
+            </div>
             <TreeLevel />
           </div>
         </div>

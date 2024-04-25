@@ -27,7 +27,7 @@ const utilsRouter = router({
   autocomplete: authenticatedProcedure
     .input(autocomplete.inputSchema)
     .output(autocomplete.outputSchema)
-    .query(async ({ ctx, input }) => {
+    .mutation(async ({ ctx, input }) => {
       return autocomplete.handler(ctx, input);
     })
 });

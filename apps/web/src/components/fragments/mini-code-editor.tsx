@@ -33,7 +33,7 @@ interface MiniCodeEditorProps {
 }
 
 const MiniCodeEditor: Component<MiniCodeEditorProps> = (props) => {
-  const { codeEditorTheme = () => "dark" } = useAppearance() || {};
+  const { codeEditorTheme } = useAppearance();
   const [editorContainerRef, setEditorContainerRef] = createRef<HTMLElement | null>(null);
   const [currentCode, setCurrentCode] = createSignal(props.code || "");
   const getUri = (): monaco.Uri => {

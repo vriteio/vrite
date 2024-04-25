@@ -183,7 +183,8 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
   return (
     <div
       class={clsx(
-        "flex flex-1 justify-center items-center cursor-pointer overflow-x-hidden group ml-0.5",
+        "flex flex-1 justify-center items-center cursor-pointer overflow-x-hidden group pl-0.5",
+        !props.contentGroup.ancestors.length && "rounded-l-md",
         !dropdownOpened() &&
           !activeDraggableContentGroupId() &&
           !active() &&
@@ -219,9 +220,10 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
         data-content-group-id={props.contentGroup?.id || ""}
       >
         <IconButton
-          class={clsx("transform transition m-0 p-0 ml-0.25", props.opened && "rotate-90")}
+          class={clsx("transform transition m-0 p-0 mx-0.25", props.opened && "rotate-90")}
           path={mdiChevronRight}
           variant="text"
+          hover={Boolean(dropdownOpened() || activeDraggableContentGroupId() || active())}
           onClick={() => {
             props.onExpand?.();
           }}

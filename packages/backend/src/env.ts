@@ -57,8 +57,7 @@ const envSchema = z.object({
   PUBLIC_COLLAB_URL: z.string(),
   PUBLIC_APP_URL: z.string(),
   PUBLIC_ASSETS_URL: z.string(),
-  PUBLIC_DISABLE_ANALYTICS: z.boolean().optional().default(false),
-  PUBLIC_APP_TYPE: z.string().optional().default("platform")
+  PUBLIC_DISABLE_ANALYTICS: z.boolean().optional().default(false)
 });
 
 declare module "fastify" {

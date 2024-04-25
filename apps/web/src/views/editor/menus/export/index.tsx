@@ -40,8 +40,8 @@ const ExportMenu: Component<ExportMenuProps> = (props) => {
   const { useSharedSignal } = useSharedState();
   const client = useClient();
   const [editor] = useSharedSignal("editor");
-  const { registerCommand = () => {} } = useCommandPalette() || {};
-  const { workspaceSettings = () => null } = useAuthenticatedUserData() || {};
+  const { registerCommand } = useCommandPalette();
+  const { workspaceSettings } = useAuthenticatedUserData();
   const { notify } = useNotifications();
   const [loading, setLoading] = createSignal(false);
   const [exportMenuOpened, setExportMenuOpened] = createSignal(false);

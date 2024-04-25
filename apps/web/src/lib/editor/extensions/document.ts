@@ -1,6 +1,8 @@
 import { Document as BaseDocument } from "@vrite/editor";
 import { AllSelection, EditorState, Plugin, TextSelection, Transaction } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
+import { SolidEditor } from "@vrite/tiptap-solid";
+import { isNodeSelection } from "@tiptap/core";
 import { Client, useNotifications } from "#context";
 
 interface DocumentOptions {
@@ -8,6 +10,7 @@ interface DocumentOptions {
 }
 interface DocumentStorage {
   autocompletion?: string;
+  element?: HTMLElement | null;
 }
 
 const autocompleteDecoration = (
@@ -36,15 +39,30 @@ const autocompleteDecoration = (
       return;
     }
 
-    const sentences = (parent.textContent || "").trim().split(/(?<=\w)\. /g);
+    const sentences = (parent.textContent || "").split(/(?<=\w)\. /g);
+    const lastSentence = sentences.at(-1);
 
-    if (sentences.at(-1)?.endsWith(".")) return;
+    if (!lastSentence?.trim() || !lastSentence?.match(/^(?:.|\n)+?(\w|\s)$/g)) return;
 
     const paragraph = sentences.at(-1) || "";
-    const context = sentences.slice(0, -1).join(". ");
+    const contextSentences = sentences.slice(0, -1).join(". ");
 
+    let context = "";
+
+    state.doc.nodesBetween(0, Math.max(selection.$from.pos, 0), (previousNode) => {
+      if (previousNode !== parent && context.length < 512) {
+        context = `${context}\n${previousNode.textContent || ""}`;
+      }
+
+      if (previousNode.type.name === "heading") {
+        context = `${previousNode.textContent}`;
+      }
+
+      return false;
+    });
+    context = `${context}\n${contextSentences}`.trim();
     client?.utils.autocomplete
-      .query(
+      .mutate(
         {
           context,
           paragraph
@@ -59,15 +77,17 @@ const autocompleteDecoration = (
         }
       })
       .catch(() => {});
-  }, 250);
+  }, 350);
   const cancel = (): void => {
     controller.abort();
     clearTimeout(timeoutHandle);
   };
   const decoration = DecorationSet.create(state.doc, [
     Decoration.widget(state.selection.from, () => {
-      const span = document.createElement("span");
+      const span = storage.element || document.createElement("span");
 
+      span;
+      span.textContent = "";
       span.setAttribute("class", "opacity-30");
       span.setAttribute("contenteditable", "false");
 
@@ -76,6 +96,7 @@ const autocompleteDecoration = (
       }
 
       element = span;
+      storage.element = span;
 
       return span;
     })
@@ -89,11 +110,38 @@ const Document = BaseDocument.extend<DocumentOptions, DocumentStorage>({
   },
   addStorage() {
     return {
-      autocompletion: ""
+      autocompletion: "",
+      element: null
     };
   },
   addKeyboardShortcuts() {
-    const { notify } = useNotifications() || {};
+    const { notify } = useNotifications();
+    const handlePartialCompletion = (editor: SolidEditor): boolean => {
+      const autocompletion = this.storage.autocompletion || "";
+
+      if (autocompletion) {
+        const { tr } = editor.state;
+        const { dispatch } = editor.view;
+        const { $from } = editor.state.selection;
+        const endOfParagraphPos = $from.pos - $from.parentOffset + $from.parent.nodeSize - 2;
+        const words = autocompletion.split(" ");
+
+        this.storage.autocompletion = words.slice(1).join(" ");
+        dispatch(
+          tr
+            .setMeta("autocompletion", true)
+            .insertText(
+              `${words[0]}${words.length > 1 ? " " : ""}`,
+              endOfParagraphPos,
+              endOfParagraphPos
+            )
+        );
+
+        return true;
+      }
+
+      return false;
+    };
 
     return {
       "Tab": ({ editor }) => {
@@ -118,32 +166,8 @@ const Document = BaseDocument.extend<DocumentOptions, DocumentStorage>({
         // Handle tab when at the end of a paragraph.
         return true;
       },
-      "Shift-Tab": ({ editor }) => {
-        const autocompletion = this.storage.autocompletion || "";
-
-        if (autocompletion) {
-          const { tr } = editor.state;
-          const { dispatch } = editor.view;
-          const { $from } = editor.state.selection;
-          const endOfParagraphPos = $from.pos - $from.parentOffset + $from.parent.nodeSize - 2;
-          const words = autocompletion.split(" ");
-
-          this.storage.autocompletion = words.slice(1).join(" ");
-          dispatch(
-            tr
-              .setMeta("autocompletion", true)
-              .insertText(
-                `${words[0]}${words.length > 1 ? " " : ""}`,
-                endOfParagraphPos,
-                endOfParagraphPos
-              )
-          );
-
-          return true;
-        }
-
-        return false;
-      },
+      "Shift-Tab": ({ editor }) => handlePartialCompletion(editor as SolidEditor),
+      "Mod-ArrowRight": ({ editor }) => handlePartialCompletion(editor as SolidEditor),
       "Mod-s": () => {
         notify?.({ text: "Vrite autosaves your content", type: "success" });
 
@@ -200,6 +224,7 @@ const Document = BaseDocument.extend<DocumentOptions, DocumentStorage>({
               (!(tr.selectionSet && selectionPosChanged) && !tr.docChanged) ||
               tr.getMeta("tableColumnResizing$") ||
               !tr.selection.empty ||
+              isNodeSelection(tr.selection) ||
               !editor.isFocused
             ) {
               return previousValue || null;
