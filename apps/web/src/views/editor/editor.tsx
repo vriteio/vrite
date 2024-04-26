@@ -45,7 +45,8 @@ import {
   ElementMenuPlugin,
   CommentMenuPlugin,
   AutoDir,
-  CustomNodeMenuPlugin
+  CustomNodeMenuPlugin,
+  AutocompletePlugin
 } from "#lib/editor";
 import {
   App,
@@ -158,7 +159,8 @@ const Editor: Component<EditorProps> = (props) => {
     },
     extensions: [
       BlockPaste.configure({ workspaceSettings }),
-      Document.configure({ client }),
+      AutocompletePlugin.configure({ client }),
+      Document,
       Placeholder,
       Paragraph,
       Text,

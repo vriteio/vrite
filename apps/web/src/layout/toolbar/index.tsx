@@ -1,5 +1,6 @@
 import { UserList } from "./user-list";
 import { RightPanelMenu } from "./right-panel-menu";
+import { Breadcrumb } from "./breadcrumb";
 import {
   mdiAppleKeyboardCommand,
   mdiBookOpenBlankVariant,
@@ -362,6 +363,7 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
             />
           </div>
         </Dropdown>
+        <Breadcrumb />
         <div class="flex-1" />
         <Show when={provider()}>
           <UserList provider={provider()!} />
