@@ -321,7 +321,7 @@ const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
           view?.deselectNode?.();
         },
         stopEvent(event) {
-          return referenceView.stopEvent(event);
+          return false;
         },
         update(newNode, decorations, innerDecorations) {
           view?.update?.(newNode, decorations, innerDecorations);
