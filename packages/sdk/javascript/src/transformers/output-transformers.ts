@@ -240,7 +240,11 @@ const htmlOutputTransformer = createOutputTransformer<string>((contentNode) => {
       }
 
       if (typeof value !== "undefined") {
-        result.push(`${key}="${value}"`);
+        if (`${value}`.includes('"')) {
+          result.push(`${key}='${value}'`);
+        } else {
+          result.push(`${key}="${value}"`);
+        }
       }
     });
 
@@ -336,7 +340,8 @@ const htmlOutputTransformer = createOutputTransformer<string>((contentNode) => {
           .join("")}</label></li>`;
       case "element":
         return `<div ${stringifyAttributes({
-          "data-type": nodeWalker.node.attrs?.type
+          "data-type": nodeWalker.node.attrs?.type,
+          "data-props": JSON.stringify(nodeWalker.node.attrs?.props)
         })}>${(nodeWalker as JSONContentNodeWalker<JSONContentNode["element"]>).children
           .map(transformContentNode)
           .join("")}</div>`;
