@@ -6,18 +6,33 @@ import { App, useClient, useContentData } from "#context";
 const Breadcrumb: Component = () => {
   const client = useClient();
   const { activeContentGroupId, contentGroups, setActiveContentGroupId } = useContentData();
-  const activeContentGroup = (): App.ContentGroup<string> | null => {
-    return activeContentGroupId() ? contentGroups[activeContentGroupId()!]! : null;
+  const activeContentGroup = (): App.ContentGroup<string> | "" => {
+    return activeContentGroupId() ? contentGroups[activeContentGroupId()!]! : "";
   };
   const [ancestors] = createResource(
     activeContentGroup,
     async (ancestor) => {
-      try {
-        const ancestors = await client.contentGroups.listAncestors.query({
-          contentGroupId: ancestor.id || ""
-        });
+      if (!ancestor) return [];
 
-        return [...ancestors, ancestor];
+      try {
+        const expectedLength = ancestor.ancestors.length + 1;
+        const ancestors = [
+          ...ancestor.ancestors
+            .map((id) => {
+              return contentGroups[id];
+            })
+            .filter(Boolean),
+          ancestor
+        ] as App.ContentGroup<string>[];
+
+        if (ancestors.length === expectedLength) return ancestors;
+
+        return [
+          ...(await client.contentGroups.listAncestors.query({
+            contentGroupId: ancestor.id || ""
+          })),
+          ancestor
+        ];
       } catch (e) {
         return [];
       }
