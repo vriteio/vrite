@@ -12,7 +12,7 @@ const RightPanelMenu: Component<{ variant?: "text" | "solid" }> = (props) => {
       text={`${rightPanelOpened() ? "Hide" : "Show"} Explorer`}
       side="left"
       class="-ml-1"
-      wrapperClass="hidden @xl:flex"
+      wrapperClass="flex"
     >
       <IconButton
         path={rightPanelOpened() ? mdiMenuClose : mdiMenuOpen}

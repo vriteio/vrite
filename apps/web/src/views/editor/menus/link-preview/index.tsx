@@ -11,8 +11,8 @@ interface LinkPreviewMenuProps {
 }
 
 const LinkPreviewMenu: Component<LinkPreviewMenuProps> = (props) => {
-  const { activeVariantId = () => null } = useContentData() || {};
-  const { workspace = () => null } = useAuthenticatedUserData() || {};
+  const { activeVariantId } = useContentData();
+  const { workspace } = useAuthenticatedUserData();
   const client = useClient();
   const updateTooltipPosition = (): void => {
     setTimeout(() => {

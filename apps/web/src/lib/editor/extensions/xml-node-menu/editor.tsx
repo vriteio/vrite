@@ -79,7 +79,7 @@ const ElementMenuEditor = lazy(async () => {
 
   return {
     default: (props: ElementMenuEditorProps) => {
-      const { codeEditorTheme = () => "dark" } = useAppearance() || {};
+      const { codeEditorTheme } = useAppearance();
       const [editorContainerRef, setEditorContainerRef] = createRef<HTMLElement | null>(null);
       const [coords, setCoords] = createSignal({ x: 0, y: 0 });
       const [visible, setVisible] = createSignal(true);

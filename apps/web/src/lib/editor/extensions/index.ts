@@ -17,3 +17,4 @@ export * from "./element";
 export * from "./auto-dir";
 export * from "./xml-node-menu";
 export * from "./custom-node-menu";
+export * from "./autocomplete";

@@ -1,6 +1,6 @@
 import { mdiDownloadOutline, mdiPuzzle } from "@mdi/js";
 import { Component, createSignal } from "solid-js";
-import { useExtensions } from "#context";
+import { App, useConfirmationModal, useExtensions } from "#context";
 import { TitledCard } from "#components/fragments";
 import { ExtensionDetails } from "#context/extensions";
 import { IconButton, Input } from "#components/primitives";
@@ -14,6 +14,7 @@ const ExtensionsURLInstallView: Component<ExtensionsURLInstallViewProps> = (prop
   const [extensionURL, setExtensionURL] = createSignal("");
   const [loading, setLoading] = createSignal(false);
   const { installExtension } = useExtensions();
+  const { confirmAction } = useConfirmationModal();
   const install = async (): Promise<void> => {
     setLoading(true);
 
@@ -22,13 +23,42 @@ const ExtensionsURLInstallView: Component<ExtensionsURLInstallViewProps> = (prop
 
     if (response.ok) {
       const spec = await response.json();
-      const installedExtension = await installExtension({
-        spec,
-        url
-      });
 
-      setLoading(false);
-      props.setOpenedExtension(installedExtension);
+      try {
+        const installedExtension = await installExtension({
+          spec,
+          url
+        });
+
+        setLoading(false);
+        props.setOpenedExtension(installedExtension);
+      } catch (error) {
+        const trpcError = error as App.ClientError;
+
+        if (trpcError.data.code === "CONFLICT") {
+          confirmAction({
+            header: "Extension already installed",
+            content:
+              "Extension with the same name is already installed. Do you want to overwrite it?",
+            type: "danger",
+            onConfirm: async () => {
+              const installedExtension = await installExtension(
+                {
+                  spec,
+                  url
+                },
+                true
+              );
+
+              setLoading(false);
+              props.setOpenedExtension(installedExtension);
+            },
+            onCancel: () => {
+              setLoading(false);
+            }
+          });
+        }
+      }
     }
   };
 

@@ -8,6 +8,7 @@ import { zodId } from "#lib/mongo";
 import { createToken } from "#lib/utils";
 
 const inputSchema = z.object({
+  overwrite: z.boolean().optional().default(false),
   extension: extension.pick({ name: true, url: true }).extend({
     permissions: z
       .array(tokenPermission)
@@ -30,7 +31,11 @@ const handler = async (
   });
 
   if (existingExtension) {
-    throw errors.alreadyExists("extension");
+    if (input.overwrite) {
+      await extensionsCollection.deleteOne({ _id: existingExtension._id });
+    } else {
+      throw errors.alreadyExists("extension");
+    }
   }
 
   const _id = new ObjectId();

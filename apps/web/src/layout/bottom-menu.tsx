@@ -1,8 +1,8 @@
-import { mdiHexagonSlice6, mdiCards } from "@mdi/js";
+import { mdiHexagonSlice6, mdiCards, mdiCreationOutline } from "@mdi/js";
 import { Component, Show, createEffect, createSignal, onCleanup } from "solid-js";
 import clsx from "clsx";
 import { useNavigate } from "@solidjs/router";
-import { IconButton, Card, Button } from "#components/primitives";
+import { IconButton, Card, Button, Tooltip } from "#components/primitives";
 import {
   App,
   Command,
@@ -85,6 +85,30 @@ const StatsMenu: Component = () => {
         <StatDisplay value={stats().locs} label="LOCs" />
       </div>
     </Show>
+  );
+};
+const ActionMenu: Component = () => {
+  // TODO: Connect the autocomplete feature
+  const [autocompleteEnabled, setAutocompleteEnabled] = createSignal(false);
+
+  return (
+    <Tooltip
+      text={autocompleteEnabled() ? "Autocomplete enabled" : "Autocomplete disabled"}
+      side="top"
+      class="-mt-1"
+    >
+      <IconButton
+        path={mdiCreationOutline}
+        size="small"
+        class="m-0 rounded-0 h-6 w-6"
+        text={autocompleteEnabled() ? "base" : "soft"}
+        color={autocompleteEnabled() ? "primary" : "base"}
+        variant="text"
+        onClick={() => {
+          setAutocompleteEnabled(!autocompleteEnabled());
+        }}
+      />
+    </Tooltip>
   );
 };
 const BottomMenu: Component = () => {
@@ -191,6 +215,7 @@ const BottomMenu: Component = () => {
         }}
       />
       <div class="flex-1" />
+      {/* <ActionMenu />*/}
       <StatsMenu />
     </div>
   );

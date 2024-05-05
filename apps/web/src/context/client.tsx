@@ -132,4 +132,4 @@ const useClient = (): Client => {
 };
 
 export { ClientProvider, useClient };
-export type { App, RouterInput, RouterOutput };
+export type { App, Client, RouterInput, RouterOutput };

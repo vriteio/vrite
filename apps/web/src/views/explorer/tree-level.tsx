@@ -4,7 +4,7 @@ import { useExplorerData } from "./explorer-context";
 import clsx from "clsx";
 import { Component, createEffect, Show, For, createSignal } from "solid-js";
 import SortableLib from "sortablejs";
-import { Card, Icon, IconButton, Loader } from "@vrite/components";
+import { Card, Icon, Loader } from "@vrite/components";
 import { mdiDotsHorizontalCircleOutline, mdiFolderPlus } from "@mdi/js";
 import { useNavigate } from "@solidjs/router";
 import { App, useClient, useContentData, useNotifications } from "#context";

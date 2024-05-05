@@ -2,6 +2,7 @@ import { PreviewData } from "./handlers/link-preview";
 import * as getHostConfig from "./handlers/host-config";
 import * as getLinkPreview from "./handlers/link-preview";
 import * as generateCSS from "./handlers/generate-css";
+import * as autocomplete from "./handlers/autocomplete";
 import type { HostConfig } from "#lib/host-config";
 import { procedure, router } from "#lib/trpc";
 import { isAuthenticated } from "#lib/middleware";
@@ -22,6 +23,12 @@ const utilsRouter = router({
     .output(generateCSS.outputSchema)
     .mutation(async ({ ctx, input }) => {
       return generateCSS.handler(ctx, input);
+    }),
+  autocomplete: authenticatedProcedure
+    .input(autocomplete.inputSchema)
+    .output(autocomplete.outputSchema)
+    .mutation(async ({ ctx, input }) => {
+      return autocomplete.handler(ctx, input);
     })
 });
 

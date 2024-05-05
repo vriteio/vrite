@@ -29,7 +29,7 @@ const FormatMenu: Component<{
   setMode(mode: string): void;
 }> = (props) => {
   const [activeMarks, setActiveMarks] = createSignal<string[]>([]);
-  const { workspaceSettings = () => null } = useAuthenticatedUserData() || {};
+  const { workspaceSettings } = useAuthenticatedUserData();
   const client = useClient();
   const commentMenuItem = {
     icon: mdiCommentOutline,

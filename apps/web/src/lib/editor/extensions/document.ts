@@ -1,11 +1,10 @@
-import { markInputRule, markPasteRule } from "@tiptap/core";
 import { Document as BaseDocument } from "@vrite/editor";
-import { AllSelection, PluginKey, Plugin, TextSelection } from "@tiptap/pm/state";
-import { useNotifications } from "#context";
+import { AllSelection, TextSelection } from "@tiptap/pm/state";
+import { Client, useNotifications } from "#context";
 
 const Document = BaseDocument.extend({
   addKeyboardShortcuts() {
-    const { notify } = useNotifications() || {};
+    const { notify } = useNotifications();
 
     return {
       "Mod-s": () => {

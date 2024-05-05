@@ -3,7 +3,6 @@ interface PublicEnv {
   PUBLIC_API_URL: string;
   PUBLIC_COLLAB_URL: string;
   PUBLIC_ASSETS_URL: string;
-  PUBLIC_APP_TYPE: string;
   PUBLIC_DISABLE_ANALYTICS: boolean;
 }
 interface ImportMetaEnv extends PublicEnv {}

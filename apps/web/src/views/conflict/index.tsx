@@ -25,7 +25,7 @@ const ConflictView: Component<{ monaco: typeof monaco }> = (props) => {
   const navigate = useNavigate();
   const { setStorage } = useLocalStorage();
   const { monaco } = props;
-  const { codeEditorTheme = () => "dark" } = useAppearance() || {};
+  const { codeEditorTheme } = useAppearance();
   const { useSharedSignal } = useSharedState();
   const [containerRef, setContainerRef] = createRef<HTMLDivElement | null>(null);
   const [conflictData] = useSharedSignal("conflictData");

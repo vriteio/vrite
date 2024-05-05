@@ -12,9 +12,7 @@ interface AppearanceContextData {
 
 const AppearanceContext = createContext<AppearanceContextData>();
 const AppearanceProvider: ParentComponent = (props) => {
-  const {
-    userSettings = () => ({ accentColor: "energy", codeEditorTheme: "auto", uiTheme: "auto" })
-  } = useAuthenticatedUserData() || {};
+  const { userSettings } = useAuthenticatedUserData();
   const prefersDark = createPrefersDark();
   const uiTheme = (): BaseTheme => {
     if (userSettings()?.uiTheme === "auto") {

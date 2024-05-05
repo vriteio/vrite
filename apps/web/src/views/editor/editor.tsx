@@ -45,12 +45,14 @@ import {
   ElementMenuPlugin,
   CommentMenuPlugin,
   AutoDir,
-  CustomNodeMenuPlugin
+  CustomNodeMenuPlugin,
+  AutocompletePlugin
 } from "#lib/editor";
 import {
   App,
   hasPermission,
   useAuthenticatedUserData,
+  useClient,
   useContentData,
   useExtensions,
   useHostConfig,
@@ -132,6 +134,7 @@ const Editor: Component<EditorProps> = (props) => {
   const [showBlockBubbleMenu, setShowBlockBubbleMenu] = createSignal(false);
   const [isNodeSelection, setIsNodeSelection] = createSignal(false);
   const { workspaceSettings } = useAuthenticatedUserData();
+  const client = useClient();
   const extensionsContext = useExtensions();
   const updateBubbleMenuPlacement = debounce(() => {
     bubbleMenuInstance()?.setProps({ placement: isNodeSelection() ? "top-start" : "top" });
@@ -156,6 +159,7 @@ const Editor: Component<EditorProps> = (props) => {
     },
     extensions: [
       BlockPaste.configure({ workspaceSettings }),
+      // AutocompletePlugin.configure({ client }),
       Document,
       Placeholder,
       Paragraph,
