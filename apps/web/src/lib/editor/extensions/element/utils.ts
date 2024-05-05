@@ -81,9 +81,9 @@ const getElementPath = (
     }
   };
 
-  for (let i = 0; i <= resolvedPos.depth; i++) {
+  for (let i = 1; i <= resolvedPos.depth; i++) {
     const node = resolvedPos.node(i);
-    const index = resolvedPos.index(i);
+    const index = resolvedPos.index(i - 1);
 
     appendToPath(node, index);
   }
