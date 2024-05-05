@@ -37,8 +37,6 @@ const handler = async (
 
   let autocompletion = result.choices[0].message.content || "";
 
-  console.log(JSON.stringify({ userPrompt, autocompletion }, null, 2));
-
   if (autocompletion.toLowerCase().startsWith("i'm sorry")) {
     autocompletion = "";
   }

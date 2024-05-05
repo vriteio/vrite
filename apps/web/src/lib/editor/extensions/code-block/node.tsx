@@ -5,7 +5,7 @@ import {
   CodeBlockAttributes
 } from "@vrite/editor";
 import { NodeViewWrapper, SolidNodeViewRenderer, useSolidNodeView } from "@vrite/tiptap-solid";
-import { isNodeSelection } from "@tiptap/core";
+import { NodeView, isNodeSelection } from "@tiptap/core";
 import { keymap } from "@tiptap/pm/keymap";
 import { TextSelection } from "@tiptap/pm/state";
 import { createNanoEvents } from "nanoevents";
@@ -78,7 +78,9 @@ const CodeBlock = BaseCodeBlock.extend<CodeBlockOptions>({
         });
 
         return (
-          <NodeViewWrapper>
+          <NodeViewWrapper
+            as={(props) => <div contenteditable={false} class="select-none" {...props} />}
+          >
             <Show
               when={!loading()}
               fallback={<div style={{ "min-height": `${contentHeight()}px` }} />}

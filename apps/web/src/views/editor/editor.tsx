@@ -159,7 +159,7 @@ const Editor: Component<EditorProps> = (props) => {
     },
     extensions: [
       BlockPaste.configure({ workspaceSettings }),
-      AutocompletePlugin.configure({ client }),
+      // AutocompletePlugin.configure({ client }),
       Document,
       Placeholder,
       Paragraph,

@@ -16,14 +16,16 @@ import {
   useNotifications
 } from "#context";
 import { ExtensionDetails, ExtensionSandbox, loadExtensionSandbox } from "#lib/extensions";
-import { user } from "#collections";
 
 interface ExtensionsContextData {
   installedExtensions: Accessor<ExtensionDetails[]>;
   availableExtensions: Accessor<ExtensionDetails[]>;
   loadingInstalledExtensions: Accessor<boolean>;
   loadingAvailableExtensions: Accessor<boolean>;
-  installExtension: (extensionDetails: ExtensionDetails) => Promise<ExtensionDetails>;
+  installExtension: (
+    extensionDetails: ExtensionDetails,
+    overwrite?: boolean
+  ) => Promise<ExtensionDetails>;
   uninstallExtension: (extensionDetails: ExtensionDetails) => Promise<void>;
 }
 
@@ -164,7 +166,8 @@ const ExtensionsProvider: ParentComponent = (props) => {
   );
 
   const installExtension = async (
-    extensionDetails: ExtensionDetails
+    extensionDetails: ExtensionDetails,
+    overwrite = false
   ): Promise<ExtensionDetails> => {
     const spec = processSpec(extensionDetails.url, extensionDetails.spec);
     const { id, token } = await client.extensions.install.mutate({
@@ -173,7 +176,8 @@ const ExtensionsProvider: ParentComponent = (props) => {
         displayName: spec.displayName,
         permissions: (spec.permissions || []) as App.TokenPermission[],
         url: extensionDetails.url
-      }
+      },
+      overwrite
     });
     const sandbox = await loadExtensionSandbox(
       {
