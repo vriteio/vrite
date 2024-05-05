@@ -31,8 +31,6 @@ Vrite is an open-source, collaborative space to create, manage, and deploy produ
 
 Learn more about all the features of Vrite and how to use them from the [official Usage Guide](https://docs.vrite.io).
 
-> **Try out:** A simple version of Vrite Editor is available without sign-in at [editor.vrite.io](https://editor.vrite.io). Full Vrite experience available at [app.vrite.io](https://app.vrite.io).
-
 ## Links
 
 - 🔥 [**Try out Vrite**](https://app.vrite.io)
