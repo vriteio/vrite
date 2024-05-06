@@ -16,12 +16,6 @@ import {
   getWorkspacesCollection
 } from "#collections";
 
-declare module "node:net" {
-  interface Socket {
-    sessionId?: string;
-  }
-}
-
 interface SessionData {
   workspaceId: string;
   userId: string;
@@ -59,7 +53,7 @@ const getSessionId = async (
       }
     }
 
-    if (ctx.req.socket) {
+    if (ctx.req.socket && ctx.req.socket.listeners("data").length <= 1) {
       // Fixes https://github.com/fastify/fastify-websocket/issues/74
       ctx.req.socket.on("data", () => {
         ctx.req.socket.resume();
