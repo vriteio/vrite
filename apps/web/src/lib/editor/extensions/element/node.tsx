@@ -321,6 +321,13 @@ const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
           view?.deselectNode?.();
         },
         stopEvent(event) {
+          if (
+            event.target instanceof HTMLElement &&
+            ["SELECT", "INPUT", "TEXTAREA"].includes(event.target.tagName)
+          ) {
+            return true;
+          }
+
           return false;
         },
         update(newNode, decorations, innerDecorations) {
