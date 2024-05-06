@@ -773,6 +773,9 @@ importers:
       '@unocss/core':
         specifier: ^0.59.0
         version: 0.59.0
+      '@unocss/extractor-arbitrary-variants':
+        specifier: ^0.59.4
+        version: 0.59.4
       '@unocss/preset-typography':
         specifier: ^0.59.0
         version: 0.59.0
@@ -7103,10 +7106,20 @@ packages:
     resolution: {integrity: sha512-9tXL6TV4FRpmFy70dHryA5NHsS7bV/x771LOPnZyiw+TRK4oGVk96IsATOflcn7L3FbXQY1mV+8Uzhkhx2PY0A==}
     dev: false
 
+  /@unocss/core@0.59.4:
+    resolution: {integrity: sha512-bBZ1sgcAtezQVZ1BST9IS3jqcsTLyqKNjiIf7FTnX3DHpfpYuMDFzSOtmkZDzBleOLO/CtcRWjT0HwTSQAmV0A==}
+    dev: false
+
   /@unocss/extractor-arbitrary-variants@0.59.0:
     resolution: {integrity: sha512-KYprrpJXgdoJZa4iVejW9uqht4W712Ra0x1gvznPW0BupIPF7vEyNAGvPTnB2y5Wb6OjNMiPbGnqL7BfBoxYSQ==}
     dependencies:
       '@unocss/core': 0.59.0
+    dev: false
+
+  /@unocss/extractor-arbitrary-variants@0.59.4:
+    resolution: {integrity: sha512-RDe4FgMGJQ+tp9GLvhPHni7Cc2O0lHBRMElVlN8LoXJAdODMICdbrEPGJlEfrc+7x/QgVFoR895KpYJh3hIgGA==}
+    dependencies:
+      '@unocss/core': 0.59.4
     dev: false
 
   /@unocss/inspector@0.59.0:
@@ -7202,7 +7215,7 @@ packages:
     resolution: {integrity: sha512-PDGAcyBFXqB7GHhKGRfajoiepL4A9SM4pyulMMT328H0uHEbwrB+niCVE/hubP2rCOGrrq7JH0nR4ftaC6m8Ow==}
     engines: {node: '>=14'}
     dependencies:
-      '@unocss/core': 0.59.0
+      '@unocss/core': 0.59.4
       magic-string: 0.30.9
     dev: false
 

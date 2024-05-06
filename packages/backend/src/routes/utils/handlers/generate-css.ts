@@ -4,6 +4,7 @@ import transformerCompileClass from "@unocss/transformer-compile-class";
 import transformerVariantGroup from "@unocss/transformer-variant-group";
 import presetWind from "@unocss/preset-wind";
 import presetTypography from "@unocss/preset-typography";
+import extractorArbitrary from "@unocss/extractor-arbitrary-variants";
 import { Context } from "#lib/context";
 
 const inputSchema = z.object({ cssString: z.string(), uid: z.string().optional() });
@@ -21,6 +22,7 @@ const handler = async (
           `${darkSubSelectorIndex >= 0 ? ".dark " : ""}${input.uid ? `[data-uid="${input.uid}"]` : ""} ${darkSubSelectorIndex >= 0 ? obj.selector.substring(darkSubSelectorIndex + 6) : obj.selector}`.trim();
       }
     ],
+    extractors: [extractorArbitrary],
     layers: {
       "b1": -3,
       "b2": -2,
