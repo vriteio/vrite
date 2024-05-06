@@ -36,10 +36,6 @@ const getSessionId = async (
   ctx: Context,
   tokenType: "accessToken" | "refreshToken" = "accessToken"
 ): Promise<string | null> => {
-  if (ctx.req.socket && ctx.req.socket.sessionId) {
-    return ctx.req.socket.sessionId;
-  }
-
   try {
     const cookies = ctx.fastify.parseCookie(ctx.req.headers.cookie || "");
 
@@ -64,7 +60,6 @@ const getSessionId = async (
     }
 
     if (ctx.req.socket) {
-      ctx.req.socket.sessionId = sessionId;
       // Fixes https://github.com/fastify/fastify-websocket/issues/74
       ctx.req.socket.on("data", () => {
         ctx.req.socket.resume();
