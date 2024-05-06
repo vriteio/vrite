@@ -1,4 +1,5 @@
 import {
+  ExtensionContentType,
   ExtensionElement,
   ExtensionElementSpec,
   ExtensionElementViewContext
@@ -221,6 +222,56 @@ const createCustomView = async (
     ...getters
   };
 };
+const generateEmptyNode = (type: ExtensionContentType): JSONContent => {
+  if (type === "blockquote") {
+    return { type: "blockquote", content: [{ type: "paragraph", content: [] }] };
+  }
+
+  if (type === "bulletList") {
+    return {
+      type: "bulletList",
+      content: [{ type: "listItem", content: [{ type: "paragraph" }] }]
+    };
+  }
+
+  if (type === "orderedList") {
+    return {
+      type: "orderedList",
+      attrs: { start: 1 },
+      content: [{ type: "listItem", content: [{ type: "paragraph" }] }]
+    };
+  }
+
+  if (type === "taskList") {
+    return { type: "taskList", content: [{ type: "taskItem", content: [{ type: "paragraph" }] }] };
+  }
+
+  if (type === "element") {
+    return { type: "element", attrs: { props: {} as any, type: "Element" } };
+  }
+
+  if (type === "table") {
+    const table: JSONContent = { type: "table", content: [] };
+
+    for (let rowIndex = 0; rowIndex < 3; rowIndex++) {
+      const row: JSONContent = { type: "tableRow", content: [] };
+
+      for (let colIndex = 0; colIndex < 3; colIndex++) {
+        if (rowIndex === 0) {
+          row.content!.push({ type: "tableHeader", content: [{ type: "paragraph", content: [] }] });
+        } else {
+          row.content!.push({ type: "tableCell", content: [{ type: "paragraph", content: [] }] });
+        }
+      }
+
+      table.content!.push(row);
+    }
+
+    return table;
+  }
+
+  return { type, content: [] };
+};
 const applyStructure = (node: PMNode, structure: StructureNode): JSONContent => {
   const nodeJSON = node.toJSON() as JSONContent;
   const applyStructureToNode = (
@@ -228,14 +279,14 @@ const applyStructure = (node: PMNode, structure: StructureNode): JSONContent => 
     structureNode: StructureNode
   ): JSONContent | null => {
     if (typeof structureNode.content === "boolean") {
-      let defaultNodeType = "paragraph";
+      let defaultNodeType: ExtensionContentType = "paragraph";
 
       if (
         structureNode.allowed &&
         !structureNode.allowed.includes("paragraph") &&
         !structureNode.allowed.includes("block")
       ) {
-        defaultNodeType = structureNode.allowed[0] || "";
+        defaultNodeType = (structureNode.allowed[0] || "") as ExtensionContentType;
       }
 
       return {
@@ -244,7 +295,7 @@ const applyStructure = (node: PMNode, structure: StructureNode): JSONContent => 
         ...((nodeJSON?.content?.length || defaultNodeType) && {
           content: nodeJSON?.content?.filter((content) => {
             return !structureNode.allowed || structureNode.allowed.includes(content.type);
-          }) || [{ type: defaultNodeType, content: [] }]
+          }) || [generateEmptyNode(defaultNodeType)]
         })
       };
     } else if (structureNode.content) {

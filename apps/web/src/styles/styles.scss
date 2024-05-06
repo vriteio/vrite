@@ -103,6 +103,9 @@ kbd {
       border-style: none solid solid none;
       word-break: break-all;
     }
+    td { 
+      @apply bg-gray-100 dark:bg-gray-800;
+    }
     th {
       @apply bg-gray-50 dark:bg-gray-900;
     }

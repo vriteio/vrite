@@ -2,6 +2,7 @@ import { NodeViewRendererProps } from "@tiptap/core";
 import { SolidEditor, SolidRenderer } from "@vrite/tiptap-solid";
 import { ExtensionElementViewContext, ExtensionElement } from "@vrite/sdk/extensions";
 import { NodeView as PMNodeView } from "@tiptap/pm/view";
+import clsx from "clsx";
 import { useNotifications } from "#context";
 import { ExtensionDetails, ExtensionViewRenderer } from "#lib/extensions";
 
@@ -63,9 +64,13 @@ const customNodeView = ({
       state: {}
     }
   );
+  const contentWrapperParent = component.element.querySelector("[data-content=true]");
 
-  component.element.querySelector("[data-content=true]")?.append(contentWrapper);
-  contentWrapper.setAttribute("class", "content relative");
+  contentWrapperParent?.append(contentWrapper);
+  contentWrapper.setAttribute(
+    "class",
+    clsx(":base: relative", "content", contentWrapperParent?.getAttribute("data-class"))
+  );
   wrapper.setAttribute("class", "!m-0");
   wrapper.setAttribute("data-uid", uid);
   wrapper.setAttribute("data-initialized", "true");

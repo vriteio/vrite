@@ -16,6 +16,7 @@ import { marked } from "marked";
 import { createStore } from "solid-js/store";
 import { ExtensionElement, ExtensionSpec, ContextObject } from "@vrite/sdk/extensions";
 import { Dynamic } from "solid-js/web";
+import clsx from "clsx";
 import { useNotifications } from "#context";
 import { Button, Card, Icon, IconButton, Loader, Select, Tooltip } from "#components/primitives";
 import { InputField } from "#components/fragments";
@@ -146,8 +147,14 @@ const baseComponents = {
   Fragment: (props: RenderedComponentProps) => {
     return <>{props.children}</>;
   },
-  Content: () => {
-    return <div data-content="true" class="w-full" />;
+  Content: (props: RenderedComponentProps<{ wrapperClass?: string; class?: string }>) => {
+    return (
+      <div
+        data-content="true"
+        data-class={props.class}
+        class={clsx(":base: w-full", props.wrapperClass)}
+      />
+    );
   },
   Element: (props: RenderedComponentProps) => <>{props.children}</>
 };

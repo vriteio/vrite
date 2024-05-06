@@ -33,7 +33,7 @@ type UsableEnv<R extends ContextObject = ContextObject, W extends ContextObject 
   readable: R;
   writable: W;
 };
-type JSONContentNodeType =
+type ExtensionContentType =
   | "paragraph"
   | "heading"
   | "blockquote"
@@ -211,7 +211,12 @@ interface ExtensionBaseComponent<
 }
 interface ExtensionBaseComponents {
   // Element Components
-  Content: ExtensionBaseComponent<{ allowed?: JSONContentNodeType[] }>;
+  Content: ExtensionBaseComponent<{
+    allowed?: ExtensionContentType[];
+    initial?: string;
+    class?: string;
+    wrapperClass?: string;
+  }>;
   Element: ExtensionBaseComponent<{ type: string }>;
   // Layout Components
   View: ExtensionBaseComponent<{ class: string }>;
@@ -567,6 +572,7 @@ export type {
   ExtensionElement,
   ContextObject,
   ContextValue,
+  ExtensionContentType,
   View,
   Func,
   Val,
