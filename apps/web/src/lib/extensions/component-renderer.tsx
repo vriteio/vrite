@@ -272,18 +272,20 @@ const ComponentRenderer: Component<ComponentRendererProps> = (props) => {
       view={props.view}
       {...componentProps}
     >
-      <For each={props.view.slot}>
-        {(view) => {
-          return (
-            <ComponentRenderer
-              view={view}
-              spec={props.spec}
-              contentEditable={props.contentEditable}
-              components={props.components}
-            />
-          );
-        }}
-      </For>
+      {props.view.slot?.length && (
+        <For each={props.view.slot}>
+          {(view) => {
+            return (
+              <ComponentRenderer
+                view={view}
+                spec={props.spec}
+                contentEditable={props.contentEditable}
+                components={props.components}
+              />
+            );
+          }}
+        </For>
+      )}
     </Dynamic>
   );
 };
