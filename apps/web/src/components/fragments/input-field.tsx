@@ -105,7 +105,7 @@ const CheckboxField: Component<InputFieldProps<"checkbox">> = (props) => {
 };
 const InputField = <T extends InputFieldType>(props: InputFieldProps<T>): JSX.Element => {
   return (
-    <div class="flex flex-col gap-1 w-full">
+    <div class="flex flex-col gap-1 w-full not-prose">
       <Switch>
         <Match when={props.type === "text"} keyed>
           <TextField {...(props as unknown as InputFieldProps<"text">)} />
