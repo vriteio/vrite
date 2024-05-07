@@ -227,6 +227,14 @@ const gfmOutputTransformer = createOutputTransformer<string>((contentNode) => {
 });
 const htmlOutputTransformer = createOutputTransformer<string>((contentNode) => {
   const contentWalker = createContentWalker(contentNode);
+  const escapeHTML = (input: string): string => {
+    return input
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  };
   const stringifyAttributes = (
     attributes: Record<string, string | boolean | number | undefined>
   ): string => {
@@ -264,7 +272,7 @@ const htmlOutputTransformer = createOutputTransformer<string>((contentNode) => {
             output = `<strong>${output}</strong>`;
             break;
           case "code":
-            output = `<code>${output}</code>`;
+            output = `<code>${escapeHTML(output)}</code>`;
             break;
           case "italic":
             output = `<em>${output}</em>`;
@@ -360,9 +368,11 @@ const htmlOutputTransformer = createOutputTransformer<string>((contentNode) => {
       case "codeBlock":
         return `<pre ${stringifyAttributes({
           lang: nodeWalker.node.attrs?.lang
-        })}><code>${(nodeWalker as JSONContentNodeWalker<JSONContentNode["codeBlock"]>).children
-          .map(transformContentNode)
-          .join("")}</code></pre>`;
+        })}><code>${escapeHTML(
+          (nodeWalker as JSONContentNodeWalker<JSONContentNode["codeBlock"]>).children
+            .map(transformContentNode)
+            .join("")
+        )}</code></pre>`;
       case "image":
         return `<img ${stringifyAttributes({
           src: nodeWalker.node.attrs?.src,

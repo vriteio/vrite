@@ -61,13 +61,7 @@ const ExportMenu: Component<ExportMenuProps> = (props) => {
       if (!content) return;
 
       if (type === "html") {
-        return formatCode(
-          htmlOutputTransformer(content).replace(/<code>((?:.|\n)+?)<\/code>/g, (_, code) => {
-            return `<code>${escapeHTML(code)}</code>`;
-          }),
-          "html",
-          prettierConfig
-        );
+        return formatCode(htmlOutputTransformer(content), "html", prettierConfig);
       }
 
       if (type === "md") {
