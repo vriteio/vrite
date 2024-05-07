@@ -79,20 +79,26 @@ const CodeBlock = BaseCodeBlock.extend<CodeBlockOptions>({
 
         return (
           <NodeViewWrapper
-            as={(props) => <div contenteditable={false} class="select-none" {...props} />}
+            as={(props) => (
+              <div contenteditable={false} class="select-none max-w-full" {...props} />
+            )}
           >
             <Show
               when={!loading()}
               fallback={<div style={{ "min-height": `${contentHeight()}px` }} />}
             >
-              <CodeBlockView
-                monaco={monacoRef()!}
-                updatingRef={updatingRef}
-                codeEditorRef={codeEditorRef}
-                setUpdatingRef={setUpdatingRef}
-                setCodeEditorRef={setCodeEditorRef}
-                contentHeight={contentHeight()}
-              />
+              <div class="relative w-full" style={{ "min-height": `${contentHeight()}px` }}>
+                <div class="absolute top-0 left-0 w-full">
+                  <CodeBlockView
+                    monaco={monacoRef()!}
+                    updatingRef={updatingRef}
+                    codeEditorRef={codeEditorRef}
+                    setUpdatingRef={setUpdatingRef}
+                    setCodeEditorRef={setCodeEditorRef}
+                    contentHeight={contentHeight()}
+                  />
+                </div>
+              </div>
             </Show>
           </NodeViewWrapper>
         );

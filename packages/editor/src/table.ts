@@ -50,11 +50,11 @@ const updateColumns = (
   }
 
   if (fixedWidth) {
-    table.style.width = `${totalWidth}px`;
+    table.style.width = `${totalWidth + 4}px`;
     table.style.minWidth = "";
   } else {
     table.style.width = "";
-    table.style.minWidth = `${totalWidth}px`;
+    table.style.minWidth = `${totalWidth + 4}px`;
   }
 };
 
@@ -63,7 +63,7 @@ class TableView implements NodeView {
 
   public cellMinWidth: number;
 
-  public dom: Element;
+  public dom: HTMLElement;
 
   public table: HTMLElement;
 
@@ -72,11 +72,16 @@ class TableView implements NodeView {
   public contentDOM: HTMLElement;
 
   public constructor(node: ProseMirrorNode, cellMinWidth: number) {
+    const wrapper = document.createElement("div");
+
+    wrapper.className = "tableWrapper w-full h-full";
     this.node = node;
     this.cellMinWidth = cellMinWidth;
     this.dom = document.createElement("div");
-    this.dom.className = "tableWrapper";
-    this.table = this.dom.appendChild(document.createElement("table"));
+    this.dom.className = "relative";
+    this.dom.style.display = "inline-grid";
+    this.dom.appendChild(wrapper);
+    this.table = wrapper.appendChild(document.createElement("table"));
     this.colgroup = this.table.appendChild(document.createElement("colgroup"));
     updateColumns(node, this.colgroup, this.table, cellMinWidth);
     this.contentDOM = this.table.appendChild(document.createElement("tbody"));

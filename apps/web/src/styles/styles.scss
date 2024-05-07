@@ -73,7 +73,7 @@ kbd {
     @apply pt-4 pb-48;
   }
   .tableWrapper {
-    @apply overflow-x-scroll pb-2 mb-3;
+    @apply overflow-x-scroll mb-1;
     &::-webkit-scrollbar {
       @apply w-2 h-2 rounded-lg bg-gray-100 dark:bg-gray-800;
     }
@@ -103,7 +103,7 @@ kbd {
       border-style: none solid solid none;
       word-break: break-all;
     }
-    td { 
+    td {
       @apply bg-gray-100 dark:bg-gray-800;
     }
     th {
@@ -140,7 +140,7 @@ kbd {
     }
 
     .column-resize-handle {
-      @apply bg-primary absolute w-1 -bottom-0.5 -top-0.5 -right-0.75 z-10 pointer-events-none;
+      @apply bg-primary absolute w-0.5 -bottom-0.5 -top-0.5 -right-0.5 z-10 pointer-events-none;
     }
     &.resizing {
       .code-block-editor {
