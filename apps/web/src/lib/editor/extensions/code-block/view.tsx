@@ -158,6 +158,8 @@ const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
 
     if (!editorContainer) return;
 
+    // editorContainer.style.minHeight = `${props.contentHeight}px`;
+
     const codeEditor = props.monaco.editor.create(editorContainer, {
       automaticLayout: true,
       model: null,
@@ -253,6 +255,7 @@ const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
       }
 
       options().provider?.awareness?.setLocalStateField("vscSelection", {
+        pos: state().getPos(),
         anchor,
         head
       });
@@ -262,17 +265,17 @@ const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
 
       options()
         .provider?.awareness?.getStates()
-        .forEach((state, clientID) => {
+        .forEach((awarenessState, clientID) => {
           if (clientID === options().provider?.awareness?.clientID) return;
 
           const model = codeEditor.getModel();
 
-          if (!state.vscSelection || !model) return;
+          if (!awarenessState.vscSelection || !model) return;
 
-          const start = model?.getPositionAt(state.vscSelection.anchor || 0);
-          const end = model?.getPositionAt(state.vscSelection.head || 0);
+          const start = model?.getPositionAt(awarenessState.vscSelection.anchor || 0);
+          const end = model?.getPositionAt(awarenessState.vscSelection.head || 0);
 
-          if (!start || !end) {
+          if (!start || !end || awarenessState.vscSelection.pos !== state().getPos()) {
             return;
           }
 
@@ -286,12 +289,15 @@ const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
             options: {
               className: clsx(
                 "bg-opacity-40 dark:bg-opacity-40",
-                selectionClasses[state.user.selectionColor as keyof typeof selectionClasses]?.label
+                selectionClasses[
+                  awarenessState.user.selectionColor as keyof typeof selectionClasses
+                ]?.label
               ),
               afterContentClassName: clsx(
                 "absolute h-full border",
-                selectionClasses[state.user.selectionColor as keyof typeof selectionClasses]
-                  ?.outline
+                selectionClasses[
+                  awarenessState.user.selectionColor as keyof typeof selectionClasses
+                ]?.outline
               )
             }
           });
@@ -359,7 +365,7 @@ const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
         ref={setEditorContainerRef}
         spellcheck={false}
         class={clsx(
-          "code-block-editor bg-gray-50 dark:bg-gray-900 h-72 rounded-2xl rounded-editor-2xl border-2 border-gray-300 dark:border-gray-700 box-content customized-editor"
+          "code-block-editor bg-gray-50 dark:bg-gray-900 rounded-2xl rounded-editor-2xl border-2 border-gray-300 dark:border-gray-700 box-content customized-editor"
         )}
       />
       <Portal mount={document.getElementById("pm-container") || document.body}>
