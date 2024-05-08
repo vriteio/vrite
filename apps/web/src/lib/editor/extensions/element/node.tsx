@@ -104,7 +104,10 @@ const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
 
           tr.doc.descendants((node, pos) => {
             if (node.type.name === "element" && customElements[node.attrs.type.toLowerCase()]) {
-              entries.push({ node, pos });
+              entries.push({
+                node,
+                pos
+              });
 
               return true;
             }
@@ -113,12 +116,35 @@ const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
           for (const entry of entries) {
             const activeElementNode = entry.node;
             const activePos = entry.pos;
-            const element = editor.view.nodeDOM(activePos) as HTMLElement;
-            const uid = element instanceof HTMLElement ? element?.getAttribute("data-uid") : null;
+            // TODO: Stop relying on the view
+            const getCustomView = (): CustomView | null => {
+              const element = editor.view.nodeDOM(activePos) as HTMLElement | null;
+              const elementNext = editor.view.nodeDOM(activePos + 1) as HTMLElement | null;
+              const uid = element instanceof HTMLElement ? element?.getAttribute("data-uid") : null;
+              const uidNextPos =
+                elementNext instanceof HTMLElement ? elementNext?.getAttribute("data-uid") : null;
 
-            if (!uid) continue;
+              if (uid) {
+                const customView = customViews.get(uid);
 
-            const customView = customViews.get(uid);
+                if (customView?.type.toLowerCase() === entry.node.attrs.type.toLowerCase()) {
+                  return customView || null;
+                }
+              }
+
+              if (uidNextPos) {
+                const customView = customViews.get(uidNextPos);
+
+                if (customView?.type.toLowerCase() === entry.node.attrs.type.toLowerCase()) {
+                  return customView || null;
+                }
+              }
+
+              return null;
+            };
+            const customView = getCustomView();
+
+            if (!customView) continue;
 
             if (
               JSON.stringify(applyStructure(activeElementNode, customView?.structure!)) !==
@@ -309,7 +335,7 @@ const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
         contentDOM: contentWrapper,
         ignoreMutation(mutation: MutationRecord | { type: "selection"; target: Element }) {
           if (mutation.type === "selection") {
-            return true;
+            return false;
           }
 
           return referenceView.ignoreMutation(mutation);

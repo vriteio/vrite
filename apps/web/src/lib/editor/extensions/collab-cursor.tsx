@@ -114,6 +114,9 @@ const CollabCursor = (provider: HocuspocusProvider): Extension => {
           ) {
             const rect = container.previousElementSibling?.getBoundingClientRect();
             const isElement = container.previousElementSibling?.getAttribute("data-element");
+            const isTextElement =
+              container.previousElementSibling?.tagName === "P" ||
+              container.previousElementSibling?.tagName.startsWith("H");
             const relativeParent =
               container.previousElementSibling?.closest("th,td") ||
               document.getElementById("pm-container");
@@ -129,7 +132,7 @@ const CollabCursor = (provider: HocuspocusProvider): Extension => {
             setBlockSelection({
               h: rect.height,
               w: rect.width,
-              display: isElement ? "none" : "block",
+              display: isElement || isTextElement ? "none" : "block",
               top: rect.top - parentPos.top
             });
           }
