@@ -139,6 +139,11 @@ const PasswordForm: AuthFormComponent = (props) => {
         value={props.formData.email}
         color="contrast"
         setValue={(value) => props.setFormData("email", value)}
+        onBlur={() => {
+          if (props.formData.email && !validateEmail(props.formData.email)) {
+            props.setFormData("error", getErrorMessage("invalidEmail"));
+          }
+        }}
         onEnter={handleEnter}
       />
       <Input

@@ -16,7 +16,7 @@ import { mdiGithub, mdiEmail, mdiFormTextboxPassword } from "@mdi/js";
 import { createStore, SetStoreFunction } from "solid-js/store";
 import { useNavigate } from "@solidjs/router";
 import { Card, IconButton, Tooltip } from "#components/primitives";
-import { createRef } from "#lib/utils";
+import { createRef, validateEmail } from "#lib/utils";
 import { useClient, useHostConfig } from "#context";
 import { logoIcon } from "#assets/icons";
 
@@ -90,7 +90,7 @@ const AuthView: Component = () => {
       ],
       ([username, email, password]) => {
         if (formData.error && (username || email || password)) {
-          setFormData("error", "");
+          setFormData("error", validateEmail(email) ? "" : getErrorMessage("invalidEmail"));
 
           const searchParams = new URLSearchParams(window.location.search);
 
