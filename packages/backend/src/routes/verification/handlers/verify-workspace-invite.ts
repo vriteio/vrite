@@ -36,8 +36,7 @@ const handler = async (
   const workspaceMembershipsCollection = getWorkspaceMembershipsCollection(ctx.db);
   const usersCollection = getUsersCollection(ctx.db);
   const workspaceMembership = await workspaceMembershipsCollection.findOne({
-    _id: new ObjectId(input.membershipId),
-    workspaceId: ctx.auth.workspaceId
+    _id: new ObjectId(input.membershipId)
   });
   const user = await usersCollection.findOne({
     _id: new ObjectId(ctx.auth.userId)
