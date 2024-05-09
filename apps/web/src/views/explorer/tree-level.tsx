@@ -4,10 +4,10 @@ import { useExplorerData } from "./explorer-context";
 import clsx from "clsx";
 import { Component, createEffect, Show, For, createSignal } from "solid-js";
 import SortableLib from "sortablejs";
-import { Card, Icon, Loader } from "@vrite/components";
-import { mdiDotsHorizontalCircleOutline, mdiFolderPlus } from "@mdi/js";
+import { mdiChevronRight, mdiDotsHorizontalCircleOutline, mdiFolderPlus } from "@mdi/js";
 import { useNavigate } from "@solidjs/router";
-import { App, useClient, useContentData, useNotifications } from "#context";
+import { Icon, IconButton, Loader } from "#components/primitives";
+import { App, hasPermission, useClient, useContentData, useNotifications } from "#context";
 
 const NewGroupButton: Component = () => {
   const { setRenaming } = useExplorerData();
@@ -16,37 +16,55 @@ const NewGroupButton: Component = () => {
   const [loading, setLoading] = createSignal(false);
 
   return (
-    <div class="px-2 h-full">
-      <button
-        class="flex w-full pr-3"
-        onClick={async () => {
-          try {
-            setLoading(true);
+    <button
+      class="flex w-full justify-center items-center cursor-pointer overflow-x-hidden group pl-0.5 rounded-l-md @hover:bg-gray-200 dark:@hover-bg-gray-700"
+      onClick={async () => {
+        try {
+          setLoading(true);
 
-            const contentGroup = await client.contentGroups.create.mutate({
-              name: ""
-            });
+          const contentGroup = await client.contentGroups.create.mutate({
+            name: ""
+          });
 
-            setRenaming(contentGroup.id);
-            setLoading(false);
-            notify({ text: "New content group created", type: "success" });
-          } catch (error) {
-            setLoading(false);
-            notify({ text: "Couldn't create new content group", type: "error" });
-          }
-        }}
-      >
-        <Card class="relative overflow-hidden flex-col flex justify-center items-center w-full m-0 border-2 rounded-2xl dark:border-gray-700 text-gray-500 dark:text-gray-400 @hover-bg-gray-200 dark:@hover-bg-gray-700 @hover:cursor-pointer h-32">
-          <Icon path={mdiFolderPlus} class="h-6 w-6" />
-          <span>New group</span>
-          <Show when={loading()}>
-            <div class="flex justify-center items-center absolute w-full h-full top-0 left-0 bg-gray-50">
-              <Loader class="h-full fill-inherit" />
-            </div>
-          </Show>
-        </Card>
-      </button>
-    </div>
+          setRenaming(contentGroup.id);
+          setLoading(false);
+          notify({ text: "New content group created", type: "success" });
+        } catch (error) {
+          setLoading(false);
+          notify({ text: "Couldn't create new content group", type: "error" });
+        }
+      }}
+    >
+      <div class="flex flex-1 justify-start items-center overflow-hidden rounded-lg cursor-pointer h-7 group draggable">
+        <IconButton
+          class={clsx("transform transition m-0 p-0 mx-0.25")}
+          path={mdiChevronRight}
+          variant="text"
+          hover={false}
+          badge
+        />
+        <div class="flex flex-1" onClick={() => {}}>
+          <div class="h-6 w-6 mr-1">
+            <Show
+              when={loading()}
+              fallback={
+                <Icon class={clsx("text-gray-500 dark:text-gray-400")} path={mdiFolderPlus} />
+              }
+            >
+              <Loader class="h-full fill-current p-0.5" />
+            </Show>
+          </div>
+          <span
+            class={clsx(
+              "!text-base inline-flex text-start flex-1 overflow-x-auto content-group-name scrollbar-hidden select-none clamp-1"
+            )}
+            title="New group"
+          >
+            New group
+          </span>
+        </div>
+      </div>
+    </button>
   );
 };
 const TreeLevel: Component<{
@@ -123,7 +141,7 @@ const TreeLevel: Component<{
       <Show when={props.parentId}>
         <div
           class={clsx(
-            "h-full w-0.5 -left-[0.5px] left-0 absolute rounded-full bg-black bg-opacity-5 dark:bg-white dark:bg-opacity-10",
+            "h-full w-0.5 left-0 absolute rounded-full bg-black bg-opacity-5 dark:bg-white dark:bg-opacity-10",
             ((selected() &&
               !activeDraggableContentGroupId() &&
               !activeDraggableContentPieceId() &&
@@ -160,7 +178,13 @@ const TreeLevel: Component<{
         <For
           each={contentLevels[props.parentId || ""]?.groups || []}
           fallback={
-            <Show when={!props.parentId && !contentLevels[props.parentId || ""]?.loading}>
+            <Show
+              when={
+                hasPermission("editContent") &&
+                !props.parentId &&
+                !contentLevels[props.parentId || ""]?.loading
+              }
+            >
               <NewGroupButton />
             </Show>
           }
