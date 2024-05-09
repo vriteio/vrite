@@ -7,6 +7,7 @@ import { nanoid } from "nanoid";
 import { Portal } from "solid-js/web";
 import { computePosition, size } from "@floating-ui/dom";
 import { debounce } from "@solid-primitives/scheduled";
+import { HocuspocusProvider } from "@hocuspocus/provider";
 import type { monaco } from "#lib/monaco";
 import { formatCode } from "#lib/code-editor";
 import { breakpoints, createRef, selectionClasses } from "#lib/utils";
@@ -42,12 +43,14 @@ const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
   const { workspaceSettings } = useAuthenticatedUserData();
   const { codeEditorTheme } = useAppearance();
   const { notify } = useNotifications();
+  const id = nanoid();
   const attrs = (): CodeBlockAttributes => state().node.attrs;
   const options = (): CodeBlockOptions => state().extension.options;
   const [editorContainerRef, setEditorContainerRef] = createRef<HTMLElement | null>(null);
   const [menuContainerRef, setMenuContainerRef] = createRef<HTMLElement | null>(null);
   const [placeholderRef, setPlaceholderRef] = createRef<HTMLElement | null>(null);
-  const [decorationsRef, setDecorationsRef] = createRef<string[]>([]);
+  const [decorationsRef, setDecorationsRef] =
+    createRef<monaco.editor.IEditorDecorationsCollection | null>(null);
   const [codeEditor, setCodeEditor] = createSignal<monaco.editor.IStandaloneCodeEditor | null>(
     null
   );
@@ -258,12 +261,27 @@ const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
 
       options().provider?.awareness?.setLocalStateField("vscSelection", {
         pos: state().getPos(),
+        id,
         anchor,
         head
       });
     });
-    options().provider?.awareness?.on("change", () => {
+    options().provider?.awareness?.on("change", (_: any, type: string | HocuspocusProvider) => {
+      if (type === "local") return;
+
       const newDecorations: monaco.editor.IModelDeltaDecoration[] = [];
+      const localVSCSelection = options().provider?.awareness?.getLocalState()?.vscSelection;
+
+      if (
+        localVSCSelection?.id === id &&
+        localVSCSelection?.pos &&
+        localVSCSelection?.pos !== state().getPos()
+      ) {
+        options().provider?.awareness?.setLocalStateField("vscSelection", {
+          ...localVSCSelection,
+          pos: state().getPos()
+        });
+      }
 
       options()
         .provider?.awareness?.getStates()
@@ -304,7 +322,12 @@ const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
             }
           });
         });
-      setDecorationsRef(codeEditor.deltaDecorations(decorationsRef() || [], newDecorations));
+
+      if (decorationsRef()) {
+        decorationsRef()?.set(newDecorations);
+      } else {
+        setDecorationsRef(codeEditor.createDecorationsCollection(newDecorations));
+      }
     });
     codeEditor.onKeyDown((event) => {
       if (event.keyCode === props.monaco.KeyCode.Escape) {

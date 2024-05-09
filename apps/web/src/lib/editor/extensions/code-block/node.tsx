@@ -108,10 +108,16 @@ const CodeBlock = BaseCodeBlock.extend<CodeBlockOptions>({
           if (newNode.type != oldNode.type) return false;
 
           if (oldNode === newNode && oldDecorations === newDecorations) {
+            updateProps();
+
             return true;
           }
 
-          if (updatingRef()) return true;
+          if (updatingRef()) {
+            updateProps();
+
+            return true;
+          }
 
           const newText = newNode.textContent;
           const curText = codeEditorRef()?.getValue() || "";
