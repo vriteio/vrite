@@ -112,6 +112,14 @@ class TableView implements NodeView {
 
     return resizing;
   }
+
+  public selectNode(): void {
+    this.table.classList.add("selected");
+  }
+
+  public deselectNode(): void {
+    this.table.classList.remove("selected");
+  }
 }
 
 const Table = BaseTable.configure({

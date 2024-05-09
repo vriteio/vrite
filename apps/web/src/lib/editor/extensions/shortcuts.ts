@@ -1,10 +1,14 @@
-import { AllSelection, TextSelection } from "@tiptap/pm/state";
+import { ElementSelection, isElementSelection } from "./element/selection";
+import { customViews } from "./element";
+import { AllSelection, TextSelection, NodeSelection } from "@tiptap/pm/state";
 import { Extension } from "@tiptap/core";
+import { CellSelection } from "@tiptap/pm/tables";
 import { useNotifications } from "#context";
 
 const Shortcuts = Extension.create({
   addKeyboardShortcuts() {
     const { notify } = useNotifications();
+    const { editor } = this;
 
     return {
       "Tab": () => {
@@ -44,10 +48,74 @@ const Shortcuts = Extension.create({
         return true;
       },
       "Escape": () => {
-        const { doc, tr } = this.editor.state;
+        const { doc, tr, selection } = this.editor.state;
         const { dispatch } = this.editor.view;
+        const getProperElementSelection = (
+          startingDepth: number,
+          currentSelection: ElementSelection
+        ): ElementSelection => {
+          const uid =
+            (
+              editor.view.nodeDOM(selection.$from.before(startingDepth)) as HTMLElement
+            )?.getAttribute("data-uid") || "";
 
-        dispatch(tr.setSelection(TextSelection.atEnd(doc)));
+          if (uid) {
+            const customView = customViews.get(uid);
+
+            if (customView) {
+              for (let depth = startingDepth; depth > 0; depth--) {
+                const parent = selection.$from.node(depth);
+
+                if (
+                  parent.type.name === "element" &&
+                  parent.attrs.type.toLowerCase() === customView.type
+                ) {
+                  return ElementSelection.create(doc, selection.$from.before(depth), false);
+                }
+              }
+            }
+          }
+
+          return currentSelection;
+        };
+
+        if (selection.$from.depth) {
+          const currentDepth = selection.$from.depth;
+
+          if (isElementSelection(selection) && selection.node.type.name === "element") {
+            const newDepth = currentDepth;
+            const newSelection = getProperElementSelection(
+              newDepth,
+              ElementSelection.create(doc, selection.$from.before(newDepth), false)
+            );
+
+            dispatch(tr.setSelection(newSelection));
+          } else {
+            const newDepth = currentDepth - (selection instanceof CellSelection ? 2 : 1);
+
+            let newSelection = NodeSelection.create(
+              doc,
+              selection.$from.before(Math.max(newDepth, 1))
+            );
+
+            if (newSelection.node.type.name === "element") {
+              newSelection = getProperElementSelection(
+                newDepth,
+                ElementSelection.create(doc, selection.$from.before(newDepth), false)
+              );
+            }
+
+            dispatch(tr.setSelection(newSelection));
+          }
+        } else {
+          if (selection instanceof AllSelection) {
+            editor.commands.blur();
+          }
+
+          const fullSelection = new AllSelection(doc);
+
+          dispatch(tr.setSelection(fullSelection));
+        }
 
         return true;
       }

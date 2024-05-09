@@ -71,7 +71,7 @@ const customNodeView = ({
     "class",
     clsx(":base: relative", "content", contentWrapperParent?.getAttribute("data-class"))
   );
-  wrapper.setAttribute("class", "!m-0");
+  wrapper.setAttribute("class", "!m-0 rounded-2xl");
   wrapper.setAttribute("data-uid", uid);
   wrapper.setAttribute("data-initialized", "true");
   wrapper.append(component.element);
@@ -80,7 +80,14 @@ const customNodeView = ({
     wrapper.setAttribute("data-custom-node-view", "true");
   }
 
-  return {};
+  return {
+    selectNode() {
+      wrapper.classList.add("ring", "ring-primary", "ring-2");
+    },
+    deselectNode() {
+      wrapper.classList.remove("ring", "ring-primary", "ring-2");
+    }
+  };
 };
 
 export { customNodeView, customSubTrees };

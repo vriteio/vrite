@@ -173,7 +173,7 @@ const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
           ) {
             const node = newState.selection.$from.nodeAfter;
 
-            if (node?.type.name === "element") {
+            if (node?.type.name === "element" && !customElements[node.attrs.type.toLowerCase()]) {
               if (node?.content.size) {
                 if (oldState.tr.selection.$to.pos >= newState.selection.$to.pos) {
                   return setTextSelection(
@@ -372,5 +372,5 @@ const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
   }
 });
 
-export { Element };
+export { Element, customViews };
 export type { ElementAttributes };

@@ -1,8 +1,9 @@
 import { isElementSelection, isElementSelectionActive } from "./selection";
-import { NodeView, NodeViewRendererProps } from "@tiptap/core";
+import { Editor, NodeView, NodeViewRendererProps } from "@tiptap/core";
 import { Node as PMNode } from "@tiptap/pm/model";
 import { NodeView as PMNodeView } from "@tiptap/pm/view";
 import { SolidEditor } from "@vrite/tiptap-solid";
+import { Transaction } from "@tiptap/pm/state";
 import { wrap } from "module";
 import { formatCode } from "#lib/code-editor";
 
@@ -67,7 +68,7 @@ const xmlNodeView = ({
   wrapper.append(code, contentContainer, bottomCode);
   code.setAttribute(
     "class",
-    "!whitespace-pre-wrap leading-[26px] min-h-6.5 block w-full !p-0 !bg-transparent !rounded-0 !text-gray-400 !dark:text-gray-400 cursor-pointer"
+    "!whitespace-pre-wrap select-none leading-[26px] min-h-6.5 block w-full !p-0 !bg-transparent !rounded-0 !text-gray-400 !dark:text-gray-400 cursor-pointer"
   );
   bottomCode.setAttribute(
     "class",
@@ -86,7 +87,11 @@ const xmlNodeView = ({
     contentContainer.classList.remove("border-l-2", "px-3", "py-[2px]");
   }
 
-  const update = (): void => {
+  const update = (meta: {
+    editor: Editor;
+    transaction?: Transaction;
+    force?: "select" | "deselect";
+  }): void => {
     const pos = typeof props.getPos === "function" ? props.getPos() : null;
     const { selection } = editor.state;
     const selectionPos = selection.$from.pos;
@@ -103,7 +108,11 @@ const xmlNodeView = ({
       bottomCode.classList.remove("!text-gray-400", "!dark:text-gray-400");
       bottomCode.classList.add("!text-[#000000]", "!dark:text-[#DCDCDC]");
       bottomCodeKey.classList.add("!text-[#008080]", "!dark:text-[#3dc9b0]");
-    } else if (isElementSelection(selection) && !isElementSelectionActive(selection)) {
+    } else if (
+      pos === selectionPos &&
+      isElementSelection(selection) &&
+      !isElementSelectionActive(selection)
+    ) {
       contentContainer.classList.add("!border-primary");
       code.classList.remove("selected-element-code");
       bottomCodeKey.classList.remove("selected-element-bottom-code");
@@ -126,7 +135,7 @@ const xmlNodeView = ({
       editor.on("selectionUpdate", update);
     },
     deselectNode() {
-      update();
+      update({ editor, force: "deselect" });
       editor.off("update", update);
       editor.off("selectionUpdate", update);
     },

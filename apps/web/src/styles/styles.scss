@@ -126,6 +126,8 @@ kbd {
     p {
       @apply p-0 m-0;
     }
+    &.selected td:after,
+    &.selected th:after,
     .selectedCell:after {
       @apply bg-primary;
       opacity: 0.1;
