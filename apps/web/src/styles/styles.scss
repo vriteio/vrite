@@ -73,7 +73,7 @@ kbd {
     @apply pt-4 pb-48;
   }
   .tableWrapper {
-    @apply overflow-x-scroll mb-1;
+    @apply overflow-x-auto mb-1;
     &::-webkit-scrollbar {
       @apply w-2 h-2 rounded-lg bg-gray-100 dark:bg-gray-800;
     }
