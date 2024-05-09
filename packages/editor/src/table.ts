@@ -79,7 +79,7 @@ class TableView implements NodeView {
     this.cellMinWidth = cellMinWidth;
     this.dom = document.createElement("div");
     this.dom.className = "relative";
-    this.dom.style.display = "inline-grid";
+    this.dom.style.display = "grid";
     this.dom.appendChild(wrapper);
     this.table = wrapper.appendChild(document.createElement("table"));
     this.colgroup = this.table.appendChild(document.createElement("colgroup"));

@@ -72,6 +72,11 @@ const createClipboardSerializer = (
         nodes;
       } else if (name === "taskList") {
         nodes.taskItem = base.nodes.taskItem;
+      } else if (name === "table") {
+        nodes.table = base.nodes.table;
+        nodes.tableRow = base.nodes.tableRow;
+        nodes.tableCell = base.nodes.tableCell;
+        nodes.tableHeader = base.nodes.tableHeader;
       }
 
       nodes[name] = node;
