@@ -157,14 +157,20 @@ const mdxAsyncOutputTransformer = async (
     );
 
     if (elementWalker.children.length > 0) {
-      return `${openingTag}\n${elementWalker.children.length > 1 ? "\n" : ""}${(
+      const addSpace =
+        elementWalker.children.length > 1 ||
+        ["orderedList", "bulletList", "taskList", "table"].includes(
+          elementWalker.children[0].node.type
+        );
+
+      return `${openingTag}\n${addSpace ? "\n" : ""}${(
         await transformContentNode(
           elementWalker as JSONContentNodeWalker<JSONContentNode["element"]>
         )
       )
         .split("\n")
         .map((line) => `  ${line}`)
-        .join("\n")}${elementWalker.children.length > 1 ? "\n" : ""}\n</${attrs.type}>`;
+        .join("\n")}${addSpace ? "\n" : ""}\n</${attrs.type}>`;
     }
 
     return openingTag;

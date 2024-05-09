@@ -70,7 +70,11 @@ const Shortcuts = Extension.create({
                   parent.type.name === "element" &&
                   parent.attrs.type.toLowerCase() === customView.type
                 ) {
-                  return ElementSelection.create(doc, selection.$from.before(depth), false);
+                  return ElementSelection.create(
+                    doc,
+                    selection.$from.before(Math.max(depth, 1)),
+                    false
+                  );
                 }
               }
             }
@@ -83,7 +87,7 @@ const Shortcuts = Extension.create({
           const currentDepth = selection.$from.depth;
 
           if (isElementSelection(selection) && selection.node.type.name === "element") {
-            const newDepth = currentDepth;
+            const newDepth = Math.max(currentDepth, 1);
             const newSelection = getProperElementSelection(
               newDepth,
               ElementSelection.create(doc, selection.$from.before(newDepth), false)
@@ -91,12 +95,12 @@ const Shortcuts = Extension.create({
 
             dispatch(tr.setSelection(newSelection));
           } else {
-            const newDepth = currentDepth - (selection instanceof CellSelection ? 2 : 1);
-
-            let newSelection = NodeSelection.create(
-              doc,
-              selection.$from.before(Math.max(newDepth, 1))
+            const newDepth = Math.max(
+              currentDepth - (selection instanceof CellSelection ? 2 : 1),
+              1
             );
+
+            let newSelection = NodeSelection.create(doc, selection.$from.before(newDepth));
 
             if (newSelection.node.type.name === "element") {
               newSelection = getProperElementSelection(
