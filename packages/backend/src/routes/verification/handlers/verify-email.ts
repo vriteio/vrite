@@ -26,6 +26,14 @@ const handler = async (
 
   if (!user) throw errors.notFound("user");
 
+  const userSettings = await userSettingsCollection.findOne({
+    userId: user._id
+  });
+
+  if (userSettings) {
+    return { redirect: "/" };
+  }
+
   const redirect = await ctx.fastify.redis.get(`user:${user._id}:emailVerificationRedirect`);
   const plan = await ctx.fastify.redis.get(`user:${user._id}:subscriptionPlan`);
 
