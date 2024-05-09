@@ -124,11 +124,12 @@ const GitHubConfigurationView: Component<GitHubConfigurationViewProps> = (props)
   );
   const retrievedToken = new URL(location.href).searchParams.get("token");
   const getTransformerLabel = (): string => {
-    const builtIn = builtInTransformers.find((t) => t.id === transformer());
+    const transformerId = savedGitHubConfig()?.transformer || transformer();
+    const builtIn = builtInTransformers.find((t) => t.id === transformerId);
 
     if (builtIn) return builtIn.label;
 
-    const remote = remoteTransformers().find((t) => t.id === transformer());
+    const remote = remoteTransformers().find((t) => t.id === transformerId);
 
     return remote?.label || "";
   };
