@@ -157,14 +157,14 @@ const mdxAsyncOutputTransformer = async (
     );
 
     if (elementWalker.children.length > 0) {
-      return `${openingTag}\n${(
+      return `${openingTag}\n${elementWalker.children.length > 1 ? "\n" : ""}${(
         await transformContentNode(
           elementWalker as JSONContentNodeWalker<JSONContentNode["element"]>
         )
       )
         .split("\n")
         .map((line) => `  ${line}`)
-        .join("\n")}\n</${attrs.type}>`;
+        .join("\n")}${elementWalker.children.length > 1 ? "\n" : ""}\n</${attrs.type}>`;
     }
 
     return openingTag;
