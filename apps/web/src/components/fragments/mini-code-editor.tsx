@@ -73,6 +73,8 @@ const MiniCodeEditor: Component<MiniCodeEditorProps> = (props) => {
         contextmenu: false,
         fontSize: 13,
         fontFamily: "JetBrainsMonoVariable",
+        tabFocusMode: false,
+        tabIndex: -1,
         hover: { enabled: !props.readOnly },
         scrollBeyondLastLine: false,
         model: null,

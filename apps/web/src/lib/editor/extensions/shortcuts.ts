@@ -1,12 +1,18 @@
-import { Document as BaseDocument } from "@vrite/editor";
 import { AllSelection, TextSelection } from "@tiptap/pm/state";
-import { Client, useNotifications } from "#context";
+import { Extension } from "@tiptap/core";
+import { useNotifications } from "#context";
 
-const Document = BaseDocument.extend({
+const Shortcuts = Extension.create({
   addKeyboardShortcuts() {
     const { notify } = useNotifications();
 
     return {
+      "Tab": () => {
+        return true;
+      },
+      "Shift-Tab": () => {
+        return true;
+      },
       "Mod-s": () => {
         notify?.({ text: "Vrite autosaves your content", type: "success" });
 
@@ -49,4 +55,4 @@ const Document = BaseDocument.extend({
   }
 });
 
-export { Document };
+export { Shortcuts };

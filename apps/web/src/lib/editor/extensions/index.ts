@@ -5,7 +5,7 @@ export * from "./link-preview";
 export * from "./slash-menu";
 export * from "./collab-cursor";
 export * from "./collaboration";
-export * from "./document";
+export * from "./shortcuts";
 export * from "./placeholder";
 export * from "./trailing-node";
 export * from "./draggable-text";

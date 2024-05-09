@@ -168,6 +168,8 @@ const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
       tabSize: 2,
       insertSpaces: true,
       readOnly: !state().editor.isEditable,
+      tabFocusMode: false,
+      tabIndex: -1,
       scrollbar: {
         alwaysConsumeMouseWheel: false,
         horizontal: "hidden"

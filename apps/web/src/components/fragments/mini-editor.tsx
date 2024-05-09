@@ -19,14 +19,15 @@ import {
   ListItem,
   TaskItem,
   HardBreak,
-  Heading
+  Heading,
+  Document
 } from "@vrite/editor";
 import { Component, createEffect, on } from "solid-js";
 import { Typography } from "@tiptap/extension-typography";
 import clsx from "clsx";
 import { Editor, Extensions } from "@tiptap/core";
 import { debounce } from "@solid-primitives/scheduled";
-import { TrailingNode, Placeholder, Document } from "#lib/editor";
+import { TrailingNode, Placeholder, Shortcuts } from "#lib/editor";
 
 interface ExtensionOptions {
   content?: string;
@@ -63,6 +64,7 @@ const getExtensions = (options: ExtensionOptions): Extensions => {
     HardBreak,
     TrailingNode,
     History,
+    Shortcuts,
     ...(options.blocks ? [Heading, Blockquote] : []),
     ...(options.lists ? [BulletList, OrderedList, TaskList, TaskItem, ListItem] : []),
     ...(options.extensions || [])

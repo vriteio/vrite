@@ -7,7 +7,7 @@ import {
   useEditor
 } from "@vrite/tiptap-solid";
 import { Component, createEffect, createSignal, on, onCleanup } from "solid-js";
-import { HardBreak, Paragraph, Text } from "@vrite/editor";
+import { HardBreak, Paragraph, Text, Document } from "@vrite/editor";
 import {
   Extension,
   isTextSelection,
@@ -28,7 +28,6 @@ import { Instance } from "tippy.js";
 import { debounce } from "@solid-primitives/scheduled";
 import { Dropdown } from "#components/primitives";
 import {
-  Document,
   Placeholder,
   TrailingNode,
   DraggableText,
@@ -45,6 +44,7 @@ import {
   ElementMenuPlugin,
   CommentMenuPlugin,
   AutoDir,
+  Shortcuts,
   CustomNodeMenuPlugin,
   AutocompletePlugin
 } from "#lib/editor";
@@ -184,7 +184,8 @@ const Editor: Component<EditorProps> = (props) => {
       Collab.configure({
         document: ydoc
       }),
-      CollabCursor(provider)
+      CollabCursor(provider),
+      Shortcuts
     ].filter(Boolean) as Extension[],
     editable: hasPermission("editContent"),
     editorProps: { attributes: { class: `outline-none` } },
