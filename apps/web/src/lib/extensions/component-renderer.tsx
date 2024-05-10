@@ -10,6 +10,7 @@ import {
   on,
   onMount,
   Show,
+  splitProps,
   Switch
 } from "solid-js";
 import { marked } from "marked";
@@ -78,16 +79,13 @@ const baseComponents = {
     );
   },
   Button: (props: RenderedComponentProps<ComponentProps<typeof Button>>) => {
+    const [, passedProps] = splitProps(props, ["children"]);
+
     return (
       <Button
-        variant={props.variant}
-        color={props.color}
-        onClick={props.onClick}
-        class={props.class}
-        text={props.text}
+        {...passedProps}
         disabled={"disabled" in props ? props.disabled : false}
         loading={"loading" in props ? props.loading : false}
-        contentEditable={props.contentEditable}
       >
         {props.children}
       </Button>
