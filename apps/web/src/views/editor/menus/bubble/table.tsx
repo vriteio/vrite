@@ -10,6 +10,7 @@ import clsx from "clsx";
 import { Component, For, Show, createEffect, on } from "solid-js";
 import { SolidEditor } from "@vrite/tiptap-solid";
 import { CellSelection } from "@tiptap/pm/tables";
+import { Node } from "@tiptap/pm/model";
 import { Card, IconButton, Tooltip } from "#components/primitives";
 import { createRef } from "#lib/utils";
 
@@ -20,6 +21,28 @@ const TableMenu: Component<{
   editor: SolidEditor;
   setMode(mode: string): void;
 }> = (props) => {
+  const getTableNode = (selection: CellSelection): Node | null => {
+    for (let { depth } = selection.$anchorCell; depth > 0; depth--) {
+      const node = selection.$anchorCell.node(depth);
+
+      if (node.type.name === "table") {
+        return node;
+      }
+    }
+
+    return null;
+  };
+  const getTableRowNode = (selection: CellSelection): Node | null => {
+    for (let { depth } = selection.$anchorCell; depth > 0; depth--) {
+      const node = selection.$anchorCell.node(depth);
+
+      if (node.type.name === "tableRow") {
+        return node;
+      }
+    }
+
+    return null;
+  };
   const tableMenus = [
     {
       icon: mdiTableHeadersEyeOff,
@@ -28,10 +51,10 @@ const TableMenu: Component<{
         const { selection } = props.editor.state;
 
         if (selection instanceof CellSelection) {
-          const tableNode = selection.$anchorCell.node(1);
-          const rowNode = selection.$anchorCell.node(2);
+          const tableNode = getTableNode(selection);
+          const rowNode = getTableRowNode(selection);
 
-          if (tableNode.child(0) === rowNode) {
+          if (tableNode && rowNode && tableNode.child(0) === rowNode) {
             return false;
           }
 
@@ -89,11 +112,11 @@ const TableMenu: Component<{
         const { selection } = props.editor.state;
 
         if (selection instanceof CellSelection) {
-          const tableNode = selection.$anchorCell.node(1);
+          const tableNode = getTableNode(selection);
 
           let isSingleColumn = false;
 
-          tableNode.content.forEach((rowNode) => {
+          tableNode?.content.forEach((rowNode) => {
             isSingleColumn = rowNode.childCount === 1;
           });
 
@@ -114,9 +137,9 @@ const TableMenu: Component<{
         const { selection } = props.editor.state;
 
         if (selection instanceof CellSelection) {
-          const tableNode = selection.$anchorCell.node(1);
+          const tableNode = getTableNode(selection);
 
-          if (tableNode.content.childCount === 1) {
+          if (tableNode?.content.childCount === 1) {
             return false;
           }
         }
@@ -135,13 +158,13 @@ const TableMenu: Component<{
         const { selection } = props.editor.state;
 
         if (selection instanceof CellSelection) {
-          const tableNode = selection.$anchorCell.node(1);
+          const tableNode = getTableNode(selection);
 
-          if (tableNode.childCount === 1) return true;
+          if (tableNode?.childCount === 1) return true;
 
           let isSingleColumn = false;
 
-          tableNode.content.forEach((rowNode) => {
+          tableNode?.content.forEach((rowNode) => {
             isSingleColumn = rowNode.childCount === 1;
           });
 
