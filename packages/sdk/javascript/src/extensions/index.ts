@@ -253,11 +253,17 @@ interface ExtensionBaseComponents {
   }>;
   Button: ExtensionBaseComponent<
     {
-      color: "base" | "contrast" | "primary";
-      text: "base" | "contrast" | "primary" | "soft";
+      color: "base" | "contrast" | "primary" | "danger" | "success";
+      text: "base" | "contrast" | "primary" | "soft" | "danger" | "success";
       class: string;
       loading: boolean;
       disabled: boolean;
+      hover: boolean;
+      badge: boolean;
+      variant: "text" | "solid";
+      size: "small" | "medium" | "large";
+      target: string;
+      link: string;
     },
     "click"
   >;
