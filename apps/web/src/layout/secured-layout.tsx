@@ -46,7 +46,9 @@ const SecuredLayout: ParentComponent = (props) => {
             <CommandPaletteProvider>
               <WalkthroughProvider>
                 <div class="flex flex-col h-full w-full">
-                  <SubscriptionBanner />
+                  <Show when={hostConfig.billing}>
+                    <SubscriptionBanner />
+                  </Show>
                   <div
                     class={clsx(
                       "flex-1 flex flex-col-reverse md:flex-row h-[calc(100%-1.5rem)]",

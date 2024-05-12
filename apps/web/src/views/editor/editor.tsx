@@ -134,7 +134,6 @@ const Editor: Component<EditorProps> = (props) => {
   const [showBlockBubbleMenu, setShowBlockBubbleMenu] = createSignal(false);
   const [isNodeSelection, setIsNodeSelection] = createSignal(false);
   const { workspaceSettings } = useAuthenticatedUserData();
-  const client = useClient();
   const extensionsContext = useExtensions();
   const updateBubbleMenuPlacement = debounce(() => {
     bubbleMenuInstance()?.setProps({ placement: isNodeSelection() ? "top-start" : "top" });

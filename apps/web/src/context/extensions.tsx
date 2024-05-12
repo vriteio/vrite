@@ -76,8 +76,12 @@ const ExtensionsProvider: ParentComponent = (props) => {
   const extensionSandboxes = new Map<string, ExtensionSandbox>();
   const [installedExtensions, setInstalledExtensions] = createSignal<ExtensionDetails[]>([]);
   const [availableExtensions, setAvailableExtensions] = createSignal<ExtensionDetails[]>([]);
-  const [loadingInstalledExtensions, setLoadingInstalledExtensions] = createSignal(true);
-  const [loadingAvailableExtensions, setLoadingAvailableExtensions] = createSignal(true);
+  const [loadingInstalledExtensions, setLoadingInstalledExtensions] = createSignal(
+    hostConfig.extensions
+  );
+  const [loadingAvailableExtensions, setLoadingAvailableExtensions] = createSignal(
+    hostConfig.extensions
+  );
 
   createEffect(async () => {
     if (!hostConfig.extensions) return;
