@@ -16,7 +16,7 @@ import { mdiGithub, mdiEmail, mdiFormTextboxPassword } from "@mdi/js";
 import { createStore, SetStoreFunction } from "solid-js/store";
 import { useNavigate } from "@solidjs/router";
 import { Card, IconButton, Tooltip } from "#components/primitives";
-import { createRef, validateEmail } from "#lib/utils";
+import { createRef, validateEmail, validateRedirectURL } from "#lib/utils";
 import { useClient, useHostConfig } from "#context";
 import { logoIcon } from "#assets/icons";
 
@@ -46,7 +46,8 @@ const AuthView: Component = () => {
   const navigate = useNavigate();
   const [showForm, setShowForm] = createSignal(false);
   const initialError = new URL(location.href).searchParams.get("error");
-  const redirect = new URL(location.href).searchParams.get("redirect") || "/";
+  const redirectParam = new URL(location.href).searchParams.get("redirect") || "/";
+  const redirect = validateRedirectURL(redirectParam) ? redirectParam : "/";
   const plan = new URL(location.href).searchParams.get("plan") || "personal";
   const [formData, setFormData] = createStore<AuthFormData>({
     password: "",

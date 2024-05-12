@@ -14,6 +14,10 @@ const inputSchema = z.object({
 const handler = async (ctx: Context, input: z.infer<typeof inputSchema>): Promise<void> => {
   const users = getUsersCollection(ctx.db);
   const user = await users.findOne({ email: input.email });
+  const isValidRedirect =
+    input.redirect?.startsWith("/") ||
+    input.redirect?.startsWith(ctx.fastify.config.PUBLIC_APP_URL);
+  const redirect = isValidRedirect ? input.redirect || "/" : "/";
 
   if (!user) throw errors.notFound("user");
 
@@ -39,12 +43,7 @@ const handler = async (ctx: Context, input: z.infer<typeof inputSchema>): Promis
     "EX",
     60 * 30
   );
-  await ctx.fastify.redis.set(
-    `user:${user._id}:magicLinkRedirect`,
-    input.redirect || "/",
-    "EX",
-    60 * 30
-  );
+  await ctx.fastify.redis.set(`user:${user._id}:magicLinkRedirect`, redirect, "EX", 60 * 30);
   await ctx.fastify.redis.set(`user:${user._id}:magicLinkSent`, "true", "EX", 60);
   await ctx.fastify.email.sendMagicLink(user.email, {
     code: magicLinkCode,

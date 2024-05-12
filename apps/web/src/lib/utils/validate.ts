@@ -22,10 +22,23 @@ const validateURL = (input: string): boolean => {
 
   return url.protocol === "http:" || url.protocol === "https:";
 };
+const validateRedirectURL = (input: string): boolean => {
+  if (input.startsWith("/")) return true;
+  if (validateURL(input) && input.startsWith(window.env.PUBLIC_APP_URL)) return true;
+
+  return false;
+};
 const validatePassword = (input: string): boolean => {
   const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
 
   return passwordRegex.test(input);
 };
 
-export { validateEmail, validateUsername, validateKey, validateURL, validatePassword };
+export {
+  validateEmail,
+  validateUsername,
+  validateKey,
+  validateURL,
+  validatePassword,
+  validateRedirectURL
+};
