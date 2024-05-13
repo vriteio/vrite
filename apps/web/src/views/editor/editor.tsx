@@ -180,11 +180,11 @@ const Editor: Component<EditorProps> = (props) => {
       TableMenuPlugin,
       ElementMenuPlugin,
       CommentMenuPlugin,
+      Shortcuts,
       Collab.configure({
         document: ydoc
       }),
-      CollabCursor(provider),
-      Shortcuts
+      CollabCursor(provider)
     ].filter(Boolean) as Extension[],
     editable: hasPermission("editContent"),
     editorProps: { attributes: { class: `outline-none` } },

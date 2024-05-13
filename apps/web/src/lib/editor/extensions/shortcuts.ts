@@ -6,6 +6,7 @@ import { CellSelection } from "@tiptap/pm/tables";
 import { useNotifications } from "#context";
 
 const Shortcuts = Extension.create({
+  priority: 10000,
   addKeyboardShortcuts() {
     const { notify } = useNotifications();
     const { editor } = this;
@@ -16,6 +17,9 @@ const Shortcuts = Extension.create({
       },
       "Shift-Tab": () => {
         return true;
+      },
+      "Mod-z": () => {
+        return editor.commands.undoInputRule();
       },
       "Mod-s": () => {
         notify?.({ text: "Vrite autosaves your content", type: "success" });
