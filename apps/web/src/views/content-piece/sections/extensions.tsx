@@ -144,13 +144,19 @@ const ExtensionsSection: Component<ExtensionsSectionProps> = (props) => {
                   contentPiece: props.contentPiece,
                   data
                 }}
-                onUsableEnvDataUpdate={(envData) => {
+                onUsableEnvDataUpdate={async (envData) => {
                   setData(envData.data);
-                  client.extensions.updateContentPieceData.mutate({
-                    contentPieceId: props.contentPiece.id,
-                    extensionId: activeExtension()!.id,
-                    data: unwrap(data)
-                  });
+
+                  try {
+                    await client.extensions.updateContentPieceData.mutate({
+                      contentPieceId: props.contentPiece.id,
+                      extensionId: activeExtension()!.id,
+                      data: unwrap(data)
+                    });
+                  } catch (error) {
+                    // eslint-disable-next-line no-console
+                    console.error(error);
+                  }
                 }}
               />
             </Show>

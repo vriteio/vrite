@@ -6,9 +6,6 @@ import {
   OutputTransformer
 } from "@vrite/sdk/transformers";
 import { ObjectId } from "mongodb";
-import * as prettier from "prettier/standalone";
-import markdownPlugin from "prettier/plugins/markdown";
-import htmlPlugin from "prettier/plugins/html";
 import axios from "axios";
 import { minimatch } from "minimatch";
 import crypto from "node:crypto";
@@ -19,7 +16,6 @@ import {
   CommonGitProviderData,
   FullContentPiece,
   getTransformersCollection,
-  getWorkspaceSettingsCollection,
   GitRecord,
   Transformer
 } from "#collections";
@@ -46,11 +42,6 @@ interface OutputContentProcessor {
   processBatch(input: OutputContentProcessorInput[]): Promise<string[]>;
 }
 
-const extensionParserMap = {
-  mdx: "mdx",
-  html: "html",
-  md: "markdown"
-} as const;
 const createInputContentProcessor = async (
   ctx: Pick<AuthenticatedContext, "db" | "auth">,
   transformer: string = "markdown"
@@ -147,11 +138,6 @@ const createOutputContentProcessor = async (
     });
   }
 
-  const workspaceSettingsCollection = getWorkspaceSettingsCollection(ctx.db);
-  const workspaceSettings = await workspaceSettingsCollection.findOne({
-    workspaceId: ctx.auth.workspaceId
-  });
-  const prettierConfig = JSON.parse(workspaceSettings?.prettierConfig || "{}");
   const transformOutputContent = async (
     input: Array<{ content: GenericJSONContentNode; metadata: Parameters<OutputTransformer>[1] }>
   ): Promise<string[]> => {
@@ -160,21 +146,8 @@ const createOutputContentProcessor = async (
     if (transformer === "markdown" && !remoteTransformer) {
       for await (const { content, metadata } of input) {
         const result = gfmOutputTransformer(content, metadata);
-        const extension = metadata?.filename?.split(".").pop();
-        const parser =
-          extensionParserMap[extension as keyof typeof extensionParserMap] || undefined;
 
-        if (parser) {
-          output.push(
-            await prettier.format(result, {
-              ...prettierConfig,
-              plugins: [parser === "html" ? htmlPlugin : markdownPlugin],
-              parser
-            })
-          );
-        } else {
-          output.push(result);
-        }
+        output.push(result);
       }
     } else if (remoteTransformer) {
       const maxBatchSize = remoteTransformer.maxBatchSize || 1;
