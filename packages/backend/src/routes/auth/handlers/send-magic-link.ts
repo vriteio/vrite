@@ -15,7 +15,7 @@ const handler = async (ctx: Context, input: z.infer<typeof inputSchema>): Promis
   const users = getUsersCollection(ctx.db);
   const user = await users.findOne({ email: input.email });
   const isValidRedirect =
-    input.redirect?.startsWith("/") ||
+    (input.redirect?.startsWith("/") && !input.redirect?.startsWith("//")) ||
     input.redirect?.startsWith(ctx.fastify.config.PUBLIC_APP_URL);
   const redirect = isValidRedirect ? input.redirect || "/" : "/";
 

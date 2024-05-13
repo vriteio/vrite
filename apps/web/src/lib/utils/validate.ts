@@ -23,7 +23,7 @@ const validateURL = (input: string): boolean => {
   return url.protocol === "http:" || url.protocol === "https:";
 };
 const validateRedirectURL = (input: string): boolean => {
-  if (input.startsWith("/")) return true;
+  if (input.startsWith("/") && !input.startsWith("//")) return true;
   if (validateURL(input) && input.startsWith(window.env.PUBLIC_APP_URL)) return true;
 
   return false;
