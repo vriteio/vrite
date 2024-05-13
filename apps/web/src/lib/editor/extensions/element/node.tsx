@@ -283,20 +283,18 @@ const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
 
           const content = applyStructure(node, customView?.structure!);
 
-          if (node.content.size <= 2) {
-            editor
-              .chain()
-              .setMeta("customView", true)
-              .insertContentAt(
-                { from: props.getPos() + 1, to: props.getPos() + node.content.size + 1 },
-                content.content || []
-              )
-              .run();
-          }
+          editor
+            .chain()
+            .setMeta("customView", true)
+            .insertContentAt(
+              { from: props.getPos() + 1, to: props.getPos() + node.content.size + 1 },
+              content.content || []
+            )
+            .run();
         } else if (parentPos >= 0) {
           const parentElement = props.editor.view.nodeDOM(parentPos) as HTMLElement;
 
-          uid = parentElement.getAttribute("data-uid") || "";
+          uid = parentElement?.getAttribute?.("data-uid") || "";
         }
 
         if (uid) {

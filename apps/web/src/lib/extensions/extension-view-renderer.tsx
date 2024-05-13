@@ -48,6 +48,7 @@ const ExtensionViewRenderer = <C extends ExtensionBaseViewContext>(
     onUsableEnvDataUpdate?(usableEnvData: UsableEnvData<C>): void;
   }>
 ): JSX.Element => {
+  const [envDataUpdateTimeoutHandle, setEnvDataUpdateTimeoutHandle] = createSignal(0);
   const [initiated, setInitiated] = createSignal(false);
   const { sandbox } = props.extension;
   const uid = props.uid || nanoid();
@@ -78,10 +79,15 @@ const ExtensionViewRenderer = <C extends ExtensionBaseViewContext>(
     );
     createEffect(
       on(uidEnvData, (value) => {
-        props.onUsableEnvDataUpdate?.({
-          ...props.usableEnvData,
-          ...value
-        });
+        clearTimeout(envDataUpdateTimeoutHandle());
+        setEnvDataUpdateTimeoutHandle(
+          window.setTimeout(() => {
+            props.onUsableEnvDataUpdate?.({
+              ...props.usableEnvData,
+              ...value
+            });
+          }, 100)
+        );
       })
     );
     registeredEffects.add(uid);
