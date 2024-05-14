@@ -105,8 +105,6 @@ const CodeBlock = BaseCodeBlock.extend<CodeBlockOptions>({
       },
       {
         update({ oldNode, newNode, newDecorations, oldDecorations, updateProps }) {
-          if (newNode.type != oldNode.type) return false;
-
           if (oldNode === newNode && oldDecorations === newDecorations) {
             updateProps();
 

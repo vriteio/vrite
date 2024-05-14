@@ -29,6 +29,7 @@ const CodeBlock = Node.create<CodeBlockOptions>({
   code: true,
   atom: true,
   isolating: true,
+  defining: true,
   selectable: true,
   addOptions() {
     return {
