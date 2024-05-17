@@ -14,7 +14,14 @@ import { SolidEditor } from "@vrite/tiptap-solid";
 import { NodeView } from "@tiptap/core";
 import { keymap } from "@tiptap/pm/keymap";
 import { Node } from "@tiptap/pm/model";
-import { EditorState, NodeSelection, Plugin, TextSelection, Transaction } from "@tiptap/pm/state";
+import {
+  EditorState,
+  NodeSelection,
+  Plugin,
+  Selection,
+  TextSelection,
+  Transaction
+} from "@tiptap/pm/state";
 import { NodeView as PMNodeView } from "@tiptap/pm/view";
 import { nanoid } from "nanoid";
 import { GapCursor } from "@tiptap/pm/gapcursor";
@@ -56,6 +63,7 @@ const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
         if (
           node &&
           !node.textContent &&
+          !node.attrs._?.uid &&
           node.content.childCount === 1 &&
           node.content.firstChild?.type.name === "paragraph" &&
           typeof pos === "number"
@@ -97,103 +105,315 @@ const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
         Backspace: handleDeleteElement
       }),
       new Plugin({
-        filterTransaction(tr) {
-          if (!tr.docChanged || tr.getMeta("customView")) return true;
+        appendTransaction(_, oldState, newState) {
+          if (oldState.selection.eq(newState.selection)) return;
 
-          const entries: Array<{ node: Node; pos: number }> = [];
+          console.group("APPEND TRANSACTION");
 
-          tr.doc.descendants((node, pos) => {
-            if (node.type.name === "element" && customElements[node.attrs.type.toLowerCase()]) {
-              entries.push({
-                node,
-                pos
-              });
+          const insideCustomView = (() => {
+            const { selection } = newState;
 
-              return true;
-            }
-          });
+            for (let { depth } = selection.$from; depth >= 0; depth--) {
+              const node = selection.$from.node(depth);
 
-          for (const entry of entries) {
-            const activeElementNode = entry.node;
-            const activePos = entry.pos;
-            // TODO: Stop relying on the view
-            const getCustomView = (): CustomView | null => {
-              const element = editor.view.nodeDOM(activePos) as HTMLElement | null;
-              const elementNext = editor.view.nodeDOM(activePos + 1) as HTMLElement | null;
-              const uid = element instanceof HTMLElement ? element?.getAttribute("data-uid") : null;
-              const uidNextPos =
-                elementNext instanceof HTMLElement ? elementNext?.getAttribute("data-uid") : null;
-
-              if (uid) {
-                const customView = customViews.get(uid);
-
-                if (customView?.type.toLowerCase() === entry.node.attrs.type.toLowerCase()) {
-                  return customView || null;
-                }
+              if (
+                node.type.name === "element" &&
+                customElements[node.attrs.type.toLowerCase()] // &&
+                // (depth !== selection.$from.depth || !(selection instanceof GapCursor))
+              ) {
+                return true;
               }
-
-              if (uidNextPos) {
-                const customView = customViews.get(uidNextPos);
-
-                if (customView?.type.toLowerCase() === entry.node.attrs.type.toLowerCase()) {
-                  return customView || null;
-                }
-              }
-
-              return null;
-            };
-            const customView = getCustomView();
-
-            if (!customView) continue;
-
-            if (
-              JSON.stringify(applyStructure(activeElementNode, customView?.structure!)) !==
-              JSON.stringify(activeElementNode.toJSON())
-            ) {
-              return false;
             }
+
+            return false;
+          })();
+          const moved = oldState.selection.$to.pos >= newState.selection.$to.pos ? "up" : "down";
+
+          if (!insideCustomView) {
+            console.groupEnd();
+
+            return;
           }
 
-          return true;
-        },
-        appendTransaction(_, oldState, newState) {
-          const setTextSelection = (tr: Transaction, position: number, dir = 1): Transaction => {
-            const nextSelection = TextSelection.findFrom(tr.doc.resolve(position), dir, true);
+          const processSelection = (selection: Selection): Selection | null => {
+            const isGapCursor = selection instanceof GapCursor;
+            const isNodeSelection = selection instanceof NodeSelection;
 
-            if (nextSelection) {
-              return tr.setSelection(nextSelection);
-            }
+            if (
+              isGapCursor &&
+              selection.$from.parent.type.name === "element" &&
+              customElements[selection.$from.parent.attrs.type.toLowerCase()]
+            ) {
+              const { nodeAfter, nodeBefore } = selection.$from;
 
-            return tr;
-          };
+              console.log(moved, nodeBefore, nodeAfter, selection);
 
-          if (
-            newState.selection instanceof NodeSelection &&
-            !isElementSelection(newState.selection)
-          ) {
-            const node = newState.selection.$from.nodeAfter;
+              if (!nodeBefore || !nodeAfter) {
+                for (let { depth } = selection.$from; depth >= 0; depth--) {
+                  const node = selection.$from.node(depth);
+                  const pos = selection.$from.before(depth);
 
-            if (node?.type.name === "element" && !customElements[node.attrs.type.toLowerCase()]) {
-              if (node?.content.size) {
-                if (oldState.tr.selection.$to.pos >= newState.selection.$to.pos) {
-                  return setTextSelection(
-                    newState.tr,
-                    newState.selection.$from.pos + (node.content.size || 0),
-                    -1
-                  );
-                } else {
-                  return setTextSelection(newState.tr, newState.selection.$from.pos + 2);
+                  if (
+                    node.type.name === "element" &&
+                    customElements[node.attrs.type.toLowerCase()]
+                  ) {
+                    return ElementSelection.create(newState.tr.doc, pos);
+                  }
                 }
-              } else if (oldState.selection.$to.pos === newState.selection.$to.pos) {
-                return newState.tr.setSelection(new GapCursor(newState.selection.$from));
-              } else {
-                return newState.tr.setSelection(new GapCursor(newState.selection.$to));
+              } else if (moved === "up" && nodeBefore) {
+                return NodeSelection.create(
+                  newState.tr.doc,
+                  selection.$from.pos - nodeBefore.nodeSize
+                );
+              } else if (moved === "down" && nodeAfter) {
+                return NodeSelection.create(newState.tr.doc, selection.$from.pos);
               }
             }
+
+            if (isNodeSelection) {
+              const { nodeAfter, nodeBefore } = selection.$from;
+              const { node } = selection;
+
+              if (node?.type.name === "element" && node.content.size && node.attrs._?.uid) {
+                const nodePos = selection.$from.pos;
+                const textPos = nodePos + 2 + (moved === "up" ? node.nodeSize - 4 : 0);
+                const textSelection = TextSelection.create(newState.tr.doc, textPos, textPos);
+                const textSelectionParent = textSelection.$from.parent;
+                const textSelectionParentPos =
+                  textSelection.$from.pos - textSelection.$from.parentOffset - 1;
+
+                if (textSelectionParent.inlineContent) {
+                  return textSelection;
+                } else {
+                  console.log(
+                    "ATTEMPT INLINE",
+                    textSelection,
+                    textSelectionParent,
+                    textSelectionParentPos,
+                    node
+                  );
+
+                  if (
+                    textSelectionParent.type.name === "element" &&
+                    customElements[textSelectionParent.attrs.type.toLowerCase()]
+                  ) {
+                    return ElementSelection.create(newState.tr.doc, textSelectionParentPos);
+                  }
+
+                  let newTextSelection: TextSelection | null = null;
+
+                  textSelectionParent.descendants((node, pos) => {
+                    const absolutePos = textSelectionParentPos + pos;
+
+                    if (newTextSelection) return false;
+
+                    if (node.inlineContent) {
+                      console.log("INLINE");
+                      newTextSelection = TextSelection.create(
+                        newState.tr.doc,
+                        absolutePos + 2 + (moved === "up" ? node.nodeSize - 2 : 0),
+                        absolutePos + 2 + (moved === "up" ? node.nodeSize - 2 : 0)
+                      );
+
+                      return false;
+                    } else {
+                      return true;
+                    }
+                  });
+
+                  if (newTextSelection) {
+                    return newTextSelection;
+                  }
+                }
+              }
+
+              if (moved === "up" && nodeBefore) {
+                return NodeSelection.create(
+                  newState.tr.doc,
+                  selection.$from.pos - nodeBefore.nodeSize
+                );
+              } else if (moved === "down" && nodeAfter) {
+                const pos = selection.$from.pos + nodeAfter.nodeSize;
+                const node = newState.tr.doc.nodeAt(pos);
+
+                if (!node) return new GapCursor(newState.tr.doc.resolve(pos));
+
+                return NodeSelection.create(newState.tr.doc, pos);
+              }
+            }
+
+            return null;
+          };
+
+          let selection = newState.selection as Selection | null;
+          let i = 0;
+
+          while (
+            selection &&
+            ((selection instanceof NodeSelection && !isElementSelection(selection)) ||
+              selection instanceof GapCursor)
+          ) {
+            if (i > 10) throw new Error("Possible infinite loop");
+
+            console.log("BEFORE SELECTION", selection);
+            selection = processSelection(selection);
+            console.log("AFTER SELECTION", selection);
+            i += 1;
+          }
+
+          console.groupEnd();
+
+          if (selection) {
+            return newState.tr.setSelection(selection).scrollIntoView();
+          } else {
+            return newState.tr.scrollIntoView();
+          }
+        }
+        /* appendTransaction(transactions, oldState, newState) {
+          const insideCustomView = (() => {
+            const { selection } = newState;
+
+            for (let depth = 0; depth <= selection.$from.depth; depth++) {
+              const node = selection.$from.node(depth);
+
+              if (
+                node.type.name === "element" &&
+                customElements[node.attrs.type.toLowerCase()] &&
+                (depth !== selection.$from.depth || !(selection instanceof GapCursor))
+              ) {
+                return true;
+              }
+            }
+
+            return false;
+          })();
+          const createTextSelection = (
+            tr: Transaction,
+            position: number,
+            dir = 1
+          ): Selection | null => {
+            const nextSelection = TextSelection.findFrom(tr.doc.resolve(position), dir, true);
+
+            return nextSelection || null;
+          };
+          const initialSelection = newState.selection;
+          const processSelection = (selection: Selection): Selection | null => {
+            if (selection instanceof GapCursor) {
+              const node = selection.$from.nodeAfter;
+              const { nodeAfter, nodeBefore, depth } = selection.$from;
+
+              console.log(nodeBefore, nodeAfter);
+
+              if (oldState.tr.selection.$to.pos >= selection.$to.pos) {
+                console.log("MOVED UP");
+
+                if (nodeBefore?.content.size) {
+                  const textSelection = createTextSelection(
+                    newState.tr,
+                    selection.$from.pos - (nodeBefore?.content.size || 0),
+                    -1
+                  );
+
+                  if (textSelection) {
+                    return textSelection;
+                  } else {
+                    return NodeSelection.findFrom(newState.tr.doc.resolve(selection.$from.pos), -1);
+                  }
+                } else {
+                  const from = selection.$from.pos - (nodeBefore?.content.size || 0) - 2;
+
+                  console.log(from);
+
+                  if (from < 0) {
+                    skip = true;
+
+                    return new GapCursor(newState.doc.resolve(0));
+                  }
+
+                  if (!nodeBefore) {
+                    return createTextSelection(newState.tr, from, -1);
+                  }
+
+                  return NodeSelection.create(newState.tr.doc, from);
+                }
+              } else {
+                console.log("MOVED DOWN");
+
+                if (nodeAfter?.content.size) {
+                  return createTextSelection(newState.tr, selection.$from.pos + 2);
+                } else {
+                  const from = selection.$from.pos;
+
+                  if (from > newState.doc.nodeSize) {
+                    skip = true;
+
+                    return new GapCursor(newState.doc.resolve(newState.doc.nodeSize));
+                  }
+
+                  if (!nodeAfter) {
+                    return createTextSelection(newState.tr, from + 2);
+                  }
+
+                  return NodeSelection.create(newState.tr.doc, from);
+                }
+              }
+            }
+
+            if (selection instanceof NodeSelection && !isElementSelection(selection)) {
+              const node = selection.$from.nodeAfter;
+
+              if (node?.type.name === "element" && customElements[node.attrs.type.toLowerCase()]) {
+                return ElementSelection.create(newState.doc, selection.$from.pos, true);
+              }
+
+              if (node?.type.name === "element" && !customElements[node.attrs.type.toLowerCase()]) {
+                if (node?.content.size) {
+                  if (oldState.tr.selection.$to.pos >= selection.$to.pos) {
+                    console.log("MOVED UP");
+
+                    return createTextSelection(newState.tr, selection.$from.pos + 2, -1);
+                  } else {
+                    const textSelection = createTextSelection(newState.tr, selection.$from.pos + 2);
+
+                    console.log("MOVED DOWN", selection.$from.pos + 2, textSelection);
+
+                    return textSelection;
+                  }
+                } else if (oldState.tr.selection.$to.pos >= selection.$to.pos) {
+                  return new GapCursor(selection.$from);
+                } else {
+                  return new GapCursor(selection.$to);
+                }
+              }
+            }
+
+            return null;
+          };
+
+          let skip = false;
+          let selection = newState.selection as Selection | null;
+          let i = 0;
+
+          while (
+            !skip &&
+            selection &&
+            ((selection instanceof NodeSelection && !isElementSelection(selection)) ||
+              selection instanceof GapCursor)
+          ) {
+            if (i > 10) break;
+
+            console.log("BEFORE SELECTION", selection);
+            selection = processSelection(selection);
+            console.log("AFTER SELECTION", selection);
+            i += 1;
+          }
+
+          if (selection && initialSelection !== selection) {
+            return newState.tr.setSelection(selection);
           }
 
           return null;
-        }
+        }*/
       })
     ];
   },
@@ -243,7 +463,7 @@ const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
         })
       );
       requestAnimationFrame(async () => {
-        if (typeof props.getPos !== "function") return;
+        if (typeof props.getPos !== "function" || typeof props.getPos() !== "number") return;
 
         const { installedExtensions } = this.options;
         const editor = this.editor as SolidEditor;
@@ -283,14 +503,16 @@ const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
 
           const content = applyStructure(node, customView?.structure!);
 
-          editor
-            .chain()
-            .setMeta("customView", true)
-            .insertContentAt(
-              { from: props.getPos() + 1, to: props.getPos() + node.content.size + 1 },
-              content.content || []
-            )
-            .run();
+          if (node.content.size <= 2) {
+            editor
+              .chain()
+              .setMeta("customView", true)
+              .insertContentAt(
+                { from: props.getPos() + 1, to: props.getPos() + node.content.size + 1 },
+                content.content || []
+              )
+              .run();
+          }
         } else if (parentPos >= 0) {
           const parentElement = props.editor.view.nodeDOM(parentPos) as HTMLElement;
 

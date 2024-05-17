@@ -111,8 +111,9 @@ const updateElementProps = (
     }
 
     if (node && node.type.name === "element") {
-      tr.setNodeMarkup(pos, node.type, {
+      tr.setMeta("customView", true).setNodeMarkup(pos, node.type, {
         props: { ...newProps },
+        _: node.attrs._,
         type: node.attrs.type
       });
     }
