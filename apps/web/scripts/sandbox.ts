@@ -137,10 +137,6 @@ type SerializedContext<C extends ExtensionBaseContext> = Omit<
               const parts = path.split(".");
               const getVal = (): Val => {
                 return parts.slice(1).reduce((currentVal, part, index) => {
-                  if (typeof currentVal !== "function") {
-                    console.log(parts, part, currentVal, env!.data);
-                  }
-
                   const value = currentVal();
 
                   if (typeof value !== "object" || Array.isArray(value) || value === null) {

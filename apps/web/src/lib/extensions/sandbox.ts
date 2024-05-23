@@ -60,6 +60,7 @@ interface ExtensionSandbox {
   spec: ExtensionSpec & ExtensionRuntimeSpec;
   envData: Accessor<ContextObject>;
   setEnvData: Setter<ContextObject>;
+  setLocalEnvData: Setter<ContextObject>;
   setEnvDataAsync: AsyncSetter<ContextObject>;
   destroy(): void;
   generateView<C extends ExtensionBaseViewContext>(
@@ -136,6 +137,9 @@ const loadExtensionSandbox = async (
     setEnvData(...args: Parameters<typeof setEnvData>) {
       setEnvData(...args);
       sandbox.connection?.remote.updateEnvData(JSON.parse(JSON.stringify(envData())));
+    },
+    setLocalEnvData(...args: Parameters<typeof setEnvData>) {
+      setEnvData(...args);
     },
     async setEnvDataAsync(...args: Parameters<typeof setEnvData>) {
       setEnvData(...args);

@@ -59,7 +59,6 @@ import {
 } from "#context";
 import { breakpoints, createRef } from "#lib/utils";
 import { BlockMenu } from "#lib/editor/extensions/slash-menu/component";
-import { MetaAttribute } from "#lib/editor/extensions/meta";
 
 declare module "#context" {
   interface SharedState {
@@ -170,7 +169,6 @@ const Editor: Component<EditorProps> = (props) => {
       DraggableText,
       CharacterCount,
       AutoDir,
-      MetaAttribute,
       Gapcursor,
       Dropcursor.configure({ class: "ProseMirror-dropcursor" }),
       SlashMenuPlugin.configure({

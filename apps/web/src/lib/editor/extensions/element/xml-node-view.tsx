@@ -1,10 +1,10 @@
 import { isElementSelection, isElementSelectionActive } from "./selection";
-import { Editor, NodeView, NodeViewRendererProps } from "@tiptap/core";
+import { ElementDisplay } from "./view-manager";
+import { Editor, NodeViewRendererProps } from "@tiptap/core";
 import { Node as PMNode } from "@tiptap/pm/model";
-import { NodeView as PMNodeView } from "@tiptap/pm/view";
 import { SolidEditor } from "@vrite/tiptap-solid";
 import { Transaction } from "@tiptap/pm/state";
-import { wrap } from "module";
+import { active } from "sortablejs";
 import { formatCode } from "#lib/code-editor";
 
 const getOpeningTag = async (node: PMNode): Promise<string> => {
@@ -36,9 +36,7 @@ const xmlNodeView = ({
   editor: SolidEditor;
   wrapper: HTMLElement;
   contentWrapper: HTMLElement;
-}): Partial<PMNodeView> => {
-  const referenceView = new NodeView(() => {}, props);
-
+}): ElementDisplay => {
   let node = props.node as PMNode;
 
   const contentContainer = document.createElement("div");
@@ -47,6 +45,7 @@ const xmlNodeView = ({
   const bottomCodeStart = document.createElement("span");
   const bottomCodeKey = document.createElement("span");
   const bottomCodeEnd = document.createElement("span");
+  const selectionBackground = document.createElement("div");
   const handleCodeClick = (event: MouseEvent): void => {
     if (typeof props.getPos === "function") {
       editor.commands.setElementSelection(props.getPos(), true);
@@ -70,9 +69,15 @@ const xmlNodeView = ({
     "class",
     "!whitespace-pre-wrap select-none leading-[26px] min-h-6.5 block w-full !p-0 !bg-transparent !rounded-0 !text-gray-400 !dark:text-gray-400 cursor-pointer"
   );
+  code.setAttribute("data-element-code", "true");
   bottomCode.setAttribute(
     "class",
     "block w-full !p-0 leading-[26px] min-h-6.5 !rounded-0 !bg-transparent !text-gray-400 !dark:text-gray-400 cursor-pointer select-none"
+  );
+  bottomCode.setAttribute("data-element-code", "true");
+  selectionBackground.setAttribute(
+    "class",
+    "absolute -top-1 -left-1 w-[calc(100%+0.25rem)] h-[calc(100%+0.5rem)] bg-primary opacity-20 -z-1 rounded-lg"
   );
   code.contentEditable = "false";
   bottomCode.contentEditable = "false";
@@ -91,35 +96,44 @@ const xmlNodeView = ({
     editor: Editor;
     transaction?: Transaction;
     force?: "select" | "deselect";
-  }): void => {
+  }): { selected: boolean; active: boolean } => {
     const pos = typeof props.getPos === "function" ? props.getPos() : null;
     const { selection } = editor.state;
     const selectionPos = selection.$from.pos;
 
-    if (pos === null) return;
+    if (pos === null) return { selected: false, active: false };
 
     if (
       pos === selectionPos &&
       isElementSelection(selection) &&
       isElementSelectionActive(selection)
     ) {
+      selectionBackground.remove();
+      contentContainer.classList.remove("!border-primary");
       code.classList.add("selected-element-code");
       bottomCodeKey.classList.add("selected-element-bottom-code");
       bottomCode.classList.remove("!text-gray-400", "!dark:text-gray-400");
       bottomCode.classList.add("!text-[#000000]", "!dark:text-[#DCDCDC]");
       bottomCodeKey.classList.add("!text-[#008080]", "!dark:text-[#3dc9b0]");
+
+      return { selected: true, active: true };
     } else if (
       pos === selectionPos &&
       isElementSelection(selection) &&
       !isElementSelectionActive(selection)
     ) {
+      if (!node.content.size) code.append(selectionBackground);
+
       contentContainer.classList.add("!border-primary");
       code.classList.remove("selected-element-code");
       bottomCodeKey.classList.remove("selected-element-bottom-code");
       bottomCode.classList.add("!text-gray-400", "!dark:text-gray-400");
       bottomCode.classList.remove("!text-[#000000]", "!dark:text-[#DCDCDC]");
       bottomCodeKey.classList.remove("!text-[#008080]", "!dark:text-[#3dc9b0]");
+
+      return { selected: true, active: false };
     } else {
+      selectionBackground.remove();
       contentContainer.classList.remove("!border-primary");
       code.classList.remove("selected-element-code");
       bottomCodeKey.classList.remove("selected-element-bottom-code");
@@ -127,25 +141,35 @@ const xmlNodeView = ({
       bottomCode.classList.remove("!text-[#000000]", "!dark:text-[#DCDCDC]");
       bottomCodeKey.classList.remove("!text-[#008080]", "!dark:text-[#3dc9b0]");
     }
+
+    return { selected: false, active: false };
   };
+  const initialState = update({ editor });
+
+  if (initialState.selected) {
+    editor.on("transaction", update);
+  }
 
   return {
-    selectNode() {
-      editor.on("update", update);
-      editor.on("selectionUpdate", update);
+    onSelect() {
+      editor.on("transaction", update);
     },
-    deselectNode() {
+    onDeselect() {
       update({ editor, force: "deselect" });
-      editor.off("update", update);
-      editor.off("selectionUpdate", update);
+      editor.off("transaction", update);
     },
-    update(newNode) {
+    onUpdate(newNode) {
       if (newNode.type.name !== "element") return false;
-      if (newNode.attrs.type !== node.attrs.type) return false;
 
       node = newNode;
-      getOpeningTag(node).then((openingTag) => (code.textContent = openingTag));
-      bottomCodeKey.textContent = getClosingTag(node);
+
+      if (
+        !isElementSelection(editor.state.selection) ||
+        !isElementSelectionActive(editor.state.selection)
+      ) {
+        getOpeningTag(node).then((openingTag) => (code.textContent = openingTag));
+        bottomCodeKey.textContent = getClosingTag(node);
+      }
 
       if (node.content.size) {
         bottomCode.classList.remove("!hidden");
@@ -156,6 +180,14 @@ const xmlNodeView = ({
       }
 
       return true;
+    },
+    unmount() {
+      wrapper.removeAttribute("class");
+      contentWrapper.removeAttribute("class");
+      wrapper.removeChild(code);
+      wrapper.removeChild(contentContainer);
+      wrapper.removeChild(bottomCode);
+      contentContainer.removeChild(contentWrapper);
     }
   };
 };

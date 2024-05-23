@@ -1,6 +1,16 @@
 import { HocuspocusProvider } from "@hocuspocus/provider";
 import { CollaborationCursor } from "@tiptap/extension-collaboration-cursor";
-import { Accessor, createMemo, createSignal, JSX, onMount, Setter, Show } from "solid-js";
+import {
+  Accessor,
+  createEffect,
+  createMemo,
+  createSignal,
+  JSX,
+  on,
+  onMount,
+  Setter,
+  Show
+} from "solid-js";
 import { render } from "solid-js/web";
 import { Extension } from "@tiptap/core";
 import { yCursorPlugin } from "y-prosemirror";
@@ -102,7 +112,23 @@ const CollabCursor = (provider: HocuspocusProvider): Extension => {
             return state.id === user.id && state.clientId !== provider.awareness?.clientID;
           });
         });
+        const isGapCursor = (): boolean => userState()?.fields.gapcursor;
 
+        createEffect(
+          on(isGapCursor, () => {
+            if (isGapCursor()) {
+              container.classList.add(
+                "ProseMirror-gapcursor",
+                ...selectionClasses[color].gapCursor.split(" ")
+              );
+            } else {
+              container.classList.remove(
+                "ProseMirror-gapcursor",
+                ...selectionClasses[color].gapCursor.split(" ")
+              );
+            }
+          })
+        );
         onMount(() => {
           if (
             container.parentElement?.classList.contains("ProseMirror") ||
@@ -169,7 +195,10 @@ const CollabCursor = (provider: HocuspocusProvider): Extension => {
           >
             {(blockSelection) => {
               return (
-                <Show when={!userState()?.fields.gapcursor}>
+                <Show
+                  when={!userState()?.fields.gapcursor}
+                  fallback={<div data-collab-cursor="true"></div>}
+                >
                   <div
                     style={{
                       height: `${blockSelection.h}px`,
@@ -177,6 +206,7 @@ const CollabCursor = (provider: HocuspocusProvider): Extension => {
                       top: `${blockSelection.top}px`,
                       display: blockSelection.display
                     }}
+                    data-collab-cursor="true"
                     class={clsx(
                       "absolute border-2 rounded-[18px] pointer-events-none",
                       selectionClasses[color].outline

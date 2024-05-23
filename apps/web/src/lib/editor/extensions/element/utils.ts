@@ -18,12 +18,13 @@ type CustomView = {
   extension: ExtensionDetails;
   views: Array<{ path: string[]; view: ExtensionElement; top?: boolean }>;
   structure: StructureNode;
+  rawView?: boolean;
   getPos(): number;
   node(): PMNode;
 };
 
 const getCustomElements = (
-  installedExtensions?: () => ExtensionDetails[]
+  installedExtensions: ExtensionDetails[]
 ): Record<
   string,
   {
@@ -39,7 +40,7 @@ const getCustomElements = (
     }
   > = {};
 
-  installedExtensions?.().forEach((extension) => {
+  installedExtensions.forEach((extension) => {
     if (!extension.id) return;
 
     const spec = extension.sandbox?.spec;
@@ -68,7 +69,7 @@ const getElementPath = (
 ): string[] => {
   let path: string[] = [];
 
-  const appendToPath = (node: PMNode, index: number): void => {
+  const appendToPath = (node: PMNode): void => {
     if (node.type.name === "element") {
       const type = `${node.attrs.type || "element"}`.toLowerCase();
 
@@ -77,19 +78,18 @@ const getElementPath = (
       } else if (customElements[type]) {
         path = [type];
       } else {
-        path.push(`${type}#${index}`);
+        path.push(`${type}`);
       }
     }
   };
 
   for (let i = 1; i <= resolvedPos.depth; i++) {
     const node = resolvedPos.node(i);
-    const index = resolvedPos.index(i - 1);
 
-    appendToPath(node, index);
+    appendToPath(node);
   }
 
-  appendToPath(resolvedPos.nodeAfter!, resolvedPos.index());
+  appendToPath(resolvedPos.nodeAfter!);
 
   return path;
 };
@@ -111,9 +111,8 @@ const updateElementProps = (
     }
 
     if (node && node.type.name === "element") {
-      tr.setMeta("customView", true).setNodeMarkup(pos, node.type, {
+      tr.setMeta("addToHistory", false).setNodeMarkup(pos, node.type, {
         props: { ...newProps },
-        _: node.attrs._,
         type: node.attrs.type
       });
     }
@@ -129,7 +128,7 @@ const createCustomView = async (
 ): Promise<CustomView | null> => {
   const uid = nanoid();
 
-  await extension.sandbox?.setEnvDataAsync((envData) => {
+  extension.sandbox?.setLocalEnvData((envData) => {
     return {
       ...envData,
       [uid]: {
@@ -162,22 +161,18 @@ const createCustomView = async (
   const processElementTree = (
     parentPath: string[],
     parentStructureNode: StructureNode,
-    element: ExtensionElement,
-    index?: number
+    element: ExtensionElement
   ): void => {
     const processSlot = (parentPath: string[], parentStructureNode: StructureNode): void => {
-      element.slot?.forEach((childElement, index) => {
+      element.slot?.forEach((childElement) => {
         if (typeof childElement === "object") {
-          processElementTree(parentPath, parentStructureNode, childElement, index);
+          processElementTree(parentPath, parentStructureNode, childElement);
         }
       });
     };
 
     if (element.component === "Element") {
-      const path = [
-        ...parentPath,
-        `${element.props?.type || ""}${typeof index === "number" ? `#${index}` : ""}`.toLowerCase()
-      ];
+      const path = [...parentPath, `${element.props?.type || ""}`.toLowerCase()];
       const view = { path, view: { component: "Fragment", slot: element.slot } };
       const structure = { element: `${element.props?.type || ""}` };
 

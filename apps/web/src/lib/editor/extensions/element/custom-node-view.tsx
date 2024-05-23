@@ -1,23 +1,21 @@
+import { ElementDisplay } from "./view-manager";
 import { NodeViewRendererProps } from "@tiptap/core";
 import { SolidEditor, SolidRenderer } from "@vrite/tiptap-solid";
 import { ExtensionElementViewContext, ExtensionElement } from "@vrite/sdk/extensions";
-import { NodeView as PMNodeView } from "@tiptap/pm/view";
 import clsx from "clsx";
 import { render } from "solid-js/web";
-import { mdiCursorText, mdiFormatParagraph, mdiPlus } from "@mdi/js";
+import { mdiPlus } from "@mdi/js";
 import { TextSelection } from "@tiptap/pm/state";
 import { useNotifications } from "#context";
 import { ExtensionDetails, ExtensionViewRenderer } from "#lib/extensions";
 import { IconButton } from "#components/primitives";
 
-const customSubTrees = new Map<string, Promise<ExtensionElement | null>>();
 const customNodeView = ({
   props,
   editor,
   extension,
   uid,
   view,
-  top,
   contentWrapper,
   wrapper,
   updateProps,
@@ -27,14 +25,13 @@ const customNodeView = ({
   editor: SolidEditor;
   uid: string;
   view: ExtensionElement;
-  top?: boolean;
   extension: ExtensionDetails;
   contentWrapper: HTMLElement;
   wrapper: HTMLElement;
   updateProps(newProps: Record<string, any>): void;
   getProps(): Record<string, any>;
-}): Partial<PMNodeView> => {
-  const component = new SolidRenderer(
+}): ElementDisplay => {
+  const renderer = new SolidRenderer(
     () => {
       const { notify } = useNotifications();
 
@@ -63,56 +60,24 @@ const customNodeView = ({
         />
       );
     },
-    {
-      editor,
-      state: {}
-    }
+    { editor, state: props }
   );
-  const contentWrapperParent = component.element.querySelector("[data-content=true]");
+  const contentHole = renderer.element.querySelector("[data-content=true]");
 
-  contentWrapperParent?.append(contentWrapper);
+  contentHole?.append(contentWrapper);
+  wrapper.append(renderer.element);
+  wrapper.setAttribute("data-custom-view", "true");
+  wrapper.setAttribute("class", "!m-0 rounded-2xl");
   contentWrapper.setAttribute(
     "class",
-    clsx(":base: relative", "content", contentWrapperParent?.getAttribute("data-class"))
+    clsx(":base: relative", "content", contentHole?.getAttribute("data-class"))
   );
-  wrapper.setAttribute("class", "!m-0 rounded-2xl");
-  wrapper.setAttribute("data-uid", uid);
-  wrapper.setAttribute("data-initialized", "true");
-  wrapper.append(component.element);
 
-  const pos = typeof props.getPos === "function" ? props.getPos() : null;
-  const { node } = props;
+  if (!props.node.content.size && contentHole) {
+    const buttonContainer = document.createElement("div");
 
-  if (typeof pos === "number" && pos <= editor.view.state.doc.nodeSize) {
-    const res = editor.commands.command(({ tr, dispatch }) => {
-      if (!dispatch) return false;
-
-      if (typeof pos !== "number" || pos > editor.view.state.doc.nodeSize) {
-        return false;
-      }
-
-      if (node && node.type.name === "element") {
-        tr.setMeta("addToHistory", false)
-          .setMeta("customView", true)
-          .setNodeMarkup(pos, node.type, {
-            ...node.attrs,
-            _: { uid }
-          });
-      }
-
-      return true;
-    });
-  }
-
-  if (top) {
-    wrapper.setAttribute("data-custom-node-view", "true");
-  }
-
-  if (!node.content.size && contentWrapperParent) {
-    const button = document.createElement("div");
-
-    button.setAttribute("contentEditable", "false");
-    button.setAttribute("class", "min-h-[35px] flex items-center");
+    buttonContainer.setAttribute("contentEditable", "false");
+    buttonContainer.setAttribute("class", "min-h-[35px] flex items-center");
     render(
       () => (
         <IconButton
@@ -145,19 +110,26 @@ const customNodeView = ({
           }}
         />
       ),
-      button
+      buttonContainer
     );
-    contentWrapperParent.append(button);
+    contentHole.append(buttonContainer);
   }
 
   return {
-    selectNode() {
+    onSelect() {
       wrapper.classList.add("ring", "ring-primary", "ring-2");
     },
-    deselectNode() {
+    onDeselect() {
       wrapper.classList.remove("ring", "ring-primary", "ring-2");
+    },
+    unmount() {
+      wrapper.removeAttribute("class");
+      wrapper.removeAttribute("data-custom-view");
+      contentWrapper.removeAttribute("class");
+      contentHole?.removeChild(contentWrapper);
+      renderer.destroy();
     }
   };
 };
 
-export { customNodeView, customSubTrees };
+export { customNodeView };

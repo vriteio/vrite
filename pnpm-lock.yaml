@@ -622,6 +622,9 @@ importers:
       dompurify:
         specifier: ^3.0.8
         version: 3.0.8
+      lib0:
+        specifier: ^0.2.94
+        version: 0.2.94
       marked:
         specifier: ^12.0.0
         version: 12.0.0
@@ -3807,7 +3810,7 @@ packages:
   /@hocuspocus/common@2.11.3:
     resolution: {integrity: sha512-w3UZpW6ZVYIHPEFzZJV3yn1d3EZaXf2m2zU53pwj0AyTBmVD7kB9ZiD6twc9A7NNB1dkqD8c58PbD42+pnNiKQ==}
     dependencies:
-      lib0: 0.2.89
+      lib0: 0.2.94
     dev: false
 
   /@hocuspocus/extension-database@2.11.3(y-protocols@1.0.6)(yjs@13.6.11):
@@ -3851,7 +3854,7 @@ packages:
     dependencies:
       '@hocuspocus/common': 2.11.3
       '@lifeomic/attempt': 3.0.3
-      lib0: 0.2.89
+      lib0: 0.2.94
       ws: 8.16.0
       y-protocols: 1.0.6(yjs@13.6.11)
       yjs: 13.6.11
@@ -3869,7 +3872,7 @@ packages:
       '@hocuspocus/common': 2.11.3
       async-lock: 1.4.1
       kleur: 4.1.5
-      lib0: 0.2.89
+      lib0: 0.2.94
       uuid: 9.0.1
       ws: 8.16.0
       y-protocols: 1.0.6(yjs@13.6.11)
@@ -11937,8 +11940,8 @@ packages:
     resolution: {integrity: sha512-K1B/Yr/gIU0wm68hk/yB0p/mv6xM3ShD5aci42vOwcjof8slG8Kpo3Q7+1WTv7DaRHKWRgLPqrFDt+4GtuFAtA==}
     dev: false
 
-  /lib0@0.2.89:
-    resolution: {integrity: sha512-5j19vcCjsQhvLG6mcDD+nprtJUCbmqLz5Hzt5xgi9SV6RIW/Dty7ZkVZHGBuPOADMKjQuKDvuQTH495wsmw8DQ==}
+  /lib0@0.2.94:
+    resolution: {integrity: sha512-hZ3p54jL4Wpu7IOg26uC7dnEWiMyNlUrb9KoG7+xYs45WkQwpVvKFndVq2+pqLYKe1u8Fp3+zAfZHVvTK34PvQ==}
     engines: {node: '>=16'}
     hasBin: true
     dependencies:
@@ -17632,7 +17635,7 @@ packages:
       y-protocols: ^1.0.1
       yjs: ^13.5.38
     dependencies:
-      lib0: 0.2.89
+      lib0: 0.2.94
       prosemirror-model: 1.19.4
       prosemirror-state: 1.4.3
       prosemirror-view: 1.33.1
@@ -17646,7 +17649,7 @@ packages:
     peerDependencies:
       yjs: ^13.0.0
     dependencies:
-      lib0: 0.2.89
+      lib0: 0.2.94
       yjs: 13.6.11
     dev: false
 
@@ -17694,7 +17697,7 @@ packages:
     resolution: {integrity: sha512-FvRRJKX9u270dOLkllGF/UDCWwmIv2Z+ucM4v1QO1TuxdmoiMnSUXH1HAcOKOrkBEhQtPTkxep7tD2DrQB+l0g==}
     engines: {node: '>=16.0.0', npm: '>=8.0.0'}
     dependencies:
-      lib0: 0.2.89
+      lib0: 0.2.94
     dev: false
 
   /yocto-queue@0.1.0:
