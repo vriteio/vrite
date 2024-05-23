@@ -104,10 +104,7 @@ const ElementMenuPlugin = Extension.create({
       generalMenu?.setState((state) => ({ ...state, active: true }));
     }
   },
-  onUpdate() {
-    handleUpdate(this.editor as SolidEditor);
-  },
-  onSelectionUpdate() {
+  onTransaction() {
     handleUpdate(this.editor as SolidEditor);
   }
 });

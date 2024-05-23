@@ -45,7 +45,6 @@ import {
   CommentMenuPlugin,
   AutoDir,
   Shortcuts,
-  CustomNodeMenuPlugin,
   AutocompletePlugin
 } from "#lib/editor";
 import {
@@ -176,7 +175,6 @@ const Editor: Component<EditorProps> = (props) => {
         menuItems: workspaceSettings() ? createBlockMenuOptions(workspaceSettings()!) : []
       }),
       hostConfig.extensions && BlockActionMenuPlugin,
-      CustomNodeMenuPlugin,
       TableMenuPlugin,
       ElementMenuPlugin,
       CommentMenuPlugin,

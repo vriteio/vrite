@@ -1,5 +1,7 @@
+// @ts-ignore
+import { ySyncPlugin } from "./sync-plugin";
 import Collaboration from "@tiptap/extension-collaboration";
-import { yUndoPlugin, yUndoPluginKey, ySyncPlugin } from "y-prosemirror";
+import { yUndoPlugin, yUndoPluginKey } from "y-prosemirror";
 
 const Collab = Collaboration.extend({
   addProseMirrorPlugins() {

@@ -7,6 +7,7 @@ import { useNotifications } from "#context";
 
 const Shortcuts = Extension.create({
   priority: 10000,
+  name: "shortcuts",
   addKeyboardShortcuts() {
     const { notify } = useNotifications();
     const { editor } = this;

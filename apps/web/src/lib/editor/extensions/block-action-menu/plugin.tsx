@@ -1,7 +1,7 @@
 import { BlockActionMenu } from "./component";
 import { Extension, Range } from "@tiptap/core";
 import { SolidEditor, SolidRenderer } from "@vrite/tiptap-solid";
-import { TextSelection } from "@tiptap/pm/state";
+import { NodeSelection, TextSelection } from "@tiptap/pm/state";
 import { ResolvedPos, Node as PMNode } from "@tiptap/pm/model";
 import { debounce } from "@solid-primitives/scheduled";
 
@@ -11,6 +11,7 @@ let component: SolidRenderer<{
   editor: SolidEditor;
   node: PMNode | null;
   range: Range | null;
+  pos: number | null;
   repositionMenu: () => void;
 }> | null = null;
 
@@ -27,24 +28,12 @@ const findParentAtDepth = (
     node
   };
 };
-const getBlockParent = (node: Node): HTMLElement | null => {
-  let currentNode: HTMLElement | null =
-    node.nodeType === 1 ? (node as HTMLElement) : node.parentElement;
-
-  while (currentNode) {
-    if (currentNode.parentElement?.classList.contains("ProseMirror")) {
-      return currentNode;
-    }
-
-    currentNode = currentNode.parentElement;
-  }
-
-  return null;
-};
 const repositionMenu = (editor: SolidEditor): void => {
   const { selection } = editor.state;
   const isTextSelection = selection instanceof TextSelection;
-  const selectedNode = selection.$from.node(1) || selection.$from.nodeAfter;
+  const isNodeSelection = selection instanceof NodeSelection;
+  const selectedNode = isNodeSelection ? selection.node : selection.$from.parent;
+  const selectedPos = selection.$from.pos - (isNodeSelection ? 0 : selection.$from.parentOffset);
 
   if (!selectedNode) {
     box.style.display = "none";
@@ -60,7 +49,7 @@ const repositionMenu = (editor: SolidEditor): void => {
 
   if (!node) return;
 
-  const blockParent = getBlockParent(node);
+  const blockParent = node.nodeType === 1 ? (node as HTMLElement) : node.parentElement;
   const parentPos = document.getElementById("pm-container")?.getBoundingClientRect();
   const childPos = blockParent?.getBoundingClientRect();
 
@@ -70,7 +59,7 @@ const repositionMenu = (editor: SolidEditor): void => {
     top: childPos.top - parentPos.top,
     right: childPos.right - parentPos.right,
     bottom: childPos.bottom - parentPos.bottom,
-    left: childPos.left - parentPos.left
+    left: 0
   };
 
   let rangeFrom = selection.$from.pos;
@@ -82,7 +71,7 @@ const repositionMenu = (editor: SolidEditor): void => {
 
   if (isTextSelection) {
     try {
-      const p = findParentAtDepth(selection.$from, 1);
+      const p = findParentAtDepth(selection.$from, selection.$from.depth - 1);
 
       rangeFrom = p.start - 1;
       rangeTo = p.start + p.node.nodeSize - 1;
@@ -97,6 +86,7 @@ const repositionMenu = (editor: SolidEditor): void => {
       to: rangeTo
     },
     node: selectedNode,
+    pos: selectedPos,
     editor,
     repositionMenu: component.state().repositionMenu || (() => {})
   });
@@ -116,6 +106,7 @@ const BlockActionMenuPlugin = Extension.create({
         editor: this.editor as SolidEditor,
         node: null as PMNode | null,
         range: null as Range | null,
+        pos: null as number | null,
         repositionMenu: () => {
           box.style.display = "none";
           debouncedRepositionMenu();

@@ -301,30 +301,34 @@ kbd {
       > :where(div, ul, ol, p, blockquote, hr):not(.ProseMirror-gapcursor)
       + :where(div, ul, ol, p, blockquote, hr, h1, h2, h3, h4, h5, h6):not(
         [data-element="true"],
-        .ProseMirror-widget
+        .ProseMirror-widget:not(:has([data-collab-cursor]))
       ),
     &
       > :where(div, ul, ol, p, blockquote, hr):not(
         [data-element="true"],
         .ProseMirror-gapcursor,
-        .ProseMirror-widget
+        .ProseMirror-widget:not(:has([data-collab-cursor]))
       )
-      + :where(div, ul, ol, p, blockquote, hr, h1, h2, h3, h4, h5, h6):not(.ProseMirror-widget),
+      + :where(div, ul, ol, p, blockquote, hr, h1, h2, h3, h4, h5, h6):not(
+        .ProseMirror-widget:not(:has([data-collab-cursor]))
+      ),
     &
       > :where(div, ul, ol, p, blockquote, hr):not(.ProseMirror-gapcursor)
       + .ProseMirror-gapcursor
       + :where(div, ul, ol, p, blockquote, hr, h1, h2, h3, h4, h5, h6):not(
         [data-element="true"],
-        .ProseMirror-widget
+        .ProseMirror-widget:not(:has([data-collab-cursor]))
       ),
     &
       > :where(div, ul, ol, p, blockquote, hr):not(
         [data-element="true"],
         .ProseMirror-gapcursor,
-        .ProseMirror-widget
+        .ProseMirror-widget:not(:has([data-collab-cursor]))
       )
       + .ProseMirror-gapcursor
-      + :where(div, ul, ol, p, blockquote, hr, h1, h2, h3, h4, h5, h6):not(.ProseMirror-widget) {
+      + :where(div, ul, ol, p, blockquote, hr, h1, h2, h3, h4, h5, h6):not(
+        .ProseMirror-widget:not(:has([data-collab-cursor]))
+      ) {
       @apply mt-5;
     }
   }

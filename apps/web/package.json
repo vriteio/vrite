@@ -53,6 +53,7 @@
     "clsx": "^2.1.0",
     "dayjs": "^1.11.10",
     "dompurify": "^3.0.8",
+    "lib0": "^0.2.94",
     "marked": "^12.0.0",
     "minisearch": "^6.3.0",
     "monaco-editor": "^0.45.0",

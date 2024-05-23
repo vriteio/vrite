@@ -3,6 +3,7 @@ import { ElementSelection, isElementSelection } from "../element/selection";
 import { SolidEditor } from "@vrite/tiptap-solid";
 import { Component, Show, createEffect, createSignal } from "solid-js";
 import { Node as PMNode } from "@tiptap/pm/model";
+import { Selection } from "@tiptap/pm/state";
 
 interface ElementMenuState {
   pos: number;
@@ -51,30 +52,38 @@ const ElementMenu: Component<ElementMenuProps> = (props) => {
             contentSize: props.state.node?.content.size || 0,
 
             removeElement() {
-              props.state.editor.commands.command(({ tr, dispatch }) => {
-                if (!dispatch) return false;
+              props.state.editor
+                .chain()
+                .command(({ tr, dispatch }) => {
+                  if (!dispatch) return false;
 
-                const lastPos = props.state.pos;
+                  const lastPos = props.state.pos;
 
-                if (typeof lastPos === "number" && props.state.node) {
-                  tr.delete(lastPos, lastPos + props.state.node.nodeSize);
+                  if (typeof lastPos === "number" && props.state.node) {
+                    tr.delete(lastPos, lastPos + props.state.node.nodeSize).setSelection(
+                      Selection.near(tr.doc.resolve(lastPos))
+                    );
 
-                  return true;
-                }
+                    return true;
+                  }
 
-                return false;
-              });
+                  return false;
+                })
+                .focus()
+                .run();
             },
             setElement(element) {
               props.state.editor.commands.command(({ tr, dispatch }) => {
                 if (!dispatch) return false;
 
-                const lastSelection = props.state.editor.state.selection;
                 const lastPos = props.state.pos;
 
                 if (lastPos !== null) {
-                  tr.setNodeAttribute(lastPos, "type", element.type);
-                  tr.setNodeAttribute(lastPos, "props", element.props);
+                  tr.setNodeAttribute(lastPos, "type", element.type).setNodeAttribute(
+                    lastPos,
+                    "props",
+                    element.props
+                  );
 
                   if (element.content && !props.state.node?.content.size) {
                     tr.replaceWith(
@@ -84,12 +93,6 @@ const ElementMenu: Component<ElementMenuProps> = (props) => {
                     );
                   } else if (!element.content && props.state.node?.content.size) {
                     tr.delete(lastPos + 1, lastPos + props.state.node!.content.size + 1);
-                  }
-
-                  if (isElementSelection(lastSelection) && props.state.editor.isFocused) {
-                    tr.setSelection(
-                      ElementSelection.create(tr.doc, lastSelection.$from.pos, false)
-                    );
                   }
 
                   return true;

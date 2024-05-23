@@ -2,24 +2,22 @@ import { ElementSelection, isElementSelection } from "./selection";
 import { xmlNodeView } from "./xml-node-view";
 import { customNodeView } from "./custom-node-view";
 import {
-  CustomView,
   applyStructure,
   createCustomView,
   getCustomElements,
   getElementPath,
   updateElementProps
 } from "./utils";
+import { ElementDisplay, createLoader, customViews, emitter, getTreeUID } from "./view-manager";
 import { Element as BaseElement, ElementAttributes } from "@vrite/editor";
 import { SolidEditor } from "@vrite/tiptap-solid";
 import { NodeView } from "@tiptap/core";
-import { keymap } from "@tiptap/pm/keymap";
 import { Node } from "@tiptap/pm/model";
-import { EditorState, NodeSelection, Plugin, TextSelection, Transaction } from "@tiptap/pm/state";
-import { NodeView as PMNodeView } from "@tiptap/pm/view";
-import { nanoid } from "nanoid";
+import { NodeSelection, Plugin, PluginKey, Selection, TextSelection } from "@tiptap/pm/state";
 import { GapCursor } from "@tiptap/pm/gapcursor";
 import { createSignal } from "solid-js";
-import { ExtensionsContextData } from "#context";
+import { ExtensionElementSpec } from "@vrite/sdk/extensions";
+import { ExtensionDetails, ExtensionsContextData } from "#context";
 
 declare module "@tiptap/core" {
   interface Commands<ReturnType> {
@@ -29,14 +27,30 @@ declare module "@tiptap/core" {
   }
 }
 
-const customViews = new Map<string, CustomView>();
-const loaders = new Map<string, Promise<void>>();
-const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
+const Element = BaseElement.extend<
+  Partial<ExtensionsContextData>,
+  {
+    customElements: Record<
+      string,
+      {
+        element: ExtensionElementSpec;
+        extension: ExtensionDetails;
+      }
+    >;
+  }
+>({
   addOptions() {
     return {};
   },
-  addProseMirrorPlugins() {
-    const handleDeleteElement = (state: EditorState): boolean => {
+  addStorage() {
+    {
+      return { customElements: {} };
+    }
+  },
+  addKeyboardShortcuts() {
+    const handleDeleteElement = (): boolean => {
+      const { state } = this.editor;
+
       if (this.editor.isActive("element")) {
         const currentDepth = state.selection.$from.depth;
 
@@ -53,9 +67,14 @@ const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
           }
         }
 
+        if (!node || !pos) return false;
+
+        const element = this.editor.view.nodeDOM(pos) as HTMLElement;
+        const uid = element?.getAttribute?.("data-uid") || "";
+
         if (
-          node &&
           !node.textContent &&
+          !uid &&
           node.content.childCount === 1 &&
           node.content.firstChild?.type.name === "paragraph" &&
           typeof pos === "number"
@@ -82,117 +101,230 @@ const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
 
       return false;
     };
-    const { installedExtensions } = this.options;
-    const editor = this.editor as SolidEditor;
 
-    let customElements = getCustomElements(installedExtensions);
-
-    requestAnimationFrame(() => {
-      customElements = getCustomElements(installedExtensions);
-    });
+    return {
+      Delete: handleDeleteElement,
+      Backspace: handleDeleteElement
+    };
+  },
+  addProseMirrorPlugins() {
+    const { storage, editor } = this;
 
     return [
-      keymap({
-        Delete: handleDeleteElement,
-        Backspace: handleDeleteElement
-      }),
       new Plugin({
-        filterTransaction(tr) {
-          if (!tr.docChanged || tr.getMeta("customView")) return true;
+        key: new PluginKey("element"),
+        state: {
+          init() {
+            return {};
+          },
+          apply(tr, previousValue) {
+            const elementViewTypeData = tr.getMeta("elementViewTypeData");
 
-          const entries: Array<{ node: Node; pos: number }> = [];
+            if (!elementViewTypeData) return previousValue;
 
-          tr.doc.descendants((node, pos) => {
-            if (node.type.name === "element" && customElements[node.attrs.type.toLowerCase()]) {
-              entries.push({
-                node,
-                pos
+            const customView = customViews.get(elementViewTypeData.uid);
+
+            if (customView) {
+              customView.rawView = !customView.rawView;
+              emitter.emit(`update:${elementViewTypeData.uid}`);
+            }
+
+            return previousValue;
+          }
+        },
+        props: {
+          handleClick(_, pos, event) {
+            const { target } = event;
+
+            if (!(target instanceof HTMLElement)) return;
+
+            if (target.matches("p,div.content,p *")) {
+              editor.commands.command(({ tr }) => {
+                tr.setSelection(TextSelection.near(editor.state.doc.resolve(pos), 1));
+
+                return true;
               });
 
               return true;
             }
-          });
-
-          for (const entry of entries) {
-            const activeElementNode = entry.node;
-            const activePos = entry.pos;
-            // TODO: Stop relying on the view
-            const getCustomView = (): CustomView | null => {
-              const element = editor.view.nodeDOM(activePos) as HTMLElement | null;
-              const elementNext = editor.view.nodeDOM(activePos + 1) as HTMLElement | null;
-              const uid = element instanceof HTMLElement ? element?.getAttribute("data-uid") : null;
-              const uidNextPos =
-                elementNext instanceof HTMLElement ? elementNext?.getAttribute("data-uid") : null;
-
-              if (uid) {
-                const customView = customViews.get(uid);
-
-                if (customView?.type.toLowerCase() === entry.node.attrs.type.toLowerCase()) {
-                  return customView || null;
-                }
-              }
-
-              if (uidNextPos) {
-                const customView = customViews.get(uidNextPos);
-
-                if (customView?.type.toLowerCase() === entry.node.attrs.type.toLowerCase()) {
-                  return customView || null;
-                }
-              }
-
-              return null;
-            };
-            const customView = getCustomView();
-
-            if (!customView) continue;
 
             if (
-              JSON.stringify(applyStructure(activeElementNode, customView?.structure!)) !==
-              JSON.stringify(activeElementNode.toJSON())
+              event.target instanceof HTMLElement &&
+              event.target.getAttribute("data-element-code")
             ) {
-              return false;
+              return true;
             }
           }
-
-          return true;
         },
         appendTransaction(_, oldState, newState) {
-          const setTextSelection = (tr: Transaction, position: number, dir = 1): Transaction => {
-            const nextSelection = TextSelection.findFrom(tr.doc.resolve(position), dir, true);
+          const { customElements } = storage;
 
-            if (nextSelection) {
-              return tr.setSelection(nextSelection);
-            }
+          if (oldState.selection.eq(newState.selection)) return;
 
-            return tr;
-          };
+          const insideCustomView = (() => {
+            const { selection } = newState;
 
-          if (
-            newState.selection instanceof NodeSelection &&
-            !isElementSelection(newState.selection)
-          ) {
-            const node = newState.selection.$from.nodeAfter;
+            for (let { depth } = selection.$from; depth >= 0; depth--) {
+              const node = selection.$from.node(depth);
 
-            if (node?.type.name === "element" && !customElements[node.attrs.type.toLowerCase()]) {
-              if (node?.content.size) {
-                if (oldState.tr.selection.$to.pos >= newState.selection.$to.pos) {
-                  return setTextSelection(
-                    newState.tr,
-                    newState.selection.$from.pos + (node.content.size || 0),
-                    -1
-                  );
-                } else {
-                  return setTextSelection(newState.tr, newState.selection.$from.pos + 2);
-                }
-              } else if (oldState.selection.$to.pos === newState.selection.$to.pos) {
-                return newState.tr.setSelection(new GapCursor(newState.selection.$from));
-              } else {
-                return newState.tr.setSelection(new GapCursor(newState.selection.$to));
+              if (node.type.name === "element" && customElements[node.attrs.type.toLowerCase()]) {
+                return true;
               }
             }
+
+            return false;
+          })();
+          const moved = oldState.selection.$to.pos >= newState.selection.$to.pos ? "up" : "down";
+
+          if (!insideCustomView) {
+            if (
+              newState.selection instanceof NodeSelection &&
+              newState.selection.node.type.name === "element" &&
+              !isElementSelection(newState.selection)
+            ) {
+              return newState.tr.setSelection(
+                ElementSelection.create(newState.tr.doc, newState.selection.$from.pos)
+              );
+            }
+
+            return;
           }
 
-          return null;
+          const processSelection = (selection: Selection): Selection | null => {
+            const isGapCursor = selection instanceof GapCursor;
+            const isNodeSelection = selection instanceof NodeSelection;
+
+            if (
+              isGapCursor &&
+              selection.$from.parent.type.name === "element" &&
+              customElements[selection.$from.parent.attrs.type.toLowerCase()]
+            ) {
+              const { nodeAfter, nodeBefore } = selection.$from;
+
+              if (!nodeBefore || !nodeAfter) {
+                for (let { depth } = selection.$from; depth >= 0; depth--) {
+                  const node = selection.$from.node(depth);
+                  const pos = selection.$from.before(depth);
+
+                  if (
+                    node.type.name === "element" &&
+                    customElements[node.attrs.type.toLowerCase()]
+                  ) {
+                    return ElementSelection.create(newState.tr.doc, pos);
+                  }
+                }
+              } else if (moved === "up" && nodeBefore) {
+                return NodeSelection.create(
+                  newState.tr.doc,
+                  selection.$from.pos - nodeBefore.nodeSize
+                );
+              } else if (moved === "down" && nodeAfter) {
+                return NodeSelection.create(newState.tr.doc, selection.$from.pos);
+              }
+            }
+
+            if (isNodeSelection) {
+              const { nodeAfter, nodeBefore } = selection.$from;
+              const { node } = selection;
+              const element = editor.view.nodeDOM(selection.$from.pos) as HTMLElement;
+              const uid = element?.getAttribute?.("data-uid") || "";
+
+              if (node?.type.name === "element" && node.content.size && uid) {
+                const nodePos = selection.$from.pos;
+                const textPos = nodePos + 2 + (moved === "up" ? node.nodeSize - 4 : 0);
+                const textSelection = TextSelection.create(newState.tr.doc, textPos, textPos);
+                const textSelectionParent = textSelection.$from.parent;
+                const textSelectionParentPos =
+                  textSelection.$from.pos - textSelection.$from.parentOffset - 1;
+
+                if (textSelectionParent.inlineContent) {
+                  return textSelection;
+                } else {
+                  if (
+                    textSelectionParent.type.name === "element" &&
+                    customElements[textSelectionParent.attrs.type.toLowerCase()]
+                  ) {
+                    return new GapCursor(newState.tr.doc.resolve(textSelectionParentPos));
+                  }
+
+                  let newTextSelection: TextSelection | null = null;
+
+                  textSelectionParent.descendants((node, pos) => {
+                    const absolutePos = textSelectionParentPos + pos;
+
+                    if (newTextSelection) return false;
+
+                    if (node.inlineContent) {
+                      newTextSelection = TextSelection.create(
+                        newState.tr.doc,
+                        absolutePos + 2 + (moved === "up" ? node.nodeSize - 2 : 0),
+                        absolutePos + 2 + (moved === "up" ? node.nodeSize - 2 : 0)
+                      );
+
+                      return false;
+                    } else {
+                      return true;
+                    }
+                  });
+
+                  if (newTextSelection) {
+                    return newTextSelection;
+                  }
+                }
+              }
+
+              if (!nodeBefore || !nodeAfter) {
+                for (let { depth } = selection.$from; depth >= 0; depth--) {
+                  const node = selection.$from.node(depth);
+                  const pos = selection.$from.before(depth);
+
+                  if (
+                    node.type.name === "element" &&
+                    customElements[node.attrs.type.toLowerCase()]
+                  ) {
+                    return ElementSelection.create(newState.tr.doc, pos);
+                  }
+                }
+              } else if (moved === "up" && nodeBefore) {
+                return NodeSelection.create(
+                  newState.tr.doc,
+                  selection.$from.pos - nodeBefore.nodeSize
+                );
+              } else if (moved === "down" && nodeAfter) {
+                const pos = selection.$from.pos + nodeAfter.nodeSize;
+                const node = newState.tr.doc.nodeAt(pos);
+
+                if (!node) return new GapCursor(newState.tr.doc.resolve(pos));
+
+                return NodeSelection.create(newState.tr.doc, pos);
+              }
+            }
+
+            return null;
+          };
+
+          let selection = newState.selection as Selection | null;
+          let i = 0;
+
+          while (
+            selection &&
+            ((selection instanceof NodeSelection && !isElementSelection(selection)) ||
+              selection instanceof GapCursor)
+          ) {
+            if (i > 100) break;
+
+            const newSelection = processSelection(selection);
+
+            selection = newSelection || selection;
+            i += 1;
+            if (!newSelection) break;
+          }
+
+          if (selection) {
+            return newState.tr.setSelection(selection).scrollIntoView();
+          } else {
+            return newState.tr.scrollIntoView();
+          }
         }
       })
     ];
@@ -215,55 +347,37 @@ const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
       }
     };
   },
+  onCreate() {
+    this.storage.customElements = getCustomElements(this.options.installedExtensions?.() || []);
+  },
   addNodeView() {
+    const editor = this.editor as SolidEditor;
+    const { storage } = this;
+
     return (props) => {
       const [elementPropsJSON, setElementPropsJSON] = createSignal(
         JSON.stringify(props.node.attrs.props || {})
       );
-
-      let { node } = props;
-
       const referenceView = new NodeView(() => {}, props);
       const wrapper = document.createElement("div");
       const contentWrapper = document.createElement("div");
-      const loadingId = nanoid();
+      const loaded = createLoader(wrapper);
 
-      let view: Partial<PMNodeView> | null = null;
-      let resolveLoader = (): void => {};
+      let { node } = props;
+      let view: ElementDisplay | null = null;
+      let removeListener = (): void => {};
 
       wrapper.setAttribute("data-element", "true");
-      wrapper.setAttribute("data-loading-id", loadingId);
-      loaders.set(
-        loadingId,
-        new Promise<void>((resolve) => {
-          resolveLoader = resolve;
-        }).then(() => {
-          loaders.delete(loadingId);
-          wrapper.removeAttribute("data-loading-id");
-        })
-      );
       requestAnimationFrame(async () => {
-        if (typeof props.getPos !== "function") return;
+        if (typeof props.getPos !== "function" || typeof props.getPos() !== "number") return;
 
-        const { installedExtensions } = this.options;
-        const editor = this.editor as SolidEditor;
+        const { customElements } = this.storage;
         const customNodeType = node.attrs.type.toLowerCase();
-        const customElements = getCustomElements(installedExtensions);
         const customElement = customNodeType ? customElements[customNodeType] : null;
-        const resolvedPos = props.editor.state.doc.resolve(props.getPos());
-        const parentPos = props.getPos() - resolvedPos.parentOffset - 1;
+        const resolvedPos = editor.state.doc.resolve(props.getPos());
         const path = getElementPath(resolvedPos, customElements);
 
-        if (parentPos >= 0) {
-          const parentElement = props.editor.view.nodeDOM(parentPos) as HTMLElement;
-          const parentLoadingId = parentElement.getAttribute("data-loading-id");
-
-          if (parentLoadingId) {
-            await loaders.get(parentLoadingId);
-          }
-        }
-
-        let uid = "";
+        let uid = await getTreeUID(editor, props.getPos());
 
         if (customElement) {
           const customView = await createCustomView(
@@ -277,57 +391,63 @@ const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
           );
 
           if (customView) {
-            uid = uid || customView.uid;
+            uid = customView.uid || uid;
             customViews.set(customView.uid, customView);
           }
 
           const content = applyStructure(node, customView?.structure!);
 
-          editor
-            .chain()
-            .setMeta("customView", true)
-            .insertContentAt(
-              { from: props.getPos() + 1, to: props.getPos() + node.content.size + 1 },
-              content.content || []
-            )
-            .run();
-        } else if (parentPos >= 0) {
-          const parentElement = props.editor.view.nodeDOM(parentPos) as HTMLElement;
-
-          uid = parentElement?.getAttribute?.("data-uid") || "";
-        }
-
-        if (uid) {
-          const customView = customViews.get(uid);
-          const matchedView = customView?.views.find((view) => {
-            return view.path.join(".") === path.join(".");
-          });
-
-          if (customView && matchedView) {
-            view = customNodeView({
-              props,
-              editor,
-              uid,
-              view: matchedView?.view!,
-              top: matchedView.top,
-              extension: customView.extension,
-              contentWrapper,
-              wrapper,
-              getProps() {
-                return JSON.parse(elementPropsJSON());
-              },
-              updateProps(newProps) {
-                updateElementProps(newProps, editor, customView);
-              }
-            });
-            resolveLoader();
-
-            return;
+          if (node.content.size <= 2) {
+            editor
+              .chain()
+              .insertContentAt(
+                { from: props.getPos() + 1, to: props.getPos() + node.content.size + 1 },
+                content.content || []
+              )
+              .run();
           }
         }
 
-        view = xmlNodeView({ props, editor, wrapper, contentWrapper });
-        resolveLoader();
+        const loadView = (): void => {
+          if (uid && !customViews.get(uid)?.rawView) {
+            const customView = customViews.get(uid);
+            const matchedView = customView?.views.find((view) => {
+              return view.path.join(".") === path.join(".");
+            });
+
+            if (customView && matchedView) {
+              if (uid) wrapper.setAttribute("data-uid", uid);
+
+              view = customNodeView({
+                props,
+                editor,
+                uid,
+                view: matchedView?.view!,
+                extension: customView.extension,
+                contentWrapper,
+                wrapper,
+                getProps() {
+                  return JSON.parse(elementPropsJSON());
+                },
+                updateProps(newProps) {
+                  updateElementProps(newProps, editor, customView);
+                }
+              });
+              loaded();
+
+              return;
+            }
+          }
+
+          view = xmlNodeView({ props, editor, wrapper, contentWrapper });
+          loaded();
+        };
+
+        removeListener = emitter.on(`update:${uid}`, (uid) => {
+          view?.unmount();
+          loadView();
+        });
+        loadView();
       });
 
       return {
@@ -341,10 +461,13 @@ const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
           return referenceView.ignoreMutation(mutation);
         },
         selectNode() {
-          view?.selectNode?.();
+          view?.onSelect?.();
         },
         deselectNode() {
-          view?.deselectNode?.();
+          view?.onDeselect?.();
+        },
+        destroy() {
+          removeListener();
         },
         stopEvent(event) {
           if (
@@ -356,11 +479,22 @@ const Element = BaseElement.extend<Partial<ExtensionsContextData>>({
 
           return false;
         },
-        update(newNode, decorations, innerDecorations) {
-          view?.update?.(newNode, decorations, innerDecorations);
+        update(newNode) {
+          if (typeof props.getPos !== "function" || typeof props.getPos() !== "number") {
+            return false;
+          }
+
           if (newNode.type.name !== "element") return false;
-          if (newNode.attrs.type !== node.attrs.type) return false;
-          if (Boolean(newNode.content.size) !== Boolean(node.content.size)) return false;
+
+          view?.onUpdate?.(newNode);
+
+          if (
+            newNode.attrs.type !== node.attrs.type &&
+            storage.customElements[newNode.attrs.type.toLowerCase()] !==
+              storage.customElements[node.attrs.type.toLowerCase()]
+          ) {
+            return false;
+          }
 
           setElementPropsJSON(JSON.stringify(newNode.attrs.props || {}));
           node = newNode;

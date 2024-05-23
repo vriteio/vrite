@@ -1,4 +1,8 @@
-import { isElementSelection, isElementSelectionActive } from "../element/selection";
+import {
+  ElementSelection,
+  isElementSelection,
+  isElementSelectionActive
+} from "../element/selection";
 import {
   createEffect,
   createMemo,
@@ -84,7 +88,7 @@ const ElementMenuEditor = lazy(async () => {
       const [coords, setCoords] = createSignal({ x: 0, y: 0 });
       const [visible, setVisible] = createSignal(true);
       const type = createMemo(() => props.state.type);
-      const processCode = async (code: string): Promise<string> => {
+      const processCode = async (code: string, selfClosing?: boolean): Promise<string> => {
         const codeTagClosed = code?.trim().replace(/>$/, "/>") || "";
         const formattedCode = await formatCode(codeTagClosed, "typescript", {
           printWidth: 60,
@@ -92,7 +96,7 @@ const ElementMenuEditor = lazy(async () => {
           singleQuote: false
         });
 
-        return formattedCode.replace(/ *?\/>;/gm, props.state.contentSize ? ">" : "/>").trim();
+        return formattedCode.replace(/ *?\/>;/gm, selfClosing ? "/>" : ">").trim();
       };
       const propsValue = createMemo((previous) => {
         if (!previous || JSON.stringify(previous) !== JSON.stringify(props.state.props)) {
@@ -118,7 +122,7 @@ const ElementMenuEditor = lazy(async () => {
       const saveLastCoords = (event: MouseEvent): void => {
         setCoords({ x: event.clientX, y: event.clientY });
       };
-      const onSave = async (code: string): Promise<void> => {
+      const onSave = async (code: string, state: ElementMenuState): Promise<void> => {
         const tagRegex = /^<(\w+?)(?:\s|\n|\/|>)/;
         const attributeRegex =
           /\s(\w+?)(?:=(?:(?:{((?:.|\n|\s)+?)})|(?:"((?:.|\n|\s)+?)")|(?:'((?:.|\n|\s)+?)')))?(?=(?:(?:\s|\n)+\w+=?)|(?:(?:\s|\n)*\/?>))/g;
@@ -142,10 +146,10 @@ const ElementMenuEditor = lazy(async () => {
             try {
               attributes[key] = JSON.parse(value);
             } catch (e) {
-              if (!props.state.props[key] || typeof props.state.props[key] === "string") {
+              if (!state.props[key] || typeof state.props[key] === "string") {
                 attributes[key] = value;
               } else {
-                attributes[key] = props.state.props[key];
+                attributes[key] = state.props[key];
               }
             }
           }
@@ -156,13 +160,13 @@ const ElementMenuEditor = lazy(async () => {
         await processAttributes();
 
         if (tag && tag !== "undefined") {
-          props.state.setElement({
+          state.setElement({
             type: tag,
             props: attributes,
             content: !code.endsWith("/>")
           });
         } else {
-          props.state.removeElement();
+          state.removeElement();
         }
       };
 
@@ -183,6 +187,20 @@ const ElementMenuEditor = lazy(async () => {
             height: contentHeight
           });
         };
+        const elementSelectionActive = createMemo<{ active: boolean; pos: number }>((previous) => {
+          const active =
+            isElementSelection(props.state.editor.state.selection) &&
+            isElementSelectionActive(props.state.editor.state.selection);
+          const { pos } = props.state.editor.state.selection.$from;
+
+          if (previous && active === previous.active && pos === previous?.pos) {
+            return previous;
+          }
+
+          return { active, pos };
+        });
+
+        let ignoreNextBlur = false;
 
         codeEditor.onDidContentSizeChange(updateEditorHeight);
         codeEditor.onDidChangeModelContent(() => {
@@ -190,9 +208,18 @@ const ElementMenuEditor = lazy(async () => {
           const bottomCode = document.querySelector(".selected-element-bottom-code") as HTMLElement;
           const value = codeEditor.getValue() || "";
 
+          if (!value || value.match(/^<?(?:\s|\n|\/|>)?$/)) {
+            ignoreNextBlur = true;
+            props.state.removeElement();
+
+            return;
+          }
+
           if (code) {
             code.textContent = value;
-            code.style.minHeight = `${codeEditor.getContentHeight()}px`;
+            requestAnimationFrame(() => {
+              code.style.minHeight = `${codeEditor.getContentHeight()}px`;
+            });
           }
 
           if (bottomCode) {
@@ -202,9 +229,15 @@ const ElementMenuEditor = lazy(async () => {
           }
         });
         codeEditor.onDidBlurEditorText(async () => {
+          if (ignoreNextBlur) {
+            ignoreNextBlur = false;
+
+            return;
+          }
+
           const code = document.querySelector(".selected-element-code") as HTMLElement;
           const bottomCode = document.querySelector(".selected-element-bottom-code") as HTMLElement;
-          const value = await processCode(editorCode());
+          const value = await processCode(editorCode(), !props.state.contentSize);
 
           if (code) {
             code.textContent = value;
@@ -216,7 +249,7 @@ const ElementMenuEditor = lazy(async () => {
             bottomCode.textContent = tag || "";
           }
 
-          await onSave(codeEditor.getValue());
+          await onSave(codeEditor.getValue(), props.state);
         });
         codeEditor.addAction({
           id: "save",
@@ -242,26 +275,20 @@ const ElementMenuEditor = lazy(async () => {
           monaco.editor.setTheme(codeEditorTheme());
         });
         createEffect(
-          on(
-            () => {
-              return (
-                isElementSelection(props.state.editor.state.selection) &&
-                isElementSelectionActive(props.state.editor.state.selection)
-              );
-            },
-            (active) => {
-              setVisible(false);
-              setTimeout(() => {
-                const element: HTMLElement | null = document.querySelector(
-                  ".selected-element-code"
-                ) as HTMLElement;
+          on(elementSelectionActive, ({ active }) => {
+            setVisible(false);
+            requestAnimationFrame(() => {
+              const element: HTMLElement | null = document.querySelector(
+                ".selected-element-code"
+              ) as HTMLElement;
 
-                if (!element) return;
+              if (!element) return;
 
-                if (active) {
-                  codeEditor.setValue(element?.textContent || "");
-                  setVisible(true);
+              element.style.minHeight = "unset";
 
+              if (active) {
+                codeEditor.setValue(element?.textContent || "");
+                requestAnimationFrame(() => {
                   const { position } =
                     codeEditor?.getTargetAtClientPoint(coords().x, coords().y) || {};
 
@@ -270,24 +297,22 @@ const ElementMenuEditor = lazy(async () => {
                   }
 
                   codeEditor?.focus();
-                  element.style.minHeight = `${codeEditor.getContentHeight()}px`;
-                } else {
-                  element.style.minHeight = "unset";
-                }
-              }, 0);
-            }
-          )
+                  requestAnimationFrame(() => {
+                    element.style.minHeight = `${codeEditor.getContentHeight()}px`;
+                    setVisible(true);
+                  });
+                });
+              }
+            });
+
+            return props.state.editor.state.selection as ElementSelection;
+          })
         );
         onCleanup(() => {
           codeEditor.getModel()?.dispose();
           codeEditor.dispose();
         });
       });
-      createRenderEffect(
-        on(type, (type, previousType) => {
-          if (type !== previousType) setVisible(false);
-        })
-      );
       window.addEventListener("pointerdown", saveLastCoords);
       onCleanup(() => {
         window.removeEventListener("pointerdown", saveLastCoords);
@@ -295,10 +320,7 @@ const ElementMenuEditor = lazy(async () => {
 
       return (
         <div
-          class={clsx(
-            "w-full flex items-center justify-start",
-            !visible() && "hidden opacity-0 pointer-events-none transition-opacity duration-200"
-          )}
+          class={clsx("w-full flex items-center justify-start", !visible() && "opacity-0")}
           contentEditable={false}
         >
           <div class="relative w-full">
