@@ -4,7 +4,6 @@ import { Editor, NodeViewRendererProps } from "@tiptap/core";
 import { Node as PMNode } from "@tiptap/pm/model";
 import { SolidEditor } from "@vrite/tiptap-solid";
 import { Transaction } from "@tiptap/pm/state";
-import { active } from "sortablejs";
 import { formatCode } from "#lib/code-editor";
 
 const getOpeningTag = async (node: PMNode): Promise<string> => {

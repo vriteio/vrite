@@ -5,6 +5,7 @@ import { ExtensionElementViewContext, ExtensionElement } from "@vrite/sdk/extens
 import clsx from "clsx";
 import { render } from "solid-js/web";
 import { mdiPlus } from "@mdi/js";
+import { Node as PMNode } from "@tiptap/pm/model";
 import { TextSelection } from "@tiptap/pm/state";
 import { useNotifications } from "#context";
 import { ExtensionDetails, ExtensionViewRenderer } from "#lib/extensions";
@@ -31,6 +32,8 @@ const customNodeView = ({
   updateProps(newProps: Record<string, any>): void;
   getProps(): Record<string, any>;
 }): ElementDisplay => {
+  let node = props.node as PMNode;
+
   const renderer = new SolidRenderer(
     () => {
       const { notify } = useNotifications();
@@ -73,7 +76,7 @@ const customNodeView = ({
     clsx(":base: relative", "content", contentHole?.getAttribute("data-class"))
   );
 
-  if (!props.node.content.size && contentHole) {
+  if (!node.content.size && contentHole) {
     const buttonContainer = document.createElement("div");
 
     buttonContainer.setAttribute("contentEditable", "false");
@@ -95,6 +98,7 @@ const customNodeView = ({
 
                 const lastPos = props.getPos();
 
+                buttonContainer.remove();
                 tr.replaceWith(
                   lastPos + 1,
                   lastPos + 1,
@@ -121,6 +125,11 @@ const customNodeView = ({
     },
     onDeselect() {
       wrapper.classList.remove("ring", "ring-primary", "ring-2");
+    },
+    onUpdate(newNode) {
+      if (newNode.type.name !== "element") return false;
+
+      node = newNode;
     },
     unmount() {
       wrapper.removeAttribute("class");

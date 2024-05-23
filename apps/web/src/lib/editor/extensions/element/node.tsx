@@ -419,7 +419,7 @@ const Element = BaseElement.extend<
               if (uid) wrapper.setAttribute("data-uid", uid);
 
               view = customNodeView({
-                props,
+                props: { ...props, node },
                 editor,
                 uid,
                 view: matchedView?.view!,
@@ -439,7 +439,7 @@ const Element = BaseElement.extend<
             }
           }
 
-          view = xmlNodeView({ props, editor, wrapper, contentWrapper });
+          view = xmlNodeView({ props: { ...props, node }, editor, wrapper, contentWrapper });
           loaded();
         };
 
