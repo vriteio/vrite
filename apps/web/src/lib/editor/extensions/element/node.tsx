@@ -159,7 +159,12 @@ const Element = BaseElement.extend<
         appendTransaction(_, oldState, newState) {
           const { customElements } = storage;
 
-          if (oldState.selection.eq(newState.selection)) return;
+          if (
+            oldState.selection.eq(newState.selection) ||
+            newState.selection instanceof TextSelection
+          ) {
+            return;
+          }
 
           const insideCustomView = (() => {
             const { selection } = newState;
@@ -302,6 +307,7 @@ const Element = BaseElement.extend<
 
             return null;
           };
+          const originalSelection = newState.selection;
 
           let selection = newState.selection as Selection | null;
           let i = 0;
@@ -321,6 +327,8 @@ const Element = BaseElement.extend<
           }
 
           if (selection) {
+            if (selection === originalSelection) return;
+
             return newState.tr.setSelection(selection).scrollIntoView();
           } else {
             return newState.tr.scrollIntoView();
