@@ -493,6 +493,7 @@ const Element = BaseElement.extend<
           }
 
           if (newNode.type.name !== "element") return false;
+          if (Boolean(newNode.content.size) !== Boolean(node.content.size)) return false;
 
           view?.onUpdate?.(newNode);
 
