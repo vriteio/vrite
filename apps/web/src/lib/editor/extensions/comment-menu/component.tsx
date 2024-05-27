@@ -50,7 +50,11 @@ const CommentMenu: Component<BlockActionMenuProps> = (props) => {
         };
 
         if (existingFragmentIndex >= 0) {
-          newFragments.push(Object.assign(fragments()[existingFragmentIndex], newFragment));
+          newFragments.splice(
+            existingFragmentIndex,
+            1,
+            Object.assign(fragments()[existingFragmentIndex], newFragment)
+          );
         } else {
           newFragments.push(newFragment);
         }

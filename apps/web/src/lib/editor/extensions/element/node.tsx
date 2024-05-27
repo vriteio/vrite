@@ -182,7 +182,11 @@ const Element = BaseElement.extend<
           ) {
             const isAtEnd = newState.selection.$from.pos === newState.doc.nodeSize - 3;
 
-            if (isAtEnd && !oldState.selection.eq(newState.selection)) {
+            if (
+              isAtEnd &&
+              !(oldState.selection instanceof TextSelection) &&
+              !oldState.selection.eq(newState.selection)
+            ) {
               return newState.tr.setSelection(
                 Selection.near(
                   newState.tr.doc.resolve(
