@@ -24,12 +24,13 @@ import { dragVerticalIcon } from "#assets/icons/drag-vertical";
 const ImageView: Component = () => {
   const { state } = useSolidNodeView<ImageAttributes>();
   const [error, setError] = createSignal(false);
-  const [loading, setLoading] = createSignal(false);
+  const [loading, setLoading] = createSignal(true);
   const [objectURL, setObjectURL] = createSignal("");
   const [currentSrc, setCurrentSrc] = createSignal("");
   const [imageContainerRef, setImageContainerRef] = createRef<HTMLElement | null>(null);
   const [referenceContainerRef, setReferenceContainerRef] = createRef<HTMLElement | null>(null);
   const [menuContainerRef, setMenuContainerRef] = createRef<HTMLElement | null>(null);
+  const [initialResize, setInitialResize] = createRef(true);
   const updateWidth = debounce((width: string) => state().updateAttributes({ width }), 250);
   const updateAspectRatio = debounce(
     (aspectRatio: string) => state().updateAttributes({ aspectRatio }),
@@ -79,8 +80,16 @@ const ImageView: Component = () => {
       }
     });
   };
-  const debouncedRepositionMenu = debounce(repositionMenu, 250);
+  const debouncedRepositionMenu = debounce(repositionMenu, 10);
   const imageResizeObserver = new ResizeObserver(([entry]) => {
+    if (loading()) return;
+
+    if (initialResize()) {
+      setInitialResize(false);
+
+      return;
+    }
+
     const containerWidth = entry.target.parentElement?.clientWidth || entry.target.clientWidth;
     const newWidth = `${Math.round((entry.target.clientWidth / containerWidth) * 1000) / 10}%`;
 
@@ -157,6 +166,8 @@ const ImageView: Component = () => {
         if (src && src !== previousSrc) {
           getImage.clear();
           getImage(src);
+        } else {
+          setLoading(false);
         }
 
         return src;
@@ -259,7 +270,7 @@ const ImageView: Component = () => {
             <div
               class={clsx(
                 "w-full bg-gradient-to-tr flex justify-center items-center relative",
-                options().cover ? "min-h-48" : "rounded-2xl"
+                options().cover ? "" : "rounded-2xl"
               )}
               style={{
                 "padding-top": getPaddingTop()
