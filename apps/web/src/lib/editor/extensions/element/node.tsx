@@ -12,7 +12,7 @@ import { ElementDisplay, createLoader, customViews, emitter, getTreeUID } from "
 import { Element as BaseElement, ElementAttributes } from "@vrite/editor";
 import { SolidEditor } from "@vrite/tiptap-solid";
 import { NodeView } from "@tiptap/core";
-import { Node } from "@tiptap/pm/model";
+import { Fragment, Node, Slice } from "@tiptap/pm/model";
 import { NodeSelection, Plugin, PluginKey, Selection, TextSelection } from "@tiptap/pm/state";
 import { GapCursor } from "@tiptap/pm/gapcursor";
 import { createSignal } from "solid-js";
@@ -133,6 +133,23 @@ const Element = BaseElement.extend<
           }
         },
         props: {
+          transformCopied: (slice) => {
+            const expectedSize = slice.size + 2;
+
+            if (slice.content.childCount > 1) return slice;
+
+            let currentFragment: Fragment = slice.content;
+            let { openStart } = slice;
+            let { openEnd } = slice;
+
+            while (currentFragment.size > expectedSize) {
+              currentFragment = currentFragment.child(0).content;
+              openStart += 1;
+              openEnd += 1;
+            }
+
+            return new Slice(currentFragment, openStart, openEnd);
+          },
           handleClick(_, pos, event) {
             const { target } = event;
 
@@ -163,6 +180,19 @@ const Element = BaseElement.extend<
             oldState.selection.eq(newState.selection) ||
             newState.selection instanceof TextSelection
           ) {
+            const isAtEnd = newState.selection.$from.pos === newState.doc.nodeSize - 3;
+
+            if (isAtEnd && !oldState.selection.eq(newState.selection)) {
+              return newState.tr.setSelection(
+                Selection.near(
+                  newState.tr.doc.resolve(
+                    Math.min(oldState.selection.$from.pos + 1, newState.tr.doc.nodeSize)
+                  ),
+                  1
+                )
+              );
+            }
+
             return;
           }
 
