@@ -10,9 +10,15 @@ import babelPlugin from "prettier/plugins/babel";
 import estreePlugin from "prettier/plugins/estree";
 import markdownPlugin from "prettier/plugins/markdown";
 import { ContentPiece } from "@vrite/sdk/api";
+import { htmlOutputTransformer } from "@vrite/sdk/transformers";
 import { convert as convertToText } from "html-to-text";
 import { dump } from "js-yaml";
 import dayjs from "dayjs";
+import { fromHtml } from "hast-util-from-html";
+import { toMdast } from "hast-util-to-mdast";
+import { toMarkdown } from "mdast-util-to-markdown";
+import { gfmToMarkdown } from "mdast-util-gfm";
+import { mdxToMarkdown } from "mdast-util-mdx";
 import type { Plugin } from "prettier";
 
 const processCode = async (code: string, hasContent?: boolean): Promise<string> => {
@@ -90,31 +96,11 @@ const mdxAsyncOutputTransformer = async (
       .join("")}`;
   };
   const transformTable = (tableWalker: JSONContentNodeWalker<JSONContentNode["table"]>): string => {
-    let output = "";
+    const html = htmlOutputTransformer(tableWalker.node);
+    const hast = fromHtml(html, { fragment: true });
+    const mdast = toMdast(hast);
 
-    tableWalker.children.forEach((tableRowWalker, rowIndex) => {
-      let isHeader = false;
-
-      const columns = tableRowWalker.children.map((tableCellWalker) => {
-        if (tableCellWalker.node.type === "tableHeader") {
-          isHeader = true;
-        }
-
-        return tableCellWalker.children.map(transformTextNode).join("\n");
-      });
-
-      if (rowIndex === tableWalker.children.length - 1) {
-        output += `| ${columns.map((row) => row.replace(/\n/g, " ")).join(" | ")} |`;
-      } else {
-        output += `| ${columns.map((row) => row.replace(/\n/g, " ")).join(" | ")} |\n`;
-      }
-
-      if (isHeader && rowIndex === 0) {
-        output += `| ${columns.map(() => "---").join(" | ")} |\n`;
-      }
-    });
-
-    return output;
+    return toMarkdown(mdast, { extensions: [gfmToMarkdown(), mdxToMarkdown()] });
   };
   const transformCodeBlock = (
     codeBlockWalker: JSONContentNodeWalker<JSONContentNode["codeBlock"]>

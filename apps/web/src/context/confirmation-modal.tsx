@@ -11,7 +11,8 @@ import {
   createMemo,
   onMount,
   createEffect,
-  on
+  on,
+  onCleanup
 } from "solid-js";
 import clsx from "clsx";
 import { tinykeys } from "tinykeys";
@@ -69,10 +70,12 @@ const ConfirmationModalProvider: ParentComponent = (props) => {
   createEffect(
     on(config, (config) => {
       if (config) {
-        return tinykeys(window, {
+        const unbind = tinykeys(window, {
           ArrowRight: handleArrowKey,
           ArrowLeft: handleArrowKey
         });
+
+        onCleanup(() => unbind());
       }
     })
   );

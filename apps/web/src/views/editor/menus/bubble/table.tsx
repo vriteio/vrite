@@ -7,12 +7,12 @@ import {
   mdiTableSplitCell
 } from "@mdi/js";
 import clsx from "clsx";
-import { Component, For, Show, createEffect, on } from "solid-js";
+import { Component, For, Show } from "solid-js";
 import { SolidEditor } from "@vrite/tiptap-solid";
 import { CellSelection } from "@tiptap/pm/tables";
 import { Node } from "@tiptap/pm/model";
+import { TextSelection } from "@tiptap/pm/state";
 import { Card, IconButton, Tooltip } from "#components/primitives";
-import { createRef } from "#lib/utils";
 
 const TableMenu: Component<{
   class?: string;
@@ -54,7 +54,7 @@ const TableMenu: Component<{
           const tableNode = getTableNode(selection);
           const rowNode = getTableRowNode(selection);
 
-          if (tableNode && rowNode && tableNode.child(0) === rowNode) {
+          if (!tableNode || !rowNode || tableNode.child(0) !== rowNode) {
             return false;
           }
 
@@ -126,7 +126,23 @@ const TableMenu: Component<{
         return true;
       },
       onClick() {
-        props.editor.chain().deleteColumn().focus().run();
+        props.editor
+          .chain()
+          .deleteColumn()
+          .command(({ tr }) => {
+            tr.setSelection(
+              TextSelection.near(
+                tr.doc.resolve(
+                  Math.min(props.editor.state.selection.$from.pos - 2, tr.doc.nodeSize)
+                ),
+                -1
+              )
+            );
+
+            return true;
+          })
+          .focus()
+          .run();
       }
     },
     {
