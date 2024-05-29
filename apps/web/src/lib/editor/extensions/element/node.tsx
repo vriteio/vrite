@@ -145,12 +145,7 @@ const Element = BaseElement.extend<
             while (currentFragment.size > expectedSize) {
               const newFragment = currentFragment.child(0).content;
 
-              if (
-                newFragment.size < expectedSize &&
-                ["bulletList", "orderedList", "taskList"].includes(
-                  currentFragment.child(0).type.name
-                )
-              ) {
+              if (newFragment.childCount !== 1) {
                 break;
               }
 
