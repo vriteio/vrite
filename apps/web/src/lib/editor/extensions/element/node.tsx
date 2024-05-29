@@ -17,6 +17,7 @@ import { NodeSelection, Plugin, PluginKey, Selection, TextSelection } from "@tip
 import { GapCursor } from "@tiptap/pm/gapcursor";
 import { createSignal } from "solid-js";
 import { ExtensionElementSpec } from "@vrite/sdk/extensions";
+import { CellSelection } from "@tiptap/pm/tables";
 import { ExtensionDetails, ExtensionsContextData } from "#context";
 
 declare module "@tiptap/core" {
@@ -179,35 +180,40 @@ const Element = BaseElement.extend<
             }
           }
         },
-        appendTransaction(_, oldState, newState) {
+        appendTransaction(transactions, oldState, newState) {
           const { customElements } = storage;
 
-          if (
-            oldState.selection.eq(newState.selection) ||
-            newState.selection instanceof TextSelection
-          ) {
+          let selection = newState.selection as Selection | null;
+
+          if (newState.selection instanceof TextSelection) {
             const isAtEnd = newState.selection.$from.pos === newState.doc.nodeSize - 3;
+            const docChanged = transactions.some((transaction) => transaction.docChanged);
 
             if (
               isAtEnd &&
+              docChanged &&
               !(oldState.selection instanceof TextSelection) &&
               !oldState.selection.eq(newState.selection)
             ) {
-              return newState.tr.setSelection(
-                Selection.near(
-                  newState.tr.doc.resolve(
-                    Math.min(oldState.selection.$from.pos + 1, newState.tr.doc.nodeSize)
-                  ),
-                  1
-                )
+              let previousFrom = oldState.selection.$from.pos;
+              let previousTo = oldState.selection.$to.pos;
+
+              if (oldState.selection instanceof CellSelection) {
+                previousFrom = oldState.selection.$anchorCell.pos;
+                previousTo = oldState.selection.$headCell.pos;
+              }
+
+              selection = Selection.near(
+                newState.tr.doc.resolve(
+                  Math.min(previousFrom + 1, previousTo + 1, newState.tr.doc.nodeSize)
+                ),
+                -1
               );
             }
-
-            return;
           }
 
           const insideCustomView = (() => {
-            const { selection } = newState;
+            if (!selection) return false;
 
             for (let { depth } = selection.$from; depth >= 0; depth--) {
               const node = selection.$from.node(depth);
@@ -351,7 +357,6 @@ const Element = BaseElement.extend<
           };
           const originalSelection = newState.selection;
 
-          let selection = newState.selection as Selection | null;
           let i = 0;
 
           while (
