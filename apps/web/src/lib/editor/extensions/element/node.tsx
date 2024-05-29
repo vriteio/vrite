@@ -268,6 +268,8 @@ const Element = BaseElement.extend<
               const element = editor.view.nodeDOM(selection.$from.pos) as HTMLElement;
               const uid = element?.getAttribute?.("data-uid") || "";
 
+              if (node.type.name !== "element") return null;
+
               if (node?.type.name === "element" && node.content.size && uid) {
                 const nodePos = selection.$from.pos;
                 const textPos = nodePos + 2 + (moved === "up" ? node.nodeSize - 4 : 0);
