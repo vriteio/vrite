@@ -143,7 +143,18 @@ const Element = BaseElement.extend<
             let { openEnd } = slice;
 
             while (currentFragment.size > expectedSize) {
-              currentFragment = currentFragment.child(0).content;
+              const newFragment = currentFragment.child(0).content;
+
+              if (
+                newFragment.size < expectedSize &&
+                ["bulletList", "orderedList", "taskList"].includes(
+                  currentFragment.child(0).type.name
+                )
+              ) {
+                break;
+              }
+
+              currentFragment = newFragment;
               openStart += 1;
               openEnd += 1;
             }
