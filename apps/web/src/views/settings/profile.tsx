@@ -3,7 +3,7 @@ import { SettingsImageUpload } from "./image-upload";
 import { mdiAlert, mdiArrowRightThin, mdiCardAccountDetails, mdiInformation } from "@mdi/js";
 import { Show, createEffect, createMemo, createResource, createSignal, onCleanup } from "solid-js";
 import { createStore } from "solid-js/store";
-import { InputField, TitledCard } from "#components/fragments";
+import { InputField, CollapsibleSection } from "#components/fragments";
 import { Button, Loader, Heading, IconButton } from "#components/primitives";
 import { App, useClient, useNotifications } from "#context";
 import { validateEmail, validateUsername } from "#lib/utils";
@@ -100,12 +100,12 @@ const ProfileSection: SettingsSectionComponent = (props) => {
       <Show
         when={profileData.newEmailChangeInVerification || profileData.oldEmailChangeInVerification}
       >
-        <TitledCard icon={mdiAlert} label="Email changed" gradient>
+        <CollapsibleSection icon={mdiAlert} label="Email changed" gradient>
           Email change verification is in progress. Please check your the inbox of your old and new
           email address for verification.
-        </TitledCard>
+        </CollapsibleSection>
       </Show>
-      <TitledCard icon={mdiInformation} label="About you">
+      <CollapsibleSection icon={mdiInformation} label="About you">
         <Show when={!existingProfileData.loading || !initialLoad()} fallback={<Loader />}>
           <div class="flex w-full gap-4 justify-center items-center">
             <SettingsImageUpload
@@ -119,7 +119,6 @@ const ProfileSection: SettingsSectionComponent = (props) => {
             <div class="flex-1">
               <InputField
                 type="text"
-                color="contrast"
                 label="Full Name"
                 value={profileData.fullName || ""}
                 inputProps={{ maxLength: 50 }}
@@ -129,7 +128,6 @@ const ProfileSection: SettingsSectionComponent = (props) => {
           </div>
           <InputField
             type="text"
-            color="contrast"
             label="Bio"
             textarea
             value={profileData.bio || ""}
@@ -140,8 +138,8 @@ const ProfileSection: SettingsSectionComponent = (props) => {
             Some interesting details about you
           </InputField>
         </Show>
-      </TitledCard>
-      <TitledCard icon={mdiCardAccountDetails} label="Credentials">
+      </CollapsibleSection>
+      <CollapsibleSection icon={mdiCardAccountDetails} label="Credentials">
         <Show when={!existingProfileData.loading || !initialLoad()} fallback={<Loader />}>
           <InputField
             label={
@@ -153,21 +151,13 @@ const ProfileSection: SettingsSectionComponent = (props) => {
                     profileData.oldEmailChangeInVerification
                   }
                 >
-                  <Button
-                    size="small"
-                    color="contrast"
-                    badge
-                    hover={false}
-                    class="m-0 font-normal"
-                    text="soft"
-                  >
+                  <Button size="small" badge hover={false} class="m-0 font-normal" text="soft">
                     Pending email verification
                   </Button>
                 </Show>
               </div>
             }
             placeholder="hello@example.com"
-            color="contrast"
             type="text"
             value={profileData.email || ""}
             setValue={(value) => handleProfileDataChange("email", value)}
@@ -179,7 +169,6 @@ const ProfileSection: SettingsSectionComponent = (props) => {
           <InputField
             label="Username"
             placeholder="user_name"
-            color="contrast"
             type="text"
             value={profileData.username || ""}
             setValue={(value) => handleProfileDataChange("username", value)}
@@ -194,7 +183,6 @@ const ProfileSection: SettingsSectionComponent = (props) => {
               You can change your password in the Security settings
             </p>
             <IconButton
-              color="contrast"
               text="soft"
               path={mdiArrowRightThin}
               class="flex-row-reverse gap-1 m-0"
@@ -203,7 +191,7 @@ const ProfileSection: SettingsSectionComponent = (props) => {
             />
           </div>
         </Show>
-      </TitledCard>
+      </CollapsibleSection>
     </>
   );
 };

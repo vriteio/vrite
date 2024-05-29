@@ -1,7 +1,7 @@
 import { mdiInformation, mdiPlus, mdiTagText, mdiTrashCan, mdiTune } from "@mdi/js";
 import { Show, For, Component, createSignal } from "solid-js";
-import { TitledCard } from "#components/fragments";
-import { Button, Card, Heading, IconButton, Tooltip } from "#components/primitives";
+import { CollapsibleSection } from "#components/fragments";
+import { Button, Card, Heading, IconButton, Loader, Tooltip } from "#components/primitives";
 import { App, hasPermission, useClient, useConfirmationModal, useNotifications } from "#context";
 
 interface RolesCardProps {
@@ -55,7 +55,7 @@ const RoleDetails: Component<{
   };
 
   return (
-    <Card class="flex flex-col w-full m-0" color="contrast">
+    <Card class="flex flex-col w-full m-0">
       <div class="flex items-center justify-center gap-2 w-full">
         <Heading level={3} class="flex-1">
           {props.role.name || "[No name]"}
@@ -111,7 +111,7 @@ const RoleDetails: Component<{
 };
 const RolesCard: Component<RolesCardProps> = (props) => {
   return (
-    <TitledCard
+    <CollapsibleSection
       icon={mdiTagText}
       label="Roles"
       action={
@@ -134,7 +134,14 @@ const RolesCard: Component<RolesCardProps> = (props) => {
         </Show>
       }
     >
-      <Show when={!props.rolesLoading}>
+      <Show
+        when={!props.rolesLoading}
+        fallback={
+          <div class="flex justify-center items-center w-full">
+            <Loader />
+          </div>
+        }
+      >
         <For each={props.roles} fallback={<p class="px-2 w-full text-start">No roles found</p>}>
           {(role) => (
             <RoleDetails
@@ -150,7 +157,6 @@ const RolesCard: Component<RolesCardProps> = (props) => {
           <Button
             class="m-0 w-full"
             text="soft"
-            color="contrast"
             loading={props.rolesLoading}
             onClick={() => {
               props.loadMore();
@@ -160,7 +166,7 @@ const RolesCard: Component<RolesCardProps> = (props) => {
           </Button>
         </Show>
       </Show>
-    </TitledCard>
+    </CollapsibleSection>
   );
 };
 

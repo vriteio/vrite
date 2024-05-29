@@ -1,8 +1,8 @@
 import { PriceTag } from "./price-tag";
 import { mdiCog } from "@mdi/js";
-import { Button } from "@vrite/components";
 import { Component, Match, Show, Switch, createMemo, createResource } from "solid-js";
-import { TitledCard } from "#components/fragments";
+import { Button } from "#components/primitives";
+import { CollapsibleSection } from "#components/fragments";
 import { useAuthenticatedUserData, useClient, useConfirmationModal } from "#context";
 import { navigateAndReload } from "#lib/utils";
 
@@ -46,7 +46,7 @@ const ChangePlanCard: Component = () => {
   };
 
   return (
-    <TitledCard icon={mdiCog} label="Change plan">
+    <CollapsibleSection icon={mdiCog} label="Change plan">
       <Button
         size="large"
         class="m-0 w-full flex items-start flex-col rounded-xl"
@@ -91,7 +91,7 @@ const ChangePlanCard: Component = () => {
           </Match>
         </Switch>
       </Show>
-    </TitledCard>
+    </CollapsibleSection>
   );
 };
 

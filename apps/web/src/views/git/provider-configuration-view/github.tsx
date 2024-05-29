@@ -3,7 +3,7 @@ import { Component, Match, Show, Switch, createMemo, createResource, createSigna
 import { Octokit, RestEndpointMethodTypes } from "@octokit/rest";
 import { Button, Heading, IconButton, Input, Tooltip } from "#components/primitives";
 import { App, hasPermission, useClient, useConfirmationModal, useSharedState } from "#context";
-import { InputField, TitledCard, SearchableSelect } from "#components/fragments";
+import { InputField, CollapsibleSection, SearchableSelect } from "#components/fragments";
 import { navigateAndReload } from "#lib/utils";
 
 interface GitHubConfigurationViewProps {
@@ -194,7 +194,7 @@ const GitHubConfigurationView: Component<GitHubConfigurationViewProps> = (props)
 
   return (
     <>
-      <TitledCard
+      <CollapsibleSection
         icon={mdiSourceBranch}
         label="Repository"
         action={
@@ -204,7 +204,6 @@ const GitHubConfigurationView: Component<GitHubConfigurationViewProps> = (props)
                 path={mdiRefresh}
                 loading={installations.loading || repositories.loading || branches.loading}
                 text="soft"
-                color="contrast"
                 class="m-0"
                 onClick={async () => {
                   setSelectedInstallation(null);
@@ -231,7 +230,6 @@ const GitHubConfigurationView: Component<GitHubConfigurationViewProps> = (props)
                   path={mdiGithub}
                   class="m-0"
                   label="Continue with GitHub"
-                  color="contrast"
                   onClick={() => {
                     navigateAndReload(
                       `/github/authorize?path=${encodeURIComponent(location.pathname)}`
@@ -259,7 +257,6 @@ const GitHubConfigurationView: Component<GitHubConfigurationViewProps> = (props)
                   value={savedGitHubConfig()?.repositoryOwner || ""}
                   class="w-full m-0"
                   wrapperClass="w-full"
-                  color="contrast"
                   disabled
                 />
               }
@@ -307,7 +304,6 @@ const GitHubConfigurationView: Component<GitHubConfigurationViewProps> = (props)
                   value={savedGitHubConfig()?.repositoryName || ""}
                   class="w-full m-0"
                   wrapperClass="w-full"
-                  color="contrast"
                   disabled
                 />
               }
@@ -342,7 +338,6 @@ const GitHubConfigurationView: Component<GitHubConfigurationViewProps> = (props)
                   value={savedGitHubConfig()?.branchName || ""}
                   class="w-full m-0"
                   wrapperClass="w-full"
-                  color="contrast"
                   disabled
                 />
               }
@@ -366,16 +361,15 @@ const GitHubConfigurationView: Component<GitHubConfigurationViewProps> = (props)
             </Show>
           </Show>
         </div>
-      </TitledCard>
+      </CollapsibleSection>
       <Show when={token() || savedGitHubConfig()}>
-        <TitledCard icon={mdiFileTree} label="Mapping">
+        <CollapsibleSection icon={mdiFileTree} label="Mapping">
           <div class="flex flex-col items-start w-full gap-2">
             <p class="prose text-gray-500 dark:text-gray-400 w-full">
               Map your content to the GitHub repository.
             </p>
             <InputField
               label="Base directory"
-              color="contrast"
               type="text"
               value={savedGitHubConfig()?.baseDirectory || baseDirectory()}
               disabled={Boolean(savedGitHubConfig())}
@@ -386,7 +380,6 @@ const GitHubConfigurationView: Component<GitHubConfigurationViewProps> = (props)
             </InputField>
             <InputField
               label="Match pattern"
-              color="contrast"
               type="text"
               value={savedGitHubConfig()?.matchPattern || matchPattern()}
               disabled={Boolean(savedGitHubConfig())}
@@ -407,7 +400,6 @@ const GitHubConfigurationView: Component<GitHubConfigurationViewProps> = (props)
                   value={getTransformerLabel()}
                   class="w-full m-0"
                   wrapperClass="w-full"
-                  color="contrast"
                   disabled
                 />
               }
@@ -431,7 +423,7 @@ const GitHubConfigurationView: Component<GitHubConfigurationViewProps> = (props)
               />
             </Show>
           </div>
-        </TitledCard>
+        </CollapsibleSection>
       </Show>
     </>
   );

@@ -4,17 +4,15 @@ import {
   mdiFormatListBulleted,
   mdiGithub,
   mdiPlayCircle,
-  mdiPuzzle,
-  mdiSchool
+  mdiPuzzle
 } from "@mdi/js";
 import { Component, For } from "solid-js";
-import clsx from "clsx";
 import { Card, Heading, Icon, IconButton } from "#components/primitives";
 import { discordIcon } from "#assets/icons";
 import { useLocalStorage } from "#context";
-import { TitledCard } from "#components/fragments";
 import { apiIcon } from "#assets/icons/api";
 import { useWalkthrough } from "#layout/walkthrough";
+import { CollapsibleSection } from "#components/fragments";
 
 const sectionMenuItems = [
   {
@@ -77,7 +75,7 @@ const GettingStartedView: Component = () => {
       <div class="flex-col h-full relative flex overflow-hidden">
         <div class="w-full h-full overflow-x-hidden overflow-y-auto scrollbar-sm-contrast px-5">
           <div class="flex justify-start flex-col min-h-full items-start w-full gap-5 pb-5">
-            {/* <TitledCard label="Walkthroughs" icon={mdiSchool}>
+            {/* <CollapsibleSection label="Walkthroughs" icon={mdiSchool}>
               <For each={walkthroughs}>
                 {({ name, url, icon }) => {
                   const active = (): boolean => activeWalkthrough() === url;
@@ -113,17 +111,14 @@ const GettingStartedView: Component = () => {
                   );
                 }}
               </For>
-            </TitledCard>*/}
-            <TitledCard label="Resources" icon={mdiFormatListBulleted}>
+            </CollapsibleSection>*/}
+            <CollapsibleSection label="Resources" icon={mdiFormatListBulleted}>
               <div class="flex flex-col gap-2 w-full">
                 <For each={sectionMenuItems}>
                   {(menuItem) => {
                     return (
                       <a href={menuItem.link} target="_blank">
-                        <Card
-                          color="contrast"
-                          class="text-start flex-col relative flex m-0 w-full justify-center items-start @hover-bg-gray-200 dark:hover:bg-gray-700"
-                        >
+                        <Card class="text-start flex-col relative flex m-0 w-full justify-center items-start @hover-bg-gray-200 dark:hover:bg-gray-700">
                           <div class="flex gap-1 items-center">
                             <Icon
                               path={menuItem.icon}
@@ -137,7 +132,7 @@ const GettingStartedView: Component = () => {
                   }}
                 </For>
               </div>
-            </TitledCard>
+            </CollapsibleSection>
           </div>
         </div>
       </div>

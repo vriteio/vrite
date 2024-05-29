@@ -2,7 +2,7 @@ import { ExtensionCard } from "./extension-card";
 import { mdiPuzzle, mdiDownload } from "@mdi/js";
 import { Component, Show, For } from "solid-js";
 import { useExtensions } from "#context";
-import { TitledCard } from "#components/fragments";
+import { CollapsibleSection } from "#components/fragments";
 import { Loader } from "#components/primitives";
 import { ExtensionDetails } from "#context/extensions";
 
@@ -18,7 +18,7 @@ const ExtensionsMenuView: Component<{
 
   return (
     <>
-      <TitledCard icon={mdiPuzzle} label="Installed">
+      <CollapsibleSection icon={mdiPuzzle} label="Installed">
         <Show
           when={installedExtensions().length > 0}
           fallback={
@@ -43,8 +43,8 @@ const ExtensionsMenuView: Component<{
             </For>
           </div>
         </Show>
-      </TitledCard>
-      <TitledCard icon={mdiDownload} label="Available">
+      </CollapsibleSection>
+      <CollapsibleSection icon={mdiDownload} label="Available">
         <Show
           when={availableExtensions().length > 0}
           fallback={
@@ -68,7 +68,7 @@ const ExtensionsMenuView: Component<{
             </For>
           </div>
         </Show>
-      </TitledCard>
+      </CollapsibleSection>
     </>
   );
 };

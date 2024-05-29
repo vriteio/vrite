@@ -8,18 +8,11 @@ import {
   mdiSync
 } from "@mdi/js";
 import { Component, For, Match, Show, Switch, createSignal } from "solid-js";
-import { Button, Heading, Icon, IconButton, Input } from "@vrite/components";
 import clsx from "clsx";
 import { useNavigate } from "@solidjs/router";
-import { TitledCard } from "#components/fragments";
-import {
-  App,
-  hasPermission,
-  useClient,
-  useContentData,
-  useNotifications,
-  useSharedState
-} from "#context";
+import { Button, Heading, Icon, IconButton, Input } from "#components/primitives";
+import { CollapsibleSection } from "#components/fragments";
+import { App, hasPermission, useClient, useNotifications, useSharedState } from "#context";
 
 interface SyncViewProps {
   gitData: App.GitData;
@@ -53,7 +46,7 @@ const InitialSyncCard: Component = () => {
   const client = useClient();
 
   return (
-    <TitledCard icon={mdiSync} label="Sync">
+    <CollapsibleSection icon={mdiSync} label="Sync">
       <Show
         when={hasPermission("manageGit")}
         fallback={
@@ -86,7 +79,7 @@ const InitialSyncCard: Component = () => {
           Sync now
         </Button>
       </Show>
-    </TitledCard>
+    </CollapsibleSection>
   );
 };
 const CommitCard: Component<{ changedRecords: App.GitRecord[] }> = (props) => {
@@ -97,7 +90,7 @@ const CommitCard: Component<{ changedRecords: App.GitRecord[] }> = (props) => {
   const [loading, setLoading] = createSignal(false);
 
   return (
-    <TitledCard
+    <CollapsibleSection
       icon={mdiSourceCommit}
       label="Commit"
       action={
@@ -150,7 +143,6 @@ const CommitCard: Component<{ changedRecords: App.GitRecord[] }> = (props) => {
             <Input
               placeholder="Message"
               class="m-0 mb-2 w-full"
-              color="contrast"
               value={message()}
               setValue={setMessage}
             />
@@ -206,7 +198,7 @@ const CommitCard: Component<{ changedRecords: App.GitRecord[] }> = (props) => {
           </For>
         </div>
       </Show>
-    </TitledCard>
+    </CollapsibleSection>
   );
 };
 const PullCard: Component = () => {
@@ -219,7 +211,7 @@ const PullCard: Component = () => {
   const [conflictData, setConflictData] = useSharedSignal("conflictData");
 
   return (
-    <TitledCard
+    <CollapsibleSection
       icon={mdiSourcePull}
       label="Pull"
       action={
@@ -301,7 +293,7 @@ const PullCard: Component = () => {
           </For>
         </div>
       </Show>
-    </TitledCard>
+    </CollapsibleSection>
   );
 };
 const SyncView: Component<SyncViewProps> = (props) => {

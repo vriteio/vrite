@@ -64,7 +64,6 @@ const SettingsImageUpload: Component<SettingsImageUploadProps> = (props) => {
       <label for={inputId} class="flex items-center justify-center cursor-pointer">
         <Button
           class="h-20 w-20 m-0 flex flex-col justify-center items-center rounded-full relative overflow-hidden"
-          color="contrast"
           text="soft"
           badge
         >

@@ -11,11 +11,12 @@ interface SlugInputProps {
 
 const SlugInput: Component<SlugInputProps> = (props) => {
   return (
-    <div class="flex">
+    <div class="flex w-full">
       <Tooltip side="right" text="Slug" enabled={props.editable !== false}>
         <IconButton
           path={mdiLink}
           variant="text"
+          class="ml-0"
           badge={props.editable === false}
           hover={props.editable !== false}
           disabled={props.editable === false}
@@ -25,7 +26,7 @@ const SlugInput: Component<SlugInputProps> = (props) => {
         <Input
           value={props.slug || ""}
           placeholder="Slug"
-          wrapperClass="w-72"
+          wrapperClass="max-w-72 w-full"
           disabled={props.editable === false}
           color="base"
           onChange={(event) => {

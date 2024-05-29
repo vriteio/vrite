@@ -35,7 +35,7 @@ const ExtensionCard: Component<ExtensionCardProps> = (props) => {
   };
 
   return (
-    <Card class="m-0 gap-1 flex flex-col justify-center items-center" color="contrast">
+    <Card class="m-0 gap-1 flex flex-col justify-center items-center">
       <div class="flex items-start justify-start w-full">
         <ExtensionIcon spec={props.extension.spec} />
         <Heading level={2} class="min-h-8 justify-center items-center flex">
@@ -45,7 +45,7 @@ const ExtensionCard: Component<ExtensionCardProps> = (props) => {
         <Show when={hasPermission("manageExtensions")}>
           <IconButton
             path={props.installed ? mdiTune : mdiDownloadOutline}
-            color={props.installed ? "base" : "primary"}
+            color={props.installed ? "contrast" : "primary"}
             text={props.installed ? "soft" : "primary"}
             label={props.installed ? "Configure" : "Install"}
             loading={loading()}

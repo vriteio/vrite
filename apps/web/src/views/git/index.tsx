@@ -181,7 +181,7 @@ const GitView: Component = () => {
           class="w-full h-full overflow-x-hidden overflow-y-auto scrollbar-sm-contrast px-5"
           ref={setScrollableContainerRef}
         >
-          <div class="flex justify-start flex-col min-h-full h-full items-start w-full gap-5 relative">
+          <div class="flex justify-start flex-col min-h-full h-full items-start w-full relative">
             <Presence initial={false}>
               <Show when={openedProvider() || true} keyed>
                 <Motion.div
@@ -189,7 +189,7 @@ const GitView: Component = () => {
                   animate={{ opacity: 1, x: "0%" }}
                   exit={{ opacity: 0, x: openedProvider() ? "100%" : "-100%" }}
                   transition={{ duration: 0.35 }}
-                  class="flex justify-start flex-col min-h-[calc(100%-env(safe-area-inset-bottom,0px))] items-start w-full gap-5 absolute pb-5"
+                  class="flex justify-start flex-col min-h-[calc(100%-env(safe-area-inset-bottom,0px))] items-start w-full absolute pb-5"
                 >
                   <Switch>
                     <Match when={loading()}>

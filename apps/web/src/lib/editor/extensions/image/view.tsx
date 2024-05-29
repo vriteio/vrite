@@ -17,15 +17,16 @@ import { mdiAlertCircle, mdiImage } from "@mdi/js";
 import { debounce } from "@solid-primitives/scheduled";
 import { computePosition, size } from "@floating-ui/dom";
 import { Portal } from "solid-js/web";
+import { createActiveElement } from "@solid-primitives/active-element";
 import { breakpoints, createRef, validateURL } from "#lib/utils";
 import { Icon, Loader } from "#components/primitives";
 import { dragVerticalIcon } from "#assets/icons/drag-vertical";
 
 const ImageView: Component = () => {
   const { state } = useSolidNodeView<ImageAttributes>();
+  const activeElement = createActiveElement();
   const [error, setError] = createSignal(false);
   const [loading, setLoading] = createSignal(true);
-  const [objectURL, setObjectURL] = createSignal("");
   const [currentSrc, setCurrentSrc] = createSignal("");
   const [imageContainerRef, setImageContainerRef] = createRef<HTMLElement | null>(null);
   const [referenceContainerRef, setReferenceContainerRef] = createRef<HTMLElement | null>(null);
@@ -38,6 +39,17 @@ const ImageView: Component = () => {
   );
   const options = (): ImageOptions => state().extension.options;
   const selected = (): boolean => {
+    if (state().selected && options().cover) {
+      const editorFocused =
+        !activeElement() || Boolean(state().editor.view.dom.contains(activeElement()));
+
+      if (!editorFocused) {
+        state().editor.commands.setTextSelection(0);
+      }
+
+      return editorFocused;
+    }
+
     return state().selected;
   };
   const isTopLevel = (): boolean => {
@@ -61,7 +73,7 @@ const ImageView: Component = () => {
         size({
           apply({ availableWidth, elements }) {
             const md = breakpoints.md();
-            const width = Math.min(availableWidth, 448);
+            const width = Math.min(availableWidth, options().cover ? 316 : 448);
 
             Object.assign(elements.floating.style, {
               maxWidth: md ? `${width}px` : "100vw",
@@ -71,9 +83,9 @@ const ImageView: Component = () => {
         })
       ]
     }).then(({ x, y }) => {
-      menuContainer.style.top = `${y + 8}px`;
+      menuContainer.style.top = `${y + 8 - (options().cover ? 48 : 0)}px`;
 
-      if (breakpoints.md()) {
+      if (breakpoints.md() || options().cover) {
         menuContainer.style.left = `${x}px`;
       } else {
         menuContainer.style.left = `${-8}px`;
@@ -104,9 +116,7 @@ const ImageView: Component = () => {
   });
   const removeImage = (): void => {
     if (currentSrc()) {
-      URL.revokeObjectURL(objectURL());
       setCurrentSrc("");
-      setObjectURL("");
     }
   };
   const getImage = debounce(async (src?: string): Promise<void> => {
@@ -124,6 +134,7 @@ const ImageView: Component = () => {
     if (!src) {
       setError(false);
       setLoading(false);
+      setCurrentSrc("");
 
       return;
     }
@@ -156,18 +167,18 @@ const ImageView: Component = () => {
       return `${(1 / Number(aspectRatio)) * 100}%`;
     }
 
-    return "35%";
+    return options().cover ? "40%" : "35%";
   };
 
   createEffect(
     on(
       () => attrs().src,
       (src, previousSrc) => {
-        if (src && src !== previousSrc) {
+        if (src === previousSrc) {
+          setLoading(false);
+        } else {
           getImage.clear();
           getImage(src);
-        } else {
-          setLoading(false);
         }
 
         return src;
@@ -200,16 +211,13 @@ const ImageView: Component = () => {
         )}
       >
         <div
-          class={clsx(
-            "border-gray-200 dark:border-gray-700 relative group",
-            options().cover ? "border-b-2" : "border-2 rounded-2xl"
-          )}
+          class={clsx("border-gray-200 dark:border-gray-700 relative group rounded-2xl border-2")}
           ref={setReferenceContainerRef}
         >
           <div
             class={clsx(
               "text-gray-500 dark:text-gray-400 absolute left-[calc(-1.5rem-2px)] z-10 opacity-0 group-hover:opacity-100",
-              (!isTopLevel() || !breakpoints.md()) && "hidden"
+              (!isTopLevel() || !breakpoints.md() || options().cover) && "hidden"
             )}
             data-drag-handle
           >
@@ -229,7 +237,7 @@ const ImageView: Component = () => {
             class={clsx(
               "w-full border-gray-200 dark:border-gray-700 flex justify-center items-center overflow-hidden bg-gray-100 dark:bg-gray-800 relative",
               !error() && !loading() && currentSrc() ? "" : "opacity-0 !absolute",
-              !options().cover && "rounded-2xl"
+              "rounded-2xl"
             )}
           >
             <div
@@ -270,7 +278,7 @@ const ImageView: Component = () => {
             <div
               class={clsx(
                 "w-full bg-gradient-to-tr flex justify-center items-center relative",
-                options().cover ? "" : "rounded-2xl"
+                "rounded-2xl"
               )}
               style={{
                 "padding-top": getPaddingTop()
@@ -295,11 +303,16 @@ const ImageView: Component = () => {
         </div>
         <Switch>
           <Match when={options().cover}>
-            <div
-              ref={setMenuContainerRef}
-              class="w-screen md:w-full justify-center items-center z-60 pointer-events-none flex relative"
-            >
-              <ImageMenu state={state()} />
+            <div class="absolute bottom-2 left-2 w-[calc(100%-1rem)] flex items-center justify-center">
+              <div
+                ref={setMenuContainerRef}
+                class={clsx(
+                  "justify-center items-center z-60 pointer-events-none max-w-md",
+                  selected() ? "flex" : "hidden"
+                )}
+              >
+                <ImageMenu state={state()} />
+              </div>
             </div>
           </Match>
           <Match when={!options().cover}>

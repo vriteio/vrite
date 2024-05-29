@@ -10,7 +10,7 @@ interface PathInputProps {
 
 const FilenameInput: Component<PathInputProps> = (props) => {
   return (
-    <div class="flex">
+    <div class="flex w-full">
       <Tooltip side="right" text="Filename" enabled={props.editable !== false}>
         <IconButton
           path={mdiFileOutline}
@@ -18,13 +18,14 @@ const FilenameInput: Component<PathInputProps> = (props) => {
           badge={props.editable === false}
           hover={props.editable !== false}
           disabled={props.editable === false}
+          class="ml-0"
         />
       </Tooltip>
       <Show when={typeof props.filename === "string"}>
         <Input
           value={props.filename || ""}
           placeholder="example.md"
-          wrapperClass="w-72"
+          wrapperClass="max-w-72 w-full"
           disabled={props.editable === false}
           color="base"
           onChange={(event) => {

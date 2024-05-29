@@ -1,41 +1,31 @@
-import { Component, For, Show, createEffect, createMemo, createSignal, on } from "solid-js";
+import { Component, For, Show, createMemo } from "solid-js";
 import {
   ContextObject,
-  ContextValue,
   ExtensionContentPieceViewContext,
   ExtensionSpec
 } from "@vrite/sdk/extensions";
-import clsx from "clsx";
-import { createStore, reconcile, unwrap } from "solid-js/store";
-import { Loader, Tooltip, Card } from "#components/primitives";
-import { App, ExtensionDetails, useClient, useExtensions, useNotifications } from "#context";
+import { createStore, unwrap } from "solid-js/store";
+import { Loader } from "#components/primitives";
+import { App, useClient, useExtensions, useNotifications } from "#context";
 import { ExtensionViewRenderer } from "#lib/extensions";
+import { CollapsibleSection } from "#components/fragments";
 
 interface ExtensionsSectionProps {
   contentPiece: App.ExtendedContentPieceWithAdditionalData<"coverWidth">;
   setCustomData(customData: Record<string, any>): void;
 }
 interface ExtensionIconProps {
-  class?: string;
   spec: ExtensionSpec;
 }
 
 const ExtensionIcon: Component<ExtensionIconProps> = (props) => {
   return (
-    <>
-      <Show when={props.spec.icon}>
-        <img
-          src={props.spec.icon}
-          class={clsx("w-8 h-8 rounded-lg", props.class, props.spec.iconDark && "dark:hidden")}
-        />
-      </Show>
-      <Show when={props.spec.iconDark}>
-        <img
-          src={props.spec.iconDark}
-          class={clsx("w-8 h-8 rounded-lg", props.class, props.spec.icon && "hidden dark:block")}
-        />
-      </Show>
-    </>
+    <div class="p-1 rounded-lg">
+      <div
+        class="h-6 w-6 bg-gray-700 dark:bg-gray-100"
+        style={{ mask: `url(${props.spec.icon})` }}
+      />
+    </div>
   );
 };
 const ExtensionsSection: Component<ExtensionsSectionProps> = (props) => {
@@ -47,29 +37,6 @@ const ExtensionsSection: Component<ExtensionsSectionProps> = (props) => {
       return extension.sandbox?.spec.contentPieceView;
     });
   });
-  const [activeExtension, setActiveExtension] = createSignal<ExtensionDetails | null>(
-    extensionsWithContentPieceView()[0] || null
-  );
-  const [data, setData] = createStore<ContextObject>(
-    props.contentPiece.customData?.__extensions__?.[activeExtension()?.spec?.name || ""] || {}
-  );
-
-  createEffect(
-    on(extensionsWithContentPieceView, () => {
-      if (!activeExtension()) {
-        setActiveExtension(extensionsWithContentPieceView()[0] || null);
-      }
-    })
-  );
-  createEffect(
-    on(activeExtension, () => {
-      setData(
-        reconcile(
-          props.contentPiece.customData?.__extensions__?.[activeExtension()?.spec.name || ""] || {}
-        )
-      );
-    })
-  );
 
   return (
     <Show
@@ -88,80 +55,54 @@ const ExtensionsSection: Component<ExtensionsSectionProps> = (props) => {
         }
         when={true}
       >
-        <div class="flex gap-1 m-1 items-start">
-          <Show when={extensionsWithContentPieceView().length}>
-            <div class="flex flex-col gap-1">
-              <For each={extensionsWithContentPieceView()}>
-                {(extension) => {
-                  return (
-                    <Tooltip text={extension.spec.displayName} side="right" class="ml-1">
-                      <button
-                        onClick={() => {
-                          setData(
-                            reconcile(
-                              props.contentPiece.customData?.__extensions__?.[
-                                extension.spec.name || ""
-                              ] || {}
-                            )
-                          );
-                          setActiveExtension(extension);
-                        }}
-                      >
-                        <ExtensionIcon
-                          spec={extension.spec}
-                          class={clsx(
-                            "border-2",
-                            activeExtension()?.id === extension.id && "border-primary",
-                            activeExtension()?.id !== extension.id &&
-                              "border-gray-200 dark:border-gray-700"
-                          )}
-                        />
-                      </button>
-                    </Tooltip>
-                  );
-                }}
-              </For>
-            </div>
-          </Show>
-          <Card class="flex flex-col justify-center flex-1 p-3 m-0" color="base">
-            <Show
-              when={activeExtension()}
-              keyed
-              fallback={
-                <p class="prose text-gray-500 dark:text-gray-400">No extensions available</p>
-              }
-            >
-              <ExtensionViewRenderer<ExtensionContentPieceViewContext>
-                ctx={{
-                  contextFunctions: ["notify"],
-                  usableEnv: { readable: ["contentPiece"], writable: ["data"] },
-                  config: activeExtension()!.config || {}
-                }}
-                extension={activeExtension()!}
-                func={{ notify }}
-                viewId={activeExtension()?.sandbox?.spec.contentPieceView}
-                usableEnvData={{
-                  contentPiece: props.contentPiece,
-                  data
-                }}
-                onUsableEnvDataUpdate={async (envData) => {
-                  setData(envData.data);
+        <Show when={extensionsWithContentPieceView().length}>
+          <For each={extensionsWithContentPieceView()}>
+            {(extension) => {
+              const [data, setData] = createStore<ContextObject>(
+                props.contentPiece.customData?.__extensions__?.[extension.spec.name || ""] || {}
+              );
 
-                  try {
-                    await client.extensions.updateContentPieceData.mutate({
-                      contentPieceId: props.contentPiece.id,
-                      extensionId: activeExtension()!.id,
-                      data: unwrap(data)
-                    });
-                  } catch (error) {
-                    // eslint-disable-next-line no-console
-                    console.error(error);
-                  }
-                }}
-              />
-            </Show>
-          </Card>
-        </div>
+              return (
+                <CollapsibleSection
+                  icon={<ExtensionIcon spec={extension.spec} />}
+                  label={`${extension.spec.displayName || ""}`}
+                  defaultOpened={false}
+                >
+                  <div class="h-full w-full block">
+                    <ExtensionViewRenderer<ExtensionContentPieceViewContext>
+                      ctx={{
+                        contextFunctions: ["notify"],
+                        usableEnv: { readable: ["contentPiece"], writable: ["data"] },
+                        config: extension!.config || {}
+                      }}
+                      extension={extension!}
+                      func={{ notify }}
+                      viewId={extension?.sandbox?.spec.contentPieceView}
+                      usableEnvData={{
+                        contentPiece: props.contentPiece,
+                        data
+                      }}
+                      onUsableEnvDataUpdate={async (envData) => {
+                        setData(envData.data);
+
+                        try {
+                          await client.extensions.updateContentPieceData.mutate({
+                            contentPieceId: props.contentPiece.id,
+                            extensionId: extension!.id,
+                            data: unwrap(data)
+                          });
+                        } catch (error) {
+                          // eslint-disable-next-line no-console
+                          console.error(error);
+                        }
+                      }}
+                    />
+                  </div>
+                </CollapsibleSection>
+              );
+            }}
+          </For>
+        </Show>
       </Show>
     </Show>
   );

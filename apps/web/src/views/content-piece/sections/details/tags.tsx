@@ -29,7 +29,7 @@ const TagsInput: Component<TagsInputProps> = (props) => {
           cardProps={{ class: "p-0 !max-h-96 !max-w-72 w-72" }}
           activatorButton={() => (
             <Tooltip text="Add tag" side="right">
-              <IconButton path={mdiTagPlusOutline} variant="text" />
+              <IconButton path={mdiTagPlusOutline} variant="text" class="ml-0" />
             </Tooltip>
           )}
         >

@@ -13,7 +13,7 @@ import {
 } from "solid-js";
 import { mdiFormatListBulleted, mdiPlusCircle, mdiPuzzle, mdiTrashCan, mdiTune } from "@mdi/js";
 import { createStore } from "solid-js/store";
-import { TitledCard } from "#components/fragments";
+import { CollapsibleSection } from "#components/fragments";
 import { App, hasPermission, useClient, useNotifications } from "#context";
 import { Button, Card, Heading, IconButton, Loader, Tooltip } from "#components/primitives";
 
@@ -90,9 +90,9 @@ const WebhookDetails: Component<WebhookDetailsProps> = (props) => {
   const [loading, setLoading] = createSignal(false);
 
   return (
-    <Card color="contrast" class="relative flex flex-col m-0 w-full">
+    <Card class="relative flex flex-col m-0 w-full">
       <div class="flex gap-1 justify-center items-center">
-        <Button badge size="small" class="m-0" hover={false}>
+        <Button badge color="contrast" size="small" class="m-0" hover={false}>
           {
             webhookEvents.find((webhookEvent) => {
               return webhookEvent.value === props.webhook.event;
@@ -198,8 +198,15 @@ const WebhooksSection: SettingsSectionComponent = (props) => {
         />
       }
     >
-      <TitledCard icon={mdiFormatListBulleted} label="List">
-        <Show when={webhooks().length || !loading()} fallback={<Loader />}>
+      <CollapsibleSection icon={mdiFormatListBulleted} label="List">
+        <Show
+          when={webhooks().length || !loading()}
+          fallback={
+            <div class="flex justify-center items-center w-full">
+              <Loader />
+            </div>
+          }
+        >
           <For
             each={webhooks()}
             fallback={<p class="px-2 w-full text-start">No registered Webhooks</p>}
@@ -234,7 +241,7 @@ const WebhooksSection: SettingsSectionComponent = (props) => {
             </Button>
           </Show>
         </Show>
-      </TitledCard>
+      </CollapsibleSection>
     </Show>
   );
 };

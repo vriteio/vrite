@@ -1,8 +1,8 @@
 import { ConfigureTokenAction } from "./configure-action";
 import { mdiInformation, mdiKeyChain } from "@mdi/js";
-import { Component, For, Show, createEffect, createMemo, createResource, on } from "solid-js";
+import { Component, For, Show, createEffect, createResource } from "solid-js";
 import { createStore } from "solid-js/store";
-import { InputField, TitledCard } from "#components/fragments";
+import { InputField, CollapsibleSection } from "#components/fragments";
 import { Select, Heading, Loader } from "#components/primitives";
 import { useClient, App } from "#context";
 
@@ -104,11 +104,17 @@ const ConfigureTokenSubSection: Component<ConfigureTokenSubSectionProps> = (prop
 
   return (
     <>
-      <TitledCard icon={mdiInformation} label="Details">
-        <Show when={!editedTokenData.loading || !props.editedTokenId} fallback={<Loader />}>
+      <CollapsibleSection icon={mdiInformation} label="Details">
+        <Show
+          when={!editedTokenData.loading || !props.editedTokenId}
+          fallback={
+            <div class="flex justify-center items-center w-full">
+              <Loader />
+            </div>
+          }
+        >
           <InputField
             label="API token name"
-            color="contrast"
             placeholder="Name"
             type="text"
             value={tokenData.name}
@@ -117,7 +123,6 @@ const ConfigureTokenSubSection: Component<ConfigureTokenSubSectionProps> = (prop
           />
           <InputField
             label="Description"
-            color="contrast"
             textarea
             optional
             placeholder="API token description"
@@ -128,9 +133,16 @@ const ConfigureTokenSubSection: Component<ConfigureTokenSubSectionProps> = (prop
             Additional details about the API token
           </InputField>
         </Show>
-      </TitledCard>
-      <TitledCard icon={mdiKeyChain} label="Permissions">
-        <Show when={!editedTokenData.loading || !props.editedTokenId} fallback={<Loader />}>
+      </CollapsibleSection>
+      <CollapsibleSection icon={mdiKeyChain} label="Permissions">
+        <Show
+          when={!editedTokenData.loading || !props.editedTokenId}
+          fallback={
+            <div class="flex justify-center items-center w-full">
+              <Loader />
+            </div>
+          }
+        >
           <For each={permissionsMenu}>
             {({ description, label, permissions }) => {
               const getOptions = (): Array<{ label: string; value: string }> => {
@@ -174,7 +186,6 @@ const ConfigureTokenSubSection: Component<ConfigureTokenSubSectionProps> = (prop
                   </div>
                   <div class="flex-1" />
                   <Select
-                    color="contrast"
                     wrapperClass="w-full @xl:w-auto"
                     class="w-full m-0 capitalize"
                     options={getOptions()}
@@ -207,7 +218,7 @@ const ConfigureTokenSubSection: Component<ConfigureTokenSubSectionProps> = (prop
             }}
           </For>
         </Show>
-      </TitledCard>
+      </CollapsibleSection>
     </>
   );
 };

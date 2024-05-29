@@ -1,7 +1,7 @@
 import { SettingsSectionComponent } from "./view";
 import { mdiCheck, mdiEmail, mdiEye, mdiEyeOff, mdiLock } from "@mdi/js";
 import { Show, createMemo, createResource, createSignal, onCleanup } from "solid-js";
-import { InputField, TitledCard } from "#components/fragments";
+import { InputField, CollapsibleSection } from "#components/fragments";
 import { Button, IconButton, Loader, Tooltip } from "#components/primitives";
 import { validatePassword } from "#lib/utils";
 import { App, useClient, useNotifications } from "#context";
@@ -51,11 +51,11 @@ const SecuritySection: SettingsSectionComponent = () => {
   return (
     <>
       <Show when={profile()?.passwordChangeInVerification}>
-        <TitledCard gradient icon={mdiEmail} label="Verify password change">
+        <CollapsibleSection gradient icon={mdiEmail} label="Verify password change">
           <p class="prose w-full">Verify password change by following the link in your inbox.</p>
-        </TitledCard>
+        </CollapsibleSection>
       </Show>
-      <TitledCard
+      <CollapsibleSection
         icon={mdiLock}
         label="Change password"
         action={
@@ -80,14 +80,20 @@ const SecuritySection: SettingsSectionComponent = () => {
           </>
         }
       >
-        <Show when={!profile.loading} fallback={<Loader />}>
+        <Show
+          when={!profile.loading}
+          fallback={
+            <div class="flex justify-center items-center w-full">
+              <Loader />
+            </div>
+          }
+        >
           <div class="prose w-full text-gray-500 dark:text-gray-400">
             You'll receive an email to verify and confirm the password change.
           </div>
           <InputField
             label="Old password"
             type="text"
-            color="contrast"
             value={oldPassword()}
             setValue={setOldPassword}
             inputProps={{ type: hideOldPassword() ? "password" : "text" }}
@@ -98,7 +104,6 @@ const SecuritySection: SettingsSectionComponent = () => {
                     path={hideOldPassword() ? mdiEye : mdiEyeOff}
                     class="m-0 ml-2"
                     text="soft"
-                    color="contrast"
                     onClick={() => {
                       setHideOldPassword(!hideOldPassword());
                     }}
@@ -110,7 +115,6 @@ const SecuritySection: SettingsSectionComponent = () => {
           <InputField
             label="New password"
             type="text"
-            color="contrast"
             value={newPassword()}
             setValue={setNewPassword}
             inputProps={{ type: hideNewPassword() ? "password" : "text" }}
@@ -121,7 +125,6 @@ const SecuritySection: SettingsSectionComponent = () => {
                     path={hideNewPassword() ? mdiEye : mdiEyeOff}
                     class="m-0 ml-2"
                     text="soft"
-                    color="contrast"
                     onClick={() => {
                       setHideNewPassword(!hideNewPassword());
                     }}
@@ -133,7 +136,7 @@ const SecuritySection: SettingsSectionComponent = () => {
             Min. 8 characters, including a number, and a lowercase letter.
           </InputField>
         </Show>
-      </TitledCard>
+      </CollapsibleSection>
     </>
   );
 };

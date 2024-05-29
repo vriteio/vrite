@@ -2,7 +2,7 @@ import { mdiInformation, mdiKeyChain } from "@mdi/js";
 import { Show, For, createResource, Component, createSignal, createEffect } from "solid-js";
 import { createStore } from "solid-js/store";
 import clsx from "clsx";
-import { InputField, TitledCard } from "#components/fragments";
+import { CollapsibleSection, InputField } from "#components/fragments";
 import { Loader, Button } from "#components/primitives";
 import { useClient, App, useNotifications, useHostConfig } from "#context";
 
@@ -142,11 +142,17 @@ const ConfigureRoleSubsection: Component<ConfigureRoleSubsectionProps> = (props)
 
   return (
     <>
-      <TitledCard icon={mdiInformation} label="Details">
-        <Show when={!editedRoleData.loading || !props.editedRoleId} fallback={<Loader />}>
+      <CollapsibleSection icon={mdiInformation} label="Details">
+        <Show
+          when={!editedRoleData.loading || !props.editedRoleId}
+          fallback={
+            <div class="flex justify-center items-center">
+              <Loader />
+            </div>
+          }
+        >
           <InputField
             label="Role name"
-            color="contrast"
             placeholder="Name"
             type="text"
             value={roleData.name}
@@ -155,7 +161,6 @@ const ConfigureRoleSubsection: Component<ConfigureRoleSubsectionProps> = (props)
           />
           <InputField
             label="Description"
-            color="contrast"
             textarea
             optional
             placeholder="Role description"
@@ -166,9 +171,16 @@ const ConfigureRoleSubsection: Component<ConfigureRoleSubsectionProps> = (props)
             Additional details about the role
           </InputField>
         </Show>
-      </TitledCard>
-      <TitledCard icon={mdiKeyChain} label="Permissions">
-        <Show when={!editedRoleData.loading || !props.editedRoleId} fallback={<Loader />}>
+      </CollapsibleSection>
+      <CollapsibleSection icon={mdiKeyChain} label="Permissions">
+        <Show
+          when={!editedRoleData.loading || !props.editedRoleId}
+          fallback={
+            <div class="flex justify-center items-center w-full">
+              <Loader />
+            </div>
+          }
+        >
           <For each={permissionsMenu}>
             {({ description, label, permission }) => {
               return (
@@ -192,7 +204,7 @@ const ConfigureRoleSubsection: Component<ConfigureRoleSubsectionProps> = (props)
             }}
           </For>
         </Show>
-      </TitledCard>
+      </CollapsibleSection>
     </>
   );
 };

@@ -1,7 +1,7 @@
 import { mdiInformation } from "@mdi/js";
 import { Show, Component, createSignal, createEffect, createMemo } from "solid-js";
 import { createStore } from "solid-js/store";
-import { InputField, TitledCard } from "#components/fragments";
+import { CollapsibleSection, InputField } from "#components/fragments";
 import { Loader, Select, Heading, Button } from "#components/primitives";
 import { useClient, App, useNotifications } from "#context";
 import { validateEmail } from "#lib/utils";
@@ -63,11 +63,17 @@ const InviteMemberSubsection: Component<InviteMemberSubsectionProps> = (props) =
 
   return (
     <>
-      <TitledCard icon={mdiInformation} label="Details">
-        <Show when={!props.rolesLoading} fallback={<Loader />}>
+      <CollapsibleSection icon={mdiInformation} label="Details">
+        <Show
+          when={!props.rolesLoading}
+          fallback={
+            <div class="flex justify-center items-center w-full">
+              <Loader />
+            </div>
+          }
+        >
           <InputField
             label="Name"
-            color="contrast"
             type="text"
             inputProps={{ maxLength: 50 }}
             value={memberData.name}
@@ -77,7 +83,6 @@ const InviteMemberSubsection: Component<InviteMemberSubsectionProps> = (props) =
           </InputField>
           <InputField
             label="Email address"
-            color="contrast"
             placeholder="hello@example.com"
             type="text"
             value={memberData.email}
@@ -91,7 +96,6 @@ const InviteMemberSubsection: Component<InviteMemberSubsectionProps> = (props) =
               </div>
             </div>
             <Select
-              color="contrast"
               class="w-full m-0"
               wrapperClass="w-full @md:w-auto"
               options={props.roles.map((role) => {
@@ -107,7 +111,7 @@ const InviteMemberSubsection: Component<InviteMemberSubsectionProps> = (props) =
             />
           </div>
         </Show>
-      </TitledCard>
+      </CollapsibleSection>
     </>
   );
 };

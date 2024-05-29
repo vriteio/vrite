@@ -3,10 +3,10 @@ import { ChangePlanCard } from "./change-plan-card";
 import { PriceTag } from "./price-tag";
 import { Match, Show, Switch, createMemo, createSignal } from "solid-js";
 import { mdiCreditCardEdit, mdiInformation } from "@mdi/js";
-import { Button, IconButton, Tooltip } from "@vrite/components";
 import dayjs from "dayjs";
+import { Button, IconButton, Tooltip } from "#components/primitives";
 import { SettingsSectionComponent } from "#views/settings/view";
-import { TitledCard } from "#components/fragments";
+import { CollapsibleSection } from "#components/fragments";
 import { hasPermission, useAuthenticatedUserData, useClient } from "#context";
 
 const BillingSection: SettingsSectionComponent = (props) => {
@@ -57,14 +57,16 @@ const BillingSection: SettingsSectionComponent = (props) => {
   });
 
   return (
-    <div class="flex justify-center flex-col items-start w-full gap-5">
-      <TitledCard icon={mdiInformation} label={subscription()?.plan ? "Active plan" : "Subscribe"}>
+    <div class="flex justify-center flex-col items-start w-full">
+      <CollapsibleSection
+        icon={mdiInformation}
+        label={subscription()?.plan ? "Active plan" : "Subscribe"}
+      >
         <Button
           size="large"
           class="m-0 w-full flex items-center rounded-xl min-h-11 flex-col items-start"
           badge={Boolean(subscription()?.plan)}
           hover={!subscription()?.plan}
-          color="contrast"
           loading={loadingCheckout() === "team"}
           onClick={() => {
             if (!subscription()?.plan) checkout("team");
@@ -94,7 +96,6 @@ const BillingSection: SettingsSectionComponent = (props) => {
             class="m-0 w-full flex items-center rounded-xl min-h-11 flex-col items-start"
             badge={Boolean(subscription()?.plan)}
             hover={!subscription()?.plan}
-            color="contrast"
             loading={loadingCheckout() === "personal"}
             onClick={() => {
               if (!subscription()?.plan) checkout("personal");
@@ -132,7 +133,6 @@ const BillingSection: SettingsSectionComponent = (props) => {
             <Button
               class="inline-flex m-0 px-1 py-0 rounded-md"
               text="soft"
-              color="contrast"
               onClick={manageSubscription}
               disabled={loadingPortal()}
             >
@@ -140,7 +140,7 @@ const BillingSection: SettingsSectionComponent = (props) => {
             </Button>
           </div>
         </Show>
-      </TitledCard>
+      </CollapsibleSection>
       <Show when={subscription()?.plan && hasPermission("manageBilling")}>
         <APIUsageCard />
         <ChangePlanCard />

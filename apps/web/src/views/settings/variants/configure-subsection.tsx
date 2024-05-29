@@ -1,7 +1,7 @@
 import { mdiCheck, mdiTune } from "@mdi/js";
 import { Component, createEffect, createMemo, createSignal, on } from "solid-js";
 import { createStore } from "solid-js/store";
-import { InputField, TitledCard } from "#components/fragments";
+import { CollapsibleSection, InputField } from "#components/fragments";
 import { IconButton, Button, Tooltip } from "#components/primitives";
 import { App, useClient, useNotifications } from "#context";
 import { validateKey } from "#lib/utils";
@@ -103,10 +103,9 @@ const ConfigureVariantSubsection: Component<ConfigureVariantSubsectionProps> = (
   });
 
   return (
-    <TitledCard icon={mdiTune} label="Configure">
+    <CollapsibleSection icon={mdiTune} label="Configure">
       <InputField
         label="Label"
-        color="contrast"
         placeholder="Variant label"
         type="text"
         value={variantData.label || ""}
@@ -117,7 +116,6 @@ const ConfigureVariantSubsection: Component<ConfigureVariantSubsectionProps> = (
       </InputField>
       <InputField
         label="Variant Key"
-        color="contrast"
         placeholder="variant_key"
         type="text"
         value={variantData.key || ""}
@@ -129,7 +127,6 @@ const ConfigureVariantSubsection: Component<ConfigureVariantSubsectionProps> = (
       </InputField>
       <InputField
         label="Description"
-        color="contrast"
         textarea
         optional
         placeholder="Variant description"
@@ -139,7 +136,7 @@ const ConfigureVariantSubsection: Component<ConfigureVariantSubsectionProps> = (
       >
         Additional details about the Variant
       </InputField>
-    </TitledCard>
+    </CollapsibleSection>
   );
 };
 

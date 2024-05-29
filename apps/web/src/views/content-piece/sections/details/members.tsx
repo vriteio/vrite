@@ -34,7 +34,7 @@ const MembersInput: Component<MembersInputProps> = (props) => {
           cardProps={{ class: "p-0 !max-h-96 !max-w-72 w-72" }}
           activatorButton={() => (
             <Tooltip text="Assign member" side="right">
-              <IconButton path={mdiAccountMultiplePlusOutline} variant="text" />
+              <IconButton path={mdiAccountMultiplePlusOutline} variant="text" class="ml-0" />
             </Tooltip>
           )}
         >

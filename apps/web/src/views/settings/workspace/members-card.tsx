@@ -8,7 +8,7 @@ import {
 } from "@mdi/js";
 import { Component, For, Show, createMemo } from "solid-js";
 import clsx from "clsx";
-import { TitledCard } from "#components/fragments";
+import { CollapsibleSection } from "#components/fragments";
 import {
   Button,
   Select,
@@ -72,10 +72,7 @@ const MemberDetails: Component<MemberDetailsProps> = (props) => {
   });
 
   return (
-    <Card
-      color="contrast"
-      class="flex flex-col justify-center items-center w-full m-0 gap-2 @md:(flex-row items-start)"
-    >
+    <Card class="flex flex-col justify-center items-center w-full m-0 gap-2 @md:(flex-row items-start)">
       <div class="w-full flex justify-center items-start">
         <Show
           when={!props.member.pendingInvite && props.member.profile?.avatar}
@@ -136,6 +133,7 @@ const MemberDetails: Component<MemberDetailsProps> = (props) => {
             label: role.name,
             value: role.id
           }))}
+          color="contrast"
           wrapperClass="flex-1 @md:flex-[unset]"
           class="m-0 flex-1"
           disabled={!hasPermission("manageWorkspace")}
@@ -170,6 +168,7 @@ const MemberDetails: Component<MemberDetailsProps> = (props) => {
               path={isUser() ? mdiLogout : mdiAccountRemove}
               text="soft"
               class="m-0"
+              color="contrast"
               onClick={() => {
                 confirmDanger({
                   header: isUser() ? "Leave workspace" : "Remove member",
@@ -228,7 +227,7 @@ const MemberDetails: Component<MemberDetailsProps> = (props) => {
 };
 const MembersCard: Component<MembersCardProps> = (props) => {
   return (
-    <TitledCard
+    <CollapsibleSection
       icon={mdiAccountMultiple}
       label="Members"
       action={
@@ -251,7 +250,14 @@ const MembersCard: Component<MembersCardProps> = (props) => {
         </Show>
       }
     >
-      <Show when={props.members.length || !props.membersLoading} fallback={<Loader />}>
+      <Show
+        when={props.members.length || !props.membersLoading}
+        fallback={
+          <div class="flex justify-center items-center w-full">
+            <Loader />
+          </div>
+        }
+      >
         <For each={props.members} fallback={<p class="px-2 w-full text-start">No members found</p>}>
           {(member) => {
             return <MemberDetails member={member} roles={props.roles} />;
@@ -261,7 +267,6 @@ const MembersCard: Component<MembersCardProps> = (props) => {
           <Button
             class="m-0 w-full"
             text="soft"
-            color="contrast"
             loading={props.membersLoading}
             onClick={() => {
               props.loadMore();
@@ -271,7 +276,7 @@ const MembersCard: Component<MembersCardProps> = (props) => {
           </Button>
         </Show>
       </Show>
-    </TitledCard>
+    </CollapsibleSection>
   );
 };
 

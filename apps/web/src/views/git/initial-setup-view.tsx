@@ -2,7 +2,7 @@ import { providers } from "./providers";
 import { mdiGit } from "@mdi/js";
 import { Component, For, Show } from "solid-js";
 import { IconButton } from "#components/primitives";
-import { TitledCard } from "#components/fragments";
+import { CollapsibleSection } from "#components/fragments";
 import { hasPermission } from "#context";
 
 interface InitialSetupViewProps {
@@ -11,7 +11,7 @@ interface InitialSetupViewProps {
 
 const InitialSetupView: Component<InitialSetupViewProps> = (props) => {
   return (
-    <TitledCard icon={mdiGit} label="Setup">
+    <CollapsibleSection icon={mdiGit} label="Setup">
       <Show
         when={hasPermission("manageGit")}
         fallback={
@@ -39,7 +39,7 @@ const InitialSetupView: Component<InitialSetupViewProps> = (props) => {
           </For>
         </div>
       </Show>
-    </TitledCard>
+    </CollapsibleSection>
   );
 };
 

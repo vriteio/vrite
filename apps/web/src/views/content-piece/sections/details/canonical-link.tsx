@@ -15,7 +15,7 @@ interface CanonicalLinkInputProps {
 
 const CanonicalLinkInput: Component<CanonicalLinkInputProps> = (props) => {
   return (
-    <div class="flex">
+    <div class="flex w-full">
       <Tooltip
         side="right"
         text={
@@ -34,6 +34,7 @@ const CanonicalLinkInput: Component<CanonicalLinkInputProps> = (props) => {
           badge={props.editable === false}
           hover={props.editable !== false}
           disabled={props.editable === false}
+          class="ml-0"
           onClick={() => {
             props.setCanonicalLink(typeof props.canonicalLink === "string" ? null : "");
           }}
@@ -59,7 +60,7 @@ const CanonicalLinkInput: Component<CanonicalLinkInputProps> = (props) => {
         <Input
           value={props.canonicalLink || ""}
           placeholder="Canonical link"
-          wrapperClass="w-72"
+          wrapperClass="max-w-72 w-full"
           disabled={props.editable === false}
           color={"base"}
           onChange={(event) => {

@@ -1,13 +1,7 @@
-import {
-  mdiWeatherNight,
-  mdiWeatherSunny,
-  mdiThemeLightDark,
-  mdiCodeTags,
-  mdiPaletteSwatch
-} from "@mdi/js";
+import { mdiWeatherNight, mdiWeatherSunny, mdiThemeLightDark, mdiPaletteSwatch } from "@mdi/js";
 import clsx from "clsx";
 import { Component, For } from "solid-js";
-import { TitledCard } from "#components/fragments";
+import { CollapsibleSection } from "#components/fragments";
 import { App, useAuthenticatedUserData, useClient } from "#context";
 import { IconButton, Button } from "#components/primitives";
 
@@ -31,7 +25,7 @@ const ThemePicker: Component<ThemePickerProps> = (props) => {
             <IconButton
               path={option.icon}
               label={option.label}
-              color={props.theme === option.value ? "primary" : "contrast"}
+              color={props.theme === option.value ? "primary" : "base"}
               text={props.theme === option.value ? "primary" : "soft"}
               class="m-0 flex-1 flex-col p-2"
               iconProps={{ class: "mb-1" }}
@@ -49,16 +43,16 @@ const AppearanceSection: Component = () => {
   const accentColors: App.AccentColor[] = ["energy", "neon", "sublime", "sunrise", "flow"];
 
   return (
-    <div class="flex justify-center flex-col items-start w-full gap-5">
-      <TitledCard icon={mdiThemeLightDark} label="Theme">
+    <>
+      <CollapsibleSection icon={mdiThemeLightDark} label="Theme">
         <ThemePicker
           theme={userSettings()?.uiTheme || "auto"}
           setTheme={async (theme) => {
             await client.userSettings.update.mutate({ uiTheme: theme });
           }}
         />
-      </TitledCard>
-      <TitledCard label="Accent color" icon={mdiPaletteSwatch}>
+      </CollapsibleSection>
+      <CollapsibleSection label="Accent color" icon={mdiPaletteSwatch}>
         <div class="grid grid-cols-3 @lg:grid-cols-5 gap-4 w-full group/container">
           <For each={accentColors}>
             {(accentColor) => {
@@ -81,7 +75,6 @@ const AppearanceSection: Component = () => {
                       accentColor: accentColor.toLowerCase() as App.AccentColor
                     });
                   }}
-                  color="contrast"
                   text={active() ? "primary" : "soft"}
                 >
                   <div
@@ -96,8 +89,8 @@ const AppearanceSection: Component = () => {
             }}
           </For>
         </div>
-      </TitledCard>
-    </div>
+      </CollapsibleSection>
+    </>
   );
 };
 

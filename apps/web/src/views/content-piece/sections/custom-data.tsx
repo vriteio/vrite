@@ -23,15 +23,13 @@ const CustomDataSection: Component<CustomDataSectionProps> = (props) => {
   };
 
   return (
-    <div class="m-1">
-      <MiniCodeEditor
-        maxHeight={400}
-        class="box-border"
-        code={JSON.stringify(props.customData, null, 2)}
-        readOnly={props.editable === false}
-        onSave={props.editable === false ? undefined : handleSave}
-      />
-    </div>
+    <MiniCodeEditor
+      maxHeight={400}
+      class="box-border"
+      code={JSON.stringify(props.customData, null, 2)}
+      readOnly={props.editable === false}
+      onSave={props.editable === false ? undefined : handleSave}
+    />
   );
 };
 

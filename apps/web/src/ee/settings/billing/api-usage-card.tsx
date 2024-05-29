@@ -1,7 +1,7 @@
 import { mdiPoll } from "@mdi/js";
 import { Button } from "@vrite/components";
 import { Component, Show, createResource } from "solid-js";
-import { TitledCard } from "#components/fragments";
+import { CollapsibleSection } from "#components/fragments";
 import { useAuthenticatedUserData, useClient } from "#context";
 
 const APIUsageCard: Component = () => {
@@ -30,13 +30,12 @@ const APIUsageCard: Component = () => {
   };
 
   return (
-    <TitledCard icon={mdiPoll} label="API usage">
+    <CollapsibleSection icon={mdiPoll} label="API usage">
       <Button
         size="large"
         class="m-0 w-full flex items-start flex-col rounded-xl"
         badge
         hover={false}
-        color="contrast"
         loading={usage.loading}
       >
         <span class="text-gray-500 dark:text-gray-400 text-xs font-semibold">Current usage</span>
@@ -64,7 +63,7 @@ const APIUsageCard: Component = () => {
         <b>{numberFormatter.format(subscription()?.plan === "team" ? 10000 : 5000)}</b> API requests
         per month. Additional requests are billed at <b>$0.001</b> per request.
       </p>
-    </TitledCard>
+    </CollapsibleSection>
   );
 };
 

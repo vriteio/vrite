@@ -66,6 +66,7 @@ const DateInput: Component<DateInputProps> = (props) => {
           disabled={props.editable === false}
           badge={props.editable === false}
           hover={props.editable !== false}
+          class="ml-0"
         />
       </Tooltip>
       <Show

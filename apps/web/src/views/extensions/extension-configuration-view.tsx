@@ -10,7 +10,7 @@ import {
   useExtensions,
   useNotifications
 } from "#context";
-import { TitledCard } from "#components/fragments";
+import { CollapsibleSection } from "#components/fragments";
 import { Tooltip, IconButton, Button } from "#components/primitives";
 import { ExtensionViewRenderer } from "#lib/extensions";
 
@@ -116,14 +116,14 @@ const ExtensionConfigurationView: Component<ExtensionModalProps> = (props) => {
 
   return (
     <>
-      <TitledCard label="Description" icon={mdiInformationOutline}>
+      <CollapsibleSection label="Description" icon={mdiInformationOutline}>
         <p
           class="prose text-gray-500 dark:text-gray-400 w-full"
           innerHTML={marked.parseInline(props.extension.spec.description, { renderer }) as string}
         />
-      </TitledCard>
+      </CollapsibleSection>
       <Show when={sandbox?.spec?.configurationView}>
-        <TitledCard label="Configuration" icon={mdiTune}>
+        <CollapsibleSection label="Configuration" icon={mdiTune}>
           <ExtensionViewRenderer<ExtensionConfigurationViewContext>
             ctx={{
               contextFunctions: ["notify"],
@@ -141,7 +141,7 @@ const ExtensionConfigurationView: Component<ExtensionModalProps> = (props) => {
               );
             }}
           />
-        </TitledCard>
+        </CollapsibleSection>
       </Show>
     </>
   );

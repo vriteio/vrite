@@ -10,11 +10,11 @@ import {
   on,
   onCleanup
 } from "solid-js";
-import { mdiFormatListBulleted, mdiPlusCircle, mdiPuzzle, mdiTrashCan, mdiTune } from "@mdi/js";
+import { mdiFormatListBulleted, mdiPlusCircle, mdiPuzzle, mdiTrashCan } from "@mdi/js";
 import { createStore } from "solid-js/store";
-import { TitledCard } from "#components/fragments";
 import { App, hasPermission, useClient, useNotifications } from "#context";
 import { Button, Card, Heading, IconButton, Loader, Tooltip } from "#components/primitives";
+import { CollapsibleSection } from "#components/fragments";
 
 interface TransformerDetailsProps {
   transformer: App.Transformer & { inUse?: boolean; extension?: boolean };
@@ -68,7 +68,7 @@ const TransformerDetails: Component<TransformerDetailsProps> = (props) => {
   const [loading, setLoading] = createSignal(false);
 
   return (
-    <Card color="contrast" class="relative flex m-0 w-full gap-1 justify-center items-start">
+    <Card class="relative flex m-0 w-full gap-1 justify-center items-start">
       <Heading level={2} class="break-anywhere flex-1">
         {props.transformer.label}
       </Heading>
@@ -151,8 +151,15 @@ const TransformersSection: SettingsSectionComponent = (props) => {
         />
       }
     >
-      <TitledCard icon={mdiFormatListBulleted} label="List">
-        <Show when={transformers().length || !loading()} fallback={<Loader />}>
+      <CollapsibleSection icon={mdiFormatListBulleted} label="List">
+        <Show
+          when={transformers().length || !loading()}
+          fallback={
+            <div class="flex justify-center items-center w-full">
+              <Loader />
+            </div>
+          }
+        >
           <For
             each={transformers()}
             fallback={<p class="px-2 w-full text-start">No registered Transformers</p>}
@@ -160,7 +167,7 @@ const TransformersSection: SettingsSectionComponent = (props) => {
             {(transformer) => <TransformerDetails transformer={transformer} />}
           </For>
         </Show>
-      </TitledCard>
+      </CollapsibleSection>
     </Show>
   );
 };

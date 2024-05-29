@@ -11,7 +11,7 @@ import {
 import { For, createEffect, createSignal } from "solid-js";
 import { debounce } from "@solid-primitives/scheduled";
 import { IconButton, Input } from "#components/primitives";
-import { TitledCard } from "#components/fragments";
+import { CollapsibleSection } from "#components/fragments";
 import { App, hasPermission, useAuthenticatedUserData, useClient } from "#context";
 
 const metadataFields: Array<{ icon: string; label: string; value: App.MetadataField }> = [
@@ -75,7 +75,7 @@ const MetadataSection: SettingsSectionComponent = () => {
 
   return (
     <>
-      <TitledCard label="Enabled fields" icon={mdiDatabaseSettings}>
+      <CollapsibleSection label="Enabled fields" icon={mdiDatabaseSettings}>
         <p class="prose text-gray-500 dark:text-gray-400">
           Select the metadata fields that should be enabled in the content piece view for all users
           of the workspace
@@ -89,7 +89,7 @@ const MetadataSection: SettingsSectionComponent = () => {
 
               return (
                 <IconButton
-                  color={active() ? "primary" : "contrast"}
+                  color={active() ? "primary" : "base"}
                   text={active() ? "primary" : "soft"}
                   badge={!hasPermission("manageWorkspace")}
                   disabled={!hasPermission("manageWorkspace")}
@@ -115,8 +115,8 @@ const MetadataSection: SettingsSectionComponent = () => {
             }}
           </For>
         </div>
-      </TitledCard>
-      <TitledCard label="Canonical pattern" icon={mdiLinkVariant}>
+      </CollapsibleSection>
+      <CollapsibleSection label="Canonical pattern" icon={mdiLinkVariant}>
         <div class="prose text-gray-500 dark:text-gray-400 w-full">
           Set the pattern to use for auto-generating <b>canonical links</b>. You can use the
           following variables:
@@ -134,7 +134,6 @@ const MetadataSection: SettingsSectionComponent = () => {
           class="w-full m-0"
           wrapperClass="w-full"
           value={canonicalLinkPattern()}
-          color="contrast"
           placeholder="https://example.com/{{variant}}/{{slug}}"
           setValue={() => {}}
           onChange={(event) => {
@@ -145,7 +144,7 @@ const MetadataSection: SettingsSectionComponent = () => {
             updateMetadataSettings();
           }}
         />
-      </TitledCard>
+      </CollapsibleSection>
     </>
   );
 };

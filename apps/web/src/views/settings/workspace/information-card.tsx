@@ -4,7 +4,7 @@ import { Component, Show, createEffect, createSignal } from "solid-js";
 import { createStore } from "solid-js/store";
 import { Button, IconButton, Loader, Tooltip } from "#components/primitives";
 import { App, hasPermission, useClient, useNotifications } from "#context";
-import { InputField, TitledCard } from "#components/fragments";
+import { CollapsibleSection, InputField } from "#components/fragments";
 
 interface InformationCardProps {
   workspace: Omit<App.Workspace, "contentGroups"> | null;
@@ -57,7 +57,7 @@ const InformationCard: Component<InformationCardProps> = (props) => {
   });
 
   return (
-    <TitledCard
+    <CollapsibleSection
       icon={mdiInformation}
       label="Details"
       action={
@@ -83,7 +83,14 @@ const InformationCard: Component<InformationCardProps> = (props) => {
         </Show>
       }
     >
-      <Show when={!props.workspaceLoading} fallback={<Loader />}>
+      <Show
+        when={!props.workspaceLoading}
+        fallback={
+          <div class="flex justify-center items-center w-full">
+            <Loader />
+          </div>
+        }
+      >
         <div class="flex w-full gap-4 justify-center items-center">
           <SettingsImageUpload
             disabled={loading()}
@@ -96,7 +103,6 @@ const InformationCard: Component<InformationCardProps> = (props) => {
           <div class="flex-1">
             <InputField
               type="text"
-              color="contrast"
               inputProps={{ maxLength: 50 }}
               label="Workspace Name"
               placeholder="Name"
@@ -110,7 +116,6 @@ const InformationCard: Component<InformationCardProps> = (props) => {
         </div>
         <InputField
           type="text"
-          color="contrast"
           label="Description"
           optional
           textarea
@@ -124,7 +129,7 @@ const InformationCard: Component<InformationCardProps> = (props) => {
           Additional details about the workspace
         </InputField>
       </Show>
-    </TitledCard>
+    </CollapsibleSection>
   );
 };
 

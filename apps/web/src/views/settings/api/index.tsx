@@ -23,7 +23,7 @@ import {
 import { createStore } from "solid-js/store";
 import { IconButton, Heading, Input, Tooltip, Loader, Card, Button } from "#components/primitives";
 import { App, hasPermission, useClient, useNotifications } from "#context";
-import { TitledCard } from "#components/fragments";
+import { CollapsibleSection } from "#components/fragments";
 
 const useTokens = (): {
   loading: Accessor<boolean>;
@@ -101,7 +101,7 @@ const TokenDetails: Component<{
   const client = useClient();
 
   return (
-    <Card class="flex flex-col gap-0 w-full m-0" color="contrast">
+    <Card class="flex flex-col gap-0 w-full m-0">
       <div class="flex items-start justify-center gap-2 w-full">
         <Heading level={3} class="flex-1 flex justify-start items-center min-h-8">
           {props.token.name || "[No name]"}
@@ -208,34 +208,43 @@ const APISection: SettingsSectionComponent = (props) => {
       }
     >
       <Show when={createdToken()}>
-        <TitledCard icon={mdiKeyStar} label={createdToken()?.name || "[No name]"} gradient>
-          <p class="w-full">Save your API token now. You won’t be able to see it again!</p>
-          <div class="flex items-center justify-center gap-2 w-full">
-            <Input
-              value={createdToken()?.token || ""}
-              color="contrast"
-              wrapperClass="flex-1"
-              class="m-0 text-gray-700 dark:text-white"
-            />
-            <Tooltip text="Copy" class="mt-1">
-              <IconButton
-                path={mdiClipboardOutline}
-                text="soft"
-                color="contrast"
-                class="m-0"
-                onClick={async () => {
-                  await window.navigator.clipboard.writeText(createdToken()?.token || "");
-                  notify({
-                    text: "Token copied to the clipboard",
-                    type: "success"
-                  });
-                }}
+        <CollapsibleSection icon={mdiKeyStar} label={createdToken()?.name || "[No name]"} gradient>
+          <Button
+            size="large"
+            class="m-0 w-full flex items-start flex-col rounded-xl p-3 gap-2"
+            color="primary"
+            badge
+          >
+            <span class="opacity-70 text-xs font-semibold">New API Token</span>
+            <div class="flex items-center justify-center gap-2 w-full">
+              <Input
+                value={createdToken()?.token || ""}
+                wrapperClass="flex-1"
+                disabled
+                class="m-0 text-gray-700 dark:text-white"
               />
-            </Tooltip>
-          </div>
-        </TitledCard>
+              <Tooltip text="Copy" class="mt-1">
+                <IconButton
+                  path={mdiClipboardOutline}
+                  text="soft"
+                  class="m-0"
+                  onClick={async () => {
+                    await window.navigator.clipboard.writeText(createdToken()?.token || "");
+                    notify({
+                      text: "Token copied to the clipboard",
+                      type: "success"
+                    });
+                  }}
+                />
+              </Tooltip>
+            </div>
+          </Button>
+          <p class="prose text-gray-500 dark:text-gray-400 w-full">
+            Save your API token now. You won’t be able to see it again!
+          </p>
+        </CollapsibleSection>
       </Show>
-      <TitledCard icon={mdiShieldKey} label="Access tokens">
+      <CollapsibleSection icon={mdiShieldKey} label="Access tokens">
         <Show when={tokens().length || !loading()} fallback={<Loader />}>
           <For each={tokens()} fallback={<p class="px-2 w-full text-start">No tokens found</p>}>
             {(token) => {
@@ -275,7 +284,7 @@ const APISection: SettingsSectionComponent = (props) => {
             </Button>
           </Show>
         </Show>
-      </TitledCard>
+      </CollapsibleSection>
     </Show>
   );
 };

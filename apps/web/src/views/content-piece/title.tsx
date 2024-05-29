@@ -16,7 +16,7 @@ const ContentPieceTitle: Component<ContentPieceTitleProps> = (props) => {
       onBlur={(editor) => {
         props.setTitle(editor.getText());
       }}
-      class="!text-4xl font-bold"
+      class="!text-2xl font-semibold !leading-7"
       placeholder="Title"
     />
   );

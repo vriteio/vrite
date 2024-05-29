@@ -12,7 +12,7 @@ import {
 } from "solid-js";
 import { mdiFormatListBulleted, mdiPlusCircle, mdiTrashCan, mdiTune } from "@mdi/js";
 import { createStore } from "solid-js/store";
-import { TitledCard } from "#components/fragments";
+import { CollapsibleSection } from "#components/fragments";
 import { App, hasPermission, useClient, useNotifications } from "#context";
 import { Button, Card, Heading, IconButton, Loader, Tooltip } from "#components/primitives";
 
@@ -79,7 +79,7 @@ const VariantDetails: Component<VariantDetailsProps> = (props) => {
   const [loading, setLoading] = createSignal(false);
 
   return (
-    <Card color="contrast" class="relative flex flex-col m-0 w-full">
+    <Card class="relative flex flex-col m-0 w-full">
       <div class="flex gap-1 justify-center items-center">
         <Button badge size="small" class="m-0" hover={false}>
           {props.variant.key}
@@ -174,8 +174,15 @@ const VariantsSection: SettingsSectionComponent = (props) => {
         />
       }
     >
-      <TitledCard icon={mdiFormatListBulleted} label="List">
-        <Show when={variants().length || !loading()} fallback={<Loader />}>
+      <CollapsibleSection icon={mdiFormatListBulleted} label="List">
+        <Show
+          when={variants().length || !loading()}
+          fallback={
+            <div class="flex justify-center items-center">
+              <Loader />
+            </div>
+          }
+        >
           <For
             each={variants()}
             fallback={<p class="px-2 w-full text-start">No registered Variants</p>}
@@ -198,7 +205,7 @@ const VariantsSection: SettingsSectionComponent = (props) => {
             )}
           </For>
         </Show>
-      </TitledCard>
+      </CollapsibleSection>
     </Show>
   );
 };

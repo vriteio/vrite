@@ -1,7 +1,7 @@
 import { mdiCheck, mdiTune } from "@mdi/js";
 import { Component, createMemo, createSignal } from "solid-js";
 import { createStore } from "solid-js/store";
-import { InputField, TitledCard } from "#components/fragments";
+import { CollapsibleSection, InputField } from "#components/fragments";
 import { IconButton, Button, Tooltip } from "#components/primitives";
 import { App, useClient, useNotifications } from "#context";
 import { validateURL } from "#lib/utils";
@@ -75,10 +75,9 @@ const ConfigureTransformerSubsection: Component<ConfigureTransformerSubsectionPr
   });
 
   return (
-    <TitledCard icon={mdiTune} label="Configure">
+    <CollapsibleSection icon={mdiTune} label="Configure">
       <InputField
         label="Label"
-        color="contrast"
         placeholder="Transformer label"
         type="text"
         value={transformerData.label || ""}
@@ -89,7 +88,6 @@ const ConfigureTransformerSubsection: Component<ConfigureTransformerSubsectionPr
       </InputField>
       <InputField
         label="Input Transformer URL"
-        color="contrast"
         placeholder="https://example.com/input"
         type="text"
         value={transformerData.input || ""}
@@ -99,7 +97,6 @@ const ConfigureTransformerSubsection: Component<ConfigureTransformerSubsectionPr
       </InputField>
       <InputField
         label="Output Transformer URL"
-        color="contrast"
         placeholder="https://example.com/output"
         type="text"
         value={transformerData.output || ""}
@@ -109,7 +106,6 @@ const ConfigureTransformerSubsection: Component<ConfigureTransformerSubsectionPr
       </InputField>
       <InputField
         label="Max Batch Size"
-        color="contrast"
         placeholder="1000"
         type="text"
         value={`${transformerData.maxBatchSize || ""}`}
@@ -125,7 +121,7 @@ const ConfigureTransformerSubsection: Component<ConfigureTransformerSubsectionPr
         Max number of entries to send to the transformer in a single request (
         <code class="!px-1 !dark:bg-gray-800">1...1000</code>)
       </InputField>
-    </TitledCard>
+    </CollapsibleSection>
   );
 };
 

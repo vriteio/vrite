@@ -1,17 +1,15 @@
 import { webhookEvents } from "./events";
 import {
   mdiCheck,
-  mdiClipboardOutline,
   mdiInformationOutline,
   mdiRefresh,
   mdiShieldLockOutline,
-  mdiTrayFull,
   mdiTune
 } from "@mdi/js";
 import { Component, Show, createEffect, createMemo, createResource, createSignal } from "solid-js";
 import { createStore } from "solid-js/store";
 import { nanoid } from "nanoid";
-import { InputField, TitledCard } from "#components/fragments";
+import { CollapsibleSection, InputField } from "#components/fragments";
 import { IconButton, Button, Loader, Tooltip } from "#components/primitives";
 import { App, useClient, useNotifications } from "#context";
 import { validateURL } from "#lib/utils";
@@ -137,11 +135,17 @@ const ConfigureWebhookSubsection: Component<ConfigureWebhookSubsectionProps> = (
 
   return (
     <>
-      <TitledCard icon={mdiInformationOutline} label="Details">
-        <Show when={!editedWebhookData.loading || !props.editedWebhookId} fallback={<Loader />}>
+      <CollapsibleSection icon={mdiInformationOutline} label="Details">
+        <Show
+          when={!editedWebhookData.loading || !props.editedWebhookId}
+          fallback={
+            <div class="flex justify-center items-center w-full">
+              <Loader />
+            </div>
+          }
+        >
           <InputField
             label="Name"
-            color="contrast"
             placeholder="Webhook name"
             type="text"
             value={webhookData.name || ""}
@@ -152,7 +156,6 @@ const ConfigureWebhookSubsection: Component<ConfigureWebhookSubsectionProps> = (
           </InputField>
           <InputField
             label="Description"
-            color="contrast"
             textarea
             optional
             placeholder="Webhook description"
@@ -163,11 +166,10 @@ const ConfigureWebhookSubsection: Component<ConfigureWebhookSubsectionProps> = (
             Additional details about the Webhook
           </InputField>
         </Show>
-      </TitledCard>
-      <TitledCard icon={mdiTune} label="Configuration">
+      </CollapsibleSection>
+      <CollapsibleSection icon={mdiTune} label="Configuration">
         <InputField
           label="Target URL"
-          color="contrast"
           placeholder="URL"
           type="text"
           value={webhookData.url || ""}
@@ -178,7 +180,6 @@ const ConfigureWebhookSubsection: Component<ConfigureWebhookSubsectionProps> = (
         <InputField
           placeholder="Event"
           label="Trigger Event"
-          color="contrast"
           type="select"
           options={webhookEvents}
           value={webhookData.event || ""}
@@ -191,7 +192,6 @@ const ConfigureWebhookSubsection: Component<ConfigureWebhookSubsectionProps> = (
         <Show when={webhookData.event.startsWith("contentPiece")}>
           <InputField
             placeholder="Content Group ID"
-            color="contrast"
             label="Content Group"
             type="text"
             value={webhookData.metadata?.contentGroupId || ""}
@@ -200,19 +200,13 @@ const ConfigureWebhookSubsection: Component<ConfigureWebhookSubsectionProps> = (
             ID of the content group to listen for the event on
           </InputField>
         </Show>
-      </TitledCard>
-      <TitledCard
+      </CollapsibleSection>
+      <CollapsibleSection
         icon={mdiShieldLockOutline}
         label="Security"
         action={
           <Show when={secretHidden()}>
-            <Button
-              class="m-0"
-              color="contrast"
-              text="soft"
-              loading={loadingSecret()}
-              onClick={revealSecret}
-            >
+            <Button class="m-0" text="soft" loading={loadingSecret()} onClick={revealSecret}>
               Reveal secret
             </Button>
           </Show>
@@ -225,7 +219,6 @@ const ConfigureWebhookSubsection: Component<ConfigureWebhookSubsectionProps> = (
           placeholder="Secret"
           label="Signing secret"
           optional
-          color="contrast"
           type="text"
           value={props.editedWebhookId ? webhookData.secret || "secret" : webhookData.secret || ""}
           disabled={Boolean(props.editedWebhookId)}
@@ -253,7 +246,7 @@ const ConfigureWebhookSubsection: Component<ConfigureWebhookSubsectionProps> = (
             );
           }}
         />
-      </TitledCard>
+      </CollapsibleSection>
     </>
   );
 };

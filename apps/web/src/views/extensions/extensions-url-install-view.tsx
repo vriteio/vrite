@@ -1,9 +1,9 @@
 import { mdiDownloadOutline, mdiPuzzle } from "@mdi/js";
 import { Component, createSignal } from "solid-js";
 import { App, useConfirmationModal, useExtensions } from "#context";
-import { TitledCard } from "#components/fragments";
+import { CollapsibleSection } from "#components/fragments";
 import { ExtensionDetails } from "#context/extensions";
-import { IconButton, Input } from "#components/primitives";
+import { IconButton, Input, Tooltip } from "#components/primitives";
 import { validateURL } from "#lib/utils";
 
 interface ExtensionsURLInstallViewProps {
@@ -64,36 +64,35 @@ const ExtensionsURLInstallView: Component<ExtensionsURLInstallViewProps> = (prop
 
   return (
     <>
-      <TitledCard
+      <CollapsibleSection
         icon={mdiPuzzle}
         label="Extension URL"
         action={
-          <IconButton
-            class="m-0"
-            color="primary"
-            path={mdiDownloadOutline}
-            disabled={!extensionURL() || !validateURL(extensionURL())}
-            loading={loading()}
-            label="Install"
-            size="small"
-            onClick={install}
-          />
+          <Tooltip text="Install" class="mt-1">
+            <IconButton
+              class="m-0"
+              color="primary"
+              path={mdiDownloadOutline}
+              disabled={!extensionURL() || !validateURL(extensionURL())}
+              loading={loading()}
+              onClick={install}
+            />
+          </Tooltip>
         }
       >
         <div class="prose text-gray-500 dark:text-gray-400 w-full">
-          The URL to the extension's <code class="!px-1 !dark:bg-gray-800">{`spec.json`}</code>{" "}
+          The URL to the extension's <code class="!px-1 !dark:bg-gray-900">{`spec.json`}</code>{" "}
           file.
         </div>
         <Input
           class="w-full m-0"
           wrapperClass="w-full"
           value={extensionURL()}
-          color="contrast"
           placeholder="https://example.com/spec.json"
           setValue={setExtensionURL}
           onEnter={install}
         />
-      </TitledCard>
+      </CollapsibleSection>
     </>
   );
 };

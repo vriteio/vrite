@@ -4,7 +4,7 @@ import { mdiApplicationBrackets, mdiCodeTagsCheck, mdiFormatText, mdiImage } fro
 import { For, Match, Switch, createEffect, createSignal, on } from "solid-js";
 import { debounce } from "@solid-primitives/scheduled";
 import { Heading, IconButton } from "#components/primitives";
-import { MiniCodeEditor, TitledCard } from "#components/fragments";
+import { CollapsibleSection, MiniCodeEditor } from "#components/fragments";
 import {
   App,
   hasPermission,
@@ -58,7 +58,7 @@ const EditorSection: SettingsSectionComponent = (props) => {
   return (
     <Switch>
       <Match when={openedSubsection() === "none"}>
-        <TitledCard label="Inline formatting" icon={mdiFormatText}>
+        <CollapsibleSection label="Inline formatting" icon={mdiFormatText}>
           <p class="prose text-gray-500 dark:text-gray-400">
             Select the inline formatting options that should be enabled in the editor for all users
             of the workspace
@@ -72,7 +72,7 @@ const EditorSection: SettingsSectionComponent = (props) => {
 
                 return (
                   <IconButton
-                    color={active() ? "primary" : "contrast"}
+                    color={active() ? "primary" : "base"}
                     text={active() ? "primary" : "soft"}
                     badge={!hasPermission("manageWorkspace")}
                     disabled={!hasPermission("manageWorkspace")}
@@ -96,8 +96,8 @@ const EditorSection: SettingsSectionComponent = (props) => {
               }}
             </For>
           </div>
-        </TitledCard>
-        <TitledCard label="Block content" icon={mdiImage}>
+        </CollapsibleSection>
+        <CollapsibleSection label="Block content" icon={mdiImage}>
           <p class="prose text-gray-500 dark:text-gray-400">
             Select content blocks that should be enabled in the editor for all users of the
             workspace
@@ -125,7 +125,7 @@ const EditorSection: SettingsSectionComponent = (props) => {
 
                           return (
                             <IconButton
-                              color={active() ? "primary" : "contrast"}
+                              color={active() ? "primary" : "base"}
                               text={active() ? "primary" : "soft"}
                               badge={!hasPermission("manageWorkspace")}
                               disabled={!hasPermission("manageWorkspace")}
@@ -154,8 +154,8 @@ const EditorSection: SettingsSectionComponent = (props) => {
               }}
             </For>
           </div>
-        </TitledCard>
-        <TitledCard label="Embeds" icon={mdiApplicationBrackets}>
+        </CollapsibleSection>
+        <CollapsibleSection label="Embeds" icon={mdiApplicationBrackets}>
           <p class="prose text-gray-500 dark:text-gray-400">
             Select which embeds to enabled in the editor for all users of the workspace
           </p>
@@ -166,7 +166,7 @@ const EditorSection: SettingsSectionComponent = (props) => {
 
                 return (
                   <IconButton
-                    color={active() ? "primary" : "contrast"}
+                    color={active() ? "primary" : "base"}
                     text={active() ? "primary" : "soft"}
                     badge={!hasPermission("manageWorkspace")}
                     disabled={!hasPermission("manageWorkspace")}
@@ -190,8 +190,8 @@ const EditorSection: SettingsSectionComponent = (props) => {
               }}
             </For>
           </div>
-        </TitledCard>
-        <TitledCard label="Prettier config" icon={mdiCodeTagsCheck}>
+        </CollapsibleSection>
+        <CollapsibleSection label="Prettier config" icon={mdiCodeTagsCheck}>
           <p class="prose text-gray-500 dark:text-gray-400">
             Customize your Prettier config for consistent code formatting for all users of the
             workspace
@@ -199,7 +199,6 @@ const EditorSection: SettingsSectionComponent = (props) => {
           <MiniCodeEditor
             minHeight={200}
             fileName="prettierrc.json"
-            color="contrast"
             code={JSON.stringify(JSON.parse(workspaceSettings()?.prettierConfig || "{}"), null, 2)}
             onSave={async (value) => {
               try {
@@ -219,7 +218,7 @@ const EditorSection: SettingsSectionComponent = (props) => {
               }
             }}
           />
-        </TitledCard>
+        </CollapsibleSection>
       </Match>
     </Switch>
   );

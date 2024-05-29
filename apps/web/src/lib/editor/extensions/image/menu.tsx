@@ -5,7 +5,7 @@ import { Component, Show, createSignal } from "solid-js";
 import { nanoid } from "nanoid";
 import { debounce } from "@solid-primitives/scheduled";
 import clsx from "clsx";
-import { uploadFile as uploadFileUtil } from "#lib/utils";
+import { createRef, uploadFile as uploadFileUtil } from "#lib/utils";
 import { Card, IconButton, Input, Tooltip } from "#components/primitives";
 
 interface ImageMenuProps {
@@ -16,6 +16,7 @@ const ImageMenu: Component<ImageMenuProps> = (props) => {
   const { storage } = props.state.extension;
   const [inputMode, setInputMode] = createSignal<"alt" | "src" | "caption">("src");
   const [uploading, setUploading] = createSignal(false);
+  const [inputValue, setInputValue] = createRef("");
   const attrs = (): ImageAttributes => props.state.node.attrs;
   const options = (): ImageOptions => props.state.extension.options;
   const placeholder = (): string => {
@@ -52,15 +53,14 @@ const ImageMenu: Component<ImageMenuProps> = (props) => {
     <div
       class={clsx(
         "pointer-events-auto flex bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 border-y-2 backdrop-blur-sm relative !md:left-unset",
-        options().cover && "w-full border-t-0",
-        !options().cover &&
-          "md:gap-2 w-screen md:flex-1 md:border-0 md:rounded-2xl !md:bg-transparent"
+        options().cover ? "w-full border-2 rounded-xl overflow-hidden" : "w-screen",
+        "md:gap-2 md:flex-1 md:border-0 md:rounded-2xl md:overflow-visible !md:bg-transparent"
       )}
     >
       <Card
         class={clsx(
           "p-1 flex m-0 border-0 overflow-hidden rounded-none gap-1",
-          !options().cover && "md:gap-0.5 md:p-0 md:border-2 md:rounded-xl"
+          "md:gap-0.5 md:p-0 md:border-2 md:rounded-xl"
         )}
       >
         <Tooltip text="Alt" fixed class="mt-1">
@@ -93,25 +93,36 @@ const ImageMenu: Component<ImageMenuProps> = (props) => {
       <Card
         class={clsx(
           "px-1 py-1 m-0 border-0 flex-1 overflow-hidden rounded-none",
-          !options().cover && "md:py-0 md:border-2 md:rounded-xl"
+          "md:py-0 md:border-2 md:rounded-xl"
         )}
       >
         <Input
-          wrapperClass={clsx("w-full min-w-unset flex-1", !options().cover && "md:max-w-96")}
+          wrapperClass={clsx("w-full min-w-unset flex-1", "md:max-w-96")}
           class="w-full bg-transparent m-0 flex-1 text-lg"
           placeholder={placeholder()}
           value={attrs()[inputMode()] || ""}
           disabled={!props.state.editor.isEditable}
           setValue={(value) => {
-            updateAttribute.clear();
-            updateAttribute(inputMode(), value);
+            setInputValue(value);
+
+            if (!options().cover) {
+              updateAttribute.clear();
+              updateAttribute(inputMode(), value);
+            }
+          }}
+          onFocus={() => {
+            setInputValue(attrs()[inputMode()] || "");
+          }}
+          onBlur={() => {
+            props.state.updateAttributes({ [inputMode()]: inputValue() || "" });
+            setInputValue("");
           }}
         />
       </Card>
       <Card
         class={clsx(
           "p-1 flex m-0 border-0 overflow-hidden rounded-none gap-1",
-          !options().cover && "md:gap-0.5 md:p-0 md:border-2 md:rounded-xl"
+          "md:gap-0.5 md:p-0 md:border-2 md:rounded-xl"
         )}
       >
         <Tooltip text="Image URL" fixed class="mt-1">

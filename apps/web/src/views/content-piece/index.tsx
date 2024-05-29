@@ -1,5 +1,6 @@
 import { ContentPieceTitle } from "./title";
-import { ContentPieceMetadata } from "./metadata";
+import { CustomDataSection, DetailsSection, ExtensionsSection } from "./sections";
+import { ContentPieceDescription } from "./description";
 import { Component, createEffect, createMemo, createSignal, on, Show } from "solid-js";
 import {
   mdiDotsVertical,
@@ -9,8 +10,7 @@ import {
   mdiEye,
   mdiClose,
   mdiInformationOutline,
-  mdiCodeJson,
-  mdiPuzzleOutline
+  mdiCodeJson
 } from "@mdi/js";
 import dayjs from "dayjs";
 import CustomParseFormat from "dayjs/plugin/customParseFormat";
@@ -24,39 +24,28 @@ import {
   useLocalStorage,
   hasPermission,
   useHostConfig,
-  useSharedState,
   useContentData,
   useNotifications
 } from "#context";
-import { MiniEditor } from "#components/fragments";
-import { breakpoints } from "#lib/utils";
+import { MiniEditor, CollapsibleSection, ScrollShadow } from "#components/fragments";
+import { breakpoints, createRef } from "#lib/utils";
 
 dayjs.extend(CustomParseFormat);
 
 const ContentPieceView: Component = () => {
   const hostConfig = useHostConfig();
   const { notify } = useNotifications();
-  const sections = [
-    { label: "Details", id: "details", icon: mdiInformationOutline },
-    { label: "Custom data", id: "custom-data", icon: mdiCodeJson },
-    hostConfig.extensions && { label: "Extensions", id: "extensions", icon: mdiPuzzleOutline }
-  ].filter(Boolean) as Array<{
-    label: string;
-    id: string;
-    icon: string;
-  }>;
   const { activeContentPieceId, activeVariantId, contentPieces, contentActions } = useContentData();
   const client = useClient();
   const { setStorage } = useLocalStorage();
   const { confirmDelete } = useConfirmationModal();
   const location = useLocation();
   const navigate = useNavigate();
+  const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
   const [loading, setLoading] = createSignal(false);
   const [dropdownMenuOpened, setDropdownMenuOpened] = createSignal(false);
   const [coverInitialValue, setCoverInitialValue] = createSignal("");
   const [titleInitialValue, setTitleInitialValue] = createSignal("");
-  const [descriptionInitialValue, setDescriptionInitialValue] = createSignal("");
-  const [activeSection, setActiveSection] = createSignal(sections[0]);
   const editable = createMemo(() => {
     return hasPermission("editMetadata");
   });
@@ -108,14 +97,6 @@ const ContentPieceView: Component = () => {
   );
   createEffect(
     on(
-      () => activeContentPiece()?.description,
-      (description) => {
-        setDescriptionInitialValue(description || "");
-      }
-    )
-  );
-  createEffect(
-    on(
       [
         () => activeContentPiece()?.coverUrl,
         () => activeContentPiece()?.coverAlt,
@@ -140,22 +121,7 @@ const ContentPieceView: Component = () => {
         class="flex flex-col m-0 relative p-0 border-0 rounded-none h-full w-full md:overflow-visible overflow-y-auto scrollbar-sm-contrast pt-[env(safe-area-inset-top)]"
         color="contrast"
       >
-        <MiniEditor
-          initialValue={coverInitialValue()}
-          onChange={(editor) => {
-            const attrs = editor.getJSON().content?.[0].attrs || {};
-
-            handleChange({
-              coverAlt: attrs.alt || "",
-              coverUrl: attrs.src || "",
-              coverWidth: attrs.width || ""
-            });
-          }}
-          content="image"
-          readOnly={!editable()}
-          extensions={[Image.configure({ cover: true })]}
-        />
-        <div class="absolute flex top-[calc(env(safe-area-inset-top)+0.75rem)] right-3 gap-2 left-3 justify-center items-center">
+        <div class="absolute flex top-[calc(env(safe-area-inset-top)+0.75rem)] right-3 gap-2 left-3 justify-center items-center z-10">
           <IconButton
             path={mdiClose}
             text="soft"
@@ -234,22 +200,100 @@ const ContentPieceView: Component = () => {
             </Dropdown>
           </Show>
         </div>
-        <div class="flex-1 border-gray-200 dark:border-gray-700 transition-all p-3 overflow-initial md:overflow-y-auto scrollbar-sm-contrast">
-          <ContentPieceTitle
-            initialTitle={titleInitialValue()}
-            editable={editable()}
-            setTitle={(title) => {
-              handleChange({ title });
-            }}
-          />
-          <ContentPieceMetadata
-            contentPiece={activeContentPiece()!}
-            setContentPiece={handleChange}
-            editable={editable()}
-            sections={sections}
-            activeSection={activeSection()}
-            setActiveSection={setActiveSection}
-          />
+        <div class="flex-col h-full relative flex overflow-hidden">
+          <ScrollShadow scrollableContainerRef={scrollableContainerRef} color="contrast" />
+          <div
+            class="w-full h-full overflow-x-hidden overflow-y-auto scrollbar-sm-contrast pt-5 px-5"
+            ref={setScrollableContainerRef}
+          >
+            <div class="flex justify-start flex-col min-h-full h-full items-start w-full relative">
+              <MiniEditor
+                initialValue={coverInitialValue()}
+                onChange={(editor) => {
+                  const attrs = editor.getJSON().content?.[0].attrs || {};
+
+                  handleChange({
+                    coverAlt: attrs.alt || "",
+                    coverUrl: attrs.src || "",
+                    coverWidth: attrs.width || ""
+                  });
+                }}
+                content="image"
+                readOnly={!editable()}
+                extensions={[Image.configure({ cover: true })]}
+              />
+              <div class="min-h-2" />
+              <ContentPieceTitle
+                initialTitle={titleInitialValue()}
+                editable={editable()}
+                setTitle={(title) => {
+                  handleChange({ title });
+                }}
+              />
+              <ContentPieceDescription
+                initialDescription={activeContentPiece()!.description || ""}
+                editable={editable()}
+                setDescription={(description) => {
+                  handleChange({ description });
+                }}
+              />
+              <div class="flex flex-col gap-0 pt-2 w-full">
+                <CollapsibleSection icon={mdiInformationOutline} label="Details">
+                  <div class="flex flex-col items-start w-full">
+                    <DetailsSection
+                      filename={activeContentPiece()!.filename || ""}
+                      slug={activeContentPiece()!.slug}
+                      canonicalLink={activeContentPiece()!.canonicalLink}
+                      date={activeContentPiece()!.date}
+                      tags={activeContentPiece()!.tags}
+                      members={activeContentPiece()!.members}
+                      editable={editable()}
+                      setFilename={(filename) => {
+                        handleChange({ filename });
+                      }}
+                      setSlug={(slug) => {
+                        handleChange({ slug });
+                      }}
+                      setCanonicalLink={(canonicalLink) => {
+                        handleChange({ canonicalLink });
+                      }}
+                      setDate={(date) => {
+                        handleChange({ date });
+                      }}
+                      setTags={(tags) => {
+                        handleChange({ tags });
+                      }}
+                      setMembers={(members) => {
+                        handleChange({ members });
+                      }}
+                    />
+                  </div>
+                </CollapsibleSection>
+                <CollapsibleSection icon={mdiCodeJson} label="Custom data" defaultOpened={false}>
+                  <div class="w-full">
+                    <CustomDataSection
+                      editable={editable()}
+                      customData={activeContentPiece()!.customData}
+                      setCustomData={(customData) => {
+                        handleChange({ customData });
+                      }}
+                    />
+                  </div>
+                </CollapsibleSection>
+                <Show when={hostConfig.extensions}>
+                  <ExtensionsSection
+                    contentPiece={activeContentPiece()!}
+                    setCustomData={(customData) => {
+                      handleChange({
+                        customData
+                      });
+                    }}
+                  />
+                </Show>
+                <div class="min-h-32" />
+              </div>
+            </div>
+          </div>
         </div>
       </Card>
     </Show>
