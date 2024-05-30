@@ -132,7 +132,6 @@ const SearchableSelect = <O extends object>(props: SearchableSelectProps<O>): JS
       activatorButton={() => {
         return (
           <Button
-            color="contrast"
             {...props.buttonProps}
             class={clsx(
               "flex m-0 px-1 w-full justify-center items-center",
