@@ -59,7 +59,7 @@
     "monaco-editor": "^0.45.0",
     "nanoevents": "^9.0.0",
     "nanoid": "^5.0.5",
-    "posthog-js": "^1.126.0",
+    "posthog-js": "^1.136.2",
     "prettier": "^3.2.5",
     "seamless-scroll-polyfill": "^2.3.4",
     "solid-js": "^1.8.14",

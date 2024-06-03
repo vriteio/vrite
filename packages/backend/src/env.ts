@@ -57,6 +57,7 @@ const envSchema = z.object({
   PUBLIC_COLLAB_URL: z.string(),
   PUBLIC_APP_URL: z.string(),
   PUBLIC_ASSETS_URL: z.string(),
+  PUBLIC_POSTHOG_TOKEN: z.string().optional(),
   PUBLIC_DISABLE_ANALYTICS: z.boolean().optional().default(false)
 });
 

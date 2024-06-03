@@ -18,6 +18,7 @@ const appService = createPlugin(async (fastify) => {
       PUBLIC_API_URL: fastify.config.PUBLIC_API_URL,
       PUBLIC_COLLAB_URL: fastify.config.PUBLIC_COLLAB_URL,
       PUBLIC_ASSETS_URL: fastify.config.PUBLIC_ASSETS_URL,
+      PUBLIC_POSTHOG_TOKEN: fastify.config.PUBLIC_POSTHOG_TOKEN,
       PUBLIC_DISABLE_ANALYTICS: fastify.config.PUBLIC_DISABLE_ANALYTICS
     });
   };

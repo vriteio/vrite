@@ -4,7 +4,7 @@ import { SidebarMenu } from "./sidebar-menu";
 import { BottomMenu } from "./bottom-menu";
 import { SidePanelRight } from "./side-panel-right";
 import { WalkthroughProvider } from "./walkthrough";
-import { ParentComponent, Show, createEffect } from "solid-js";
+import { Component, ParentComponent, Show, createEffect } from "solid-js";
 import { useLocation } from "@solidjs/router";
 import { mdiFullscreenExit } from "@mdi/js";
 import clsx from "clsx";
@@ -16,21 +16,36 @@ import {
   CommandPaletteProvider,
   ContentDataProvider,
   useLocalStorage,
-  useHostConfig
+  useHostConfig,
+  useAuthenticatedUserData
 } from "#context";
 import { IconButton, Tooltip } from "#components/primitives";
 import { SubscriptionBanner } from "#ee";
 
+const Analytics: Component = () => {
+  const { profile, workspace } = useAuthenticatedUserData();
+  const hostConfig = useHostConfig();
+
+  if (import.meta.env.PROD && hostConfig.analytics) {
+    posthog.init(window.env.PUBLIC_POSTHOG_TOKEN, {
+      ui_host: "https://app.posthog.com",
+      api_host: "https://posthog.vrite.io"
+    });
+    posthog.identify(profile()!.id, {
+      email: profile()!.email,
+      username: profile()!.username
+    });
+    posthog.group("workspace", workspace()!.id, {
+      name: workspace()!.name
+    });
+  }
+
+  return <></>;
+};
 const SecuredLayout: ParentComponent = (props) => {
   const { storage, setStorage } = useLocalStorage();
   const hostConfig = useHostConfig();
   const location = useLocation();
-
-  if (import.meta.env.PROD && hostConfig.analytics) {
-    posthog.init("phc_m9JcBa51gXCkGdLFtqeMZXFfJkuSTg8C9iDMun0sZgg", {
-      api_host: "https://app.posthog.com"
-    });
-  }
 
   createEffect(() => {
     if (location.pathname !== "/editor") {
@@ -40,6 +55,7 @@ const SecuredLayout: ParentComponent = (props) => {
 
   return (
     <AuthenticatedUserDataProvider>
+      <Analytics />
       <AppearanceProvider>
         <ExtensionsProvider>
           <ContentDataProvider>
