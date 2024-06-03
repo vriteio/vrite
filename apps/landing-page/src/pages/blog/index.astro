@@ -6,13 +6,22 @@ import "@fontsource/nunito/600.css";
 import "@fontsource/nunito/700.css";
 import "@fontsource/nunito/800.css";
 import "@fontsource/nunito/900.css";
-import { Button, Card, IconButton } from "#components/primitives";
-import { mdiCalendar } from "@mdi/js";
-import { format } from "date-fns";
 import { BaseHead, Header, Footer } from "#components/fragments";
-import { getContentPieces } from "virtual:vrite";
+import { getContentPieces, client } from "virtual:vrite";
+import { format } from "date-fns";
 
 const contentPieces = await getContentPieces({ limit: "all" });
+const tags = await client.tags.list({ perPage: 100 });
+const workspace = await client.workspace.get();
+const contentPiecesByMonth = contentPieces.reduce((acc, contentPiece) => {
+  const date = new Date(contentPiece.date);
+  const month = format(date, "MMMM yyyy");
+  if (!acc[month]) {
+    acc[month] = [];
+  }
+  acc[month].push(contentPiece);
+  return acc;
+}, {});
 const title = "Vrite － developer content platform";
 const description =
   "Open-Source, collaborative developer content platform for documentation, technical blogs, and more.";
@@ -20,76 +29,97 @@ const description =
 export const prerender = true;
 ---
 
-<html lang="en" class="dark">
+<html lang="en" class="bg-gray-50 dark:bg-gray-800">
   <head>
     <BaseHead title={title} description={description} />
   </head>
 
   <body class="overflow-x-hidden overscroll-none">
     <main
-      class="flex flex-col items-center justify-center gap-8 p-4 pb-0 bg-gray-100 dark:bg-gray-800"
+      class="flex flex-col relative items-center justify-center gap-8 p-4 pb-0 bg-gray-50 dark:bg-gray-800 z-0"
     >
+      <div
+        class="bg-gradient-to-tr opacity-30 absolute top-[25vmin] xl:-top-[50vmin] -left-[50vmin] h-[100vmin] w-[100vmin] flex justify-center items-center rounded-full -z-1 blur-2xl"
+      >
+        <div class="h-[60vmin] w-[60vmin] bg-gray-50 dark:bg-gray-800 absolute rounded-full"></div>
+      </div>
       <div class="w-full flex justify-center items-start max-w-screen-lg">
         <Header client:idle />
       </div>
-      <div class="min-h-screen max-w-screen-xl w-full mt-16">
-        <header
-          class="text-gray-600 dark:text-gray-100 font-extrabold text-3xl md:text-5xl flex justify-start items-center"
-        >
-          <h1>Blog</h1>
-        </header>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 py-4 flex-1">
-          {
-            contentPieces.map((contentPiece) => (
-              <Fragment>
-                <a href={`/blog/${contentPiece.slug}/`}>
-                  <div>
-                    <Card color="primary" class="m-0 pb-0 pl-0 pr-2 pt-2 overflow-hidden">
-                      <img
-                        class="w-full rounded-2xl hover:hero-image transition-transform duration-500 shadow-xl"
-                        src={`${contentPiece.coverUrl}?w=600?format=webp`}
-                      />
-                    </Card>
-                    <div class="px-2">
-                      <div class="flex justify-start items-center mt-2">
-                        <>
-                          <IconButton
-                            path={mdiCalendar}
-                            class="px-1"
-                            color="primary"
-                            size="small"
-                            badge
-                            label={format(
-                              contentPiece.date ? new Date(contentPiece.date) : new Date(),
-                              "dd MMM yyyy"
-                            )}
-                          />
-                        </>
-                      </div>
-                      <h2 class="text-xl md:text-2xl text-gray-600 dark:text-gray-100">
-                        {contentPiece.title}
-                      </h2>
-                      <div class="flex justify-start items-center mt-1">
-                        {contentPiece.members.map((member) => {
-                          return (
-                            <Button
-                              class="flex gap-1 m-0 border-0 justify-center items-center pl-1.5"
-                              badge
-                            >
-                              <img src={member.profile.avatar} class="h-6 w-6 rounded-full" />
-                              <span class="font-semibold">{member.profile.fullName}</span>
-                            </Button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                </a>
-              </Fragment>
-            ))
-          }
+      <div
+        class="min-h-screen max-w-screen-lg w-full mt-16 relative justify-center items-center flex flex-col pb-16"
+      >
+        <div class="flex justify-start items-start py-16 w-full gap-20">
+          <div class="md:max-w-1/2">
+            <h1 class="text-5xl !font-bold text-gray-800 dark:text-gray-100 mb-2">
+              {workspace.name}
+            </h1>
+            <p class="text-2xl text-gray-500 dark:text-gray-400">
+              {workspace.description}
+            </p>
+          </div>
         </div>
+        {
+          Object.entries(contentPiecesByMonth).map(([month, contentPieces]) => {
+            return (
+              <>
+                <div class="w-full opacity-10 my-8 text-black dark:text-white font-mono text-lg flex items-center justify-center gap-4">
+                  <div class="h-2px bg-black dark:bg-white flex-1" />
+                  {month}
+                </div>
+                <div class="flex w-full z-0 relative">
+                  <div class="flex flex-col gap-20 w-full">
+                    {contentPieces.map((contentPiece) => (
+                      <a
+                        class="flex flex-col-reverse md:flex-row w-full gap-4 md:gap-20 relative z-10 group"
+                        href={`/blog/${contentPiece.slug}/`}
+                      >
+                        <div class="flex-1">
+                          <div class="max-w-lg">
+                            <div class="flex-1 text-gray-500 dark:text-gray-400">
+                              {format(
+                                contentPiece.date ? new Date(contentPiece.date) : new Date(),
+                                "dd MMM yyyy"
+                              )}
+                            </div>
+                            <h2 class="!font-bold text-3xl mb-1 group-hover:bg-gradient-to-tr group-hover:bg-clip-text group-hover:text-transparent">
+                              {contentPiece.title}
+                            </h2>
+                            <div class="font-normal text-lg mb-2 text-gray-500 dark:text-gray-400">
+                              <Fragment set:html={contentPiece.description} />
+                            </div>
+                            <div class="flex justify-start items-center gap-2 mb-1">
+                              {contentPiece.tags.map((tag) => (
+                                <div class="font-mono text-sm inline-flex">
+                                  <span class="font-bold bg-gradient-to-tr bg-clip-text text-transparent">
+                                    #
+                                  </span>
+                                  <span class="opacity-80">{tag.label.trim()}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                        <div class="flex flex-col gap-8 justify-center items-center w-full max-w-lg">
+                          <div class="w-full rounded-3xl relative">
+                            <div class="grid-background-3 -z-10" />
+                            <div class="transition-transform duration-300 ease-in-out group-hover:scale-95 rounded-2xl overflow-hidden border-2 border-gray-200 dark:border-gray-700">
+                              <img
+                                alt={contentPiece.coverAlt}
+                                src={contentPiece.coverUrl}
+                                class="object-cover"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              </>
+            );
+          })
+        }
       </div>
       <Footer />
     </main>

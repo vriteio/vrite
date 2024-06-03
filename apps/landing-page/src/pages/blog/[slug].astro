@@ -1,20 +1,19 @@
 ---
 import { Header, BaseHead, Footer } from "#components/fragments";
-import { IconButton, Card, Button } from "#components/primitives";
-import { mdiCalendar } from "@mdi/js";
 import { format } from "date-fns";
 import { Content, ContentPiece, getStaticPaths } from "virtual:vrite";
 import { convert } from "html-to-text";
+import "#styles/blog.scss";
 
 type Props = ContentPiece;
 
-const { title, description, date, coverUrl, members } = Astro.props;
+const { title, description, date, coverUrl } = Astro.props;
 
 export const prerender = true;
 export { getStaticPaths };
 ---
 
-<html lang="en" class="dark">
+<html lang="en" class="bg-gray-50 dark:bg-gray-800">
   <head>
     <BaseHead
       title={title}
@@ -23,42 +22,39 @@ export { getStaticPaths };
     />
   </head>
 
-  <body class="overflow-x-hidden overscroll-none">
+  <body class="overflow-x-hidden">
     <main
-      class="flex flex-col items-center justify-center gap-8 p-4 pb-0 bg-gray-100 dark:bg-gray-800"
+      class="flex flex-col items-center justify-center gap-8 p-4 pb-0 bg-gray-50 dark:bg-gray-800"
     >
       <div class="w-full flex justify-center items-start max-w-screen-lg">
         <Header client:idle />
-      </div><Card color="primary" class="m-0 p-2 overflow-hidden mt-8 md:mt-16">
-        <img src={`${coverUrl}?w=1200&format=webp`} class="max-w-screen-lg w-full rounded-2xl" />
-      </Card>
+      </div>
+      <div class="mt-8 md:mt-16 relative z-1 text-xl max-w-[calc(70ch+8rem)]">
+        <div class="grid-background-2"></div>
+        <div class="px-16">
+          <img
+            src={coverUrl}
+            alt="Blog post cover"
+            class="object-cover max-w-screen-lg w-full rounded-3xl shadow-2xl shadow-gray-400 dark:shadow-gray-900 before:bg-gray-100 dark:before:bg-gray-800"
+          />
+        </div>
+      </div>
       <div
-        class="prose dark:prose-invert text-gray-600 dark:text-gray-100 text-lg max-w-screen-lg w-full md:p-16 md:pt-0"
+        class="relative z-1 text-xl max-w-[70ch] prose dark:prose-invert text-gray-600 dark:text-gray-100 w-full pb-8 md:pt-0"
       >
         <div class="w-full justify-start items-center flex gap-2">
-          <IconButton
-            path={mdiCalendar}
-            class="px-1.5 m-0"
-            text="soft"
-            badge
-            label={format(date ? new Date(date) : new Date(), "dd MMM yyyy")}
-          />
-          {
-            members.map((member) => {
-              return (
-                <Button class="flex gap-1 m-0 border-0 justify-center items-center pl-1.5" badge>
-                  <img src={member.profile.avatar} class="h-6 w-6 rounded-full" />
-                  <span class="font-semibold">{member.profile.fullName}</span>
-                </Button>
-              );
-            })
-          }
+          <span class="text-gray-500 dark:text-gray-400 text-base"> Arek Nawo</span>
+          <div class="h-4 w-px rounded-full bg-gray-500 dark:bg-gray-400"></div>
+          <span class="text-gray-500 dark:text-gray-400 text-base">
+            {format(date ? new Date(date) : new Date(), "dd MMM yyyy")}
+          </span>
         </div>
-        <header class="not-prose font-extrabold text-3xl md:text-5xl">
-          {title}
+        <header>
+          <h1 class="!font-bold">{title}</h1>
         </header>
         <Content contentPieceId={Astro.props.id} />
       </div>
+
       <Footer />
     </main>
   </body>

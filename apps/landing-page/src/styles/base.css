@@ -157,6 +157,21 @@ h2 {
   mask-image: radial-gradient(ellipse at center, rgba(0, 0, 0, 1), transparent 90%);
   animation: uncover 1s ease-out forwards;
 }
+.grid-background-3 {
+  position: absolute;
+  width: 175%;
+  height: 120%;
+  top: -10%;
+  left: -65%;
+  background-image: linear-gradient(#e5e7eb 2px, transparent 0),
+    linear-gradient(to right, #e5e7eb 2px, transparent 0);
+  background-size: 24px 24px;
+  background-position: center center;
+  mask-position: center center;
+  mask-repeat: no-repeat;
+  mask-image: radial-gradient(ellipse at center, rgba(0, 0, 0, 1), transparent 75%);
+  animation: uncover 1s ease-out forwards;
+}
 
 @media (prefers-color-scheme: dark) {
   .grid-background {
@@ -167,7 +182,12 @@ h2 {
     background-image: linear-gradient(#4b5563 2px, transparent 0),
       linear-gradient(to right, #4b5563 2px, transparent 0);
   }
+  .grid-background-3 {
+    background-image: linear-gradient(#374151 2px, transparent 0),
+      linear-gradient(to right, #374151 2px, transparent 0);
+  }
 }
+
 @keyframes uncover {
   from {
     opacity: 0;
@@ -234,4 +254,35 @@ h2 {
       transparent
     );
   }
+}
+
+.astro-code {
+  @apply !rounded-2xl !bg-gray-800 !dark:bg-gray-900 px-4 py-3 leading-6;
+}
+.astro-code::-webkit-scrollbar {
+  @apply w-2 h-4 rounded-b-2xl bg-gray-800 dark:bg-gray-900 border;
+}
+.astro-code::-webkit-scrollbar-thumb {
+  @apply rounded-2xl bg-gray-700 border-4 border-gray-800 dark:border-gray-900 border-solid;
+}
+.astro-code::-webkit-scrollbar-track {
+  @apply mx-2;
+}
+.prose :where(code):not(:where(pre *, .not-prose, .not-prose *)) {
+  @apply bg-gray-200 fill-current dark:bg-gray-900 rounded-md px-1 font-mono font-medium py-0.5 text-wrap;
+}
+.prose :where(code):not(:where(pre *, .not-prose, .not-prose *))::after {
+  content: "";
+}
+.prose :where(code):not(:where(pre *, .not-prose, .not-prose *))::before {
+  content: "";
+}
+.prose :where(img, video):not(:where(.not-prose, .not-prose *)) {
+  @apply rounded-2xl;
+}
+.prose :where(figcaption) {
+  @apply text-center text-gray-500 dark:text-gray-400 text-sm mt-1;
+}
+.prose img {
+  margin-bottom: 1em;
 }
