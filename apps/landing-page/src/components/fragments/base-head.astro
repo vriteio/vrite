@@ -38,4 +38,13 @@ const { title, description, image = "/meta-image.jpg" } = Astro.props;
 <meta property="twitter:title" content={title} />
 <meta property="twitter:description" content={description} />
 <meta property="twitter:image" content={new URL(image, Astro.url)} />
-{Astro.props.analytics !== false && <Analytics client:only />}
+{Astro.props.analytics !== false && <>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=AW-16595937003">
+  </script>
+  <script lang="js" is:inline>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+  
+    gtag('config', 'AW-16595937003');
+  </script><Analytics client:only /></>}
