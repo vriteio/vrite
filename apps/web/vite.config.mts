@@ -13,9 +13,11 @@ export default defineConfig(async ({ mode }) => {
     plugins.push({
       name: "html-transform",
       transformIndexHtml(html: string) {
-        return html.replace(/{{(PUBLIC_.+?)}}/g, (_match, name) => {
-          return env[name];
-        });
+        return html
+          .replace(/{{(PUBLIC_.+?)}}/g, (_match, name) => {
+            return env[name];
+          })
+          .replace(/{{#if VRITE_CLOUD}}(?:.|\n)+?{{\/if}}/g, "");
       }
     });
   }

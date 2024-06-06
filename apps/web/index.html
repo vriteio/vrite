@@ -66,6 +66,18 @@
         }
       }
     </script>
+    {{#if VRITE_CLOUD}}
+    <script async src="https://www.googletagmanager.com/gtag/js?id=AW-16595937003"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag("js", new Date());
+
+      gtag("config", "AW-16595937003");
+    </script>
+    {{/if}}
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>

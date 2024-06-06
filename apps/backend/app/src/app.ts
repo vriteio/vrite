@@ -14,6 +14,7 @@ import path from "path";
 const appService = createPlugin(async (fastify) => {
   const renderPage = async (reply: FastifyReply): Promise<void> => {
     return reply.header("X-Frame-Options", "SAMEORIGIN").view("index.html", {
+      VRITE_CLOUD: process.env.VRITE_CLOUD,
       PUBLIC_APP_URL: fastify.config.PUBLIC_APP_URL,
       PUBLIC_API_URL: fastify.config.PUBLIC_API_URL,
       PUBLIC_COLLAB_URL: fastify.config.PUBLIC_COLLAB_URL,
