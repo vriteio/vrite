@@ -13,16 +13,6 @@ import {
 } from "#lib/utils";
 import { useClient } from "#context";
 
-declare global {
-  interface Window {
-    gtag?: (
-      type: string,
-      event: string,
-      options: { send_to: string; event_callback: () => void }
-    ) => void;
-  }
-}
-
 const PasswordForm: AuthFormComponent = (props) => {
   const client = useClient();
   const [hidePassword, setHidePassword] = createSignal(true);
@@ -68,10 +58,7 @@ const PasswordForm: AuthFormComponent = (props) => {
         redirect: props.redirect,
         plan: props.plan
       });
-      window.gtag?.("event", "conversion", {
-        send_to: "AW-16595937003/5SD4CLf_vLcZEOvNx-k9",
-        event_callback: () => {}
-      });
+      props.onRegister?.();
       setLoading(false);
       props.setFormData("formType", "verify-email");
     } catch (error) {

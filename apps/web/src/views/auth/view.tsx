@@ -36,9 +36,20 @@ interface AuthFormComponentProps {
   redirect?: string;
   plan?: string;
   setFormData: SetStoreFunction<AuthFormData>;
+  onRegister?: () => void;
 }
 
 type AuthFormComponent = Component<AuthFormComponentProps>;
+
+declare global {
+  interface Window {
+    gtag?: (
+      type: string,
+      event: string,
+      options: { send_to: string; event_callback: () => void }
+    ) => void;
+  }
+}
 
 const AuthView: Component = () => {
   const hostConfig = useHostConfig();
@@ -71,8 +82,15 @@ const AuthView: Component = () => {
       setShowForm(true);
     }
   };
+  const trackConversion = (): void => {
+    window.gtag?.("event", "conversion", {
+      send_to: "AW-16595937003/5SD4CLf_vLcZEOvNx-k9",
+      event_callback: () => {}
+    });
+  };
   const continueWithGitHub = (): void => {
     setFormData("loading", true);
+    trackConversion();
     window.location.replace(`/login/github?plan=${plan}`);
   };
 
@@ -121,6 +139,9 @@ const AuthView: Component = () => {
                 setFormData={setFormData}
                 redirect={redirect}
                 plan={plan}
+                onRegister={() => {
+                  trackConversion();
+                }}
                 footer={
                   <>
                     <Show when={hostConfig.githubOAuth}>
