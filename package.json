@@ -24,7 +24,7 @@
     "eslint-plugin-solid": "^0.12.1",
     "prettier": "^3.0.2",
     "prettier-plugin-astro": "^0.11.0",
-    "turbo": "^1.10.11",
+    "turbo": "^2.0.1",
     "typescript": "^5.1.6"
   },
   "engines": {
@@ -33,5 +33,5 @@
   "dependencies": {
     "dotenv-cli": "^7.2.1"
   },
-  "packageManager": "pnpm@8.8.0"
+  "packageManager": "pnpm@8.4.0"
 }

@@ -6,7 +6,7 @@ RUN apk add --no-cache libc6-compat && npm install -g turbo
 
 COPY . .
 
-RUN turbo prune --scope=@vrite/collaboration --docker
+RUN turbo prune @vrite/collaboration --docker
 
 
 FROM base as installer

@@ -6,7 +6,7 @@ RUN apk add --no-cache libc6-compat && npm install -g turbo
 
 COPY . .
 
-RUN turbo prune --scope=@vrite/usage-reporting --docker
+RUN turbo prune @vrite/usage-reporting --docker
 
 
 FROM base as installer
