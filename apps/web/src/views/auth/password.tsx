@@ -58,7 +58,7 @@ const PasswordForm: AuthFormComponent = (props) => {
         redirect: props.redirect,
         plan: props.plan
       });
-      props.onRegister?.();
+      await props.onRegister?.();
       setLoading(false);
       props.setFormData("formType", "verify-email");
     } catch (error) {

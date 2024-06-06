@@ -36,7 +36,7 @@ interface AuthFormComponentProps {
   redirect?: string;
   plan?: string;
   setFormData: SetStoreFunction<AuthFormData>;
-  onRegister?: () => void;
+  onRegister?: () => Promise<void>;
 }
 
 type AuthFormComponent = Component<AuthFormComponentProps>;
@@ -82,15 +82,27 @@ const AuthView: Component = () => {
       setShowForm(true);
     }
   };
-  const trackConversion = (): void => {
+  const trackConversion = async (): Promise<void> => {
+    let conversionCallback: () => void = () => {};
+
+    const registeredConversion = new Promise<void>((resolve) => {
+      conversionCallback = resolve;
+    });
+
     window.gtag?.("event", "conversion", {
       send_to: "AW-16595937003/5SD4CLf_vLcZEOvNx-k9",
-      event_callback: () => {}
+      event_callback: conversionCallback
     });
+
+    if (!window.gtag) {
+      conversionCallback();
+    }
+
+    await registeredConversion;
   };
-  const continueWithGitHub = (): void => {
+  const continueWithGitHub = async (): Promise<void> => {
     setFormData("loading", true);
-    trackConversion();
+    await trackConversion();
     window.location.replace(`/login/github?plan=${plan}`);
   };
 
@@ -140,7 +152,7 @@ const AuthView: Component = () => {
                 redirect={redirect}
                 plan={plan}
                 onRegister={() => {
-                  trackConversion();
+                  return trackConversion();
                 }}
                 footer={
                   <>
