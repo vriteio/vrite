@@ -19,6 +19,7 @@ import {
 import { ExtensionEndpoints, createExtensionEndpoints } from "./extension";
 import { VariantsEndpoints, createVariantsEndpoints } from "./variants";
 import { TransformersEndpoints, createTransformersEndpoints } from "./transformers";
+import { SnippetsEndpoints, createSnippetsEndpoints } from "./snippets";
 import PolyfilledEventSource from "@sanity/eventsource";
 
 interface SearchResult {
@@ -31,6 +32,7 @@ interface ClientConfig extends APIFetcherConfig {}
 interface Client {
   contentGroups: ContentGroupsEndpoints;
   contentPieces: ContentPiecesEndpoints;
+  snippets: SnippetsEndpoints;
   tags: TagsEndpoints;
   profile: ProfileEndpoints;
   userSettings: UserSettingsEndpoints;
@@ -68,6 +70,7 @@ const createClient = (config: ClientConfig): Client => {
   const client: Client = {
     contentGroups: createContentGroupsEndpoints(sendRequest),
     contentPieces: createContentPiecesEndpoints(sendRequest),
+    snippets: createSnippetsEndpoints(sendRequest),
     tags: createTagsEndpoints(sendRequest),
     profile: createProfileEndpoints(sendRequest),
     userSettings: createUserSettingsEndpoints(sendRequest),

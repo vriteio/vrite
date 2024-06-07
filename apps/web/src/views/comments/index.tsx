@@ -1,7 +1,6 @@
-import { mdiCommentMultipleOutline } from "@mdi/js";
 import { Editor } from "@tiptap/core";
 import { Component, For, Show, createMemo, createResource } from "solid-js";
-import { Dropdown, Heading, IconButton } from "#components/primitives";
+import { Heading } from "#components/primitives";
 import { App, useClient } from "#context";
 import { CommentCard } from "#lib/editor";
 import { createRef } from "#lib/utils";
@@ -49,19 +48,7 @@ const CommentThreadsMenu: Component<CommentThreadsMenuProps> = (props) => {
 
   return (
     <Show when={threads().length && !threads.loading}>
-      <Dropdown
-        activatorButton={() => (
-          <IconButton
-            path={mdiCommentMultipleOutline}
-            label={`${threads().length} thread${threads().length > 1 ? "s" : ""}`}
-            variant="text"
-            text="soft"
-          />
-        )}
-        cardProps={{
-          class: "w-96 p-2 gap-2 mt-2 pr-1"
-        }}
-      >
+      <div>
         <ScrollShadow scrollableContainerRef={scrollableContainerRef} />
         <div
           class="max-h-[60vh] overflow-y-auto scrollbar-sm flex flex-col pr-1 gap-2"
@@ -77,7 +64,7 @@ const CommentThreadsMenu: Component<CommentThreadsMenuProps> = (props) => {
             }}
           </For>
         </div>
-      </Dropdown>
+      </div>
     </Show>
   );
 };

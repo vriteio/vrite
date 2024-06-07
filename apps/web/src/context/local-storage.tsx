@@ -15,6 +15,7 @@ interface StorageData {
   expandedContentLevels: string[];
   dashboardView: string;
   sidePanelView: string;
+  sidePanelRightView: string;
   rightPanelWidth: number;
   toolbarView: string;
   sidePanelWidth: number;

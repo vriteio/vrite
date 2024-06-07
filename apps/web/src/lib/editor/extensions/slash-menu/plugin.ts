@@ -3,9 +3,10 @@ import { SolidEditor, SolidRenderer } from "@vrite/tiptap-solid";
 import { Extension } from "@tiptap/core";
 import Suggestion, { SuggestionProps } from "@tiptap/suggestion";
 import tippy, { Instance } from "tippy.js";
+import { Accessor } from "solid-js";
 
 interface SlashMenuPluginOptions {
-  menuItems: SlashMenuItem[];
+  menuItems: Accessor<SlashMenuItem[]>;
 }
 
 const stringToRegex = (str: string): RegExp => {
@@ -15,7 +16,7 @@ const SlashMenuPlugin = Extension.create<SlashMenuPluginOptions>({
   name: "slashMenu",
   addOptions() {
     return {
-      menuItems: [] as SlashMenuItem[]
+      menuItems: () => []
     };
   },
   addProseMirrorPlugins() {
@@ -56,7 +57,7 @@ const SlashMenuPlugin = Extension.create<SlashMenuPluginOptions>({
           const filteredItems: SlashMenuItem[] = [];
 
           conditions.forEach((condition) => {
-            this.options.menuItems.forEach((item) => {
+            this.options.menuItems().forEach((item) => {
               if (condition(item) && !filteredItems.includes(item)) {
                 filteredItems.push(item);
               }
@@ -86,6 +87,9 @@ const SlashMenuPlugin = Extension.create<SlashMenuPluginOptions>({
               component = new SolidRenderer(SlashMenu, {
                 state: {
                   ...props,
+                  close() {
+                    popup?.hide();
+                  },
                   setOnKeyDown(handler) {
                     component?.setState((state) => ({ ...state, onKeyDown: handler }));
                   }

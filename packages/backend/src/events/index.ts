@@ -14,3 +14,4 @@ export * from "./workspace-settings";
 export * from "./workspace";
 export * from "./git-data";
 export * from "./role";
+export * from "./snippet";

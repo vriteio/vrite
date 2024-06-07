@@ -4,9 +4,14 @@ import { useExplorerData } from "./explorer-context";
 import clsx from "clsx";
 import { Component, createEffect, Show, For, createSignal } from "solid-js";
 import SortableLib from "sortablejs";
-import { mdiChevronRight, mdiDotsHorizontalCircleOutline, mdiFolderPlus } from "@mdi/js";
+import {
+  mdiChevronRight,
+  mdiDotsHorizontalCircleOutline,
+  mdiFolderPlus,
+  mdiUnfoldMoreHorizontal
+} from "@mdi/js";
 import { useNavigate } from "@solidjs/router";
-import { Icon, IconButton, Loader } from "#components/primitives";
+import { Icon, IconButton, Loader, Sortable } from "#components/primitives";
 import { App, hasPermission, useClient, useContentData, useNotifications } from "#context";
 
 const NewGroupButton: Component = () => {
@@ -289,39 +294,56 @@ const TreeLevel: Component<{
             );
           }}
         </For>
-        <For each={contentLevels[props.parentId || ""]?.pieces || []}>
-          {(contentPieceId) => {
+        <Sortable
+          ids={contentLevels[props.parentId || ""]?.pieces || []}
+          onDragStart={() => {
+            console.log("drag start");
+          }}
+          handle=".dot-btn"
+        >
+          {(contentPieceId, index, dataProps) => {
             return (
-              <ContentPieceRow
-                contentPiece={contentPieces[contentPieceId]!}
-                onClick={() => {
-                  navigate(`/editor/${contentPieceId}`);
-                }}
-                onDragEnd={() => {
-                  const contentPiece = contentPieces[contentPieceId]!;
-                  const newParentId = highlight() || "";
-                  const oldParentId = contentPiece.contentGroupId;
-                  const updatedContentPiece: App.ExtendedContentPieceWithAdditionalData<
-                    "order" | "coverWidth"
-                  > = {
-                    ...contentPiece,
-                    contentGroupId: newParentId
-                  };
+              <div
+                {...dataProps()}
+                class="flex flex-row-reverse group/order relative justify-center items-center"
+              >
+                <IconButton
+                  path={mdiUnfoldMoreHorizontal}
+                  variant="text"
+                  class="dot-btn m-0 opacity-0 group-hover/order:opacity-100 absolute right-10"
+                  size="small"
+                />
+                <ContentPieceRow
+                  contentPiece={contentPieces[contentPieceId]!}
+                  onClick={() => {
+                    navigate(`/editor/${contentPieceId}`);
+                  }}
+                  onDragEnd={() => {
+                    const contentPiece = contentPieces[contentPieceId]!;
+                    const newParentId = highlight() || "";
+                    const oldParentId = contentPiece.contentGroupId;
+                    const updatedContentPiece: App.ExtendedContentPieceWithAdditionalData<
+                      "order" | "coverWidth"
+                    > = {
+                      ...contentPiece,
+                      contentGroupId: newParentId
+                    };
 
-                  if (!newParentId || newParentId === oldParentId) return;
+                    if (!newParentId || newParentId === oldParentId) return;
 
-                  contentActions.moveContentPiece({
-                    contentPiece: updatedContentPiece
-                  });
-                  client.contentPieces.move.mutate({
-                    id: contentPieceId,
-                    contentGroupId: newParentId || undefined
-                  });
-                }}
-              />
+                    contentActions.moveContentPiece({
+                      contentPiece: updatedContentPiece
+                    });
+                    client.contentPieces.move.mutate({
+                      id: contentPieceId,
+                      contentGroupId: newParentId || undefined
+                    });
+                  }}
+                />
+              </div>
             );
           }}
-        </For>
+        </Sortable>
         <Show when={contentLevels[props.parentId || ""]?.moreToLoad}>
           <div class="ml-0.5 flex rounded-none hover:bg-gray-200 dark:hover:bg-gray-700 py-1">
             <button

@@ -35,7 +35,6 @@
     "@tiptap/extension-dropcursor": "^2.2.6",
     "@tiptap/extension-gapcursor": "^2.2.6",
     "@tiptap/extension-history": "^2.2.6",
-    "@tiptap/extension-placeholder": "^2.2.6",
     "@tiptap/extension-typography": "^2.2.6",
     "@tiptap/pm": "2.2.6",
     "@tiptap/suggestion": "2.2.6",

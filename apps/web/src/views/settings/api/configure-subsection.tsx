@@ -41,6 +41,11 @@ const ConfigureTokenSubSection: Component<ConfigureTokenSubSectionProps> = (prop
       permissions: ["contentPieces:read", "contentPieces:write"]
     },
     {
+      label: "Snippets",
+      description: "Access the JSON content and manage snippets",
+      permissions: ["snippets:read", "snippets:write"]
+    },
+    {
       label: "Content groups",
       description: "Access and manage content groups and the IDs of related content pieces",
       permissions: ["contentGroups:read", "contentGroups:write"]

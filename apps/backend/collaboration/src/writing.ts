@@ -3,7 +3,8 @@ import {
   getContentsCollection,
   getContentVariantsCollection,
   errors,
-  SessionData
+  SessionData,
+  getSnippetContentsCollection
 } from "@vrite/backend";
 import { Server } from "@hocuspocus/server";
 import { Database } from "@hocuspocus/extension-database";
@@ -13,6 +14,7 @@ import { SearchIndexing } from "#extensions/search-indexing";
 import { GitSync } from "#extensions/git-sync";
 
 const writingPlugin = createPlugin(async (fastify) => {
+  const snippetContentsCollection = getSnippetContentsCollection(fastify.mongo.db!);
   const contentsCollection = getContentsCollection(fastify.mongo.db!);
   const contentVariantsCollection = getContentVariantsCollection(fastify.mongo.db!);
   const server = Server.configure({
@@ -53,6 +55,18 @@ const writingPlugin = createPlugin(async (fastify) => {
             return null;
           }
 
+          if (documentName.startsWith("snippet:")) {
+            const snippetContent = await snippetContentsCollection.findOne({
+              snippetId: new ObjectId(documentName.split(":")[1])
+            });
+
+            if (snippetContent && snippetContent.content) {
+              return new Uint8Array(snippetContent.content.buffer);
+            }
+
+            return null;
+          }
+
           const [contentPieceId, variantId] = documentName.split(":");
 
           if (variantId) {
@@ -77,11 +91,27 @@ const writingPlugin = createPlugin(async (fastify) => {
           return null;
         },
         async store({ documentName, state, ...details }) {
-          const [contentPieceId, variantId] = documentName.split(":");
-
           if (documentName.startsWith("workspace:")) {
             return;
           }
+
+          if (documentName.startsWith("snippet:")) {
+            const snippetId = documentName.split(":")[1] || "";
+
+            if (state) {
+              await snippetContentsCollection?.updateOne(
+                {
+                  snippetId: new ObjectId(snippetId)
+                },
+                { $set: { content: new Binary(state) } },
+                { upsert: true }
+              );
+
+              return;
+            }
+          }
+
+          const [contentPieceId, variantId] = documentName.split(":");
 
           if (state) {
             if (!(details as { update?: any }).update) {

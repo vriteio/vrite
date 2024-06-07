@@ -4,6 +4,7 @@ import { UnderscoreID, zodId } from "#lib/mongo";
 
 const tokenPermission = z.enum([
   "contentPieces:read",
+  "snippets:read",
   "contentGroups:read",
   "roles:read",
   "tags:read",
@@ -13,6 +14,7 @@ const tokenPermission = z.enum([
   "workspaceMemberships:read",
   "workspace:read",
   "contentPieces:write",
+  "snippets:write",
   "contentGroups:write",
   "roles:write",
   "tags:write",

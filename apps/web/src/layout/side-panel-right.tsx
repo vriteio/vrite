@@ -1,10 +1,41 @@
 import { debounce } from "@solid-primitives/scheduled";
 import clsx from "clsx";
-import { createSignal, createMemo, onCleanup, Component } from "solid-js";
-import { useLocalStorage } from "#context";
+import { createSignal, createMemo, onCleanup, Component, For, Show } from "solid-js";
+import { Dynamic } from "solid-js/web";
+import { mdiCommentMultipleOutline, mdiFileMultipleOutline, mdiShapeOutline } from "@mdi/js";
+import { useContentData, useLocalStorage, useSharedState } from "#context";
 import { createRef } from "#lib/utils";
 import { ExplorerView } from "#views/explorer";
+import { IconButton, Tooltip } from "#components/primitives";
+import { SnippetsView } from "#views/snippets";
+import { CommentThreadsMenu } from "#views/comments";
 
+const sidePanelRightViews: Record<
+  string,
+  { view: Component<Record<string, any>>; icon: string; label: string; id: string }
+> = {
+  explorer: { view: ExplorerView, icon: mdiFileMultipleOutline, label: "Explorer", id: "explorer" },
+  snippets: { view: SnippetsView, icon: mdiShapeOutline, label: "Snippets", id: "snippets" },
+  comments: {
+    view: () => {
+      const { activeContentPieceId, contentPieces } = useContentData();
+      const { useSharedSignal } = useSharedState();
+      const [sharedEditor] = useSharedSignal("editor");
+
+      return (
+        <Show when={sharedEditor() && activeContentPieceId()}>
+          <CommentThreadsMenu
+            editor={sharedEditor()!}
+            editedContentPiece={contentPieces[activeContentPieceId()!]!}
+          />
+        </Show>
+      );
+    },
+    icon: mdiCommentMultipleOutline,
+    label: "Comments",
+    id: "comments"
+  }
+};
 const SidePanelRight: Component = () => {
   const { storage, setStorage } = useLocalStorage();
   const [prevX, setPrevX] = createRef(0);
@@ -13,6 +44,8 @@ const SidePanelRight: Component = () => {
   const [minWidth] = createSignal(375);
   const [maxWidth] = createSignal(640);
   const [handleHover, setHandleHover] = createSignal(false);
+  const viewId = createMemo(() => storage().sidePanelRightView || "explorer");
+  const view = (): Component => sidePanelRightViews[viewId() || "explorer"].view;
   const collapsed = createMemo(() => {
     return (storage().rightPanelWidth || 0) < minWidth();
   });
@@ -76,8 +109,34 @@ const SidePanelRight: Component = () => {
       }}
     >
       <div class={clsx("flex-1 w-full relative", collapsed() && "md:hidden")}>
-        <div class="h-full">
-          <ExplorerView />
+        <div class="h-full flex flex-col">
+          <div class="px-5 pt-3 flex gap-1.5">
+            <For each={Object.values(sidePanelRightViews)}>
+              {(view) => {
+                return (
+                  <Tooltip text={view.label} class="mt-1">
+                    <IconButton
+                      path={view.icon}
+                      color={view.id === viewId() ? "primary" : "base"}
+                      text={view.id === viewId() ? "primary" : "soft"}
+                      class="m-0"
+                      iconProps={{ class: "h-5 w-5" }}
+                      variant={view.id === viewId() ? "solid" : "text"}
+                      onClick={() => {
+                        setStorage((storage) => ({
+                          ...storage,
+                          sidePanelRightView: view.id
+                        }));
+                      }}
+                    />
+                  </Tooltip>
+                );
+              }}
+            </For>
+          </div>
+          <div class="flex-1">
+            <Dynamic component={view()} />
+          </div>
         </div>
       </div>
       <div

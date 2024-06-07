@@ -1,11 +1,11 @@
 import { CommentMenu } from "./component";
 import { Comment } from "@vrite/editor";
-import { Editor, Extension, getAttributes, getMarkRange, mergeAttributes } from "@tiptap/core";
+import { Editor, getAttributes } from "@tiptap/core";
 import { SolidEditor, SolidRenderer } from "@vrite/tiptap-solid";
 import { debounce } from "@solid-primitives/scheduled";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
 import { DecorationSet, Decoration } from "@tiptap/pm/view";
-import { Mark, ResolvedPos } from "@tiptap/pm/model";
+import { Mark } from "@tiptap/pm/model";
 
 const box = document.createElement("div");
 
@@ -38,12 +38,11 @@ const updatePosition = (editor: Editor): void => {
   box.style.transform = `translateX(${Math.min(viewWidth - parentPos.width + 24, 360)}px)`;
   component?.setState((state) => ({
     ...state,
-    contentOverlap: viewWidth - parentPos.width + 24 < 360
+    contentOverlap: (viewWidth - parentPos.width) / 2 + 24 < 360
   }));
 };
 const CommentMenuPluginKey = new PluginKey("commentMenu");
 const CommentMenuPlugin = Comment.extend({
-  // name: "commentMenu",
   exitable: true,
   addStorage() {
     return {

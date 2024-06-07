@@ -27,7 +27,7 @@ import { Typography } from "@tiptap/extension-typography";
 import clsx from "clsx";
 import { Editor, Extensions } from "@tiptap/core";
 import { debounce } from "@solid-primitives/scheduled";
-import { TrailingNode, Placeholder, Shortcuts } from "#lib/editor";
+import { Placeholder, Shortcuts } from "#lib/editor";
 
 interface ExtensionOptions {
   content?: string;
@@ -62,7 +62,6 @@ const getExtensions = (options: ExtensionOptions): Extensions => {
     Paragraph,
     Text,
     HardBreak,
-    TrailingNode,
     History,
     Shortcuts,
     ...(options.blocks ? [Heading, Blockquote] : []),

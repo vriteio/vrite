@@ -1,6 +1,5 @@
 import { SetStoreFunction } from "solid-js/store";
 import { useLocation, useNavigate } from "@solidjs/router";
-import { Accessor } from "solid-js";
 import { App, ContentLevel } from "#context";
 
 interface ContentActionsInput {

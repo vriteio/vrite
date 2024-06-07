@@ -2,7 +2,8 @@ import { CommentThread } from "./comment-thread";
 import { CommentDataProvider } from "./comment-data";
 import { SolidEditor } from "@vrite/tiptap-solid";
 import clsx from "clsx";
-import { Component, For, createEffect, createSignal, on, onCleanup } from "solid-js";
+import { Component, For, createEffect, createSignal, on, onCleanup, onMount } from "solid-js";
+import { createStore } from "solid-js/store";
 import { useContentData, useLocalStorage } from "#context";
 
 interface BlockActionMenuProps {
@@ -25,7 +26,10 @@ interface CommentFragmentData {
 const CommentMenu: Component<BlockActionMenuProps> = (props) => {
   const { storage } = useLocalStorage();
   const { activeContentPieceId } = useContentData();
-  const [fragments, setFragments] = createSignal<CommentFragmentData[]>([]);
+  const [fragments, setFragments] = createStore<Record<string, CommentFragmentData | undefined>>(
+    {}
+  );
+  const [fragmentIds, setFragmentIds] = createSignal<string[]>([]);
   const handleStateUpdate = (): void => {
     const container = document.getElementById("pm-container");
     const parentPos = container?.getBoundingClientRect();
@@ -33,14 +37,15 @@ const CommentMenu: Component<BlockActionMenuProps> = (props) => {
 
     props.state.editor.state.doc.descendants((node, pos) => {
       const commentMark = node.marks.find((mark) => mark.type.name === "comment");
-      const existingFragments = fragments().map((fragment) => fragment.id);
 
       if (node.type.name === "text" && commentMark) {
         const fragmentId = commentMark.attrs.thread;
-        const existingFragmentIndex = existingFragments.indexOf(fragmentId);
+        const existingNewFragmentIndex = newFragments.findIndex(
+          (fragment) => fragment.id === fragmentId
+        );
         const coords = props.state.editor.view.coordsAtPos(pos);
         const previousFragment = newFragments[newFragments.length - 1] || null;
-        const top = coords.top - (parentPos?.top || 0);
+        const top = coords.top - (parentPos?.top || 0) + 16;
         const newFragment = {
           top,
           computedTop: previousFragment ? Math.max(previousFragment.computedTop + 104, top) : top,
@@ -49,13 +54,8 @@ const CommentMenu: Component<BlockActionMenuProps> = (props) => {
           pos: pos + node.nodeSize
         };
 
-        if (existingFragmentIndex >= 0) {
-          newFragments.splice(
-            existingFragmentIndex,
-            1,
-            Object.assign(fragments()[existingFragmentIndex], newFragment)
-          );
-        } else {
+        if (existingNewFragmentIndex < 0) {
+          setFragments(newFragment.id, newFragment);
           newFragments.push(newFragment);
         }
 
@@ -64,7 +64,15 @@ const CommentMenu: Component<BlockActionMenuProps> = (props) => {
 
       return true;
     });
-    setFragments(newFragments);
+
+    const newFragmentIds = newFragments.map((fragment) => fragment.id);
+
+    setFragmentIds(newFragmentIds);
+    Object.keys(fragments).forEach((fragmentId) => {
+      if (!newFragmentIds.includes(fragmentId)) {
+        setFragments(fragmentId, undefined);
+      }
+    });
   };
 
   createEffect(
@@ -75,11 +83,21 @@ const CommentMenu: Component<BlockActionMenuProps> = (props) => {
       }
     )
   );
-  props.state.editor.on("selectionUpdate", handleStateUpdate);
-  props.state.editor.on("update", handleStateUpdate);
-  onCleanup(() => {
-    props.state.editor.off("selectionUpdate", handleStateUpdate);
-    props.state.editor.off("update", handleStateUpdate);
+  onMount(() => {
+    const container = document.getElementById("pm-container");
+    const observer = new ResizeObserver(() => {
+      handleStateUpdate();
+    });
+
+    if (container) {
+      observer.observe(container);
+    }
+
+    props.state.editor.on("transaction", handleStateUpdate);
+    onCleanup(() => {
+      observer.disconnect();
+      props.state.editor.off("transaction", handleStateUpdate);
+    });
   });
 
   return (
@@ -91,11 +109,11 @@ const CommentMenu: Component<BlockActionMenuProps> = (props) => {
           props.state.fragment && "z-10 -translate-x-0"
         )}
       >
-        <For each={fragments()}>
-          {(fragment) => {
+        <For each={fragmentIds()}>
+          {(fragmentId) => {
             return (
               <CommentThread
-                fragment={fragment}
+                fragment={fragments[fragmentId]!}
                 contentOverlap={props.state.contentOverlap}
                 selectedFragmentId={props.state.fragment}
                 contentPieceId={activeContentPieceId() || ""}

@@ -12,6 +12,7 @@ interface SortableProps {
   disabled?: boolean;
   group?: string;
   sortableId?: string;
+  handle?: string;
   dragImage?: Component<{ id: string }>;
   addon?: Component;
   ref?(element: HTMLElement): void;
@@ -57,9 +58,10 @@ const Sortable: Component<SortableProps> = (props) => {
         () => props.filter,
         () => props.disabled,
         () => props.group,
-        () => props.sortableId
+        () => props.sortableId,
+        () => props.handle
       ],
-      ([wrapperRef, ghostClass, filter, disabled, group, sortableId]) => {
+      ([wrapperRef, ghostClass, filter, disabled, group, sortableId, handle]) => {
         if (wrapperRef) {
           const currentSortable = sortable();
 
@@ -185,6 +187,7 @@ const Sortable: Component<SortableProps> = (props) => {
               delay: 500,
               ghostClass,
               disabled,
+              handle,
               filter,
               group
             })

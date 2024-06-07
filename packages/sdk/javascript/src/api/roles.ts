@@ -2,6 +2,7 @@ import { PaginationParams, SendRequest } from "./request";
 
 type RolePermission =
   | "editContent"
+  | "editSnippets"
   | "editMetadata"
   | "manageDashboard"
   | "manageTokens"

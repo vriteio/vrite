@@ -84,6 +84,7 @@ const createWorkspace = async (
       workspaceId,
       permissions: [
         "editContent",
+        "editSnippets",
         "editMetadata",
         "manageDashboard",
         "manageTokens",

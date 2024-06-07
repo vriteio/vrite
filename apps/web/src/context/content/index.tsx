@@ -9,7 +9,7 @@ import {
 } from "solid-js";
 import { createEffect, on, onCleanup } from "solid-js";
 import { createStore, reconcile } from "solid-js/store";
-import { useNavigate, useParams } from "@solidjs/router";
+import { useLocation, useNavigate, useParams } from "@solidjs/router";
 import { useClient, useLocalStorage, App } from "#context";
 
 interface ContentLevel {
@@ -43,6 +43,7 @@ const ContentDataContext = createContext<ContentDataContextData>();
 const ContentDataProvider: ParentComponent = (props) => {
   const client = useClient();
   const params = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const { storage, setStorage } = useLocalStorage();
   const [variants, setVariants] = createStore<Record<string, App.Variant | undefined>>({});
@@ -62,7 +63,11 @@ const ContentDataProvider: ParentComponent = (props) => {
     return storage().activeContentGroupId || null;
   };
   const [activeContentPieceId] = createResource(
-    () => params.contentPiece,
+    () => {
+      if (location.pathname.startsWith("/snippet")) return "";
+
+      return params.contentPieceId;
+    },
     async (contentPieceParam) => {
       if (!contentPieceParam.trim()) return null;
 
@@ -82,7 +87,7 @@ const ContentDataProvider: ParentComponent = (props) => {
       }
 
       const contentPiecesBySlug = await client.contentPieces.list.query({
-        slug: params.contentPiece
+        slug: contentPieceParam
       });
 
       if (contentPieceParam) {
@@ -105,7 +110,7 @@ const ContentDataProvider: ParentComponent = (props) => {
 
       return null;
     },
-    { initialValue: params.contentPiece || null }
+    { initialValue: params.contentPieceId || null }
   );
   const setActiveVariantId = (variantId: string | null): void => {
     setStorage((storage) => ({

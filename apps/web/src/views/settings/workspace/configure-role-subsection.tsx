@@ -38,6 +38,11 @@ const ConfigureRoleSubsection: Component<ConfigureRoleSubsectionProps> = (props)
       permission: "editContent"
     },
     {
+      label: "Edit snippets",
+      description: "Edit the content snippets",
+      permission: "editSnippets"
+    },
+    {
       label: "Edit metadata",
       description: "Edit the content pieces' metadata",
       permission: "editMetadata"

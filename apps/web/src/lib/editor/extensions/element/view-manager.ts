@@ -37,7 +37,10 @@ const getTreeUID = async (editor: SolidEditor, pos: number): Promise<string | nu
   const parentPos = pos - resolvedPos.parentOffset - 1;
 
   if (parentPos >= 0) {
-    const parentElement = editor.view.nodeDOM(parentPos) as HTMLElement;
+    const parentElement = editor.view.nodeDOM(parentPos) as HTMLElement | null;
+
+    if (!parentElement) return null;
+
     const parentLoadingId = parentElement.getAttribute("data-loader-id");
 
     if (parentLoadingId) {

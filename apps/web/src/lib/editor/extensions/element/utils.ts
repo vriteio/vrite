@@ -19,6 +19,7 @@ type CustomView = {
   views: Array<{ path: string[]; view: ExtensionElement; top?: boolean }>;
   structure: StructureNode;
   rawView?: boolean;
+  lastPos?: number;
   getPos(): number;
   node(): PMNode;
 };

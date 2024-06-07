@@ -1,5 +1,4 @@
 import {
-  Accessor,
   ParentComponent,
   createContext,
   createEffect,
@@ -44,6 +43,8 @@ const CommentDataProvider: ParentComponent<CommentUpdatesProviderProps> = (props
   const handlers: CommentUpdateHandler[] = [];
   const [threads, { mutate: setThreads }] = createResource(
     () => {
+      if (!props.contentPieceId) return [];
+
       return client.comments.listThreads.query({
         contentPieceId: props.contentPieceId
       });

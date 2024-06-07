@@ -205,7 +205,7 @@ const Element = BaseElement.extend<
 
               selection = Selection.near(
                 newState.tr.doc.resolve(
-                  Math.min(previousFrom + 1, previousTo + 1, newState.tr.doc.nodeSize)
+                  Math.min(previousFrom + 1, previousTo + 1, newState.tr.doc.nodeSize - 2)
                 ),
                 -1
               );
@@ -238,7 +238,11 @@ const Element = BaseElement.extend<
               );
             }
 
-            return;
+            if (newState.selection instanceof GapCursor) {
+              return newState.tr.scrollIntoView();
+            }
+
+            return newState.tr;
           }
 
           const processSelection = (selection: Selection): Selection | null => {
@@ -376,6 +380,21 @@ const Element = BaseElement.extend<
           if (selection) {
             if (selection === originalSelection) return;
 
+            if (isElementSelection(selection)) {
+              const element = editor.view.nodeDOM(selection.$from.pos);
+
+              if (element instanceof HTMLElement) {
+                const boundingRect = element.getBoundingClientRect();
+
+                if (
+                  boundingRect.y + boundingRect.height > 40 &&
+                  boundingRect.y + 32 < window.innerHeight
+                ) {
+                  return newState.tr.setSelection(selection);
+                }
+              }
+            }
+
             return newState.tr.setSelection(selection).scrollIntoView();
           } else {
             return newState.tr.scrollIntoView();
@@ -419,6 +438,7 @@ const Element = BaseElement.extend<
       const loaded = createLoader(wrapper);
 
       let { node } = props;
+      let uid: string | null = null;
       let view: ElementDisplay | null = null;
       let removeListener = (): void => {};
 
@@ -432,7 +452,7 @@ const Element = BaseElement.extend<
         const resolvedPos = editor.state.doc.resolve(props.getPos());
         const path = getElementPath(resolvedPos, customElements);
 
-        let uid = await getTreeUID(editor, props.getPos());
+        uid = await getTreeUID(editor, props.getPos());
 
         if (customElement) {
           const customView = await createCustomView(
@@ -535,12 +555,19 @@ const Element = BaseElement.extend<
           return false;
         },
         update(newNode) {
-          if (typeof props.getPos !== "function" || typeof props.getPos() !== "number") {
+          if (
+            node.type !== newNode.type ||
+            typeof props.getPos !== "function" ||
+            typeof props.getPos() !== "number" ||
+            newNode.type.name !== "element" ||
+            Boolean(newNode.content.size) !== Boolean(node.content.size)
+          ) {
+            if (uid && customViews.has(uid)) {
+              customViews.delete(uid);
+            }
+
             return false;
           }
-
-          if (newNode.type.name !== "element") return false;
-          if (Boolean(newNode.content.size) !== Boolean(node.content.size)) return false;
 
           view?.onUpdate?.(newNode);
 
@@ -549,6 +576,10 @@ const Element = BaseElement.extend<
             storage.customElements[newNode.attrs.type.toLowerCase()] !==
               storage.customElements[node.attrs.type.toLowerCase()]
           ) {
+            if (uid && customViews.has(uid)) {
+              customViews.delete(uid);
+            }
+
             return false;
           }
 
