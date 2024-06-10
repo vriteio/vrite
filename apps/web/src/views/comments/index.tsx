@@ -201,7 +201,7 @@ const CommentsView: Component = () => {
     return inactiveThreads().filter((thread) => !thread.resolved);
   });
   const resolvedThreads = createMemo(() => {
-    return inactiveThreads().filter((thread) => thread.resolved);
+    return threads().filter((thread) => thread.resolved);
   });
 
   return (
