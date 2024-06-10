@@ -61,7 +61,9 @@ const createClipboardSerializer = (
     paragraph: base.nodes.paragraph,
     text: base.nodes.text
   };
-  const marks: Record<string, (mark: Mark, inline: boolean) => DOMOutputSpec> = {};
+  const marks: Record<string, (mark: Mark, inline: boolean) => DOMOutputSpec> = {
+    comment: base.marks.comment
+  };
 
   if (settings.embeds.length > 0) {
     nodes.embed = base.nodes.embed;

@@ -19,6 +19,7 @@ import { createSignal } from "solid-js";
 import { ExtensionElementSpec } from "@vrite/sdk/extensions";
 import { CellSelection } from "@tiptap/pm/tables";
 import { ExtensionDetails, ExtensionsContextData } from "#context";
+import { optimizeContentSlice } from "#lib/utils";
 
 declare module "@tiptap/core" {
   interface Commands<ReturnType> {
@@ -135,27 +136,7 @@ const Element = BaseElement.extend<
         },
         props: {
           transformCopied: (slice) => {
-            const expectedSize = slice.size + 2;
-
-            if (slice.content.childCount > 1) return slice;
-
-            let currentFragment: Fragment = slice.content;
-            let { openStart } = slice;
-            let { openEnd } = slice;
-
-            while (currentFragment.size > expectedSize) {
-              const newFragment = currentFragment.child(0).content;
-
-              if (newFragment.childCount !== 1) {
-                break;
-              }
-
-              currentFragment = newFragment;
-              openStart += 1;
-              openEnd += 1;
-            }
-
-            return new Slice(currentFragment, openStart, openEnd);
+            return optimizeContentSlice(slice);
           },
           handleClick(_, pos, event) {
             const { target } = event;

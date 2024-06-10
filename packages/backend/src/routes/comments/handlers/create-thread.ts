@@ -4,7 +4,11 @@ import { AuthenticatedContext } from "#lib/middleware";
 import { commentThread, getCommentThreadsCollection } from "#collections";
 import { publishCommentEvent } from "#events";
 
-const inputSchema = commentThread.pick({ contentPieceId: true, fragment: true });
+const inputSchema = commentThread.pick({
+  contentPieceId: true,
+  fragment: true,
+  initialContent: true
+});
 const outputSchema = commentThread.pick({ id: true });
 const handler = async (
   ctx: AuthenticatedContext,
@@ -18,6 +22,7 @@ const handler = async (
     workspaceId: ctx.auth.workspaceId,
     contentPieceId: new ObjectId(input.contentPieceId),
     fragment: input.fragment,
+    initialContent: input.initialContent,
     resolved: false
   };
 

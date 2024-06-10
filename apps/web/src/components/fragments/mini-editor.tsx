@@ -51,13 +51,7 @@ const getExtensions = (options: ExtensionOptions): Extensions => {
   const extensions = [
     options.content ? Document.extend({ content: options.content }) : Document,
     Placeholder.configure({
-      placeholder: ({ node, editor }) => {
-        if (node.type.name === "paragraph" && editor.state.doc.firstChild === node) {
-          return options.placeholder || "";
-        }
-
-        return "";
-      }
+      placeholder: options.placeholder
     }),
     Paragraph,
     Text,

@@ -4,7 +4,14 @@ import { DecorationSet, Decoration } from "@tiptap/pm/view";
 
 const Placeholder = Extension.create({
   name: "placeholder",
+  addOptions() {
+    return {
+      placeholder: "Write something..."
+    };
+  },
   addProseMirrorPlugins() {
+    const { options } = this;
+
     return [
       new Plugin({
         key: new PluginKey("placeholder"),
@@ -18,7 +25,10 @@ const Placeholder = Extension.create({
               doc.firstChild?.content.size == 0
             ) {
               return DecorationSet.create(doc, [
-                Decoration.node(0, 2, { "data-placeholder": "Write away...", "class": "is-empty" })
+                Decoration.node(0, 2, {
+                  "data-placeholder": options.placeholder,
+                  "class": "is-empty"
+                })
               ]);
             }
           }

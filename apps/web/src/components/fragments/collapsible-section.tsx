@@ -9,8 +9,8 @@ interface CollapsibleSectionProps {
   children?: JSX.Element;
   action?: JSX.Element;
   gradient?: boolean;
-  collapsible?: boolean;
   defaultOpened?: boolean;
+  mode?: "hide" | "remove";
 }
 
 const CollapsibleSection: Component<CollapsibleSectionProps> = (props) => {
@@ -68,7 +68,7 @@ const CollapsibleSection: Component<CollapsibleSectionProps> = (props) => {
           opened() ? "py-1 my-1" : "max-h-0 overflow-hidden"
         )}
       >
-        {props.children}
+        <Show when={!props.mode || props.mode === "hide" || opened()}>{props.children}</Show>
       </div>
     </div>
   );

@@ -4,12 +4,7 @@ import { useExplorerData } from "./explorer-context";
 import clsx from "clsx";
 import { Component, createEffect, Show, For, createSignal } from "solid-js";
 import SortableLib from "sortablejs";
-import {
-  mdiChevronRight,
-  mdiDotsHorizontalCircleOutline,
-  mdiFolderPlus,
-  mdiUnfoldMoreHorizontal
-} from "@mdi/js";
+import { mdiChevronRight, mdiDotsHorizontalCircleOutline, mdiFolderPlus } from "@mdi/js";
 import { useNavigate } from "@solidjs/router";
 import { Icon, IconButton, Loader, Sortable } from "#components/primitives";
 import { App, hasPermission, useClient, useContentData, useNotifications } from "#context";
@@ -294,25 +289,10 @@ const TreeLevel: Component<{
             );
           }}
         </For>
-        <Sortable
-          ids={contentLevels[props.parentId || ""]?.pieces || []}
-          onDragStart={() => {
-            console.log("drag start");
-          }}
-          handle=".dot-btn"
-        >
-          {(contentPieceId, index, dataProps) => {
+        <For each={contentLevels[props.parentId || ""]?.pieces || []}>
+          {(contentPieceId, index) => {
             return (
-              <div
-                {...dataProps()}
-                class="flex flex-row-reverse group/order relative justify-center items-center"
-              >
-                <IconButton
-                  path={mdiUnfoldMoreHorizontal}
-                  variant="text"
-                  class="dot-btn m-0 opacity-0 group-hover/order:opacity-100 absolute right-10"
-                  size="small"
-                />
+              <div class="flex flex-row-reverse group/order relative justify-center items-center">
                 <ContentPieceRow
                   contentPiece={contentPieces[contentPieceId]!}
                   onClick={() => {
@@ -343,7 +323,7 @@ const TreeLevel: Component<{
               </div>
             );
           }}
-        </Sortable>
+        </For>
         <Show when={contentLevels[props.parentId || ""]?.moreToLoad}>
           <div class="ml-0.5 flex rounded-none hover:bg-gray-200 dark:hover:bg-gray-700 py-1">
             <button

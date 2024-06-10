@@ -15,9 +15,10 @@ import {
   mdiFormatUnderlineWavy
 } from "@mdi/js";
 import { nanoid } from "nanoid";
+import { generateHTML } from "@tiptap/core";
 import { Card, IconButton, Tooltip } from "#components/primitives";
 import { App, useAuthenticatedUserData, useClient, useContentData } from "#context";
-import { breakpoints } from "#lib/utils";
+import { breakpoints, optimizeContentSlice } from "#lib/utils";
 
 const FormatMenu: Component<{
   class?: string;
@@ -40,12 +41,18 @@ const FormatMenu: Component<{
         props.editor.commands.unsetComment();
       } else {
         const threadFragment = nanoid();
+        const slice = optimizeContentSlice(props.editor.state.selection.content());
+        const html = generateHTML(
+          { type: "doc", content: slice.toJSON().content },
+          props.editor.extensionManager.extensions
+        );
 
         props.editor.chain().setComment({ thread: threadFragment }).focus().run();
 
         try {
           await client.comments.createThread.mutate({
             contentPieceId: activeContentPieceId()!,
+            initialContent: html,
             fragment: threadFragment
           });
         } catch (error) {

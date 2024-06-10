@@ -52,7 +52,10 @@ const CommentCard: Component<CommentCardProps> = (props) => {
             </span>
           </Show>
         </div>
-        <span class="text-gray-500 dark:text-gray-400 text-xs leading-5 mr-0.75">
+        <span
+          class="text-gray-500 dark:text-gray-400 text-xs leading-5 mr-0.75 clamp-1"
+          title={dayjs(props.comment.date).format("MMMM D, YYYY [at] h:mm A")}
+        >
           {dayjs(props.comment.date).fromNow()}
         </span>
         <Dropdown

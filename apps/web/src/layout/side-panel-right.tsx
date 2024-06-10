@@ -8,29 +8,29 @@ import { createRef } from "#lib/utils";
 import { ExplorerView } from "#views/explorer";
 import { IconButton, Tooltip } from "#components/primitives";
 import { SnippetsView } from "#views/snippets";
-import { CommentThreadsMenu } from "#views/comments";
+import { CommentsView } from "#views/comments";
 
 const sidePanelRightViews: Record<
   string,
-  { view: Component<Record<string, any>>; icon: string; label: string; id: string }
+  {
+    view: Component<Record<string, any>>;
+    icon: string;
+    label: string;
+    id: string;
+    show?(): boolean;
+  }
 > = {
   explorer: { view: ExplorerView, icon: mdiFileMultipleOutline, label: "Explorer", id: "explorer" },
   snippets: { view: SnippetsView, icon: mdiShapeOutline, label: "Snippets", id: "snippets" },
   comments: {
-    view: () => {
-      const { activeContentPieceId, contentPieces } = useContentData();
+    show: () => {
+      const { activeContentPieceId } = useContentData();
       const { useSharedSignal } = useSharedState();
       const [sharedEditor] = useSharedSignal("editor");
 
-      return (
-        <Show when={sharedEditor() && activeContentPieceId()}>
-          <CommentThreadsMenu
-            editor={sharedEditor()!}
-            editedContentPiece={contentPieces[activeContentPieceId()!]!}
-          />
-        </Show>
-      );
+      return Boolean(activeContentPieceId());
     },
+    view: CommentsView,
     icon: mdiCommentMultipleOutline,
     label: "Comments",
     id: "comments"
@@ -44,7 +44,14 @@ const SidePanelRight: Component = () => {
   const [minWidth] = createSignal(375);
   const [maxWidth] = createSignal(640);
   const [handleHover, setHandleHover] = createSignal(false);
-  const viewId = createMemo(() => storage().sidePanelRightView || "explorer");
+  const viewId = createMemo(() => {
+    const viewId = storage().sidePanelRightView || "explorer";
+    const { show } = sidePanelRightViews[viewId];
+
+    if (show && !show()) return "explorer";
+
+    return viewId;
+  });
   const view = (): Component => sidePanelRightViews[viewId() || "explorer"].view;
   const collapsed = createMemo(() => {
     return (storage().rightPanelWidth || 0) < minWidth();
@@ -114,27 +121,29 @@ const SidePanelRight: Component = () => {
             <For each={Object.values(sidePanelRightViews)}>
               {(view) => {
                 return (
-                  <Tooltip text={view.label} class="mt-1">
-                    <IconButton
-                      path={view.icon}
-                      color={view.id === viewId() ? "primary" : "base"}
-                      text={view.id === viewId() ? "primary" : "soft"}
-                      class="m-0"
-                      iconProps={{ class: "h-5 w-5" }}
-                      variant={view.id === viewId() ? "solid" : "text"}
-                      onClick={() => {
-                        setStorage((storage) => ({
-                          ...storage,
-                          sidePanelRightView: view.id
-                        }));
-                      }}
-                    />
-                  </Tooltip>
+                  <Show when={!view.show || view.show()}>
+                    <Tooltip text={view.label} class="mt-1">
+                      <IconButton
+                        path={view.icon}
+                        color={view.id === viewId() ? "primary" : "base"}
+                        text={view.id === viewId() ? "primary" : "soft"}
+                        class="m-0"
+                        iconProps={{ class: "h-5 w-5" }}
+                        variant={view.id === viewId() ? "solid" : "text"}
+                        onClick={() => {
+                          setStorage((storage) => ({
+                            ...storage,
+                            sidePanelRightView: view.id
+                          }));
+                        }}
+                      />
+                    </Tooltip>
+                  </Show>
                 );
               }}
             </For>
           </div>
-          <div class="flex-1">
+          <div class="flex-1 overflow-hidden">
             <Dynamic component={view()} />
           </div>
         </div>

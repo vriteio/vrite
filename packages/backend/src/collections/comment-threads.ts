@@ -11,6 +11,7 @@ const commentThread = z.object({
     .describe("ID marking a fragment of content that the thread is associated with"),
   contentPieceId: zodId().describe("ID of the content piece that the thread is associated with"),
   variantId: zodId().describe("ID of the variant that the thread is associated with").optional(),
+  initialContent: z.string().describe("Initial HTML content of the commented fragment").optional(),
   date: z.string().describe("Date the thread was created")
 });
 

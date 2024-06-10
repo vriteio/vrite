@@ -11,7 +11,9 @@ import {
   CommentWithAdditionalData
 } from "#collections";
 
-const inputSchema = commentThread.pick({ contentPieceId: true });
+const inputSchema = commentThread
+  .pick({ contentPieceId: true })
+  .extend({ resolved: z.boolean().optional() });
 const outputSchema = z.array(
   commentThread.omit({ comments: true }).extend({
     firstComment: comment
@@ -30,29 +32,26 @@ const handler = async (
   const threads = await commentThreadsCollection
     .find({
       contentPieceId: new ObjectId(input.contentPieceId),
-      workspaceId: ctx.auth.workspaceId
+      workspaceId: ctx.auth.workspaceId,
+      ...(typeof input.resolved === "boolean" ? { resolved: input.resolved } : {})
     })
     .toArray();
   const firstComments = await fetchThreadsFirstComments(ctx.db, threads);
 
-  return threads
-    .map((thread) => {
-      const firstComment =
-        firstComments.find((comment) => {
-          return `${comment.id}` === `${thread.comments[0]}`;
-        }) || null;
+  return threads.map((thread) => {
+    const firstComment =
+      firstComments.find((comment) => {
+        return `${comment.id}` === `${thread.comments[0]}`;
+      }) || null;
 
-      return {
-        ...thread,
-        id: `${thread._id}`,
-        date: thread.date.toISOString(),
-        contentPieceId: `${thread.contentPieceId}`,
-        firstComment
-      };
-    })
-    .filter((thread) => thread && !thread.resolved) as Array<
-    Omit<CommentThread, "comments"> & { firstComment: CommentWithAdditionalData }
-  >;
+    return {
+      ...thread,
+      id: `${thread._id}`,
+      date: thread.date.toISOString(),
+      contentPieceId: `${thread.contentPieceId}`,
+      firstComment
+    };
+  }) as Array<Omit<CommentThread, "comments"> & { firstComment: CommentWithAdditionalData }>;
 };
 
 export { inputSchema, outputSchema, handler };

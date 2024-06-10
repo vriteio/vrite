@@ -9,14 +9,7 @@ import {
   createMemo,
   createSignal
 } from "solid-js";
-import {
-  mdiCheck,
-  mdiDotsVertical,
-  mdiFileDocumentOutline,
-  mdiRename,
-  mdiTrashCan,
-  mdiUnfoldMoreHorizontal
-} from "@mdi/js";
+import { mdiCheck, mdiDotsVertical, mdiFileDocumentOutline, mdiRename, mdiTrashCan } from "@mdi/js";
 import SortableLib from "sortablejs";
 import clsx from "clsx";
 import { Dropdown, Icon, IconButton, Input, Loader } from "#components/primitives";

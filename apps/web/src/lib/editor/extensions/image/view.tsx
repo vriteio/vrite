@@ -167,7 +167,7 @@ const ImageView: Component = () => {
       return `${(1 / Number(aspectRatio)) * 100}%`;
     }
 
-    return options().cover ? "40%" : "35%";
+    return options().cover ? "45%" : "35%";
   };
 
   createEffect(
@@ -207,7 +207,7 @@ const ImageView: Component = () => {
       <div
         class={clsx(
           "rounded-2xl select-none min-w-64",
-          !options().cover && selected() && "ring ring-primary ring-2"
+          !options().cover && selected() && "ring-primary ring-2"
         )}
       >
         <div

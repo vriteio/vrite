@@ -7,7 +7,6 @@ import {
   useEditor
 } from "@vrite/tiptap-solid";
 import {
-  Component,
   ParentComponent,
   Show,
   createEffect,
@@ -57,6 +56,7 @@ import {
 import { useAuthenticatedUserData, useExtensions, useHostConfig, useSharedState } from "#context";
 import { breakpoints, createRef } from "#lib/utils";
 import { BlockMenu } from "#lib/editor/extensions/slash-menu/component";
+import { useCommentData } from "#context/comments";
 
 declare module "#context" {
   interface SharedState {
@@ -76,6 +76,7 @@ const Editor: ParentComponent<EditorProps & { docName: string; editable?: boolea
   const hostConfig = useHostConfig();
   const navigate = useNavigate();
   const location = useLocation();
+  const commentData = useCommentData();
   const { useSharedSignal } = useSharedState();
   const { workspaceSettings } = useAuthenticatedUserData();
   const extensionsContext = useExtensions();
@@ -242,7 +243,9 @@ const Editor: ParentComponent<EditorProps & { docName: string; editable?: boolea
       }),
       hostConfig.extensions && BlockActionMenuPlugin,
       TableMenuPlugin,
-      CommentMenuPlugin,
+      CommentMenuPlugin.configure({
+        commentData
+      }),
       Shortcuts,
       Collab.configure({
         document: ydoc
