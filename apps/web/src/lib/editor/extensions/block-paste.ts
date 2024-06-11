@@ -9,6 +9,7 @@ import { EditorState, Plugin } from "@tiptap/pm/state";
 import { gfmOutputTransformer } from "@vrite/sdk/transformers";
 import { marked } from "marked";
 import { Accessor } from "solid-js";
+import { JSONContent } from "@vrite/sdk/api";
 import { App } from "#context";
 
 interface BlockPasteRule {
@@ -119,6 +120,7 @@ const run = (
       return enabledBlocks.includes(key as App.WorkspaceSettings["blocks"][number]);
     })
   );
+  const baseMarkedRenderer = new marked.Renderer();
   const { chain } = new CommandManager({
     editor,
     state
@@ -161,6 +163,13 @@ const run = (
         const dataType = body.includes(`data-type="taskItem"`) ? ` data-type="taskList"` : "";
 
         return `<${type}${startAt}${dataType}>${body}</${type}>\n`;
+      },
+      code(code, infoString, escaped) {
+        const base = baseMarkedRenderer.code(code, infoString, escaped);
+
+        return base.replace(/(?:\s|\n)*<\/code><\/pre>\n$/g, (match) => {
+          return "</code></pre>\n";
+        });
       }
     }
   });
@@ -173,8 +182,17 @@ const run = (
     const resolvedFrom = Math.max(from, pos);
     const resolvedTo = Math.min(to, pos + node.content.size);
     const json = node.content?.toJSON();
+    const isJSONInline = json?.some((node: JSONContent) => node.type === "text");
     const text = node.textBetween(resolvedFrom - pos, resolvedTo - pos, undefined, "\ufffc");
-    const textToMatch = json ? gfmOutputTransformer({ type: "doc", content: json }) : text;
+
+    let textToMatch = text;
+
+    if (json) {
+      textToMatch = gfmOutputTransformer({
+        type: "doc",
+        content: isJSONInline ? [{ type: "paragraph", content: json }] : json
+      });
+    }
 
     if (activeBlockType) {
       const match = blockPasteRules[activeBlockType].end(textToMatch);
