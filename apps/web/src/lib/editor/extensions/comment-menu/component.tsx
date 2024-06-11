@@ -14,7 +14,7 @@ interface BlockActionMenuProps {
 }
 
 const CommentMenu: Component<BlockActionMenuProps> = (props) => {
-  const { storage } = useLocalStorage();
+  const { storage, setStorage } = useLocalStorage();
   const {
     fragments,
     orderedFragmentIds,
@@ -88,6 +88,18 @@ const CommentMenu: Component<BlockActionMenuProps> = (props) => {
       }
     )
   );
+  createEffect(
+    on(activeFragmentId, (activeFragmentId) => {
+      if (!activeFragmentId) return;
+
+      if ((storage().rightPanelWidth || 0) > 0) {
+        setStorage((storage) => ({
+          ...storage,
+          sidePanelRightView: "comments"
+        }));
+      }
+    })
+  );
   onMount(() => {
     const container = document.getElementById("pm-container");
     const observer = new ResizeObserver(() => {
@@ -106,9 +118,7 @@ const CommentMenu: Component<BlockActionMenuProps> = (props) => {
   });
 
   return (
-    <Show
-      when={(storage().rightPanelWidth || 0) <= 0 || storage().sidePanelRightView !== "comments"}
-    >
+    <Show when={(storage().rightPanelWidth || 0) <= 0}>
       <div
         class={clsx(
           "hidden md:block not-prose text-base w-80 m-0 transform max-h-[60vh] backdrop-blur-lg bg-gray-100 dark:bg-gray-800 dark:bg-opacity-50 bg-opacity-50 rounded-l-2xl",

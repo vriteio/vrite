@@ -58,6 +58,7 @@ const CommentDataProvider: ParentComponent<CommentDataProviderProps> = (props) =
     {}
   );
   const [threads, { mutate: setThreads }] = createResource(
+    activeContentPieceId,
     () => {
       if (!activeContentPieceId()) return [];
 

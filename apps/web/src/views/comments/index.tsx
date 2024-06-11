@@ -1,4 +1,4 @@
-import { Component, For, Show, createMemo, createSignal } from "solid-js";
+import { Component, For, Show, createEffect, createMemo, createSignal } from "solid-js";
 import {
   mdiCheckCircleOutline,
   mdiClose,
@@ -41,7 +41,8 @@ const CommentViewThread: Component<CommentsViewThreadProps> = (props) => {
       <div
         class={clsx(
           "flex flex-col gap-2 p-3 rounded-[1.25rem] cursor-pointer relative z-0 border-2 bg-gray-200 dark:bg-gray-900 dark:bg-opacity-40 bg-opacity-40 border-gray-200 dark:border-gray-700 transform transition-transform",
-          activeFragmentId() && props.fragmentId !== activeFragmentId() && "opacity-40 scale-95"
+          activeFragmentId() && props.fragmentId !== activeFragmentId() && "opacity-40 scale-95",
+          props.fragmentId !== activeFragmentId() && thread?.resolved && "pb-2"
         )}
         onClick={(event) => {
           if (fragment) {
