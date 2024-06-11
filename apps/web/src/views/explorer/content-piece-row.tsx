@@ -132,7 +132,6 @@ const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
             pull: false,
             put: false
           },
-          ignore: ".dot-btn",
           delayOnTouchOnly: true,
           delay: 250,
           disabled: !hasPermission("manageDashboard"),
