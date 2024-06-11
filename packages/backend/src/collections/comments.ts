@@ -9,8 +9,10 @@ const comment = z.object({
   threadId: zodId().describe("ID of the thread the comment is a part of"),
   content: z.string().describe("HTML content of the comment"),
   date: z.string().describe("Date the comment was created"),
-  contentPieceId: zodId().describe("ID of the content piece the comment is associated with"),
-  variantId: zodId().describe("ID of the variant the comment is associated with").optional()
+  contentPieceId: zodId()
+    .optional()
+    .describe("ID of the content piece the comment is associated with"),
+  variantId: zodId().optional().describe("ID of the variant the comment is associated with")
 });
 const commentMember = z.object({
   id: zodId(),
@@ -30,7 +32,7 @@ interface Comment<ID extends string | ObjectId = string>
   memberId: ID;
   threadId: ID;
   date: ID extends string ? string : Date;
-  contentPieceId: ID;
+  contentPieceId?: ID;
   variantId?: ID;
 }
 interface CommentWithAdditionalData<ID extends string | ObjectId = string>

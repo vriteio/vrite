@@ -44,9 +44,10 @@ const fetchCommentsMembers = async (
       id: `${comment._id}`,
       date: comment.date.toISOString(),
       threadId: `${comment.threadId}`,
-      contentPieceId: `${comment.contentPieceId}`,
       member: null,
+      contentPieceId: undefined,
       variantId: undefined,
+      ...(comment.contentPieceId && { contentPieceId: `${comment.contentPieceId}` }),
       ...(comment.variantId && { variantId: `${comment.variantId}` }),
       ...(membership &&
         user && {
