@@ -24,10 +24,10 @@ const NewSnippetButton: Component = () => {
 
           setRenaming(contentGroup.id);
           setLoading(false);
-          notify({ text: "New content group created", type: "success" });
+          notify({ text: "New snippet created", type: "success" });
         } catch (error) {
           setLoading(false);
-          notify({ text: "Couldn't create new content group", type: "error" });
+          notify({ text: "Couldn't create new snippet", type: "error" });
         }
       }}
     >

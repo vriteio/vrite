@@ -56,9 +56,9 @@ const SnippetEntry: Component<SnippetEntryProps> = (props) => {
                   await client.snippets.delete.mutate({ id: props.snippet.id });
                   snippetsActions.deleteSnippet({ id: props.snippet.id });
                   setLoading("");
-                  notify({ text: "Content piece deleted", type: "success" });
+                  notify({ text: "Snippet deleted", type: "success" });
                 } catch (error) {
-                  notify({ text: "Couldn't delete the content piece", type: "error" });
+                  notify({ text: "Couldn't delete the snippet", type: "error" });
                   setLoading("");
                 }
               }
