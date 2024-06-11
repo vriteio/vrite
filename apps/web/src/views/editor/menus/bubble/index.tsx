@@ -13,7 +13,6 @@ type BubbleMenuMode = "format" | "link" | "table" | "block" | "select";
 interface BubbleMenuProps {
   editor: SolidEditor;
   opened: boolean;
-  contentPieceId?: string;
   class?: string;
   mode?: BubbleMenuMode;
   ref?: Ref<HTMLElement>[1];
@@ -83,7 +82,6 @@ const BubbleMenu: Component<BubbleMenuProps> = (props) => {
           opened={props.opened}
           setMode={setMode}
           class={props.class}
-          contentPieceId={props.contentPieceId}
           blur={props.blur}
         />
       </Match>

@@ -1,6 +1,7 @@
 import { UserList } from "./user-list";
 import { RightPanelMenu } from "./right-panel-menu";
 import { Breadcrumb } from "./breadcrumb";
+import { ExportMenu } from "./export-menu";
 import {
   mdiAppleKeyboardCommand,
   mdiBookOpenBlankVariant,
@@ -26,7 +27,6 @@ import {
   useNotifications,
   useSharedState
 } from "#context";
-import { ExportMenu } from "#views/editor/menus";
 import { Button, Dropdown, Icon, IconButton, Tooltip } from "#components/primitives";
 import { logoIcon } from "#assets/icons";
 import { breakpoints, isAppleDevice } from "#lib/utils";

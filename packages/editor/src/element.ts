@@ -48,7 +48,7 @@ const Element = Node.create({
   parseHTML() {
     return [
       {
-        tag: "div[data-element=true]"
+        tag: "div[data-type]"
       }
     ];
   },

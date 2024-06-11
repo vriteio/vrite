@@ -22,10 +22,15 @@ const ConflictView = lazy(async () => {
 
   return { default: ConflictView };
 });
-const EditorView = lazy(async () => {
-  const { EditorView } = await import("#views/editor");
+const ContentPieceEditorView = lazy(async () => {
+  const { ContentPieceEditorView } = await import("#views/editor");
 
-  return { default: EditorView };
+  return { default: ContentPieceEditorView };
+});
+const SnippetEditorView = lazy(async () => {
+  const { SnippetEditorView } = await import("#views/editor");
+
+  return { default: SnippetEditorView };
 });
 const DashboardView = lazy(async () => {
   const { DashboardView } = await import("#views/dashboard");
@@ -56,11 +61,11 @@ const App: Component = () => {
         <Route path="/auth" component={AuthView} />
         <Route path="/verify" component={VerifyView} />
         <Route path="/workspaces" component={WorkspacesView} />
-        <Route path="/edit" component={EditorView} />
       </Route>
       <Route path={["/", "**"]} component={SecuredWrapper}>
-        <Route path={["/", "/*contentPiece"]} component={DashboardView} />
-        <Route path="/editor/*contentPiece" component={EditorView} />
+        <Route path={["/", "/*contentPieceId"]} component={DashboardView} />
+        <Route path="/editor/*contentPieceId" component={ContentPieceEditorView} />
+        <Route path="/snippet/*snippetId" component={SnippetEditorView} />
         <Show when={hostConfig.githubApp}>
           <Route path="/conflict" component={ConflictView} />
         </Show>

@@ -18,6 +18,7 @@ import { variantsRouter } from "./variants";
 import { gitRouter } from "./git";
 import { searchRouter } from "./search";
 import { transformersRouter } from "./transformers";
+import { snippetsRouter } from "./snippets";
 import type { TRPCClientError } from "@trpc/client";
 import { billingRouter } from "#ee/billing";
 import { Context, createContext } from "#lib/context";
@@ -29,6 +30,7 @@ const appRouter = router({
   utils: utilsRouter,
   contentGroups: contentGroupsRouter,
   contentPieces: contentPiecesRouter,
+  snippets: snippetsRouter,
   tags: tagsRouter,
   userSettings: userSettingsRouter,
   tokens: tokensRouter,

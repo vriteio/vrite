@@ -1,6 +1,6 @@
 {
   "name": "vrite",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "license": "AGPL-3.0-only",
   "private": true,
   "workspaces": [
@@ -11,7 +11,7 @@
     "build": "dotenv -- turbo run build",
     "publish": "turbo run publish",
     "start": "dotenv -- turbo run start",
-    "dev": "dotenv -- turbo run dev",
+    "dev": "dotenv -- turbo run dev --env-mode=loose",
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
   "devDependencies": {
@@ -24,7 +24,7 @@
     "eslint-plugin-solid": "^0.12.1",
     "prettier": "^3.0.2",
     "prettier-plugin-astro": "^0.11.0",
-    "turbo": "^2.0.1",
+    "turbo": "^2.0.3",
     "typescript": "^5.1.6"
   },
   "engines": {

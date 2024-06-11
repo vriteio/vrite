@@ -17,7 +17,9 @@ import {
   getContentVariantsCollection,
   getVariantsCollection,
   getGitDataCollection,
-  getWorkspacesCollection
+  getWorkspacesCollection,
+  getSnippetsCollection,
+  getSnippetContentsCollection
 } from "#collections";
 
 const databasePlugin = createPlugin(async (fastify) => {
@@ -46,6 +48,8 @@ const databasePlugin = createPlugin(async (fastify) => {
   const contentVariantsCollection = getContentVariantsCollection(db);
   const gitDataCollection = getGitDataCollection(db);
   const workspacesCollection = getWorkspacesCollection(db);
+  const snippetsCollection = getSnippetsCollection(db);
+  const snippetContentsCollection = getSnippetContentsCollection(db);
   const createIndexes = [
     contentPiecesCollection.createIndex({ workspaceId: 1 }),
     contentPiecesCollection.createIndex({ contentGroupId: 1 }),
@@ -90,7 +94,9 @@ const databasePlugin = createPlugin(async (fastify) => {
     variantsCollection.createIndex({ workspaceId: 1 }),
     variantsCollection.createIndex({ key: 1 }),
     gitDataCollection.createIndex({ workspaceId: 1 }, { unique: true }),
-    gitDataCollection.createIndex({ "records.contentPieceId": 1 })
+    gitDataCollection.createIndex({ "records.contentPieceId": 1 }),
+    snippetsCollection.createIndex({ workspaceId: 1 }),
+    snippetContentsCollection.createIndex({ snippetId: 1 })
   ];
 
   if (fastify.hostConfig.billing) {

@@ -4,6 +4,7 @@ import { UnderscoreID, zodId } from "#lib/mongo";
 
 const permission = z.enum([
   "editContent",
+  "editSnippets",
   "editMetadata",
   "manageDashboard",
   "manageTokens",

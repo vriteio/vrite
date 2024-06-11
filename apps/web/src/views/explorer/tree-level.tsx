@@ -6,7 +6,7 @@ import { Component, createEffect, Show, For, createSignal } from "solid-js";
 import SortableLib from "sortablejs";
 import { mdiChevronRight, mdiDotsHorizontalCircleOutline, mdiFolderPlus } from "@mdi/js";
 import { useNavigate } from "@solidjs/router";
-import { Icon, IconButton, Loader } from "#components/primitives";
+import { Icon, IconButton, Loader, Sortable } from "#components/primitives";
 import { App, hasPermission, useClient, useContentData, useNotifications } from "#context";
 
 const NewGroupButton: Component = () => {
@@ -290,35 +290,37 @@ const TreeLevel: Component<{
           }}
         </For>
         <For each={contentLevels[props.parentId || ""]?.pieces || []}>
-          {(contentPieceId) => {
+          {(contentPieceId, index) => {
             return (
-              <ContentPieceRow
-                contentPiece={contentPieces[contentPieceId]!}
-                onClick={() => {
-                  navigate(`/editor/${contentPieceId}`);
-                }}
-                onDragEnd={() => {
-                  const contentPiece = contentPieces[contentPieceId]!;
-                  const newParentId = highlight() || "";
-                  const oldParentId = contentPiece.contentGroupId;
-                  const updatedContentPiece: App.ExtendedContentPieceWithAdditionalData<
-                    "order" | "coverWidth"
-                  > = {
-                    ...contentPiece,
-                    contentGroupId: newParentId
-                  };
+              <div class="flex flex-row-reverse group/order relative justify-center items-center">
+                <ContentPieceRow
+                  contentPiece={contentPieces[contentPieceId]!}
+                  onClick={() => {
+                    navigate(`/editor/${contentPieceId}`);
+                  }}
+                  onDragEnd={() => {
+                    const contentPiece = contentPieces[contentPieceId]!;
+                    const newParentId = highlight() || "";
+                    const oldParentId = contentPiece.contentGroupId;
+                    const updatedContentPiece: App.ExtendedContentPieceWithAdditionalData<
+                      "order" | "coverWidth"
+                    > = {
+                      ...contentPiece,
+                      contentGroupId: newParentId
+                    };
 
-                  if (!newParentId || newParentId === oldParentId) return;
+                    if (!newParentId || newParentId === oldParentId) return;
 
-                  contentActions.moveContentPiece({
-                    contentPiece: updatedContentPiece
-                  });
-                  client.contentPieces.move.mutate({
-                    id: contentPieceId,
-                    contentGroupId: newParentId || undefined
-                  });
-                }}
-              />
+                    contentActions.moveContentPiece({
+                      contentPiece: updatedContentPiece
+                    });
+                    client.contentPieces.move.mutate({
+                      id: contentPieceId,
+                      contentGroupId: newParentId || undefined
+                    });
+                  }}
+                />
+              </div>
             );
           }}
         </For>

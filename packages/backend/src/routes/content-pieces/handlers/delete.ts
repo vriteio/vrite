@@ -3,6 +3,8 @@ import { z } from "zod";
 import {
   contentPiece,
   FullContentPiece,
+  getCommentsCollection,
+  getCommentThreadsCollection,
   getContentPiecesCollection,
   getContentPieceVariantsCollection,
   getContentsCollection,
@@ -33,12 +35,20 @@ const handler = async (
   const contentPieceVariantsCollection = getContentPieceVariantsCollection(ctx.db);
   const contentsCollection = getContentsCollection(ctx.db);
   const contentVariantsCollection = getContentVariantsCollection(ctx.db);
+  const commentThreadsCollection = getCommentThreadsCollection(ctx.db);
+  const commentsCollection = getCommentsCollection(ctx.db);
   const contentPiece = await contentPiecesCollection.findOne({
     _id: new ObjectId(input.id),
     workspaceId: ctx.auth.workspaceId
   });
 
   if (!contentPiece) throw errors.notFound("contentPiece");
+
+  const commentThreads = await commentThreadsCollection
+    .find({
+      contentPieceId: contentPiece._id
+    })
+    .toArray();
 
   await contentPiecesCollection.deleteOne({ _id: contentPiece._id });
   await contentsCollection.deleteOne({ contentPieceId: contentPiece._id });
@@ -48,6 +58,12 @@ const handler = async (
   });
   await contentVariantsCollection.deleteMany({
     contentPieceId: contentPiece._id
+  });
+  await commentThreadsCollection.deleteMany({
+    contentPieceId: contentPiece._id
+  });
+  await commentsCollection.deleteMany({
+    threadId: { $in: commentThreads.map((thread) => thread._id) }
   });
   publishContentPieceEvent(ctx, `${contentPiece.contentGroupId}`, {
     action: "delete",

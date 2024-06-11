@@ -7,6 +7,7 @@ export type {
   JSONContent,
   JSONContentAttrs
 } from "./content-pieces";
+export type { Snippet } from "./snippets";
 export type { Profile } from "./profile";
 export type { Role, RoleBaseType, RolePermission } from "./roles";
 export type { Tag, TagColor } from "./tags";

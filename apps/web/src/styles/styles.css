@@ -164,3 +164,32 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 .highlight-text * {
   @apply bg-gradient-to-tr font-semibold text-transparent bg-clip-text dark:text-transparent dark:bg-clip-text;
 }
+.gradient-border-left {
+  background: linear-gradient(to left, transparent 50%, theme(colors.gray.100) 50%),
+    linear-gradient(to left, currentColor, currentColor);
+  background-size:
+    16px 2px,
+    100% 2px;
+}
+.dark .gradient-border-left {
+  background: linear-gradient(to left, transparent 50%, theme(colors.gray.800) 50%),
+    linear-gradient(to left, currentColor, currentColor);
+  background-size:
+    16px 2px,
+    100% 2px;
+}
+
+.gradient-border-right {
+  background: linear-gradient(to right, transparent 50%, theme(colors.gray.100) 50%),
+    linear-gradient(to right, currentColor, currentColor);
+  background-size:
+    16px 2px,
+    100% 2px;
+}
+.dark .gradient-border-right {
+  background: linear-gradient(to right, transparent 50%, theme(colors.gray.800) 50%),
+    linear-gradient(to right, currentColor, currentColor);
+  background-size:
+    16px 2px,
+    100% 2px;
+}

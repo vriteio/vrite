@@ -5,7 +5,7 @@ import { Range } from "@tiptap/core";
 import clsx from "clsx";
 import { scrollIntoView } from "seamless-scroll-polyfill";
 import { Ref, breakpoints } from "#lib/utils";
-import { Button, Card, IconButton } from "#components/primitives";
+import { Button, Card, Icon, IconButton, Loader } from "#components/primitives";
 import { App } from "#context";
 
 interface SlashMenuItem {
@@ -15,9 +15,10 @@ interface SlashMenuItem {
   block?: App.WorkspaceSettings["blocks"][number];
   embed?: App.WorkspaceSettings["embeds"][number];
   ref: Ref<HTMLElement | null>;
-  command(params: { editor: SolidEditor; range: Range }): void;
+  command(params: { editor: SolidEditor; range: Range }): any | Promise<any>;
 }
 interface SlashMenuState extends SuggestionProps<SlashMenuItem> {
+  close(): void;
   onKeyDown?(props: SuggestionKeyDownProps): boolean;
   setOnKeyDown(callback: (props: SuggestionKeyDownProps) => boolean): void;
 }
@@ -28,12 +29,25 @@ interface SlashMenuProps {
 const BlockMenu: Component<{ items: SlashMenuItem[]; editor: SolidEditor; close(): void }> = (
   props
 ) => {
+  const [loading, setLoading] = createSignal(-1);
   const selectItem = (index: number): void => {
     const item = props.items[index];
 
     if (item) {
-      item.command({ editor: props.editor, range: props.editor.state.selection });
-      props.close();
+      const commandResult = item.command({
+        editor: props.editor,
+        range: props.editor.state.selection
+      });
+
+      if (commandResult instanceof Promise) {
+        setLoading(index);
+        commandResult.finally(() => {
+          setLoading(-1);
+          props.close();
+        });
+      } else {
+        props.close();
+      }
     }
   };
 
@@ -58,14 +72,25 @@ const BlockMenu: Component<{ items: SlashMenuItem[]; editor: SolidEditor; close(
               <Show when={menuItem.group !== props.items[index() - 1]?.group}>
                 <div class="px-2 font-semibold">{menuItem.group}</div>
               </Show>
-              <IconButton
-                path={menuItem.icon}
-                label={menuItem.label}
+              <Button
+                loading={loading() === index()}
                 ref={menuItem.ref[1]}
                 onClick={() => selectItem(index())}
                 variant="text"
-                class="justify-start w-[calc(100%-0.5rem)]"
-              />
+                class="justify-start w-[calc(100%-0.5rem)] flex items-center p-1"
+              >
+                <Show
+                  when={loading() !== index()}
+                  fallback={
+                    <div class="flex justify-center items-center h-6 w-6">
+                      <Loader class="h-5 w-5" />
+                    </div>
+                  }
+                >
+                  <Icon path={menuItem.icon || ""} class="h-6 w-6 fill-inherit" />
+                </Show>
+                <span class="pl-1">{menuItem.label}</span>
+              </Button>
             </>
           );
         }}
@@ -75,12 +100,27 @@ const BlockMenu: Component<{ items: SlashMenuItem[]; editor: SolidEditor; close(
 };
 const SlashMenu: Component<SlashMenuProps> = (props) => {
   const [selectedIndex, setSelectedIndex] = createSignal(0);
+  const [loading, setLoading] = createSignal(-1);
   const [blockHoverSelect, setBlockHoverSelect] = createSignal(false);
   const selectItem = (index: number): void => {
     const item = props.state.items[index];
+    const editor = props.state.editor as SolidEditor;
 
     if (item) {
-      props.state.command(item);
+      const commandResult = item.command({
+        editor,
+        range: props.state.range
+      });
+
+      if (commandResult instanceof Promise) {
+        setLoading(index);
+        commandResult.finally(() => {
+          setLoading(-1);
+          props.state.close();
+        });
+      } else {
+        props.state.close();
+      }
     }
   };
   const scrollToSelectedItem = (): void => {
@@ -150,15 +190,10 @@ const SlashMenu: Component<SlashMenuProps> = (props) => {
     <Show when={breakpoints.md()}>
       <Card
         class={clsx(
-          "shadow-2xl md:shadow-none rounded-none border-x-0 md:border-x-2 md:rounded-2xl -translate-x-2 md:translate-x-0 w-screen md:w-56 m-0 max-h-72 overflow-hidden transition duration-200 transform origin-top-left p-1"
+          "shadow-2xl md:shadow-none rounded-none border-x-0 md:border-x-2 md:rounded-2xl -translate-x-2 md:translate-x-0 w-screen md:w-72 m-0 max-h-96 overflow-hidden transition duration-200 transform origin-top-left p-1"
         )}
       >
-        <div
-          class={clsx(
-            // "w-full h-full overflow-auto md:max-h-64 scrollbar-sm"
-            "w-full h-full overflow-auto max-h-64 scrollbar-sm"
-          )}
-        >
+        <div class={clsx("w-full h-full overflow-auto max-h-88 scrollbar-sm")}>
           <For
             each={props.state.items}
             fallback={
@@ -178,9 +213,7 @@ const SlashMenu: Component<SlashMenuProps> = (props) => {
                   <Show when={menuItem.group !== props.state.items[index() - 1]?.group}>
                     <div class="px-2 font-semibold">{menuItem.group}</div>
                   </Show>
-                  <IconButton
-                    path={menuItem.icon}
-                    label={menuItem.label}
+                  <Button
                     ref={menuItem.ref[1]}
                     hover={false}
                     onClick={() => selectItem(index())}
@@ -194,10 +227,22 @@ const SlashMenu: Component<SlashMenuProps> = (props) => {
                     }}
                     variant="text"
                     class={clsx(
-                      "justify-start w-[calc(100%-0.5rem)]",
+                      "justify-start w-[calc(100%-0.5rem)] flex items-center p-1",
                       selectedIndex() === index() && "bg-gray-300 dark:bg-gray-700"
                     )}
-                  />
+                  >
+                    <Show
+                      when={loading() !== index()}
+                      fallback={
+                        <div class="flex justify-center items-center h-6 w-6">
+                          <Loader class="h-5 w-5" />
+                        </div>
+                      }
+                    >
+                      <Icon path={menuItem.icon || ""} class="h-6 w-6 fill-inherit" />
+                    </Show>
+                    <span class="pl-1">{menuItem.label}</span>
+                  </Button>
                 </>
               );
             }}

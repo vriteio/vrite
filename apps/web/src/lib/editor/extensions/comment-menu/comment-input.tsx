@@ -81,7 +81,12 @@ const CommentInput: Component<{
           />
         </Tooltip>
       </div>
-      <div class="flex justify-end items-center text-xs px-2 gap-1">
+      <div
+        class={clsx(
+          "justify-end items-center text-xs px-2 gap-1",
+          props.thread?.resolved ? "hidden" : "flex"
+        )}
+      >
         <kbd class="bg-gray-200 dark:bg-gray-900 text-gray-500 dark:text-gray-400 flex justify-center items-center rounded-md px-1 h-4">
           {isAppleDevice() ? <Icon path={mdiAppleKeyboardCommand} class="h-3 w-3" /> : "Ctrl "}{" "}
           Enter

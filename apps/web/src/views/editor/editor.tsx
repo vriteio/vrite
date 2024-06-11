@@ -6,7 +6,15 @@ import {
   SolidEditorContent,
   useEditor
 } from "@vrite/tiptap-solid";
-import { Component, createEffect, createSignal, on, onCleanup } from "solid-js";
+import {
+  ParentComponent,
+  Show,
+  createEffect,
+  createMemo,
+  createSignal,
+  on,
+  onCleanup
+} from "solid-js";
 import { HardBreak, Paragraph, Text, Document } from "@vrite/editor";
 import {
   Extension,
@@ -29,7 +37,6 @@ import { debounce } from "@solid-primitives/scheduled";
 import { Dropdown } from "#components/primitives";
 import {
   Placeholder,
-  TrailingNode,
   DraggableText,
   LinkPreviewWrapper,
   SlashMenuPlugin,
@@ -41,24 +48,15 @@ import {
   createBlockMenuOptions,
   BlockPaste,
   TableMenuPlugin,
-  ElementMenuPlugin,
   CommentMenuPlugin,
   AutoDir,
   Shortcuts,
-  AutocompletePlugin
+  createSnippetsMenuOptions
 } from "#lib/editor";
-import {
-  App,
-  hasPermission,
-  useAuthenticatedUserData,
-  useClient,
-  useContentData,
-  useExtensions,
-  useHostConfig,
-  useSharedState
-} from "#context";
+import { useAuthenticatedUserData, useExtensions, useHostConfig, useSharedState } from "#context";
 import { breakpoints, createRef } from "#lib/utils";
 import { BlockMenu } from "#lib/editor/extensions/slash-menu/component";
+import { useCommentData } from "#context/comments";
 
 declare module "#context" {
   interface SharedState {
@@ -69,20 +67,38 @@ declare module "#context" {
 
 interface EditorProps {
   reloaded?: boolean;
-  editedContentPiece: App.ContentPieceWithAdditionalData;
   scrollableContainerRef(): HTMLElement | null;
   onLoad?(): void;
   reload?(): void;
 }
 
-const Editor: Component<EditorProps> = (props) => {
-  const { activeVariantId } = useContentData();
+const Editor: ParentComponent<EditorProps & { docName: string; editable?: boolean }> = (props) => {
   const hostConfig = useHostConfig();
   const navigate = useNavigate();
-  const location = useLocation<{ breadcrumb?: string[] }>();
+  const location = useLocation();
+  const commentData = useCommentData();
   const { useSharedSignal } = useSharedState();
-  const ydoc = new Y.Doc();
+  const { workspaceSettings } = useAuthenticatedUserData();
+  const extensionsContext = useExtensions();
+  const [, setSharedEditor] = useSharedSignal("editor");
+  const [, setSharedProvider] = useSharedSignal("provider");
   const [containerRef, setContainerRef] = createRef<HTMLElement | null>(null);
+  const [bubbleMenuOpened, setBubbleMenuOpened] = createSignal(true);
+  const [bubbleMenuInstance, setBubbleMenuInstance] = createSignal<Instance | null>(null);
+  const [floatingMenuOpened, setFloatingMenuOpened] = createSignal(true);
+  const [blockMenuOpened, setBlockMenuOpened] = createSignal(false);
+  const [showBlockBubbleMenu, setShowBlockBubbleMenu] = createSignal(false);
+  const [isNodeSelection, setIsNodeSelection] = createSignal(false);
+  const [activeElement, setActiveElement] = createRef<HTMLElement | null>(null);
+  const baseBlockMenuOptions = createMemo(() => {
+    return workspaceSettings() ? createBlockMenuOptions(workspaceSettings()!) : [];
+  });
+  const blockMenuOptions = createMemo(() => {
+    return [...baseBlockMenuOptions(), ...createSnippetsMenuOptions()];
+  });
+  const updateBubbleMenuPlacement = debounce(() => {
+    bubbleMenuInstance()?.setProps({ placement: isNodeSelection() ? "top-start" : "top" });
+  }, 250);
   const handleReload = async (): Promise<void> => {
     if (props.reloaded) {
       navigate("/");
@@ -104,100 +120,15 @@ const Editor: Component<EditorProps> = (props) => {
     const containerRect = scrollableContainer.getBoundingClientRect();
     const rect = heading.getBoundingClientRect();
 
-    setTimeout(() => {
+    requestAnimationFrame(() => {
       scrollableContainer.scrollTo({
         top: rect.top - containerRect.top + scrollableContainer.scrollTop,
         behavior: "instant"
       });
       navigate(location.pathname, { replace: true });
-    }, 0);
+    });
   };
-  const provider = new HocuspocusProvider({
-    token: "vrite",
-    url: window.env.PUBLIC_COLLAB_URL.replace("http", "ws"),
-    async onSynced() {
-      props.onLoad?.();
-      scrollToHeading();
-    },
-    onDisconnect: handleReload,
-    onAuthenticationFailed: handleReload,
-    name: `${props.editedContentPiece.id || ""}${activeVariantId() ? ":" : ""}${
-      activeVariantId() || ""
-    }`,
-    document: ydoc
-  });
-  const [bubbleMenuOpened, setBubbleMenuOpened] = createSignal(true);
-  const [bubbleMenuInstance, setBubbleMenuInstance] = createSignal<Instance | null>(null);
-  const [floatingMenuOpened, setFloatingMenuOpened] = createSignal(true);
-  const [blockMenuOpened, setBlockMenuOpened] = createSignal(false);
-  const [showBlockBubbleMenu, setShowBlockBubbleMenu] = createSignal(false);
-  const [isNodeSelection, setIsNodeSelection] = createSignal(false);
-  const { workspaceSettings } = useAuthenticatedUserData();
-  const extensionsContext = useExtensions();
-  const updateBubbleMenuPlacement = debounce(() => {
-    bubbleMenuInstance()?.setProps({ placement: isNodeSelection() ? "top-start" : "top" });
-  }, 250);
-
-  let el: HTMLElement | null = null;
-
-  const getEditorExtensions = (): Array<MarkExtension | NodeExtension> => {
-    if (workspaceSettings()) {
-      return createExtensions(extensionsContext, workspaceSettings()!, provider);
-    }
-
-    return [];
-  };
-  const editor = useEditor({
-    onCreate({ editor }) {
-      if (workspaceSettings()) {
-        editor.view.setProps({
-          clipboardSerializer: createClipboardSerializer(editor, workspaceSettings()!)
-        });
-      }
-    },
-    extensions: [
-      BlockPaste.configure({ workspaceSettings }),
-      // AutocompletePlugin.configure({ client }),
-      Document,
-      Placeholder,
-      Paragraph,
-      Text,
-      HardBreak,
-      Typography,
-      ...getEditorExtensions(),
-      TrailingNode,
-      DraggableText,
-      CharacterCount,
-      AutoDir,
-      Gapcursor,
-      Dropcursor.configure({ class: "ProseMirror-dropcursor" }),
-      SlashMenuPlugin.configure({
-        menuItems: workspaceSettings() ? createBlockMenuOptions(workspaceSettings()!) : []
-      }),
-      hostConfig.extensions && BlockActionMenuPlugin,
-      TableMenuPlugin,
-      ElementMenuPlugin,
-      CommentMenuPlugin,
-      Shortcuts,
-      Collab.configure({
-        document: ydoc
-      }),
-      CollabCursor(provider)
-    ].filter(Boolean) as Extension[],
-    editable: hasPermission("editContent"),
-    editorProps: { attributes: { class: `outline-none` } },
-    onSelectionUpdate({ editor }) {
-      setIsNodeSelection(editor.state.selection instanceof NodeSelection);
-    },
-    onBlur({ event }) {
-      el = event?.relatedTarget as HTMLElement | null;
-    }
-  });
-  const [, setSharedEditor] = useSharedSignal("editor", editor());
-  const [, setSharedProvider] = useSharedSignal("provider", provider);
   const shouldShow = (editor: SolidEditor): boolean => {
-    el = null;
-
     const { state, view } = editor;
     const { doc, selection } = state;
     const { ranges } = selection;
@@ -208,6 +139,8 @@ const Editor: Component<EditorProps> = (props) => {
     const isCellSelection = selection instanceof CellSelection;
     const isNodeSelection = selection instanceof NodeSelection;
     const isEmptyTextBlock = !doc.textBetween(from, to).length && isTextSelection(state.selection);
+
+    setActiveElement(null);
 
     if ((!view.hasFocus() && !isNodeSelection) || isAllSelection) {
       setBubbleMenuOpened(false);
@@ -263,6 +196,71 @@ const Editor: Component<EditorProps> = (props) => {
 
     return true;
   };
+  const getEditorExtensions = (
+    provider: HocuspocusProvider
+  ): Array<MarkExtension | NodeExtension> => {
+    if (workspaceSettings()) {
+      return createExtensions(extensionsContext, workspaceSettings()!, provider);
+    }
+
+    return [];
+  };
+  const ydoc = new Y.Doc();
+  const provider = new HocuspocusProvider({
+    token: "vrite",
+    url: window.env.PUBLIC_COLLAB_URL.replace("http", "ws"),
+    async onSynced() {
+      props.onLoad?.();
+      scrollToHeading();
+    },
+    onDisconnect: handleReload,
+    onAuthenticationFailed: handleReload,
+    name: props.docName,
+    document: ydoc
+  });
+  const editor = useEditor({
+    onCreate({ editor }) {
+      editor.view.setProps({
+        clipboardSerializer: createClipboardSerializer(editor, workspaceSettings()!)
+      });
+    },
+    extensions: [
+      ...getEditorExtensions(provider),
+      BlockPaste.configure({ workspaceSettings }),
+      Document,
+      Placeholder,
+      Paragraph,
+      Text,
+      HardBreak,
+      Typography,
+      DraggableText,
+      CharacterCount,
+      AutoDir,
+      Gapcursor,
+      Dropcursor.configure({ class: "ProseMirror-dropcursor" }),
+      SlashMenuPlugin.configure({
+        menuItems: blockMenuOptions
+      }),
+      hostConfig.extensions && BlockActionMenuPlugin,
+      TableMenuPlugin,
+      CommentMenuPlugin.configure({
+        commentData
+      }),
+      Shortcuts,
+      Collab.configure({
+        document: ydoc
+      }),
+      CollabCursor(provider)
+    ].filter(Boolean) as Extension[],
+    editable: props.editable,
+    editorProps: { attributes: { class: `outline-none` } },
+    onSelectionUpdate({ editor }) {
+      setIsNodeSelection(editor.state.selection instanceof NodeSelection);
+    },
+    onBlur({ event }) {
+      setActiveElement(event?.relatedTarget as HTMLElement | null);
+    }
+  });
 
   onCleanup(() => {
     editor().destroy();
@@ -291,95 +289,90 @@ const Editor: Component<EditorProps> = (props) => {
   );
 
   return (
-    <>
-      <div
-        class="w-full max-w-[70ch] prose prose-editor text-xl dark:prose-invert relative transform"
-        ref={setContainerRef}
-        id="pm-container"
+    <div
+      class="w-full max-w-[70ch] prose prose-editor text-xl dark:prose-invert relative transform"
+      ref={setContainerRef}
+      id="pm-container"
+    >
+      <LinkPreviewWrapper editor={editor()}>
+        {(link, tippyInstance) => {
+          return <LinkPreviewMenu link={link} tippyInstance={tippyInstance} />;
+        }}
+      </LinkPreviewWrapper>
+
+      <BubbleMenuWrapper
+        editor={editor()}
+        tippyOptions={{
+          duration: [300, 250],
+          zIndex: 30,
+          hideOnClick: false,
+          interactive: true,
+          animation: breakpoints.md() ? "scale-subtle" : "shift-away-subtle",
+          onHide() {
+            if (containerRef()?.contains(activeElement())) return false;
+          },
+          onCreate(instance) {
+            setBubbleMenuInstance(instance);
+          },
+          maxWidth: "100%"
+        }}
+        shouldShow={({ editor }) => {
+          if (!breakpoints.md() && shouldShowFloatingMenu(editor as SolidEditor)) {
+            setShowBlockBubbleMenu(true);
+
+            return true;
+          }
+
+          setShowBlockBubbleMenu(false);
+
+          if (isNodeSelection()) {
+            bubbleMenuInstance()?.setProps({
+              placement: isNodeSelection() ? "top-start" : "top"
+            });
+          }
+
+          return shouldShow(editor as SolidEditor);
+        }}
       >
-        {editor() && (
-          <LinkPreviewWrapper editor={editor()}>
-            {(link, tippyInstance) => {
-              return <LinkPreviewMenu link={link} tippyInstance={tippyInstance} />;
-            }}
-          </LinkPreviewWrapper>
-        )}
-        {editor() && (
-          <BubbleMenuWrapper
+        <BubbleMenu
+          class={clsx(!breakpoints.md() && "m-0 w-screen -left-1 rounded-none border-x-0")}
+          editor={editor()}
+          opened={bubbleMenuOpened()}
+          setBlockMenuOpened={setBlockMenuOpened}
+          mode={showBlockBubbleMenu() ? "block" : undefined}
+          blur={() => {
+            editor().commands.blur();
+            setActiveElement(null);
+            bubbleMenuInstance()?.hide();
+          }}
+        />
+      </BubbleMenuWrapper>
+      <Show when={breakpoints.md()}>
+        <FloatingMenuWrapper
+          editor={editor()}
+          shouldShow={({ editor }) => {
+            return shouldShowFloatingMenu(editor as SolidEditor);
+          }}
+        >
+          <FloatingMenu editor={editor()} opened={floatingMenuOpened()} />
+        </FloatingMenuWrapper>
+      </Show>
+      <Show when={!breakpoints.md()}>
+        <Dropdown
+          activatorButton={() => <div />}
+          opened={blockMenuOpened()}
+          setOpened={setBlockMenuOpened}
+        >
+          <BlockMenu
+            items={blockMenuOptions()}
+            close={() => setBlockMenuOpened(false)}
             editor={editor()}
-            tippyOptions={{
-              duration: [300, 250],
-              zIndex: 30,
-              hideOnClick: false,
-              interactive: true,
-              animation: breakpoints.md() ? "scale-subtle" : "shift-away-subtle",
-              onHide() {
-                if (containerRef()?.contains(el)) return false;
-              },
-              onCreate(instance) {
-                setBubbleMenuInstance(instance);
-              },
-              maxWidth: "100%"
-            }}
-            shouldShow={({ editor }) => {
-              if (!breakpoints.md() && shouldShowFloatingMenu(editor as SolidEditor)) {
-                setShowBlockBubbleMenu(true);
-
-                return true;
-              }
-
-              setShowBlockBubbleMenu(false);
-
-              if (isNodeSelection()) {
-                bubbleMenuInstance()?.setProps({
-                  placement: isNodeSelection() ? "top-start" : "top"
-                });
-              }
-
-              return shouldShow(editor as SolidEditor);
-            }}
-          >
-            <BubbleMenu
-              class={clsx(!breakpoints.md() && "m-0 w-screen -left-1 rounded-none border-x-0")}
-              editor={editor()}
-              opened={bubbleMenuOpened()}
-              setBlockMenuOpened={setBlockMenuOpened}
-              mode={showBlockBubbleMenu() ? "block" : undefined}
-              blur={() => {
-                editor().commands.blur();
-                el = null;
-                bubbleMenuInstance()?.hide();
-              }}
-              contentPieceId={props.editedContentPiece.id}
-            />
-          </BubbleMenuWrapper>
-        )}
-        {editor() && breakpoints.md() && (
-          <FloatingMenuWrapper
-            editor={editor()}
-            shouldShow={({ editor }) => {
-              return shouldShowFloatingMenu(editor as SolidEditor);
-            }}
-          >
-            <FloatingMenu editor={editor()} opened={floatingMenuOpened()} />
-          </FloatingMenuWrapper>
-        )}
-        {editor() && !breakpoints.md() && (
-          <Dropdown
-            activatorButton={() => <div />}
-            opened={blockMenuOpened()}
-            setOpened={setBlockMenuOpened}
-          >
-            <BlockMenu
-              items={workspaceSettings() ? createBlockMenuOptions(workspaceSettings()!) : []}
-              close={() => setBlockMenuOpened(false)}
-              editor={editor()}
-            />
-          </Dropdown>
-        )}
-        <SolidEditorContent editor={editor()} />
-      </div>
-    </>
+          />
+        </Dropdown>
+      </Show>
+      <SolidEditorContent editor={editor()} />
+      {props.children}
+    </div>
   );
 };
 

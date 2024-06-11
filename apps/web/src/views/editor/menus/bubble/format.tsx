@@ -15,21 +15,22 @@ import {
   mdiFormatUnderlineWavy
 } from "@mdi/js";
 import { nanoid } from "nanoid";
+import { generateHTML } from "@tiptap/core";
 import { Card, IconButton, Tooltip } from "#components/primitives";
-import { App, useAuthenticatedUserData, useClient } from "#context";
-import { breakpoints } from "#lib/utils";
+import { App, useAuthenticatedUserData, useClient, useContentData } from "#context";
+import { breakpoints, optimizeContentSlice } from "#lib/utils";
 
 const FormatMenu: Component<{
   class?: string;
   mode: string;
   opened: boolean;
   editor: SolidEditor;
-  contentPieceId?: string;
   blur?(): void;
   setMode(mode: string): void;
 }> = (props) => {
-  const [activeMarks, setActiveMarks] = createSignal<string[]>([]);
+  const { activeContentPieceId } = useContentData();
   const { workspaceSettings } = useAuthenticatedUserData();
+  const [activeMarks, setActiveMarks] = createSignal<string[]>([]);
   const client = useClient();
   const commentMenuItem = {
     icon: mdiCommentOutline,
@@ -40,12 +41,18 @@ const FormatMenu: Component<{
         props.editor.commands.unsetComment();
       } else {
         const threadFragment = nanoid();
+        const slice = optimizeContentSlice(props.editor.state.selection.content());
+        const html = generateHTML(
+          { type: "doc", content: slice.toJSON().content },
+          props.editor.extensionManager.extensions
+        );
 
         props.editor.chain().setComment({ thread: threadFragment }).focus().run();
 
         try {
           await client.comments.createThread.mutate({
-            contentPieceId: props.contentPieceId || "",
+            contentPieceId: activeContentPieceId()!,
+            initialContent: html,
             fragment: threadFragment
           });
         } catch (error) {
@@ -99,7 +106,7 @@ const FormatMenu: Component<{
       { icon: mdiFormatColorHighlight, mark: "highlight", label: "Highlight" },
       { icon: mdiFormatSubscript, mark: "subscript", label: "Subscript" },
       { icon: mdiFormatSuperscript, mark: "superscript", label: "Superscript" },
-      ...(props.contentPieceId && breakpoints.md() ? [commentMenuItem] : []),
+      ...(activeContentPieceId() && breakpoints.md() ? [commentMenuItem] : []),
       ...(breakpoints.md() ? [] : [closeKeyboardItem])
     ] as Array<{ icon: string; mark?: string; label: string; onClick?(): void }>
   ).filter(({ mark }) => {

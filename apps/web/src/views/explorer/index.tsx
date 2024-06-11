@@ -54,7 +54,7 @@ const ExplorerTree: Component = () => {
 
   return (
     <div class="relative overflow-hidden w-full pl-3 flex flex-col">
-      <div class={"flex justify-start items-start mb-1 px-2 pr-5 flex-col pt-5"}>
+      <div class={"flex justify-start items-start mb-1 px-2 pr-5 flex-col"}>
         <div class="flex justify-center items-center w-full">
           <IconButton
             path={mdiClose}

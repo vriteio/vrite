@@ -44,11 +44,13 @@ import {
   mdiCodepen,
   mdiYoutube,
   mdiTable,
-  mdiCubeOutline
+  mdiCubeOutline,
+  mdiFileHidden
 } from "@mdi/js";
 import { createRef } from "#lib/utils";
-import { App, ExtensionsContextData } from "#context";
+import { App, ExtensionsContextData, useClient } from "#context";
 import { codeSandboxIcon } from "#assets/icons";
+import { useSnippetsData } from "#context/snippets";
 
 const createClipboardSerializer = (
   editor: Editor,
@@ -59,7 +61,9 @@ const createClipboardSerializer = (
     paragraph: base.nodes.paragraph,
     text: base.nodes.text
   };
-  const marks: Record<string, (mark: Mark, inline: boolean) => DOMOutputSpec> = {};
+  const marks: Record<string, (mark: Mark, inline: boolean) => DOMOutputSpec> = {
+    comment: base.marks.comment
+  };
 
   if (settings.embeds.length > 0) {
     nodes.embed = base.nodes.embed;
@@ -345,5 +349,30 @@ const createBlockMenuOptions = (settings?: App.WorkspaceSettings): SlashMenuItem
     return (block && settings.blocks.includes(block)) || (embed && settings.embeds.includes(embed));
   }) as SlashMenuItem[];
 };
+const createSnippetsMenuOptions = (): SlashMenuItem[] => {
+  const { snippets } = useSnippetsData();
+  const client = useClient();
 
-export { createClipboardSerializer, createExtensions, createBlockMenuOptions };
+  return snippets().map((snippet) => {
+    return {
+      label: snippet.name,
+      icon: mdiFileHidden,
+      group: "Snippets",
+      ref: createRef<HTMLElement | null>(null),
+      async command({ editor, range }) {
+        const { content } = await client.snippets.get.query({ id: snippet.id, content: true });
+
+        if (!content) return;
+
+        return editor.chain().focus().deleteRange(range).insertContent(content).run();
+      }
+    };
+  });
+};
+
+export {
+  createClipboardSerializer,
+  createExtensions,
+  createBlockMenuOptions,
+  createSnippetsMenuOptions
+};

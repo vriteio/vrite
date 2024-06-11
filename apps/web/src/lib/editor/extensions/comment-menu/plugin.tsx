@@ -1,19 +1,18 @@
 import { CommentMenu } from "./component";
 import { Comment } from "@vrite/editor";
-import { Editor, Extension, getAttributes, getMarkRange, mergeAttributes } from "@tiptap/core";
+import { Editor, getAttributes } from "@tiptap/core";
 import { SolidEditor, SolidRenderer } from "@vrite/tiptap-solid";
 import { debounce } from "@solid-primitives/scheduled";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
 import { DecorationSet, Decoration } from "@tiptap/pm/view";
-import { Mark, ResolvedPos } from "@tiptap/pm/model";
+import { Mark } from "@tiptap/pm/model";
+import { CommentDataContextData } from "#context/comments";
 
 const box = document.createElement("div");
 
 let component: SolidRenderer<{
   editor: SolidEditor;
-  fragment: string;
   contentOverlap: boolean;
-  setFragment(fragment: string): void;
   updatePosition(): void;
 }> | null = null;
 
@@ -35,33 +34,46 @@ const updatePosition = (editor: Editor): void => {
   box.style.top = "0px";
   box.style.right = "0px";
   box.style.display = "block";
-  box.style.transform = `translateX(${Math.min(viewWidth - parentPos.width + 24, 360)}px)`;
+  box.style.transform = `translateX(${Math.min((viewWidth - parentPos.width) / 2 + 24, 360)}px)`;
   component?.setState((state) => ({
     ...state,
-    contentOverlap: viewWidth - parentPos.width + 24 < 360
+    contentOverlap: (viewWidth - parentPos.width) / 2 + 24 < 360
   }));
 };
 const CommentMenuPluginKey = new PluginKey("commentMenu");
-const CommentMenuPlugin = Comment.extend({
-  // name: "commentMenu",
+const CommentMenuPlugin = Comment.extend<
+  { commentData: CommentDataContextData },
+  {
+    resizeHandler(): void;
+    activeFragmentId(): string | null;
+    setActiveFragmentId(id: string): void;
+  }
+>({
   exitable: true,
+  addOptions() {
+    return { commentData: {} as CommentDataContextData };
+  },
   addStorage() {
     return {
-      resizeHandler: () => {}
+      resizeHandler: () => {},
+      activeFragmentId: () => null,
+      setActiveFragmentId: () => {}
     };
   },
   addCommands() {
+    const { storage } = this;
+
     return {
       setComment: (attributes) => {
         return ({ commands }) => {
-          component?.state().setFragment(attributes.thread || "");
+          storage.setActiveFragmentId(attributes.thread || "");
 
           return commands.setMark("comment", attributes);
         };
       },
       unsetComment: () => {
         return ({ commands }) => {
-          component?.state().setFragment("");
+          storage.setActiveFragmentId("");
 
           return commands.unsetMark("comment");
         };
@@ -77,19 +89,9 @@ const CommentMenuPlugin = Comment.extend({
       editor: this.editor as SolidEditor,
       state: {
         editor: this.editor as SolidEditor,
-        fragment: "",
         contentOverlap: false as boolean,
         updatePosition() {
           updatePosition(this.editor);
-        },
-        setFragment(fragment: string) {
-          component?.setState((state) => ({
-            ...state,
-            fragment
-          }));
-          this.editor.view.dispatch(
-            this.editor.view.state.tr.setMeta(CommentMenuPluginKey, { fragment })
-          );
         }
       }
     });
@@ -99,6 +101,13 @@ const CommentMenuPlugin = Comment.extend({
     box.appendChild(component.element);
     document.getElementById("pm-container")?.appendChild(box);
     this.storage.resizeHandler = debouncedHandleUpdate;
+    this.storage.activeFragmentId = () => this.options.commentData.activeFragmentId();
+    this.storage.setActiveFragmentId = (id: string) => {
+      this.options.commentData.setActiveFragmentId(id);
+      this.editor.view.dispatch(
+        this.editor.view.state.tr.setMeta(CommentMenuPluginKey, { fragment: id })
+      );
+    };
     window.addEventListener("resize", this.storage.resizeHandler);
   },
   onDestroy() {
@@ -116,6 +125,8 @@ const CommentMenuPlugin = Comment.extend({
     }, 0);
   },
   addProseMirrorPlugins() {
+    const { storage } = this;
+
     return [
       new Plugin({
         key: CommentMenuPluginKey,
@@ -129,7 +140,7 @@ const CommentMenuPlugin = Comment.extend({
               if (
                 node.type.name === "text" &&
                 commentMark &&
-                commentMark.attrs.thread === component?.state().fragment
+                commentMark.attrs.thread === storage.activeFragmentId()
               ) {
                 activeMarks.push({
                   mark: commentMark,
@@ -156,7 +167,7 @@ const CommentMenuPlugin = Comment.extend({
 
             const attrs = getAttributes(view.state, "comment");
 
-            component?.state().setFragment(attrs.thread || "");
+            storage.setActiveFragmentId(attrs.thread || "");
 
             if (attrs.thread) {
               return true;

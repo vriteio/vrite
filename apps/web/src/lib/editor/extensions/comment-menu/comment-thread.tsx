@@ -1,22 +1,14 @@
 import { CommentCard, CommentWithMember } from "./comment-card";
 import { CommentInput } from "./comment-input";
-import { ThreadWithFirstComment, useCommentData } from "./comment-data";
 import { SolidEditor } from "@vrite/tiptap-solid";
 import clsx from "clsx";
-import { Component, createSignal, createEffect, on, Show, For } from "solid-js";
+import { Component, createSignal, createEffect, on, Show, For, createMemo } from "solid-js";
 import { mdiCheckCircleOutline, mdiCloseCircle } from "@mdi/js";
 import { createRef } from "@vrite/components/src/ref";
 import { Button, Card, Heading, IconButton, Loader } from "#components/primitives";
 import { App, useClient } from "#context";
 import { ScrollShadow } from "#components/fragments";
-
-interface CommentFragmentData {
-  id: string;
-  top: number;
-  computedTop: number;
-  overlap: number;
-  pos: number;
-}
+import { CommentFragmentData, ThreadWithFirstComment, useCommentData } from "#context/comments";
 
 const CommentThread: Component<{
   fragment: CommentFragmentData;
@@ -27,65 +19,32 @@ const CommentThread: Component<{
   setFragment(fragment: string): void;
 }> = (props) => {
   const client = useClient();
-  const { subscribeToUpdates, getThreadByFragment } = useCommentData();
+  const { getThreadByFragment, useCommentsInThread } = useCommentData();
   const [resolving, setResolving] = createSignal(false);
   const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLDivElement | null>(
     null
   );
-  const [loading, setLoading] = createSignal(true);
-  const [comments, setComments] = createSignal<
-    Array<Omit<App.Comment, "memberId"> & { member: App.CommentMember | null }>
-  >([]);
   const selected = (): boolean => props.selectedFragmentId === props.fragment.id;
-  const loadComments = async (): Promise<void> => {
-    setLoading(true);
-
-    try {
-      const comments = await client.comments.listComments.query({
-        fragment: props.fragment.id
-      });
-
-      setComments(comments);
-      setLoading(false);
-    } catch (error) {
-      setLoading(false);
-    }
-  };
+  const top = createMemo(() => {
+    return props.contentOverlap || selected() ? props.fragment.top() : props.fragment.computedTop();
+  });
   const thread = (): ThreadWithFirstComment | null => getThreadByFragment(props.fragment.id);
+  const { comments, loading } = useCommentsInThread(() => thread()?.id || "");
   const firstComment = (): CommentWithMember => comments()[0];
   const latterComments = (): CommentWithMember[] => comments().slice(1);
-
-  createEffect(
-    on(thread, (thread, previousThread) => {
-      if (thread?.id !== previousThread?.id) {
-        loadComments();
-      }
-    })
-  );
-  subscribeToUpdates(({ action, data }) => {
-    if (action === "createComment" && data.threadId === thread()?.id) {
-      setComments((comments) => [...comments, data]);
-    } else if (action === "deleteComment") {
-      setComments((comments) => {
-        return comments.filter((comment) => comment.id !== data.id);
-      });
-    }
-  });
 
   return (
     <div
       class={clsx(
-        "absolute rounded-2xl flex flex-col gap-2 transform transition-all",
+        "absolute rounded-b-2xl flex flex-col gap-2 transform transition-transform",
         props.selectedFragmentId && !selected() && "opacity-40 scale-90 z-0",
         props.contentOverlap && props.selectedFragmentId && !selected() && "!hidden",
         props.selectedFragmentId &&
           selected() &&
-          "z-1 hidden md:block not-prose text-base w-86 m-0 transform min-h-[60vh] max-h-[60vh] bg-gray-100 dark:bg-gray-800 dark:bg-opacity-50 bg-opacity-80 rounded-l-2xl"
+          "z-1 hidden md:block not-prose text-base w-86 m-0 transform min-h-[60vh] max-h-[60vh] bg-gray-100 dark:bg-gray-800 dark:bg-opacity-50 bg-opacity-80"
       )}
       style={{
-        top: `${
-          props.contentOverlap || selected() ? props.fragment.top : props.fragment.computedTop
-        }px`,
+        top: `${top()}px`,
         right: "0px",
         width: "100%"
       }}
@@ -94,7 +53,7 @@ const CommentThread: Component<{
       }}
     >
       <Show when={selected()}>
-        <div class="flex justify-center items-center absolute w-full px-3 -top-9 pb-1 bg-gray-100 dark:bg-gray-800 dark:bg-opacity-50 bg-opacity-80">
+        <div class="flex justify-center items-center absolute w-full px-3 -top-8 bg-gray-100 dark:bg-gray-800 dark:bg-opacity-50 bg-opacity-80 rounded-t-2xl">
           <IconButton
             path={mdiCloseCircle}
             class="m-0 mr-1 p-0.5"
@@ -138,7 +97,13 @@ const CommentThread: Component<{
                 await client.comments.resolveThread.mutate({
                   fragment: threadFragment
                 });
-                props.editor.chain().extendMarkRange("comment").focus().unsetComment().run();
+                props.editor
+                  .chain()
+                  .setTextSelection(props.fragment.pos)
+                  .extendMarkRange("comment")
+                  .focus()
+                  .unsetComment()
+                  .run();
                 setResolving(false);
               }}
             />
@@ -146,31 +111,41 @@ const CommentThread: Component<{
         </div>
       </Show>
       <ScrollShadow scrollableContainerRef={scrollableContainerRef} color="contrast" />
-      <div
-        class="overflow-y-auto h-full scrollbar-sm-contrast h-[60vh] max-h-[60vh] flex flex-col gap-2 p-2 pt-0"
-        ref={setScrollableContainerRef}
-      >
-        <Show
-          when={firstComment()}
-          fallback={
-            <Show when={!selected()}>
-              <Card class="m-0 min-h-24 flex justify-center items-center cursor-pointer">
-                <Button badge loading={loading()} variant="text" text="soft" hover={false}>
-                  Start discussion
-                </Button>
-              </Card>
-            </Show>
-          }
+      <div class="flex relative justify-center items-center w-full">
+        <div
+          class="overflow-y-auto h-full w-full scrollbar-sm-contrast max-h-[60vh] flex flex-col gap-2 p-2"
+          ref={setScrollableContainerRef}
         >
-          <CommentCard comment={firstComment()!} class={clsx(!selected() && "cursor-pointer")} />
-        </Show>
-        <Show when={!loading() && selected()}>
-          <For each={latterComments()}>
-            {(comment) => {
-              return <CommentCard comment={comment} />;
-            }}
-          </For>
-          <CommentInput thread={thread()} />
+          <Show
+            when={firstComment()}
+            fallback={
+              <Show when={!selected()}>
+                <Card class="m-0 min-h-24 flex justify-center items-center cursor-pointer">
+                  <Button badge loading={loading()} variant="text" text="soft" hover={false}>
+                    Start discussion
+                  </Button>
+                </Card>
+              </Show>
+            }
+          >
+            <CommentCard comment={firstComment()!} class={clsx(!selected() && "cursor-pointer")} />
+          </Show>
+          <Show when={!loading() && selected()}>
+            <For each={latterComments()}>
+              {(comment) => {
+                return <CommentCard comment={comment} />;
+              }}
+            </For>
+            <CommentInput thread={thread()} />
+          </Show>
+        </div>
+        <Show when={!loading() && !selected() && latterComments().length}>
+          <div
+            class="border-2 border-t-0 bg-gray-50 absolute -bottom-3 w-[calc(100%-2rem)] text-center text-xs text-gray-500 dark:text-gray-400 rounded-b-xl -z-1 py-0.5"
+            style={{ "mask-image": "linear-gradient(to bottom, black, transparent)" }}
+          >
+            +{latterComments().length} Comment{comments().length > 1 ? "s" : ""}
+          </div>
         </Show>
       </div>
     </div>

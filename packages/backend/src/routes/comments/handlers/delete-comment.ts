@@ -34,7 +34,8 @@ const handler = async (
   publishCommentEvent(ctx, `${existingThread.contentPieceId}`, {
     action: "deleteComment",
     data: {
-      id: `${existingComment._id}`
+      id: `${existingComment._id}`,
+      threadId: `${existingComment.threadId}`
     }
   });
 };

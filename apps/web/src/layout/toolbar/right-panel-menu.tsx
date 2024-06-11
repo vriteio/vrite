@@ -9,7 +9,7 @@ const RightPanelMenu: Component<{ variant?: "text" | "solid" }> = (props) => {
 
   return (
     <Tooltip
-      text={`${rightPanelOpened() ? "Hide" : "Show"} Explorer`}
+      text={`${rightPanelOpened() ? "Hide" : "Show"} Menu`}
       side="left"
       class="-ml-1"
       wrapperClass="flex"

@@ -13,11 +13,11 @@ type CommentEvent =
     }
   | {
       action: "updateComment";
-      data: Pick<Comment, "id" | "content">;
+      data: Pick<Comment, "id" | "content" | "threadId">;
     }
   | {
       action: "deleteComment";
-      data: Pick<Comment, "id">;
+      data: Pick<Comment, "id" | "threadId">;
     };
 
 const publishCommentEvent = createEventPublisher<CommentEvent>((contentPieceId) => {

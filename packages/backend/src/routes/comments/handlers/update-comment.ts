@@ -34,7 +34,8 @@ const handler = async (
     action: "updateComment",
     data: {
       content: input.content,
-      id: `${existingComment._id}`
+      id: `${existingComment._id}`,
+      threadId: `${existingComment.threadId}`
     }
   });
 };
