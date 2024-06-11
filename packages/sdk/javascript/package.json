@@ -1,6 +1,6 @@
 {
   "name": "@vrite/sdk",
-  "version": "0.4.6",
+  "version": "0.4.7",
   "private": false,
   "description": "JavaScript SDK and API client for Vrite - open-source developer content platform",
   "license": "MIT",
