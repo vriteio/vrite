@@ -71,10 +71,10 @@ const repositionMenu = (editor: SolidEditor): void => {
 
   if (isTextSelection) {
     try {
-      const p = findParentAtDepth(selection.$from, selection.$from.depth - 1);
+      const p = findParentAtDepth(selection.$from, selection.$from.depth);
 
-      rangeFrom = p.start - 1;
-      rangeTo = p.start + p.node.nodeSize - 1;
+      rangeFrom = Math.max(p.start - 1, 0);
+      rangeTo = Math.min(p.start + p.node.nodeSize - 1, editor.state.doc.nodeSize - 2);
     } catch (error) {
       box.style.display = "none";
     }
