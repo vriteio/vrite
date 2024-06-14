@@ -49,6 +49,7 @@ import {
   BlockPaste,
   TableMenuPlugin,
   CommentMenuPlugin,
+  ElementMenuPlugin,
   AutoDir,
   Shortcuts,
   createSnippetsMenuOptions
@@ -243,6 +244,7 @@ const Editor: ParentComponent<EditorProps & { docName: string; editable?: boolea
       }),
       hostConfig.extensions && BlockActionMenuPlugin,
       TableMenuPlugin,
+      ElementMenuPlugin,
       CommentMenuPlugin.configure({
         commentData
       }),

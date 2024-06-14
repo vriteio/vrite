@@ -15,3 +15,4 @@ export * from "./table-menu";
 export * from "./element";
 export * from "./auto-dir";
 export * from "./autocomplete";
+export { ElementMenuPlugin } from "./xml-node-menu";
