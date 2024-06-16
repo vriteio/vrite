@@ -9,7 +9,7 @@ import {
 } from "@mdi/js";
 import clsx from "clsx";
 import DOMPurify from "dompurify";
-import { Button, Heading, IconButton, Loader } from "#components/primitives";
+import { Button, Card, Heading, IconButton, Loader } from "#components/primitives";
 import { useClient, useLocalStorage, useSharedState } from "#context";
 import { CommentCard, CommentInput } from "#lib/editor";
 import { useCommentData } from "#context/comments";
@@ -252,6 +252,14 @@ const CommentsView: Component = () => {
                 </For>
               }
             >
+              <Show when={!threads().length}>
+                <Card class="flex flex-col justify-center items-start m-0 px-3.5">
+                  <Heading level={3}>No opened threads</Heading>
+                  <span class="text-gray-500 dark:text-gray-400">
+                    Select some text to add a comment.
+                  </span>
+                </Card>
+              </Show>
               <Show when={activeThreads().length}>
                 <CollapsibleSection icon={mdiCommentTextOutline} label="Active threads">
                   <div class="relative flex-1 flex flex-col gap-3 w-full">
@@ -262,6 +270,7 @@ const CommentsView: Component = () => {
                     </For>
                   </div>
                 </CollapsibleSection>
+                S
               </Show>
               <Show when={inactiveUnresolvedThreads().length}>
                 <CollapsibleSection
