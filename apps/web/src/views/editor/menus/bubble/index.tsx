@@ -108,3 +108,4 @@ const BubbleMenu: Component<BubbleMenuProps> = (props) => {
 };
 
 export { BubbleMenu };
+export type { BubbleMenuMode };

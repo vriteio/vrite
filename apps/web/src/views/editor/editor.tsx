@@ -1,4 +1,4 @@
-import { BubbleMenu, LinkPreviewMenu, FloatingMenu } from "./menus";
+import { BubbleMenu, LinkPreviewMenu, FloatingMenu, BubbleMenuMode } from "./menus";
 import {
   BubbleMenuWrapper,
   FloatingMenuWrapper,
@@ -88,7 +88,7 @@ const Editor: ParentComponent<EditorProps & { docName: string; editable?: boolea
   const [bubbleMenuInstance, setBubbleMenuInstance] = createSignal<Instance | null>(null);
   const [floatingMenuOpened, setFloatingMenuOpened] = createSignal(true);
   const [blockMenuOpened, setBlockMenuOpened] = createSignal(false);
-  const [showBlockBubbleMenu, setShowBlockBubbleMenu] = createSignal(false);
+  const [forceBubbleMenu, setForceBubbleMenu] = createSignal<BubbleMenuMode | undefined>();
   const [isNodeSelection, setIsNodeSelection] = createSignal(false);
   const [activeElement, setActiveElement] = createRef<HTMLElement | null>(null);
   const baseBlockMenuOptions = createMemo(() => {
@@ -298,7 +298,14 @@ const Editor: ParentComponent<EditorProps & { docName: string; editable?: boolea
     >
       <LinkPreviewWrapper editor={editor()}>
         {(link, tippyInstance) => {
-          return <LinkPreviewMenu link={link} tippyInstance={tippyInstance} />;
+          return (
+            <LinkPreviewMenu
+              link={link}
+              editor={editor()}
+              tippyInstance={tippyInstance}
+              setBubbleMenu={setForceBubbleMenu}
+            />
+          );
         }}
       </LinkPreviewWrapper>
 
@@ -320,12 +327,12 @@ const Editor: ParentComponent<EditorProps & { docName: string; editable?: boolea
         }}
         shouldShow={({ editor }) => {
           if (!breakpoints.md() && shouldShowFloatingMenu(editor as SolidEditor)) {
-            setShowBlockBubbleMenu(true);
+            setForceBubbleMenu("block");
 
             return true;
           }
 
-          setShowBlockBubbleMenu(false);
+          setForceBubbleMenu(undefined);
 
           if (isNodeSelection()) {
             bubbleMenuInstance()?.setProps({
@@ -341,7 +348,7 @@ const Editor: ParentComponent<EditorProps & { docName: string; editable?: boolea
           editor={editor()}
           opened={bubbleMenuOpened()}
           setBlockMenuOpened={setBlockMenuOpened}
-          mode={showBlockBubbleMenu() ? "block" : undefined}
+          mode={forceBubbleMenu()}
           blur={() => {
             editor().commands.blur();
             setActiveElement(null);

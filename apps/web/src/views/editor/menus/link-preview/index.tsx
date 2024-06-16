@@ -1,13 +1,17 @@
+import { BubbleMenuMode } from "../bubble";
 import { Accessor, Component, createMemo, createResource, Show } from "solid-js";
-import { mdiWeb, mdiFileDocumentOutline } from "@mdi/js";
+import { mdiWeb, mdiFileDocumentOutline, mdiPencil } from "@mdi/js";
 import clsx from "clsx";
 import { Instance } from "tippy.js";
+import { SolidEditor } from "@vrite/tiptap-solid";
 import { App, useAuthenticatedUserData, useClient, useContentData } from "#context";
-import { Card, Icon, IconButton, Loader } from "#components/primitives";
+import { Card, Icon, IconButton, Loader, Tooltip } from "#components/primitives";
 
 interface LinkPreviewMenuProps {
+  editor: SolidEditor;
   link: Accessor<string>;
   tippyInstance: Accessor<Instance | undefined>;
+  setBubbleMenu(mode: BubbleMenuMode | undefined): void;
 }
 
 const LinkPreviewMenu: Component<LinkPreviewMenuProps> = (props) => {
@@ -84,40 +88,55 @@ const LinkPreviewMenu: Component<LinkPreviewMenuProps> = (props) => {
             <Show when={previewData()?.description}>
               <p class="mt-0 mb-2 text-sm px-2">{previewData()?.description}</p>
             </Show>
-            <Show
-              when={previewData()?.title}
-              fallback={
-                <IconButton
-                  path={previewData()?.type === "internal" ? mdiFileDocumentOutline : mdiWeb}
-                  badge
-                  class="m-0"
-                  text="soft"
-                  label="Visit website"
-                />
-              }
-            >
-              <div class="flex items-start justify-start text-base">
-                <Show
-                  when={icon()}
-                  fallback={
-                    <Icon
-                      path={previewData()?.type === "internal" ? mdiFileDocumentOutline : mdiWeb}
-                      class="h-6 w-6"
-                    />
-                  }
-                >
-                  <img src={icon()} class="w-6 h-6 mr-1" />
-                </Show>
-                <div class="flex flex-col flex-1 justify-start items-start pl-1 text-left">
-                  <span class="flex-1 text-start font-semibold clamp-1 break-all">
-                    {previewData()?.title}
-                  </span>
-                  <span class="text-xs text-gray-500 dark:text-gray-400 font-mono clamp-1 break-all">
-                    {previewData()?.url}
-                  </span>
+            <div class="flex gap-1">
+              <Show
+                when={previewData()?.title}
+                fallback={
+                  <IconButton
+                    path={previewData()?.type === "internal" ? mdiFileDocumentOutline : mdiWeb}
+                    badge
+                    class="m-0"
+                    text="soft"
+                    label="Visit website"
+                  />
+                }
+              >
+                <div class="flex items-start justify-start text-base">
+                  <Show
+                    when={icon()}
+                    fallback={
+                      <Icon
+                        path={previewData()?.type === "internal" ? mdiFileDocumentOutline : mdiWeb}
+                        class="h-6 w-6"
+                      />
+                    }
+                  >
+                    <img src={icon()} class="w-6 h-6 mr-1" />
+                  </Show>
+                  <div class="flex flex-col flex-1 justify-start items-start pl-1 text-left">
+                    <span class="flex-1 text-start font-semibold clamp-1 break-all">
+                      {previewData()?.title}
+                    </span>
+                    <span class="text-xs text-gray-500 dark:text-gray-400 font-mono clamp-1 break-all">
+                      {previewData()?.url}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            </Show>
+              </Show>
+              <Tooltip text="Edit link" class="mt-1" fixed>
+                <IconButton
+                  path={mdiPencil}
+                  text="soft"
+                  variant="text"
+                  class="m-0"
+                  onClick={(event) => {
+                    props.editor.chain().extendMarkRange("link").focus().run();
+                    props.setBubbleMenu("link");
+                    event.preventDefault();
+                  }}
+                />
+              </Tooltip>
+            </div>
           </Show>
         </Card>
       </a>
