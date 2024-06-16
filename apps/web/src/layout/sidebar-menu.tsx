@@ -65,12 +65,20 @@ const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
   const navigate = useNavigate();
   const location = useLocation();
   const md = createMediaQuery("(min-width: 768px)");
-  const setSidePanelView = (view: string): void => {
-    setStorage((storage) => ({
-      ...storage,
-      sidePanelWidth: storage.sidePanelWidth || 375,
-      sidePanelView: view
-    }));
+  const setSidePanelView = (view: string, toggle = true): void => {
+    if (view === storage().sidePanelView && toggle) {
+      setStorage((storage) => ({
+        ...storage,
+        sidePanelWidth: storage.sidePanelWidth || 0,
+        sidePanelView: ""
+      }));
+    } else {
+      setStorage((storage) => ({
+        ...storage,
+        sidePanelWidth: storage.sidePanelWidth || 375,
+        sidePanelView: view
+      }));
+    }
   };
   const switchRightPanel = (): void => {
     setStorage((storage) => ({ ...storage, rightPanelWidth: storage.rightPanelWidth ? 0 : 375 }));
@@ -104,7 +112,7 @@ const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
           navigate(`/${activeContentPieceId() || ""}`);
 
           if (activeContentPieceId() && md() && pathnameData().view === "dashboard") {
-            setSidePanelView("contentPiece");
+            setSidePanelView("contentPiece", false);
           }
 
           if (!md()) setStorage((storage) => ({ ...storage, sidePanelWidth: 0 }));

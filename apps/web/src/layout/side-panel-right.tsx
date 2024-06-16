@@ -3,6 +3,7 @@ import clsx from "clsx";
 import { createSignal, createMemo, onCleanup, Component, For, Show } from "solid-js";
 import { Dynamic } from "solid-js/web";
 import { mdiCommentMultipleOutline, mdiFileMultipleOutline, mdiShapeOutline } from "@mdi/js";
+import { useLocation } from "@solidjs/router";
 import { useContentData, useLocalStorage, useSharedState } from "#context";
 import { createRef } from "#lib/utils";
 import { ExplorerView } from "#views/explorer";
@@ -25,16 +26,26 @@ const sidePanelRightViews: Record<
   comments: {
     show: () => {
       const { activeContentPieceId } = useContentData();
-      const { useSharedSignal } = useSharedState();
-      const [sharedEditor] = useSharedSignal("editor");
+      const location = useLocation();
 
-      return Boolean(activeContentPieceId());
+      return Boolean(activeContentPieceId() && location.pathname.includes("editor"));
     },
     view: CommentsView,
     icon: mdiCommentMultipleOutline,
     label: "Comments",
     id: "comments"
   }
+  /* history: {
+    show: () => {
+      const { activeContentPieceId } = useContentData();
+
+      return Boolean(activeContentPieceId());
+    },
+    view: HistoryView,
+    icon: mdiHistory,
+    label: "History",
+    id: "history"
+  }*/
 };
 const SidePanelRight: Component = () => {
   const { storage, setStorage } = useLocalStorage();

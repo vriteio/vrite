@@ -270,7 +270,6 @@ const CommentsView: Component = () => {
                     </For>
                   </div>
                 </CollapsibleSection>
-                S
               </Show>
               <Show when={inactiveUnresolvedThreads().length}>
                 <CollapsibleSection
