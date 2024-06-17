@@ -1,10 +1,6 @@
-import {
-  ExtendedRegExpMatchArray,
-  Node,
-  mergeAttributes,
-  nodeInputRule,
-  wrappingInputRule
-} from "@tiptap/core";
+import { wrappingInputRule } from "./wrapping-input-rule";
+import { nodeInputRule } from "./node-input-rule";
+import { ExtendedRegExpMatchArray, Node, mergeAttributes } from "@tiptap/core";
 
 interface ElementAttributes {
   type?: string;

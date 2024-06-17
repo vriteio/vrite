@@ -553,6 +553,9 @@ importers:
       '@solid-primitives/scheduled':
         specifier: ^1.4.2
         version: 1.4.2(solid-js@1.8.14)
+      '@solidjs/meta':
+        specifier: ^0.29.4
+        version: 0.29.4(solid-js@1.8.14)
       '@solidjs/router':
         specifier: ^0.11.3
         version: 0.11.3(solid-js@1.8.14)
@@ -5925,6 +5928,14 @@ packages:
     resolution: {integrity: sha512-11ypVbp987XxETeRqY5Y3OmmTpm8/jZqJXRvo6AyqBthzkvvjEdReuUMU2yVb+pwWGxfZpWHZ6EUCcGXUMhfwg==}
     peerDependencies:
       solid-js: ^1.6.12
+    dependencies:
+      solid-js: 1.8.14
+    dev: false
+
+  /@solidjs/meta@0.29.4(solid-js@1.8.14):
+    resolution: {integrity: sha512-zdIWBGpR9zGx1p1bzIPqF5Gs+Ks/BH8R6fWhmUa/dcK1L2rUC8BAcZJzNRYBQv74kScf1TSOs0EY//Vd/I0V8g==}
+    peerDependencies:
+      solid-js: '>=1.8.4'
     dependencies:
       solid-js: 1.8.14
     dev: false

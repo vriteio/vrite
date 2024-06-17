@@ -1,6 +1,7 @@
 import { Editor } from "./editor";
 import clsx from "clsx";
 import { Component, createSignal, createEffect, on, Show } from "solid-js";
+import { Title } from "@solidjs/meta";
 import { Loader } from "#components/primitives";
 import { createRef } from "#lib/utils";
 import {
@@ -8,7 +9,8 @@ import {
   useLocalStorage,
   useExtensions,
   useAuthenticatedUserData,
-  hasPermission
+  hasPermission,
+  App
 } from "#context";
 
 const ContentPieceEditorView: Component = () => {
@@ -23,6 +25,9 @@ const ContentPieceEditorView: Component = () => {
   const docName = (): string => {
     return `${activeContentPieceId() || ""}${activeVariantId() ? ":" : ""}${activeVariantId() || ""}`;
   };
+  const contentPiece = ():
+    | App.ExtendedContentPieceWithAdditionalData<"order" | "coverWidth">
+    | undefined => contentPieces[activeContentPieceId() || ""];
 
   createEffect(
     on(
@@ -52,18 +57,16 @@ const ContentPieceEditorView: Component = () => {
   );
   setStorage((storage) => ({ ...storage, toolbarView: "editor" }));
   createEffect(
-    on(
-      () => contentPieces[activeContentPieceId() || ""],
-      (newContentPiece, previousContentPiece) => {
-        if (newContentPiece !== previousContentPiece) {
-          setSyncing(true);
-        }
+    on(contentPiece, (newContentPiece, previousContentPiece) => {
+      if (newContentPiece !== previousContentPiece) {
+        setSyncing(true);
       }
-    )
+    })
   );
 
   return (
     <>
+      <Title>{contentPiece()?.title || "Vrite"}</Title>
       <Show
         when={activeContentPieceId()}
         fallback={

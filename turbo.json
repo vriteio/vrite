@@ -1,19 +1,14 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalDependencies": [
-    "**/.env.*local"
-  ],
+  "globalDependencies": ["**/.env.*local"],
+  "ui": "stream",
   "tasks": {
     "build": {
-      "dependsOn": [
-        "^build"
-      ],
+      "dependsOn": ["^build"],
       "cache": false
     },
     "@vrite/app#build": {
-      "dependsOn": [
-        "@vrite/web#build"
-      ]
+      "dependsOn": ["@vrite/web#build"]
     },
     "lint": {
       "outputs": []

@@ -9,11 +9,23 @@ import {
   updateElementProps
 } from "./utils";
 import { ElementDisplay, createLoader, customViews, emitter, getTreeUID } from "./view-manager";
-import { Element as BaseElement, ElementAttributes } from "@vrite/editor";
+import {
+  Element as BaseElement,
+  ElementAttributes,
+  nodeInputRule,
+  wrappingInputRule
+} from "@vrite/editor";
 import { SolidEditor } from "@vrite/tiptap-solid";
-import { NodeView } from "@tiptap/core";
-import { Fragment, Node, Slice } from "@tiptap/pm/model";
-import { NodeSelection, Plugin, PluginKey, Selection, TextSelection } from "@tiptap/pm/state";
+import { ExtendedRegExpMatchArray, NodeView, Range } from "@tiptap/core";
+import { Node } from "@tiptap/pm/model";
+import {
+  NodeSelection,
+  Plugin,
+  PluginKey,
+  Selection,
+  TextSelection,
+  Transaction
+} from "@tiptap/pm/state";
 import { GapCursor } from "@tiptap/pm/gapcursor";
 import { createSignal } from "solid-js";
 import { ExtensionElementSpec } from "@vrite/sdk/extensions";
@@ -32,6 +44,7 @@ declare module "@tiptap/core" {
 const Element = BaseElement.extend<
   Partial<ExtensionsContextData>,
   {
+    allowContentInsertAtPositions: number[];
     customElements: Record<
       string,
       {
@@ -46,7 +59,7 @@ const Element = BaseElement.extend<
   },
   addStorage() {
     {
-      return { customElements: {} };
+      return { customElements: {}, allowContentInsertAtPositions: [] };
     }
   },
   addKeyboardShortcuts() {
@@ -121,6 +134,11 @@ const Element = BaseElement.extend<
           },
           apply(tr, previousValue) {
             const elementViewTypeData = tr.getMeta("elementViewTypeData");
+            const elementInserted = tr.getMeta("elementInserted");
+
+            if (elementInserted) {
+              storage.allowContentInsertAtPositions.push(elementInserted.pos);
+            }
 
             if (!elementViewTypeData) return previousValue;
 
@@ -417,6 +435,14 @@ const Element = BaseElement.extend<
       const wrapper = document.createElement("div");
       const contentWrapper = document.createElement("div");
       const loaded = createLoader(wrapper);
+      const initialPos = typeof props.getPos === "function" ? props.getPos() || 0 : 0;
+      const insertContent = storage.allowContentInsertAtPositions.includes(initialPos);
+
+      if (insertContent) {
+        storage.allowContentInsertAtPositions = storage.allowContentInsertAtPositions.filter(
+          (pos) => pos !== initialPos
+        );
+      }
 
       let { node } = props;
       let uid: string | null = null;
@@ -433,7 +459,7 @@ const Element = BaseElement.extend<
         const resolvedPos = editor.state.doc.resolve(props.getPos());
         const path = getElementPath(resolvedPos, customElements);
 
-        uid = await getTreeUID(editor, props.getPos());
+        uid = (await getTreeUID(editor, props.getPos())) || uid;
 
         if (customElement) {
           const customView = await createCustomView(
@@ -451,16 +477,19 @@ const Element = BaseElement.extend<
             customViews.set(customView.uid, customView);
           }
 
-          const content = applyStructure(node, customView?.structure!);
+          if (insertContent) {
+            const content = applyStructure(node, customView?.structure!);
 
-          if (node.content.size <= 2) {
-            editor
-              .chain()
-              .insertContentAt(
-                { from: props.getPos() + 1, to: props.getPos() + node.content.size + 1 },
-                content.content || []
-              )
-              .run();
+            if (node.content.size <= 2) {
+              editor
+                .chain()
+                .setMeta("elementViewContentInsert", { uid, pos: props.getPos() })
+                .insertContentAt(
+                  { from: props.getPos() + 1, to: props.getPos() + node.content.size + 1 },
+                  content.content || []
+                )
+                .run();
+            }
           }
         }
 
@@ -571,6 +600,43 @@ const Element = BaseElement.extend<
         }
       };
     };
+  },
+  addInputRules() {
+    const getAttributes = (input: ExtendedRegExpMatchArray): Record<string, any> => {
+      const [code] = input;
+      const tagRegex = /^<(\w+?)(?:\s|\n|\/|>)/;
+      const [, tag] = tagRegex.exec(code.trim()) || [];
+
+      if (tag && tag !== "undefined") {
+        return { type: tag, props: {} };
+      }
+
+      return {};
+    };
+    const appendTransaction = ({ tr, range }: { tr: Transaction; range: Range }): void => {
+      const $start = tr.doc.resolve(range.from);
+      const blockRange = $start.blockRange();
+
+      if (blockRange) {
+        tr.setMeta("elementInserted", { pos: blockRange.start });
+      }
+    };
+
+    return [
+      nodeInputRule({
+        find: /^<.*?.+?\/>$/,
+        type: this.type,
+        getAttributes,
+        appendTransaction
+      }),
+      wrappingInputRule({
+        find: /^<.*?.+?>$/,
+        type: this.type,
+        joinPredicate: () => false,
+        getAttributes,
+        appendTransaction
+      })
+    ];
   }
 });
 

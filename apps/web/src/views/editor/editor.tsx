@@ -58,6 +58,7 @@ import { useAuthenticatedUserData, useExtensions, useHostConfig, useSharedState 
 import { breakpoints, createRef } from "#lib/utils";
 import { BlockMenu } from "#lib/editor/extensions/slash-menu/component";
 import { useCommentData } from "#context/comments";
+import { TrailingNode } from "#lib/editor/extensions/trailing-node";
 
 declare module "#context" {
   interface SharedState {
@@ -248,6 +249,7 @@ const Editor: ParentComponent<EditorProps & { docName: string; editable?: boolea
       CommentMenuPlugin.configure({
         commentData
       }),
+      TrailingNode,
       Shortcuts,
       Collab.configure({
         document: ydoc

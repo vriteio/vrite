@@ -20,8 +20,8 @@ interface Configuration {
 
 class GitSync implements Extension {
   private configuration: Configuration = {
-    debounce: 5000,
-    debounceMaxWait: 20000
+    debounce: 2500,
+    debounceMaxWait: 10000
   };
 
   private fastify: FastifyInstance;

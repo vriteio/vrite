@@ -2,6 +2,7 @@ import { Component, Match, ParentComponent, Show, Switch, lazy } from "solid-js"
 import { Route, Router } from "@solidjs/router";
 import RelativeTimePlugin from "dayjs/plugin/relativeTime";
 import dayjs from "dayjs";
+import { Title } from "@solidjs/meta";
 import { SecuredLayout } from "#layout";
 import { useHostConfig } from "#context";
 
@@ -56,21 +57,24 @@ const App: Component = () => {
   const hostConfig = useHostConfig();
 
   return (
-    <Router preload={false}>
-      <Route path={["/", "**"]} component={Wrapper}>
-        <Route path="/auth" component={AuthView} />
-        <Route path="/verify" component={VerifyView} />
-        <Route path="/workspaces" component={WorkspacesView} />
-      </Route>
-      <Route path={["/", "**"]} component={SecuredWrapper}>
-        <Route path={["/", "/*contentPieceId"]} component={DashboardView} />
-        <Route path="/editor/*contentPieceId" component={ContentPieceEditorView} />
-        <Route path="/snippet/*snippetId" component={SnippetEditorView} />
-        <Show when={hostConfig.githubApp}>
-          <Route path="/conflict" component={ConflictView} />
-        </Show>
-      </Route>
-    </Router>
+    <>
+      <Title>Vrite</Title>
+      <Router preload={false}>
+        <Route path={["/", "**"]} component={Wrapper}>
+          <Route path="/auth" component={AuthView} />
+          <Route path="/verify" component={VerifyView} />
+          <Route path="/workspaces" component={WorkspacesView} />
+        </Route>
+        <Route path={["/", "**"]} component={SecuredWrapper}>
+          <Route path={["/", "/*contentPieceId"]} component={DashboardView} />
+          <Route path="/editor/*contentPieceId" component={ContentPieceEditorView} />
+          <Route path="/snippet/*snippetId" component={SnippetEditorView} />
+          <Show when={hostConfig.githubApp}>
+            <Route path="/conflict" component={ConflictView} />
+          </Show>
+        </Route>
+      </Router>
+    </>
   );
 };
 

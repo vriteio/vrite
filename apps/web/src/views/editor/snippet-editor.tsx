@@ -2,6 +2,7 @@ import { Editor } from "./editor";
 import clsx from "clsx";
 import { Component, createSignal, createEffect, on, Show, For, createMemo } from "solid-js";
 import { useNavigate } from "@solidjs/router";
+import { Title } from "@solidjs/meta";
 import { Loader } from "#components/primitives";
 import { createRef } from "#lib/utils";
 import { useLocalStorage, useExtensions, useAuthenticatedUserData, hasPermission } from "#context";
@@ -69,6 +70,7 @@ const SnippetEditorView: Component = () => {
 
   return (
     <>
+      <Title>{activeSnippet()?.name ? `${activeSnippet()?.name} | Snippet` : "Vrite"}</Title>
       <Show
         when={activeSnippet()}
         fallback={
