@@ -28,6 +28,7 @@ const Image = Node.create<ImageOptions>({
   name: "image",
   draggable: true,
   selectable: true,
+  priority: 200,
   addOptions() {
     return {
       inline: false,

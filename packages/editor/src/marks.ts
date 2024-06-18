@@ -130,6 +130,7 @@ const Code = BaseCode.extend({
 const Link = BaseLink.extend({
   exitable: true,
   inclusive: true,
+  priority: 100,
   addOptions() {
     return {
       linkOnPaste: true,

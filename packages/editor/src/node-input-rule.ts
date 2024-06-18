@@ -47,9 +47,9 @@ const nodeInputRule = (config: {
         const lastChar = match[0][match[0].length - 1];
 
         tr.insertText(lastChar, start + match[0].length - 1);
-        tr.replaceWith(matchStart, end, newNode);
+        tr.replaceWith(matchStart - 1, end, newNode);
       } else if (match[0]) {
-        tr.insert(start - 1, config.type.create(attributes)).delete(
+        tr.replaceWith(start, end, config.type.create(attributes)).delete(
           tr.mapping.map(start),
           tr.mapping.map(end)
         );

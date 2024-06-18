@@ -87,23 +87,25 @@ const ContentPieceEditorView: Component = () => {
           <div
             class={clsx("p-2 md:mx-10 w-full md:w-[calc(100%-5rem)] flex flex-col items-center")}
           >
-            <Show when={workspaceSettings() && installedExtensions()} keyed>
-              <Show when={contentPieces[activeContentPieceId() || ""]} keyed>
-                <Editor
-                  editable={hasPermission("editContent")}
-                  docName={docName()}
-                  scrollableContainerRef={scrollableContainerRef}
-                  reloaded={reloaded()}
-                  reload={async () => {
-                    setReloaded(true);
-                  }}
-                  onLoad={() => {
-                    setTimeout(() => {
-                      scrollableContainerRef()?.scrollTo({ top: lastScrollTop() });
-                    }, 0);
-                    setSyncing(false);
-                  }}
-                />
+            <Show when={workspaceSettings()} keyed>
+              <Show when={installedExtensions()} keyed>
+                <Show when={contentPieces[activeContentPieceId() || ""]} keyed>
+                  <Editor
+                    editable={hasPermission("editContent")}
+                    docName={docName()}
+                    scrollableContainerRef={scrollableContainerRef}
+                    reloaded={reloaded()}
+                    reload={async () => {
+                      setReloaded(true);
+                    }}
+                    onLoad={() => {
+                      setTimeout(() => {
+                        scrollableContainerRef()?.scrollTo({ top: lastScrollTop() });
+                      }, 0);
+                      setSyncing(false);
+                    }}
+                  />
+                </Show>
               </Show>
             </Show>
           </div>

@@ -158,13 +158,6 @@ const createExtensions = (
   };
 
   return [
-    ...Object.entries(marks).map(([name, extension]) => {
-      if (settings.marks.includes(name as App.WorkspaceSettings["marks"][number])) {
-        return extension;
-      }
-
-      return extension.extend(resetExtensionConfig);
-    }),
     ...Object.entries(blocks).flatMap(([name, extension]) => {
       if (settings.blocks.includes(name as App.WorkspaceSettings["blocks"][number])) {
         return Array.isArray(extension) ? extension : [extension];
@@ -180,7 +173,14 @@ const createExtensions = (
     Heading.configure({
       enabledLevels: getHeadingLevels(settings)
     }),
-    ...getItemNodes()
+    ...getItemNodes(),
+    ...Object.entries(marks).map(([name, extension]) => {
+      if (settings.marks.includes(name as App.WorkspaceSettings["marks"][number])) {
+        return extension;
+      }
+
+      return extension.extend(resetExtensionConfig);
+    })
   ];
 };
 const createBlockMenuOptions = (settings?: App.WorkspaceSettings): SlashMenuItem[] => {
