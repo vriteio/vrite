@@ -31,8 +31,8 @@ const CommentCard: Component<CommentCardProps> = (props) => {
         >
           <img src={`${member()?.profile?.avatar}?h=80&w=80`} class="h-10 w-10" />
         </Show>
-        <div class="flex flex-col flex-1 gap-1 min-h-10 justify-center mx-2">
-          <span class="whitxespace-nowrap font-semibold leading-4">
+        <div class="flex flex-col flex-1 gap-1 min-h-10 justify-center mx-2 clamp-1">
+          <span class="whitxespace-nowrap font-semibold leading-4 clamp-1">
             <Show
               when={member()?.profile?.fullName}
               fallback={
@@ -46,7 +46,10 @@ const CommentCard: Component<CommentCardProps> = (props) => {
             </Show>
           </span>
           <Show when={member()?.profile?.fullName}>
-            <span class="whitespace-nowrap text-sm leading-3 text-gray-500 dark:text-gray-400">
+            <span
+              class="whitespace-nowrap text-sm leading-3 text-gray-500 dark:text-gray-400 clamp-1"
+              title={member()?.profile?.username}
+            >
               <span class="opacity-70">@</span>
               {member()?.profile?.username}
             </span>
@@ -95,7 +98,11 @@ const CommentCard: Component<CommentCardProps> = (props) => {
           />
         </Dropdown>
       </div>
-      <div class="prose p-1 pt-2" innerHTML={props.comment.content}></div>
+      <div
+        class="prose p-1 pt-2"
+        style={{ "overflow-wrap": "anywhere" }}
+        innerHTML={props.comment.content}
+      ></div>
     </Card>
   );
 };
