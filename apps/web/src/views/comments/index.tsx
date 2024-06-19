@@ -148,9 +148,13 @@ const CommentViewThread: Component<CommentsViewThreadProps> = (props) => {
             fallback={
               <Show
                 when={props.fragmentId !== activeFragmentId() && !thread?.resolved}
-                fallback={<p class="px-1">No comments</p>}
+                fallback={
+                  <Show when={thread?.resolved}>
+                    <p class="px-1">No comments</p>
+                  </Show>
+                }
               >
-                <div class="m-0 min-h-18 flex justify-center items-center cursor-pointer">
+                <div class="m-0 min-h-24 flex justify-center items-center cursor-pointer bg-gray-50 dark:bg-gray-900 rounded-2xl">
                   <Button badge loading={loading()} variant="text" text="soft" hover={false}>
                     Start discussion
                   </Button>

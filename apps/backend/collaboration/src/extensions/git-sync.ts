@@ -62,7 +62,13 @@ class GitSync implements Extension {
     context,
     document
   }: Pick<onChangePayload, "documentName" | "document" | "context">): void {
-    if (documentName.startsWith("workspace:") || documentName.startsWith("snippet:")) return;
+    if (
+      documentName.startsWith("workspace:") ||
+      documentName.startsWith("snippet:") ||
+      documentName.startsWith("version:")
+    ) {
+      return;
+    }
 
     const [contentPieceId, variantId = null] = documentName.split(":");
     const update = (): void => {

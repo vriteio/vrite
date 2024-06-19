@@ -11,7 +11,7 @@ import {
 import { AuthenticatedContext } from "#lib/middleware";
 import { zodId } from "#lib/mongo";
 import {
-  fetchContentPieceMembers,
+  fetchEntryMembers,
   fetchContentPieceTags,
   getCanonicalLinkFromPattern,
   stringToRegex
@@ -101,7 +101,7 @@ const handler = async (
   return Promise.all(
     contentPieces.map(async (contentPiece) => {
       const tags = await fetchContentPieceTags(ctx.db, contentPiece);
-      const members = await fetchContentPieceMembers(ctx.db, contentPiece);
+      const members = await fetchEntryMembers(ctx.db, contentPiece);
 
       return {
         ...contentPiece,

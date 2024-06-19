@@ -2,15 +2,27 @@ import { debounce } from "@solid-primitives/scheduled";
 import clsx from "clsx";
 import { createSignal, createMemo, onCleanup, Component, For, Show } from "solid-js";
 import { Dynamic } from "solid-js/web";
-import { mdiCommentMultipleOutline, mdiFileMultipleOutline, mdiShapeOutline } from "@mdi/js";
+import {
+  mdiCommentMultipleOutline,
+  mdiFileMultipleOutline,
+  mdiHistory,
+  mdiShapeOutline
+} from "@mdi/js";
 import { useLocation } from "@solidjs/router";
-import { useContentData, useLocalStorage, useSharedState } from "#context";
+import { useContentData, useHistoryData, useLocalStorage } from "#context";
 import { createRef } from "#lib/utils";
 import { ExplorerView } from "#views/explorer";
 import { IconButton, Tooltip } from "#components/primitives";
 import { SnippetsView } from "#views/snippets";
 import { CommentsView } from "#views/comments";
+import { HistoryView } from "#views/history";
 
+const showEditorSpecificView = (): boolean => {
+  const { activeContentPieceId } = useContentData();
+  const location = useLocation();
+
+  return Boolean(activeContentPieceId() && location.pathname.includes("editor"));
+};
 const sidePanelRightViews: Record<
   string,
   {
@@ -24,28 +36,23 @@ const sidePanelRightViews: Record<
   explorer: { view: ExplorerView, icon: mdiFileMultipleOutline, label: "Explorer", id: "explorer" },
   snippets: { view: SnippetsView, icon: mdiShapeOutline, label: "Snippets", id: "snippets" },
   comments: {
-    show: () => {
-      const { activeContentPieceId } = useContentData();
-      const location = useLocation();
-
-      return Boolean(activeContentPieceId() && location.pathname.includes("editor"));
-    },
+    show: showEditorSpecificView,
     view: CommentsView,
     icon: mdiCommentMultipleOutline,
     label: "Comments",
     id: "comments"
-  }
-  /* history: {
+  },
+  history: {
     show: () => {
-      const { activeContentPieceId } = useContentData();
+      const location = useLocation();
 
-      return Boolean(activeContentPieceId());
+      return showEditorSpecificView() || location.pathname.startsWith("/version");
     },
     view: HistoryView,
     icon: mdiHistory,
     label: "History",
     id: "history"
-  }*/
+  }
 };
 const SidePanelRight: Component = () => {
   const { storage, setStorage } = useLocalStorage();
@@ -59,7 +66,9 @@ const SidePanelRight: Component = () => {
     const viewId = storage().sidePanelRightView || "explorer";
     const { show } = sidePanelRightViews[viewId];
 
-    if (show && !show()) return "explorer";
+    if (show && !show()) {
+      return "explorer";
+    }
 
     return viewId;
   });

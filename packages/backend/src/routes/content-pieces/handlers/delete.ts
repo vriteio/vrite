@@ -8,7 +8,9 @@ import {
   getContentPiecesCollection,
   getContentPieceVariantsCollection,
   getContentsCollection,
-  getContentVariantsCollection
+  getContentVariantsCollection,
+  getContentVersionsCollection,
+  getVersionsCollection
 } from "#collections";
 import { errors } from "#lib/errors";
 import { AuthenticatedContext } from "#lib/middleware";
@@ -37,6 +39,8 @@ const handler = async (
   const contentVariantsCollection = getContentVariantsCollection(ctx.db);
   const commentThreadsCollection = getCommentThreadsCollection(ctx.db);
   const commentsCollection = getCommentsCollection(ctx.db);
+  const versionsCollection = getVersionsCollection(ctx.db);
+  const contentVersionsCollection = getContentVersionsCollection(ctx.db);
   const contentPiece = await contentPiecesCollection.findOne({
     _id: new ObjectId(input.id),
     workspaceId: ctx.auth.workspaceId
@@ -57,6 +61,14 @@ const handler = async (
     workspaceId: ctx.auth.workspaceId
   });
   await contentVariantsCollection.deleteMany({
+    contentPieceId: contentPiece._id,
+    workspaceId: ctx.auth.workspaceId
+  });
+  await versionsCollection.deleteMany({
+    contentPieceId: contentPiece._id,
+    workspaceId: ctx.auth.workspaceId
+  });
+  await contentVersionsCollection.deleteMany({
     contentPieceId: contentPiece._id
   });
   await commentThreadsCollection.deleteMany({

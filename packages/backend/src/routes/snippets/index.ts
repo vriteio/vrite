@@ -64,11 +64,9 @@ const snippetsRouter = router({
     .mutation(async ({ ctx, input }) => {
       return deleteSnippet.handler(ctx, input);
     }),
-  changes: authenticatedProcedure
-    .input(z.object({ workspaceId: zodId() }))
-    .subscription(async ({ ctx, input }) => {
-      return subscribeToSnippetEvents(ctx, input.workspaceId);
-    })
+  changes: authenticatedProcedure.subscription(async ({ ctx }) => {
+    return subscribeToSnippetEvents(ctx, `${ctx.auth.workspaceId}`);
+  })
 });
 
 export { snippetsRouter };

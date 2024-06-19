@@ -21,3 +21,5 @@ export * from "./variants";
 export * from "./transformers";
 export * from "./snippets";
 export * from "./snippet-contents";
+export * from "./content-versions";
+export * from "./versions";

@@ -33,6 +33,11 @@ const SnippetEditorView = lazy(async () => {
 
   return { default: SnippetEditorView };
 });
+const VersionEditorView = lazy(async () => {
+  const { VersionEditorView } = await import("#views/editor");
+
+  return { default: VersionEditorView };
+});
 const DashboardView = lazy(async () => {
   const { DashboardView } = await import("#views/dashboard");
 
@@ -69,6 +74,7 @@ const App: Component = () => {
           <Route path={["/", "/*contentPieceId"]} component={DashboardView} />
           <Route path="/editor/*contentPieceId" component={ContentPieceEditorView} />
           <Route path="/snippet/*snippetId" component={SnippetEditorView} />
+          <Route path="/version/:contentPieceId/*versionId" component={VersionEditorView} />
           <Show when={hostConfig.githubApp}>
             <Route path="/conflict" component={ConflictView} />
           </Show>

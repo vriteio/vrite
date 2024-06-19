@@ -165,7 +165,6 @@ const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
             active() &&
               !activeDraggableContentGroupId() &&
               !activeDraggableContentPieceId() &&
-              pathnameData().view === "editor" &&
               "fill-[url(#gradient)]"
           )}
           path={mdiFileDocumentOutline}
@@ -214,7 +213,6 @@ const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
               active() &&
                 !activeDraggableContentGroupId() &&
                 !activeDraggableContentPieceId() &&
-                pathnameData().view === "editor" &&
                 "text-transparent bg-clip-text bg-gradient-to-tr"
             )}
           >

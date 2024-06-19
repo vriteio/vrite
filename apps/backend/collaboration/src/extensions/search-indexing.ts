@@ -45,7 +45,13 @@ class SearchIndexing implements Extension {
     document,
     context
   }: Pick<onChangePayload, "documentName" | "document" | "context">): void {
-    if (documentName.startsWith("workspace:") || documentName.startsWith("snippet:")) return;
+    if (
+      documentName.startsWith("workspace:") ||
+      documentName.startsWith("snippet:") ||
+      documentName.startsWith("version:")
+    ) {
+      return;
+    }
 
     const [contentPieceId, variantId] = documentName.split(":");
     const state = docToBuffer(document);

@@ -24,7 +24,8 @@ import {
   Table,
   TableCell,
   TableHeader,
-  TableRow
+  TableRow,
+  Comment
 } from "@vrite/editor";
 import { HocuspocusProvider } from "@hocuspocus/provider";
 import {
@@ -180,7 +181,8 @@ const createExtensions = (
       }
 
       return extension.extend(resetExtensionConfig);
-    })
+    }),
+    Comment
   ];
 };
 const createBlockMenuOptions = (settings?: App.WorkspaceSettings): SlashMenuItem[] => {

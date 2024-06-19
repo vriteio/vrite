@@ -10,11 +10,7 @@ import {
 import { UnderscoreID, zodId } from "#lib/mongo";
 import { errors } from "#lib/errors";
 import { AuthenticatedContext } from "#lib/middleware";
-import {
-  fetchContentPieceMembers,
-  fetchContentPieceTags,
-  getCanonicalLinkFromPattern
-} from "#lib/utils";
+import { fetchEntryMembers, fetchContentPieceTags, getCanonicalLinkFromPattern } from "#lib/utils";
 import { publishContentPieceEvent } from "#events";
 
 declare module "fastify" {
@@ -123,7 +119,7 @@ const handler = async (
     ...update
   };
   const tags = await fetchContentPieceTags(ctx.db, updatedContentPiece);
-  const members = await fetchContentPieceMembers(ctx.db, updatedContentPiece);
+  const members = await fetchEntryMembers(ctx.db, updatedContentPiece);
   const sameContentGroup = contentPiece.contentGroupId.equals(updatedContentPiece.contentGroupId);
 
   publishContentPieceEvent(

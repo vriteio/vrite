@@ -228,33 +228,36 @@ const Editor: ParentComponent<EditorProps & { docName: string; editable?: boolea
     },
     extensions: [
       ...getEditorExtensions(provider),
-      BlockPaste.configure({ workspaceSettings }),
       Document,
-      Placeholder,
       Paragraph,
       Text,
       HardBreak,
       Typography,
-      DraggableText,
       CharacterCount,
       AutoDir,
       Gapcursor,
       Dropcursor.configure({ class: "ProseMirror-dropcursor" }),
-      SlashMenuPlugin.configure({
-        menuItems: blockMenuOptions
-      }),
-      hostConfig.extensions && BlockActionMenuPlugin,
-      TableMenuPlugin,
-      ElementMenuPlugin,
-      CommentMenuPlugin.configure({
-        commentData
-      }),
       TrailingNode,
-      Shortcuts,
       Collab.configure({
         document: ydoc
       }),
-      CollabCursor(provider)
+      CollabCursor(provider),
+      ...((props.editable && [
+        BlockPaste.configure({ workspaceSettings }),
+        Placeholder,
+        DraggableText,
+        SlashMenuPlugin.configure({
+          menuItems: blockMenuOptions
+        }),
+        hostConfig.extensions && BlockActionMenuPlugin,
+        TableMenuPlugin,
+        ElementMenuPlugin,
+        CommentMenuPlugin.configure({
+          commentData
+        }),
+        Shortcuts
+      ]) ||
+        [])
     ].filter(Boolean) as Extension[],
     editable: props.editable,
     editorProps: { attributes: { class: `outline-none` } },
@@ -298,88 +301,90 @@ const Editor: ParentComponent<EditorProps & { docName: string; editable?: boolea
       ref={setContainerRef}
       id="pm-container"
     >
-      <LinkPreviewWrapper editor={editor()}>
-        {(link, tippyInstance) => {
-          return (
-            <LinkPreviewMenu
-              link={link}
-              editor={editor()}
-              tippyInstance={tippyInstance}
-              setBubbleMenu={setForceBubbleMenu}
-            />
-          );
-        }}
-      </LinkPreviewWrapper>
-
-      <BubbleMenuWrapper
-        editor={editor()}
-        tippyOptions={{
-          duration: [300, 250],
-          zIndex: 30,
-          hideOnClick: false,
-          interactive: true,
-          animation: breakpoints.md() ? "scale-subtle" : "shift-away-subtle",
-          onHide() {
-            if (containerRef()?.contains(activeElement())) return false;
-          },
-          onCreate(instance) {
-            setBubbleMenuInstance(instance);
-          },
-          maxWidth: "100%"
-        }}
-        shouldShow={({ editor }) => {
-          if (!breakpoints.md() && shouldShowFloatingMenu(editor as SolidEditor)) {
-            setForceBubbleMenu("block");
-
-            return true;
-          }
-
-          setForceBubbleMenu(undefined);
-
-          if (isNodeSelection()) {
-            bubbleMenuInstance()?.setProps({
-              placement: isNodeSelection() ? "top-start" : "top"
-            });
-          }
-
-          return shouldShow(editor as SolidEditor);
-        }}
-      >
-        <BubbleMenu
-          class={clsx(!breakpoints.md() && "m-0 w-screen -left-1 rounded-none border-x-0")}
-          editor={editor()}
-          opened={bubbleMenuOpened()}
-          setBlockMenuOpened={setBlockMenuOpened}
-          mode={forceBubbleMenu()}
-          blur={() => {
-            editor().commands.blur();
-            setActiveElement(null);
-            bubbleMenuInstance()?.hide();
+      <Show when={props.editable}>
+        <LinkPreviewWrapper editor={editor()}>
+          {(link, tippyInstance) => {
+            return (
+              <LinkPreviewMenu
+                link={link}
+                editor={editor()}
+                tippyInstance={tippyInstance}
+                setBubbleMenu={setForceBubbleMenu}
+              />
+            );
           }}
-        />
-      </BubbleMenuWrapper>
-      <Show when={breakpoints.md()}>
-        <FloatingMenuWrapper
+        </LinkPreviewWrapper>
+
+        <BubbleMenuWrapper
           editor={editor()}
+          tippyOptions={{
+            duration: [300, 250],
+            zIndex: 30,
+            hideOnClick: false,
+            interactive: true,
+            animation: breakpoints.md() ? "scale-subtle" : "shift-away-subtle",
+            onHide() {
+              if (containerRef()?.contains(activeElement())) return false;
+            },
+            onCreate(instance) {
+              setBubbleMenuInstance(instance);
+            },
+            maxWidth: "100%"
+          }}
           shouldShow={({ editor }) => {
-            return shouldShowFloatingMenu(editor as SolidEditor);
+            if (!breakpoints.md() && shouldShowFloatingMenu(editor as SolidEditor)) {
+              setForceBubbleMenu("block");
+
+              return true;
+            }
+
+            setForceBubbleMenu(undefined);
+
+            if (isNodeSelection()) {
+              bubbleMenuInstance()?.setProps({
+                placement: isNodeSelection() ? "top-start" : "top"
+              });
+            }
+
+            return shouldShow(editor as SolidEditor);
           }}
         >
-          <FloatingMenu editor={editor()} opened={floatingMenuOpened()} />
-        </FloatingMenuWrapper>
-      </Show>
-      <Show when={!breakpoints.md()}>
-        <Dropdown
-          activatorButton={() => <div />}
-          opened={blockMenuOpened()}
-          setOpened={setBlockMenuOpened}
-        >
-          <BlockMenu
-            items={blockMenuOptions()}
-            close={() => setBlockMenuOpened(false)}
+          <BubbleMenu
+            class={clsx(!breakpoints.md() && "m-0 w-screen -left-1 rounded-none border-x-0")}
             editor={editor()}
+            opened={bubbleMenuOpened()}
+            setBlockMenuOpened={setBlockMenuOpened}
+            mode={forceBubbleMenu()}
+            blur={() => {
+              editor().commands.blur();
+              setActiveElement(null);
+              bubbleMenuInstance()?.hide();
+            }}
           />
-        </Dropdown>
+        </BubbleMenuWrapper>
+        <Show when={breakpoints.md()}>
+          <FloatingMenuWrapper
+            editor={editor()}
+            shouldShow={({ editor }) => {
+              return shouldShowFloatingMenu(editor as SolidEditor);
+            }}
+          >
+            <FloatingMenu editor={editor()} opened={floatingMenuOpened()} />
+          </FloatingMenuWrapper>
+        </Show>
+        <Show when={!breakpoints.md()}>
+          <Dropdown
+            activatorButton={() => <div />}
+            opened={blockMenuOpened()}
+            setOpened={setBlockMenuOpened}
+          >
+            <BlockMenu
+              items={blockMenuOptions()}
+              close={() => setBlockMenuOpened(false)}
+              editor={editor()}
+            />
+          </Dropdown>
+        </Show>
       </Show>
       <SolidEditorContent editor={editor()} />
       {props.children}

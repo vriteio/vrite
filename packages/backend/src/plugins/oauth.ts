@@ -53,7 +53,7 @@ const registerGitHubOAuth = (fastify: FastifyInstance): void => {
         }
       });
       const userData = await client.get<{
-        name: string;
+        name?: string;
         id: string;
         login: string;
       }>("/user");

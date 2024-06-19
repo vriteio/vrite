@@ -9,3 +9,4 @@ export * from "./shared-state";
 export * from "./command-palette";
 export * from "./host-config";
 export * from "./content";
+export * from "./history";

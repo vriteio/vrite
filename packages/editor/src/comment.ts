@@ -45,18 +45,6 @@ const Comment = Mark.create<CommentOptions>({
       mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, { "data-comment": true }),
       0
     ];
-  },
-  addCommands() {
-    return {
-      setComment: (attributes) => {
-        return ({ commands }) => commands.setMark("comment", attributes);
-      },
-      unsetComment: () => {
-        return ({ commands }) => {
-          return commands.unsetMark("comment");
-        };
-      }
-    };
   }
 });
 

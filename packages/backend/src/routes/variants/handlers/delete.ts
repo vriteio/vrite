@@ -5,7 +5,9 @@ import {
   getVariantsCollection,
   getContentPieceVariantsCollection,
   getContentVariantsCollection,
-  variant
+  variant,
+  getVersionsCollection,
+  getContentVersionsCollection
 } from "#collections";
 import { publishVariantEvent } from "#events";
 import { errors } from "#lib/errors";
@@ -27,6 +29,8 @@ const handler = async (
   input: z.infer<typeof inputSchema>
 ): Promise<void> => {
   const variantsCollection = getVariantsCollection(ctx.db);
+  const versionsCollection = getVersionsCollection(ctx.db);
+  const contentVersionsCollection = getContentVersionsCollection(ctx.db);
   const contentPieceVariantsCollection = getContentPieceVariantsCollection(ctx.db);
   const contentVariantsCollection = getContentVariantsCollection(ctx.db);
   const variantId = new ObjectId(input.id);
@@ -40,6 +44,13 @@ const handler = async (
     variantId
   });
   await contentVariantsCollection.deleteMany({
+    variantId
+  });
+  await versionsCollection.deleteMany({
+    variantId,
+    workspaceId: ctx.auth.workspaceId
+  });
+  await contentVersionsCollection.deleteMany({
     variantId
   });
 

@@ -97,29 +97,31 @@ const EmbedView: Component = () => {
       <div
         class={clsx(
           "relative select-none rounded-2xl min-w-64 group",
-          selected() && "ring ring-primary ring-2"
+          state().editor.isEditable && selected() && "ring-primary ring-2"
         )}
         ref={setReferenceContainerRef}
       >
-        <div
-          class={clsx(
-            "text-gray-500 dark:text-gray-400 absolute left-[calc(-1.5rem-2px)] z-10 opacity-0 group-hover:opacity-100",
-            (!isTopLevel() || !breakpoints.md()) && "hidden"
-          )}
-          data-drag-handle
-        >
-          <Icon
-            path={dragVerticalIcon}
-            class="h-6 w-6"
-            stroke="currentColor"
-            stroke-stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width={2}
-            onMouseDown={() => {
-              state().editor.commands.setNodeSelection(state().getPos());
-            }}
-          />
-        </div>
+        <Show when={state().editor.isEditable}>
+          <div
+            class={clsx(
+              "text-gray-500 dark:text-gray-400 absolute left-[calc(-1.5rem-2px)] z-10 opacity-0 group-hover:opacity-100",
+              (!isTopLevel() || !breakpoints.md()) && "hidden"
+            )}
+            data-drag-handle
+          >
+            <Icon
+              path={dragVerticalIcon}
+              class="h-6 w-6"
+              stroke="currentColor"
+              stroke-stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width={2}
+              onMouseDown={() => {
+                state().editor.commands.setNodeSelection(state().getPos());
+              }}
+            />
+          </div>
+        </Show>
         <Show
           when={attrs().src}
           fallback={
@@ -145,17 +147,19 @@ const EmbedView: Component = () => {
             class="object-contain w-full m-0 transition-opacity duration-300 border-2 border-gray-300 dark:border-gray-700 aspect-video min-h-96 rounded-2xl"
           />
         </Show>
-        <Portal mount={document.getElementById("pm-container") || document.body}>
-          <div
-            ref={setMenuContainerRef}
-            class={clsx(
-              "w-screen md:w-full justify-center items-center z-1 pointer-events-none fixed",
-              selected() ? "flex" : "hidden"
-            )}
-          >
-            <EmbedMenu state={state()} />
-          </div>
-        </Portal>
+        <Show when={state().editor.isEditable}>
+          <Portal mount={document.getElementById("pm-container") || document.body}>
+            <div
+              ref={setMenuContainerRef}
+              class={clsx(
+                "w-screen md:w-full justify-center items-center z-1 pointer-events-none fixed",
+                selected() ? "flex" : "hidden"
+              )}
+            >
+              <EmbedMenu state={state()} />
+            </div>
+          </Portal>
+        </Show>
       </div>
     </NodeViewWrapper>
   );

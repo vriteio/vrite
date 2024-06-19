@@ -15,11 +15,7 @@ import { DocJSON, bufferToJSON } from "#lib/content-processing";
 import { errors } from "#lib/errors";
 import { AuthenticatedContext } from "#lib/middleware";
 import { zodId } from "#lib/mongo";
-import {
-  fetchContentPieceTags,
-  fetchContentPieceMembers,
-  getCanonicalLinkFromPattern
-} from "#lib/utils";
+import { fetchContentPieceTags, fetchEntryMembers, getCanonicalLinkFromPattern } from "#lib/utils";
 
 const inputSchema = z.object({
   id: zodId().describe("ID of the content piece"),
@@ -107,7 +103,7 @@ const handler = async (
   }
 
   const tags = await fetchContentPieceTags(ctx.db, contentPiece);
-  const members = await fetchContentPieceMembers(ctx.db, contentPiece);
+  const members = await fetchEntryMembers(ctx.db, contentPiece);
   const getDescription = (): string => {
     if (input.description === "html") {
       return contentPiece.description || "";

@@ -19,7 +19,9 @@ import {
   getGitDataCollection,
   getWorkspacesCollection,
   getSnippetsCollection,
-  getSnippetContentsCollection
+  getSnippetContentsCollection,
+  getVersionsCollection,
+  getContentVersionsCollection
 } from "#collections";
 
 const databasePlugin = createPlugin(async (fastify) => {
@@ -50,6 +52,8 @@ const databasePlugin = createPlugin(async (fastify) => {
   const workspacesCollection = getWorkspacesCollection(db);
   const snippetsCollection = getSnippetsCollection(db);
   const snippetContentsCollection = getSnippetContentsCollection(db);
+  const versionsCollection = getVersionsCollection(db);
+  const contentVersionsCollection = getContentVersionsCollection(db);
   const createIndexes = [
     contentPiecesCollection.createIndex({ workspaceId: 1 }),
     contentPiecesCollection.createIndex({ contentGroupId: 1 }),
@@ -96,7 +100,11 @@ const databasePlugin = createPlugin(async (fastify) => {
     gitDataCollection.createIndex({ workspaceId: 1 }, { unique: true }),
     gitDataCollection.createIndex({ "records.contentPieceId": 1 }),
     snippetsCollection.createIndex({ workspaceId: 1 }),
-    snippetContentsCollection.createIndex({ snippetId: 1 })
+    snippetContentsCollection.createIndex({ snippetId: 1 }),
+    versionsCollection.createIndex({ workspaceId: 1 }),
+    versionsCollection.createIndex({ contentPieceId: 1 }),
+    versionsCollection.createIndex({ contentPieceId: 1, variantId: 1 }),
+    contentVersionsCollection.createIndex({ versionId: 1 })
   ];
 
   if (fastify.hostConfig.billing) {

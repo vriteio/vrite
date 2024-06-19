@@ -9,7 +9,9 @@ import {
   getContentPieceVariantsCollection,
   getContentVariantsCollection,
   FullContentGroup,
-  contentGroup
+  contentGroup,
+  getVersionsCollection,
+  getContentVersionsCollection
 } from "#collections";
 import { publishContentGroupEvent } from "#events";
 import { errors } from "#lib/errors";
@@ -38,6 +40,8 @@ const handler = async (
   const contentsCollection = getContentsCollection(ctx.db);
   const contentPieceVariantsCollection = getContentPieceVariantsCollection(ctx.db);
   const contentVariantsCollection = getContentVariantsCollection(ctx.db);
+  const versionsCollection = getVersionsCollection(ctx.db);
+  const contentVersionsCollection = getContentVersionsCollection(ctx.db);
   const contentGroupId = new ObjectId(input.id);
   const contentGroup = await contentGroupsCollection.findOne({
     _id: contentGroupId,
@@ -87,6 +91,13 @@ const handler = async (
     workspaceId: ctx.auth.workspaceId
   });
   await contentVariantsCollection.deleteMany({
+    contentPieceId: { $in: contentPieceIds }
+  });
+  await versionsCollection.deleteMany({
+    contentPieceId: { $in: contentPieceIds },
+    workspaceId: ctx.auth.workspaceId
+  });
+  await contentVersionsCollection.deleteMany({
     contentPieceId: { $in: contentPieceIds }
   });
   publishContentGroupEvent(ctx, `${ctx.auth.workspaceId}`, {

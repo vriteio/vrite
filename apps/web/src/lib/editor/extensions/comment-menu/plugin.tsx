@@ -1,6 +1,6 @@
 import { CommentMenu } from "./component";
 import { Comment } from "@vrite/editor";
-import { Editor, getAttributes } from "@tiptap/core";
+import { Editor, Extension, getAttributes } from "@tiptap/core";
 import { SolidEditor, SolidRenderer } from "@vrite/tiptap-solid";
 import { debounce } from "@solid-primitives/scheduled";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
@@ -41,7 +41,7 @@ const updatePosition = (editor: Editor): void => {
   }));
 };
 const CommentMenuPluginKey = new PluginKey("commentMenu");
-const CommentMenuPlugin = Comment.extend<
+const CommentMenuPlugin = Extension.create<
   { commentData: CommentDataContextData },
   {
     resizeHandler(): void;
@@ -49,7 +49,7 @@ const CommentMenuPlugin = Comment.extend<
     setActiveFragmentId(id: string): void;
   }
 >({
-  exitable: true,
+  name: "commentMenu",
   addOptions() {
     return { commentData: {} as CommentDataContextData };
   },

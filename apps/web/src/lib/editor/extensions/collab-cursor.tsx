@@ -19,7 +19,13 @@ import { GapCursor } from "@tiptap/pm/gapcursor";
 import { useAuthenticatedUserData } from "#context";
 import { getSelectionColor, selectionClasses, selectionColors } from "#lib/utils";
 
-type AwarenessUser = { name: string; avatar: string; id: string; selectionColor: string };
+type AwarenessUser = {
+  name: string;
+  membershipId: string;
+  avatar: string;
+  id: string;
+  selectionColor: string;
+};
 type AwarenessState = { clientId: number } & AwarenessUser & { fields: Record<string, any> };
 type CollabCursorStorage = {
   users: Accessor<AwarenessState[]>;
@@ -41,7 +47,7 @@ const awarenessStatesToArray = (states: Map<number, Record<string, any>>): Aware
   });
 };
 const CollabCursor = (provider: HocuspocusProvider): Extension => {
-  const { profile } = useAuthenticatedUserData();
+  const { profile, membership } = useAuthenticatedUserData();
 
   return CollaborationCursor.extend<CollabCursorOptions, CollabCursorStorage>({
     onSelectionUpdate() {
@@ -93,6 +99,7 @@ const CollabCursor = (provider: HocuspocusProvider): Extension => {
     provider,
     user: {
       name: profile()?.username || "",
+      membershipId: membership()?.id || "",
       avatar: profile()?.avatar || "",
       id: profile()?.id || "",
       selectionColor: getSelectionColor()

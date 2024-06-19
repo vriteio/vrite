@@ -17,11 +17,7 @@ import { errors } from "#lib/errors";
 import { AuthenticatedContext } from "#lib/middleware";
 import { UnderscoreID, zodId } from "#lib/mongo";
 import { publishContentPieceEvent } from "#events";
-import {
-  fetchContentPieceTags,
-  fetchContentPieceMembers,
-  getCanonicalLinkFromPattern
-} from "#lib/utils";
+import { fetchContentPieceTags, fetchEntryMembers, getCanonicalLinkFromPattern } from "#lib/utils";
 
 declare module "fastify" {
   interface RouteCallbacks {
@@ -188,7 +184,7 @@ const handler = async (
   }
 
   const tags = await fetchContentPieceTags(ctx.db, newContentPiece);
-  const members = await fetchContentPieceMembers(ctx.db, newContentPiece);
+  const members = await fetchEntryMembers(ctx.db, newContentPiece);
 
   publishContentPieceEvent(ctx, `${newContentPiece.contentGroupId}`, {
     action: "update",

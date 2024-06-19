@@ -18,8 +18,10 @@ import {
   getContentPieceVariantsCollection,
   getContentPiecesCollection,
   getContentVariantsCollection,
+  getContentVersionsCollection,
   getContentsCollection,
-  getVariantsCollection
+  getVariantsCollection,
+  getVersionsCollection
 } from "#collections";
 import initialContent from "#assets/initial-content.json";
 
@@ -167,6 +169,8 @@ const deleteWorkspace = async (workspaceId: ObjectId, fastify: FastifyInstance):
   const variantsCollection = getVariantsCollection(db);
   const contentPieceVariantsCollection = getContentPieceVariantsCollection(db);
   const contentVariantsCollection = getContentVariantsCollection(db);
+  const versionsCollection = getVersionsCollection(db);
+  const contentVersionsCollection = getContentVersionsCollection(db);
   const contentPieceIds = await contentPiecesCollection
     .find({ workspaceId })
     .map(({ _id }) => _id)
@@ -198,6 +202,12 @@ const deleteWorkspace = async (workspaceId: ObjectId, fastify: FastifyInstance):
   });
   await contentVariantsCollection.deleteMany({
     contentPieceId: { $in: contentPieceIds }
+  });
+  await versionsCollection.deleteMany({
+    workspaceId
+  });
+  await contentVersionsCollection.deleteMany({
+    workspaceId
   });
   await fastify.search.deleteTenant(workspaceId);
   await fastify.billing.deleteCustomer(`${workspaceId}`);

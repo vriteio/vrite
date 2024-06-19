@@ -14,7 +14,7 @@ import { getSelectionColor } from "#lib/utils";
 
 const DashboardView: Component = () => {
   const { useSharedSignal } = useSharedState();
-  const { workspace, profile } = useAuthenticatedUserData();
+  const { workspace, profile, membership } = useAuthenticatedUserData();
   const { storage, setStorage } = useLocalStorage();
   const { activeContentPieceId } = useContentData();
   const [provider, setProvider] = useSharedSignal("provider");
@@ -28,6 +28,7 @@ const DashboardView: Component = () => {
     name: profile()?.username || "",
     avatar: profile()?.avatar || "",
     id: profile()?.id || "",
+    membershipId: membership()?.id || "",
     selectionColor: getSelectionColor()
   });
   onCleanup(() => {

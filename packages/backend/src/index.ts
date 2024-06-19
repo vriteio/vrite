@@ -7,6 +7,7 @@ export * from "./lib/mongo";
 export * from "./lib/session";
 export * from "./lib/content-processing";
 export * from "./lib/git-sync";
+export * from "./lib/utils";
 export * from "./plugins";
 export * from "./collections";
 export * from "./events";

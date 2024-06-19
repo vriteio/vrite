@@ -15,3 +15,4 @@ export * from "./workspace";
 export * from "./git-data";
 export * from "./role";
 export * from "./snippet";
+export * from "./versions";

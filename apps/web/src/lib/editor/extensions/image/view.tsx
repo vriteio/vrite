@@ -207,32 +207,34 @@ const ImageView: Component = () => {
       <div
         class={clsx(
           "rounded-2xl select-none min-w-64",
-          !options().cover && selected() && "ring-primary ring-2"
+          state().editor.isEditable && !options().cover && selected() && "ring-primary ring-2"
         )}
       >
         <div
           class={clsx("border-gray-200 dark:border-gray-700 relative group rounded-2xl border-2")}
           ref={setReferenceContainerRef}
         >
-          <div
-            class={clsx(
-              "text-gray-500 dark:text-gray-400 absolute left-[calc(-1.5rem-2px)] z-10 opacity-0 group-hover:opacity-100",
-              (!isTopLevel() || !breakpoints.md() || options().cover) && "hidden"
-            )}
-            data-drag-handle
-          >
-            <Icon
-              path={dragVerticalIcon}
-              class="h-6 w-6"
-              stroke="currentColor"
-              stroke-stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width={2}
-              onMouseDown={() => {
-                state().editor.commands.setNodeSelection(state().getPos());
-              }}
-            />
-          </div>
+          <Show when={state().editor.isEditable}>
+            <div
+              class={clsx(
+                "text-gray-500 dark:text-gray-400 absolute left-[calc(-1.5rem-2px)] z-10 opacity-0 group-hover:opacity-100",
+                (!isTopLevel() || !breakpoints.md() || options().cover) && "hidden"
+              )}
+              data-drag-handle
+            >
+              <Icon
+                path={dragVerticalIcon}
+                class="h-6 w-6"
+                stroke="currentColor"
+                stroke-stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width={2}
+                onMouseDown={() => {
+                  state().editor.commands.setNodeSelection(state().getPos());
+                }}
+              />
+            </div>
+          </Show>
           <div
             class={clsx(
               "w-full border-gray-200 dark:border-gray-700 flex justify-center items-center overflow-hidden bg-gray-100 dark:bg-gray-800 relative",
@@ -302,6 +304,9 @@ const ImageView: Component = () => {
           </Show>
         </div>
         <Switch>
+          <Match when={!state().editor.isEditable}>
+            <></>
+          </Match>
           <Match when={options().cover}>
             <div class="absolute bottom-2 left-2 w-[calc(100%-1rem)] flex items-center justify-center">
               <div

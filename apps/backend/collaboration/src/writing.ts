@@ -4,7 +4,8 @@ import {
   getContentVariantsCollection,
   errors,
   SessionData,
-  getSnippetContentsCollection
+  getSnippetContentsCollection,
+  getContentVersionsCollection
 } from "@vrite/backend";
 import { Server } from "@hocuspocus/server";
 import { Database } from "@hocuspocus/extension-database";
@@ -12,9 +13,11 @@ import { Redis } from "@hocuspocus/extension-redis";
 import { ObjectId, Binary } from "mongodb";
 import { SearchIndexing } from "#extensions/search-indexing";
 import { GitSync } from "#extensions/git-sync";
+import { VersionHistory } from "#extensions/version-history";
 
 const writingPlugin = createPlugin(async (fastify) => {
   const snippetContentsCollection = getSnippetContentsCollection(fastify.mongo.db!);
+  const contentVersionsCollection = getContentVersionsCollection(fastify.mongo.db!);
   const contentsCollection = getContentsCollection(fastify.mongo.db!);
   const contentVariantsCollection = getContentVariantsCollection(fastify.mongo.db!);
   const server = Server.configure({
@@ -55,6 +58,18 @@ const writingPlugin = createPlugin(async (fastify) => {
             return null;
           }
 
+          if (documentName.startsWith("version:")) {
+            const contentVersion = await contentVersionsCollection.findOne({
+              versionId: new ObjectId(documentName.split(":")[1])
+            });
+
+            if (contentVersion && contentVersion.content) {
+              return new Uint8Array(contentVersion.content.buffer);
+            }
+
+            return null;
+          }
+
           if (documentName.startsWith("snippet:")) {
             const snippetContent = await snippetContentsCollection.findOne({
               snippetId: new ObjectId(documentName.split(":")[1])
@@ -91,7 +106,7 @@ const writingPlugin = createPlugin(async (fastify) => {
           return null;
         },
         async store({ documentName, state, ...details }) {
-          if (documentName.startsWith("workspace:")) {
+          if (documentName.startsWith("workspace:") || documentName.startsWith("version:")) {
             return;
           }
 
@@ -140,7 +155,8 @@ const writingPlugin = createPlugin(async (fastify) => {
         }
       }),
       new SearchIndexing(fastify),
-      new GitSync(fastify)
+      new GitSync(fastify),
+      new VersionHistory(fastify)
     ]
   });
 

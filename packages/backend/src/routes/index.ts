@@ -19,6 +19,7 @@ import { gitRouter } from "./git";
 import { searchRouter } from "./search";
 import { transformersRouter } from "./transformers";
 import { snippetsRouter } from "./snippets";
+import { versionsRouter } from "./versions";
 import type { TRPCClientError } from "@trpc/client";
 import { billingRouter } from "#ee/billing";
 import { Context, createContext } from "#lib/context";
@@ -46,7 +47,8 @@ const appRouter = router({
   git: gitRouter,
   search: searchRouter,
   transformers: transformersRouter,
-  billing: billingRouter
+  billing: billingRouter,
+  versions: versionsRouter
 });
 
 type Router = typeof appRouter;

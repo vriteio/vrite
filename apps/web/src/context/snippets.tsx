@@ -77,22 +77,17 @@ const SnippetsDataProvider: ParentComponent = (props) => {
       });
     }
   };
-  const snippetsSubscription = client.snippets.changes.subscribe(
-    {
-      workspaceId: workspace()!.id || ""
-    },
-    {
-      onData({ action, data }) {
-        if (action === "create") {
-          snippetsActions.createSnippet(data);
-        } else if (action === "update") {
-          snippetsActions.updateSnippet(data);
-        } else if (action === "delete") {
-          snippetsActions.deleteSnippet(data);
-        }
+  const snippetsSubscription = client.snippets.changes.subscribe(undefined, {
+    onData({ action, data }) {
+      if (action === "create") {
+        snippetsActions.createSnippet(data);
+      } else if (action === "update") {
+        snippetsActions.updateSnippet(data);
+      } else if (action === "delete") {
+        snippetsActions.deleteSnippet(data);
       }
     }
-  );
+  });
 
   onMount(() => {
     load();

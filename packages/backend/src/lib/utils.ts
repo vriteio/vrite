@@ -36,11 +36,11 @@ const fetchContentPieceTags = async (
     })
     .filter((value) => value) as Tag[];
 };
-const fetchContentPieceMembers = async (
+const fetchEntryMembers = async (
   db: Db,
-  contentPiece: UnderscoreID<ContentPiece<ObjectId>>
+  entry: Pick<ContentPiece<ObjectId>, "members">
 ): Promise<Array<ContentPieceMember>> => {
-  const memberIds = contentPiece.members || [];
+  const memberIds = entry.members || [];
   const workspaceMembershipsCollection = getWorkspaceMembershipsCollection(db);
   const usersCollection = getUsersCollection(db);
   const memberships = await workspaceMembershipsCollection
@@ -129,7 +129,7 @@ const createToken = async (
 export {
   stringToRegex,
   fetchContentPieceTags,
-  fetchContentPieceMembers,
+  fetchEntryMembers,
   getCanonicalLinkFromPattern,
   createToken
 };
