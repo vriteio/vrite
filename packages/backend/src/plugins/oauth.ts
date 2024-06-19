@@ -76,7 +76,10 @@ const registerGitHubOAuth = (fastify: FastifyInstance): void => {
         const newUser = {
           _id: new ObjectId(),
           email: primaryEmail,
-          username: userData.data.name.toLowerCase().replace(/-/g, "_").slice(0, 20),
+          username: (userData.data.name || userData.data.login)
+            .toLowerCase()
+            .replace(/-/g, "_")
+            .slice(0, 20),
           salt: await generateSalt(),
           external: {
             github: { id: userData.data.id }
