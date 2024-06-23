@@ -569,13 +569,16 @@ const Element = BaseElement.extend<
             node.type !== newNode.type ||
             typeof props.getPos !== "function" ||
             typeof props.getPos() !== "number" ||
-            newNode.type.name !== "element" ||
-            Boolean(newNode.content.size) !== Boolean(node.content.size)
+            newNode.type.name !== "element"
           ) {
             if (uid && customViews.has(uid)) {
               customViews.delete(uid);
             }
 
+            return false;
+          }
+
+          if (Boolean(newNode.content.size) !== Boolean(node.content.size)) {
             return false;
           }
 
