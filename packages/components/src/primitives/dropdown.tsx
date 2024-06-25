@@ -1,6 +1,7 @@
 import { Overlay } from "./overlay";
 import { Card } from "./card";
 import { createRef } from "../ref";
+import { isTouchDevice } from "../utils";
 import clsx from "clsx";
 import {
   Component,
@@ -18,7 +19,6 @@ import { computePosition, flip, Placement, size } from "@floating-ui/dom";
 import { Dynamic, Portal } from "solid-js/web";
 import { createMediaQuery } from "@solid-primitives/media";
 import { createActiveElement } from "@solid-primitives/active-element";
-import { isTouchDevice } from "#utils";
 
 interface DropdownProps extends JSX.HTMLAttributes<HTMLDivElement> {
   class?: string;
