@@ -1,6 +1,6 @@
 import { DocJSON } from "./conversions";
 import * as JSONDiff from "jsondiffpatch";
-import diff_match_patch, { diff_match_patch as DiffMatchPatch, Diff } from "diff-match-patch";
+import { diff_match_patch as DiffMatchPatch, Diff } from "diff-match-patch";
 
 const objectHash = (input: object): string => {
   const obj = input as DocJSON;
@@ -15,7 +15,6 @@ const objectHash = (input: object): string => {
       let outputValue = value;
 
       if (key === "width" || key === "aspectRatio" || key === "autoDir" || key === "diff") return;
-      if (["heading", "paragraph"].includes(obj.type) && key === "id") return;
 
       if (typeof value === "object") {
         outputValue = JSON.stringify(input, Object.keys(input).sort());
@@ -27,6 +26,7 @@ const objectHash = (input: object): string => {
 };
 const generateDiffDocument = (oldContent: DocJSON, newContent: DocJSON): any => {
   const differ = JSONDiff.create({
+    arrays: { detectMove: false },
     propertyFilter(name) {
       return name !== "autoDir" && name !== "diff" && name !== "width" && name !== "id";
     },
@@ -117,11 +117,21 @@ const generateDiffDocument = (oldContent: DocJSON, newContent: DocJSON): any => 
     arrayDelta: JSONDiff.ArrayDelta
   ): DocJSON[] => {
     const output: DocJSON[] = [];
+    const unchangedBlocks: DocJSON[] = [];
     const maxIndex = Math.max(oldContentLevel.length, newContentLevel.length);
 
     for (let i = 0; i < maxIndex; i++) {
       const oldContent = oldContentLevel[i];
       const newContent = newContentLevel[i];
+
+      if (
+        (!arrayDelta[`${i}`] && !arrayDelta[`_${i}`]) ||
+        (!arrayDelta[`_${i}`] && arrayDelta[`${i}`] && !arrayDelta[`${i - 1}`]) ||
+        (!arrayDelta[`${i}`] && arrayDelta[`_${i}`] && !arrayDelta[`_${i - 1}`])
+      ) {
+        output.push(...unchangedBlocks);
+        unchangedBlocks.length = 0;
+      }
 
       if (oldContent && oldContent.type !== "text" && !oldContent.content) {
         oldContent.content = [];
@@ -131,12 +141,6 @@ const generateDiffDocument = (oldContent: DocJSON, newContent: DocJSON): any => 
         newContent.content = [];
       }
 
-      if (!arrayDelta[`${i}`] && !arrayDelta[`_${i}`] && newContent) {
-        // No change
-        output.push(newContent);
-        continue;
-      }
-
       if (oldContent && arrayDelta[`_${i}`]) {
         // Block removed
         oldContent.attrs = oldContent.attrs || {};
@@ -144,10 +148,26 @@ const generateDiffDocument = (oldContent: DocJSON, newContent: DocJSON): any => 
         output.push(oldContent);
       }
 
-      if (newContent && oldContent && arrayDelta[`${i}`] && !Array.isArray(arrayDelta[`${i}`])) {
+      if (newContent && !arrayDelta[`${i}`]) {
+        // Block unchanged
+        if (!arrayDelta[`${i}`] && !arrayDelta[`_${i}`]) {
+          output.push(newContent);
+        } else {
+          unchangedBlocks.push(newContent);
+        }
+      }
+
+      if (newContent && arrayDelta[`${i}`] && Array.isArray(arrayDelta[`${i}`])) {
+        // Block added
+        newContent.attrs = newContent.attrs || {};
+        newContent.attrs.diff = "added";
+        output.push(newContent);
+      }
+
+      if (newContent && arrayDelta[`${i}`] && !Array.isArray(arrayDelta[`${i}`])) {
         const objectDelta = arrayDelta[`${i}`] as JSONDiff.ObjectDelta;
 
-        // Nested change
+        // Block changed inside
         if (newContent.type === "heading" || newContent.type === "paragraph") {
           const contentChanged = objectDelta.content && `${objectDelta.content}`;
           const textArrayDelta = objectDelta.content as JSONDiff.ArrayDelta;
@@ -186,13 +206,6 @@ const generateDiffDocument = (oldContent: DocJSON, newContent: DocJSON): any => 
             })
           });
         }
-      }
-
-      if (newContent && Array.isArray(arrayDelta[`${i}`])) {
-        // Block added
-        newContent.attrs = newContent.attrs || {};
-        newContent.attrs.diff = "added";
-        output.push(newContent);
       }
     }
 
