@@ -86,6 +86,10 @@ const handler = async (
     }
   }
 
+  if (!referenceContent) {
+    referenceContent = { type: "doc", content: [] };
+  }
+
   if (!versionContent || !referenceContent) {
     throw errors.notFound("content");
   }
