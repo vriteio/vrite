@@ -77,12 +77,16 @@ const generateDiffDocument = (oldContent: DocJSON, newContent: DocJSON): any => 
         const [patch] = diffMatchPatch.patch_fromText(objectDelta.text![0] as string) as any[];
         const diffs = patch.diffs as Diff[];
         const start = patch.start1;
+        const text = newContent.text?.slice(0, start);
 
-        output.push({
-          type: "text",
-          text: newContent.text?.slice(0, start),
-          marks: [...(newContent.marks || [])]
-        });
+        if (text) {
+          output.push({
+            type: "text",
+            text,
+            marks: [...(newContent.marks || [])]
+          });
+        }
+
         diffs.forEach(([operation, text]) => {
           let diff = objectDelta.marks ? "changed" : "";
 
@@ -92,14 +96,16 @@ const generateDiffDocument = (oldContent: DocJSON, newContent: DocJSON): any => 
             diff = "added";
           }
 
-          output.push({
-            type: "text",
-            text,
-            marks: [
-              ...(newContent.marks || []),
-              ...(diff ? [{ type: "diff", attrs: { diff } }] : [])
-            ]
-          });
+          if (text) {
+            output.push({
+              type: "text",
+              text,
+              marks: [
+                ...(newContent.marks || []),
+                ...(diff ? [{ type: "diff", attrs: { diff } }] : [])
+              ]
+            });
+          }
         });
       }
 

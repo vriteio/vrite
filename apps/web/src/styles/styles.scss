@@ -627,3 +627,9 @@ span[data-highlight-diff] {
     content: none;
   }
 }
+[data-highlight-diff="changed"]:where(span) {
+  @apply text-blue-500 bg-blue-500 bg-opacity-10;
+  &::after {
+    content: none;
+  }
+}
