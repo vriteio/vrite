@@ -58,7 +58,7 @@ const DashboardView: Component = () => {
   }
 
   return (
-    <div class="relative flex-1 overflow-hidden flex flex-row h-full">
+    <div class="relative flex-1 overflow-hidden flex flex-row h-full" id="table">
       <DashboardDataProvider>
         <Switch>
           <Match when={storage().dashboardView === "table"}>

@@ -5,11 +5,13 @@ interface ContentVersion<ID extends string | ObjectId = string> {
   contentPieceId: ID;
   versionId: ID;
   variantId?: ID;
-  content?: Binary;
+  content: Binary;
   id: ID;
 }
 
-interface FullContentVersion<ID extends string | ObjectId = string> extends ContentVersion<ID> {}
+interface FullContentVersion<ID extends string | ObjectId = string> extends ContentVersion<ID> {
+  expiresAt?: ID extends ObjectId ? Date : string;
+}
 
 const getContentVersionsCollection = (
   db: Db

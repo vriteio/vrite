@@ -8,7 +8,7 @@ import {
   mdiHistory,
   mdiShapeOutline
 } from "@mdi/js";
-import { useLocation } from "@solidjs/router";
+import { useLocation, useParams } from "@solidjs/router";
 import { useContentData, useHistoryData, useLocalStorage } from "#context";
 import { createRef } from "#lib/utils";
 import { ExplorerView } from "#views/explorer";
@@ -44,9 +44,9 @@ const sidePanelRightViews: Record<
   },
   history: {
     show: () => {
-      const location = useLocation();
+      const params = useParams();
 
-      return showEditorSpecificView() || location.pathname.startsWith("/version");
+      return showEditorSpecificView() || Boolean(params.versionId);
     },
     view: HistoryView,
     icon: mdiHistory,
@@ -67,6 +67,8 @@ const SidePanelRight: Component = () => {
     const { show } = sidePanelRightViews[viewId];
 
     if (show && !show()) {
+      setStorage({ sidePanelRightView: "explorer" });
+
       return "explorer";
     }
 
@@ -106,9 +108,11 @@ const SidePanelRight: Component = () => {
   };
   const onPointerUp = (): void => {
     setDragging(false);
+    document.body.style.userSelect = "";
   };
   const onPointerLeave = (): void => {
     setDragging(false);
+    document.body.style.userSelect = "";
   };
 
   setPreviousWidth(Number(localStorage.getItem("rightPanelWidth")));
@@ -176,6 +180,7 @@ const SidePanelRight: Component = () => {
           setDragging(true);
           setPreviousWidth(storage().rightPanelWidth || 0);
           setPrevX(event.x);
+          document.body.style.userSelect = "none";
         }}
         onPointerEnter={() => {
           triggerHandleHover();

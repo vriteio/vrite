@@ -222,7 +222,6 @@ const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
             opened={dropdownOpened()}
             class="ml-1 mr-3"
             setOpened={setDropdownOpened}
-            autoPlacement
             fixed
             alternativePlacements={["bottom-start", "bottom-end"]}
             activatorButton={() => (

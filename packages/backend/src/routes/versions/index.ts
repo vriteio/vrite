@@ -2,6 +2,7 @@ import * as listVersions from "./handlers/list";
 import * as updateVersions from "./handlers/update";
 import * as getVersion from "./handlers/get";
 import * as restoreVersion from "./handlers/restore";
+import * as diffVersion from "./handlers/diff";
 import { z } from "zod";
 import { subscribeToVersionEvents } from "#events";
 import { isAuthenticated } from "#lib/middleware";
@@ -14,6 +15,12 @@ const versionsRouter = router({
     .output(listVersions.outputSchema)
     .query(async ({ ctx, input }) => {
       return listVersions.handler(ctx, input);
+    }),
+  diff: authenticatedProcedure
+    .input(diffVersion.inputSchema)
+    .output(diffVersion.outputSchema)
+    .query(async ({ ctx, input }) => {
+      return diffVersion.handler(ctx, input);
     }),
   update: authenticatedProcedure
     .input(updateVersions.inputSchema)

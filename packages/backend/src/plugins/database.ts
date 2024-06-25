@@ -104,7 +104,10 @@ const databasePlugin = createPlugin(async (fastify) => {
     versionsCollection.createIndex({ workspaceId: 1 }),
     versionsCollection.createIndex({ contentPieceId: 1 }),
     versionsCollection.createIndex({ contentPieceId: 1, variantId: 1 }),
-    contentVersionsCollection.createIndex({ versionId: 1 })
+    versionsCollection.createIndex({ date: 1 }),
+    versionsCollection.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0, sparse: true }),
+    contentVersionsCollection.createIndex({ versionId: 1 }),
+    contentVersionsCollection.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0, sparse: true })
   ];
 
   if (fastify.hostConfig.billing) {

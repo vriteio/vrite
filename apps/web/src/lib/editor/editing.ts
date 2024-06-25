@@ -102,7 +102,7 @@ const createClipboardSerializer = (
 const createExtensions = (
   extensionsContext: ExtensionsContextData,
   settings: App.WorkspaceSettings,
-  provider: HocuspocusProvider
+  provider?: HocuspocusProvider | null
 ): Array<MarkExtension | NodeExtension> => {
   const resetExtensionConfig = {
     addKeyboardShortcuts: () => ({}),

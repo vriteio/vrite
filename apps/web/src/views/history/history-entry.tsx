@@ -1,15 +1,27 @@
 import { useHistoryMenuData } from "./history-context";
-import { Component, For, Match, Show, Switch, createMemo, createSignal } from "solid-js";
+import {
+  Component,
+  For,
+  Match,
+  Show,
+  Switch,
+  createEffect,
+  createMemo,
+  createSignal
+} from "solid-js";
 import {
   mdiAccountCircle,
   mdiCheck,
   mdiChevronRight,
   mdiCircleOutline,
   mdiDotsVertical,
-  mdiRename
+  mdiRename,
+  mdiSetLeft,
+  mdiSetRight
 } from "@mdi/js";
 import clsx from "clsx";
 import dayjs from "dayjs";
+import { useNavigate } from "@solidjs/router";
 import { Dropdown, Icon, IconButton, Input, Tooltip } from "#components/primitives";
 import { App, useClient, useHistoryData } from "#context";
 
@@ -20,6 +32,7 @@ interface HistoryEntryProps {
 }
 
 const HistoryEntry: Component<HistoryEntryProps> = (props) => {
+  const navigate = useNavigate();
   const { labelling, setLabelling, useExpanded } = useHistoryMenuData();
   const { historyActions, activeVersionId } = useHistoryData();
   const [expanded, setExpanded] = useExpanded(props.entry.id);
@@ -34,21 +47,48 @@ const HistoryEntry: Component<HistoryEntryProps> = (props) => {
       onClick(): void;
     } | null> = [];
 
-    menuOptions.push({
-      icon: mdiRename,
-      label: "Assign label",
-      class: "justify-start",
-      onClick() {
-        setDropdownOpened(false);
-        setLabelling(props.entry.id);
+    menuOptions.push(
+      {
+        icon: mdiRename,
+        label: "Assign label",
+        class: "justify-start",
+        onClick() {
+          setDropdownOpened(false);
+          setLabelling(props.entry.id);
+        }
+      },
+      null,
+      {
+        icon: mdiSetRight,
+        label: "Compare with latest",
+        class: "justify-start",
+        onClick() {
+          setDropdownOpened(false);
+          navigate(`/diff/latest/${props.entry.contentPieceId}/${props.entry.id}`);
+        }
+      },
+      {
+        icon: mdiSetLeft,
+        label: "Compare with previous",
+        class: "justify-start",
+        onClick() {
+          setDropdownOpened(false);
+          navigate(`/diff/previous/${props.entry.contentPieceId}/${props.entry.id}`);
+        }
       }
-    });
+    );
 
     return menuOptions;
   });
   const active = (): boolean => {
     return activeVersionId() === props.entry.id;
   };
+
+  createEffect(() => {
+    if (props.subEntries?.some((entry) => entry.id === activeVersionId())) {
+      setExpanded(true);
+    }
+  });
 
   return (
     <div>
@@ -62,7 +102,13 @@ const HistoryEntry: Component<HistoryEntryProps> = (props) => {
         <div class="h-5 min-w-5 flex justify-center items-center mr-1">
           <button
             onClick={() => {
-              setExpanded(!expanded());
+              if (props.subEntries?.length) {
+                setExpanded(!expanded());
+              } else {
+                if (labelling()) return;
+
+                props.onClick?.(props.entry);
+              }
             }}
           >
             <Icon
@@ -187,6 +233,7 @@ const HistoryEntry: Component<HistoryEntryProps> = (props) => {
               opened={dropdownOpened()}
               setOpened={setDropdownOpened}
               fixed
+              alternativePlacements={["top-end", "bottom-end"]}
               activatorButton={() => (
                 <IconButton
                   path={mdiDotsVertical}

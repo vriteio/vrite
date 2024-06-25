@@ -15,4 +15,5 @@ export * from "./table-menu";
 export * from "./element";
 export * from "./auto-dir";
 export * from "./autocomplete";
+export * from "./diff";
 export { ElementMenuPlugin } from "./xml-node-menu";

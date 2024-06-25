@@ -1,7 +1,6 @@
 import {
   mdiAccountCircle,
   mdiAccountMultipleOutline,
-  mdiCalendar,
   mdiCalendarOutline,
   mdiFileDocumentOutline,
   mdiFileOutline,
@@ -27,16 +26,13 @@ import {
 } from "solid-js";
 import { SetStoreFunction, createStore } from "solid-js/store";
 import { debounce } from "@solid-primitives/scheduled";
-import { Button, Icon, IconButton, Heading } from "#components/primitives";
-import { tagColorClasses } from "#lib/utils";
-import {
-  useLocalStorage,
-  App,
-  useAuthenticatedUserData,
-  useClient,
-  useContentData
-} from "#context";
+import { Button, Icon, Heading } from "#components/primitives";
+import { Ref, tagColorClasses } from "#lib/utils";
+import { App, useAuthenticatedUserData, useClient, useContentData } from "#context";
 
+interface DashboardTableViewDataProviderProps {
+  container: Ref<HTMLElement | null>[0];
+}
 interface DashboardTableViewColumnConfig {
   id: string;
   width: number;
@@ -57,12 +53,15 @@ interface DashboardTableViewColumnDef {
 type DashboardTableViewContextType = {
   columnDefs: Record<string, DashboardTableViewColumnDef>;
   columns: DashboardTableViewColumnConfig[];
+  container: Ref<HTMLElement | null>[0];
   tableWidth: Accessor<number>;
   setColumns: SetStoreFunction<DashboardTableViewColumnConfig[]>;
 };
 
 const DashboardTableViewContext = createContext<DashboardTableViewContextType>();
-const DashboardTableViewDataProvider: ParentComponent = (props) => {
+const DashboardTableViewDataProvider: ParentComponent<DashboardTableViewDataProviderProps> = (
+  props
+) => {
   const { workspaceSettings } = useAuthenticatedUserData();
   const { activeContentPieceId } = useContentData();
   const client = useClient();
@@ -346,7 +345,9 @@ const DashboardTableViewDataProvider: ParentComponent = (props) => {
   });
 
   return (
-    <DashboardTableViewContext.Provider value={{ columnDefs, columns, setColumns, tableWidth }}>
+    <DashboardTableViewContext.Provider
+      value={{ columnDefs, columns, setColumns, tableWidth, container: props.container }}
+    >
       {props.children}
     </DashboardTableViewContext.Provider>
   );

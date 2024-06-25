@@ -1,5 +1,5 @@
 import { UnderscoreID } from "./mongo";
-import { jsonToBuffer, DocJSON } from "./content-processing";
+import { jsonToBuffer, DocJSON } from "./content-processing/conversions";
 import { ObjectId, Binary } from "mongodb";
 import { LexoRank } from "lexorank";
 import { FastifyInstance } from "fastify";

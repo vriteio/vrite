@@ -38,6 +38,7 @@ interface VersionWithAdditionalData<ID extends string | ObjectId = string>
 
 interface FullVersion<ID extends string | ObjectId = string> extends Version<ID> {
   workspaceId: ID;
+  expiresAt?: ID extends ObjectId ? Date : string;
 }
 interface FullVersionWithAdditionalData<ID extends string | ObjectId = string>
   extends Omit<FullVersion<ID>, "members"> {

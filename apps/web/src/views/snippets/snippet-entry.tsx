@@ -46,7 +46,7 @@ const SnippetEntry: Component<SnippetEntryProps> = (props) => {
           onClick() {
             setDropdownOpened(false);
             confirmDelete({
-              header: "Delete group",
+              header: "Delete snippet",
               content: <p>Do you really want to delete this snippet?</p>,
               async onConfirm() {
                 if (!props.snippet) return;

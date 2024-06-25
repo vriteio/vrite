@@ -31,7 +31,8 @@ import {
   TableCell,
   TableHeader,
   TableRow,
-  Element
+  Element,
+  UniqueId
 } from "@vrite/editor";
 
 type Attrs = Record<string, string | number | boolean>;
@@ -87,7 +88,8 @@ const htmlToJSON = (html: string): DocJSON => {
     Table,
     TableCell,
     TableHeader,
-    TableRow
+    TableRow,
+    UniqueId
   ]) as DocJSON;
 };
 const jsonToBuffer = (json: DocJSON): Buffer => {
@@ -121,7 +123,8 @@ const jsonToBuffer = (json: DocJSON): Buffer => {
     Table,
     TableCell,
     TableHeader,
-    TableRow
+    TableRow,
+    UniqueId
   ]);
 
   return Buffer.from(Y.encodeStateAsUpdate(doc));

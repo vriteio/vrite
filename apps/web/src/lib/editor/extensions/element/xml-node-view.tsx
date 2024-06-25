@@ -4,6 +4,7 @@ import { Editor, NodeViewRendererProps } from "@tiptap/core";
 import { Node as PMNode } from "@tiptap/pm/model";
 import { SolidEditor } from "@vrite/tiptap-solid";
 import { Transaction } from "@tiptap/pm/state";
+import clsx from "clsx";
 import { formatCode } from "#lib/code-editor";
 
 const getOpeningTag = async (node: PMNode): Promise<string> => {
@@ -61,7 +62,7 @@ const xmlNodeView = ({
     "px-3 py-[2px] w-full border-gray-300 dark:border-gray-700 border-l-2 ml-1 content"
   );
   wrapper.setAttribute("class", "flex flex-col justify-center items-center relative w-full");
-  contentWrapper.setAttribute("class", "relative content");
+  contentWrapper.setAttribute("class", clsx(node.content.size && "relative", "content"));
   contentContainer.append(contentWrapper);
   wrapper.append(code, contentContainer, bottomCode);
   code.setAttribute(
@@ -172,9 +173,11 @@ const xmlNodeView = ({
 
       if (node.content.size) {
         bottomCode.classList.remove("!hidden");
+        contentWrapper.classList.add("relative");
         contentContainer.classList.add("border-l-2", "px-3", "py-[2px]");
       } else {
         bottomCode.classList.add("!hidden");
+        contentWrapper.classList.remove("relative");
         contentContainer.classList.remove("border-l-2", "px-3", "py-[2px]");
       }
 

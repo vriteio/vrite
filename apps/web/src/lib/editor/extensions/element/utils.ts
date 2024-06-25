@@ -112,10 +112,7 @@ const updateElementProps = (
     }
 
     if (node && node.type.name === "element") {
-      tr.setMeta("addToHistory", false).setNodeMarkup(pos, node.type, {
-        props: { ...newProps },
-        type: node.attrs.type
-      });
+      tr.setMeta("addToHistory", false).setNodeAttribute(pos, "props", { ...newProps });
     }
 
     return true;

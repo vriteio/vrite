@@ -38,6 +38,11 @@ const VersionEditorView = lazy(async () => {
 
   return { default: VersionEditorView };
 });
+const DiffEditorView = lazy(async () => {
+  const { DiffEditorView } = await import("#views/editor");
+
+  return { default: DiffEditorView };
+});
 const DashboardView = lazy(async () => {
   const { DashboardView } = await import("#views/dashboard");
 
@@ -75,6 +80,7 @@ const App: Component = () => {
           <Route path="/editor/*contentPieceId" component={ContentPieceEditorView} />
           <Route path="/snippet/*snippetId" component={SnippetEditorView} />
           <Route path="/version/:contentPieceId/*versionId" component={VersionEditorView} />
+          <Route path="/diff/:diffAgainst/:contentPieceId/*versionId" component={DiffEditorView} />
           <Show when={hostConfig.githubApp}>
             <Route path="/conflict" component={ConflictView} />
           </Show>

@@ -9,7 +9,7 @@ import {
   useContext
 } from "solid-js";
 import { createStore, reconcile } from "solid-js/store";
-import { useContentData } from "#context";
+import { useContentData, useHistoryData } from "#context";
 
 interface HistoryMenuContextData {
   labelling: Accessor<string>;
@@ -19,6 +19,7 @@ interface HistoryMenuContextData {
 
 const HistoryMenuDataContext = createContext<HistoryMenuContextData>();
 const HistoryMenuDataProvider: ParentComponent = (props) => {
+  const { activeVersionId } = useHistoryData();
   const { activeContentPieceId } = useContentData();
   const [expanded, setExpanded] = createStore({} as Record<string, boolean>);
   const [labelling, setLabelling] = createSignal("");
@@ -32,6 +33,9 @@ const HistoryMenuDataProvider: ParentComponent = (props) => {
       setExpanded(reconcile({}));
     })
   );
+  createEffect(() => {
+    setExpanded(activeVersionId(), true);
+  });
 
   return (
     <HistoryMenuDataContext.Provider

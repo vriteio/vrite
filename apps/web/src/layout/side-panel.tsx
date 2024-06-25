@@ -82,9 +82,11 @@ const SidePanel: Component = () => {
   };
   const onPointerUp = (): void => {
     setDragging(false);
+    document.body.style.userSelect = "";
   };
   const onPointerLeave = (): void => {
     setDragging(false);
+    document.body.style.userSelect = "";
   };
 
   setPreviousWidth(Number(localStorage.getItem("sidePanelWidth")));
@@ -124,6 +126,7 @@ const SidePanel: Component = () => {
           setDragging(true);
           setPreviousWidth(storage().sidePanelWidth || 0);
           setPrevX(event.x);
+          document.body.style.userSelect = "none";
         }}
         onPointerEnter={() => {
           triggerHandleHover();

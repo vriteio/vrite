@@ -11,7 +11,7 @@ import {
   useContext
 } from "solid-js";
 import { createStore, reconcile } from "solid-js/store";
-import { useLocation, useParams } from "@solidjs/router";
+import { useParams } from "@solidjs/router";
 import { App, useClient, useContentData } from "#context";
 
 interface HistoryActions {
@@ -26,13 +26,13 @@ interface HistoryDataContextData {
   historyActions: HistoryActions;
   loadMore(): Promise<void>;
   activeVersionId(): string;
+  diffAgainst(): "latest" | "previous" | "";
 }
 
 const HistoryDataContext = createContext<HistoryDataContextData>();
 const HistoryDataProvider: ParentComponent = (props) => {
   const client = useClient();
   const params = useParams();
-  const location = useLocation();
   const { activeContentPieceId, activeVariantId } = useContentData();
   const [versions, setVersions] = createStore<Record<string, App.VersionWithAdditionalData>>({});
   const [entryIds, setEntryIds] = createSignal<string[]>([]);
@@ -59,10 +59,13 @@ const HistoryDataProvider: ParentComponent = (props) => {
     setLoading(false);
     setMoreToLoad(data.length === 100);
   };
-  const activeVersionId = createMemo((): string => {
-    if (!location.pathname.startsWith("/version")) return "";
+  const activeVersionId = createMemo(() => {
+    return params.versionId || "";
+  });
+  const diffAgainst = createMemo(() => {
+    if (!params.diffAgainst) return "";
 
-    return params.versionId;
+    return params.diffAgainst === "latest" ? "latest" : "previous";
   });
   const historyActions: HistoryActions = {
     updateVersion: (update) => {
@@ -75,7 +78,11 @@ const HistoryDataProvider: ParentComponent = (props) => {
     onData({ action, data }) {
       if (action === "update") {
         historyActions.updateVersion(data);
-      } else if (action === "create") {
+      } else if (
+        action === "create" &&
+        data.contentPieceId === activeContentPieceId() &&
+        data.variantId === activeVariantId()
+      ) {
         setEntryIds((entries) => [data.id, ...entries]);
         setVersions(data.id, data);
       }
@@ -120,6 +127,7 @@ const HistoryDataProvider: ParentComponent = (props) => {
         moreToLoad,
         loadMore,
         activeVersionId,
+        diffAgainst,
         historyActions
       }}
     >

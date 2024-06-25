@@ -20,7 +20,6 @@ interface EntriesByHourByGroup {
 
 const HistoryEntriesList: Component = () => {
   const { setStorage } = useLocalStorage();
-  const { activeContentPieceId } = useContentData();
   const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
   const { entryIds, versions, moreToLoad, loadMore, loading } = useHistoryData();
   const navigate = useNavigate();
@@ -136,7 +135,7 @@ const HistoryEntriesList: Component = () => {
                             subEntries={entriesByHour.entries.slice(1)}
                             entry={entriesByHour.entries[0]}
                             onClick={(entry) => {
-                              navigate(`/version/${activeContentPieceId() || ""}/${entry.id}`);
+                              navigate(`/version/${entry.contentPieceId}/${entry.id}`);
                             }}
                           />
                         );
@@ -175,7 +174,7 @@ const HistoryEntriesList: Component = () => {
 };
 const HistoryView: Component = () => {
   return (
-    <div class="relative flex-1 overflow-hidden flex flex-row h-full">
+    <div class="relative flex-1 overflow-hidden flex flex-row h-full" id="history-container">
       <HistoryMenuDataProvider>
         <HistoryEntriesList />
       </HistoryMenuDataProvider>

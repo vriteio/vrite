@@ -74,7 +74,7 @@ const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
           onClick() {
             setDropdownOpened(false);
             confirmDelete({
-              header: "Delete group",
+              header: "Delete content piece",
               content: (
                 <p>
                   Do you really want to delete this content piece? This will delete all its content

@@ -1,14 +1,16 @@
-import { Extension, onChangePayload } from "@hocuspocus/server";
+import { Extension, onChangePayload, onDisconnectPayload } from "@hocuspocus/server";
 import {
   docToJSON,
   getContentVersionsCollection,
   getVersionsCollection,
   jsonToBuffer,
   publishVersionEvent,
-  fetchEntryMembers
+  fetchEntryMembers,
+  DocJSON
 } from "@vrite/backend";
 import { FastifyInstance } from "fastify";
 import { Binary, ObjectId } from "mongodb";
+import dayjs from "dayjs";
 
 interface Configuration {
   debounce: number | false | null;
@@ -38,13 +40,17 @@ class VersionHistory implements Extension {
     this.contentVersionsCollection = getContentVersionsCollection(fastify.mongo.db!);
   }
 
-  public async onChange({
-    documentName,
-    document,
-    context,
-    update,
-    ...x
-  }: onChangePayload): Promise<void> {
+  public async onDisconnect({ documentName, clientsCount }: onDisconnectPayload): Promise<any> {
+    if (clientsCount === 0) {
+      const debounced = this.debounced.get(documentName);
+
+      if (debounced?.timeout) clearTimeout(debounced.timeout);
+
+      this.debounced.delete(documentName);
+    }
+  }
+
+  public async onChange({ documentName, document, context }: onChangePayload): Promise<void> {
     return this.debounceUpdate({ documentName, document, context });
   }
 
@@ -65,9 +71,13 @@ class VersionHistory implements Extension {
     const update = (): void => {
       const debouncedData = this.debounced.get(documentName);
 
-      this.createVersion(contentPieceId, variantId, debouncedData?.members || [], {
-        context,
-        document
+      this.createVersion({
+        contentPieceId,
+        variantId,
+        members: debouncedData?.members || [],
+        json: docToJSON(document),
+        userId: `${context.userId}`,
+        workspaceId: `${context.workspaceId}`
       });
     };
 
@@ -80,52 +90,56 @@ class VersionHistory implements Extension {
     );
   }
 
-  private async createVersion(
-    contentPieceId: string,
-    variantId: string | null,
-    members: string[],
-    details: Pick<onChangePayload, "context" | "document">
-  ): Promise<void> {
-    if (variantId) return;
+  private async createVersion(details: {
+    contentPieceId: string;
+    workspaceId: string;
+    userId: string;
+    variantId: string | null;
+    members: string[];
+    json: DocJSON;
+  }): Promise<void> {
+    if (details.variantId) return;
 
     const ctx = {
       db: this.fastify.mongo.db!,
       auth: {
-        workspaceId: new ObjectId(`${details.context.workspaceId}`),
-        userId: new ObjectId(`${details.context.userId}`)
+        workspaceId: new ObjectId(`${details.workspaceId}`),
+        userId: new ObjectId(`${details.userId}`)
       }
     };
-    const json = docToJSON(details.document);
-    const buffer = jsonToBuffer(json);
+    const buffer = jsonToBuffer(details.json);
     const versionId = new ObjectId();
     const date = new Date();
     const version = {
       _id: versionId,
       date,
-      contentPieceId: new ObjectId(contentPieceId),
-      ...(variantId ? { variantId: new ObjectId(variantId) } : {}),
-      members: members.map((id) => new ObjectId(id)),
-      workspaceId: ctx.auth.workspaceId
+      contentPieceId: new ObjectId(details.contentPieceId),
+      ...(details.variantId ? { variantId: new ObjectId(details.variantId) } : {}),
+      members: details.members.map((id) => new ObjectId(id)),
+      workspaceId: ctx.auth.workspaceId,
+      expiresAt: dayjs(date).add(31, "days").toDate()
     };
 
     await this.versionsCollection.insertOne(version);
     await this.contentVersionsCollection.insertOne({
       _id: new ObjectId(),
-      contentPieceId: new ObjectId(contentPieceId),
+      contentPieceId: new ObjectId(details.contentPieceId),
       versionId,
-      ...(variantId ? { variantId: new ObjectId(variantId) } : {}),
-      content: new Binary(buffer)
+      ...(details.variantId ? { variantId: new ObjectId(details.variantId) } : {}),
+      content: new Binary(buffer),
+      expiresAt: dayjs(date).add(31, "days").toDate()
     });
-    publishVersionEvent({ fastify: this.fastify }, `${details.context.workspaceId}`, {
+    publishVersionEvent({ fastify: this.fastify }, `${details.workspaceId}`, {
       action: "create",
-      userId: `${details.context.userId}`,
+      userId: `${details.userId}`,
       data: {
         id: `${versionId}`,
         date: date.toISOString(),
-        contentPieceId: `${contentPieceId}`,
-        variantId: variantId ? `${variantId}` : null,
+        contentPieceId: `${details.contentPieceId}`,
+        variantId: details.variantId ? `${details.variantId}` : null,
         members: await fetchEntryMembers(ctx.db, version),
-        workspaceId: `${ctx.auth.workspaceId}`
+        workspaceId: `${ctx.auth.workspaceId}`,
+        expiresAt: version.expiresAt?.toISOString()
       }
     });
   }

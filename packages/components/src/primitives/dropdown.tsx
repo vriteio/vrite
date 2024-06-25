@@ -14,10 +14,11 @@ import {
   onMount,
   Show
 } from "solid-js";
-import { autoPlacement, computePosition, flip, hide, Placement, size } from "@floating-ui/dom";
+import { computePosition, flip, Placement, size } from "@floating-ui/dom";
 import { Dynamic, Portal } from "solid-js/web";
 import { createMediaQuery } from "@solid-primitives/media";
 import { createActiveElement } from "@solid-primitives/active-element";
+import { isTouchDevice } from "#utils";
 
 interface DropdownProps extends JSX.HTMLAttributes<HTMLDivElement> {
   class?: string;
@@ -33,7 +34,7 @@ interface DropdownProps extends JSX.HTMLAttributes<HTMLDivElement> {
   activatorWrapperClass?: string;
   overflowContainerClass?: string;
   alternativePlacements?: Placement[];
-  autoPlacement?: boolean;
+  boundary?: HTMLElement | null;
   activatorButton: Component<{ opened: boolean; computeDropdownPosition(): void }>;
   setOpened?(opened: boolean): void;
 }
@@ -90,21 +91,12 @@ const Dropdown: Component<DropdownProps> = (props) => {
     const box = boxRef();
 
     if (button && box) {
-      const strategyFixedMiddleware = [
-        props.autoPlacement &&
-          autoPlacement({
-            allowedPlacements: props.alternativePlacements,
-            altBoundary: true
-          })
-      ].filter(Boolean);
-      const strategyAbsoluteMiddleware = [
-        flip({ fallbackPlacements: props.alternativePlacements })
-      ];
-
       computePosition(button, box, {
         middleware: [
-          ...(props.fixed ? strategyFixedMiddleware : strategyAbsoluteMiddleware),
-          hide(),
+          flip({
+            fallbackPlacements: props.alternativePlacements,
+            ...(props.boundary && { boundary: props.boundary })
+          }),
           size({
             padding: 16,
             apply({ availableWidth, availableHeight, elements }) {
@@ -125,6 +117,8 @@ const Dropdown: Component<DropdownProps> = (props) => {
     }
   };
   const onPointerDown = (event: PointerEvent): void => {
+    if (!isTouchDevice()) return;
+
     setResizing(true);
     setHeight(boxRef()?.getBoundingClientRect().height || 0);
     setMinHeight((minHeight) => minHeight || boxRef()?.getBoundingClientRect().height || 0);

@@ -106,7 +106,7 @@ const ContentPieceGroup: Component<ContentPieceGroupProps> = (props) => {
   const { setStorage } = useLocalStorage();
   const { notify } = useNotifications();
   const { confirmDelete } = useConfirmationModal();
-  const { tableWidth } = useDashboardTableViewData();
+  const { tableWidth, container } = useDashboardTableViewData();
   const [expanded, setExpanded] = createSignal(true);
   const [loading, setLoading] = createSignal(false);
   const [dropdownOpened, setDropdownOpened] = createSignal(false);
@@ -269,7 +269,7 @@ const ContentPieceGroup: Component<ContentPieceGroupProps> = (props) => {
             <Dropdown
               placement="bottom-start"
               alternativePlacements={["bottom-start", "top-start"]}
-              autoPlacement
+              boundary={container()}
               opened={dropdownOpened()}
               fixed
               class="ml-1 mr-4"
@@ -305,7 +305,7 @@ const ContentPieceGroup: Component<ContentPieceGroupProps> = (props) => {
                         variant="text"
                         text="soft"
                         color={item.color}
-                        class="justify-start whitespace-nowrap w-full m-0 justify-start"
+                        class="justify-start whitespace-nowrap w-full m-0"
                         onClick={item.onClick}
                       />
                     );

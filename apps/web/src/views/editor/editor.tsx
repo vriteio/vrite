@@ -15,12 +15,14 @@ import {
   on,
   onCleanup
 } from "solid-js";
-import { HardBreak, Paragraph, Text, Document } from "@vrite/editor";
+import { HardBreak, Paragraph, Text, Document, UniqueId } from "@vrite/editor";
 import {
   Extension,
   isTextSelection,
   Node as NodeExtension,
-  Mark as MarkExtension
+  Mark as MarkExtension,
+  Content,
+  Extensions
 } from "@tiptap/core";
 import { Gapcursor } from "@tiptap/extension-gapcursor";
 import { Dropcursor } from "@tiptap/extension-dropcursor";
@@ -69,12 +71,15 @@ declare module "#context" {
 
 interface EditorProps {
   reloaded?: boolean;
+  extensions?: Extensions;
   scrollableContainerRef(): HTMLElement | null;
   onLoad?(): void;
   reload?(): void;
 }
 
-const Editor: ParentComponent<EditorProps & { docName: string; editable?: boolean }> = (props) => {
+const Editor: ParentComponent<
+  EditorProps & { docName?: string; content?: Content; editable?: boolean }
+> = (props) => {
   const hostConfig = useHostConfig();
   const navigate = useNavigate();
   const location = useLocation();
@@ -199,7 +204,7 @@ const Editor: ParentComponent<EditorProps & { docName: string; editable?: boolea
     return true;
   };
   const getEditorExtensions = (
-    provider: HocuspocusProvider
+    provider?: HocuspocusProvider | null
   ): Array<MarkExtension | NodeExtension> => {
     if (workspaceSettings()) {
       return createExtensions(extensionsContext, workspaceSettings()!, provider);
@@ -208,23 +213,36 @@ const Editor: ParentComponent<EditorProps & { docName: string; editable?: boolea
     return [];
   };
   const ydoc = new Y.Doc();
-  const provider = new HocuspocusProvider({
-    token: "vrite",
-    url: window.env.PUBLIC_COLLAB_URL.replace("http", "ws"),
-    async onSynced() {
-      props.onLoad?.();
-      scrollToHeading();
-    },
-    onDisconnect: handleReload,
-    onAuthenticationFailed: handleReload,
-    name: props.docName,
-    document: ydoc
-  });
+  const provider =
+    (props.docName &&
+      new HocuspocusProvider({
+        token: "vrite",
+        url: window.env.PUBLIC_COLLAB_URL.replace("http", "ws"),
+        async onSynced() {
+          props.onLoad?.();
+          scrollToHeading();
+        },
+        onDisconnect: handleReload,
+        onAuthenticationFailed: handleReload,
+        name: props.docName,
+        document: ydoc
+      })) ||
+    null;
   const editor = useEditor({
     onCreate({ editor }) {
       editor.view.setProps({
         clipboardSerializer: createClipboardSerializer(editor, workspaceSettings()!)
       });
+
+      if (!provider) {
+        props.onLoad?.();
+      }
+    },
+    onSelectionUpdate({ editor }) {
+      setIsNodeSelection(editor.state.selection instanceof NodeSelection);
+    },
+    onBlur({ event }) {
+      setActiveElement(event?.relatedTarget as HTMLElement | null);
     },
     extensions: [
       ...getEditorExtensions(provider),
@@ -238,10 +256,14 @@ const Editor: ParentComponent<EditorProps & { docName: string; editable?: boolea
       Gapcursor,
       Dropcursor.configure({ class: "ProseMirror-dropcursor" }),
       TrailingNode,
-      Collab.configure({
-        document: ydoc
-      }),
-      CollabCursor(provider),
+      UniqueId,
+      ...((provider && [
+        Collab.configure({
+          document: ydoc
+        }),
+        CollabCursor(provider)
+      ]) ||
+        []),
       ...((props.editable && [
         BlockPaste.configure({ workspaceSettings }),
         Placeholder,
@@ -257,21 +279,17 @@ const Editor: ParentComponent<EditorProps & { docName: string; editable?: boolea
         }),
         Shortcuts
       ]) ||
-        [])
-    ].filter(Boolean) as Extension[],
+        []),
+      ...(props.extensions || [])
+    ].filter(Boolean) as Extensions,
     editable: props.editable,
     editorProps: { attributes: { class: `outline-none` } },
-    onSelectionUpdate({ editor }) {
-      setIsNodeSelection(editor.state.selection instanceof NodeSelection);
-    },
-    onBlur({ event }) {
-      setActiveElement(event?.relatedTarget as HTMLElement | null);
-    }
+    ...(props.content && { content: props.content })
   });
 
   onCleanup(() => {
     editor().destroy();
-    provider.destroy();
+    provider?.destroy();
     setSharedEditor(undefined);
     setSharedProvider(undefined);
   });
@@ -286,7 +304,7 @@ const Editor: ParentComponent<EditorProps & { docName: string; editable?: boolea
   createEffect(
     on(editor, () => {
       setSharedEditor(editor());
-      setSharedProvider(provider);
+      if (provider) setSharedProvider(provider);
     })
   );
   createEffect(

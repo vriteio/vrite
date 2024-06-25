@@ -96,7 +96,7 @@ const toolbarViews: Record<string, Component<Record<string, any>>> = {
     const { useSharedSignal } = useSharedState();
     const { registerCommand } = useCommandPalette();
     const [sharedProvider] = useSharedSignal("provider");
-    const { storage, setStorage } = useLocalStorage();
+    const { setStorage } = useLocalStorage();
     const [menuOpened, setMenuOpened] = createSignal(false);
 
     createEffect(

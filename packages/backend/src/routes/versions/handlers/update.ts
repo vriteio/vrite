@@ -40,7 +40,8 @@ const handler = async (
       variantId: `${version.variantId}`,
       date: version.date?.toISOString(),
       label: input.label,
-      members: await fetchEntryMembers(ctx.db, version)
+      members: await fetchEntryMembers(ctx.db, version),
+      expiresAt: version.expiresAt?.toISOString()
     }
   });
 };

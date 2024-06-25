@@ -4,6 +4,7 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "devDependencies": {
+    "@types/diff-match-patch": "^1.0.36",
     "@types/disposable-email-domains": "^1.0.6",
     "@types/node": "20.4.5"
   },
@@ -41,10 +42,12 @@
     "@vrite/emails": "workspace:*",
     "@vrite/sdk": "workspace:*",
     "axios": "^1.6.7",
+    "diff-match-patch": "^1.0.5",
     "disposable-email-domains": "^1.0.62",
     "fastify": "^4.26.0",
     "fastify-raw-body": "^4.3.0",
     "html-to-text": "^9.0.5",
+    "jsondiffpatch": "^0.6.0",
     "lexorank": "^1.0.5",
     "marked": "^12.0.0",
     "mime-types": "^2.1.35",

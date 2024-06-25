@@ -114,9 +114,11 @@ const Table: Component = () => {
   );
 };
 const DashboardTableView: Component = () => {
+  const [container, setContainer] = createRef<HTMLDivElement | null>(null);
+
   return (
-    <div class="relative overflow-hidden w-full">
-      <DashboardTableViewDataProvider>
+    <div class="relative overflow-hidden w-full" ref={setContainer}>
+      <DashboardTableViewDataProvider container={container}>
         <Table />
       </DashboardTableViewDataProvider>
     </div>

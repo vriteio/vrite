@@ -6,7 +6,6 @@ import * as updateSnippet from "./handlers/update";
 import { z } from "zod";
 import { subscribeToSnippetEvents } from "#events";
 import { isAuthenticated } from "#lib/middleware";
-import { zodId } from "#lib/mongo";
 import { procedure, router } from "#lib/trpc";
 
 const basePath = "/snippets";

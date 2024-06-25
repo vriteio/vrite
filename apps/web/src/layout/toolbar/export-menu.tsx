@@ -7,11 +7,12 @@ import {
   mdiLanguageHtml5,
   mdiLanguageMarkdown
 } from "@mdi/js";
-import { Component, createSignal } from "solid-js";
+import { Component, Show, createSignal } from "solid-js";
 import { gfmOutputTransformer, htmlOutputTransformer } from "@vrite/sdk/transformers";
 import { JSONContent } from "@vrite/sdk";
 import { nanoid } from "nanoid";
 import clsx from "clsx";
+import { diff } from "lib0";
 import { Card, Dropdown, Heading, IconButton, Overlay, Tooltip } from "#components/primitives";
 import { MiniCodeEditor } from "#components/fragments";
 import {
@@ -19,11 +20,12 @@ import {
   useAuthenticatedUserData,
   useClient,
   useCommandPalette,
+  useContentData,
+  useHistoryData,
   useNotifications,
   useSharedState
 } from "#context";
 import { formatCode } from "#lib/code-editor";
-import { escapeHTML } from "#lib/utils";
 import { mdxIcon } from "#assets/icons";
 
 interface ExportMenuProps {
@@ -38,7 +40,8 @@ type ExportType = "html" | "json" | "md" | "mdx";
 
 const ExportMenu: Component<ExportMenuProps> = (props) => {
   const { useSharedSignal } = useSharedState();
-  const client = useClient();
+  const { activeContentPieceId } = useContentData();
+  const { diffAgainst } = useHistoryData();
   const [editor] = useSharedSignal("editor");
   const { registerCommand } = useCommandPalette();
   const { workspaceSettings } = useAuthenticatedUserData();
@@ -154,7 +157,7 @@ const ExportMenu: Component<ExportMenuProps> = (props) => {
   ]);
 
   return (
-    <>
+    <Show when={activeContentPieceId() && !diffAgainst()}>
       <Dropdown
         activatorWrapperClass="w-full"
         activatorButton={() => (
@@ -295,7 +298,7 @@ const ExportMenu: Component<ExportMenuProps> = (props) => {
           </div>
         </Card>
       </Overlay>
-    </>
+    </Show>
   );
 };
 

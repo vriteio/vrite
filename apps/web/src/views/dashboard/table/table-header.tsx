@@ -9,7 +9,7 @@ import clsx from "clsx";
 import { Checkbox, Dropdown, Icon, IconButton, Sortable } from "#components/primitives";
 
 const DashboardTableViewHeader: Component = () => {
-  const { columnDefs, columns, setColumns } = useDashboardTableViewData();
+  const { columnDefs, columns, setColumns, container } = useDashboardTableViewData();
   const [resizedHeader, setResizedHeader] = createSignal("");
   const [dropdownOpened, setDropdownOpened] = createSignal("");
   const [addColumnDropdownOpened, setAddColumnDropdownOpened] = createSignal(false);
@@ -56,15 +56,14 @@ const DashboardTableViewHeader: Component = () => {
         setColumns(ids.map((id) => columns.find((column) => column?.id === id)!));
       }}
       addon={() => (
-        <div class="locked h-8 flex justify-center items-center text-left font-500 border-gray-200 dark:border-gray-700 relative bg-gray-200 border-gray-200 bg-opacity-50 dark:bg-gray-700 dark:bg-opacity-30 dark:border-gray-700 flex-1 min-w-[4rem]">
+        <div class="locked h-8 flex justify-center items-center text-left font-500 border-gray-200 dark:border-gray-700 relative bg-gray-200 bg-opacity-50 dark:bg-gray-700 dark:bg-opacity-30 flex-1 min-w-[4rem]">
           <div class="flex justify-start items-center w-full pl-0.5">
             <Dropdown
-              placement="bottom-start"
-              alternativePlacements={["bottom-start", "bottom-end"]}
+              placement="bottom-end"
               opened={addColumnDropdownOpened()}
+              boundary={container()}
               class="m-0"
               fixed
-              autoPlacement
               cardProps={{ class: "mt-2" }}
               setOpened={(opened) => {
                 setAddColumnDropdownOpened(opened);
@@ -131,7 +130,7 @@ const DashboardTableViewHeader: Component = () => {
         return (
           <Show when={column() && columnDef()}>
             <div
-              class="h-8 flex justify-center items-center border-r-2 first:border-l-0 text-left font-500 border-gray-200 dark:border-gray-700 relative bg-gray-200 border-gray-200 bg-opacity-50 dark:bg-gray-700 dark:bg-opacity-30 dark:border-gray-700"
+              class="h-8 flex justify-center items-center border-r-2 first:border-l-0 text-left font-500 border-gray-200 dark:border-gray-700 relative bg-gray-200 bg-opacity-50 dark:bg-gray-700 dark:bg-opacity-30"
               ref={(element) => {
                 setColumns(index(), "ref", element);
               }}
@@ -147,10 +146,10 @@ const DashboardTableViewHeader: Component = () => {
               <Dropdown
                 placement="bottom-end"
                 alternativePlacements={["bottom-start", "bottom-end"]}
+                boundary={container()}
                 cardProps={{ class: "mt-2" }}
                 opened={dropdownOpened() === column()?.id}
                 fixed
-                autoPlacement
                 class="m-0 mr-0.5"
                 setOpened={(opened) => {
                   setDropdownOpened(opened ? column().id : "");
@@ -174,7 +173,7 @@ const DashboardTableViewHeader: Component = () => {
                     label="Hide column"
                     variant="text"
                     text="soft"
-                    class="justify-start whitespace-nowrap w-full m-0 justify-start"
+                    class="justify-start whitespace-nowrap w-full m-0"
                     onClick={() => {
                       setColumns((columns) => {
                         return columns.filter((column) => column?.id !== columnDef().id);

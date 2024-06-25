@@ -587,3 +587,43 @@ kbd {
 .iPadShowKeyboard {
   @apply hidden;
 }
+[data-highlight-diff="added"] {
+  @apply relative;
+  &::after {
+    content: "";
+    @apply bg-green-500 opacity-10 absolute w-full h-full top-0 left-0 pointer-events-none;
+  }
+}
+[data-highlight-diff="removed"] {
+  @apply relative;
+  &::after {
+    content: "";
+    @apply bg-red-500 opacity-10 absolute w-full h-full top-0 left-0 pointer-events-none;
+  }
+}
+[data-highlight-diff="changed"] {
+  @apply relative;
+  &::after {
+    content: "";
+    @apply bg-blue-500 opacity-5 absolute w-full h-full top-0 left-0 pointer-events-none;
+  }
+}
+
+p[data-highlight-diff],
+span[data-highlight-diff] {
+  &::after {
+    @apply w-full left-0;
+  }
+}
+[data-highlight-diff="added"]:where(span) {
+  @apply text-green-500 bg-green-500 bg-opacity-10;
+  &::after {
+    content: none;
+  }
+}
+[data-highlight-diff="removed"]:where(span) {
+  @apply text-red-500 bg-red-500 bg-opacity-10;
+  &::after {
+    content: none;
+  }
+}
