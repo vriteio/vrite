@@ -41,7 +41,7 @@ const refreshTokenLink = (closeConnection: () => void): TRPCLink<App.Router> => 
             error(error) {
               if (
                 attempts > 3 ||
-                ["auth.isSignedIn", "userSettings.getWorkspaceId", "verification"].some((value) => {
+                ["auth.isSignedIn", "verification"].some((value) => {
                   return op.path.startsWith(value);
                 })
               ) {
@@ -52,6 +52,7 @@ const refreshTokenLink = (closeConnection: () => void): TRPCLink<App.Router> => 
                   !op.path.startsWith("verification") &&
                   !refreshingPromise
                 ) {
+                  console.error("UNAUTHORIZED", error);
                   navigateAndReload("/auth");
 
                   return;
