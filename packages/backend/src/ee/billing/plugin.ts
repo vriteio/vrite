@@ -291,7 +291,7 @@ const billingPlugin = createPlugin(async (fastify) => {
       }
 
       const subscription = JSON.parse(
-        workspace.subscriptionData || '{"data":{"items":[]}}'
+        workspace.subscriptionData || '{"items":{"data":[]}}'
       ) as Stripe.Subscription;
       const subscriptionItem = subscription.items.data.find((item) => {
         return item.price.id !== fastify.config.STRIPE_API_PRICE_ID;
@@ -336,7 +336,7 @@ const billingPlugin = createPlugin(async (fastify) => {
       }
 
       const subscription = JSON.parse(
-        workspace.subscriptionData || '"data":{"items":[]}'
+        workspace.subscriptionData || '"items":{"data":[]}'
       ) as Stripe.Subscription;
       const plan = workspace.subscriptionPlan as "team" | "personal";
 
@@ -389,7 +389,7 @@ const billingPlugin = createPlugin(async (fastify) => {
         if (!workspace) return;
 
         const subscription = JSON.parse(
-          workspace.subscriptionData || '{"data":{"items":[]}}'
+          workspace.subscriptionData || '{"items":{"data":[]}}'
         ) as Stripe.Subscription;
         const subscriptionAPIUsageItem = subscription.items.data.find((item) => {
           return item.price.id === fastify.config.STRIPE_API_PRICE_ID;
