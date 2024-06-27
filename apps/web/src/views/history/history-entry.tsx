@@ -183,7 +183,7 @@ const HistoryEntry: Component<HistoryEntryProps> = (props) => {
                   return (
                     <div
                       style={{
-                        "margin-right": `-${index() * 0.6}rem`,
+                        "margin-right": `-${index() > 0 ? 0.6 : 0}rem`,
                         "opacity": `${1 - index() * 0.1}`,
                         "z-index": index()
                       }}
