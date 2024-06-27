@@ -2,6 +2,25 @@ import { DocJSON } from "./conversions";
 import * as JSONDiff from "jsondiffpatch";
 import { diff_match_patch as DiffMatchPatch, Diff } from "diff-match-patch";
 
+const hashGenericObject = (input: Record<string, any>): string => {
+  return Object.keys(input)
+    .sort()
+    .reduce((acc, key) => {
+      const value = input[key];
+
+      if (!value) return `${acc}${key}`;
+
+      if (Array.isArray(value)) {
+        return `${acc}${key}=${value.join(",")}`;
+      }
+
+      if (typeof value === "object") {
+        return `${acc}${key}=${hashGenericObject(value)}`;
+      }
+
+      return `${acc}${key}=${value}`;
+    }, "");
+};
 const objectHash = (input: object): string => {
   const obj = input as DocJSON;
 
@@ -16,8 +35,8 @@ const objectHash = (input: object): string => {
 
       if (key === "width" || key === "aspectRatio" || key === "autoDir" || key === "diff") return;
 
-      if (typeof value === "object") {
-        outputValue = JSON.stringify(input, Object.keys(value).sort());
+      if (value && typeof value === "object") {
+        outputValue = hashGenericObject(input);
       }
 
       return `[${key}=${outputValue}]`;
