@@ -36,7 +36,7 @@ const objectHash = (input: object): string => {
       if (key === "width" || key === "aspectRatio" || key === "autoDir" || key === "diff") return;
 
       if (value && typeof value === "object") {
-        outputValue = hashGenericObject(input);
+        outputValue = hashGenericObject(value);
       }
 
       return `[${key}=${outputValue}]`;
@@ -243,8 +243,7 @@ const generateDiffDocument = (oldContent: DocJSON, newContent: DocJSON): any => 
       oldContent.content || [],
       newContent.content || [],
       delta.content as JSONDiff.ArrayDelta
-    ),
-    d: { delta, oldContent, newContent }
+    )
   };
 };
 
