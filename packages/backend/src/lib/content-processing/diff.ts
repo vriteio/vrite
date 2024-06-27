@@ -33,10 +33,22 @@ const objectHash = (input: object): string => {
     .map(([key, value]) => {
       let outputValue = value;
 
-      if (key === "width" || key === "aspectRatio" || key === "autoDir" || key === "diff") return;
+      if (
+        key === "width" ||
+        key === "aspectRatio" ||
+        key === "autoDir" ||
+        key === "diff" ||
+        key === "props"
+      ) {
+        return;
+      }
 
       if (value && typeof value === "object") {
-        outputValue = hashGenericObject(value);
+        if (Array.isArray(value)) {
+          outputValue = (value as any[]).join(",");
+        } else {
+          outputValue = hashGenericObject(value);
+        }
       }
 
       return `[${key}=${outputValue}]`;
