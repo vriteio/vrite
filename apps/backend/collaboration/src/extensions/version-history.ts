@@ -1,4 +1,4 @@
-import { Extension, onChangePayload, onDisconnectPayload } from "@hocuspocus/server";
+import { Extension, onChangePayload } from "@hocuspocus/server";
 import {
   docToJSON,
   getContentVersionsCollection,
@@ -38,16 +38,6 @@ class VersionHistory implements Extension {
     };
     this.versionsCollection = getVersionsCollection(fastify.mongo.db!);
     this.contentVersionsCollection = getContentVersionsCollection(fastify.mongo.db!);
-  }
-
-  public async onDisconnect({ documentName, clientsCount }: onDisconnectPayload): Promise<any> {
-    if (clientsCount === 0) {
-      const debounced = this.debounced.get(documentName);
-
-      if (debounced?.timeout) clearTimeout(debounced.timeout);
-
-      this.debounced.delete(documentName);
-    }
   }
 
   public async onChange({ documentName, document, context }: onChangePayload): Promise<void> {
@@ -98,8 +88,14 @@ class VersionHistory implements Extension {
     members: string[];
     json: DocJSON;
   }): Promise<void> {
-    if (details.variantId) return;
-
+    const [previousVersionContent] = await this.contentVersionsCollection
+      .find({
+        contentPieceId: new ObjectId(details.contentPieceId),
+        variantId: details.variantId ? new ObjectId(details.variantId) : null
+      })
+      .sort({ _id: -1 })
+      .limit(1)
+      .toArray();
     const ctx = {
       db: this.fastify.mongo.db!,
       auth: {
@@ -108,6 +104,11 @@ class VersionHistory implements Extension {
       }
     };
     const buffer = jsonToBuffer(details.json);
+
+    if (previousVersionContent && buffer.equals(previousVersionContent.content)) {
+      return;
+    }
+
     const versionId = new ObjectId();
     const date = new Date();
     const version = {
