@@ -105,7 +105,7 @@ class VersionHistory implements Extension {
     };
     const buffer = jsonToBuffer(details.json);
 
-    if (previousVersionContent && buffer.equals(previousVersionContent.content)) {
+    if (previousVersionContent && buffer.equals(previousVersionContent.content.buffer)) {
       return;
     }
 
