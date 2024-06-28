@@ -105,38 +105,48 @@ const generateDiffDocument = (oldContent: DocJSON, newContent: DocJSON): any => 
 
       if (newContent && oldContent && arrayDelta[`${i}`] && !Array.isArray(arrayDelta[`${i}`])) {
         const objectDelta = arrayDelta[`${i}`] as JSONDiff.ObjectDelta;
-        const [patch] = diffMatchPatch.patch_fromText(objectDelta.text![0] as string) as any[];
-        const diffs = patch.diffs as Diff[];
-        const start = patch.start1;
-        const text = newContent.text?.slice(0, start);
+        const patches = diffMatchPatch.patch_fromText(objectDelta.text![0] as string) as any[];
 
-        if (text) {
-          output.push({
-            type: "text",
-            text,
-            marks: [...(newContent.marks || [])]
-          });
-        }
+        patches.forEach((patch, index) => {
+          const diffs = patch.diffs as Diff[];
+          const endOfPreviousPatch = patches.reduce((acc, patch, i) => {
+            if (i < index) {
+              return acc + patch.length2;
+            }
 
-        diffs.forEach(([operation, text]) => {
-          let diff = objectDelta.marks ? "changed" : "";
-
-          if (operation === DiffMatchPatch.DIFF_DELETE) {
-            diff = "removed";
-          } else if (operation === DiffMatchPatch.DIFF_INSERT) {
-            diff = "added";
-          }
+            return acc;
+          }, 0);
+          const startOfCurrentPatch = patch.start2;
+          const text = newContent.text?.slice(endOfPreviousPatch, startOfCurrentPatch);
 
           if (text) {
             output.push({
               type: "text",
               text,
-              marks: [
-                ...(newContent.marks || []),
-                ...(diff ? [{ type: "diff", attrs: { diff } }] : [])
-              ]
+              marks: [...(newContent.marks || [])]
             });
           }
+
+          diffs.forEach(([operation, text]) => {
+            let diff = objectDelta.marks ? "changed" : "";
+
+            if (operation === DiffMatchPatch.DIFF_DELETE) {
+              diff = "removed";
+            } else if (operation === DiffMatchPatch.DIFF_INSERT) {
+              diff = "added";
+            }
+
+            if (text) {
+              output.push({
+                type: "text",
+                text,
+                marks: [
+                  ...(newContent.marks || []),
+                  ...(diff ? [{ type: "diff", attrs: { diff } }] : [])
+                ]
+              });
+            }
+          });
         });
       }
 
@@ -205,13 +215,17 @@ const generateDiffDocument = (oldContent: DocJSON, newContent: DocJSON): any => 
         const objectDelta = arrayDelta[`${i}`] as JSONDiff.ObjectDelta;
 
         // Block changed inside
-        if (newContent.type === "heading" || newContent.type === "paragraph") {
+        if (
+          newContent.type === "heading" ||
+          newContent.type === "paragraph" ||
+          newContent.type === "codeBlock"
+        ) {
           const contentChanged = objectDelta.content && `${objectDelta.content}`;
           const textArrayDelta = objectDelta.content as JSONDiff.ArrayDelta;
 
           output.push({
             ...newContent,
-            ...(objectDelta.attrs && {
+            ...((objectDelta.attrs || (newContent.type === "codeBlock" && newContent.content)) && {
               attrs: {
                 ...newContent.attrs,
                 diff: "changed"
