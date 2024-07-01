@@ -30,7 +30,9 @@ interface SnippetsEndpoints {
     input: Partial<Pick<Snippet, "name"> & { content?: string }> & Pick<Snippet, "id">
   ): Promise<void>;
   delete(input: Pick<Snippet, "id">): Promise<void>;
-  list(): Promise<Array<Snippet>>;
+  list<IncludeContent extends true | false = false>(input: {
+    content?: IncludeContent;
+  }): Promise<Array<Snippet<IncludeContent>>>;
 }
 
 const basePath = "/snippets";
@@ -59,8 +61,10 @@ const createSnippetsEndpoints = (sendRequest: SendRequest): SnippetsEndpoints =>
       params: input
     });
   },
-  list: () => {
-    return sendRequest<Array<Snippet>>("GET", `${basePath}/list`);
+  list: <IncludeContent extends true | false = false>(input: { content?: IncludeContent }) => {
+    return sendRequest<Array<Snippet<IncludeContent>>>("GET", `${basePath}/list`, {
+      params: input
+    });
   }
 });
 

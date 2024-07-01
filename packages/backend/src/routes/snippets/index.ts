@@ -26,10 +26,10 @@ const snippetsRouter = router({
       openapi: { method: "GET", path: `${basePath}/list`, protect: true },
       permissions: { token: ["snippets:read"] }
     })
-    .input(z.void())
+    .input(listSnippets.inputSchema)
     .output(listSnippets.outputSchema)
-    .query(async ({ ctx }) => {
-      return listSnippets.handler(ctx);
+    .query(async ({ ctx, input }) => {
+      return listSnippets.handler(ctx, input);
     }),
   create: authenticatedProcedure
     .meta({
