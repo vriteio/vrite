@@ -342,7 +342,7 @@ const htmlOutputTransformer = createOutputTransformer<string>((contentNode) => {
       case "taskItem":
         return `<li data-type="taskItem"><label><input ${stringifyAttributes({
           type: "checkbox",
-          checked: nodeWalker.node.attrs.checked
+          ...(nodeWalker.node.attrs.checked && { checked: true })
         })} />${(nodeWalker as JSONContentNodeWalker<JSONContentNode["taskItem"]>).children
           .map(transformContentNode)
           .join("")}</label></li>`;

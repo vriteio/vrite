@@ -12,7 +12,6 @@ import { gfmOutputTransformer, htmlOutputTransformer } from "@vrite/sdk/transfor
 import { JSONContent } from "@vrite/sdk";
 import { nanoid } from "nanoid";
 import clsx from "clsx";
-import { diff } from "lib0";
 import { Card, Dropdown, Heading, IconButton, Overlay, Tooltip } from "#components/primitives";
 import { MiniCodeEditor } from "#components/fragments";
 import {

@@ -998,7 +998,7 @@
   __export(api_exports, {
     createClient: () => N
   });
-  var import_eventsource, l, S, E, L, f2, G, D, T, O, C, R, m, j, x, I, u2, v, k, q, A, P, z, g, B, h, M, b, J, N;
+  var import_eventsource, l, S, E, f2, L, G, D, T, O, C, R, m, j, x, I, u2, v, k, q, A, P, z, g, B, h, M, b, J, N;
   var init_api = __esm({
     "../../packages/sdk/javascript/dist/api.mjs"() {
       "use strict";
@@ -1006,12 +1006,12 @@
       l = "/content-groups";
       S = (t) => ({ get: (e) => t("GET", `${l}`, { params: e }), list: (e) => t("GET", `${l}/list`, { params: e }), create: (e) => t("POST", `${l}`, { body: e }), update: (e) => t("PUT", `${l}`, { body: e }), delete: (e) => t("DELETE", `${l}`, { params: e }) });
       E = "/content-pieces";
-      L = (t) => ({ get: (e) => t("GET", `${E}`, { params: e }), create: (e) => t("POST", `${E}`, { body: e }), update: (e) => t("PUT", `${E}`, { body: e }), delete: (e) => t("DELETE", `${E}`, { params: e }), list: (e) => t("GET", `${E}/list`, { params: e }) });
-      f2 = (t) => {
-        let e = t.baseURL || "https://api.vrite.io", p2 = t.extensionId || "", i = t.headers || {}, $ = null, { token: c } = t;
-        return { sendRequest: async (s2, a2, n) => {
+      f2 = (t) => ({ get: (e) => t("GET", `${E}`, { params: e }), create: (e) => t("POST", `${E}`, { body: e }), update: (e) => t("PUT", `${E}`, { body: e }), delete: (e) => t("DELETE", `${E}`, { params: e }), list: (e) => t("GET", `${E}/list`, { params: e }) });
+      L = (t) => {
+        let e = t.baseURL || "https://api.vrite.io", p2 = t.extensionId || "", n = t.headers || {}, $ = null, { token: c } = t;
+        return { sendRequest: async (s2, a2, i) => {
           try {
-            const { default: o } = await Promise.resolve().then(() => __toESM(require_browser2(), 1)), d2 = await o(`${e}${a2}/?${encodeURI(Object.entries(n?.params || {}).filter(([, y]) => y).map(([y, w]) => `${y}=${w}`).join("&"))}`, { headers: { Authorization: `Bearer ${c}`, Accept: "application/json", ...n?.body ? { "Content-Type": "application/json" } : {}, ...p2 ? { "X-Vrite-Extension-ID": p2 } : {}, ...i }, body: n?.body ? JSON.stringify(n.body) : null, signal: $, method: s2 });
+            const { default: o } = await Promise.resolve().then(() => __toESM(require_browser2(), 1)), d2 = await o(`${e}${a2}/?${encodeURI(Object.entries(i?.params || {}).filter(([, y]) => y).map(([y, w]) => `${y}=${w}`).join("&"))}`, { headers: { Authorization: `Bearer ${c}`, Accept: "application/json", ...i?.body ? { "Content-Type": "application/json" } : {}, ...p2 ? { "X-Vrite-Extension-ID": p2 } : {}, ...n }, body: i?.body ? JSON.stringify(i.body) : null, signal: $, method: s2 });
             $ = null;
             let r = null;
             try {
@@ -1027,10 +1027,10 @@
             throw console.error(o), o;
           }
         }, reconfigure: (s2) => {
-          e = s2.baseURL || e, c = s2.token || c, p2 = s2.extensionId || p2, i = s2.headers || i;
+          e = s2.baseURL || e, c = s2.token || c, p2 = s2.extensionId || p2, n = s2.headers || n;
         }, useSignal: (s2) => {
           $ = s2;
-        }, getConfig: () => ({ baseURL: e, token: c, extensionId: p2, headers: i }), getSignal: () => $ };
+        }, getConfig: () => ({ baseURL: e, token: c, extensionId: p2, headers: n }), getSignal: () => $ };
       };
       G = "/user-settings";
       D = (t) => ({ get: () => t("GET", `${G}`), update: (e) => t("PUT", `${G}`, { body: e }) });
@@ -1056,17 +1056,17 @@
       b = "/snippets";
       J = (t) => ({ get: (e) => t("GET", `${b}`, { params: e }), create: (e) => t("POST", `${b}`, { body: e }), update: (e) => t("PUT", `${b}`, { body: e }), delete: (e) => t("DELETE", `${b}`, { params: e }), list: () => t("GET", `${b}/list`) });
       N = (t) => {
-        const { sendRequest: e, reconfigure: p2, getConfig: i, getSignal: $, useSignal: c } = f2(t), s2 = { contentGroups: S(e), contentPieces: L(e), snippets: J(e), tags: O(e), profile: R(e), userSettings: D(e), webhooks: j(e), workspace: I(e), roles: v(e), workspaceSettings: q(e), workspaceMemberships: A(e), extension: z(e), variants: B(e), transformers: M(e), search(a2) {
+        const { sendRequest: e, reconfigure: p2, getConfig: n, getSignal: $, useSignal: c } = L(t), s2 = { contentGroups: S(e), contentPieces: f2(e), snippets: J(e), tags: O(e), profile: R(e), userSettings: D(e), webhooks: j(e), workspace: I(e), roles: v(e), workspaceSettings: q(e), workspaceMemberships: A(e), extension: z(e), variants: B(e), transformers: M(e), search(a2) {
           return e("GET", "/search", { params: a2 });
         }, async ask(a2) {
-          let n = "";
-          const o = new import_eventsource.default(`${i().baseURL}/search/ask?query=${encodeURIComponent(a2.query)}`, { headers: { Authorization: `Bearer ${i().token}`, "Content-Type": "application/json", Accept: "application/json" } });
+          let i = "";
+          const o = new import_eventsource.default(`${n().baseURL}/search/ask?query=${encodeURIComponent(a2.query)}`, { headers: { Authorization: `Bearer ${n().token}`, "Content-Type": "application/json", Accept: "application/json" } });
           o.addEventListener("error", (d2) => {
             const r = d2;
-            return r.message ? a2.onError?.(r.message) : (o.close(), a2.onEnd?.(n));
+            return r.message ? a2.onError?.(r.message) : (o.close(), a2.onEnd?.(i));
           }), o.addEventListener("message", (d2) => {
             const r = decodeURIComponent(d2.data);
-            n += r, a2.onChunk?.(r, n);
+            i += r, a2.onChunk?.(r, i);
           }), $()?.addEventListener("abort", () => {
             o.close();
           }), c(null);
@@ -1074,6 +1074,8 @@
           return c(a2), s2;
         }, reconfigure(a2) {
           return p2(a2), s2;
+        }, getConfig() {
+          return n();
         } };
         return s2;
       };

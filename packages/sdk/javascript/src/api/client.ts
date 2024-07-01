@@ -63,6 +63,7 @@ interface Client {
   }): void;
   useSignal(signal: AbortSignal | null): Client;
   reconfigure(config: ClientConfig): Client;
+  getConfig(): ClientConfig;
 }
 
 const createClient = (config: ClientConfig): Client => {
@@ -132,6 +133,9 @@ const createClient = (config: ClientConfig): Client => {
       reconfigure(config);
 
       return client;
+    },
+    getConfig() {
+      return getConfig();
     }
   };
 

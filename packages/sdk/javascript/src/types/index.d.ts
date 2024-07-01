@@ -1,4 +1,4 @@
-declare module "virtual:vrite" {
+declare module "virtual:vrite/client" {
   // @ts-ignore
   export const client: import("@vrite/sdk/api").Client;
   export {
@@ -7,8 +7,10 @@ declare module "virtual:vrite" {
     Client,
     ContentGroup,
     ContentPiece,
+    ContentPieceWithAdditionalData,
     JSONContent,
     JSONContentAttrs,
+    Snippet,
     Profile,
     Role,
     RoleBaseType,
@@ -26,9 +28,16 @@ declare module "virtual:vrite" {
     WorkspaceSettings,
     ListedMember,
     ListedWorkspace,
+    Extension,
+    Variant,
     UnauthorizedError
     // @ts-ignore
   } from "@vrite/sdk/api";
+  export function getContentGroupId(): string;
+}
+declare module "virtual:vrite" {
+  export * from "virtual:vrite/client";
+  // @ts-ignore
   export function Content(props: {
     contentPieceId?: string;
     slug?: string;
@@ -52,5 +61,4 @@ declare module "virtual:vrite" {
     }
     // @ts-ignore
   ): Promise<Array<Omit<import("@vrite/sdk/api").ContentPieceWithAdditionalData, "content">>>;
-  export function getContentGroupId(): string;
 }

@@ -245,6 +245,7 @@ const Editor: ParentComponent<
       setActiveElement(event?.relatedTarget as HTMLElement | null);
     },
     extensions: [
+      Shortcuts,
       ...getEditorExtensions(provider),
       Document,
       Paragraph,
@@ -276,8 +277,7 @@ const Editor: ParentComponent<
         ElementMenuPlugin,
         CommentMenuPlugin.configure({
           commentData
-        }),
-        Shortcuts
+        })
       ]) ||
         []),
       ...(props.extensions || [])

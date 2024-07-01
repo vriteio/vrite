@@ -133,14 +133,18 @@ interface ContentPiecesEndpoints {
       Pick<ContentPiece<CustomData>, "id">
   ): Promise<void>;
   delete(input: Pick<ContentPiece, "id">): Promise<void>;
-  list<CustomData extends Record<string, any> = Record<string, any>>(
+  list<
+    CustomData extends Record<string, any> = Record<string, any>,
+    IncludeContent extends true | false = false
+  >(
     input: PaginationParams & {
+      content?: IncludeContent;
       contentGroupId: string;
       tagId?: string;
       slug?: string;
       variant?: string;
     }
-  ): Promise<Array<Omit<ContentPieceWithAdditionalData<CustomData>, "content">>>;
+  ): Promise<Array<ContentPieceWithAdditionalData<CustomData, IncludeContent>>>;
 }
 
 const basePath = "/content-pieces";
@@ -193,15 +197,19 @@ const createContentPiecesEndpoints = (sendRequest: SendRequest): ContentPiecesEn
       params: input
     });
   },
-  list: <CustomData extends Record<string, any> = Record<string, any>>(
+  list: <
+    CustomData extends Record<string, any> = Record<string, any>,
+    IncludeContent extends true | false = false
+  >(
     input: PaginationParams & {
+      content?: IncludeContent;
       contentGroupId: string;
       tagId?: string;
       slug?: string;
       variant?: string;
     }
   ) => {
-    return sendRequest<Array<Omit<ContentPieceWithAdditionalData<CustomData>, "content">>>(
+    return sendRequest<Array<ContentPieceWithAdditionalData<CustomData, IncludeContent>>>(
       "GET",
       `${basePath}/list`,
       { params: input }

@@ -49,6 +49,7 @@ interface MiniEditorProps extends ExtensionOptions {
 
 const getExtensions = (options: ExtensionOptions): Extensions => {
   const extensions = [
+    Shortcuts,
     options.content ? Document.extend({ content: options.content }) : Document,
     Placeholder.configure({
       placeholder: options.placeholder
@@ -57,7 +58,6 @@ const getExtensions = (options: ExtensionOptions): Extensions => {
     Text,
     HardBreak,
     History,
-    Shortcuts,
     ...(options.blocks ? [Heading, Blockquote] : []),
     ...(options.lists ? [BulletList, OrderedList, TaskList, TaskItem, ListItem] : []),
     ...(options.extensions || [])
