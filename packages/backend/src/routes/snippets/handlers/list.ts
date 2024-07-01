@@ -3,9 +3,11 @@ import { getSnippetContentsCollection, getSnippetsCollection, snippet } from "#c
 import { AuthenticatedContext } from "#lib/middleware";
 import { DocJSON, bufferToJSON } from "#lib/content-processing";
 
-const inputSchema = z.object({
-  content: z.boolean().describe("Whether to fetch the JSON content").default(false)
-});
+const inputSchema = z
+  .object({
+    content: z.boolean().describe("Whether to fetch the JSON content").default(false)
+  })
+  .optional();
 const outputSchema = z.array(
   snippet.extend({
     content: z.record(z.string(), z.any()).describe("JSON content of the snippet").optional()
@@ -24,7 +26,7 @@ const handler = async (
     .toArray();
   const contents = new Map<string, DocJSON>();
 
-  if (input.content) {
+  if (input?.content) {
     const snippetContentsCollection = getSnippetContentsCollection(ctx.db);
     const snippetIds = snippets.map((snippet) => snippet._id);
     const snippetContents = await snippetContentsCollection
@@ -46,7 +48,7 @@ const handler = async (
     return {
       id: `${snippet._id}`,
       name: snippet.name,
-      ...(input.content && content ? { content } : {})
+      ...(input?.content && content ? { content } : {})
     };
   });
 };

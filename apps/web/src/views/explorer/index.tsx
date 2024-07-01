@@ -15,6 +15,7 @@ const ExplorerTree: Component = () => {
     useContentData();
   const {
     highlight,
+    reordering,
     setHighlight,
     activeDraggableContentGroupId,
     activeDraggableContentPieceId,
@@ -41,7 +42,7 @@ const ExplorerTree: Component = () => {
     event.stopPropagation();
   };
   const active = (): boolean => activeContentGroupId() === null;
-  const highlighted = (): boolean => highlight() === "";
+  const highlighted = (): boolean => highlight() === "" && !reordering();
   const colored = (): boolean => {
     return (
       highlighted() ||

@@ -1,5 +1,5 @@
 import { useExplorerData } from "./explorer-context";
-import { Component, For, Match, Show, Switch, createMemo, createSignal } from "solid-js";
+import { Accessor, Component, For, Match, Show, Switch, createMemo, createSignal } from "solid-js";
 import {
   mdiCheck,
   mdiChevronRight,
@@ -10,11 +10,13 @@ import {
   mdiFolderPlus,
   mdiIdentifier,
   mdiRename,
-  mdiTrashCan
+  mdiTrashCan,
+  mdiUnfoldMoreHorizontal
 } from "@mdi/js";
 import clsx from "clsx";
 import SortableLib from "sortablejs";
-import { Dropdown, Icon, IconButton, Input, Loader } from "#components/primitives";
+import { useMatch } from "@solidjs/router";
+import { Dropdown, Icon, IconButton, Input, Loader, Tooltip } from "#components/primitives";
 import {
   App,
   hasPermission,
@@ -33,9 +35,16 @@ interface ContentGroupRowProps {
   onDragEnd?(event: SortableLib.SortableEvent): void;
 }
 
+const useIsDashboardRoute = (): Accessor<boolean> => {
+  const isDashboardRouteWithContentPiece = useMatch(() => "/:contentPieceId");
+  const isDirectDashboardRoute = useMatch(() => "/");
+
+  return () => Boolean(isDashboardRouteWithContentPiece() || isDirectDashboardRoute());
+};
 const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
   const { loading, renaming, setLoading, setRenaming } = useExplorerData();
   const client = useClient();
+  const isDashboardRoute = useIsDashboardRoute();
   const { notify } = useNotifications();
   const { confirmDelete } = useConfirmationModal();
   const { activeContentGroupId, expandedContentLevels, contentActions } = useContentData();
@@ -44,7 +53,8 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
     activeDraggableContentPieceId,
     setActiveDraggableContentGroupId,
     pathnameData,
-    highlight
+    highlight,
+    reordering
   } = useExplorerData();
   const [dropdownOpened, setDropdownOpened] = createSignal(false);
   const menuOptions = createMemo(() => {
@@ -177,196 +187,230 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
 
     return menuOptions;
   });
-  const active = (): boolean => activeContentGroupId() === props.contentGroup.id;
-  const highlighted = (): boolean => highlight() === props.contentGroup.id;
+  const active = (): boolean => {
+    return activeContentGroupId() === props.contentGroup.id && isDashboardRoute();
+  };
+  const highlighted = (): boolean => highlight() === props.contentGroup.id && !reordering();
 
   return (
     <div
       class={clsx(
-        "flex flex-1 justify-center items-center cursor-pointer overflow-x-hidden group pl-0.5",
+        "flex justify-center items-center relative group",
         !props.contentGroup.ancestors.length && "rounded-l-md",
         !dropdownOpened() &&
           !activeDraggableContentGroupId() &&
           !active() &&
           "@hover:bg-gray-200 dark:@hover-bg-gray-700"
       )}
-      ref={(el) => {
-        SortableLib.create(el, {
-          group: {
-            name: "shared",
-            pull: false,
-            put: false
-          },
-          delayOnTouchOnly: true,
-          delay: 250,
-          disabled: !hasPermission("manageDashboard"),
-          revertOnSpill: true,
-          draggable: ".draggable",
-          fallbackOnBody: true,
-          sort: false,
-          onStart() {
-            setActiveDraggableContentGroupId(props.contentGroup.id);
-          },
-          onEnd(event) {
-            event.preventDefault();
-            props.onDragEnd?.(event);
-            setActiveDraggableContentGroupId(null);
-          }
-        });
-      }}
     >
       <div
-        class="flex flex-1 justify-start items-center overflow-hidden rounded-lg cursor-pointer h-7 group draggable"
-        data-content-group-id={props.contentGroup?.id || ""}
-      >
-        <IconButton
-          class={clsx("transform transition m-0 p-0 mx-0.25", props.opened && "rotate-90")}
-          path={mdiChevronRight}
-          variant="text"
-          hover={Boolean(dropdownOpened() || activeDraggableContentGroupId() || active())}
-          onClick={() => {
-            props.onExpand?.();
-          }}
-        />
-        <button
-          class="flex flex-1"
-          onClick={() => {
-            if (renaming()) return;
-
-            props.onExpand?.(true);
-            props.onClick?.();
-          }}
-        >
-          <Icon
-            class={clsx(
-              "h-6 w-6 mr-1 text-gray-500 dark:text-gray-400",
-              (highlighted() ||
-                (active() &&
-                  !activeDraggableContentGroupId() &&
-                  !activeDraggableContentPieceId() &&
-                  pathnameData().view === "dashboard")) &&
-                "fill-[url(#gradient)]"
-            )}
-            path={props.opened ? mdiFolderOpen : mdiFolder}
-          />
-          <Show
-            when={renaming() !== props.contentGroup.id}
-            fallback={
-              <Input
-                wrapperClass="flex-1"
-                class="m-0 p-0 !bg-transparent h-6 rounded-none pointer-events-auto"
-                value={props.contentGroup.name}
-                ref={(el) => {
-                  setTimeout(() => {
-                    el?.select();
-                  }, 0);
-                }}
-                onEnter={(event) => {
-                  const target = event.currentTarget as HTMLInputElement;
-                  const name = target.value || "";
-
-                  client.contentGroups.update.mutate({
-                    id: props.contentGroup.id,
-                    name
-                  });
-                  contentActions.updateContentGroup({ id: props.contentGroup.id, name });
-                  setRenaming("");
-                }}
-                onChange={(event) => {
-                  const name = event.currentTarget.value || "";
-
-                  client.contentGroups.update.mutate({
-                    id: props.contentGroup.id,
-                    name
-                  });
-                  contentActions.updateContentGroup({ id: props.contentGroup.id, name });
-                  setRenaming("");
-                }}
-              />
+        class="flex flex-1 justify-center items-center cursor-pointer overflow-x-hidden pl-0.5"
+        ref={(el) => {
+          SortableLib.create(el, {
+            group: {
+              name: "shared",
+              pull: false,
+              put: false
+            },
+            filter: ".reorder-handle",
+            delayOnTouchOnly: true,
+            delay: 250,
+            disabled: !hasPermission("manageDashboard"),
+            revertOnSpill: true,
+            draggable: ".draggable",
+            fallbackOnBody: true,
+            sort: false,
+            onStart() {
+              setActiveDraggableContentGroupId(props.contentGroup.id);
+            },
+            onEnd(event) {
+              event.preventDefault();
+              props.onDragEnd?.(event);
+              setActiveDraggableContentGroupId(null);
             }
+          });
+        }}
+      >
+        <div
+          class="flex flex-1 justify-start items-center overflow-hidden rounded-lg cursor-pointer h-7 draggable"
+          data-content-group-id={props.contentGroup?.id || ""}
+        >
+          <IconButton
+            class={clsx("transform transition m-0 p-0 mx-0.25", props.opened && "rotate-90")}
+            path={mdiChevronRight}
+            variant="text"
+            hover={Boolean(dropdownOpened() || activeDraggableContentGroupId() || active())}
+            onClick={() => {
+              props.onExpand?.();
+            }}
+          />
+          <button
+            class="flex flex-1"
+            onClick={() => {
+              if (renaming()) return;
+
+              props.onExpand?.(true);
+              props.onClick?.();
+            }}
           >
-            <span
+            <Icon
               class={clsx(
-                "!text-base inline-flex text-start flex-1 overflow-x-auto content-group-name scrollbar-hidden select-none clamp-1",
+                "h-6 w-6 mr-1 text-gray-500 dark:text-gray-400",
                 (highlighted() ||
                   (active() &&
                     !activeDraggableContentGroupId() &&
                     !activeDraggableContentPieceId() &&
                     pathnameData().view === "dashboard")) &&
-                  "text-transparent bg-clip-text bg-gradient-to-tr"
+                  "fill-[url(#gradient)]"
               )}
-              title={props.contentGroup?.name || ""}
-            >
-              {props.contentGroup?.name || ""}
-            </span>
-          </Show>
-        </button>
-        <Switch>
-          <Match when={loading() === props.contentGroup.id}>
-            <div class="m-0 p-1 mr-4 ml-1 flex justify-center items-center">
-              <Loader class="h-4 w-4" />
-            </div>
-          </Match>
-          <Match when={renaming() === props.contentGroup.id}>
-            <IconButton
-              path={mdiCheck}
-              class="m-0 p-0 mr-4 ml-1"
-              variant="text"
-              color="contrast"
-              text="soft"
-              onClick={() => {
-                setRenaming("");
-              }}
+              path={props.opened ? mdiFolderOpen : mdiFolder}
             />
-          </Match>
-          <Match when={true}>
-            <Dropdown
-              placement="bottom-end"
-              opened={dropdownOpened()}
-              fixed
-              class="ml-1 mr-4"
-              setOpened={setDropdownOpened}
-              activatorButton={() => (
+            <Show
+              when={renaming() !== props.contentGroup.id}
+              fallback={
+                <Input
+                  wrapperClass="flex-1"
+                  class="m-0 p-0 !bg-transparent h-6 rounded-none pointer-events-auto"
+                  value={props.contentGroup.name}
+                  ref={(el) => {
+                    setTimeout(() => {
+                      el?.select();
+                    }, 0);
+                  }}
+                  onEnter={(event) => {
+                    const target = event.currentTarget as HTMLInputElement;
+                    const name = target.value || "";
+
+                    client.contentGroups.update.mutate({
+                      id: props.contentGroup.id,
+                      name
+                    });
+                    contentActions.updateContentGroup({ id: props.contentGroup.id, name });
+                    setRenaming("");
+                  }}
+                  onChange={(event) => {
+                    const name = event.currentTarget.value || "";
+
+                    client.contentGroups.update.mutate({
+                      id: props.contentGroup.id,
+                      name
+                    });
+                    contentActions.updateContentGroup({ id: props.contentGroup.id, name });
+                    setRenaming("");
+                  }}
+                />
+              }
+            >
+              <span
+                class={clsx(
+                  "!text-base inline-flex text-start flex-1 overflow-x-auto content-group-name scrollbar-hidden select-none clamp-1",
+                  (highlighted() ||
+                    (active() &&
+                      !activeDraggableContentGroupId() &&
+                      !activeDraggableContentPieceId() &&
+                      pathnameData().view === "dashboard")) &&
+                    "text-transparent bg-clip-text bg-gradient-to-tr"
+                )}
+                title={props.contentGroup?.name || ""}
+              >
+                {props.contentGroup?.name || ""}
+              </span>
+            </Show>
+          </button>
+          <Show when={!activeDraggableContentPieceId() && !activeDraggableContentGroupId()}>
+            <Switch>
+              <Match when={loading() === props.contentGroup.id}>
+                <div class="m-0 p-1 mr-4 ml-1 flex justify-center items-center">
+                  <Loader class="h-4 w-4" />
+                </div>
+              </Match>
+              <Match when={renaming() === props.contentGroup.id}>
                 <IconButton
-                  path={mdiDotsVertical}
-                  class={clsx("m-0 p-0 group-hover:opacity-100", !dropdownOpened() && "opacity-0")}
+                  path={mdiCheck}
+                  class="m-0 p-0 mr-4 ml-1"
                   variant="text"
                   color="contrast"
                   text="soft"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    setDropdownOpened(true);
+                  onClick={() => {
+                    setRenaming("");
                   }}
                 />
-              )}
-            >
-              <div class="w-full flex flex-col">
-                <For each={menuOptions()}>
-                  {(item) => {
-                    if (!item) {
-                      return (
-                        <div class="hidden md:block w-full h-2px my-1 bg-gray-200 dark:bg-gray-700 rounded-full" />
-                      );
-                    }
+              </Match>
+              <Match when={true}>
+                <Dropdown
+                  placement="bottom-end"
+                  opened={dropdownOpened()}
+                  fixed
+                  class="ml-1 mr-4"
+                  setOpened={setDropdownOpened}
+                  activatorButton={() => (
+                    <IconButton
+                      path={mdiDotsVertical}
+                      class={clsx(
+                        "m-0 p-0 group-hover:opacity-100",
+                        !dropdownOpened() && "opacity-0"
+                      )}
+                      variant="text"
+                      color="contrast"
+                      text="soft"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setDropdownOpened(true);
+                      }}
+                    />
+                  )}
+                >
+                  <div class="w-full flex flex-col">
+                    <For each={menuOptions()}>
+                      {(item) => {
+                        if (!item) {
+                          return (
+                            <div class="hidden md:block w-full h-2px my-1 bg-gray-200 dark:bg-gray-700 rounded-full" />
+                          );
+                        }
 
-                    return (
-                      <IconButton
-                        path={item.icon}
-                        label={item.label}
-                        variant="text"
-                        text="soft"
-                        color={item.color}
-                        class="justify-start whitespace-nowrap w-full m-0 justify-start"
-                        onClick={item.onClick}
-                      />
-                    );
-                  }}
-                </For>
-              </div>
-            </Dropdown>
-          </Match>
-        </Switch>
+                        return (
+                          <IconButton
+                            path={item.icon}
+                            label={item.label}
+                            variant="text"
+                            text="soft"
+                            color={item.color}
+                            class="justify-start whitespace-nowrap w-full m-0"
+                            onClick={item.onClick}
+                          />
+                        );
+                      }}
+                    </For>
+                  </div>
+                </Dropdown>
+              </Match>
+            </Switch>
+          </Show>
+        </div>
       </div>
+      <Show
+        when={
+          !activeDraggableContentPieceId() &&
+          !activeDraggableContentGroupId() &&
+          loading() !== props.contentGroup.id &&
+          renaming() !== props.contentGroup.id
+        }
+      >
+        <Tooltip text="Reorder" fixed wrapperClass="absolute right-10" class="mt-1">
+          <IconButton
+            path={mdiUnfoldMoreHorizontal}
+            class={clsx(
+              "m-0 p-0 group-hover:opacity-100 opacity-0 reorder-handle cursor-grab",
+              dropdownOpened() && "!opacity-0"
+            )}
+            variant="text"
+            color="contrast"
+            text="soft"
+            badge
+          />
+        </Tooltip>
+      </Show>
     </div>
   );
 };

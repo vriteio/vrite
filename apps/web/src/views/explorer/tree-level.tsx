@@ -4,7 +4,13 @@ import { useExplorerData } from "./explorer-context";
 import clsx from "clsx";
 import { Component, createEffect, Show, For, createSignal } from "solid-js";
 import SortableLib from "sortablejs";
-import { mdiChevronRight, mdiDotsHorizontalCircleOutline, mdiFolderPlus } from "@mdi/js";
+import {
+  mdiChevronRight,
+  mdiDotsHorizontalCircleOutline,
+  mdiFileDocumentOutline,
+  mdiFolder,
+  mdiFolderPlus
+} from "@mdi/js";
 import { useNavigate } from "@solidjs/router";
 import { Icon, IconButton, Loader, Sortable } from "#components/primitives";
 import { App, hasPermission, useClient, useContentData, useNotifications } from "#context";
@@ -85,9 +91,13 @@ const TreeLevel: Component<{
   } = useContentData();
   const {
     highlight,
+    reordering,
     setHighlight,
+    setReordering,
     activeDraggableContentGroupId,
     activeDraggableContentPieceId,
+    setActiveDraggableContentGroupId,
+    setActiveDraggableContentPieceId,
     pathnameData
   } = useExplorerData();
   const client = useClient();
@@ -135,7 +145,7 @@ const TreeLevel: Component<{
       <div
         class={clsx(
           "h-full w-full absolute -z-1",
-          highlight() === props.parentId && "bg-gradient-to-tr opacity-30"
+          highlight() === props.parentId && !reordering() && "bg-gradient-to-tr opacity-30"
         )}
       />
       <Show when={props.parentId}>
@@ -147,6 +157,7 @@ const TreeLevel: Component<{
               !activeDraggableContentPieceId() &&
               pathnameData().view === "dashboard") ||
               highlight() === props.parentId) &&
+              !reordering() &&
               "!bg-gradient-to-tr"
           )}
         />
@@ -175,8 +186,41 @@ const TreeLevel: Component<{
             </For>
           </div>
         </Show>
-        <For
-          each={contentLevels[props.parentId || ""]?.groups || []}
+        <Sortable
+          ids={contentLevels[props.parentId || ""]?.groups || []}
+          dragImage={(props) => {
+            return (
+              <div class="flex whitespace-nowrap gap-1 rounded-lg px-1 py-0.5 border-2 bg-gray-50 border-gray-200 dark:bg-gray-900 dark:border-gray-700">
+                <Icon path={mdiFolder} class="h-6 w-6" />
+                {contentGroups[props.id]?.name}
+              </div>
+            );
+          }}
+          onDragStart={(contentGroupId) => {
+            setReordering(true);
+            setActiveDraggableContentGroupId(contentGroupId);
+          }}
+          onDragEnd={(newIds, details) => {
+            const activeContentLevel = contentLevels[props.parentId || ""]?.groups || [];
+            const isMoved =
+              activeContentLevel.some((id) => !newIds.includes(id)) ||
+              newIds.some((id) => !activeContentLevel.includes(id));
+            const isReordered = !isMoved && activeContentLevel.join(":") !== newIds.join(":");
+
+            setReordering(false);
+            setActiveDraggableContentGroupId(null);
+
+            if (isReordered) {
+              const newIndex = newIds.indexOf(details.affectedId);
+
+              client.contentGroups.reorder.mutate({
+                id: details.affectedId,
+                index: newIndex
+              });
+              contentActions.reorderContentGroup({ id: details.affectedId, index: newIndex });
+            }
+          }}
+          handle=".reorder-handle"
           fallback={
             <Show
               when={
@@ -189,9 +233,10 @@ const TreeLevel: Component<{
             </Show>
           }
         >
-          {(groupId) => {
+          {(groupId, _, dataProps) => {
             return (
               <div
+                {...dataProps()}
                 class="relative"
                 data-content-group-id={groupId || ""}
                 onDragEnter={(event) => {
@@ -231,6 +276,7 @@ const TreeLevel: Component<{
                     group: {
                       name: "shared"
                     },
+                    filter: ".reorder-handle",
                     disabled: true
                   });
                 }}
@@ -288,11 +334,69 @@ const TreeLevel: Component<{
               </div>
             );
           }}
-        </For>
-        <For each={contentLevels[props.parentId || ""]?.pieces || []}>
-          {(contentPieceId, index) => {
+        </Sortable>
+        <Sortable
+          ids={contentLevels[props.parentId || ""]?.pieces || []}
+          handle=".reorder-handle"
+          dragImage={(props) => {
             return (
-              <div class="flex flex-row-reverse group/order relative justify-center items-center">
+              <div class="flex whitespace-nowrap gap-1 rounded-lg px-1 py-0.5 border-2 bg-gray-100 border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+                <Icon path={mdiFileDocumentOutline} class="h-6 w-6" />
+                {contentPieces[props.id]?.title}
+              </div>
+            );
+          }}
+          onDragStart={(affectedId) => {
+            if (affectedId) {
+              setReordering(true);
+              setActiveDraggableContentPieceId(affectedId);
+            }
+          }}
+          onDragEnd={(newIds, details) => {
+            const activeContentLevel = contentLevels[props.parentId || ""]?.pieces || [];
+            const isReordered = activeContentLevel.join(":") !== newIds.join(":");
+
+            setReordering(false);
+            setActiveDraggableContentPieceId(null);
+
+            if (isReordered) {
+              const oldIndex = activeContentLevel.indexOf(details.affectedId);
+              const newIndex = newIds.indexOf(details.affectedId);
+              const contentPieceId = activeContentLevel[oldIndex];
+              const baseReferenceContentPieceId = activeContentLevel[newIndex];
+              const secondReferenceContentPieceId =
+                activeContentLevel[oldIndex < newIndex ? newIndex + 1 : newIndex - 1];
+
+              let nextReferenceContentPieceId = secondReferenceContentPieceId;
+              let previousReferenceContentPieceId = baseReferenceContentPieceId;
+
+              if (oldIndex < newIndex) {
+                nextReferenceContentPieceId = baseReferenceContentPieceId;
+                previousReferenceContentPieceId = secondReferenceContentPieceId;
+              }
+
+              client.contentPieces.move.mutate({
+                id: contentPieceId,
+                nextReferenceId: nextReferenceContentPieceId,
+                previousReferenceId: previousReferenceContentPieceId
+              });
+
+              if (contentPieces[contentPieceId]) {
+                contentActions.moveContentPiece({
+                  contentPiece: contentPieces[contentPieceId]!,
+                  nextReferenceId: nextReferenceContentPieceId,
+                  previousReferenceId: previousReferenceContentPieceId
+                });
+              }
+            }
+          }}
+        >
+          {(contentPieceId, _, dataProps) => {
+            return (
+              <div
+                class="flex flex-row-reverse group/order relative justify-center items-center"
+                {...dataProps()}
+              >
                 <ContentPieceRow
                   contentPiece={contentPieces[contentPieceId]!}
                   onClick={() => {
@@ -323,7 +427,7 @@ const TreeLevel: Component<{
               </div>
             );
           }}
-        </For>
+        </Sortable>
         <Show when={contentLevels[props.parentId || ""]?.moreToLoad}>
           <div class="ml-0.5 flex rounded-none hover:bg-gray-200 dark:hover:bg-gray-700 py-1">
             <button

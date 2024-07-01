@@ -13,6 +13,7 @@ interface ExplorerContextData {
   renaming: Accessor<string>;
   loading: Accessor<string>;
   highlight: Accessor<string | null>;
+  reordering: Accessor<boolean>;
   activeDraggableContentGroupId: Accessor<string | null>;
   activeDraggableContentPieceId: Accessor<string | null>;
   setActiveDraggableContentGroupId: Setter<string | null>;
@@ -20,6 +21,7 @@ interface ExplorerContextData {
   setRenaming: Setter<string>;
   setLoading: Setter<string>;
   setHighlight: Setter<string | null>;
+  setReordering: Setter<boolean>;
   pathnameData: Accessor<{
     activeContentPieceId?: string;
     view?: "editor" | "dashboard";
@@ -37,6 +39,7 @@ const ExplorerDataProvider: ParentComponent = (props) => {
   >(null);
   const [renaming, setRenaming] = createSignal("");
   const [loading, setLoading] = createSignal("");
+  const [reordering, setReordering] = createSignal(false);
   const [highlight, setHighlight] = createSignal<string | null>(null);
   const pathnameData = createMemo<{
     activeContentPieceId?: string;
@@ -59,9 +62,11 @@ const ExplorerDataProvider: ParentComponent = (props) => {
         renaming,
         loading,
         highlight,
+        reordering,
         setRenaming,
         setLoading,
         setHighlight,
+        setReordering,
         pathnameData,
         activeDraggableContentGroupId,
         activeDraggableContentPieceId,
