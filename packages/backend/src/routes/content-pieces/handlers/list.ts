@@ -23,7 +23,7 @@ import { DocJSON, bufferToJSON } from "#lib/content-processing";
 const inputSchema = z.object({
   content: z.boolean().describe("Whether to fetch the JSON content").default(false),
   contentGroupId: zodId()
-    .describe("ID of the content group which contains the content pieces")
+    .describe("Comma-separated list of IDs of the content groups which contain the content pieces")
     .optional(),
   variant: zodId()
     .describe("ID or key of the variant")
@@ -64,7 +64,9 @@ const handler = async (
   const cursor = contentPiecesCollection
     .find({
       workspaceId: ctx.auth.workspaceId,
-      ...(input.contentGroupId ? { contentGroupId: new ObjectId(input.contentGroupId) } : {}),
+      ...(input.contentGroupId && {
+        contentGroupId: { $in: input.contentGroupId.split(",").map((id) => new ObjectId(id)) }
+      }),
       ...(input.tagId ? { tags: new ObjectId(input.tagId) } : {}),
       ...(input.slug ? { slug: stringToRegex(input.slug) } : {}),
       ...(input.lastOrder ? { order: { $lt: input.lastOrder } } : {})
