@@ -9,8 +9,6 @@ The stack used:
 - **Astro** (SSG/SSR framework)
 - **Solid.js** (for all the interactive UI components)
 - **Vrite CMS & SDK** (powering the blog)
-- **SendGrid** (everything email)
-- **Railway** (hosting)
 
 ## Quick start
 

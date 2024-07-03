@@ -28,7 +28,7 @@ const VerifyPasswordChange: React.FC<VerifyPasswordChangeProps> = ({ link = "" }
           <Container className="mx-auto w-[500px]">
             <Section className="mt-[32px]">
               <Img
-                src="http://cdn.mcauto-images-production.sendgrid.net/d4071ef535227442/1dff1cba-517b-48ad-aab0-40c3b0f5050b/500x211.png"
+                src="https://assets.vrite.io/6409e82d7dfc74cef7a72e0d/v0aihKNNJQGDAoYJN5Ml6.png"
                 width="95"
                 height="40"
                 alt="Vrite"

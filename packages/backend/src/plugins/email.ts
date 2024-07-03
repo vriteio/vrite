@@ -1,11 +1,13 @@
 import { EmailPlugin, FastifyInstance } from "fastify";
-import { MailService } from "@sendgrid/mail";
 import { ObjectId } from "mongodb";
 import { EmailTemplate, getSubject, renderEmail } from "@vrite/emails";
 import * as nodemailer from "nodemailer";
+import { Resend } from "resend";
+import SMTPTransport from "nodemailer/lib/smtp-transport";
 import { getWorkspacesCollection, getUsersCollection } from "#collections";
 import { createPlugin } from "#lib/plugin";
 import { errors } from "#lib/errors";
+import { hostConfig } from "#lib/host-config";
 
 type EmailSender = (email: {
   to: string;
@@ -51,34 +53,43 @@ declare module "fastify" {
         code: string;
       }
     ): Promise<void>;
+    addEmailToContactList(
+      email: string,
+      details: {
+        username: string;
+      }
+    ): Promise<void>;
   }
   interface FastifyInstance {
     email: EmailPlugin;
   }
 }
 
-const createEmailSender = (fastify: FastifyInstance): EmailSender => {
-  if (fastify.hostConfig.sendgrid) {
-    const service = new MailService();
+const createEmailSender = (
+  fastify: FastifyInstance
+): {
+  sendEmail: EmailSender;
+  client: Resend | nodemailer.Transporter<SMTPTransport.SentMessageInfo> | null;
+} => {
+  if (fastify.hostConfig.resend) {
+    const resend = new Resend(fastify.config.RESEND_API_KEY);
 
-    service.setApiKey(fastify.config.SENDGRID_API_KEY || "");
+    return {
+      client: resend,
+      sendEmail: async (email) => {
+        try {
+          await resend.emails.send({
+            from: `${fastify.config.SENDER_NAME} <${fastify.config.SENDER_EMAIL}>`,
+            to: email.to,
+            subject: getSubject(email.template),
+            html: renderEmail(email.template, email.data),
+            text: renderEmail(email.template, email.data, true)
+          });
+        } catch (error) {
+          fastify.log.error(error);
 
-    return async (email) => {
-      try {
-        await service.send({
-          to: email.to,
-          from: {
-            email: fastify.config.SENDER_EMAIL,
-            name: fastify.config.SENDER_NAME
-          },
-          subject: getSubject(email.template),
-          html: renderEmail(email.template, email.data),
-          text: renderEmail(email.template, email.data, true)
-        });
-      } catch (error) {
-        fastify.log.error(error);
-
-        throw errors.serverError();
+          throw errors.serverError();
+        }
       }
     };
   }
@@ -97,32 +108,38 @@ const createEmailSender = (fastify: FastifyInstance): EmailSender => {
         })
     });
 
-    return async (email) => {
-      try {
-        await transporter.sendMail({
-          from: { address: fastify.config.SENDER_EMAIL, name: fastify.config.SENDER_NAME },
-          to: email.to,
-          subject: getSubject(email.template),
-          html: renderEmail(email.template, email.data),
-          text: renderEmail(email.template, email.data, true)
-        });
-      } catch (error) {
-        fastify.log.error(error);
+    return {
+      client: transporter,
+      sendEmail: async (email) => {
+        try {
+          await transporter.sendMail({
+            from: { address: fastify.config.SENDER_EMAIL, name: fastify.config.SENDER_NAME },
+            to: email.to,
+            subject: getSubject(email.template),
+            html: renderEmail(email.template, email.data),
+            text: renderEmail(email.template, email.data, true)
+          });
+        } catch (error) {
+          fastify.log.error(error);
 
-        throw errors.serverError();
+          throw errors.serverError();
+        }
       }
     };
   }
 
-  return async () => {
-    // eslint-disable-next-line no-console
-    fastify.log.error("No email service configured");
+  return {
+    client: null,
+    sendEmail: async () => {
+      // eslint-disable-next-line no-console
+      fastify.log.error("No email service configured");
 
-    throw errors.serverError();
+      throw errors.serverError();
+    }
   };
 };
 const emailPlugin = createPlugin(async (fastify) => {
-  const sendEmail = createEmailSender(fastify);
+  const { sendEmail, client } = createEmailSender(fastify);
 
   fastify.decorate("email", {
     async sendEmailVerification(email, details) {
@@ -182,6 +199,17 @@ const emailPlugin = createPlugin(async (fastify) => {
         data: {
           link: `${fastify.config.PUBLIC_APP_URL}/verify?type=email-change&code=${details.code}`
         }
+      });
+    },
+    async addEmailToContactList(email, details) {
+      if (!fastify.hostConfig.resend || !fastify.config.RESEND_AUDIENCE_ID) return;
+
+      const resend = client as Resend;
+
+      await resend.contacts.create({
+        audienceId: fastify.config.RESEND_AUDIENCE_ID,
+        email,
+        firstName: details.username
       });
     }
   } as EmailPlugin);

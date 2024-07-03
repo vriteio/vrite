@@ -135,6 +135,10 @@ const createWorkspace = async (
     }
   }
 
+  if (fastify.hostConfig.resend) {
+    await fastify.email.addEmailToContactList(user.email, { username: user.username });
+  }
+
   if (config?.newUser) {
     await contentGroupsCollection.insertMany(contentGroups);
     await contentPiecesCollection.insertOne({

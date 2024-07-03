@@ -31,8 +31,9 @@ const envSchema = z.object({
   SMTP_USERNAME: z.string().optional(),
   SMTP_PASSWORD: z.string().optional(),
   SMTP_SECURE: z.boolean().optional(),
-  // SendGrid (Email)
-  SENDGRID_API_KEY: z.string().optional(),
+  // Resend (Email)
+  RESEND_API_KEY: z.string().optional(),
+  RESEND_AUDIENCE_ID: z.string().optional(),
   // GitHub App (Git sync)
   GITHUB_APP_ID: z.string().optional(),
   GITHUB_APP_PRIVATE_KEY: z.string().optional(),

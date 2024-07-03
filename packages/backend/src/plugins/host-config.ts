@@ -16,7 +16,7 @@ const hostConfigPlugin = createPlugin(async (fastify) => {
         fastify.config.GITHUB_APP_CLIENT_ID &&
         fastify.config.GITHUB_APP_CLIENT_SECRET
     ),
-    sendgrid: Boolean(fastify.config.SENDGRID_API_KEY),
+    resend: Boolean(fastify.config.RESEND_API_KEY),
     smtp: Boolean(fastify.config.SMTP_HOST && fastify.config.SMTP_PORT),
     search: Boolean(fastify.config.WEAVIATE_API_KEY && fastify.config.WEAVIATE_URL),
     aiSearch: Boolean(
