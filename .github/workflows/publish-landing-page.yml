@@ -16,7 +16,7 @@ jobs:
       - name: PNPM
         uses: pnpm/action-setup@v4
       - name: Build
-        run: pnpm install && pnpm run build --filter @vrite/docs
+        run: pnpm install && pnpm run build --filter @vrite/landing-page
       - name: Publish to Cloudflare Pages
         uses: cloudflare/pages-action@v1
         with:
