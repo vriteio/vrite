@@ -58,7 +58,7 @@ const VerifyPasswordChange: React.FC<VerifyPasswordChangeProps> = ({ link = "" }
                 reviewing your security settings.
               </Text>
             </Section>
-            <Text className="text-[12px] my-0">Vrite ©2023</Text>
+            <Text className="text-[12px] my-0">Vrite ©2024</Text>
           </Container>
         </Body>
       </Tailwind>
