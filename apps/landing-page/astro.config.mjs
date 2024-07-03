@@ -9,7 +9,7 @@ import robotsTxt from "astro-robots-txt";
 const { VRITE_ACCESS_TOKEN, VRITE_CONTENT_GROUP_ID, ...vars } = loadEnv(
   import.meta.env.MODE,
   process.cwd(),
-  ""
+  "VRITE_"
 );
 console.log(VRITE_ACCESS_TOKEN, VRITE_CONTENT_GROUP_ID, vars);
 
