@@ -11,7 +11,6 @@ import { getContentPieces, client } from "virtual:vrite";
 import { format } from "date-fns";
 
 const contentPieces = await getContentPieces({ limit: "all" });
-const tags = await client.tags.list({ perPage: 100 });
 const workspace = await client.workspace.get();
 const contentPiecesByMonth = contentPieces.reduce((acc, contentPiece) => {
   const date = new Date(contentPiece.date);
