@@ -6,10 +6,10 @@ jobs:
     permissions:
       contents: read
       deployments: write
-    name: Publish Vrite Docs to Cloudflare Pages
+    name: Publish Vrite Landing Page to Cloudflare Pages
     env:
-      PUBLIC_VRITE_SEARCH_TOKEN: F0OCwgqqI3aYDXehlhNBo:dt4OCRw5OsXtU_VcTB9o-
-      PUBLIC_VRITE_SEARCH_CONTENT_GROUP: 65d5f9a25a6b29a3ac69c65c
+      VRITE_ACCESS_TOKEN: o3qiG1nPs_1kG17He8smz:OOdP6YHsBTUDv78dVPko5
+      VRITE_CONTENT_GROUP_ID: 640b816da3d81d99daed3475
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -24,5 +24,5 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: vrite-docs
-          directory: apps/docs/dist
+          projectName: vrite-landing-page
+          directory: apps/landing-page/dist
