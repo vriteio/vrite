@@ -10,6 +10,7 @@ import { BaseHead, Header, Footer } from "#components/fragments";
 import { getContentPieces, client } from "virtual:vrite";
 import { format } from "date-fns";
 
+console.log(client.getConfig());
 const contentPieces = await getContentPieces({ limit: "all" });
 const workspace = await client.workspace.get();
 const contentPiecesByMonth = contentPieces.reduce((acc, contentPiece) => {
