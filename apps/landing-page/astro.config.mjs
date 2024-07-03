@@ -6,11 +6,12 @@ import { vritePlugin } from "@vrite/sdk/astro";
 import { loadEnv } from "vite";
 import robotsTxt from "astro-robots-txt";
 
-const { VRITE_ACCESS_TOKEN, VRITE_CONTENT_GROUP_ID } = loadEnv(
+const { VRITE_ACCESS_TOKEN, VRITE_CONTENT_GROUP_ID, ...vars } = loadEnv(
   import.meta.env.MODE,
   process.cwd(),
   ""
 );
+console.log(VRITE_ACCESS_TOKEN, VRITE_CONTENT_GROUP_ID, vars);
 
 export default defineConfig({
   integrations: [
