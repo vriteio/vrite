@@ -8,9 +8,9 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "dotenv -- turbo run build",
+    "build": "dotenv -- turbo run build --env-mode=loose",
     "publish": "turbo run publish",
-    "start": "dotenv -- turbo run start",
+    "start": "dotenv -- turbo run start --env-mode=loose",
     "dev": "dotenv -- turbo run dev --env-mode=loose",
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
