@@ -12,7 +12,7 @@ jobs:
       VRITE_CONTENT_GROUP_ID: 640b816da3d81d99daed3475
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: PNPM
         uses: pnpm/action-setup@v4
       - name: Build
