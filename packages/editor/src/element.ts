@@ -84,33 +84,6 @@ const Element = Node.create({
         };
       }
     };
-  },
-  addInputRules() {
-    const getAttributes = (input: ExtendedRegExpMatchArray): Record<string, any> => {
-      const [code] = input;
-      const tagRegex = /^<(\w+?)(?:\s|\n|\/|>)/;
-      const [, tag] = tagRegex.exec(code.trim()) || [];
-
-      if (tag && tag !== "undefined") {
-        return { type: tag, props: {} };
-      }
-
-      return {};
-    };
-
-    return [
-      nodeInputRule({
-        find: /^<.*?.+?\/>$/,
-        type: this.type,
-        getAttributes
-      }),
-      wrappingInputRule({
-        find: /^<.*?.+?>$/,
-        type: this.type,
-        joinPredicate: () => false,
-        getAttributes
-      })
-    ];
   }
 });
 

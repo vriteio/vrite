@@ -101,6 +101,7 @@ const xmlNodeView = ({
     const { selection } = editor.state;
     const selectionPos = selection.$from.pos;
 
+    code.style.minHeight = "unset";
     if (pos === null) return { selected: false, active: false };
 
     if (
@@ -122,7 +123,9 @@ const xmlNodeView = ({
       isElementSelection(selection) &&
       !isElementSelectionActive(selection)
     ) {
-      if (!node.content.size) code.append(selectionBackground);
+      if (!node.content.size) {
+        wrapper.append(selectionBackground);
+      }
 
       contentContainer.classList.add("!border-primary");
       code.classList.remove("selected-element-code");

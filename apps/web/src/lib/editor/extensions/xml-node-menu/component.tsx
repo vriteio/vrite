@@ -1,5 +1,4 @@
 import { ElementMenuEditor } from "./editor";
-import { ElementSelection, isElementSelection } from "../element/selection";
 import { SolidEditor } from "@vrite/tiptap-solid";
 import { Component, Show, createEffect, createSignal } from "solid-js";
 import { Node as PMNode } from "@tiptap/pm/model";

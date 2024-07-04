@@ -605,6 +605,7 @@ const Element = BaseElement.extend<
     };
   },
   addInputRules() {
+    const { editor } = this;
     const getAttributes = (input: ExtendedRegExpMatchArray): Record<string, any> => {
       const [code] = input;
       const tagRegex = /^<(\w+?)(?:\s|\n|\/|>)/;
@@ -622,12 +623,15 @@ const Element = BaseElement.extend<
 
       if (blockRange) {
         tr.setMeta("elementInserted", { pos: blockRange.start });
+        requestAnimationFrame(() => {
+          editor.chain().setElementSelection(blockRange.start).focus().run();
+        });
       }
     };
 
     return [
       nodeInputRule({
-        find: /^<.*?.+?\/>$/,
+        find: /(^<.*?.+?\/>$)/,
         type: this.type,
         getAttributes,
         appendTransaction

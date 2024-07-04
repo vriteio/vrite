@@ -215,6 +215,7 @@ const ElementMenuEditor = lazy(async () => {
             return;
           }
 
+          // TODO: Handle word wrap
           if (code) {
             code.textContent = value;
             requestAnimationFrame(() => {
