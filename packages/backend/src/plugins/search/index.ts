@@ -229,7 +229,7 @@ const registerSearch = async (fastify: FastifyInstance): Promise<void> => {
       }
 
       return await openai.chat.completions.create({
-        model: "gpt-4-turbo-preview",
+        model: "gpt-4o",
         stream: true,
         messages: [
           {

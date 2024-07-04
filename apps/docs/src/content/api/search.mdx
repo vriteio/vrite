@@ -3,7 +3,7 @@ slug: "api/search"
 title: "Search"
 ---
 
-Vrite provides a built-in, workspace-wide hybrid search powered by [Weaviate](https://weaviate.io/) and [OpenAI](https://openai.com/)’s API. Vrite chunks and index all content pieces following the headings (document structure) of each piece. The API allows you to both search and get answers to your questions via a question-answering endpoint based on GPT-4.
+Vrite provides a built-in, workspace-wide hybrid search powered by [Weaviate](https://weaviate.io/) and [OpenAI](https://openai.com/)’s API. Vrite chunks and index all content pieces following the headings (document structure) of each piece. The API allows you to both search and get answers to your questions via a question-answering endpoint based on GPT-4o.
 
 ## Search
 
@@ -69,7 +69,7 @@ Additionally, it provides an option to limit the search results and search the c
 
 ## Q&A Search
 
-Uses Vrite search and GPT-4 with RAG to provide a simple question-answering experience for your Vrite workspace. It streams the answer via [SSEs](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events). Provides the same content filtering options as the `/search` endpoint.
+Uses Vrite search and GPT-4o with RAG to provide a simple question-answering experience for your Vrite workspace. It streams the answer via [SSEs](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events). Provides the same content filtering options as the `/search` endpoint.
 
 <EndpointCard
   method="GET"
