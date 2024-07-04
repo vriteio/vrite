@@ -2,6 +2,7 @@ import { ContentActions, createContentActions } from "./actions";
 import { ContentLoader, createContentLoader } from "./loader";
 import {
   createContext,
+  createMemo,
   createResource,
   InitializedResource,
   ParentComponent,
@@ -62,12 +63,11 @@ const ContentDataProvider: ParentComponent = (props) => {
   const activeContentGroupId = (): string | null => {
     return storage().activeContentGroupId || null;
   };
+  const contentPieceParam = createMemo(() => {
+    return params.contentPieceId || "";
+  });
   const [activeContentPieceId] = createResource(
-    () => {
-      if (location.pathname.startsWith("/snippet")) return "";
-
-      return params.contentPieceId;
-    },
+    contentPieceParam,
     async (contentPieceParam) => {
       if (!contentPieceParam.trim()) return null;
 
@@ -110,7 +110,7 @@ const ContentDataProvider: ParentComponent = (props) => {
 
       return null;
     },
-    { initialValue: params.contentPieceId || null }
+    { initialValue: contentPieceParam() || null }
   );
   const setActiveVariantId = (variantId: string | null): void => {
     setStorage((storage) => ({
@@ -260,23 +260,34 @@ const ContentDataProvider: ParentComponent = (props) => {
       );
     }
   });
-  createEffect(() => {
+  createEffect((cancelPreviousRequest) => {
+    if (typeof cancelPreviousRequest === "function") {
+      cancelPreviousRequest();
+    }
+
     const id = activeContentPieceId();
     const variantId = activeVariantId();
 
     if (!id || activeContentPieceId.loading || contentPieces[id]) return;
 
+    const controller = new AbortController();
+
     client.contentPieces.get
-      .query({
-        id,
-        variant: variantId || undefined
-      })
+      .query(
+        {
+          id,
+          variant: variantId || undefined
+        },
+        { signal: controller.signal }
+      )
       .then((contentPiece) => {
         setContentPieces(id, contentPiece);
       })
       .catch(() => {
         navigate(location.pathname.includes("editor") ? "/editor" : "/", { replace: true });
       });
+
+    return () => controller.abort();
   });
   onCleanup(() => {
     contentGroupsSubscription.unsubscribe();

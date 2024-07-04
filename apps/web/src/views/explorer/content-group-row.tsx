@@ -35,16 +35,10 @@ interface ContentGroupRowProps {
   onDragEnd?(event: SortableLib.SortableEvent): void;
 }
 
-const useIsDashboardRoute = (): Accessor<boolean> => {
-  const isDashboardRouteWithContentPiece = useMatch(() => "/:contentPieceId");
-  const isDirectDashboardRoute = useMatch(() => "/");
-
-  return () => Boolean(isDashboardRouteWithContentPiece() || isDirectDashboardRoute());
-};
 const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
   const { loading, renaming, setLoading, setRenaming } = useExplorerData();
   const client = useClient();
-  const isDashboardRoute = useIsDashboardRoute();
+  const isDashboardRoute = useMatch(() => "/:contentPieceId?");
   const { notify } = useNotifications();
   const { confirmDelete } = useConfirmationModal();
   const { activeContentGroupId, expandedContentLevels, contentActions } = useContentData();
@@ -188,7 +182,7 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
     return menuOptions;
   });
   const active = (): boolean => {
-    return activeContentGroupId() === props.contentGroup.id && isDashboardRoute();
+    return activeContentGroupId() === props.contentGroup.id && Boolean(isDashboardRoute());
   };
   const highlighted = (): boolean => highlight() === props.contentGroup.id && !reordering();
 

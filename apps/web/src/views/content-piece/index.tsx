@@ -107,6 +107,14 @@ const ContentPieceView: Component = () => {
       }
     )
   );
+  createEffect(() => {
+    if (!activeContentPieceId.loading && !activeContentPiece()) {
+      setStorage((storage) => ({
+        ...storage,
+        sidePanelView: ""
+      }));
+    }
+  });
 
   return (
     <Show

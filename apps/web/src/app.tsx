@@ -76,11 +76,14 @@ const App: Component = () => {
           <Route path="/workspaces" component={WorkspacesView} />
         </Route>
         <Route path={["/", "**"]} component={SecuredWrapper}>
-          <Route path={["/", "/:contentPieceId"]} component={DashboardView} />
-          <Route path="/editor/:contentPieceId" component={ContentPieceEditorView} />
-          <Route path="/snippet/:snippetId" component={SnippetEditorView} />
-          <Route path="/version/:contentPieceId/:versionId" component={VersionEditorView} />
-          <Route path="/diff/:diffAgainst/:contentPieceId/:versionId" component={DiffEditorView} />
+          <Route path="/editor/:contentPieceId?" component={ContentPieceEditorView} />
+          <Route path={["/:contentPieceId?"]} component={DashboardView} />
+          <Route path="/snippet/:snippetId?" component={SnippetEditorView} />
+          <Route path="/version/:contentPieceId?/:versionId?" component={VersionEditorView} />
+          <Route
+            path="/diff/:diffAgainst/:contentPieceId?/:versionId?"
+            component={DiffEditorView}
+          />
           <Show when={hostConfig.githubApp}>
             <Route path="/conflict" component={ConflictView} />
           </Show>

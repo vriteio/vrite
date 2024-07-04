@@ -66,7 +66,7 @@ const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
   const location = useLocation();
   const md = createMediaQuery("(min-width: 768px)");
   const setSidePanelView = (view: string, toggle = true): void => {
-    if (view === storage().sidePanelView && toggle) {
+    if (view === storage().sidePanelView && (storage().sidePanelWidth || 0) > 0 && toggle) {
       setStorage((storage) => ({
         ...storage,
         sidePanelWidth: storage.sidePanelWidth || 0,
@@ -140,7 +140,9 @@ const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
         icon: mdiFile,
         label: "Content piece",
         inMenu: true,
-        active: () => storage().sidePanelView === "contentPiece",
+        active: () => {
+          return storage().sidePanelView === "contentPiece" && (storage()?.sidePanelWidth || 0) > 0;
+        },
         onClick: () => {
           setSidePanelView("contentPiece");
         }
@@ -166,7 +168,7 @@ const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
         icon: mdiGit,
         label: "Source control",
         inMenu: true,
-        active: () => storage().sidePanelView === "git",
+        active: () => storage().sidePanelView === "git" && (storage()?.sidePanelWidth || 0) > 0,
         onClick: () => {
           setSidePanelView("git");
         }
@@ -175,7 +177,9 @@ const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
         icon: mdiCog,
         label: "Settings",
         inMenu: true,
-        active: () => storage().sidePanelView === "settings",
+        active: () => {
+          return storage().sidePanelView === "settings" && (storage()?.sidePanelWidth || 0) > 0;
+        },
         onClick: () => {
           setSidePanelView("settings");
         }
@@ -184,7 +188,9 @@ const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
         icon: mdiPuzzle,
         label: "Extensions",
         inMenu: true,
-        active: () => storage().sidePanelView === "extensions",
+        active: () => {
+          return storage().sidePanelView === "extensions" && (storage()?.sidePanelWidth || 0) > 0;
+        },
         onClick: () => {
           setSidePanelView("extensions");
         }
@@ -193,7 +199,7 @@ const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
         icon: mdiHelpCircle,
         label: "Help",
         inMenu: true,
-        active: () => storage().sidePanelView === "default",
+        active: () => storage().sidePanelView === "default" && (storage()?.sidePanelWidth || 0) > 0,
         onClick: () => {
           setSidePanelView("default");
         }
