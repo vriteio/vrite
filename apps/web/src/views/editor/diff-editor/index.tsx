@@ -14,6 +14,7 @@ import {
 import { useNavigate } from "@solidjs/router";
 import dayjs from "dayjs";
 import { Content } from "@tiptap/core";
+import { Title } from "@solidjs/meta";
 import { Loader } from "#components/primitives";
 import { createRef } from "#lib/utils";
 import {
@@ -51,6 +52,17 @@ const DiffEditorView: Component = () => {
 
     return version.label || dayjs(version.date).format("MMMM DD, HH:mm");
   });
+  const title = (): string => {
+    if (contentPiece()?.title && versionName()) {
+      if (diffAgainst() === "latest") {
+        return `${contentPiece()?.title} | ${versionName()} - Current`;
+      }
+
+      return `${contentPiece()?.title} | Previous - ${versionName()}`;
+    }
+
+    return "Vrite";
+  };
   const [content] = createResource(
     () => `${activeVersionId()}-${diffAgainst()}`,
     async () => {
@@ -106,6 +118,7 @@ const DiffEditorView: Component = () => {
 
   return (
     <>
+      <Title>{title()}</Title>
       <Show
         when={activeVersionId() && diffAgainst()}
         fallback={

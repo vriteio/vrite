@@ -38,6 +38,13 @@ const VersionEditorView: Component = () => {
 
     return version.label || dayjs(version.date).format("MMMM DD, HH:mm");
   });
+  const title = (): string => {
+    if (contentPiece()?.title && versionName()) {
+      return `${contentPiece()?.title} | ${versionName()}`;
+    }
+
+    return "Vrite";
+  };
   const docName = (): string => {
     return `version:${activeVersionId() || ""}`;
   };
@@ -87,6 +94,7 @@ const VersionEditorView: Component = () => {
 
   return (
     <>
+      <Title>{title()}</Title>
       <Show
         when={activeVersionId()}
         fallback={
