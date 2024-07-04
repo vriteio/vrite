@@ -64,13 +64,14 @@ const handleUpdate = (editor: SolidEditor): void => {
     bottom: childPos.bottom - parentPos.bottom,
     left: childPos.left - parentPos.left
   };
+  const alignCenter =
+    parentPos.width > relativePos.left + 125 &&
+    ((tablePos?.width || 0) > 250 || relativePos.left > 125);
 
   generalMenuContainer.style.top = `${relativePos.top + (tablePos?.height || 0)}px`;
-  generalMenuContainer.style.transform = `translate(${
-    (tablePos?.width || 0) > 250 ? "-50%" : "0"
-  },0.75rem)`;
+  generalMenuContainer.style.transform = `translate(${alignCenter ? "-50%" : "0"},0.75rem)`;
 
-  if ((tablePos?.width || 0) > 250 && breakpoints.md()) {
+  if (alignCenter && breakpoints.md()) {
     generalMenuContainer.style.left = `${
       relativePos.left + Math.min(tablePos?.width || parentPos.width, parentPos.width) / 2
     }px`;

@@ -1054,7 +1054,7 @@
       h = "/transformers";
       M = (t) => ({ create: (e) => t("POST", `${h}`, { body: e }), delete: (e) => t("DELETE", `${h}`, { params: e }), list: () => t("GET", `${h}/list`) });
       b = "/snippets";
-      J = (t) => ({ get: (e) => t("GET", `${b}`, { params: e }), create: (e) => t("POST", `${b}`, { body: e }), update: (e) => t("PUT", `${b}`, { body: e }), delete: (e) => t("DELETE", `${b}`, { params: e }), list: () => t("GET", `${b}/list`) });
+      J = (t) => ({ get: (e) => t("GET", `${b}`, { params: e }), create: (e) => t("POST", `${b}`, { body: e }), update: (e) => t("PUT", `${b}`, { body: e }), delete: (e) => t("DELETE", `${b}`, { params: e }), list: (e) => t("GET", `${b}/list`, { params: e }) });
       N = (t) => {
         const { sendRequest: e, reconfigure: p2, getConfig: n, getSignal: $, useSignal: c } = L(t), s2 = { contentGroups: S(e), contentPieces: f2(e), snippets: J(e), tags: O(e), profile: R(e), userSettings: D(e), webhooks: j(e), workspace: I(e), roles: v(e), workspaceSettings: q(e), workspaceMemberships: A(e), extension: z(e), variants: B(e), transformers: M(e), search(a2) {
           return e("GET", "/search", { params: a2 });

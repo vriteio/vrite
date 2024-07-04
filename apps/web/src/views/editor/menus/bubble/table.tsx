@@ -7,11 +7,10 @@ import {
   mdiTableSplitCell
 } from "@mdi/js";
 import clsx from "clsx";
-import { Component, For, Show } from "solid-js";
+import { Component, For, Show, createSignal, onCleanup } from "solid-js";
 import { SolidEditor } from "@vrite/tiptap-solid";
 import { CellSelection } from "@tiptap/pm/tables";
 import { Node } from "@tiptap/pm/model";
-import { TextSelection } from "@tiptap/pm/state";
 import { Card, IconButton, Tooltip } from "#components/primitives";
 
 const TableMenu: Component<{
@@ -54,7 +53,7 @@ const TableMenu: Component<{
           const tableNode = getTableNode(selection);
           const rowNode = getTableRowNode(selection);
 
-          if (!tableNode || !rowNode || tableNode.child(0) !== rowNode) {
+          if (!tableNode || !rowNode) {
             return false;
           }
 
@@ -112,55 +111,56 @@ const TableMenu: Component<{
         const { selection } = props.editor.state;
 
         if (selection instanceof CellSelection) {
+          if (selection.isRowSelection()) return false;
+
           const tableNode = getTableNode(selection);
 
           let isSingleColumn = false;
+          let isMergedColumn = false;
 
           tableNode?.content.forEach((rowNode) => {
-            isSingleColumn = rowNode.childCount === 1;
+            isSingleColumn = isSingleColumn || rowNode.childCount === 1;
           });
 
-          return !isSingleColumn;
+          if (isSingleColumn) return false;
+
+          selection.forEachCell((node) => {
+            isMergedColumn = isMergedColumn || node.attrs.colspan !== 1;
+          });
+
+          return !isMergedColumn;
         }
 
-        return true;
+        return false;
       },
       onClick() {
-        props.editor
-          .chain()
-          .deleteColumn()
-          .command(({ tr }) => {
-            tr.setSelection(
-              TextSelection.near(
-                tr.doc.resolve(
-                  Math.min(props.editor.state.selection.$from.pos - 2, tr.doc.nodeSize)
-                ),
-                -1
-              )
-            );
-
-            return true;
-          })
-          .focus()
-          .run();
+        props.editor.chain().deleteColumn().focus().run();
       }
     },
     {
       icon: mdiTableRowRemove,
       label: "Delete row(s)",
-
       show() {
         const { selection } = props.editor.state;
 
         if (selection instanceof CellSelection) {
-          const tableNode = getTableNode(selection);
+          if (selection.isColSelection()) return false;
 
-          if (tableNode?.content.childCount === 1) {
-            return false;
-          }
+          const tableNode = getTableNode(selection);
+          const isSingleRow = tableNode?.childCount === 1;
+
+          let isMergedRow = false;
+
+          if (isSingleRow) return false;
+
+          selection.forEachCell((node) => {
+            isMergedRow = isMergedRow || node.attrs.rowspan !== 1;
+          });
+
+          return !isMergedRow;
         }
 
-        return true;
+        return false;
       },
       onClick() {
         props.editor.chain().deleteRow().focus().run();
@@ -169,22 +169,11 @@ const TableMenu: Component<{
     {
       icon: mdiTableRemove,
       label: "Delete table",
-
       show() {
         const { selection } = props.editor.state;
 
         if (selection instanceof CellSelection) {
-          const tableNode = getTableNode(selection);
-
-          if (tableNode?.childCount === 1) return true;
-
-          let isSingleColumn = false;
-
-          tableNode?.content.forEach((rowNode) => {
-            isSingleColumn = rowNode.childCount === 1;
-          });
-
-          return isSingleColumn;
+          return selection.isColSelection() && selection.isRowSelection();
         }
 
         return false;
@@ -207,8 +196,18 @@ const TableMenu: Component<{
         fallback={<span class="px-1.5 py-0.5 text-base">No available options</span>}
       >
         {(menuItem) => {
+          const [show, setShow] = createSignal(!menuItem.show || menuItem.show());
+          const selectionUpdateHandler = (): void => {
+            setShow(!menuItem.show || menuItem.show());
+          };
+
+          props.editor.on("selectionUpdate", selectionUpdateHandler);
+          onCleanup(() => {
+            props.editor.off("selectionUpdate", selectionUpdateHandler);
+          });
+
           return (
-            <Show when={!menuItem.show || menuItem.show()}>
+            <Show when={show()}>
               <Tooltip text={menuItem.label} side="bottom" wrapperClass="snap-start">
                 <IconButton
                   path={menuItem.icon}

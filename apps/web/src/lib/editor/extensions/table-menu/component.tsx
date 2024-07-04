@@ -12,6 +12,8 @@ import { ChainedCommands } from "@tiptap/core";
 import { SolidEditor } from "@vrite/tiptap-solid";
 import { Component, For, Show, createMemo } from "solid-js";
 import clsx from "clsx";
+import { Selection } from "@tiptap/pm/state";
+import { Node } from "@tiptap/pm/model";
 import { Card, IconButton, Tooltip } from "#components/primitives";
 import { breakpoints } from "#lib/utils";
 
@@ -26,6 +28,18 @@ const TableMenu: Component<TableMenuProps> = (props) => {
   const hasHeader = createMemo(() => {
     return props.state.container?.querySelector("tr:first-child > th") !== null;
   });
+  const getTableNode = (selection: Selection): { node: Node; pos: number } | null => {
+    for (let { depth } = selection.$from; depth > 0; depth--) {
+      const node = selection.$from.node(depth);
+      const pos = selection.$from.before(depth);
+
+      if (node.type.name === "table") {
+        return { node, pos };
+      }
+    }
+
+    return null;
+  };
   const runCommand = (fn: (chain: ChainedCommands) => void): void => {
     const chain = props.state.editor.chain();
 
@@ -82,13 +96,37 @@ const TableMenu: Component<TableMenuProps> = (props) => {
             },
             {
               label() {
-                return hasHeader() ? "Remove header row" : "Add header row";
+                return hasHeader() ? "Remove header" : "Add header";
               },
               icon() {
                 return hasHeader() ? mdiTableHeadersEyeOff : mdiTableHeadersEye;
               },
               onClick() {
-                props.state.editor.chain().focus().toggleHeaderRow().run();
+                if (hasHeader()) {
+                  const { node, pos } = getTableNode(props.state.editor.state.selection)!;
+
+                  node.descendants((descendantNode, descendantPos) => {
+                    if (descendantNode.type.name === "tableHeader") {
+                      props.state.editor
+                        .chain()
+                        .command(({ tr, state }) => {
+                          tr.setNodeMarkup(
+                            pos + descendantPos + 1,
+                            state.schema.nodes.tableCell,
+                            descendantNode.attrs,
+                            descendantNode.marks
+                          );
+
+                          return true;
+                        })
+                        .fixTables()
+                        .focus()
+                        .run();
+                    }
+                  });
+                } else {
+                  props.state.editor.chain().toggleHeaderRow().fixTables().focus().run();
+                }
               }
             },
             {
