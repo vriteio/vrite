@@ -87,9 +87,9 @@ const createContentLoader = ({
 
       setContentLevels(contentGroupId || "", { ...level, loading: true });
 
-      const contentGroups = await client.contentGroups.list.query({
+      const contentGroups = (await client.contentGroups.list.query({
         ancestor: contentGroupId || undefined
-      });
+      })) as App.ContentGroup[];
 
       level.groups = contentGroups.map((contentGroup) => contentGroup.id);
       contentGroups.forEach((contentGroup) => {

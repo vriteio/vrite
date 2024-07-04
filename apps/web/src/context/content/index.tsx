@@ -131,10 +131,15 @@ const ContentDataProvider: ParentComponent = (props) => {
 
     return storage().expandedContentLevels || [""];
   };
-  const expandContentLevel = (contentGroupId: string): void => {
+  const expandContentLevel = (contentGroupId: string | string[]): void => {
     setStorage((storage) => ({
       ...storage,
-      expandedContentLevels: [...new Set([...expandedContentLevels(), contentGroupId])]
+      expandedContentLevels: [
+        ...new Set([
+          ...expandedContentLevels(),
+          ...(typeof contentGroupId === "string" ? [contentGroupId] : contentGroupId)
+        ])
+      ]
     }));
   };
   const collapseContentLevel = (contentGroupId: string): void => {
@@ -154,7 +159,9 @@ const ContentDataProvider: ParentComponent = (props) => {
     setStorage((storage) => ({
       ...storage,
       expandedContentLevels:
-        storage.expandedContentLevels?.filter((id) => !levelsToClose.includes(id)) || []
+        storage.expandedContentLevels?.filter((id) => {
+          return !levelsToClose.includes(id);
+        }) || []
     }));
   };
   const contentActions = createContentActions({
@@ -209,7 +216,7 @@ const ContentDataProvider: ParentComponent = (props) => {
       }
     }
   });
-  const load = (): void => {
+  const load = async (): Promise<void> => {
     setContentLevels(reconcile({}));
     setContentGroups(reconcile({}));
     setContentPieces(reconcile({}));
@@ -218,8 +225,30 @@ const ContentDataProvider: ParentComponent = (props) => {
         await contentLoader.loadContentLevel(id);
       } catch (e) {
         collapseContentLevel(id);
+
+        if (id === activeContentGroupId()) {
+          setActiveContentGroupId(null);
+        }
       }
     });
+
+    if (activeContentGroupId() && !expandedContentLevels().includes(activeContentGroupId()!)) {
+      try {
+        const ancestors = await client.contentGroups.listAncestors.query({
+          contentGroupId: activeContentGroupId()!
+        });
+        const contentGroup = (await client.contentGroups.get.query({
+          id: activeContentGroupId()!
+        })) as App.ContentGroup;
+
+        setContentGroups(contentGroup.id, contentGroup);
+        ancestors.forEach((ancestor) => {
+          setContentGroups(ancestor.id, ancestor);
+        });
+      } catch (e) {
+        setActiveContentGroupId(null);
+      }
+    }
   };
 
   createEffect(
