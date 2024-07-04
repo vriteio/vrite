@@ -33,13 +33,7 @@ const objectHash = (input: object): string => {
     .map(([key, value]) => {
       let outputValue = value;
 
-      if (
-        key === "width" ||
-        key === "aspectRatio" ||
-        key === "autoDir" ||
-        key === "diff" ||
-        key === "props"
-      ) {
+      if (!["id", "level", "colspan", "rowspan", "src", "embed"].includes(key)) {
         return;
       }
 
