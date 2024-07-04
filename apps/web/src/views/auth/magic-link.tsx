@@ -14,6 +14,8 @@ const MagicLinkForm: AuthFormComponent = (props) => {
     return Boolean(props.formData.email && validateEmail(props.formData.email));
   });
   const submit = async (): Promise<void> => {
+    setLoading(true);
+
     try {
       await client.auth.sendMagicLink.mutate({ ...props.formData, redirect: props.redirect });
       setLoading(false);
