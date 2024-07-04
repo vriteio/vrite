@@ -2,7 +2,6 @@ import "#styles";
 import App from "./app";
 import { Show, render } from "solid-js/web";
 import { createConnectivitySignal } from "@solid-primitives/connectivity";
-import { MetaProvider } from "@solidjs/meta";
 import { SVGDefs } from "#components/fragments";
 import { logoIcon } from "#assets/icons";
 import { IconButton } from "#components/primitives";
@@ -12,7 +11,8 @@ import {
   NotificationsProvider,
   LocalStorageProvider,
   SharedStateProvider,
-  HostConfigProvider
+  HostConfigProvider,
+  MetaProvider
 } from "#context";
 
 const container = document.querySelector("#root");

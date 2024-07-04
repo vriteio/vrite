@@ -11,10 +11,8 @@ import {
   createMemo,
   createResource
 } from "solid-js";
-import { useNavigate } from "@solidjs/router";
 import dayjs from "dayjs";
 import { Content } from "@tiptap/core";
-import { Title } from "@solidjs/meta";
 import { Loader } from "#components/primitives";
 import { createRef } from "#lib/utils";
 import {
@@ -24,7 +22,8 @@ import {
   useContentData,
   useHistoryData,
   App,
-  useClient
+  useClient,
+  useMeta
 } from "#context";
 import { Diff } from "#lib/editor";
 
@@ -35,7 +34,7 @@ const DiffEditorView: Component = () => {
   const { activeContentPieceId, contentPieces } = useContentData();
   const { loadingInstalledExtensions, installedExtensions } = useExtensions();
   const { workspaceSettings } = useAuthenticatedUserData();
-  const navigate = useNavigate();
+  const { setMetaTitle } = useMeta();
   const [syncing, setSyncing] = createSignal(true);
   const [lastScrollTop, setLastScrollTop] = createSignal(0);
   const [reloaded, setReloaded] = createSignal(false);
@@ -114,11 +113,13 @@ const DiffEditorView: Component = () => {
       { defer: true }
     )
   );
+  createEffect(() => {
+    setMetaTitle(title());
+  });
   setStorage((storage) => ({ ...storage, toolbarView: "editor" }));
 
   return (
     <>
-      <Title>{title()}</Title>
       <Show
         when={activeVersionId() && diffAgainst()}
         fallback={

@@ -10,3 +10,4 @@ export * from "./command-palette";
 export * from "./host-config";
 export * from "./content";
 export * from "./history";
+export * from "./meta";

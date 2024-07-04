@@ -2,10 +2,15 @@ import { Editor } from "./editor";
 import clsx from "clsx";
 import { Component, createSignal, createEffect, on, Show, For, createMemo } from "solid-js";
 import { useNavigate } from "@solidjs/router";
-import { Title } from "@solidjs/meta";
 import { Loader } from "#components/primitives";
 import { createRef } from "#lib/utils";
-import { useLocalStorage, useExtensions, useAuthenticatedUserData, hasPermission } from "#context";
+import {
+  useLocalStorage,
+  useExtensions,
+  useAuthenticatedUserData,
+  hasPermission,
+  useMeta
+} from "#context";
 import { useSnippetsData } from "#context/snippets";
 
 const SnippetEditorView: Component = () => {
@@ -13,6 +18,7 @@ const SnippetEditorView: Component = () => {
   const { storage, setStorage } = useLocalStorage();
   const { loadingInstalledExtensions, installedExtensions } = useExtensions();
   const { workspaceSettings } = useAuthenticatedUserData();
+  const { setMetaTitle } = useMeta();
   const navigate = useNavigate();
   const [syncing, setSyncing] = createSignal(true);
   const [lastScrollTop, setLastScrollTop] = createSignal(0);
@@ -67,10 +73,12 @@ const SnippetEditorView: Component = () => {
       { defer: true }
     )
   );
+  createEffect(() => {
+    setMetaTitle(activeSnippet()?.name ? `${activeSnippet()?.name} | Snippet` : "");
+  });
 
   return (
     <>
-      <Title>{activeSnippet()?.name ? `${activeSnippet()?.name} | Snippet` : "Vrite"}</Title>
       <Show
         when={activeSnippet()}
         fallback={

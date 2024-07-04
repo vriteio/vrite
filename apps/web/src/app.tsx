@@ -1,8 +1,7 @@
-import { Component, Match, ParentComponent, Show, Switch, lazy } from "solid-js";
+import { Component, ParentComponent, Show, lazy } from "solid-js";
 import { Route, Router } from "@solidjs/router";
 import RelativeTimePlugin from "dayjs/plugin/relativeTime";
 import dayjs from "dayjs";
-import { Title } from "@solidjs/meta";
 import { SecuredLayout } from "#layout";
 import { useHostConfig } from "#context";
 
@@ -68,7 +67,6 @@ const App: Component = () => {
 
   return (
     <>
-      <Title>Vrite</Title>
       <Router preload={false}>
         <Route path={["/", "**"]} component={Wrapper}>
           <Route path="/auth" component={AuthView} />

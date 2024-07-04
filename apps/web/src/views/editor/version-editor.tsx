@@ -3,7 +3,6 @@ import clsx from "clsx";
 import { Component, createSignal, createEffect, on, Show, For, createMemo } from "solid-js";
 import { useNavigate } from "@solidjs/router";
 import dayjs from "dayjs";
-import { Title } from "@solidjs/meta";
 import { Loader } from "#components/primitives";
 import { createRef } from "#lib/utils";
 import {
@@ -12,7 +11,8 @@ import {
   useAuthenticatedUserData,
   useContentData,
   useHistoryData,
-  App
+  App,
+  useMeta
 } from "#context";
 
 const VersionEditorView: Component = () => {
@@ -21,6 +21,7 @@ const VersionEditorView: Component = () => {
   const { activeContentPieceId, contentPieces } = useContentData();
   const { loadingInstalledExtensions, installedExtensions } = useExtensions();
   const { workspaceSettings } = useAuthenticatedUserData();
+  const { setMetaTitle } = useMeta();
   const navigate = useNavigate();
   const [syncing, setSyncing] = createSignal(true);
   const [lastScrollTop, setLastScrollTop] = createSignal(0);
@@ -39,11 +40,7 @@ const VersionEditorView: Component = () => {
     return version.label || dayjs(version.date).format("MMMM DD, HH:mm");
   });
   const title = (): string => {
-    if (contentPiece()?.title && versionName()) {
-      return `${contentPiece()?.title} | ${versionName()}`;
-    }
-
-    return "Vrite";
+    return `${contentPiece()?.title || "Vrite"} | ${versionName() || "Version"}`;
   };
   const docName = (): string => {
     return `version:${activeVersionId() || ""}`;
@@ -91,10 +88,12 @@ const VersionEditorView: Component = () => {
       { defer: true }
     )
   );
+  createEffect(() => {
+    setMetaTitle(title());
+  });
 
   return (
     <>
-      <Title>{title()}</Title>
       <Show
         when={activeVersionId()}
         fallback={

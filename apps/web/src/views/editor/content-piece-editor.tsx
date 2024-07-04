@@ -1,7 +1,6 @@
 import { Editor } from "./editor";
 import clsx from "clsx";
 import { Component, createSignal, createEffect, on, Show } from "solid-js";
-import { Title } from "@solidjs/meta";
 import { Loader } from "#components/primitives";
 import { createRef } from "#lib/utils";
 import {
@@ -10,7 +9,8 @@ import {
   useExtensions,
   useAuthenticatedUserData,
   hasPermission,
-  App
+  App,
+  useMeta
 } from "#context";
 
 const ContentPieceEditorView: Component = () => {
@@ -18,6 +18,7 @@ const ContentPieceEditorView: Component = () => {
   const { storage, setStorage } = useLocalStorage();
   const { loadingInstalledExtensions, installedExtensions } = useExtensions();
   const { workspaceSettings } = useAuthenticatedUserData();
+  const { setMetaTitle } = useMeta();
   const [syncing, setSyncing] = createSignal(true);
   const [lastScrollTop, setLastScrollTop] = createSignal(0);
   const [reloaded, setReloaded] = createSignal(false);
@@ -63,10 +64,12 @@ const ContentPieceEditorView: Component = () => {
       }
     })
   );
+  createEffect(() => {
+    setMetaTitle(contentPiece()?.title || "");
+  });
 
   return (
     <>
-      <Title>{contentPiece()?.title || "Vrite"}</Title>
       <Show
         when={activeContentPieceId()}
         fallback={
