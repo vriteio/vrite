@@ -245,7 +245,14 @@ const APISection: SettingsSectionComponent = (props) => {
         </CollapsibleSection>
       </Show>
       <CollapsibleSection icon={mdiShieldKey} label="Access tokens">
-        <Show when={tokens().length || !loading()} fallback={<Loader />}>
+        <Show
+          when={tokens().length || !loading()}
+          fallback={
+            <div class="flex justify-center items-center w-full">
+              <Loader />
+            </div>
+          }
+        >
           <For each={tokens()} fallback={<p class="px-2 w-full text-start">No tokens found</p>}>
             {(token) => {
               return (
