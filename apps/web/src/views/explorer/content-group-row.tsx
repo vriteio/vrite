@@ -195,7 +195,7 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
   return (
     <div
       class={clsx(
-        "flex justify-center items-center relative group",
+        "flex justify-center items-center relative group ml-0.5",
         !props.contentGroup.ancestors.length && "rounded-l-md",
         !dropdownOpened() &&
           !activeDraggableContentGroupId() &&
@@ -204,7 +204,7 @@ const ContentGroupRow: Component<ContentGroupRowProps> = (props) => {
       )}
     >
       <div
-        class="flex flex-1 justify-center items-center cursor-pointer overflow-x-hidden pl-0.5"
+        class="flex flex-1 justify-center items-center cursor-pointer overflow-x-hidden"
         ref={(el) => {
           SortableLib.create(el, {
             group: {

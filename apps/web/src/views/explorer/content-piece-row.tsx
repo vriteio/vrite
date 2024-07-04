@@ -19,6 +19,7 @@ import {
 } from "@mdi/js";
 import SortableLib from "sortablejs";
 import clsx from "clsx";
+import { useLocation } from "@solidjs/router";
 import { Dropdown, Icon, IconButton, Input, Loader, Tooltip } from "#components/primitives";
 import {
   App,
@@ -37,6 +38,7 @@ interface ContentPieceRowProps {
 }
 
 const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
+  const location = useLocation();
   const { activeContentPieceId, activeVariantId, contentActions } = useContentData();
   const {
     setActiveDraggableContentPieceId,
@@ -110,7 +112,9 @@ const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
 
     return menuOptions;
   });
-  const active = (): boolean => activeContentPieceId() === props.contentPiece.id;
+  const active = (): boolean => {
+    return activeContentPieceId() === props.contentPiece.id;
+  };
 
   createEffect(() => {
     const sortableInstance = sortableInstanceRef();
@@ -126,15 +130,15 @@ const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
   return (
     <div
       class={clsx(
-        "flex flex-1 items-center relative group",
+        "flex flex-1 items-center relative group ml-0.5",
         !dropdownOpened() &&
           !activeDraggableContentPieceId() &&
-          (pathnameData().view === "dashboard" || !active()) &&
+          !active() &&
           "@hover-bg-gray-200 dark:@hover-bg-gray-700"
       )}
     >
       <div
-        class="flex flex-1 justify-center items-center cursor-pointer overflow-hidden ml-0.5"
+        class="flex flex-1 justify-center items-center cursor-pointer overflow-hidden"
         ref={(el) => {
           const sortableInstance = SortableLib.create(el, {
             group: {
