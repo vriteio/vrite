@@ -129,7 +129,7 @@ const BlockActionMenuPlugin = Extension.create({
   onFocus() {
     box.style.display = "block";
   },
-  onSelectionUpdate() {
+  onTransaction() {
     repositionMenu(this.editor as SolidEditor);
   }
 });

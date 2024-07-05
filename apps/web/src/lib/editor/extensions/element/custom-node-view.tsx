@@ -1,4 +1,5 @@
 import { ElementDisplay } from "./view-manager";
+import { isElementSelection } from "./selection";
 import { NodeViewRendererProps } from "@tiptap/core";
 import { SolidEditor, SolidRenderer } from "@vrite/tiptap-solid";
 import { ExtensionElementViewContext, ExtensionElement } from "@vrite/sdk/extensions";
@@ -117,6 +118,14 @@ const customNodeView = ({
       buttonContainer
     );
     contentHole.append(buttonContainer);
+  }
+
+  const { selection } = editor.state;
+  const selectionPos = selection.$from.pos;
+  const pos = typeof props.getPos === "function" ? props.getPos() : null;
+
+  if (pos === selectionPos && isElementSelection(selection)) {
+    wrapper.classList.add("ring", "ring-primary", "ring-2");
   }
 
   return {

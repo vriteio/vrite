@@ -277,7 +277,11 @@ const ContentPieceView: Component = () => {
                     />
                   </div>
                 </CollapsibleSection>
-                <CollapsibleSection icon={mdiCodeJson} label="Custom data" defaultOpened={false}>
+                <CollapsibleSection
+                  icon={mdiCodeJson}
+                  label="Custom JSON data"
+                  defaultOpened={false}
+                >
                   <div class="w-full">
                     <CustomDataSection
                       editable={editable()}

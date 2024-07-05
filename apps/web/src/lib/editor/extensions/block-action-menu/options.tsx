@@ -100,7 +100,7 @@ const options: Record<
 const OptionsDropdown: Component<OptionsDropdownProps> = (props) => {
   const [opened, setOpened] = createSignal(false);
   const availableOptions = createMemo(() => {
-    opened;
+    opened();
 
     return (
       options[props.node.type.name]?.filter((option) => {
@@ -138,14 +138,25 @@ const OptionsDropdown: Component<OptionsDropdownProps> = (props) => {
         <div class="flex flex-col gap-1">
           <For each={availableOptions()}>
             {(option) => {
+              const path = (): string => {
+                if (!opened()) return "";
+
+                return typeof option.icon === "function" ? option.icon(props) : option.icon;
+              };
+              const label = (): string => {
+                if (!opened()) return "";
+
+                return typeof option.label === "function" ? option.label(props) : option.label;
+              };
+
               return (
                 <IconButton
                   class="m-0 w-full justify-start"
                   text={option.color || "soft"}
                   color={option.color || "base"}
                   variant="text"
-                  path={typeof option.icon === "function" ? option.icon(props) : option.icon}
-                  label={typeof option.label === "function" ? option.label(props) : option.label}
+                  path={path()}
+                  label={label()}
                   onClick={() => {
                     option.onClick(props);
                     setOpened(false);

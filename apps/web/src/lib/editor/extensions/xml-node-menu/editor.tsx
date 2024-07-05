@@ -215,10 +215,21 @@ const ElementMenuEditor = lazy(async () => {
             return;
           }
 
-          // TODO: Handle word wrap
           if (code) {
-            code.textContent = value;
+            // WARNING: This is a private API
+            const viewModel = (codeEditor as any)._modelData.viewModel as Pick<
+              monaco.editor.ITextModel,
+              "getLineCount" | "getLineContent"
+            >;
+
             requestAnimationFrame(() => {
+              let viewModelContent = "";
+
+              for (let i = 1; i <= viewModel.getLineCount(); i++) {
+                viewModelContent += `${viewModel.getLineContent(i)}\n`;
+              }
+
+              code.textContent = viewModelContent.trim();
               code.style.minHeight = `${codeEditor.getContentHeight()}px`;
             });
           }
