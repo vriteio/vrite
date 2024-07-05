@@ -32,7 +32,7 @@ import {
       generateOpenApiDocument(appRouter, {
         baseUrl: server.config.PUBLIC_API_URL,
         title: "Vrite API",
-        version: "0.4.3"
+        version: "0.4.4"
       })
     );
   });
