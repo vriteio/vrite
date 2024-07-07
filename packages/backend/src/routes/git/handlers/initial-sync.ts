@@ -107,8 +107,8 @@ const handler = async (ctx: AuthenticatedContext): Promise<void> => {
 
     for await (const directory of gitDirectory.directories) {
       const descendantContentGroup = await gitDirectoryToContentGroup(directory, [
-        contentGroupId,
-        ...ancestors
+        ...ancestors,
+        contentGroupId
       ]);
 
       contentGroup.descendants.push(descendantContentGroup._id);

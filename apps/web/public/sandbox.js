@@ -998,20 +998,20 @@
   __export(api_exports, {
     createClient: () => N
   });
-  var import_eventsource, l, S, E, f2, L, G, D, T, O, C, R, m, j, x, I, u2, v, k, q, A, P, z, g, B, h, M, b, J, N;
+  var import_eventsource, l, f2, E, S, L, G, D, T, O, C, I, m, R, j, x, u2, v, k, q, A, P, z, b, B, h, M, g, J, N;
   var init_api = __esm({
     "../../packages/sdk/javascript/dist/api.mjs"() {
       "use strict";
       import_eventsource = __toESM(require_browser(), 1);
       l = "/content-groups";
-      S = (t) => ({ get: (e) => t("GET", `${l}`, { params: e }), list: (e) => t("GET", `${l}/list`, { params: e }), create: (e) => t("POST", `${l}`, { body: e }), update: (e) => t("PUT", `${l}`, { body: e }), delete: (e) => t("DELETE", `${l}`, { params: e }) });
+      f2 = (t) => ({ get: (e) => t("GET", `${l}`, { params: e }), list: (e) => t("GET", `${l}/list`, { params: e }), create: (e) => t("POST", `${l}`, { body: e }), update: (e) => t("PUT", `${l}`, { body: e }), delete: (e) => t("DELETE", `${l}`, { params: e }) });
       E = "/content-pieces";
-      f2 = (t) => ({ get: (e) => t("GET", `${E}`, { params: e }), create: (e) => t("POST", `${E}`, { body: e }), update: (e) => t("PUT", `${E}`, { body: e }), delete: (e) => t("DELETE", `${E}`, { params: e }), list: (e) => t("GET", `${E}/list`, { params: e }) });
+      S = (t) => ({ get: (e) => t("GET", `${E}`, { params: e }), create: (e) => t("POST", `${E}`, { body: e }), update: (e) => t("PUT", `${E}`, { body: e }), delete: (e) => t("DELETE", `${E}`, { params: e }), list: ({ contentGroupId: e, ...o }) => t("GET", `${E}/list`, { params: { ...o, contentGroupId: typeof e == "string" ? e : e.join(",") } }) });
       L = (t) => {
-        let e = t.baseURL || "https://api.vrite.io", p2 = t.extensionId || "", n = t.headers || {}, $ = null, { token: c } = t;
+        let e = t.baseURL || "https://api.vrite.io", o = t.extensionId || "", p2 = t.headers || {}, $ = null, { token: c } = t;
         return { sendRequest: async (s2, a2, i) => {
           try {
-            const { default: o } = await Promise.resolve().then(() => __toESM(require_browser2(), 1)), d2 = await o(`${e}${a2}/?${encodeURI(Object.entries(i?.params || {}).filter(([, y]) => y).map(([y, w]) => `${y}=${w}`).join("&"))}`, { headers: { Authorization: `Bearer ${c}`, Accept: "application/json", ...i?.body ? { "Content-Type": "application/json" } : {}, ...p2 ? { "X-Vrite-Extension-ID": p2 } : {}, ...n }, body: i?.body ? JSON.stringify(i.body) : null, signal: $, method: s2 });
+            const { default: n } = await Promise.resolve().then(() => __toESM(require_browser2(), 1)), d2 = await n(`${e}${a2}/?${encodeURI(Object.entries(i?.params || {}).filter(([, y]) => y).map(([y, w]) => `${y}=${w}`).join("&"))}`, { headers: { Authorization: `Bearer ${c}`, Accept: "application/json", ...i?.body ? { "Content-Type": "application/json" } : {}, ...o ? { "X-Vrite-Extension-ID": o } : {}, ...p2 }, body: i?.body ? JSON.stringify(i.body) : null, signal: $, method: s2 });
             $ = null;
             let r = null;
             try {
@@ -1023,25 +1023,25 @@
             if (!d2.ok)
               throw r;
             return r;
-          } catch (o) {
-            throw console.error(o), o;
+          } catch (n) {
+            throw console.error(n), n;
           }
         }, reconfigure: (s2) => {
-          e = s2.baseURL || e, c = s2.token || c, p2 = s2.extensionId || p2, n = s2.headers || n;
+          e = s2.baseURL || e, c = s2.token || c, o = s2.extensionId || o, p2 = s2.headers || p2;
         }, useSignal: (s2) => {
           $ = s2;
-        }, getConfig: () => ({ baseURL: e, token: c, extensionId: p2, headers: n }), getSignal: () => $ };
+        }, getConfig: () => ({ baseURL: e, token: c, extensionId: o, headers: p2 }), getSignal: () => $ };
       };
       G = "/user-settings";
       D = (t) => ({ get: () => t("GET", `${G}`), update: (e) => t("PUT", `${G}`, { body: e }) });
       T = "/tags";
       O = (t) => ({ get: (e) => t("GET", `${T}`, { params: e }), update: (e) => t("PUT", `${T}`, { body: e }), create: (e) => t("PUT", `${T}`, { body: e }), delete: (e) => t("DELETE", `${T}`, { params: e }), list: (e) => t("GET", `${T}/list`, { params: e }) });
       C = "/profile";
-      R = (t) => ({ get: () => t("GET", `${C}`) });
+      I = (t) => ({ get: () => t("GET", `${C}`) });
       m = "/webhooks";
-      j = (t) => ({ get: (e) => t("GET", `${m}`, { params: e }), create: (e) => t("POST", `${m}`, { body: e }), update: (e) => t("PUT", `${m}`, { body: e }), delete: (e) => t("DELETE", `${m}`, { params: e }), list: (e) => t("GET", `${m}/list`, { params: e }) });
-      x = "/workspace";
-      I = (t) => ({ get: () => t("GET", `${x}`) });
+      R = (t) => ({ get: (e) => t("GET", `${m}`, { params: e }), create: (e) => t("POST", `${m}`, { body: e }), update: (e) => t("PUT", `${m}`, { body: e }), delete: (e) => t("DELETE", `${m}`, { params: e }), list: (e) => t("GET", `${m}/list`, { params: e }) });
+      j = "/workspace";
+      x = (t) => ({ get: () => t("GET", `${j}`) });
       u2 = "/roles";
       v = (t) => ({ get: (e) => t("GET", `${u2}`, { params: e }), create: (e) => t("POST", `${u2}`, { body: e }), update: (e) => t("PUT", `${u2}`, { body: e }), delete: (e) => t("DELETE", `${u2}`, { params: e }), list: (e) => t("GET", `${u2}/list`, { params: e }) });
       k = "/workspace-settings";
@@ -1049,33 +1049,33 @@
       A = (t) => ({ listMembers: (e) => t("GET", "/workspace-memberships/list-members", { params: e }), listWorkspaces: (e) => t("GET", "/workspace-memberships/list-workspaces", { params: e }), create: (e) => t("POST", "/workspace-memberships", { body: e }), update: (e) => t("PUT", "/workspace-memberships", { body: e }), delete: (e) => t("DELETE", "/workspace-memberships", { params: e }) });
       P = "/extension";
       z = (t) => ({ get: () => t("GET", `${P}`), updateContentPieceData: (e) => t("POST", `${P}/content-piece-data`, { body: e }) });
-      g = "/variants";
-      B = (t) => ({ create: (e) => t("POST", `${g}`, { body: e }), update: (e) => t("PUT", `${g}`, { body: e }), delete: (e) => t("DELETE", `${g}`, { params: e }), list: () => t("GET", `${g}/list`) });
+      b = "/variants";
+      B = (t) => ({ create: (e) => t("POST", `${b}`, { body: e }), update: (e) => t("PUT", `${b}`, { body: e }), delete: (e) => t("DELETE", `${b}`, { params: e }), list: () => t("GET", `${b}/list`) });
       h = "/transformers";
       M = (t) => ({ create: (e) => t("POST", `${h}`, { body: e }), delete: (e) => t("DELETE", `${h}`, { params: e }), list: () => t("GET", `${h}/list`) });
-      b = "/snippets";
-      J = (t) => ({ get: (e) => t("GET", `${b}`, { params: e }), create: (e) => t("POST", `${b}`, { body: e }), update: (e) => t("PUT", `${b}`, { body: e }), delete: (e) => t("DELETE", `${b}`, { params: e }), list: (e) => t("GET", `${b}/list`, { params: e }) });
+      g = "/snippets";
+      J = (t) => ({ get: (e) => t("GET", `${g}`, { params: e }), create: (e) => t("POST", `${g}`, { body: e }), update: (e) => t("PUT", `${g}`, { body: e }), delete: (e) => t("DELETE", `${g}`, { params: e }), list: (e) => t("GET", `${g}/list`, { params: e }) });
       N = (t) => {
-        const { sendRequest: e, reconfigure: p2, getConfig: n, getSignal: $, useSignal: c } = L(t), s2 = { contentGroups: S(e), contentPieces: f2(e), snippets: J(e), tags: O(e), profile: R(e), userSettings: D(e), webhooks: j(e), workspace: I(e), roles: v(e), workspaceSettings: q(e), workspaceMemberships: A(e), extension: z(e), variants: B(e), transformers: M(e), search(a2) {
+        const { sendRequest: e, reconfigure: o, getConfig: p2, getSignal: $, useSignal: c } = L(t), s2 = { contentGroups: f2(e), contentPieces: S(e), snippets: J(e), tags: O(e), profile: I(e), userSettings: D(e), webhooks: R(e), workspace: x(e), roles: v(e), workspaceSettings: q(e), workspaceMemberships: A(e), extension: z(e), variants: B(e), transformers: M(e), search(a2) {
           return e("GET", "/search", { params: a2 });
         }, async ask(a2) {
           let i = "";
-          const o = new import_eventsource.default(`${n().baseURL}/search/ask?query=${encodeURIComponent(a2.query)}`, { headers: { Authorization: `Bearer ${n().token}`, "Content-Type": "application/json", Accept: "application/json" } });
-          o.addEventListener("error", (d2) => {
+          const n = new import_eventsource.default(`${p2().baseURL}/search/ask?query=${encodeURIComponent(a2.query)}`, { headers: { Authorization: `Bearer ${p2().token}`, "Content-Type": "application/json", Accept: "application/json" } });
+          n.addEventListener("error", (d2) => {
             const r = d2;
-            return r.message ? a2.onError?.(r.message) : (o.close(), a2.onEnd?.(i));
-          }), o.addEventListener("message", (d2) => {
+            return r.message ? a2.onError?.(r.message) : (n.close(), a2.onEnd?.(i));
+          }), n.addEventListener("message", (d2) => {
             const r = decodeURIComponent(d2.data);
             i += r, a2.onChunk?.(r, i);
           }), $()?.addEventListener("abort", () => {
-            o.close();
+            n.close();
           }), c(null);
         }, useSignal(a2) {
           return c(a2), s2;
         }, reconfigure(a2) {
-          return p2(a2), s2;
+          return o(a2), s2;
         }, getConfig() {
-          return n();
+          return p2();
         } };
         return s2;
       };
