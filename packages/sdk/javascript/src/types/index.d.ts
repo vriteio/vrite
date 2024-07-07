@@ -6,6 +6,7 @@ declare module "virtual:vrite/client" {
     BadRequestError,
     Client,
     ContentGroup,
+    ContentGroupWithSubtree,
     ContentPiece,
     ContentPieceWithAdditionalData,
     JSONContent,

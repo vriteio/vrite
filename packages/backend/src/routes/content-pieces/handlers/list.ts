@@ -11,7 +11,7 @@ import {
   getContentVariantsCollection
 } from "#collections";
 import { AuthenticatedContext } from "#lib/middleware";
-import { zodId } from "#lib/mongo";
+import { zodId, zodIdList } from "#lib/mongo";
 import {
   fetchEntryMembers,
   fetchContentPieceTags,
@@ -22,7 +22,7 @@ import { DocJSON, bufferToJSON } from "#lib/content-processing";
 
 const inputSchema = z.object({
   content: z.boolean().describe("Whether to fetch the JSON content").default(false),
-  contentGroupId: zodId()
+  contentGroupId: zodIdList()
     .describe("Comma-separated list of IDs of the content groups which contain the content pieces")
     .optional(),
   variant: zodId()

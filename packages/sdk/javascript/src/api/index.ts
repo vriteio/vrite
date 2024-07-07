@@ -1,6 +1,6 @@
 export { createClient } from "./client";
 export type { Client, SearchResult } from "./client";
-export type { ContentGroup } from "./content-groups";
+export type { ContentGroup, ContentGroupWithSubtree } from "./content-groups";
 export type {
   ContentPiece,
   ContentPieceWithAdditionalData,

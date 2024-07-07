@@ -139,7 +139,7 @@ interface ContentPiecesEndpoints {
   >(
     input: PaginationParams & {
       content?: IncludeContent;
-      contentGroupId: string;
+      contentGroupId: string | string[];
       tagId?: string;
       slug?: string;
       variant?: string;
@@ -200,19 +200,26 @@ const createContentPiecesEndpoints = (sendRequest: SendRequest): ContentPiecesEn
   list: <
     CustomData extends Record<string, any> = Record<string, any>,
     IncludeContent extends true | false = false
-  >(
-    input: PaginationParams & {
-      content?: IncludeContent;
-      contentGroupId: string;
-      tagId?: string;
-      slug?: string;
-      variant?: string;
-    }
-  ) => {
+  >({
+    contentGroupId,
+    ...input
+  }: PaginationParams & {
+    content?: IncludeContent;
+    contentGroupId: string | string[];
+    tagId?: string;
+    slug?: string;
+    variant?: string;
+  }) => {
     return sendRequest<Array<ContentPieceWithAdditionalData<CustomData, IncludeContent>>>(
       "GET",
       `${basePath}/list`,
-      { params: input }
+      {
+        params: {
+          ...input,
+          contentGroupId:
+            typeof contentGroupId === "string" ? contentGroupId : contentGroupId.join(",")
+        }
+      }
     );
   }
 });
