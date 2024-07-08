@@ -65,7 +65,7 @@ const repositionMenu = (editor: SolidEditor): void => {
   let rangeFrom = selection.$from.pos;
   let rangeTo = selection.$to.pos;
 
-  box.style.top = `${relativePos.top}px`;
+  box.style.top = `${relativePos.top - (childPos.height <= 32 ? (32 - childPos.height) / 2 : 0)}px`;
   box.style.left = `${relativePos.left + parentPos.width}px`;
   box.style.display = "block";
 

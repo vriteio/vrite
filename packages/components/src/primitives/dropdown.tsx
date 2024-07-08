@@ -190,7 +190,10 @@ const Dropdown: Component<DropdownProps> = (props) => {
   createEffect(
     on([() => props.overlay, opened], ([overlay, opened]) => {
       const handleClick = (event: MouseEvent): void => {
-        if (!boxRef()?.contains(event.target as Node)) {
+        if (
+          !boxRef()?.contains(event.target as Node) &&
+          !["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName || "")
+        ) {
           setOpened(false);
           event.preventDefault();
           event.stopPropagation();

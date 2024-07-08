@@ -39,7 +39,10 @@ const Overlay: Component<OverlayProps> = (props) => {
           onClick={(event) => {
             event.preventDefault();
             event.stopPropagation();
-            props.onOverlayClick?.();
+
+            if (!["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName || "")) {
+              props.onOverlayClick?.();
+            }
           }}
           {...passedProps}
         />

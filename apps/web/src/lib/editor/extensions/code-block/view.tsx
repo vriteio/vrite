@@ -59,6 +59,9 @@ const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
   const selected = (): boolean => {
     return state().selected;
   };
+  const startLine = (): number => {
+    return parseInt(`${attrs().startLine || 1}`);
+  };
   const repositionMenu = (): void => {
     const referenceContainer = editorContainerRef();
     const menuContainer = menuContainerRef();
@@ -169,6 +172,9 @@ const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
       fontSize: 13,
       fontFamily: "JetBrainsMonoVariable",
       tabSize: 2,
+      lineNumbers(lineNumber) {
+        return `${lineNumber + startLine() - 1}`;
+      },
       insertSpaces: true,
       readOnly: !state().editor.isEditable,
       tabFocusMode: false,
@@ -356,6 +362,15 @@ const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
         });
       }
     }).observe(editorContainer);
+  });
+  createEffect(() => {
+    startLine();
+    codeEditor()?.updateOptions({
+      lineNumbers(lineNumber) {
+        return `${lineNumber + startLine() - 1}`;
+      }
+    });
+    codeEditor()?.render(true);
   });
   createEffect(
     on(selected, (selected) => {

@@ -5,6 +5,7 @@ interface CodeBlockAttributes {
   lang?: string;
   title?: string;
   meta?: string;
+  startLine?: number;
 }
 interface CodeBlockOptions {
   inline: boolean;
@@ -63,6 +64,18 @@ const CodeBlock = Node.create<CodeBlockOptions>({
           return element.getAttribute("data-title");
         }
       },
+      startLine: {
+        default: 1,
+        parseHTML: (element) => {
+          const value = parseInt(element.getAttribute("data-start-line") || "1");
+
+          if (!value || isNaN(value)) {
+            return 1;
+          }
+
+          return value;
+        }
+      },
       meta: {
         default: null,
         parseHTML: (element) => {
@@ -87,6 +100,7 @@ const CodeBlock = Node.create<CodeBlockOptions>({
         "code",
         {
           "class": node.attrs.lang ? `language-${node.attrs.lang}` : null,
+          "data-start-line": `${node.attrs.startLine}`,
           "data-title": node.attrs.title,
           "data-meta": node.attrs.meta
         },
