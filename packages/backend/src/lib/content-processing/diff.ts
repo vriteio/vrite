@@ -99,49 +99,61 @@ const generateDiffDocument = (oldContent: DocJSON, newContent: DocJSON): any => 
 
       if (newContent && oldContent && arrayDelta[`${i}`] && !Array.isArray(arrayDelta[`${i}`])) {
         const objectDelta = arrayDelta[`${i}`] as JSONDiff.ObjectDelta;
-        const patches = diffMatchPatch.patch_fromText(objectDelta.text![0] as string) as any[];
 
-        patches.forEach((patch, index) => {
-          const diffs = patch.diffs as Diff[];
-          const endOfPreviousPatch = patches.reduce((acc, patch, i) => {
-            if (i < index) {
-              return acc + patch.length2;
-            }
+        if (objectDelta.text?.[0]) {
+          const patches = diffMatchPatch.patch_fromText(objectDelta.text![0] as string) as any[];
 
-            return acc;
-          }, 0);
-          const startOfCurrentPatch = patch.start2;
-          const text = newContent.text?.slice(endOfPreviousPatch, startOfCurrentPatch);
+          patches.forEach((patch, index) => {
+            const diffs = patch.diffs as Diff[];
+            const endOfPreviousPatch = patches.reduce((acc, patch, i) => {
+              if (i < index) {
+                return acc + patch.length2;
+              }
 
-          if (text) {
-            output.push({
-              type: "text",
-              text,
-              marks: [...(newContent.marks || [])]
-            });
-          }
-
-          diffs.forEach(([operation, text]) => {
-            let diff = objectDelta.marks ? "changed" : "";
-
-            if (operation === DiffMatchPatch.DIFF_DELETE) {
-              diff = "removed";
-            } else if (operation === DiffMatchPatch.DIFF_INSERT) {
-              diff = "added";
-            }
+              return acc;
+            }, 0);
+            const startOfCurrentPatch = patch.start2;
+            const text = newContent.text?.slice(endOfPreviousPatch, startOfCurrentPatch);
 
             if (text) {
               output.push({
                 type: "text",
                 text,
-                marks: [
-                  ...(newContent.marks || []),
-                  ...(diff ? [{ type: "diff", attrs: { diff } }] : [])
-                ]
+                marks: [...(newContent.marks || [])]
               });
             }
+
+            diffs.forEach(([operation, text]) => {
+              let diff = objectDelta.marks ? "changed" : "";
+
+              if (operation === DiffMatchPatch.DIFF_DELETE) {
+                diff = "removed";
+              } else if (operation === DiffMatchPatch.DIFF_INSERT) {
+                diff = "added";
+              }
+
+              if (text) {
+                output.push({
+                  type: "text",
+                  text,
+                  marks: [
+                    ...(newContent.marks || []),
+                    ...(diff ? [{ type: "diff", attrs: { diff } }] : [])
+                  ]
+                });
+              }
+            });
           });
-        });
+        } else {
+          output.push({
+            type: "text",
+            text: newContent.text,
+            marks: [
+              ...(newContent.marks || []),
+              ...(objectDelta.marks ? [{ type: "diff", attrs: { diff: "changed" } }] : [])
+            ]
+          });
+        }
       }
 
       if (!arrayDelta[`${i}`] && !arrayDelta[`_${i}`] && newContent) {
