@@ -118,6 +118,12 @@ const options: Record<string, NodeOption[]> = {
         const [startLine, setStartLine] = createSignal<number>(
           props.state.node.attrs.startLine || 1
         );
+        const saveStartLine = (): void => {
+          props.state.editor.commands.updateAttributes("codeBlock", {
+            startLine: startLine()
+          });
+          props.close();
+        };
 
         return (
           <div class="flex flex-col items-start gap-0.5">
@@ -140,6 +146,10 @@ const options: Record<string, NodeOption[]> = {
                 type="number"
                 min={1}
                 max={9999}
+                onEnter={(event) => {
+                  event.preventDefault();
+                  saveStartLine();
+                }}
                 value={`${startLine()}`}
                 setValue={(value) => {
                   let parsedValue = parseInt(`${value || 1}`);
@@ -152,17 +162,7 @@ const options: Record<string, NodeOption[]> = {
                   setStartLine(parsedValue);
                 }}
               />
-              <IconButton
-                path={mdiCheck}
-                class="m-0"
-                color="primary"
-                onClick={() => {
-                  props.state.editor.commands.updateAttributes("codeBlock", {
-                    startLine: startLine()
-                  });
-                  props.close();
-                }}
-              />
+              <IconButton path={mdiCheck} class="m-0" color="primary" onClick={saveStartLine} />
             </div>
           </div>
         );

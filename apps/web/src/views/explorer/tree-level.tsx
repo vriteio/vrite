@@ -1,6 +1,7 @@
 import { ContentGroupRow } from "./content-group-row";
 import { ContentPieceRow } from "./content-piece-row";
 import { useExplorerData } from "./explorer-context";
+import { NewGroupButton } from "./new-group-button";
 import clsx from "clsx";
 import { Component, createEffect, Show, For, createSignal } from "solid-js";
 import SortableLib from "sortablejs";
@@ -15,64 +16,6 @@ import { useNavigate } from "@solidjs/router";
 import { Icon, IconButton, Loader, Sortable } from "#components/primitives";
 import { App, hasPermission, useClient, useContentData, useNotifications } from "#context";
 
-const NewGroupButton: Component = () => {
-  const { setRenaming } = useExplorerData();
-  const { notify } = useNotifications();
-  const client = useClient();
-  const [loading, setLoading] = createSignal(false);
-
-  return (
-    <button
-      class="flex w-full justify-center items-center cursor-pointer overflow-x-hidden group pl-0.5 rounded-l-md @hover:bg-gray-200 dark:@hover-bg-gray-700"
-      onClick={async () => {
-        try {
-          setLoading(true);
-
-          const contentGroup = await client.contentGroups.create.mutate({
-            name: ""
-          });
-
-          setRenaming(contentGroup.id);
-          setLoading(false);
-          notify({ text: "New content group created", type: "success" });
-        } catch (error) {
-          setLoading(false);
-          notify({ text: "Couldn't create new content group", type: "error" });
-        }
-      }}
-    >
-      <div class="flex flex-1 justify-start items-center overflow-hidden rounded-lg cursor-pointer h-7 group draggable">
-        <IconButton
-          class={clsx("transform transition m-0 p-0 mx-0.25")}
-          path={mdiChevronRight}
-          variant="text"
-          hover={false}
-          badge
-        />
-        <div class="flex flex-1" onClick={() => {}}>
-          <div class="h-6 w-6 mr-1">
-            <Show
-              when={loading()}
-              fallback={
-                <Icon class={clsx("text-gray-500 dark:text-gray-400")} path={mdiFolderPlus} />
-              }
-            >
-              <Loader class="h-full fill-current p-0.5" />
-            </Show>
-          </div>
-          <span
-            class={clsx(
-              "!text-base inline-flex text-start flex-1 overflow-x-auto content-group-name scrollbar-hidden select-none clamp-1"
-            )}
-            title="New group"
-          >
-            New group
-          </span>
-        </div>
-      </div>
-    </button>
-  );
-};
 const TreeLevel: Component<{
   parentId?: string;
 }> = (props) => {

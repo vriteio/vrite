@@ -1,5 +1,6 @@
 import { TreeLevel } from "./tree-level";
 import { ExplorerDataProvider, useExplorerData } from "./explorer-context";
+import { NewGroupButton } from "./new-group-button";
 import { Component } from "solid-js";
 import { mdiClose, mdiHexagonSlice6 } from "@mdi/js";
 import { createRef } from "@vrite/components/src/ref";
@@ -159,6 +160,7 @@ const ExplorerTree: Component = () => {
               </button>
             </div>
             <TreeLevel />
+            <NewGroupButton />
           </div>
         </div>
       </div>
