@@ -139,7 +139,7 @@ interface ContentPiecesEndpoints {
   >(
     input: PaginationParams & {
       content?: IncludeContent;
-      contentGroupId: string | string[];
+      contentGroupId?: string | string[];
       tagId?: string;
       slug?: string;
       variant?: string;
@@ -205,7 +205,7 @@ const createContentPiecesEndpoints = (sendRequest: SendRequest): ContentPiecesEn
     ...input
   }: PaginationParams & {
     content?: IncludeContent;
-    contentGroupId: string | string[];
+    contentGroupId?: string | string[];
     tagId?: string;
     slug?: string;
     variant?: string;
@@ -216,8 +216,10 @@ const createContentPiecesEndpoints = (sendRequest: SendRequest): ContentPiecesEn
       {
         params: {
           ...input,
-          contentGroupId:
-            typeof contentGroupId === "string" ? contentGroupId : contentGroupId.join(",")
+          ...(contentGroupId && {
+            contentGroupId:
+              typeof contentGroupId === "string" ? contentGroupId : contentGroupId.join(",")
+          })
         }
       }
     );
