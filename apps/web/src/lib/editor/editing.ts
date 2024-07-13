@@ -60,7 +60,8 @@ const createClipboardSerializer = (
   const base = DOMSerializer.fromSchema(editor.schema);
   const nodes: Record<string, (node: Node) => DOMOutputSpec> = {
     paragraph: base.nodes.paragraph,
-    text: base.nodes.text
+    text: base.nodes.text,
+    hardBreak: base.nodes.hardBreak
   };
   const marks: Record<string, (mark: Mark, inline: boolean) => DOMOutputSpec> = {
     comment: base.marks.comment
