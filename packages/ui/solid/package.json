@@ -1,0 +1,71 @@
+{
+  "name": "@vrite/solid-ui",
+  "version": "0.5.0-alpha.0",
+  "description": "Headless Solid.js components for building technical publications with Vrite",
+  "type": "module",
+  "scripts": {
+    "build": "tsup",
+    "prepublish": "pnpm build"
+  },
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "solid": "./dist/index.jsx",
+      "default": "./dist/index.js"
+    },
+    "./*": {
+      "types": "./dist/*/index.d.ts",
+      "solid": "./dist/*/index.jsx",
+      "default": "./dist/*/index.js"
+    },
+    "./src/*": "./src/*"
+  },
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "*": [
+        "./dist/*/index.d.ts",
+        "./dist/index.d.ts"
+      ]
+    }
+  },
+  "source": "src/index.tsx",
+  "files": [
+    "dist",
+    "src",
+    "NOTICE.txt"
+  ],
+  "keywords": [
+    "vrite",
+    "solid",
+    "solidjs",
+    "ui",
+    "components",
+    "headless",
+    "unstyled"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@solid-primitives/scheduled": "^1.4.3",
+    "marked": "^13.0.2",
+    "nanoid": "^5.0.7",
+    "seamless-scroll-polyfill": "^2.3.4",
+    "tinykeys": "^2.1.0"
+  },
+  "devDependencies": {
+    "@vrite/sdk": "workspace:*",
+    "esbuild-plugin-solid": "^0.6.0",
+    "rollup": "^4.18.1",
+    "rollup-preset-solid": "^2.0.1",
+    "solid-js": "^1.8.18",
+    "tsup": "^8.1.2",
+    "typescript": "^5.5.3"
+  },
+  "peerDependencies": {
+    "@vrite/sdk": "workspace:*",
+    "solid-js": "^1.8.18"
+  }
+}

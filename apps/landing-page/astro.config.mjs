@@ -2,7 +2,7 @@ import { defineConfig } from "astro/config";
 import solidJs from "@astrojs/solid-js";
 import sitemap from "@astrojs/sitemap";
 import unocss from "unocss/astro";
-import { vritePlugin } from "@vrite/sdk/astro";
+import { vrite, vritePages } from "@vrite/pages";
 import { loadEnv } from "vite";
 import robotsTxt from "astro-robots-txt";
 
@@ -25,9 +25,12 @@ export default defineConfig({
         }
       ]
     }),
-    vritePlugin({
-      accessToken: VRITE_ACCESS_TOKEN,
-      contentGroupId: VRITE_CONTENT_GROUP_ID
+    vritePages({
+      source: vrite({
+        accessToken: VRITE_ACCESS_TOKEN,
+        contentGroupId: VRITE_CONTENT_GROUP_ID,
+        baseURL: "http://localhost:4444"
+      })
     })
   ],
   site: "https://vrite.io",

@@ -7,20 +7,27 @@ import "@fontsource/nunito/700.css";
 import "@fontsource/nunito/800.css";
 import "@fontsource/nunito/900.css";
 import { BaseHead, Header, Footer } from "#components/fragments";
-import { getContentPieces, client } from "virtual:vrite";
+import { type ContentMetadata, useContentSource } from "vrite:pages";
 import { format } from "date-fns";
+import { IconButton } from "#components/primitives";
+import { mdiChevronLeft, mdiChevronRight } from "@mdi/js";
 
-const contentPieces = await getContentPieces({ limit: "all" });
-const workspace = await client.workspace.get();
-const contentPiecesByMonth = contentPieces.reduce((acc, contentPiece) => {
-  const date = new Date(contentPiece.date);
-  const month = format(date, "MMMM yyyy");
-  if (!acc[month]) {
-    acc[month] = [];
-  }
-  acc[month].push(contentPiece);
-  return acc;
-}, {});
+const contentSource = useContentSource(Astro);
+const page = Number(Astro.url.searchParams.get("page") || 1);
+const { contentMetadata } = await contentSource.listContentMetadata(page);
+const pageMetadata = await contentSource.getPageMetadata();
+const contentMetadataByMonth = contentMetadata.reduce<Record<string, ContentMetadata[]>>(
+  (acc, contentMetadata) => {
+    const date = new Date(contentMetadata.date!);
+    const month = format(date, "MMMM yyyy");
+    if (!acc[month]) {
+      acc[month] = [];
+    }
+    acc[month].push(contentMetadata);
+    return acc;
+  },
+  {}
+);
 const title = "Vrite － developer content platform";
 const description =
   "Open-Source, collaborative developer content platform for documentation, technical blogs, and more.";
@@ -51,15 +58,15 @@ export const prerender = true;
         <div class="flex justify-start items-start py-16 w-full gap-20">
           <div class="md:max-w-1/2">
             <h1 class="text-5xl !font-bold text-gray-800 dark:text-gray-100 mb-2">
-              {workspace.name}
+              {pageMetadata.title}
             </h1>
             <p class="text-2xl text-gray-500 dark:text-gray-400">
-              {workspace.description}
+              {pageMetadata.description}
             </p>
           </div>
         </div>
         {
-          Object.entries(contentPiecesByMonth).map(([month, contentPieces]) => {
+          Object.entries(contentMetadataByMonth).map(([month, contentMetadataList]) => {
             return (
               <>
                 <div class="w-full opacity-10 my-8 text-black dark:text-white font-mono text-lg flex items-center justify-center gap-4">
@@ -68,32 +75,32 @@ export const prerender = true;
                 </div>
                 <div class="flex w-full z-0 relative">
                   <div class="flex flex-col gap-20 w-full">
-                    {contentPieces.map((contentPiece) => (
+                    {contentMetadataList.map((contentMetadata) => (
                       <a
                         class="flex flex-col-reverse md:flex-row w-full gap-4 md:gap-20 relative z-10 group"
-                        href={`/blog/${contentPiece.slug}/`}
+                        href={`/blog/${contentMetadata.slug}/`}
                       >
                         <div class="flex-1">
                           <div class="max-w-lg">
                             <div class="flex-1 text-gray-500 dark:text-gray-400">
                               {format(
-                                contentPiece.date ? new Date(contentPiece.date) : new Date(),
+                                contentMetadata.date ? new Date(contentMetadata.date) : new Date(),
                                 "dd MMM yyyy"
                               )}
                             </div>
                             <h2 class="!font-bold text-3xl mb-1 group-hover:bg-gradient-to-tr group-hover:bg-clip-text group-hover:text-transparent">
-                              {contentPiece.title}
+                              {contentMetadata.title}
                             </h2>
                             <div class="font-normal text-lg mb-2 text-gray-500 dark:text-gray-400">
-                              <Fragment set:html={contentPiece.description} />
+                              <Fragment set:html={contentMetadata.description} />
                             </div>
                             <div class="flex justify-start items-center gap-2 mb-1">
-                              {contentPiece.tags.map((tag) => (
+                              {contentMetadata.tags.map((tag) => (
                                 <div class="font-mono text-sm inline-flex">
                                   <span class="font-bold bg-gradient-to-tr bg-clip-text text-transparent">
                                     #
                                   </span>
-                                  <span class="opacity-80">{tag.label.trim()}</span>
+                                  <span class="opacity-80">{tag.trim()}</span>
                                 </div>
                               ))}
                             </div>
@@ -104,8 +111,8 @@ export const prerender = true;
                             <div class="grid-background-3 -z-10" />
                             <div class="transition-transform duration-300 ease-in-out group-hover:scale-95 rounded-2xl overflow-hidden border-2 border-gray-200 dark:border-gray-700">
                               <img
-                                alt={contentPiece.coverAlt}
-                                src={contentPiece.coverUrl}
+                                alt={`Cover image for ${contentMetadata.title}`}
+                                src={contentMetadata.cover}
                                 class="object-cover"
                               />
                             </div>
@@ -119,6 +126,16 @@ export const prerender = true;
             );
           })
         }
+        <div class="w-full flex items-center justify-center mt-16 gap-16">
+          <IconButton path={mdiChevronLeft} text="soft" variant="text" />
+          <div class="font-semibold text-gray-500 dark:text-gray-400">Page {page}</div>
+          <IconButton
+            path={mdiChevronRight}
+            text="soft"
+            variant="text"
+            link={`/blog?page=${page + 1}`}
+          />
+        </div>
       </div>
       <Footer />
     </main>

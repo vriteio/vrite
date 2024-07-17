@@ -4,17 +4,26 @@ interface APIFetcherConfig {
   extensionId?: string;
   headers?: Record<string, string>;
 }
-type SendRequest = <O extends Record<string, any> | void = void>(
+type SendRequest = <
+  O extends Record<string, any> | void = void,
+  M extends Record<string, any> | void = void
+>(
   method: "GET" | "PUT" | "DELETE" | "POST",
   path: string,
   options?: {
     params?: Record<string, string | number | boolean | undefined>;
     body?: Record<string, any>;
   }
-) => Promise<O>;
+) => Promise<M extends void ? O : O & { meta: M }>;
 type PaginationParams = {
   perPage?: number;
   page?: number;
+};
+type PaginationMeta = {
+  total: number;
+  pages: number;
+  perPage: number;
+  page: number;
 };
 interface APIFetcher {
   sendRequest: SendRequest;
@@ -73,6 +82,21 @@ const createAPIFetcher = (config: APIFetcherConfig): APIFetcher => {
         throw json;
       }
 
+      const paginationTotal = response.headers.get("x-pagination-total");
+
+      if (paginationTotal) {
+        return Object.assign(json, {
+          meta: {
+            pagination: {
+              total: parseInt(paginationTotal),
+              pages: parseInt(response.headers.get("x-pagination-pages") || "0"),
+              perPage: parseInt(response.headers.get("x-pagination-per-page") || "0"),
+              page: parseInt(response.headers.get("x-pagination-page") || "0")
+            }
+          }
+        });
+      }
+
       return json;
     } catch (error) {
       // eslint-disable-next-line no-console
@@ -106,4 +130,4 @@ const createAPIFetcher = (config: APIFetcherConfig): APIFetcher => {
 };
 
 export { createAPIFetcher };
-export type { SendRequest, APIFetcherConfig, PaginationParams };
+export type { SendRequest, APIFetcherConfig, PaginationParams, PaginationMeta };

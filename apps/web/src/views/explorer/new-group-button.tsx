@@ -1,9 +1,9 @@
 import { useExplorerData } from "./explorer-context";
-import { mdiChevronRight, mdiFolderPlusOutline } from "@mdi/js";
+import { mdiFolderPlusOutline } from "@mdi/js";
 import clsx from "clsx";
 import { Component, createSignal, Show } from "solid-js";
 import { useNotifications, useClient } from "#context";
-import { IconButton, Icon, Loader } from "#components/primitives";
+import { Icon, Loader } from "#components/primitives";
 
 const NewGroupButton: Component = () => {
   const { setRenaming } = useExplorerData();
@@ -13,7 +13,7 @@ const NewGroupButton: Component = () => {
 
   return (
     <button
-      class="flex w-full justify-center items-center cursor-pointer overflow-x-hidden group pl-0.5 rounded-l-md @hover:bg-gray-200 dark:@hover-bg-gray-700 ml-6.5"
+      class="flex w-[calc(100%-1.625rem)] justify-center items-center cursor-pointer overflow-x-hidden group pl-0.5 rounded-l-md @hover:bg-gray-200 dark:@hover-bg-gray-700 ml-6.5"
       onClick={async () => {
         try {
           setLoading(true);

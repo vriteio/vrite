@@ -12,7 +12,7 @@
     "jsx": "preserve",
     "baseUrl": ".",
     "jsxImportSource": "solid-js",
-    "types": ["@vrite/sdk/types", "astro/client"],
+    "types": ["@vrite/pages/types", "astro/client"],
     "paths": {
       "#*": ["./src/*"]
     }

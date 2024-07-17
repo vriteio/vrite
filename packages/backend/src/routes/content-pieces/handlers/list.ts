@@ -1,5 +1,5 @@
 import { getVariantDetails } from "../utils";
-import { ObjectId } from "mongodb";
+import { Filter, ObjectId } from "mongodb";
 import { z } from "zod";
 import {
   getContentPiecesCollection,
@@ -8,10 +8,11 @@ import {
   tag,
   contentPiece,
   getContentsCollection,
-  getContentVariantsCollection
+  getContentVariantsCollection,
+  FullContentPiece
 } from "#collections";
 import { AuthenticatedContext } from "#lib/middleware";
-import { zodId, zodIdList } from "#lib/mongo";
+import { UnderscoreID, zodId, zodIdList } from "#lib/mongo";
 import {
   fetchEntryMembers,
   fetchContentPieceTags,
@@ -61,23 +62,32 @@ const handler = async (
   const contentPiecesCollection = getContentPiecesCollection(ctx.db);
   const contentPieceVariantsCollection = getContentPieceVariantsCollection(ctx.db);
   const { variantId, variantKey } = await getVariantDetails(ctx.db, input.variant);
+  const filter: Filter<UnderscoreID<FullContentPiece<ObjectId>>> = {
+    workspaceId: ctx.auth.workspaceId,
+    ...(input.contentGroupId && {
+      contentGroupId: { $in: input.contentGroupId.split(",").map((id) => new ObjectId(id)) }
+    }),
+    ...(input.tagId ? { tags: new ObjectId(input.tagId) } : {}),
+    ...(input.slug ? { slug: stringToRegex(input.slug) } : {})
+  };
   const cursor = contentPiecesCollection
     .find({
-      workspaceId: ctx.auth.workspaceId,
-      ...(input.contentGroupId && {
-        contentGroupId: { $in: input.contentGroupId.split(",").map((id) => new ObjectId(id)) }
-      }),
-      ...(input.tagId ? { tags: new ObjectId(input.tagId) } : {}),
-      ...(input.slug ? { slug: stringToRegex(input.slug) } : {}),
+      ...filter,
       ...(input.lastOrder ? { order: { $lt: input.lastOrder } } : {})
     })
     .sort({ order: -1 });
 
-  if (!input.lastOrder) {
+  if (!input.lastOrder && input.perPage) {
     cursor.skip((input.page - 1) * input.perPage);
   }
 
-  let contentPieces = await cursor.limit(input.perPage).toArray();
+  let contentPieces: Array<UnderscoreID<FullContentPiece<ObjectId>>> = [];
+
+  if (input.perPage) {
+    contentPieces = await cursor.limit(input.perPage).toArray();
+  } else {
+    contentPieces = await cursor.toArray();
+  }
 
   if (variantId) {
     const contentPieceVariants = await contentPieceVariantsCollection
@@ -145,6 +155,27 @@ const handler = async (
       });
     }
   }
+
+  let totalCount = 0;
+
+  if (input.perPage) {
+    if (!input.lastOrder) {
+      totalCount += (input.page - 1) * input.perPage + contentPieces.length;
+    }
+
+    if (contentPieces.length === input.perPage) {
+      totalCount += await contentPiecesCollection.countDocuments(filter, { skip: totalCount });
+    }
+  } else {
+    totalCount = contentPieces.length;
+  }
+
+  ctx.res.headers({
+    "x-pagination-total": totalCount,
+    "x-pagination-pages": Math.ceil(totalCount / (input.perPage || 1)),
+    "x-pagination-per-page": input.perPage,
+    "x-pagination-page": input.page
+  });
 
   return Promise.all(
     contentPieces.map(async (contentPiece) => {

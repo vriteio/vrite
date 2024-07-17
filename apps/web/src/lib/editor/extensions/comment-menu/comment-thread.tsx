@@ -141,7 +141,7 @@ const CommentThread: Component<{
         </div>
         <Show when={!loading() && !selected() && latterComments().length}>
           <div
-            class="border-2 border-t-0 bg-gray-50 absolute -bottom-3 w-[calc(100%-2rem)] text-center text-xs text-gray-500 dark:text-gray-400 rounded-b-xl -z-1 py-0.5"
+            class="border-2 border-gray-200 dark:border-gray-700 border-t-0 bg-gray-50 dark:bg-gray-800 absolute -bottom-3 w-[calc(100%-2rem)] text-center text-xs text-gray-500 dark:text-gray-400 rounded-b-xl -z-1 py-0.5"
             style={{ "mask-image": "linear-gradient(to bottom, black, transparent)" }}
           >
             +{latterComments().length} Comment{comments().length > 1 ? "s" : ""}

@@ -1,0 +1,131 @@
+---
+import { htmlOutputTransformer, type JSONContentNode } from "@vrite/sdk/transformers";
+// @ts-ignore
+import { Components } from "vrite:pages/components";
+
+interface Props {
+  content: JSONContentNode[keyof JSONContentNode];
+}
+
+if (!Components.Code) {
+  const { Code } = await import("astro:components");
+
+  Components.Code = Code;
+}
+
+const node = Astro.props.content;
+---
+
+{
+  (() => {
+    switch (node.type) {
+      case "paragraph":
+      case "heading":
+        return <Fragment set:html={htmlOutputTransformer(node)} />;
+      case "codeBlock":
+        return (
+          <Components.Code
+            lang={node.attrs?.lang as any}
+            code={node.content.map((textNode) => textNode.text).join("")}
+            about={node.attrs?.title}
+          />
+        );
+      case "blockquote":
+        return (
+          <blockquote>
+            <slot />
+          </blockquote>
+        );
+      case "bulletList":
+        return (
+          <ul>
+            <slot />
+          </ul>
+        );
+      case "orderedList":
+        return (
+          <ol start={node.attrs.start}>
+            <slot />
+          </ol>
+        );
+      case "taskList":
+        return (
+          <ul data-type="taskList">
+            <slot />
+          </ul>
+        );
+      case "listItem":
+        return (
+          <li>
+            <slot />
+          </li>
+        );
+      case "taskItem":
+        return (
+          <li data-type="taskItem">
+            <label>
+              <input type="checkbox" checked={node.attrs.checked} />
+              <slot />
+            </label>
+          </li>
+        );
+      case "element":
+        const Component = Components[node.attrs.type];
+
+        if (Component) {
+          return (
+            <Component {...node.attrs.props}>
+              <slot />
+            </Component>
+          );
+        }
+
+        return (
+          <div data-type={node.attrs.type} data-props={JSON.stringify(node.attrs.props)}>
+            <slot />
+          </div>
+        );
+      case "image":
+        if (node.attrs?.caption) {
+          return (
+            <figure>
+              <img src={node.attrs?.src} alt={node.attrs?.alt} />
+              <figcaption>{node.attrs.caption}</figcaption>
+            </figure>
+          );
+        }
+
+        return <img src={node.attrs?.src} alt={node.attrs?.alt} />;
+      case "embed":
+        return <iframe data-type={node.attrs?.embed} src={node.attrs?.src} />;
+      case "horizontalRule":
+        return <hr />;
+      case "table":
+        return (
+          <table>
+            <slot />
+          </table>
+        );
+      case "tableRow":
+        return (
+          <tr>
+            <slot />
+          </tr>
+        );
+      case "tableCell":
+        return (
+          <td>
+            <slot />
+          </td>
+        );
+      case "tableHeader":
+        return (
+          <th>
+            <slot />
+          </th>
+        );
+      default:
+        return <slot />;
+    }
+  })()
+}

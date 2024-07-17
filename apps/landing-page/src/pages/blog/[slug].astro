@@ -1,16 +1,31 @@
 ---
 import { Header, BaseHead, Footer } from "#components/fragments";
 import { format } from "date-fns";
-import { Content, ContentPiece, getStaticPaths } from "virtual:vrite";
+import { ContentMetadata, useContentSource } from "vrite:pages";
 import { convert } from "html-to-text";
 import "#styles/blog.scss";
 
-type Props = ContentPiece;
+interface Props {
+  content: ContentMetadata;
+}
 
-const { title, description, date, coverUrl } = Astro.props;
-
+const { title, description, date, cover } = Astro.props.content;
+const contentSource = useContentSource(Astro);
+const { Content } = await contentSource.renderContent(Astro.params.slug);
 export const prerender = true;
-export { getStaticPaths };
+export const getStaticPaths = async () => {
+  const contentSource = useContentSource(Astro);
+  const { contentMetadata } = await contentSource.listContentMetadata(1);
+
+  return contentMetadata.map((contentMetadata) => {
+    return {
+      params: {
+        slug: contentMetadata.slug
+      },
+      props: { content: contentMetadata }
+    };
+  });
+};
 ---
 
 <html lang="en" class="bg-gray-50 dark:bg-gray-800">
@@ -18,7 +33,7 @@ export { getStaticPaths };
     <BaseHead
       title={title}
       description={convert(description || "", { wordwrap: false })}
-      image={coverUrl}
+      image={cover}
     />
   </head>
 
@@ -33,7 +48,7 @@ export { getStaticPaths };
         <div class="grid-background-2"></div>
         <div class="px-16">
           <img
-            src={coverUrl}
+            src={cover}
             alt="Blog post cover"
             class="object-cover max-w-screen-lg w-full rounded-3xl shadow-2xl shadow-gray-400 dark:shadow-gray-900 before:bg-gray-100 dark:before:bg-gray-800"
           />
@@ -52,7 +67,7 @@ export { getStaticPaths };
         <header>
           <h1 class="!font-bold">{title}</h1>
         </header>
-        <Content contentPieceId={Astro.props.id} />
+        <Content />
       </div>
 
       <Footer />

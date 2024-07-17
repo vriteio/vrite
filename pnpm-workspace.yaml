@@ -2,5 +2,4 @@ packages:
   - "apps/*"
   - "apps/**/*"
   - "packages/*"
-  - "packages/extensions/*"
-  - "packages/sdk/*"
+  - "packages/ui/*"

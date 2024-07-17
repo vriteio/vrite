@@ -1,0 +1,26 @@
+---
+import Node from "./node.astro";
+import { __content } from "./content";
+import type { JSONContent } from "@vrite/sdk/api";
+import type { JSONContentNode } from "@vrite/sdk/transformers";
+// @ts-ignore
+
+const content = (globalThis as any)[__content] as JSONContent;
+const renderContent = (
+  content: JSONContent,
+  render: (content: JSONContent, children: any[]) => any
+): any => {
+  return render(
+    content,
+    (content.content || []).map((node: JSONContent) => {
+      return renderContent(node, render);
+    })
+  );
+};
+---
+
+{
+  renderContent(content, (content, children) => {
+    return <Node content={content as JSONContentNode[keyof JSONContentNode]}>{children}</Node>;
+  })
+}

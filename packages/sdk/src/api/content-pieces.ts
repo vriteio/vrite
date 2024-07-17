@@ -1,5 +1,5 @@
 import { Profile } from "./profile";
-import { PaginationParams, SendRequest } from "./request";
+import { PaginationParams, PaginationMeta, SendRequest } from "./request";
 import { Tag } from "./tags";
 
 type JSONContentAttrs = Record<string, string | number | boolean>;
@@ -144,7 +144,11 @@ interface ContentPiecesEndpoints {
       slug?: string;
       variant?: string;
     }
-  ): Promise<Array<ContentPieceWithAdditionalData<CustomData, IncludeContent>>>;
+  ): Promise<
+    Array<ContentPieceWithAdditionalData<CustomData, IncludeContent>> & {
+      meta: { pagination: PaginationMeta };
+    }
+  >;
 }
 
 const basePath = "/content-pieces";
@@ -210,19 +214,20 @@ const createContentPiecesEndpoints = (sendRequest: SendRequest): ContentPiecesEn
     slug?: string;
     variant?: string;
   }) => {
-    return sendRequest<Array<ContentPieceWithAdditionalData<CustomData, IncludeContent>>>(
-      "GET",
-      `${basePath}/list`,
+    return sendRequest<
+      Array<ContentPieceWithAdditionalData<CustomData, IncludeContent>>,
       {
-        params: {
-          ...input,
-          ...(contentGroupId && {
-            contentGroupId:
-              typeof contentGroupId === "string" ? contentGroupId : contentGroupId.join(",")
-          })
-        }
+        pagination: PaginationMeta;
       }
-    );
+    >("GET", `${basePath}/list`, {
+      params: {
+        ...input,
+        ...(contentGroupId && {
+          contentGroupId:
+            typeof contentGroupId === "string" ? contentGroupId : contentGroupId.join(",")
+        })
+      }
+    });
   }
 });
 
