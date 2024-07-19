@@ -41,14 +41,15 @@ const SideBarNestedMenu: Component<SideBarNestedMenuProps> = (props) => {
     <div class="flex flex-col w-full">
       <Show when={!props.openedByDefault} fallback={<span>{props.children}</span>}>
         <Button
-          class="flex justify-center items-center text-start w-full group m-0 px-0"
+          class="flex justify-center items-center text-start w-full group m-0"
           onClick={() => setOpened((opened) => !opened)}
           variant="text"
           text="soft"
         >
+          <div class="flex-1">{props.children}</div>
           <IconButton
             path={mdiChevronDown}
-            class="m-0 p-0 pl-1"
+            class="m-0 p-0"
             variant="text"
             text="soft"
             badge
@@ -59,7 +60,6 @@ const SideBarNestedMenu: Component<SideBarNestedMenuProps> = (props) => {
               )
             }}
           />
-          <div class="flex-1">{props.children}</div>
         </Button>
       </Show>
       <div
@@ -73,7 +73,7 @@ const SideBarNestedMenu: Component<SideBarNestedMenuProps> = (props) => {
           <Show when={!props.openedByDefault}>
             <div class="w-2px rounded-full h-full bg-gray-200 dark:bg-gray-700" />
           </Show>
-          <div class={clsx("flex-1 flex flex-col gap-1", !props.openedByDefault && "pl-1")}>
+          <div class={clsx("flex-1 flex flex-col gap-1", !props.openedByDefault && "pl-2")}>
             <For each={props.menu}>
               {(item) => {
                 if (item.menu) {
@@ -131,7 +131,7 @@ const SideBar: Component<SideBarProps> = (props) => {
             menuOpened() ? "" : "translate-y-[100vh] md:translate-y-0"
           )}
         >
-          <div class="flex items-center justify-start px-2 w-[calc(100%+0.25rem)] -ml-1 py-2 rounded-xl sticky top-0 relative z-1 bg-gray-50 dark:bg-gray-800 bg-opacity-50 dark:bg-opacity-50 backdrop-blur-lg">
+          <div class="flex items-center justify-start px-2 w-[calc(100%+0.25rem)] -ml-1 py-2 rounded-xl top-0 relative z-1 bg-gray-50 dark:bg-gray-800 bg-opacity-50 dark:bg-opacity-50 backdrop-blur-lg">
             <IconButton
               path={logoIcon}
               color="primary"

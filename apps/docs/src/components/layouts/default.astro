@@ -6,7 +6,6 @@ import {
   SVGDefs,
   OnThisPage,
   Footer,
-  SearchPalette,
   ScrollbarWidth
 } from "#components/fragments";
 import type { MarkdownHeading } from "astro";
@@ -104,7 +103,7 @@ type Props = {
     <main
       class="flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-800 min-h-screen"
     >
-      <div class="flex-1 flex justify-center items-center flex-1 w-full max-w-screen-2xl relative">
+      <div class="flex-1 flex justify-center items-center w-full max-w-screen-2xl relative">
         <SideBar
           menu={menu}
           sections={sections}
@@ -112,7 +111,6 @@ type Props = {
           currentPath={Astro.url.pathname}
           client:load
         />
-        <SearchPalette client:load />
         <div class="flex overflow-visible w-full relative h-full md:max-w-[calc(100%-16rem)]">
           <div
             class="flex-1 flex overflow-visible w-full justify-center min-h-screen"
@@ -129,7 +127,7 @@ type Props = {
                       badge
                       color="primary"
                       variant="text"
-                      class="m-0 pl-1 py-0"
+                      class="m-0 pl-1 py-0 font-semibold"
                       hover={false}
                     >
                       {currentEntry?.labels.at(-2)}

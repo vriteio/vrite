@@ -11,6 +11,7 @@ import {
 import { mdiListBox } from "@mdi/js";
 import clsx from "clsx";
 import { scroll } from "seamless-scroll-polyfill";
+import { type TOCItem, TOC } from "@vrite/solid-ui";
 import type { MarkdownHeading } from "astro";
 import { Button, IconButton } from "#components/primitives";
 
@@ -20,26 +21,31 @@ interface OnThisPageProps {
 }
 
 const OnThisPage: Component<OnThisPageProps> = (props) => {
-  const [activeHeading, setActiveHeading] = createSignal(props.headings[0]?.slug || "");
-  const headings = createMemo(() => {
-    return props.headings.filter((heading) => {
-      return heading.depth === 2 || heading.depth === 3;
+  const items = createMemo(() => {
+    const items: TOCItem[] = [];
+
+    let parent: TOCItem[] | null = null;
+
+    props.headings.forEach((heading) => {
+      if (heading.depth === 2) {
+        const children: TOCItem[] = [];
+
+        items.push({
+          label: heading.text,
+          id: heading.slug,
+          children
+        });
+        parent = children;
+      } else if (heading.depth === 3) {
+        parent?.push({
+          label: heading.text,
+          id: heading.slug
+        });
+      }
     });
+
+    return items;
   });
-  const scrollToActiveHeading = (smooth?: boolean): void => {
-    const heading = activeHeading();
-    const element = document.getElementById(heading);
-
-    if (!element) return;
-
-    const rect = element.getBoundingClientRect();
-    const y = rect.top + window.scrollY - 60;
-
-    scroll(window, {
-      top: y,
-      behavior: smooth === false ? "instant" : "smooth"
-    });
-  };
   const handleClick = (event: MouseEvent): void => {
     const target = event.target as HTMLElement;
 
@@ -47,8 +53,6 @@ const OnThisPage: Component<OnThisPageProps> = (props) => {
       const { id } = target;
 
       if (id) {
-        setActiveHeading(id);
-        scrollToActiveHeading();
         history.replaceState(null, "", `#${id}`);
         navigator.clipboard.writeText(window.location.href);
       }
@@ -56,59 +60,7 @@ const OnThisPage: Component<OnThisPageProps> = (props) => {
   };
 
   onMount(() => {
-    if (!headings().length) return;
-
-    const hash = location.hash.slice(1);
-    const setCurrent: IntersectionObserverCallback = (entries) => {
-      for (const entry of entries) {
-        if (entry.isIntersecting) {
-          const { id } = entry.target;
-
-          setActiveHeading(entry.target.id);
-          break;
-        }
-      }
-    };
-    const container = document.body;
-    const observerOptions: IntersectionObserverInit = {
-      rootMargin: "-100px 0% -66%",
-      threshold: 0
-    };
-    const headingsObserver = new IntersectionObserver(setCurrent, observerOptions);
-    const handleScroll = (): void => {
-      if (!container) return;
-
-      const threshold = 50;
-      const isEnd =
-        container.scrollTop + container.clientHeight + threshold >= container.scrollHeight;
-      const isStart = container.scrollTop <= threshold;
-
-      if (isEnd) {
-        setActiveHeading(headings()[headings().length - 1].slug);
-      } else if (isStart) {
-        setActiveHeading(headings()[0].slug);
-      }
-    };
-
-    document
-      .querySelectorAll(
-        headings()
-          .map((heading) => `#${heading.slug}`)
-          .join(", ")
-      )
-      .forEach((h) => headingsObserver.observe(h));
-    container?.addEventListener("scroll", handleScroll);
-    document.body.addEventListener("click", handleClick);
-    onCleanup(() => {
-      headingsObserver.disconnect();
-      container?.removeEventListener("scroll", handleScroll);
-      document.body.removeEventListener("click", handleClick);
-    });
-
-    if (hash) {
-      setActiveHeading(hash);
-      scrollToActiveHeading(false);
-    }
+    document.addEventListener("click", handleClick);
   });
 
   return (
@@ -120,7 +72,7 @@ const OnThisPage: Component<OnThisPageProps> = (props) => {
         )}
       >
         <Show when={props.hide !== true}>
-          <Show when={headings().length}>
+          <Show when={items().length}>
             <IconButton
               text="soft"
               class="font-bold justify-start m-0"
@@ -131,25 +83,45 @@ const OnThisPage: Component<OnThisPageProps> = (props) => {
               label="On This Page"
             />
           </Show>
-          <For each={headings()}>
-            {(heading) => {
-              return (
-                <Button
-                  variant="text"
-                  text={activeHeading() === heading.slug ? "base" : "soft"}
-                  color={activeHeading() === heading.slug ? "primary" : "base"}
-                  class={clsx("text-start m-0", heading.depth === 3 && "ml-6")}
-                  size={heading.depth === 2 ? "medium" : "small"}
-                  onClick={() => {
-                    setActiveHeading(heading.slug);
-                    scrollToActiveHeading();
-                  }}
-                >
-                  {heading.text}
-                </Button>
-              );
-            }}
-          </For>
+          <div class="flex flex-col">
+            <TOC.Root items={items()} offset={80} getId={() => ""}>
+              {(props) => {
+                const isActive = (): boolean => props.isActive;
+                const level = (): number => props.level;
+
+                return (
+                  <>
+                    <TOC.Item
+                      item={props.item}
+                      as={(props) => {
+                        return (
+                          <Button
+                            variant="text"
+                            hover={false}
+                            onClick={props.onClick}
+                            class={clsx(
+                              "text-start m-0 bg-gradient-to-tr text-transparent bg-clip-text from-gray-500 to-gray-500 dark:from-gray-400 dark:to-gray-400",
+                              isActive() && "!from-orange-500 !to-red-500",
+                              !isActive() &&
+                                "hover:!from-gray-700 hover:!to-gray-700 dark:hover:!from-gray-200 dark:hover:!to-gray-200",
+                              level() === 1 && "font-semibold"
+                            )}
+                          >
+                            {props.children}
+                          </Button>
+                        );
+                      }}
+                    >
+                      {props.item.label}
+                    </TOC.Item>
+                    <Show when={props.item.children?.length}>
+                      <div class="ml-4 flex flex-col">{props.children}</div>
+                    </Show>
+                  </>
+                );
+              }}
+            </TOC.Root>
+          </div>
         </Show>
       </div>
       <div class="min-w-64 hidden xl:flex" />

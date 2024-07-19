@@ -16,7 +16,7 @@ import { scrollIntoView } from "seamless-scroll-polyfill";
 import { createContext } from "solid-js";
 import { debounce } from "@solid-primitives/scheduled";
 import { marked } from "marked";
-import { Dynamic } from "solid-js/web";
+import { Dynamic, Portal } from "solid-js/web";
 import type { Client, SearchResult } from "@vrite/sdk/api";
 
 type SearchMode = "search" | "ask";
@@ -28,10 +28,11 @@ interface SearchContextData {
   hoverSelectEnabled: Accessor<boolean>;
   loading: Accessor<boolean>;
   inputElement: Accessor<HTMLInputElement | undefined>;
-  answer: Accessor<JSX.Element>;
+  answer: Accessor<Component | null>;
   results: Accessor<SearchResult[]>;
   selectedResult: Accessor<SearchResult | null>;
-  setAnswer: Setter<JSX.Element>;
+  selectedResultElement: Accessor<HTMLElement | null>;
+  setAnswer: Setter<Component | null>;
   setMode: Setter<SearchMode>;
   setValue: Setter<string>;
   setOpened: Setter<boolean>;
@@ -39,6 +40,7 @@ interface SearchContextData {
   setLoading: Setter<boolean>;
   setInputElement: Setter<HTMLInputElement | undefined>;
   setSelectedResult: Setter<SearchResult | null>;
+  setSelectedResultElement: Setter<HTMLElement | null>;
   actions: {
     onResultClick(searchResult: SearchResult): void;
     ask(): void;
@@ -60,7 +62,7 @@ interface SearchRootProps {
 interface SearchOverlayProps extends Omit<JSX.HTMLAttributes<HTMLElement>, "children" | "ref"> {
   as?:
     | keyof JSX.IntrinsicElements
-    | Component<{
+    | ParentComponent<{
         onClick(event: MouseEvent & { currentTarget: HTMLElement; target: Element }): void;
       }>;
 }
@@ -75,6 +77,7 @@ interface SearchPaletteProps extends Omit<JSX.HTMLAttributes<HTMLElement>, "chil
   as?:
     | keyof JSX.IntrinsicElements
     | ParentComponent<{
+        onClick(event: MouseEvent & { currentTarget: HTMLElement; target: Element }): void;
         onPointerMove(event: PointerEvent & { currentTarget: HTMLElement; target: Element }): void;
       }>;
 }
@@ -85,6 +88,7 @@ interface SearchInputProps
     | "textarea"
     | Component<{
         value: string;
+        mode: SearchMode;
         ref(element: HTMLInputElement): void;
         onInput(
           event: InputEvent & { currentTarget: HTMLInputElement; target: HTMLInputElement }
@@ -99,29 +103,33 @@ interface SearchModeToggleProps extends Omit<JSX.HTMLAttributes<HTMLElement>, "c
   mode?: SearchMode;
   as?:
     | keyof JSX.IntrinsicElements
-    | Component<{
+    | ParentComponent<{
+        mode: SearchMode;
         onClick(event: MouseEvent & { currentTarget: HTMLElement; target: Element }): void;
       }>;
-  children: JSX.Element | Component<{ mode: SearchMode }>;
+  children?: JSX.Element | Component<{ mode: SearchMode }>;
 }
 interface SearchResultsProps {
-  children: Component<{
+  children?: Component<{
     results: SearchResult[];
     loading: boolean;
+    value: string;
     isSelected(result: SearchResult): boolean;
   }>;
 }
-interface SearchResultItemProps extends Omit<JSX.HTMLAttributes<HTMLElement>, "children" | "ref"> {
+interface SearchResultUIProps extends Omit<JSX.HTMLAttributes<HTMLElement>, "children" | "ref"> {
   result: SearchResult;
   as?:
     | keyof JSX.IntrinsicElements
     | ParentComponent<{
+        selected: boolean;
+        ref(element: HTMLElement): void;
         onClick(event: MouseEvent & { currentTarget: HTMLElement; target: Element }): void;
         onPointerEnter(event: PointerEvent & { currentTarget: HTMLElement; target: Element }): void;
       }>;
 }
 interface SearchAnswerProps {
-  children: Component<{ answer: JSX.Element; loading: boolean }>;
+  children?: Component<{ answer?: JSX.Element; loading: boolean }>;
 }
 
 const SearchContext = createContext<SearchContextData>();
@@ -132,12 +140,13 @@ const SearchRoot: ParentComponent<SearchRootProps> = (props) => {
   const [opened, setOpened] = createSignal(props.opened || false);
   const [value, setValue] = createSignal(props.value || "");
   const [mode, setMode] = createSignal<SearchMode>(props.mode || "search");
-  const [answer, setAnswer] = createSignal<JSX.Element>("");
+  const [answer, setAnswer] = createSignal<Component | null>(null);
   const [results, setResults] = createSignal<SearchResult[]>([]);
   const [loading, setLoading] = createSignal(false);
   const [hoverSelectEnabled, setHoverSelectEnabled] = createSignal(false);
   const [inputElement, setInputElement] = createSignal<HTMLInputElement | undefined>(undefined);
   const [selectedResult, setSelectedResult] = createSignal<SearchResult | null>(null);
+  const [selectedResultElement, setSelectedResultElement] = createSignal<HTMLElement | null>(null);
   const [abortControllerRef, setAbortControllerRef] = createSignal<AbortController | null>(null);
   const ask = async (): Promise<void> => {
     let content = "";
@@ -155,7 +164,9 @@ const SearchRoot: ParentComponent<SearchRootProps> = (props) => {
       onChunk(chunk) {
         setLoading(false);
         content += chunk;
-        setAnswer(<div innerHTML={`${marked.parse(content, { gfm: true })}`} />);
+        setAnswer(() => () => (
+          <div style="display:contents;" innerHTML={`${marked.parse(content, { gfm: true })}`} />
+        ));
       },
       onEnd() {
         setLoading(false);
@@ -165,7 +176,7 @@ const SearchRoot: ParentComponent<SearchRootProps> = (props) => {
   const search = debounce(async () => {
     setResults([]);
 
-    if (abortControllerRef()) abortControllerRef()?.abort();
+    if (abortControllerRef()) abortControllerRef()?.abort("query changed");
 
     if (!value()) {
       setLoading(false);
@@ -195,15 +206,15 @@ const SearchRoot: ParentComponent<SearchRootProps> = (props) => {
       }
     }
   }, 150);
-  const scrollToSelectedResult = (smooth?: boolean): void => {
-    const selectedResultElement = document.querySelector("[data-selected=true]");
-
-    if (selectedResultElement) {
-      scrollIntoView(selectedResultElement, {
-        behavior: smooth ? "smooth" : "instant",
-        block: "center"
-      });
-    }
+  const scrollToSelectedResult = (): void => {
+    requestAnimationFrame(() => {
+      if (selectedResultElement()) {
+        scrollIntoView(selectedResultElement()!, {
+          behavior: "instant",
+          block: "center"
+        });
+      }
+    });
   };
 
   createEffect(
@@ -223,7 +234,7 @@ const SearchRoot: ParentComponent<SearchRootProps> = (props) => {
       setHoverSelectEnabled(false);
       setSelectedResult(null);
       setLoading(false);
-      setAnswer("");
+      setAnswer(null);
       setResults([]);
       setValue("");
     })
@@ -260,7 +271,7 @@ const SearchRoot: ParentComponent<SearchRootProps> = (props) => {
             scrollToSelectedResult();
           } else if (mode() === "search") {
             setSelectedResult(results().at(-1) || null);
-            scrollToSelectedResult(true);
+            scrollToSelectedResult();
           }
         },
         "ArrowDown": (event) => {
@@ -277,10 +288,10 @@ const SearchRoot: ParentComponent<SearchRootProps> = (props) => {
             scrollToSelectedResult();
           } else {
             setSelectedResult(results()[0] || null);
-            scrollToSelectedResult(true);
+            scrollToSelectedResult();
           }
         },
-        "Enter": (event) => {
+        "Enter": () => {
           if (!opened()) return;
 
           if (mode() === "search") {
@@ -336,8 +347,10 @@ const SearchRoot: ParentComponent<SearchRootProps> = (props) => {
         setInputElement,
         setAnswer,
         selectedResult,
+        selectedResultElement,
         setHoverSelectEnabled,
         setSelectedResult,
+        setSelectedResultElement,
         actions: {
           ask,
           onResultClick: props.onResultClick
@@ -348,23 +361,27 @@ const SearchRoot: ParentComponent<SearchRootProps> = (props) => {
     </SearchContext.Provider>
   );
 };
-const SearchOverlay: Component<SearchOverlayProps> = (props) => {
+const SearchOverlay: ParentComponent<SearchOverlayProps> = (props) => {
   const { opened, setOpened } = useSearch();
   const [, passProps] = splitProps(props, ["as", "onClick"]);
 
   return (
     <Show when={opened()}>
-      <Dynamic
-        {...passProps}
-        component={props.as || "div"}
-        onClick={(event: MouseEvent & { currentTarget: HTMLElement; target: Element }) => {
-          setOpened(false);
+      <Portal>
+        <Dynamic
+          {...passProps}
+          component={props.as || "div"}
+          onClick={(event: MouseEvent & { currentTarget: HTMLElement; target: Element }) => {
+            setOpened(false);
 
-          if (typeof props.onClick === "function") {
-            props.onClick(event);
-          }
-        }}
-      />
+            if (typeof props.onClick === "function") {
+              props.onClick(event);
+            }
+          }}
+        >
+          {props.children}
+        </Dynamic>
+      </Portal>
     </Show>
   );
 };
@@ -398,6 +415,10 @@ const SearchPalette: ParentComponent<SearchPaletteProps> = (props) => {
       {...passProps}
       component={props.as || "div"}
       role="search"
+      onClick={(event: MouseEvent & { currentTarget: HTMLElement; target: Element }) => {
+        event.stopPropagation();
+        event.preventDefault();
+      }}
       onPointerMove={(event: PointerEvent & { currentTarget: HTMLElement; target: Element }) => {
         setHoverSelectEnabled(true);
 
@@ -422,6 +443,7 @@ const SearchInput: Component<SearchInputProps> = (props) => {
       value={value()}
       ref={(element: HTMLInputElement) => setInputElement(element)}
       role="searchbox"
+      mode={mode()}
       onInput={(
         event: InputEvent & { currentTarget: HTMLInputElement; target: HTMLInputElement }
       ) => {
@@ -449,7 +471,7 @@ const SearchInput: Component<SearchInputProps> = (props) => {
       onKeyUp={(event: KeyboardEvent & { currentTarget: HTMLInputElement; target: Element }) => {
         if (event.key === "Enter" && mode() === "ask") {
           setLoading(true);
-          setAnswer("");
+          setAnswer(null);
           actions.ask();
         }
 
@@ -468,6 +490,7 @@ const SearchModeToggle: Component<SearchModeToggleProps> = (props) => {
     <Dynamic
       {...passProps}
       component={props.as || "button"}
+      mode={mode()}
       onClick={(event: MouseEvent & { currentTarget: HTMLElement; target: Element }) => {
         setMode(props.mode || mode() === "search" ? "ask" : "search");
 
@@ -483,21 +506,32 @@ const SearchModeToggle: Component<SearchModeToggleProps> = (props) => {
   );
 };
 const SearchResults: Component<SearchResultsProps> = (props) => {
-  const { results, selectedResult, loading } = useSearch();
+  const { mode, value, results, selectedResult, loading } = useSearch();
 
   return (
-    <Dynamic
-      component={props.children}
-      results={results()}
-      loading={loading()}
-      isSelected={(result: SearchResult) => {
-        return result === selectedResult();
-      }}
-    />
+    <Show when={mode() === "search" && props.children}>
+      <Dynamic
+        component={props.children}
+        results={results()}
+        loading={loading()}
+        value={value()}
+        isSelected={(result: SearchResult) => {
+          return result === selectedResult();
+        }}
+      />
+    </Show>
   );
 };
-const SearchResultItem: ParentComponent<SearchResultItemProps> = (props) => {
-  const { actions, hoverSelectEnabled, setSelectedResult } = useSearch();
+const SearchResultUI: ParentComponent<SearchResultUIProps> = (props) => {
+  const {
+    actions,
+    selectedResult,
+    setSelectedResultElement,
+    hoverSelectEnabled,
+    setSelectedResult,
+    setOpened
+  } = useSearch();
+  const [element, setElement] = createSignal<HTMLElement | null>(null);
   const [, passProps] = splitProps(props, [
     "result",
     "children",
@@ -505,12 +539,24 @@ const SearchResultItem: ParentComponent<SearchResultItemProps> = (props) => {
     "onPointerEnter",
     "as"
   ]);
+  const selected = (): boolean => {
+    return props.result === selectedResult();
+  };
+
+  createEffect(() => {
+    if (selected() && element()) {
+      setSelectedResultElement(element());
+    }
+  });
 
   return (
     <Dynamic
       {...passProps}
       component={props.as || "button"}
+      ref={(element: HTMLElement) => setElement(element)}
+      selected={selected()}
       onClick={(event: MouseEvent & { currentTarget: HTMLElement; target: Element }) => {
+        setOpened(false);
         actions.onResultClick(props.result);
 
         if (typeof props.onClick === "function") {
@@ -541,8 +587,12 @@ const SearchAnswer: Component<SearchAnswerProps> = (props) => {
   const { mode, loading, answer } = useSearch();
 
   return (
-    <Show when={mode() === "ask"}>
-      <Dynamic component={props.children} answer={answer()} loading={loading()} />
+    <Show when={mode() === "ask" && props.children}>
+      <Dynamic
+        component={props.children}
+        answer={answer() ? <Dynamic component={answer()!} /> : null}
+        loading={loading()}
+      />
     </Show>
   );
 };
@@ -554,7 +604,7 @@ const Search = {
   Trigger: SearchTrigger,
   Input: SearchInput,
   Results: SearchResults,
-  Result: SearchResultItem,
+  Result: SearchResultUI,
   Answer: SearchAnswer
 };
 

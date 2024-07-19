@@ -18,7 +18,7 @@ const generateConfig = (jsx: boolean): Options => {
       }
 
       options.chunkNames = "[name]/[hash]";
-      options.drop = ["console", "debugger"];
+      // options.drop = ["console", "debugger"];
     },
     outExtension() {
       return jsx ? { js: ".jsx" } : {};

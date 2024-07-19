@@ -8,33 +8,73 @@ import {
   ParentComponent,
   createContext,
   Accessor,
-  useContext
+  useContext,
+  createMemo,
+  JSX,
+  splitProps,
+  Setter
 } from "solid-js";
 import { scroll } from "seamless-scroll-polyfill";
 import { Dynamic } from "solid-js/web";
 
 interface TOCItem {
   label: string;
+  id?: string;
   children?: TOCItem[];
 }
 interface TOCContextData {
   activeId: Accessor<string>;
+  setActiveId: Setter<string>;
+  actions: {
+    scrollToActiveItem(): void;
+  };
   getId(item: TOCItem): string;
+}
+interface TOCItemUIProps extends Omit<JSX.HTMLAttributes<HTMLElement>, "children" | "ref"> {
+  as?:
+    | keyof JSX.IntrinsicElements
+    | ParentComponent<{
+        onClick(event: MouseEvent & { currentTarget: HTMLElement; target: Element }): void;
+      }>;
+  item: TOCItem;
 }
 interface TOCLevelProps {
   items: TOCItem[];
-  children: ParentComponent<{ item: TOCItem; isActive(item: TOCItem): boolean }>;
+  level: number;
+  children: ParentComponent<{ item: TOCItem; isActive: boolean; level: number }>;
 }
-interface TOCRootProps extends TOCLevelProps {
+interface TOCRootProps extends Omit<TOCLevelProps, "level"> {
   idAttribute?: string;
   scrollContainer?: HTMLElement;
   offset?: number;
-  getId(item: TOCItem): string;
+  getId?(item: TOCItem): string;
 }
 
 const TOCContext = createContext<TOCContextData>();
 const useTOC = (): TOCContextData => {
   return useContext(TOCContext)!;
+};
+const TOCItemUI: ParentComponent<TOCItemUIProps> = (props) => {
+  const { getId, setActiveId, actions } = useTOC();
+  const [, passProps] = splitProps(props, ["as", "onClick"]);
+
+  return (
+    <Dynamic
+      {...passProps}
+      component={props.as || "button"}
+      onClick={(event: MouseEvent & { currentTarget: HTMLElement; target: Element }) => {
+        setActiveId(getId(props.item));
+        actions.scrollToActiveItem();
+        setActiveId(getId(props.item));
+
+        if (typeof props.onClick === "function") {
+          props.onClick(event);
+        }
+      }}
+    >
+      {props.children}
+    </Dynamic>
+  );
 };
 const TOCLevel: Component<TOCLevelProps> = (props) => {
   const { activeId, getId } = useTOC();
@@ -46,12 +86,13 @@ const TOCLevel: Component<TOCLevelProps> = (props) => {
           <Dynamic
             component={props.children}
             item={item}
-            isActive={(item: TOCItem) => {
-              return Boolean(activeId() && activeId() === getId(item));
-            }}
+            isActive={Boolean(activeId() && activeId() === getId(item))}
+            level={props.level}
           >
             <Show when={item.children?.length}>
-              <TOCLevel items={item.children || []}>{props.children}</TOCLevel>
+              <TOCLevel items={item.children || []} level={props.level + 1}>
+                {props.children}
+              </TOCLevel>
             </Show>
           </Dynamic>
         );
@@ -63,10 +104,23 @@ const TOCRoot: Component<TOCRootProps> = (props) => {
   const idAttribute = (): string => props.idAttribute || "id";
   const scrollContainer = (): HTMLElement => props.scrollContainer || document.body;
   const getId = (item?: TOCItem): string => {
-    return item ? props.getId(item) : "";
+    return item ? item.id || props.getId?.(item) || "" : "";
   };
-  const [activeId, setActiveId] = createSignal(getId(props.items[0]));
-  const scrollToActiveItem = (smooth?: boolean): void => {
+  const flattenItems = createMemo(() => {
+    const output: TOCItem[] = [];
+    const flatten = (items: TOCItem[]): void => {
+      for (const item of items) {
+        output.push(item);
+        flatten(item.children || []);
+      }
+    };
+
+    flatten(props.items);
+
+    return output;
+  });
+  const [activeId, setActiveId] = createSignal(getId(flattenItems()[0]));
+  const scrollToActiveItem = (): void => {
     const item = activeId();
     const element = document.querySelector(`[${idAttribute()}="${item}"]`);
 
@@ -79,14 +133,14 @@ const TOCRoot: Component<TOCRootProps> = (props) => {
 
       scroll(window, {
         top: y,
-        behavior: smooth === false ? "instant" : "smooth"
+        behavior: "instant"
       });
     } else {
       const y = rect.top + scrollContainer().scrollTop - (props.offset || 0);
 
       scroll(scrollContainer(), {
         top: y,
-        behavior: smooth === false ? "instant" : "smooth"
+        behavior: "instant"
       });
     }
   };
@@ -96,8 +150,6 @@ const TOCRoot: Component<TOCRootProps> = (props) => {
     const setCurrent: IntersectionObserverCallback = (entries) => {
       for (const entry of entries) {
         if (entry.isIntersecting) {
-          const { id } = entry.target;
-
           setActiveId(entry.target.getAttribute(idAttribute()) || "");
           break;
         }
@@ -118,15 +170,17 @@ const TOCRoot: Component<TOCRootProps> = (props) => {
       const isStart = container.scrollTop <= threshold;
 
       if (isEnd) {
-        setActiveId(getId(props.items.at(-1)));
+        setActiveId(getId(flattenItems().at(-1)));
       } else if (isStart) {
-        setActiveId(getId(props.items[0]));
+        setActiveId(getId(flattenItems()[0]));
       }
     };
+    const selector = flattenItems()
+      .map((item) => `[${idAttribute()}="${getId(item)}"]`)
+      .join(", ");
+    const elements = selector ? document.querySelectorAll(selector) : [];
 
-    document
-      .querySelectorAll(props.items.map((item) => `[${idAttribute()}="${getId(item)}"]`).join(", "))
-      .forEach((element) => observer.observe(element));
+    elements.forEach((element) => observer.observe(element));
     container?.addEventListener("scroll", handleScroll);
     onCleanup(() => {
       observer.disconnect();
@@ -135,7 +189,7 @@ const TOCRoot: Component<TOCRootProps> = (props) => {
 
     if (hash) {
       setActiveId(hash);
-      scrollToActiveItem(false);
+      scrollToActiveItem();
     }
   });
 
@@ -143,15 +197,23 @@ const TOCRoot: Component<TOCRootProps> = (props) => {
     <TOCContext.Provider
       value={{
         activeId,
-        getId
+        setActiveId,
+        getId,
+        actions: {
+          scrollToActiveItem
+        }
       }}
     >
-      <TOCLevel items={props.items}>{props.children}</TOCLevel>
+      <TOCLevel items={props.items} level={1}>
+        {props.children}
+      </TOCLevel>
     </TOCContext.Provider>
   );
 };
 const TOC = {
-  Root: TOCRoot
+  Root: TOCRoot,
+  Item: TOCItemUI
 };
 
 export { TOC };
+export type { TOCItem };

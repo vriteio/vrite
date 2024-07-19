@@ -998,7 +998,7 @@
   __export(api_exports, {
     createClient: () => V
   });
-  var import_eventsource, l, S, g, L, I, P, O, E, x, D, C, T, j, R, v, m, q, k, A, z, w, B, b, M, G, J, u2, N, V;
+  var import_eventsource, l, S, g, L, I, P, O, E, x, D, C, T, j, R, v, m, q, k, A, z, w, B, b, M, h, J, u2, N, V;
   var init_api = __esm({
     "../../packages/sdk/dist/api.mjs"() {
       "use strict";
@@ -1009,28 +1009,28 @@
       L = (t) => ({ get: (e) => t("GET", `${g}`, { params: e }), create: (e) => t("POST", `${g}`, { body: e }), update: (e) => t("PUT", `${g}`, { body: e }), delete: (e) => t("DELETE", `${g}`, { params: e }), list: ({ contentGroupId: e, ...o }) => t("GET", `${g}/list`, { params: { ...o, ...e && { contentGroupId: typeof e == "string" ? e : e.join(",") } } }) });
       I = (t) => {
         let e = t.baseURL || "https://api.vrite.io", o = t.extensionId || "", i = t.headers || {}, d2 = null, { token: $ } = t;
-        return { sendRequest: async (a2, s2, c) => {
+        return { sendRequest: async (s2, a2, c) => {
           try {
-            const { default: p2 } = await Promise.resolve().then(() => __toESM(require_browser2(), 1)), n = await p2(`${e}${s2}/?${encodeURI(Object.entries(c?.params || {}).filter(([, h]) => h).map(([h, U]) => `${h}=${U}`).join("&"))}`, { headers: { Authorization: `Bearer ${$}`, Accept: "application/json", ...c?.body ? { "Content-Type": "application/json" } : {}, ...o ? { "X-Vrite-Extension-ID": o } : {}, ...i }, body: c?.body ? JSON.stringify(c.body) : null, signal: d2, method: a2 });
+            const { default: p2 } = await Promise.resolve().then(() => __toESM(require_browser2(), 1)), r = await p2(`${e}${a2}/?${encodeURI(Object.entries(c?.params || {}).filter(([, y]) => y).map(([y, U]) => `${y}=${U}`).join("&"))}`, { headers: { Authorization: `Bearer ${$}`, Accept: "application/json", ...c?.body ? { "Content-Type": "application/json" } : {}, ...o ? { "X-Vrite-Extension-ID": o } : {}, ...i }, body: c?.body ? JSON.stringify(c.body) : null, signal: d2, method: s2 });
             d2 = null;
-            let r = null;
+            let n = null;
             try {
-              if (r = await n.json(), !r)
+              if (n = await r.json(), !n)
                 return;
             } catch {
               return;
             }
-            if (!n.ok)
-              throw r;
-            const y = n.headers.get("x-pagination-total");
-            return console.log(`${e}${s2}`, y, n.headers), y ? Object.assign(r, { meta: { pagination: { total: parseInt(y), pages: parseInt(n.headers.get("x-pagination-pages") || "0"), perPage: parseInt(n.headers.get("x-pagination-per-page") || "0"), page: parseInt(n.headers.get("x-pagination-page") || "0") } } }) : r;
+            if (!r.ok)
+              throw n;
+            const G = r.headers.get("x-pagination-total");
+            return G ? Object.assign(n, { meta: { pagination: { total: parseInt(G), pages: parseInt(r.headers.get("x-pagination-pages") || "0"), perPage: parseInt(r.headers.get("x-pagination-per-page") || "0"), page: parseInt(r.headers.get("x-pagination-page") || "0") } } }) : n;
           } catch (p2) {
             throw console.error(p2), p2;
           }
-        }, reconfigure: (a2) => {
-          e = a2.baseURL || e, $ = a2.token || $, o = a2.extensionId || o, i = a2.headers || i;
-        }, useSignal: (a2) => {
-          d2 = a2;
+        }, reconfigure: (s2) => {
+          e = s2.baseURL || e, $ = s2.token || $, o = s2.extensionId || o, i = s2.headers || i;
+        }, useSignal: (s2) => {
+          d2 = s2;
         }, getConfig: () => ({ baseURL: e, token: $, extensionId: o, headers: i }), getSignal: () => d2 };
       };
       P = "/user-settings";
@@ -1052,33 +1052,33 @@
       B = (t) => ({ get: () => t("GET", `${w}`), updateContentPieceData: (e) => t("POST", `${w}/content-piece-data`, { body: e }) });
       b = "/variants";
       M = (t) => ({ create: (e) => t("POST", `${b}`, { body: e }), update: (e) => t("PUT", `${b}`, { body: e }), delete: (e) => t("DELETE", `${b}`, { params: e }), list: () => t("GET", `${b}/list`) });
-      G = "/transformers";
-      J = (t) => ({ create: (e) => t("POST", `${G}`, { body: e }), delete: (e) => t("DELETE", `${G}`, { params: e }), list: () => t("GET", `${G}/list`) });
+      h = "/transformers";
+      J = (t) => ({ create: (e) => t("POST", `${h}`, { body: e }), delete: (e) => t("DELETE", `${h}`, { params: e }), list: () => t("GET", `${h}/list`) });
       u2 = "/snippets";
       N = (t) => ({ get: (e) => t("GET", `${u2}`, { params: e }), create: (e) => t("POST", `${u2}`, { body: e }), update: (e) => t("PUT", `${u2}`, { body: e }), delete: (e) => t("DELETE", `${u2}`, { params: e }), list: (e) => t("GET", `${u2}/list`, { params: e }) });
       V = (t) => {
-        const { sendRequest: e, reconfigure: o, getConfig: i, getSignal: d2, useSignal: $ } = I(t), a2 = { contentGroups: S(e), contentPieces: L(e), snippets: N(e), tags: x(e), profile: C(e), userSettings: O(e), webhooks: j(e), workspace: v(e), roles: q(e), workspaceSettings: A(e), workspaceMemberships: z(e), extension: B(e), variants: M(e), transformers: J(e), search(s2) {
-          return e("GET", "/search", { params: s2 });
-        }, async ask(s2) {
+        const { sendRequest: e, reconfigure: o, getConfig: i, getSignal: d2, useSignal: $ } = I(t), s2 = { contentGroups: S(e), contentPieces: L(e), snippets: N(e), tags: x(e), profile: C(e), userSettings: O(e), webhooks: j(e), workspace: v(e), roles: q(e), workspaceSettings: A(e), workspaceMemberships: z(e), extension: B(e), variants: M(e), transformers: J(e), search(a2) {
+          return e("GET", "/search", { params: a2 });
+        }, async ask(a2) {
           let c = "";
-          const p2 = new import_eventsource.default(`${i().baseURL}/search/ask?query=${encodeURIComponent(s2.query)}`, { headers: { Authorization: `Bearer ${i().token}`, "Content-Type": "application/json", Accept: "application/json" } });
-          p2.addEventListener("error", (n) => {
-            const r = n;
-            return r.message ? s2.onError?.(r.message) : (p2.close(), s2.onEnd?.(c));
-          }), p2.addEventListener("message", (n) => {
-            const r = decodeURIComponent(n.data);
-            c += r, s2.onChunk?.(r, c);
+          const p2 = new import_eventsource.default(`${i().baseURL}/search/ask?query=${encodeURIComponent(a2.query)}`, { headers: { Authorization: `Bearer ${i().token}`, "Content-Type": "application/json", Accept: "application/json" } });
+          p2.addEventListener("error", (r) => {
+            const n = r;
+            return n.message ? a2.onError?.(n.message) : (p2.close(), a2.onEnd?.(c));
+          }), p2.addEventListener("message", (r) => {
+            const n = decodeURIComponent(r.data);
+            c += n, a2.onChunk?.(n, c);
           }), d2()?.addEventListener("abort", () => {
             p2.close();
           }), $(null);
-        }, useSignal(s2) {
-          return $(s2), a2;
-        }, reconfigure(s2) {
-          return o(s2), a2;
+        }, useSignal(a2) {
+          return $(a2), s2;
+        }, reconfigure(a2) {
+          return o(a2), s2;
         }, getConfig() {
           return i();
         } };
-        return a2;
+        return s2;
       };
     }
   });

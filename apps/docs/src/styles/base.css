@@ -152,8 +152,9 @@ h2 {
     transform: translateY(3rem);
   }
 }
+
 .astro-code {
-  @apply !rounded-2xl !bg-gray-800 !py-3 !px-4;
+  @apply !rounded-2xl !bg-gray-800 !dark:bg-gray-900 !py-3 !px-4;
 }
 .astro-code::-webkit-scrollbar {
   @apply w-2 h-2 rounded-lg bg-transparent;
@@ -173,6 +174,9 @@ h2 {
   line-height: 21px !important;
   display: flex;
   flex-direction: column;
+}
+.code-block-contrast .astro-code {
+  @apply !bg-gray-800 !dark:bg-gray-800;
 }
 .prose :where(:not(pre) > code):not(:where(.not-prose, .not-prose *)) {
   &::before,
