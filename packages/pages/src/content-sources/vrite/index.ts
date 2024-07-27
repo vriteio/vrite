@@ -9,8 +9,6 @@ const vrite = createContentSource<{
   contentGroupId: string;
   baseURL?: string;
 }>("vrite", ({ sourceConfig }) => {
-  console.log(sourceConfig);
-
   const client = createClient({
     token: sourceConfig.accessToken,
     baseURL: sourceConfig.baseURL

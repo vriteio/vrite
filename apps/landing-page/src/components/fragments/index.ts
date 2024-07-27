@@ -7,3 +7,4 @@ export * from "./observed";
 export * from "./analytics";
 export * from "./header";
 export * from "./parallax-card";
+export * from "./pagination-menu";

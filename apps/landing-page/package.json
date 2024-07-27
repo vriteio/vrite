@@ -20,6 +20,7 @@
     "@vrite/components": "workspace:*",
     "@vrite/pages": "workspace:*",
     "@vrite/sdk": "workspace:*",
+    "@vrite/solid-ui": "workspace:*",
     "astro": "^4.11.5",
     "atropos": "^2.0.2",
     "clsx": "^2.0.0",

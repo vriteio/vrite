@@ -1,19 +1,8 @@
-import {
-  Component,
-  For,
-  onMount,
-  onCleanup,
-  createSignal,
-  createMemo,
-  createEffect,
-  Show
-} from "solid-js";
-import { mdiListBox } from "@mdi/js";
+import { Component, onMount, createMemo, Show } from "solid-js";
 import clsx from "clsx";
-import { scroll } from "seamless-scroll-polyfill";
 import { type TOCItem, TOC } from "@vrite/solid-ui";
 import type { MarkdownHeading } from "astro";
-import { Button, IconButton } from "#components/primitives";
+import { Button } from "#components/primitives";
 
 interface OnThisPageProps {
   headings: MarkdownHeading[];
@@ -67,24 +56,13 @@ const OnThisPage: Component<OnThisPageProps> = (props) => {
     <>
       <div
         class={clsx(
-          "w-64 flex-col justify-start top-0 pt-24 xl:fixed right-0 hidden xl:flex gap-2",
+          "w-72 flex-col justify-start top-0 pt-24 xl:fixed right-0 hidden xl:flex gap-2",
           "mr-[max(0px,calc((100%-(1536px))/2))]"
         )}
       >
         <Show when={props.hide !== true}>
-          <Show when={items().length}>
-            <IconButton
-              text="soft"
-              class="font-bold justify-start m-0"
-              variant="text"
-              badge
-              hover={false}
-              path={mdiListBox}
-              label="On This Page"
-            />
-          </Show>
           <div class="flex flex-col">
-            <TOC.Root items={items()} offset={80} getId={() => ""}>
+            <TOC.Root items={items()} offset={80}>
               {(props) => {
                 const isActive = (): boolean => props.isActive;
                 const level = (): number => props.level;
@@ -124,7 +102,7 @@ const OnThisPage: Component<OnThisPageProps> = (props) => {
           </div>
         </Show>
       </div>
-      <div class="min-w-64 hidden xl:flex" />
+      <div class="min-w-72 hidden xl:flex" />
     </>
   );
 };

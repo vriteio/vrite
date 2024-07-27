@@ -102,4 +102,4 @@ const createAstroPlugin = (
 const vritePages = createAstroPlugin;
 
 export { vritePages };
-export { vrite } from "./content-sources";
+export * from "./content-sources";

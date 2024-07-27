@@ -1,6 +1,17 @@
 import { mdiMenu, mdiClose, mdiChevronDown } from "@mdi/js";
 import clsx from "clsx";
-import { Component, For, JSX, Show, createEffect, createSignal } from "solid-js";
+import {
+  Component,
+  For,
+  JSX,
+  Match,
+  Show,
+  Switch,
+  createEffect,
+  createMemo,
+  createSignal
+} from "solid-js";
+import { Tree, TreeItem } from "@vrite/solid-ui";
 import { menuOpened, setMenuOpened } from "#lib/state";
 import { Card, Button, IconButton } from "#components/primitives";
 import { logoIcon } from "#assets/icons/logo";
@@ -22,93 +33,143 @@ interface SideBarProps {
   >;
   currentPath: string;
 }
+interface MenuLevel {
+  label: string;
+  link?: string;
+  menu?: MenuLevel[];
+}
 interface SideBarNestedMenuProps {
-  menu: Array<{ label: string; link?: string; menu?: Array<{ label: string; link: string }> }>;
+  menu: MenuLevel[];
   currentPath: string;
-  children: JSX.Element;
-  openedByDefault?: boolean;
 }
 
 const SideBarNestedMenu: Component<SideBarNestedMenuProps> = (props) => {
-  const [opened, setOpened] = createSignal(
-    props.openedByDefault ||
-      props.menu.filter((item) => {
-        return item.link && props.currentPath.includes(item.link);
-      }).length > 0
-  );
+  const currentPath = (): string => props.currentPath.replace(/(^\/)|(\/$)/g, "");
+  const [expanded, setExpanded] = createSignal<string[]>([currentPath()]);
+  const items = createMemo<TreeItem[]>(() => {
+    const processMenuLevel = (
+      menuLevel: MenuLevel[],
+      collapsible = true,
+      parentId = ""
+    ): TreeItem[] => {
+      return menuLevel.map((item) => {
+        const id =
+          (item.link || "").replace(/(^\/)|(\/$)/g, "") ||
+          `${parentId}${parentId ? "." : ""}${item.label.toLowerCase().replace(/\s/g, "-")}`;
+
+        return {
+          label: item.label,
+          collapsible,
+          id,
+          children: item.menu ? processMenuLevel(item.menu, true, id) : undefined,
+          data: {
+            link: item.link
+          }
+        };
+      });
+    };
+
+    return processMenuLevel(props.menu, false);
+  });
 
   return (
-    <div class="flex flex-col w-full">
-      <Show when={!props.openedByDefault} fallback={<span>{props.children}</span>}>
-        <Button
-          class="flex justify-center items-center text-start w-full group m-0"
-          onClick={() => setOpened((opened) => !opened)}
-          variant="text"
-          text="soft"
-        >
-          <div class="flex-1">{props.children}</div>
-          <IconButton
-            path={mdiChevronDown}
-            class="m-0 p-0"
-            variant="text"
-            text="soft"
-            badge
-            iconProps={{
-              class: clsx(
-                "transform transition-transform duration-100 h-5 w-5",
-                opened() ? "" : "-rotate-90"
-              )
-            }}
-          />
-        </Button>
-      </Show>
-      <div
-        class={clsx(
-          "flex flex-1 w-full overflow-hidden",
-          !props.openedByDefault && "pl-3.25",
-          opened() ? "max-h-full" : "max-h-0"
-        )}
-      >
-        <div class="pt-1 flex w-full">
-          <Show when={!props.openedByDefault}>
-            <div class="w-2px rounded-full h-full bg-gray-200 dark:bg-gray-700" />
-          </Show>
-          <div class={clsx("flex-1 flex flex-col gap-1", !props.openedByDefault && "pl-2")}>
-            <For each={props.menu}>
-              {(item) => {
-                if (item.menu) {
+    <Tree.Root<{ link: string }>
+      items={items()}
+      collapsible
+      expanded={expanded()}
+      setExpanded={setExpanded}
+    >
+      {(props) => {
+        const isExpanded = (): boolean => props.isExpanded;
+        const label = (): string => props.item.label;
+        const active = (): boolean => {
+          const link = (props.item.data?.link || "").replace(/(^\/)|(\/$)/g, "");
+
+          return Boolean(props.item.data?.link && currentPath() === link);
+        };
+
+        return (
+          <div class="flex flex-col w-full">
+            <Switch>
+              <Match when={props.item.data?.link}>
+                {(link) => {
                   return (
-                    <SideBarNestedMenu currentPath={props.currentPath} menu={item.menu}>
-                      {item.label}
-                    </SideBarNestedMenu>
+                    <Button
+                      variant={active() ? "solid" : "text"}
+                      class="text-start w-full m-0"
+                      text={active() ? "primary" : "soft"}
+                      color={active() ? "primary" : "base"}
+                      link={link()}
+                      target={link()?.startsWith("http") ? "_blank" : "_self"}
+                    >
+                      {props.item.label}
+                    </Button>
                   );
-                }
-
-                const active = (): boolean => {
-                  const currentPath = props.currentPath.replace(/(^\/)|(\/$)/g, "");
-                  const link = (item.link || "").replace(/(^\/)|(\/$)/g, "");
-
-                  return Boolean(item.link && currentPath === link);
-                };
-
-                return (
-                  <Button
-                    variant={active() ? "solid" : "text"}
-                    class="text-start w-full m-0"
-                    text={active() ? "primary" : "soft"}
-                    color={active() ? "primary" : "base"}
-                    link={item.link}
-                    target={item.link?.startsWith("http") ? "_blank" : "_self"}
-                  >
-                    {item.label}
-                  </Button>
-                );
-              }}
-            </For>
+                }}
+              </Match>
+              <Match when={props.item.collapsible}>
+                <Tree.Item
+                  item={props.item}
+                  as={(props) => {
+                    return (
+                      <Button
+                        class="flex justify-center items-center text-start w-full group m-0"
+                        onClick={props.onClick}
+                        variant="text"
+                        text="soft"
+                      >
+                        <div class="flex-1">{label()}</div>
+                        <IconButton
+                          path={mdiChevronDown}
+                          class="m-0 p-0"
+                          variant="text"
+                          text="soft"
+                          badge
+                          iconProps={{
+                            class: clsx(
+                              "transform transition-transform duration-100 h-5 w-5",
+                              isExpanded() ? "" : "-rotate-90"
+                            )
+                          }}
+                        />
+                      </Button>
+                    );
+                  }}
+                />
+              </Match>
+              <Match when={true}>
+                <Button
+                  variant="text"
+                  class="justify-start w-full font-bold m-0"
+                  badge
+                  hover={false}
+                >
+                  {props.item.label}
+                </Button>
+              </Match>
+            </Switch>
+            <Show when={props.item.children?.length}>
+              <div
+                class={clsx(
+                  "flex flex-1 w-full overflow-hidden",
+                  props.item.collapsible && "pl-3.25",
+                  props.isExpanded ? "max-h-full" : "max-h-0"
+                )}
+              >
+                <div class="pt-1 flex w-full">
+                  <Show when={props.item.collapsible}>
+                    <div class="w-2px rounded-full h-full bg-gray-200 dark:bg-gray-700" />
+                  </Show>
+                  <div class={clsx("flex-1 flex flex-col gap-1", props.item.collapsible && "pl-2")}>
+                    {props.children}
+                  </div>
+                </div>
+              </div>
+            </Show>
           </div>
-        </div>
-      </div>
-    </div>
+        );
+      }}
+    </Tree.Root>
   );
 };
 const SideBar: Component<SideBarProps> = (props) => {
@@ -125,7 +186,7 @@ const SideBar: Component<SideBarProps> = (props) => {
       <div class={clsx("h-full fixed top-0 left-0 z-2", "pl-[max(0px,calc((100%-1536px)/2))]")}>
         <Card
           class={clsx(
-            "top-0 h-full z-50 min-w-64 w-full md:max-w-64 m-0  bg-gray-50 dark:bg-gray-800",
+            "top-0 h-full z-50 min-w-72 w-full md:max-w-72 m-0  bg-gray-50 dark:bg-gray-800",
             "flex-col gap-2 justify-start items-start border-0 rounded-none flex fixed md:relative",
             "transform md:transition-transform duration-300 ease-in-out scrollbar-sm-contrast overflow-auto",
             menuOpened() ? "" : "translate-y-[100vh] md:translate-y-0"
@@ -167,26 +228,10 @@ const SideBar: Component<SideBarProps> = (props) => {
               }}
             </For>
           </div>
-          <For each={props.menu[props.currentSection]}>
-            {(menuItem) => {
-              return (
-                <SideBarNestedMenu
-                  currentPath={props.currentPath}
-                  menu={menuItem.menu}
-                  openedByDefault
-                >
-                  <Button
-                    variant="text"
-                    class="justify-start w-full font-bold m-0"
-                    badge
-                    hover={false}
-                  >
-                    {menuItem.label}
-                  </Button>
-                </SideBarNestedMenu>
-              );
-            }}
-          </For>
+          <SideBarNestedMenu
+            currentPath={props.currentPath}
+            menu={props.menu[props.currentSection]}
+          ></SideBarNestedMenu>
           <div class="min-h-24 md:min-h-unset md:flex-1" />
           <div class="flex sticky bottom-0">
             <IconButton
@@ -213,7 +258,7 @@ const SideBar: Component<SideBarProps> = (props) => {
           }}
         />
       </div>
-      <div class="min-w-64 hidden md:block" />
+      <div class="min-w-72 hidden md:block" />
     </>
   );
 };

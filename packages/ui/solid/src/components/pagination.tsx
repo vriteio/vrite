@@ -16,7 +16,7 @@ import { Dynamic } from "solid-js/web";
 
 type SeparatorItem = { type: "separator" };
 type PageItem = { type: "page"; page: number; active?: boolean };
-type Item = SeparatorItem | PageItem;
+type PaginationItem = SeparatorItem | PageItem;
 
 interface PaginationContextData {
   page: Accessor<number>;
@@ -36,22 +36,24 @@ interface PaginationPreviousProps
     | keyof JSX.IntrinsicElements
     | ParentComponent<{
         disabled: boolean;
+        page?: number;
         onClick(event: MouseEvent & { currentTarget: HTMLElement; target: Element }): void;
       }>;
 }
 interface PaginationItemsProps {
   children: Component<{
-    items: Item[];
+    items: PaginationItem[];
   }>;
 }
 interface PaginationSeparatorProps
   extends Omit<JSX.HTMLAttributes<HTMLElement>, "children" | "ref"> {
   as?: keyof JSX.IntrinsicElements | ParentComponent;
 }
-interface PaginationItemProps extends Omit<JSX.HTMLAttributes<HTMLElement>, "children" | "ref"> {
+interface PaginationItemUIProps extends Omit<JSX.HTMLAttributes<HTMLElement>, "children" | "ref"> {
   as?:
     | keyof JSX.IntrinsicElements
     | ParentComponent<{
+        page: number;
         onClick(event: MouseEvent & { currentTarget: HTMLElement; target: Element }): void;
       }>;
   item: PageItem;
@@ -62,6 +64,7 @@ interface PaginationNextProps extends Omit<JSX.HTMLAttributes<HTMLElement>, "chi
     | keyof JSX.IntrinsicElements
     | ParentComponent<{
         disabled: boolean;
+        page?: number;
         onClick(event: MouseEvent & { currentTarget: HTMLElement; target: Element }): void;
       }>;
 }
@@ -103,6 +106,7 @@ const PaginationPrevious: ParentComponent<PaginationPreviousProps> = (props) => 
       component={props.as || "button"}
       aria-label="Next page"
       disabled={page() <= 1}
+      page={page() >= 1 ? page() - 1 : undefined}
       onClick={(event: MouseEvent & { currentTarget: HTMLElement; target: Element }) => {
         if (page() >= 1) {
           setPage(page() - 1);
@@ -120,7 +124,7 @@ const PaginationPrevious: ParentComponent<PaginationPreviousProps> = (props) => 
 const PaginationItems: Component<PaginationItemsProps> = (props) => {
   const { page, total, visiblePages } = usePagination();
   const items = createMemo(() => {
-    const items: Item[] = [];
+    const items: PaginationItem[] = [];
 
     if (!visiblePages() || total() <= visiblePages()) {
       for (let i = 1; i <= total(); i++) {
@@ -169,7 +173,7 @@ const PaginationItems: Component<PaginationItemsProps> = (props) => {
 
   return <Dynamic component={props.children} items={items()} />;
 };
-const PaginationItem: Component<PaginationItemProps> = (props) => {
+const PaginationItemUI: Component<PaginationItemUIProps> = (props) => {
   const { setPage } = usePagination();
   const [, passProps] = splitProps(props, ["item", "as", "children", "onClick"]);
 
@@ -177,6 +181,7 @@ const PaginationItem: Component<PaginationItemProps> = (props) => {
     <Dynamic
       {...passProps}
       component={props.as || "button"}
+      page={props.item.page}
       onClick={(event: MouseEvent & { currentTarget: HTMLElement; target: Element }) => {
         setPage(props.item.page);
 
@@ -210,6 +215,7 @@ const PaginationNext: ParentComponent<PaginationNextProps> = (props) => {
       component={props.as || "button"}
       aria-label="Next page"
       disabled={page() >= total()}
+      page={page() < total() ? page() + 1 : undefined}
       onClick={(event: MouseEvent & { currentTarget: HTMLElement; target: Element }) => {
         if (page() < total()) {
           setPage(page() + 1);
@@ -228,9 +234,10 @@ const Pagination = {
   Root: PaginationRoot,
   Previous: PaginationPrevious,
   Items: PaginationItems,
-  Item: PaginationItem,
+  Item: PaginationItemUI,
   Separator: PaginationSeparator,
   Next: PaginationNext
 };
 
 export { Pagination };
+export type { PageItem, SeparatorItem, PaginationItem };
