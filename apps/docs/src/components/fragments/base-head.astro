@@ -52,4 +52,4 @@ const { title, description, image = "/meta-image.jpg" } = Astro.props;
 <meta property="twitter:title" content={title} />
 <meta property="twitter:description" content={description} />
 <meta property="twitter:image" content={new URL(image, Astro.url)} />
-{Astro.props.analytics !== false && <Analytics client:only />}
+{Astro.props.analytics !== false && <Analytics client:only="solid-js" />}

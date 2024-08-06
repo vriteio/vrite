@@ -12,7 +12,9 @@ import {
   createMemo,
   JSX,
   splitProps,
-  Setter
+  Setter,
+  createEffect,
+  on
 } from "solid-js";
 import { scroll } from "seamless-scroll-polyfill";
 import { Dynamic } from "solid-js/web";
@@ -25,6 +27,13 @@ interface TOCItem {
 interface TOCContextData {
   activeId: Accessor<string>;
   setActiveId: Setter<string>;
+  options: Accessor<{
+    useHash: boolean;
+    idAttribute: string;
+    scrollContainer: HTMLElement;
+    offset: number;
+    scrollBehavior: "instant" | "smooth";
+  }>;
   actions: {
     scrollToActiveItem(): void;
   };
@@ -47,6 +56,8 @@ interface TOCRootProps extends Omit<TOCLevelProps, "level"> {
   idAttribute?: string;
   scrollContainer?: HTMLElement;
   offset?: number;
+  useHash?: boolean;
+  scrollBehavior?: "instant" | "smooth";
   getId?(item: TOCItem): string;
 }
 
@@ -54,8 +65,36 @@ const TOCContext = createContext<TOCContextData>();
 const useTOC = (): TOCContextData => {
   return useContext(TOCContext)!;
 };
+const scrollToElement = (
+  selector: string,
+  behavior?: "instant" | "smooth",
+  options?: { scrollContainer?: HTMLElement; offset?: number }
+): void => {
+  const element = document.querySelector(selector);
+  const scrollContainer = options?.scrollContainer || document.body;
+
+  if (!element) return;
+
+  const rect = element.getBoundingClientRect();
+
+  if (scrollContainer === document.body) {
+    const y = rect.top + window.scrollY - (options?.offset || 0);
+
+    scroll(window, {
+      top: y,
+      behavior: behavior || "instant"
+    });
+  } else {
+    const y = rect.top + scrollContainer.scrollTop - (options?.offset || 0);
+
+    scroll(scrollContainer, {
+      top: y,
+      behavior: behavior || "instant"
+    });
+  }
+};
 const TOCItemUI: ParentComponent<TOCItemUIProps> = (props) => {
-  const { getId, setActiveId, actions } = useTOC();
+  const { getId, setActiveId, activeId, actions, options } = useTOC();
   const [, passProps] = splitProps(props, ["as", "onClick"]);
 
   return (
@@ -66,6 +105,10 @@ const TOCItemUI: ParentComponent<TOCItemUIProps> = (props) => {
         setActiveId(getId(props.item));
         actions.scrollToActiveItem();
         setActiveId(getId(props.item));
+
+        if (options().useHash) {
+          history.pushState({}, "", `#${activeId()}`);
+        }
 
         if (typeof props.onClick === "function") {
           props.onClick(event);
@@ -101,6 +144,7 @@ const TOCLevel: Component<TOCLevelProps> = (props) => {
   );
 };
 const TOCRoot: Component<TOCRootProps> = (props) => {
+  const useHash = (): boolean => (typeof props.useHash === "boolean" ? props.useHash : true);
   const idAttribute = (): string => props.idAttribute || "id";
   const scrollContainer = (): HTMLElement => props.scrollContainer || document.body;
   const getId = (item?: TOCItem): string => {
@@ -119,34 +163,17 @@ const TOCRoot: Component<TOCRootProps> = (props) => {
 
     return output;
   });
-  const [activeId, setActiveId] = createSignal(getId(flattenItems()[0]));
-  const scrollToActiveItem = (): void => {
+  const [activeId, setActiveId] = createSignal("");
+  const scrollToActiveItem = (behavior?: "instant" | "smooth"): void => {
     const item = activeId();
-    const element = document.querySelector(`[${idAttribute()}="${item}"]`);
 
-    if (!element) return;
-
-    const rect = element.getBoundingClientRect();
-
-    if (scrollContainer() === document.body) {
-      const y = rect.top + window.scrollY - (props.offset || 0);
-
-      scroll(window, {
-        top: y,
-        behavior: "instant"
-      });
-    } else {
-      const y = rect.top + scrollContainer().scrollTop - (props.offset || 0);
-
-      scroll(scrollContainer(), {
-        top: y,
-        behavior: "instant"
-      });
-    }
+    scrollToElement(`[${idAttribute()}="${item}"]`, behavior || props.scrollBehavior || "instant", {
+      offset: props.offset,
+      scrollContainer: scrollContainer()
+    });
   };
 
   onMount(() => {
-    const hash = location.hash.slice(1);
     const setCurrent: IntersectionObserverCallback = (entries) => {
       for (const entry of entries) {
         if (entry.isIntersecting) {
@@ -175,6 +202,11 @@ const TOCRoot: Component<TOCRootProps> = (props) => {
         setActiveId(getId(flattenItems()[0]));
       }
     };
+    const handleHashChange = (): void => {
+      const hash = location.hash.slice(1);
+
+      setActiveId(hash || getId(flattenItems()[0]));
+    };
     const selector = flattenItems()
       .map((item) => `[${idAttribute()}="${getId(item)}"]`)
       .join(", ");
@@ -182,15 +214,13 @@ const TOCRoot: Component<TOCRootProps> = (props) => {
 
     elements.forEach((element) => observer.observe(element));
     container?.addEventListener("scroll", handleScroll);
+    window.addEventListener("hashchange", handleHashChange);
     onCleanup(() => {
       observer.disconnect();
       container?.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("hashchange", handleHashChange);
     });
-
-    if (hash) {
-      setActiveId(hash);
-      scrollToActiveItem();
-    }
+    handleHashChange();
   });
 
   return (
@@ -199,6 +229,13 @@ const TOCRoot: Component<TOCRootProps> = (props) => {
         activeId,
         setActiveId,
         getId,
+        options: () => ({
+          useHash: useHash(),
+          idAttribute: idAttribute(),
+          scrollContainer: scrollContainer(),
+          offset: props.offset || 0,
+          scrollBehavior: props.scrollBehavior || "instant"
+        }),
         actions: {
           scrollToActiveItem
         }
@@ -215,5 +252,5 @@ const TOC = {
   Item: TOCItemUI
 };
 
-export { TOC };
+export { TOC, scrollToElement };
 export type { TOCItem };

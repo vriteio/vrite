@@ -1,4 +1,4 @@
-import { Component, For, Show, createSignal, onMount } from "solid-js";
+import { Component, For, Show, createEffect, createSignal, onMount } from "solid-js";
 import {
   mdiAppleKeyboardCommand,
   mdiChevronRight,
@@ -19,6 +19,7 @@ import { Button, Card, Icon, IconButton, Input, Loader, Tooltip } from "#compone
 
 const SearchPalette: Component = (props) => {
   const [showShortcut, setShowShortcut] = createSignal(false);
+  const [opened, setOpened] = createSignal(false);
   const client = createClient({
     token: import.meta.env.PUBLIC_VRITE_SEARCH_TOKEN
   });
@@ -32,17 +33,24 @@ const SearchPalette: Component = (props) => {
   onMount(() => {
     setShowShortcut(true);
   });
+  createEffect(() => {
+    if (opened()) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+    }
+  });
 
   return (
     <Search.Root
       client={client}
+      opened={opened()}
+      setOpened={setOpened}
       onResultClick={(result) => {
         const { slug } = result.contentPiece;
         const [_title, subHeading1, subHeading2] = result.breadcrumb;
 
-        window.location.href = `/${slug.startsWith("/") ? slug.slice(1) : slug}#${convertToSlug(
-          subHeading2 || subHeading1
-        )}`;
+        window.location.href = `/${slug.startsWith("/") ? slug.slice(1) : slug}#${convertToSlug(subHeading2 || subHeading1)}`;
       }}
     >
       <Search.Trigger

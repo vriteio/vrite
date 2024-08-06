@@ -1,5 +1,5 @@
 ---
-slug: "/usage-guide/navigation/command-palette"
+slug: "usage-guide/navigation/command-palette"
 title: "Command Palette"
 ---
 

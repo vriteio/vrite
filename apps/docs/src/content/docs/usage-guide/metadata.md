@@ -1,5 +1,5 @@
 ---
-slug: "/usage-guide/metadata"
+slug: "usage-guide/metadata"
 title: "Managing Metadata"
 ---
 

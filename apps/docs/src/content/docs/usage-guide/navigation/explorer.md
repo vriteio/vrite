@@ -1,5 +1,5 @@
 ---
-slug: "/usage-guide/navigation/explorer"
+slug: "usage-guide/navigation/explorer"
 title: "Explorer panel"
 ---
 

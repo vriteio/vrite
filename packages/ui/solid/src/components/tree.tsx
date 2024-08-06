@@ -71,13 +71,26 @@ const TreeItemUI = <D extends object = any>(
         if (collapsible()) {
           setExpanded((expanded) => {
             const id = getId(props.item);
-            const index = expanded.indexOf(id);
 
-            if (index === -1) {
-              return [...expanded, id];
+            if (expanded.includes(id)) {
+              return expanded.filter((expandedId) => expandedId !== id);
+            } else {
+              const childIds: string[] = [];
+              const getChildIds = (item: TreeItem): void => {
+                childIds.push(getId(item));
+                item.children?.forEach(getChildIds);
+              };
+
+              props.item.children?.forEach(getChildIds);
+
+              const expandedChildIds = childIds.filter((childId) => expanded.includes(childId));
+
+              if (expandedChildIds.length > 0) {
+                return expanded.filter((expandedId) => !expandedChildIds.includes(expandedId));
+              } else {
+                return [...expanded, id];
+              }
             }
-
-            return [...expanded.slice(0, index), ...expanded.slice(index + 1)];
           });
         }
 

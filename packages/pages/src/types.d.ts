@@ -16,26 +16,39 @@ declare module "vrite:pages" {
     contentMetadata: ContentMetadata[];
     branches: ContentTreeBranch[];
   }
-  interface PageMetadata {
+  interface GeneralConfig {
     title: string;
     description: string;
+    logo?: string;
+    favicon?: string;
+    theme?: string;
+    links?: Array<{ url: string; label: string; icon?: string }>;
   }
   interface ContentSource {
     name: string;
     config: Record<string, any>;
-    getPageMetadata(): Promise<PageMetadata>;
-    getContentMetadata(slug: string): Promise<ContentMetadata>;
-    getContentTree(): Promise<{
+    getContentMetadata(slug: string, group?: string): Promise<ContentMetadata>;
+    getContentTree(group?: string): Promise<{
       branches: ContentTreeBranch[];
       contentMetadata: ContentMetadata[];
     }>;
-    renderContent(slug: string): Promise<{
+    getFlattenContentTree(group?: string): Promise<
+      Array<{
+        contentMetadata: ContentMetadata;
+        branches: ContentTreeBranch[];
+      }>
+    >;
+    renderContent(
+      slug: string,
+      group?: string
+    ): Promise<{
       Content: import("astro/dist/runtime/server").AstroComponentFactory;
       headings: Array<import("astro").MarkdownHeading>;
     }>;
     listContentMetadata(
       page: number | "all",
-      perPage?: number
+      perPage?: number,
+      group?: string
     ): Promise<{ contentMetadata: ContentMetadata[]; totalPages: number }>;
   }
 
@@ -44,5 +57,10 @@ declare module "vrite:pages" {
       import("astro").AstroGlobal<Record<string, any>, import("astro").AstroComponentFactory>
     >
   ): ContentSource;
-  export type { ContentMetadata, ContentTreeBranch, PageMetadata, ContentSource };
+  export function useConfig(
+    Astro: Readonly<
+      import("astro").AstroGlobal<Record<string, any>, import("astro").AstroComponentFactory>
+    >
+  ): GeneralConfig;
+  export type { ContentMetadata, ContentTreeBranch, ContentSource, GeneralConfig };
 }

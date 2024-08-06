@@ -19,8 +19,6 @@ declare module 'astro:content' {
 }
 
 declare module 'astro:content' {
-	export { z } from 'astro/zod';
-
 	type Flatten<T> = T extends { [K: string]: infer U } ? U : never;
 
 	export type CollectionKey = keyof AnyEntryMap;
@@ -28,52 +26,6 @@ declare module 'astro:content' {
 
 	export type ContentCollectionKey = keyof ContentEntryMap;
 	export type DataCollectionKey = keyof DataEntryMap;
-
-	// This needs to be in sync with ImageMetadata
-	export type ImageFunction = () => import('astro/zod').ZodObject<{
-		src: import('astro/zod').ZodString;
-		width: import('astro/zod').ZodNumber;
-		height: import('astro/zod').ZodNumber;
-		format: import('astro/zod').ZodUnion<
-			[
-				import('astro/zod').ZodLiteral<'png'>,
-				import('astro/zod').ZodLiteral<'jpg'>,
-				import('astro/zod').ZodLiteral<'jpeg'>,
-				import('astro/zod').ZodLiteral<'tiff'>,
-				import('astro/zod').ZodLiteral<'webp'>,
-				import('astro/zod').ZodLiteral<'gif'>,
-				import('astro/zod').ZodLiteral<'svg'>,
-			]
-		>;
-	}>;
-
-	type BaseSchemaWithoutEffects =
-		| import('astro/zod').AnyZodObject
-		| import('astro/zod').ZodUnion<[BaseSchemaWithoutEffects, ...BaseSchemaWithoutEffects[]]>
-		| import('astro/zod').ZodDiscriminatedUnion<string, import('astro/zod').AnyZodObject[]>
-		| import('astro/zod').ZodIntersection<BaseSchemaWithoutEffects, BaseSchemaWithoutEffects>;
-
-	type BaseSchema =
-		| BaseSchemaWithoutEffects
-		| import('astro/zod').ZodEffects<BaseSchemaWithoutEffects>;
-
-	export type SchemaContext = { image: ImageFunction };
-
-	type DataCollectionConfig<S extends BaseSchema> = {
-		type: 'data';
-		schema?: S | ((context: SchemaContext) => S);
-	};
-
-	type ContentCollectionConfig<S extends BaseSchema> = {
-		type?: 'content';
-		schema?: S | ((context: SchemaContext) => S);
-	};
-
-	type CollectionConfig<S> = ContentCollectionConfig<S> | DataCollectionConfig<S>;
-
-	export function defineCollection<S extends BaseSchema>(
-		input: CollectionConfig<S>
-	): CollectionConfig<S>;
 
 	type AllValuesOf<T> = T extends any ? T[keyof T] : never;
 	type ValidContentEntrySlug<C extends keyof ContentEntryMap> = AllValuesOf<
@@ -164,11 +116,11 @@ declare module 'astro:content' {
 			? {
 					collection: C;
 					slug: ValidContentEntrySlug<C>;
-			  }
+				}
 			: {
 					collection: C;
 					id: keyof DataEntryMap[C];
-			  }
+				}
 	>;
 	// Allow generic `string` to avoid excessive type errors in the config
 	// if `dev` is not running to update as you edit.
@@ -293,14 +245,14 @@ declare module 'astro:content' {
 "docs": {
 "getting-started/concepts.mdx": {
 	id: "getting-started/concepts.mdx";
-  slug: "/getting-started/concepts";
+  slug: "getting-started/concepts";
   body: string;
   collection: "docs";
   data: InferEntrySchema<"docs">
 } & { render(): Render[".mdx"] };
 "getting-started/introduction.mdx": {
 	id: "getting-started/introduction.mdx";
-  slug: "/getting-started/introduction";
+  slug: "getting-started/introduction";
   body: string;
   collection: "docs";
   data: InferEntrySchema<"docs">
@@ -335,89 +287,97 @@ declare module 'astro:content' {
 } & { render(): Render[".md"] };
 "usage-guide/content-editor.md": {
 	id: "usage-guide/content-editor.md";
-  slug: "/usage-guide/content-editor";
+  slug: "usage-guide/content-editor";
   body: string;
   collection: "docs";
   data: InferEntrySchema<"docs">
 } & { render(): Render[".md"] };
 "usage-guide/extensions/introduction.mdx": {
 	id: "usage-guide/extensions/introduction.mdx";
-  slug: "/usage-guide/extensions/introduction";
+  slug: "usage-guide/extensions/introduction";
   body: string;
   collection: "docs";
   data: InferEntrySchema<"docs">
 } & { render(): Render[".mdx"] };
 "usage-guide/extensions/official-extensions/dev.mdx": {
 	id: "usage-guide/extensions/official-extensions/dev.mdx";
-  slug: "/usage-guide/extensions/official/dev";
+  slug: "usage-guide/extensions/official/dev";
   body: string;
   collection: "docs";
   data: InferEntrySchema<"docs">
 } & { render(): Render[".mdx"] };
 "usage-guide/extensions/official-extensions/gpt.mdx": {
 	id: "usage-guide/extensions/official-extensions/gpt.mdx";
-  slug: "/usage-guide/extensions/official/gpt";
+  slug: "usage-guide/extensions/official/gpt";
   body: string;
   collection: "docs";
   data: InferEntrySchema<"docs">
 } & { render(): Render[".mdx"] };
 "usage-guide/extensions/official-extensions/hashnode.mdx": {
 	id: "usage-guide/extensions/official-extensions/hashnode.mdx";
-  slug: "/usage-guide/extensions/official/hashnode";
+  slug: "usage-guide/extensions/official/hashnode";
   body: string;
   collection: "docs";
   data: InferEntrySchema<"docs">
 } & { render(): Render[".mdx"] };
 "usage-guide/extensions/official-extensions/mdx.mdx": {
 	id: "usage-guide/extensions/official-extensions/mdx.mdx";
-  slug: "/usage-guide/extensions/official/mdx";
+  slug: "usage-guide/extensions/official/mdx";
   body: string;
   collection: "docs";
   data: InferEntrySchema<"docs">
 } & { render(): Render[".mdx"] };
 "usage-guide/extensions/official-extensions/medium.mdx": {
 	id: "usage-guide/extensions/official-extensions/medium.mdx";
-  slug: "/usage-guide/extensions/official/medium";
+  slug: "usage-guide/extensions/official/medium";
   body: string;
   collection: "docs";
   data: InferEntrySchema<"docs">
 } & { render(): Render[".mdx"] };
 "usage-guide/metadata.md": {
 	id: "usage-guide/metadata.md";
-  slug: "/usage-guide/metadata";
+  slug: "usage-guide/metadata";
   body: string;
   collection: "docs";
   data: InferEntrySchema<"docs">
 } & { render(): Render[".md"] };
 "usage-guide/navigation/command-palette.md": {
 	id: "usage-guide/navigation/command-palette.md";
-  slug: "/usage-guide/navigation/command-palette";
+  slug: "usage-guide/navigation/command-palette";
   body: string;
   collection: "docs";
   data: InferEntrySchema<"docs">
 } & { render(): Render[".md"] };
 "usage-guide/navigation/dashboard.md": {
 	id: "usage-guide/navigation/dashboard.md";
-  slug: "/usage-guide/navigation/dashboard";
+  slug: "usage-guide/navigation/dashboard";
   body: string;
   collection: "docs";
   data: InferEntrySchema<"docs">
 } & { render(): Render[".md"] };
 "usage-guide/navigation/explorer.md": {
 	id: "usage-guide/navigation/explorer.md";
-  slug: "/usage-guide/navigation/explorer";
+  slug: "usage-guide/navigation/explorer";
   body: string;
   collection: "docs";
   data: InferEntrySchema<"docs">
 } & { render(): Render[".md"] };
 "usage-guide/navigation/navigation.mdx": {
 	id: "usage-guide/navigation/navigation.mdx";
-  slug: "/usage-guide/navigation/introduction";
+  slug: "usage-guide/navigation/introduction";
   body: string;
   collection: "docs";
   data: InferEntrySchema<"docs">
 } & { render(): Render[".mdx"] };
 };
+"recipes": Record<string, {
+  id: string;
+  slug: string;
+  body: string;
+  collection: "recipes";
+  data: InferEntrySchema<"recipes">;
+  render(): Render[".md"];
+}>;
 
 	};
 
@@ -427,5 +387,5 @@ declare module 'astro:content' {
 
 	type AnyEntryMap = ContentEntryMap & DataEntryMap;
 
-	type ContentConfig = typeof import("../src/content/config");
+	export type ContentConfig = typeof import("../src/content/config.js");
 }

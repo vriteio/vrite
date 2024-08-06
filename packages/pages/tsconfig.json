@@ -4,9 +4,6 @@
     "strictNullChecks": true,
     "moduleResolution": "node",
     "jsx": "preserve",
-    "baseUrl": ".",
-    "paths": {
-      "#*": ["./src/*"]
-    }
+    "baseUrl": "."
   }
 }

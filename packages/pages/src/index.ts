@@ -1,22 +1,15 @@
 /* eslint-disable no-inline-comments */
-import autoImportPlugin from "unplugin-auto-import/vite";
+import { parse as parseJs } from "acorn";
+import type { ConfigureSource, DynamicConfig } from "./utils";
 import type { AstroIntegration } from "astro";
+import type { MdxjsEsm } from "mdast-util-mdx";
+import type { VFile } from "vfile";
 import type { Plugin as VitePlugin } from "vite";
+import type { GeneralConfig } from "vrite:pages";
 
-interface VritePagesSourceConfig<T extends object = Record<string, any>> {
-  name: string;
-  config: T;
-}
-interface VritePagesConfig {
-  name?: string;
-  logo?: string;
-  favicon?: string;
-  theme?: string;
-  links?: Array<{ url: string; label: string; icon?: string }>;
-}
 interface VritePagesPluginConfig {
-  source: VritePagesSourceConfig;
-  config: VritePagesConfig;
+  source: ReturnType<ConfigureSource>;
+  config: DynamicConfig<GeneralConfig>;
 }
 
 const createVitePlugin = (): VitePlugin => {
@@ -46,21 +39,24 @@ const createVitePlugin = (): VitePlugin => {
 
         let getConfig = vritePagesIntegration.__.config;
 
-        if (typeof getConfig !== "function") getConfig = () => getConfig;
+        if (typeof getConfig !== "function") getConfig = () => vritePagesIntegration.__.config;
 
         const useContentSource = (Astro) => {
-          const config = getConfig({ Astro });
+          const config = getConfig(Astro);
 
-          return getSource({Astro}, getConfig);
+          return getSource(Astro, getConfig);
+        }
+        const useConfig = (Astro) => {
+          return getConfig(Astro);
         }
 
-        export { useContentSource }
+        export { useContentSource, useConfig }
         `;
       } else if (id === resolvedVirtualComponentsModuleId) {
         return /* js */ `
         const rootPath = import.meta.url.replace("%00vrite:pages/components","");
         const importPath = rootPath + "src/components/content";
-        const Components = {};
+        let Components = {};
         try {
           const contentComponentsModule = await import(/* @vite-ignore */ importPath);
 
@@ -69,8 +65,8 @@ const createVitePlugin = (): VitePlugin => {
             
             Components[key] = contentComponentsModule[key];
           });
-        } catch (e){
-          console.log("No content components found");
+        } catch (e) {
+          components = {};
         }
 
         export { Components };
@@ -79,9 +75,7 @@ const createVitePlugin = (): VitePlugin => {
     }
   };
 };
-const createAstroPlugin = (
-  config: VritePagesPluginConfig
-): AstroIntegration & { __: VritePagesPluginConfig } => {
+const createAstroPlugin = (config: VritePagesPluginConfig): AstroIntegration => {
   return {
     __: config,
     name: "vrite-pages",
@@ -89,17 +83,51 @@ const createAstroPlugin = (
       "astro:config:setup": ({ updateConfig }) => {
         updateConfig({
           vite: {
-            plugins: [
-              autoImportPlugin({ dirs: ["./src/components/content/**"], dts: false }),
-              createVitePlugin()
+            plugins: [createVitePlugin() as any]
+          },
+          markdown: {
+            remarkPlugins: [
+              () => {
+                const js = `import * as Components from "src/components/content"`;
+                const importNode: MdxjsEsm = {
+                  type: "mdxjsEsm",
+                  value: js,
+                  data: {
+                    estree: {
+                      ...parseJs(js, { ecmaVersion: "latest", sourceType: "module" }),
+                      type: "Program",
+                      sourceType: "module"
+                    }
+                  } as MdxjsEsm["data"]
+                };
+
+                return (tree: { children: any[] }, file: VFile) => {
+                  const processNode = (node: any): void => {
+                    if (node.type === "mdxJsxFlowElement" || node.type === "mdxJsxTextElement") {
+                      node.name = `Components.${node.name}`;
+                    }
+
+                    if (node.children) {
+                      node.children.forEach(processNode);
+                    }
+                  };
+
+                  processNode(tree);
+
+                  if (!file.basename?.endsWith(".md")) {
+                    tree.children.unshift(importNode);
+                  }
+                };
+              }
             ]
           }
         });
       }
     }
-  };
+  } as AstroIntegration & { __: VritePagesPluginConfig };
 };
 const vritePages = createAstroPlugin;
 
 export { vritePages };
-export * from "./content-sources";
+export type { VritePagesPluginConfig };
+export { content, vrite } from "./content-sources";

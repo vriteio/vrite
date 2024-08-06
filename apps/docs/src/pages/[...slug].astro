@@ -1,39 +1,60 @@
 ---
 import { DefaultLayout } from "#components/layouts";
-import { getCollection, getEntryBySlug } from "astro:content";
+import { useContentSource } from "vrite:pages";
 
 let { slug } = Astro.params;
+let { contentMetadata, group } = Astro.props;
 
 if (slug === undefined) {
   return Astro.redirect("/getting-started/introduction");
 }
 
-const { entry, type } = Astro.props;
-const { Content, headings } = await entry.render();
+const contentSource = useContentSource(Astro);
+const { Content, headings } = await contentSource.renderContent(slug, group);
 
 export const prerender = true;
 export async function getStaticPaths() {
-  const docsEntries = await getCollection("docs");
-  const apiEntries = await getCollection("api");
-  // const recipesEntries = await getCollection("recipes");
-  return [
-    ...apiEntries.map((entry) => ({
-      params: { slug: entry.slug },
-      props: { entry, type: "api" }
-    })),
-    ...docsEntries.map((entry) => ({
-      params: { slug: entry.slug },
-      props: { entry, type: "docs" }
-    }))
-  ];
+  const contentSource = useContentSource(Astro);
+  if ("groups" in contentSource.config) {
+    const groupNames = Object.keys(contentSource.config.groups);
+    const output = [];
+
+    for await (const group of groupNames) {
+      const { contentMetadata } = await contentSource.listContentMetadata("all", undefined, group);
+
+      output.push(
+        ...contentMetadata.map((contentMetadata) => {
+          return {
+            params: {
+              slug: contentMetadata.slug
+            },
+            props: { contentMetadata, group }
+          };
+        })
+      );
+    }
+
+    return output;
+  }
+  const { contentMetadata } = await contentSource.listContentMetadata("all", undefined);
+
+  return contentMetadata.map((contentMetadata) => {
+    return {
+      params: {
+        slug: contentMetadata.slug
+      },
+      props: { contentMetadata, group: undefined }
+    };
+  });
 }
 ---
 
 <DefaultLayout
   headings={headings}
-  title={entry.data.title || ""}
-  description={entry.data.description}
-  hideOnThisPage={type === "api"}
+  title={contentMetadata.title || ""}
+  description={contentMetadata.description}
+  hideTOC={group === "api"}
+  group={group}
 >
   <Content />
 </DefaultLayout>

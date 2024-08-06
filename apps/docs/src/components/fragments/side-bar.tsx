@@ -12,25 +12,22 @@ import {
   createSignal
 } from "solid-js";
 import { Tree, TreeItem } from "@vrite/solid-ui";
+import type { ContentTreeBranch, ContentMetadata } from "vrite:pages";
 import { menuOpened, setMenuOpened } from "#lib/state";
 import { Card, Button, IconButton } from "#components/primitives";
 import { logoIcon } from "#assets/icons/logo";
 
 interface SideBarProps {
-  currentSection: string;
   sections: Array<{
     label: string;
     icon: string;
     link: string;
-    id: string;
+    active?: boolean;
   }>;
-  menu: Record<
-    string,
-    Array<{
-      label: string;
-      menu: Array<{ label: string; link?: string; menu?: Array<{ label: string; link: string }> }>;
-    }>
-  >;
+  menu: {
+    branches: ContentTreeBranch[];
+    contentMetadata: ContentMetadata[];
+  };
   currentPath: string;
 }
 interface MenuLevel {
@@ -39,7 +36,7 @@ interface MenuLevel {
   menu?: MenuLevel[];
 }
 interface SideBarNestedMenuProps {
-  menu: MenuLevel[];
+  menu: ContentTreeBranch[];
   currentPath: string;
 }
 
@@ -48,23 +45,29 @@ const SideBarNestedMenu: Component<SideBarNestedMenuProps> = (props) => {
   const [expanded, setExpanded] = createSignal<string[]>([currentPath()]);
   const items = createMemo<TreeItem[]>(() => {
     const processMenuLevel = (
-      menuLevel: MenuLevel[],
+      menuLevel: ContentTreeBranch[],
       collapsible = true,
-      parentId = ""
+      level = 1
     ): TreeItem[] => {
       return menuLevel.map((item) => {
-        const id =
-          (item.link || "").replace(/(^\/)|(\/$)/g, "") ||
-          `${parentId}${parentId ? "." : ""}${item.label.toLowerCase().replace(/\s/g, "-")}`;
+        const children = [
+          ...processMenuLevel(item.branches || [], true, level + 1),
+          ...(item.contentMetadata || []).map((content) => {
+            return {
+              label: content.title,
+              id: content.slug,
+              data: {
+                link: content.slug.startsWith("/") ? content.slug : `/${content.slug}`
+              }
+            };
+          })
+        ];
 
         return {
-          label: item.label,
+          label: item.branchName,
           collapsible,
-          id,
-          children: item.menu ? processMenuLevel(item.menu, true, id) : undefined,
-          data: {
-            link: item.link
-          }
+          id: `${item.branchName}:${level}`,
+          children: children.length > 0 ? children : undefined
         };
       });
     };
@@ -96,11 +99,12 @@ const SideBarNestedMenu: Component<SideBarNestedMenuProps> = (props) => {
                   return (
                     <Button
                       variant={active() ? "solid" : "text"}
-                      class="text-start w-full m-0"
+                      class="text-start w-full m-0 @hover:bg-gray-200 @hover:dark:bg-gray-700"
                       text={active() ? "primary" : "soft"}
                       color={active() ? "primary" : "base"}
                       link={link()}
                       target={link()?.startsWith("http") ? "_blank" : "_self"}
+                      hover={false}
                     >
                       {props.item.label}
                     </Button>
@@ -113,9 +117,10 @@ const SideBarNestedMenu: Component<SideBarNestedMenuProps> = (props) => {
                   as={(props) => {
                     return (
                       <Button
-                        class="flex justify-center items-center text-start w-full group m-0"
+                        class="flex justify-center items-center text-start w-full group m-0 @hover:bg-gray-200 @hover:dark:bg-gray-700"
                         onClick={props.onClick}
                         variant="text"
+                        hover={false}
                         text="soft"
                       >
                         <div class="flex-1">{label()}</div>
@@ -158,7 +163,7 @@ const SideBarNestedMenu: Component<SideBarNestedMenuProps> = (props) => {
               >
                 <div class="pt-1 flex w-full">
                   <Show when={props.item.collapsible}>
-                    <div class="w-2px rounded-full h-full bg-gray-200 dark:bg-gray-700" />
+                    <div class="w-px rounded-full h-full bg-gray-200 dark:bg-gray-700" />
                   </Show>
                   <div class={clsx("flex-1 flex flex-col gap-1", props.item.collapsible && "pl-2")}>
                     {props.children}
@@ -192,7 +197,7 @@ const SideBar: Component<SideBarProps> = (props) => {
             menuOpened() ? "" : "translate-y-[100vh] md:translate-y-0"
           )}
         >
-          <div class="flex items-center justify-start px-2 w-[calc(100%+0.25rem)] -ml-1 py-2 rounded-xl top-0 relative z-1 bg-gray-50 dark:bg-gray-800 bg-opacity-50 dark:bg-opacity-50 backdrop-blur-lg">
+          <div class="flex items-center justify-start px-2 w-[calc(100%+0.25rem)] -ml-1 py-2 rounded-xl top-0 relative z-1">
             <IconButton
               path={logoIcon}
               color="primary"
@@ -219,8 +224,8 @@ const SideBar: Component<SideBarProps> = (props) => {
                       path={section.icon}
                       class="m-0 group-hover:bg-gray-300 dark:group-hover:bg-gray-700 h-8 w-8"
                       iconProps={{ class: "h-5 w-5" }}
-                      color={section.id === props.currentSection ? "primary" : "base"}
-                      text={section.id === props.currentSection ? "primary" : "soft"}
+                      color={section.active ? "primary" : "base"}
+                      text={section.active ? "primary" : "soft"}
                     />
                     <span class=" ml-2 text-gray-500 dark:text-gray-400">{section.label}</span>
                   </a>
@@ -230,17 +235,17 @@ const SideBar: Component<SideBarProps> = (props) => {
           </div>
           <SideBarNestedMenu
             currentPath={props.currentPath}
-            menu={props.menu[props.currentSection]}
+            menu={props.menu.branches}
           ></SideBarNestedMenu>
           <div class="min-h-24 md:min-h-unset md:flex-1" />
-          <div class="flex sticky bottom-0">
+          <div class="flex sticky bottom-0 w-full">
             <IconButton
               path={logoIcon}
               variant="text"
               text="soft"
-              size="small"
-              class="m-0 w-full justify-start flex gap-1 pr-1 bg-gray-50 dark:bg-gray-800 bg-opacity-50 dark:bg-opacity-50 backdrop-blur-lg"
-              iconProps={{ class: "h-4 w-4 ml-0.5" }}
+              hover={false}
+              class="m-0 justify-start flex gap-1 pr-2 bg-gray-50 dark:bg-gray-800 bg-opacity-50 dark:bg-opacity-50 backdrop-blur-lg font-medium hover:text-gray-700 dark:hover:text-gray-50 hover:bg-gray-100 dark:hover:bg-gray-900"
+              iconProps={{ class: "h-5 w-5 ml-0.5 fill-[url(#gradient)]" }}
               link="https://vrite.io"
               target="_blank"
               label="Powered by Vrite"

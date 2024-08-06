@@ -1,41 +1,60 @@
 import { __content } from "./content";
 import { createContentSource } from "../../utils";
 import { createClient, type ContentGroupWithSubtree } from "@vrite/sdk/api";
-import type { ContentTreeBranch } from "vrite:pages";
+import type { ContentMetadata, ContentTreeBranch } from "vrite:pages";
 import type { MarkdownHeading } from "astro";
 
-const vrite = createContentSource<{
-  accessToken: string;
+type VriteContentSourceGroup = {
   contentGroupId: string;
+  data?: Record<string, any>;
+};
+type BaseVriteContentSourceConfig = {
+  accessToken: string;
   baseURL?: string;
-}>("vrite", ({ sourceConfig }) => {
+};
+
+const vrite = createContentSource<
+  | (BaseVriteContentSourceConfig & VriteContentSourceGroup)
+  | (BaseVriteContentSourceConfig & { groups: Record<string, VriteContentSourceGroup> })
+>("vrite", ({ sourceConfig }) => {
   const client = createClient({
     token: sourceConfig.accessToken,
     baseURL: sourceConfig.baseURL
   });
+  const getGroup = (groupName?: string): VriteContentSourceGroup | null => {
+    if (groupName && "groups" in sourceConfig) {
+      return sourceConfig.groups[groupName];
+    }
+
+    if ("contentGroupId" in sourceConfig) {
+      return sourceConfig as VriteContentSourceGroup;
+    }
+
+    if ("groups" in sourceConfig) {
+      return Object.values(sourceConfig.groups)[0];
+    }
+
+    return null;
+  };
 
   return {
-    async getPageMetadata() {
-      const workspace = await client.workspace.get();
-      const title = workspace.name;
-      const description = workspace.description || "";
+    async getContentTree(groupName) {
+      const group = getGroup(groupName);
+      const contentGroupId = group?.contentGroupId;
 
-      return {
-        title,
-        description
-      };
-    },
-    async getContentTree() {
+      if (!group || !contentGroupId) {
+        throw new Error('Config error encountered when calling "getContentTree()"');
+      }
+
       const contentGroups = await client.contentGroups.list({
-        ancestor: sourceConfig.contentGroupId,
+        ancestor: contentGroupId,
         subtree: true
       });
       const extractIdsFromTreeLevel = (
         treeLevel: ContentGroupWithSubtree[],
         contentGroupIdsSet?: Set<string>
       ): string[] => {
-        const contentGroupIds =
-          contentGroupIdsSet || new Set<string>([sourceConfig.contentGroupId]);
+        const contentGroupIds = contentGroupIdsSet || new Set<string>([contentGroupId]);
 
         treeLevel.forEach((entry) => {
           contentGroupIds.add(entry.id);
@@ -79,17 +98,48 @@ const vrite = createContentSource<{
         contentMetadata: contentGroupToContentTree({
           ancestors: [],
           descendants: [],
-          id: sourceConfig.contentGroupId,
+          id: contentGroupId,
           name: ""
         }).contentMetadata
       };
     },
-    async getContentMetadata(slug) {
+    async getFlattenContentTree(groupName?: string) {
+      const contentTree = await this.getContentTree(groupName);
+      const flattenContentTree: Array<{
+        contentMetadata: ContentMetadata;
+        branches: ContentTreeBranch[];
+      }> = [];
+      const flatten = (branch: ContentTreeBranch, parentBranches: ContentTreeBranch[]): void => {
+        const branches = [...parentBranches, branch];
+
+        branch.contentMetadata.forEach((contentMetadata) => {
+          flattenContentTree.push({
+            contentMetadata,
+            branches
+          });
+        });
+        branch.branches.forEach((childBranch) => flatten(childBranch, branches));
+      };
+
+      contentTree.branches.forEach((branch) => flatten(branch, []));
+      contentTree.contentMetadata.forEach((contentMetadata) => {
+        flattenContentTree.push({
+          contentMetadata,
+          branches: []
+        });
+      });
+
+      return flattenContentTree;
+    },
+    async getContentMetadata(slug, groupName) {
       const [contentPiece] = await client.contentPieces.list({
-        contentGroupId: sourceConfig.contentGroupId,
         slug,
         perPage: 1
       });
+
+      if (!contentPiece) {
+        throw new Error(`Content with slug "${slug}" not found`);
+      }
 
       return {
         title: contentPiece.title || "",
@@ -139,11 +189,16 @@ const vrite = createContentSource<{
       return { Content, headings };
       // () => Content.default({ content: contentPiece.content });
     },
-    async listContentMetadata(page, perPage = 50) {
+    async listContentMetadata(page, perPage = 50, groupName) {
+      const group = getGroup(groupName);
+      const contentGroupId = group?.contentGroupId;
+
+      if (!contentGroupId) return { contentMetadata: [], totalPages: 0 };
+
       const contentPieces = await client.contentPieces.list({
         perPage,
         page: page === "all" ? 0 : page,
-        contentGroupId: sourceConfig.contentGroupId
+        contentGroupId
       });
 
       return {

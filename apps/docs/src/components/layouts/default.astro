@@ -9,10 +9,8 @@ import {
   ScrollbarWidth
 } from "#components/fragments";
 import type { MarkdownHeading } from "astro";
-import menu from "./menu.json";
 import { Button } from "#components/primitives";
-import { mdiBookOpenBlankVariant, mdiConsoleLine, mdiGithub } from "@mdi/js";
-import { discordIcon } from "#assets/icons";
+import { useConfig, useContentSource } from "vrite:pages";
 
 interface MenuLevel {
   label: string;
@@ -24,67 +22,46 @@ const image = "https://docs.vrite.io/meta-image.png";
 const title = "Vrite － developer content platform";
 const description =
   "Open-Source, collaborative developer content platform for documentation, technical blogs, and more.";
-const flattenMenu = (
-  menu: MenuLevel[],
-  section: string,
-  labels: string[]
-): Array<{ label: string; link: string; section: string; labels: string[] }> => {
-  return menu.flatMap((item) => {
-    if (item.link) {
-      return [{ label: item.label, link: item.link, section, labels: [...labels, item.label] }];
-    }
-    if (item.menu) {
-      return flattenMenu(item.menu, section, [...labels, item.label]);
-    }
-    return [];
-  });
-};
-const sections = [
-  {
-    label: "Documentation",
-    link: "/getting-started/introduction",
-    icon: mdiBookOpenBlankVariant,
-    id: "docs"
-  },
-  {
-    label: "API reference",
-    link: "/api/authentication",
-    icon: mdiConsoleLine,
-    id: "api"
-  },
-  {
-    label: "GitHub",
-    link: "https://github.com/vriteio/vrite",
-    icon: mdiGithub,
-    id: "github"
-  },
-  {
-    label: "Community",
-    link: "https://discord.gg/yYqDWyKnqE",
-    icon: discordIcon,
-    id: "community"
-  }
-  /*{
-    label: "Recipes",
-    link: "/self-hosting/docker",
-    icon: mdiTextBoxMultiple,
-    id: "recipes"
-  }*/
+const contentSource = useContentSource(Astro);
+const config = useConfig(Astro);
+const tree = await contentSource.getContentTree(Astro.props.group);
+const flatTree = await contentSource.getFlattenContentTree(Astro.props.group);
+const sections: Array<{
+  label: string;
+  link: string;
+  icon: string;
+  active?: boolean;
+}> = [
+  ...Object.keys(contentSource.config.groups || []).map((groupName) => {
+    const group = contentSource.config.groups[groupName];
+
+    return {
+      label: group.data.label,
+      link: group.data.url,
+      icon: group.data.icon,
+      active: groupName === Astro.props.group
+    };
+  }),
+  ...(config.links?.map((link) => ({
+    label: link.label,
+    link: link.url,
+    icon: link.icon,
+    active: false
+  })) || [])
 ];
-const flatMenu = [
-  ...flattenMenu(menu.docs, "docs", []),
-  ...flattenMenu(menu.recipes, "recipes", []),
-  ...flattenMenu(menu.api, "api", [])
-];
-const currentEntry = flatMenu.find((item) => Astro.url.pathname.includes(item.link));
-const nextEntry = currentEntry ? flatMenu[flatMenu.indexOf(currentEntry) + 1] : null;
-const prevEntry = currentEntry ? flatMenu[flatMenu.indexOf(currentEntry) - 1] : null;
+
+const currentEntry = flatTree.find((item) =>
+  Astro.url.pathname.includes(item.contentMetadata.slug)
+);
+const nextEntry = currentEntry ? flatTree[flatTree.indexOf(currentEntry) + 1] : null;
+const prevEntry = currentEntry ? flatTree[flatTree.indexOf(currentEntry) - 1] : null;
 
 type Props = {
   headings: MarkdownHeading[];
+  group?: string;
   title: string;
   description?: string;
-  hideOnThisPage?: boolean;
+  hideTOC?: boolean;
 };
 ---
 
@@ -96,21 +73,32 @@ type Props = {
       title={Astro.props.title ? `${Astro.props.title} | Vrite Documentation` : title}
       image={image}
     />
+    <script>
+      import { scrollToElement } from "@vrite/solid-ui";
+
+      history.scrollRestoration = "manual";
+      requestAnimationFrame(() => {
+        const hash = location.hash.slice(1);
+
+        if (hash) {
+          scrollToElement(`#${hash}`, "instant", { offset: 80 });
+        }
+      });
+      window.addEventListener("hashchange", () => {
+        const hash = location.hash.slice(1);
+
+        scrollToElement(`#${hash}`, "instant", { offset: 80 });
+      });
+    </script>
   </head>
   <body class="overscroll-none overflow-x-hidden">
     <SVGDefs />
-    <ScrollbarWidth client:only />
+    <ScrollbarWidth client:only="solid-js" />
     <main
       class="flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-800 min-h-screen"
     >
       <div class="flex-1 flex justify-center items-center w-full max-w-screen-2xl relative">
-        <SideBar
-          menu={menu}
-          sections={sections}
-          currentSection={currentEntry?.section || "docs"}
-          currentPath={Astro.url.pathname}
-          client:load
-        />
+        <SideBar menu={tree} sections={sections} currentPath={Astro.url.pathname} client:load />
         <div class="flex overflow-visible w-full relative h-full md:max-w-[calc(100%-18rem)]">
           <div
             class="flex-1 flex overflow-visible w-full justify-center min-h-screen"
@@ -122,7 +110,7 @@ type Props = {
               <div class="sticky top-0 w-full left-0 z-1"><Header client:load /></div>
               <div class="pt-24">
                 {
-                  (currentEntry?.labels.length || 0) > 1 && (
+                  (currentEntry?.branches.length || 0) > 0 && (
                     <Button
                       badge
                       color="primary"
@@ -130,20 +118,19 @@ type Props = {
                       class="m-0 pl-1 py-0 font-semibold"
                       hover={false}
                     >
-                      {currentEntry?.labels.at(-2)}
+                      {currentEntry?.branches.at(-1)?.branchName}
                     </Button>
                   )
                 }
                 <h1 class="font-extrabold">{Astro.props.title}</h1>
                 <slot />
-                <Footer nextEntry={nextEntry} previousEntry={prevEntry} />
+                <Footer
+                  nextEntry={nextEntry?.contentMetadata || null}
+                  previousEntry={prevEntry?.contentMetadata || null}
+                />
               </div>
             </div>
-            <OnThisPage
-              headings={Astro.props.headings}
-              hide={Astro.props.hideOnThisPage}
-              client:load
-            />
+            <OnThisPage headings={Astro.props.headings} hide={Astro.props.hideTOC} client:load />
           </div>
         </div>
       </div>

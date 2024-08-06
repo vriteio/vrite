@@ -1,5 +1,5 @@
 ---
-slug: "/usage-guide/content-editor"
+slug: "usage-guide/content-editor"
 title: "Writing in Vrite Editor"
 ---
 

@@ -1,5 +1,5 @@
 ---
-slug: "/usage-guide/navigation/dashboard"
+slug: "usage-guide/navigation/dashboard"
 title: "Dashboard"
 ---
 

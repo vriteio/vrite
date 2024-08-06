@@ -1,28 +1,28 @@
 import type { AstroGlobal } from "astro";
-import type { ContentSource } from "vrite:pages";
+import type { ContentSource, GeneralConfig } from "vrite:pages";
 
 // eslint-disable-next-line no-use-before-define
 type JSONValue = string | number | boolean | JSONObject | JSONArray;
 
-interface JSONObject {
+type JSONObject = {
   [x: string]: JSONValue;
-}
+};
 
 interface JSONArray extends Array<JSONValue> {}
 
-type PagesConfig<T extends JSONObject> = T | ((Astro: AstroGlobal) => T);
+type DynamicConfig<T> = T | ((Astro: AstroGlobal) => T);
 
 interface SourceContext<T extends JSONObject> {
   Astro: AstroGlobal;
   sourceConfig: T;
-  config: JSONObject;
+  config: GeneralConfig;
 }
 type CreateSource<T extends JSONObject> = (
   ctx: SourceContext<T>
 ) => Omit<ContentSource, "name" | "config">;
-type ConfigureSource<T extends JSONObject> = (
-  config: PagesConfig<T>
-) => (Astro: AstroGlobal, config: PagesConfig<JSONObject>) => ContentSource;
+type ConfigureSource<T extends JSONObject = JSONObject> = (
+  config: DynamicConfig<T>
+) => (Astro: AstroGlobal, config: DynamicConfig<GeneralConfig>) => ContentSource;
 
 const createContentSource = <T extends JSONObject>(
   name: string,
@@ -48,3 +48,4 @@ const createContentSource = <T extends JSONObject>(
 };
 
 export { createContentSource };
+export type { ConfigureSource, DynamicConfig, SourceContext, JSONValue, JSONObject, JSONArray };

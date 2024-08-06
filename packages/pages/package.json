@@ -48,19 +48,13 @@
   ],
   "dependencies": {
     "@vrite/sdk": "workspace:*",
-    "unplugin-auto-import": "^0.18.0"
+    "acorn": "^8.12.1"
   },
   "devDependencies": {
-    "astro": "^4.11.5",
+    "astro": "^4.13.1",
     "unbuild": "^2.0.0",
-    "vite": "^5.3.3"
-  },
-  "peerDependenciesMeta": {
-    "astro": {
-      "optional": true
-    }
-  },
-  "peerDependencies": {
-    "astro": "^4.11.5"
+    "vite": "^5.3.3",
+    "mdast-util-mdx": "^3.0.0",
+    "vfile": "^6.0.1"
   }
 }

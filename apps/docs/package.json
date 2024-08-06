@@ -11,7 +11,6 @@
     "astro": "astro"
   },
   "dependencies": {
-    "@vrite/solid-ui": "workspace:*",
     "@astrojs/mdx": "^1.1.1",
     "@astrojs/sitemap": "^3.0.0",
     "@astrojs/solid-js": "^3.0.1",
@@ -22,8 +21,10 @@
     "@types/marked": "^5.0.1",
     "@unocss/reset": "^0.59.0",
     "@vrite/components": "workspace:*",
+    "@vrite/pages": "workspace:*",
     "@vrite/sdk": "workspace:*",
-    "astro": "^3.1.0",
+    "@vrite/solid-ui": "workspace:*",
+    "astro": "^4.13.1",
     "astro-auto-import": "^0.3.1",
     "astro-icon": "^1.1.0",
     "clsx": "^2.0.0",

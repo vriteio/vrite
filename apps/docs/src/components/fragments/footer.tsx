@@ -1,10 +1,11 @@
 import { mdiChevronLeft, mdiChevronRight } from "@mdi/js";
 import { Component, Show } from "solid-js";
+import { ContentMetadata } from "vrite:pages";
 import { IconButton } from "#components/primitives";
 
 interface FooterProps {
-  nextEntry?: { label: string; link: string } | null;
-  previousEntry?: { label: string; link: string } | null;
+  nextEntry: ContentMetadata | null;
+  previousEntry: ContentMetadata | null;
 }
 
 const Footer: Component<FooterProps> = (props) => {
@@ -13,28 +14,28 @@ const Footer: Component<FooterProps> = (props) => {
       <div class="flex-1">
         <Show when={props.previousEntry}>
           <IconButton
-            label={props.previousEntry!.label}
+            label={props.previousEntry!.title}
             text="soft"
             variant="text"
             path={mdiChevronLeft}
             iconProps={{ class: "min-w-8" }}
             size="large"
             class="no-underline flex-1 m-0 justify-start"
-            link={props.previousEntry!.link}
+            link={`/${props.previousEntry!.slug}`}
           />
         </Show>
       </div>
       <div class="flex-1">
         <Show when={props.nextEntry}>
           <IconButton
-            label={<span class="pr-2">{props.nextEntry!.label}</span>}
+            label={<span class="pr-2">{props.nextEntry!.title}</span>}
             text="soft"
             variant="text"
             path={mdiChevronRight}
             iconProps={{ class: "min-w-8" }}
             size="large"
             class="flex-row-reverse no-underline m-0 justify-start"
-            link={props.nextEntry!.link}
+            link={`/${props.nextEntry!.slug}`}
           />
         </Show>
       </div>

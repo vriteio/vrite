@@ -62,7 +62,7 @@ const OnThisPage: Component<OnThisPageProps> = (props) => {
       >
         <Show when={props.hide !== true}>
           <div class="flex flex-col">
-            <TOC.Root items={items()} offset={80}>
+            <TOC.Root items={items()} offset={80} useHash>
               {(props) => {
                 const isActive = (): boolean => props.isActive;
                 const level = (): number => props.level;

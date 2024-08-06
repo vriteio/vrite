@@ -1,2 +1,2 @@
-export * from "./vrite";
-export * from "./content";
+export { vrite } from "./vrite";
+export { content } from "./content";

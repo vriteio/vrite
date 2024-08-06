@@ -1,37 +1,56 @@
 import { createContentSource } from "../../utils";
-// @ts-expect-error
-import { getCollection, getEntry, getEntries } from "astro:content";
 import type { ContentMetadata, ContentTreeBranch } from "vrite:pages";
 
 type SourceConfigTreeBranch = {
   branchName: string;
-  contentSlugs: string[];
-  branches: SourceConfigTreeBranch[];
+  contentSlugs?: string[];
+  branches?: SourceConfigTreeBranch[];
+};
+type AstroContentSourceGroup = {
+  collection: string;
+  data?: Record<string, any>;
+  tree?: {
+    contentSlugs?: string[];
+    branches?: SourceConfigTreeBranch[];
+  };
+};
+type BaseAstroContentSourceConfig = {
+  authorsCollection?: string;
 };
 
-const content = createContentSource<{
-  collection: string;
-  authorsCollection?: string;
-  tree?: {
-    contentSlugs: string[];
-    branches: SourceConfigTreeBranch[];
-  };
-  page: {
-    title: string;
-    description?: string;
-  };
-}>("vrite", ({ sourceConfig }) => {
-  return {
-    async getPageMetadata() {
-      const { title, description = "" } = sourceConfig.page;
+const content = createContentSource<
+  | (BaseAstroContentSourceConfig & AstroContentSourceGroup)
+  | (BaseAstroContentSourceConfig & { groups: Record<string, AstroContentSourceGroup> })
+>("vrite", ({ sourceConfig }) => {
+  const getGroup = (groupName?: string): AstroContentSourceGroup | null => {
+    if (groupName && "groups" in sourceConfig) {
+      return sourceConfig.groups[groupName];
+    }
 
-      return {
-        title,
-        description
-      };
-    },
-    async getContentTree() {
-      const allEntries = await getCollection(sourceConfig.collection);
+    if ("collection" in sourceConfig) {
+      return sourceConfig as AstroContentSourceGroup;
+    }
+
+    if ("groups" in sourceConfig) {
+      return Object.values(sourceConfig.groups)[0];
+    }
+
+    return null;
+  };
+
+  return {
+    async getContentTree(groupName) {
+      const group = getGroup(groupName);
+      const collection = group?.collection;
+      const tree = group?.tree;
+
+      if (!group || !collection) {
+        throw new Error('Config error encountered when calling "getContentTree()"');
+      }
+
+      // @ts-expect-error
+      const { getCollection } = await import("astro:content");
+      const allEntries: any[] = await getCollection(collection);
 
       let allAuthors: any[] = [];
 
@@ -68,19 +87,19 @@ const content = createContentSource<{
       ): ContentTreeBranch => {
         return {
           branchName: branch.branchName,
-          contentMetadata: branch.contentSlugs
+          contentMetadata: (branch.contentSlugs || [])
             .map((slug) => {
               return slugToContentMetadata(slug);
             })
             .filter(Boolean) as ContentMetadata[],
-          branches: branch.branches.map(sourceConfigToContentTreeBranch)
+          branches: (branch.branches || []).map(sourceConfigToContentTreeBranch)
         };
       };
 
-      if (sourceConfig.tree) {
+      if (tree) {
         return {
-          branches: sourceConfig.tree.branches.map(sourceConfigToContentTreeBranch),
-          contentMetadata: sourceConfig.tree.contentSlugs
+          branches: (tree.branches || []).map(sourceConfigToContentTreeBranch),
+          contentMetadata: (tree.contentSlugs || [])
             .map((slug) => {
               return slugToContentMetadata(slug);
             })
@@ -97,10 +116,47 @@ const content = createContentSource<{
           .filter(Boolean) as ContentMetadata[]
       };
     },
-    async getContentMetadata(slug) {
-      const entry = await getEntry(sourceConfig.collection, slug);
+    async getFlattenContentTree(groupName?: string) {
+      const contentTree = await this.getContentTree(groupName);
+      const flattenContentTree: Array<{
+        contentMetadata: ContentMetadata;
+        branches: ContentTreeBranch[];
+      }> = [];
+      const flatten = (branch: ContentTreeBranch, parentBranches: ContentTreeBranch[]): void => {
+        const branches = [...parentBranches, branch];
 
-      let authors = [];
+        branch.contentMetadata.forEach((contentMetadata) => {
+          flattenContentTree.push({
+            contentMetadata,
+            branches
+          });
+        });
+        branch.branches.forEach((childBranch) => flatten(childBranch, branches));
+      };
+
+      contentTree.branches.forEach((branch) => flatten(branch, []));
+      contentTree.contentMetadata.forEach((contentMetadata) => {
+        flattenContentTree.push({
+          contentMetadata,
+          branches: []
+        });
+      });
+
+      return flattenContentTree;
+    },
+    async getContentMetadata(slug, groupName) {
+      const group = getGroup(groupName);
+      const collection = group?.collection;
+
+      if (!collection) {
+        throw new Error('Config error encountered when calling "getContentMetadata()"');
+      }
+
+      // @ts-expect-error
+      const { getEntry, getEntries } = await import("astro:content");
+      const entry = await getEntry(collection, slug);
+
+      let authors: any[] = [];
 
       if (sourceConfig.authorsCollection) {
         authors = await getEntries(sourceConfig.authorsCollection, entry.data.authors);
@@ -113,22 +169,36 @@ const content = createContentSource<{
         cover: entry.data.coverUrl || undefined,
         slug: entry.slug,
         tags: entry.data.tags,
-        authors: authors.map((author) => {
-          return {
-            name: author.data.name,
-            avatar: author.data.avatar
-          };
-        })
+        authors: authors.map((author) => ({
+          name: author.data.name,
+          avatar: author.data.avatar
+        }))
       };
     },
-    async renderContent(slug) {
-      const entry = await getEntry(sourceConfig.collection, slug);
+    async renderContent(slug, groupName) {
+      const group = getGroup(groupName);
+      const collection = group?.collection;
+
+      if (!collection) {
+        throw new Error('Config error encountered when calling "renderContent()"');
+      }
+
+      // @ts-expect-error
+      const { getEntry } = await import("astro:content");
+      const entry = await getEntry(collection, slug);
       const { Content, headings } = await entry.render();
 
       return { Content, headings };
     },
-    async listContentMetadata(page, perPage = 50) {
-      const allEntries = await getCollection(sourceConfig.collection);
+    async listContentMetadata(page, perPage = 50, groupName) {
+      const group = getGroup(groupName);
+      const collection = group?.collection;
+
+      if (!collection) return { contentMetadata: [], totalPages: 0 };
+
+      // @ts-expect-error
+      const { getCollection } = await import("astro:content");
+      const allEntries = await getCollection(collection);
 
       let allAuthors: any[] = [];
 
@@ -136,7 +206,7 @@ const content = createContentSource<{
         allAuthors = await getCollection(sourceConfig.authorsCollection);
       }
 
-      let paginatedEntries = allEntries;
+      let paginatedEntries: any[] = allEntries;
 
       if (page !== "all") {
         paginatedEntries = allEntries.slice((page - 1) * perPage, page * perPage);
@@ -144,7 +214,9 @@ const content = createContentSource<{
 
       return {
         contentMetadata: paginatedEntries.map((entry) => {
-          const authors = allAuthors.filter((author) => entry.data.authors.includes(author.id));
+          const authors: any[] = allAuthors.filter((author) => {
+            return entry.data.authors.includes(author.id);
+          });
 
           return {
             title: entry.data.title || "",
@@ -153,12 +225,10 @@ const content = createContentSource<{
             cover: entry.data.coverUrl || undefined,
             slug: entry.slug,
             tags: entry.data.tags,
-            authors: authors.map((author) => {
-              return {
-                name: author.data.name,
-                avatar: author.data.avatar
-              };
-            })
+            authors: authors.map((author) => ({
+              name: author.data.name,
+              avatar: author.data.avatar
+            }))
           };
         }),
         totalPages: Math.ceil(allEntries.length / perPage)
