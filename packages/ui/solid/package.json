@@ -1,6 +1,6 @@
 {
   "name": "@vrite/solid-ui",
-  "version": "0.5.0-alpha.1",
+  "version": "0.5.0-alpha.2",
   "description": "Headless Solid.js components for building technical publications with Vrite",
   "type": "module",
   "scripts": {
