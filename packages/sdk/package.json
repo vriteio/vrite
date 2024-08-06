@@ -7,6 +7,7 @@
   "type": "module",
   "scripts": {
     "build": "unbuild",
+    "prepublish": "pnpm run build",
     "publish": "pnpm publish --access public --no-git-checks"
   },
   "bugs": {
