@@ -1,4 +1,4 @@
-import { PaginationParams, SendRequest } from "./request";
+import { PaginationParams, PaginationMeta, SendRequest } from "./request";
 
 type RolePermission =
   | "editContent"
@@ -36,7 +36,7 @@ interface RolesEndpoints {
   create(input: Omit<Role, "id" | "baseType">): Promise<Pick<Role, "id">>;
   update(input: Partial<Omit<Role, "id" | "baseType">> & Pick<Role, "id">): Promise<void>;
   delete(input: Pick<Role, "id">): Promise<void>;
-  list(input: PaginationParams): Promise<Role[]>;
+  list(input: PaginationParams): Promise<Role[] & { meta: { pagination: PaginationMeta } }>;
 }
 
 const basePath = `/roles`;
@@ -62,7 +62,7 @@ const createRolesEndpoints = (sendRequest: SendRequest): RolesEndpoints => ({
     });
   },
   list: (input) => {
-    return sendRequest<Role[]>("GET", `${basePath}/list`, {
+    return sendRequest<Role[], { pagination: PaginationMeta }>("GET", `${basePath}/list`, {
       params: input
     });
   }

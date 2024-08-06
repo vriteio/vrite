@@ -1,5 +1,5 @@
 import { JSONContent } from "./content-pieces";
-import { PaginationParams, SendRequest } from "./request";
+import { SendRequest } from "./request";
 
 type Snippet<IncludeContent extends true | false = false> = {
   /**

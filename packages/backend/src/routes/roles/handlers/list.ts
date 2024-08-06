@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { ObjectId } from "mongodb";
+import { Filter, ObjectId } from "mongodb";
 import { AuthenticatedContext } from "#lib/middleware";
-import { role, baseRoleType, getRolesCollection } from "#collections";
-import { zodId } from "#lib/mongo";
+import { role, baseRoleType, getRolesCollection, FullRole } from "#collections";
+import { UnderscoreID, zodId } from "#lib/mongo";
 
 const inputSchema = z
   .object({
@@ -19,18 +19,46 @@ const handler = async (
   input: z.infer<typeof inputSchema>
 ): Promise<z.infer<typeof outputSchema>> => {
   const rolesCollection = getRolesCollection(ctx.db);
+  const filter: Filter<UnderscoreID<FullRole<ObjectId>>> = {
+    workspaceId: ctx.auth.workspaceId
+  };
   const cursor = rolesCollection
     .find({
-      workspaceId: ctx.auth.workspaceId,
+      ...filter,
       ...(input.lastId && { _id: { $lt: new ObjectId(input.lastId) } })
     })
     .sort({ _id: -1 });
 
-  if (!input.lastId) {
+  if (!input.lastId && input.perPage) {
     cursor.skip((input.page - 1) * input.perPage);
   }
 
-  const roles = await cursor.limit(input.perPage).toArray();
+  let roles: Array<UnderscoreID<FullRole<ObjectId>>> = [];
+
+  if (input.perPage) {
+    roles = await cursor.limit(input.perPage).toArray();
+  } else {
+    roles = await cursor.toArray();
+  }
+
+  let totalCount = 0;
+
+  if (input.perPage) {
+    totalCount += (input.page - 1) * input.perPage + roles.length;
+
+    if (roles.length === input.perPage) {
+      totalCount += await rolesCollection.countDocuments(filter, { skip: totalCount });
+    }
+  } else {
+    totalCount = roles.length;
+  }
+
+  ctx.res.headers({
+    "x-pagination-total": totalCount,
+    "x-pagination-pages": Math.ceil(totalCount / (input.perPage || 1)),
+    "x-pagination-per-page": input.perPage,
+    "x-pagination-page": input.page
+  });
 
   return roles.map(({ _id, workspaceId, ...role }) => ({
     id: `${_id}`,

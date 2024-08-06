@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { ObjectId } from "mongodb";
+import { Filter, ObjectId } from "mongodb";
 import { AuthenticatedContext } from "#lib/middleware";
-import { webhook, getWebhooksCollection, Webhook } from "#collections";
-import { zodId } from "#lib/mongo";
+import { webhook, getWebhooksCollection, Webhook, FullWebhook } from "#collections";
+import { UnderscoreID, zodId } from "#lib/mongo";
 
 const inputSchema = z.object({
   perPage: z.number().describe("Number of webhooks to return per page").default(20),
@@ -27,11 +27,14 @@ const handler = async (
 ): Promise<z.infer<typeof outputSchema>> => {
   const extensionId = ctx.req.headers["x-vrite-extension-id"] as string | undefined;
   const webhooksCollection = getWebhooksCollection(ctx.db);
+  const filter: Filter<UnderscoreID<FullWebhook<ObjectId>>> = {
+    workspaceId: ctx.auth.workspaceId,
+    ...(input.extensionOnly && extensionId ? { extensionId: new ObjectId(extensionId) } : {})
+  };
   const cursor = webhooksCollection
     .find({
-      workspaceId: ctx.auth.workspaceId,
-      ...(input.lastId ? { _id: { $lt: new ObjectId(input.lastId) } } : {}),
-      ...(input.extensionOnly && extensionId ? { extensionId: new ObjectId(extensionId) } : {})
+      ...filter,
+      ...(input.lastId ? { _id: { $lt: new ObjectId(input.lastId) } } : {})
     })
     .sort("_id", -1);
 
@@ -39,7 +42,32 @@ const handler = async (
     cursor.skip((input.page - 1) * input.perPage);
   }
 
-  const webhooks = await cursor.limit(input.perPage).toArray();
+  let webhooks: Array<UnderscoreID<FullWebhook<ObjectId>>> = [];
+
+  if (input.perPage) {
+    webhooks = await cursor.limit(input.perPage).toArray();
+  } else {
+    webhooks = await cursor.toArray();
+  }
+
+  let totalCount = 0;
+
+  if (input.perPage) {
+    totalCount += (input.page - 1) * input.perPage + webhooks.length;
+
+    if (webhooks.length === input.perPage) {
+      totalCount += await webhooksCollection.countDocuments(filter, { skip: totalCount });
+    }
+  } else {
+    totalCount = webhooks.length;
+  }
+
+  ctx.res.headers({
+    "x-pagination-total": totalCount,
+    "x-pagination-pages": Math.ceil(totalCount / (input.perPage || 1)),
+    "x-pagination-per-page": input.perPage,
+    "x-pagination-page": input.page
+  });
 
   return webhooks.map(({ _id, workspaceId, metadata, extensionId, secret, ...webhook }) => {
     const result: Webhook & { id: string; extension?: boolean } = {

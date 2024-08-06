@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { ObjectId } from "mongodb";
+import { Filter, ObjectId } from "mongodb";
 import { AuthenticatedContext } from "#lib/middleware";
-import { getTokensCollection, token } from "#collections";
-import { zodId } from "#lib/mongo";
+import { FullToken, getTokensCollection, token } from "#collections";
+import { UnderscoreID, zodId } from "#lib/mongo";
 
 const inputSchema = z
   .object({
@@ -21,18 +21,46 @@ const handler = async (
   input: z.infer<typeof inputSchema>
 ): Promise<z.infer<typeof outputSchema>> => {
   const tokensCollection = getTokensCollection(ctx.db);
+  const filter: Filter<UnderscoreID<FullToken<ObjectId>>> = {
+    workspaceId: ctx.auth.workspaceId
+  };
   const cursor = tokensCollection
     .find({
-      workspaceId: ctx.auth.workspaceId,
+      ...filter,
       ...(input.lastId ? { _id: { $lt: new ObjectId(input.lastId) } } : {})
     })
     .sort("_id", -1);
 
-  if (!input.lastId) {
+  if (!input.lastId && input.perPage) {
     cursor.skip((input.page - 1) * input.perPage);
   }
 
-  const tokens = await cursor.limit(input.perPage).toArray();
+  let tokens: Array<UnderscoreID<FullToken<ObjectId>>> = [];
+
+  if (input.perPage) {
+    tokens = await cursor.limit(input.perPage).toArray();
+  } else {
+    tokens = await cursor.toArray();
+  }
+
+  let totalCount = 0;
+
+  if (input.perPage) {
+    totalCount += (input.page - 1) * input.perPage + tokens.length;
+
+    if (tokens.length === input.perPage) {
+      totalCount += await tokensCollection.countDocuments(filter, { skip: totalCount });
+    }
+  } else {
+    totalCount = tokens.length;
+  }
+
+  ctx.res.headers({
+    "x-pagination-total": totalCount,
+    "x-pagination-pages": Math.ceil(totalCount / (input.perPage || 1)),
+    "x-pagination-per-page": input.perPage,
+    "x-pagination-page": input.page
+  });
 
   return tokens.map((token) => ({
     id: `${token._id}`,

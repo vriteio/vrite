@@ -1,4 +1,4 @@
-import { PaginationParams, SendRequest } from "./request";
+import { PaginationMeta, PaginationParams, SendRequest } from "./request";
 
 type WebhookEvent =
   | "contentPieceUpdated"
@@ -48,7 +48,11 @@ interface WebhooksEndpoints {
   delete(query: Pick<Webhook, "id">): Promise<void>;
   list(
     input: PaginationParams & { extensionOnly?: boolean }
-  ): Promise<Array<Omit<Webhook, "secret"> & { extension?: boolean }>>;
+  ): Promise<
+    Array<Omit<Webhook, "secret"> & { extension?: boolean }> & {
+      meta: { pagination: PaginationMeta };
+    }
+  >;
 }
 
 const basePath = `/webhooks`;

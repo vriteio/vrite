@@ -1,13 +1,14 @@
 import { z } from "zod";
-import { ObjectId } from "mongodb";
+import { Filter, ObjectId } from "mongodb";
 import { AuthenticatedContext } from "#lib/middleware";
 import {
+  FullWorkspaceMembership,
   getUsersCollection,
   getWorkspaceMembershipsCollection,
   profile,
   workspaceMembership
 } from "#collections";
-import { zodId } from "#lib/mongo";
+import { UnderscoreID, zodId } from "#lib/mongo";
 
 const inputSchema = z
   .object({
@@ -28,18 +29,49 @@ const handler = async (
 ): Promise<z.infer<typeof outputSchema>> => {
   const workspaceMembershipsCollection = getWorkspaceMembershipsCollection(ctx.db);
   const usersCollection = getUsersCollection(ctx.db);
+  const filter: Filter<UnderscoreID<FullWorkspaceMembership<ObjectId>>> = {
+    workspaceId: ctx.auth.workspaceId
+  };
   const cursor = workspaceMembershipsCollection
     .find({
-      workspaceId: ctx.auth.workspaceId,
+      ...filter,
       ...(input.lastId ? { _id: { $lt: new ObjectId(input.lastId) } } : {})
     })
     .sort("_id", -1);
 
-  if (!input.lastId) {
+  if (!input.lastId && input.perPage) {
     cursor.skip((input.page - 1) * input.perPage);
   }
 
-  const workspaceMemberships = await cursor.limit(input.perPage).toArray();
+  let workspaceMemberships: Array<UnderscoreID<FullWorkspaceMembership<ObjectId>>> = [];
+
+  if (input.perPage) {
+    workspaceMemberships = await cursor.limit(input.perPage).toArray();
+  } else {
+    workspaceMemberships = await cursor.toArray();
+  }
+
+  let totalCount = 0;
+
+  if (input.perPage) {
+    totalCount += (input.page - 1) * input.perPage + workspaceMemberships.length;
+
+    if (workspaceMemberships.length === input.perPage) {
+      totalCount += await workspaceMembershipsCollection.countDocuments(filter, {
+        skip: totalCount
+      });
+    }
+  } else {
+    totalCount = workspaceMemberships.length;
+  }
+
+  ctx.res.headers({
+    "x-pagination-total": totalCount,
+    "x-pagination-pages": Math.ceil(totalCount / (input.perPage || 1)),
+    "x-pagination-per-page": input.perPage,
+    "x-pagination-page": input.page
+  });
+
   const users = await usersCollection
     .find({
       _id: {

@@ -1,4 +1,4 @@
-import { PaginationParams, SendRequest } from "./request";
+import { PaginationParams, PaginationMeta, SendRequest } from "./request";
 
 type TagColor =
   | "gray"
@@ -34,7 +34,13 @@ interface TagsEndpoints {
   update(input: Partial<Tag> & Pick<Tag, "id">): Promise<void>;
   create(input: Omit<Tag, "id">): Promise<Pick<Tag, "id">>;
   delete(input: Pick<Tag, "id">): Promise<void>;
-  list(input: PaginationParams): Promise<Tag[]>;
+  list(input: PaginationParams): Promise<
+    Tag[] & {
+      meta: {
+        pagination: PaginationMeta;
+      };
+    }
+  >;
 }
 
 const basePath = "/tags";
@@ -60,7 +66,7 @@ const createTagsEndpoints = (sendRequest: SendRequest): TagsEndpoints => ({
     });
   },
   list: (input: PaginationParams) => {
-    return sendRequest<Tag[]>("GET", `${basePath}/list`, {
+    return sendRequest<Tag[], { pagination: PaginationMeta }>("GET", `${basePath}/list`, {
       params: input
     });
   }

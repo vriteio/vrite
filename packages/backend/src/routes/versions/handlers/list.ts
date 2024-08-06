@@ -1,13 +1,14 @@
 import { z } from "zod";
-import { ObjectId } from "mongodb";
+import { Filter, ObjectId } from "mongodb";
 import {
+  FullVersion,
   getContentVersionsCollection,
   getVersionsCollection,
   version,
   versionMember
 } from "#collections";
 import { AuthenticatedContext } from "#lib/middleware";
-import { zodId } from "#lib/mongo";
+import { UnderscoreID, zodId } from "#lib/mongo";
 import { fetchEntryMembers } from "#lib/utils";
 import { DocJSON, bufferToJSON } from "#lib/content-processing";
 
@@ -30,21 +31,49 @@ const handler = async (
   input: z.infer<typeof inputSchema>
 ): Promise<z.infer<typeof outputSchema>> => {
   const versionsCollection = getVersionsCollection(ctx.db);
+  const filter: Filter<UnderscoreID<FullVersion<ObjectId>>> = {
+    workspaceId: ctx.auth.workspaceId,
+    contentPieceId: new ObjectId(input.contentPieceId),
+    ...(input.variantId ? { variantId: new ObjectId(input.variantId) } : {})
+  };
   const cursor = versionsCollection
     .find({
-      workspaceId: ctx.auth.workspaceId,
-      contentPieceId: new ObjectId(input.contentPieceId),
-      ...(input.variantId ? { variantId: new ObjectId(input.variantId) } : {}),
+      ...filter,
       ...(input.lastId ? { _id: { $lt: new ObjectId(input.lastId) } } : {})
     })
     .sort({ date: -1 });
+  const contents = new Map<string, DocJSON>();
 
-  if (!input.lastId) {
+  if (!input.lastId && input.perPage) {
     cursor.skip((input.page - 1) * input.perPage);
   }
 
-  const versions = await cursor.limit(input.perPage).toArray();
-  const contents = new Map<string, DocJSON>();
+  let versions: Array<UnderscoreID<FullVersion<ObjectId>>> = [];
+
+  if (input.perPage) {
+    versions = await cursor.limit(input.perPage).toArray();
+  } else {
+    versions = await cursor.toArray();
+  }
+
+  let totalCount = 0;
+
+  if (input.perPage) {
+    totalCount += (input.page - 1) * input.perPage + versions.length;
+
+    if (versions.length === input.perPage) {
+      totalCount += await versionsCollection.countDocuments(filter, { skip: totalCount });
+    }
+  } else {
+    totalCount = versions.length;
+  }
+
+  ctx.res.headers({
+    "x-pagination-total": totalCount,
+    "x-pagination-pages": Math.ceil(totalCount / (input.perPage || 1)),
+    "x-pagination-per-page": input.perPage,
+    "x-pagination-page": input.page
+  });
 
   if (input.content) {
     const versionContentsCollection = getContentVersionsCollection(ctx.db);

@@ -1,5 +1,5 @@
 import { Profile } from "./profile";
-import { PaginationParams, SendRequest } from "./request";
+import { PaginationMeta, PaginationParams, SendRequest } from "./request";
 import { Role } from "./roles";
 import { WorkspaceDetails } from "./workspace";
 
@@ -48,8 +48,12 @@ interface ListedWorkspace {
   role?: Pick<Role, "id" | "name">;
 }
 interface WorkspaceMembershipsEndpoints {
-  listMembers(input: PaginationParams): Promise<ListedMember[]>;
-  listWorkspaces(input: PaginationParams): Promise<ListedWorkspace[]>;
+  listMembers(
+    input: PaginationParams
+  ): Promise<ListedMember[] & { meta: { pagination: PaginationMeta } }>;
+  listWorkspaces(
+    input: PaginationParams
+  ): Promise<ListedWorkspace[] & { meta: { pagination: PaginationMeta } }>;
   create(input: { email: string; name: string; roleId: string }): Promise<void>;
   update(input: { id: string; roleId: string }): Promise<void>;
   delete(input: { id: string }): Promise<void>;
@@ -59,14 +63,22 @@ const createWorkspaceMembershipsEndpoints = (
   sendRequest: SendRequest
 ): WorkspaceMembershipsEndpoints => ({
   listMembers: (input) => {
-    return sendRequest<ListedMember[]>("GET", "/workspace-memberships/list-members", {
-      params: input
-    });
+    return sendRequest<ListedMember[], { pagination: PaginationMeta }>(
+      "GET",
+      "/workspace-memberships/list-members",
+      {
+        params: input
+      }
+    );
   },
   listWorkspaces: (input) => {
-    return sendRequest<ListedWorkspace[]>("GET", "/workspace-memberships/list-workspaces", {
-      params: input
-    });
+    return sendRequest<ListedWorkspace[], { pagination: PaginationMeta }>(
+      "GET",
+      "/workspace-memberships/list-workspaces",
+      {
+        params: input
+      }
+    );
   },
   create: (input) => {
     return sendRequest("POST", "/workspace-memberships", {
