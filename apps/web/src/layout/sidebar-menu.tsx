@@ -12,7 +12,8 @@ import {
   mdiGit,
   mdiFile,
   mdiMagnify,
-  mdiFileMultiple
+  mdiFileMultiple,
+  mdiWeb
 } from "@mdi/js";
 import {
   Accessor,
@@ -24,17 +25,19 @@ import {
   createSignal,
   on
 } from "solid-js";
-import { useLocation, useNavigate } from "@solidjs/router";
+import { useLocation, useNavigate, useMatch } from "@solidjs/router";
 import clsx from "clsx";
 import { createMediaQuery } from "@solid-primitives/media";
 import { createActiveElement } from "@solid-primitives/active-element";
+import { ExtensionSpec } from "@vrite/sdk/extensions";
 import { breakpoints, navigateAndReload } from "#lib/utils";
 import {
   useLocalStorage,
   useAuthenticatedUserData,
   useCommandPalette,
   useHostConfig,
-  useContentData
+  useContentData,
+  useExtensions
 } from "#context";
 import {
   Button,
@@ -49,14 +52,32 @@ import {
 import { logoIcon, discordIcon } from "#assets/icons";
 
 interface MenuItem {
-  icon: string;
+  icon: string | JSX.Element;
   label: string;
   props?: Record<string, string>;
   inMenu?: boolean;
   active?: () => boolean;
   onClick(): void;
 }
+interface ExtensionIconProps {
+  spec: ExtensionSpec;
+  active?: boolean;
+}
 
+const ExtensionIcon: Component<ExtensionIconProps> = (props) => {
+  return (
+    <div class="p-1 group/icon">
+      <div
+        class={clsx(
+          "h-6 w-6",
+          props.active && "bg-gradient-to-tr group-hover/icon:from-white group-hover/icon:to-white",
+          !props.active && "bg-gray-500 dark:bg-gray-100"
+        )}
+        style={{ mask: `url(${props.spec.icon})` }}
+      />
+    </div>
+  );
+};
 const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
   const { storage, setStorage } = useLocalStorage();
   const commandPalette = useCommandPalette();
@@ -64,6 +85,7 @@ const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
   const hostConfig = useHostConfig();
   const navigate = useNavigate();
   const location = useLocation();
+  const extensions = useExtensions();
   const md = createMediaQuery("(min-width: 768px)");
   const setSidePanelView = (view: string, toggle = true): void => {
     if (view === storage().sidePanelView && (storage().sidePanelWidth || 0) > 0 && toggle) {
@@ -83,17 +105,25 @@ const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
   const switchRightPanel = (): void => {
     setStorage((storage) => ({ ...storage, rightPanelWidth: storage.rightPanelWidth ? 0 : 375 }));
   };
-  const pathnameData = createMemo(() => {
-    const pathRegex = /^\/(?:editor\/?)?([a-f\d]{24})?$/i;
-    const match = location.pathname.match(pathRegex);
+  const editorMatch = useMatch(() => "/editor/:contentPieceId?");
+  const extensionMatch = useMatch(() => "/ext/:extensionName?");
+  const dashboardMatch = useMatch(() => "/:contentPieceId?");
 
-    if (!match) return {};
-
-    return {
-      activeContentPieceId: match[1],
-      view: match[0].includes("editor") ? "editor" : "dashboard"
-    };
-  });
+  createEffect(
+    on(
+      extensionMatch,
+      (extensionMatch, previousExtensionMatch) => {
+        if (
+          previousExtensionMatch &&
+          !extensionMatch &&
+          storage().sidePanelView?.startsWith("ext:")
+        ) {
+          setStorage((storage) => ({ ...storage, sidePanelView: undefined, sidePanelWidth: 0 }));
+        }
+      },
+      { defer: true }
+    )
+  );
 
   return () => {
     return [
@@ -102,7 +132,8 @@ const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
         label: "Dashboard",
         active: () => {
           return (
-            pathnameData().view === "dashboard" &&
+            !editorMatch() &&
+            dashboardMatch() &&
             (md() ||
               (!(storage().sidePanelView && storage().sidePanelWidth) &&
                 !storage().rightPanelWidth))
@@ -111,7 +142,7 @@ const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
         onClick: () => {
           navigate(`/${activeContentPieceId() || ""}`);
 
-          if (activeContentPieceId() && md() && pathnameData().view === "dashboard") {
+          if (activeContentPieceId() && md() && !editorMatch() && dashboardMatch()) {
             setSidePanelView("contentPiece", false);
           }
 
@@ -123,7 +154,7 @@ const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
         label: "Editor",
         active: () => {
           return (
-            pathnameData().view === "editor" &&
+            editorMatch() &&
             (md() ||
               (!(storage().sidePanelView && storage().sidePanelWidth) &&
                 !storage().rightPanelWidth))
@@ -135,6 +166,38 @@ const useMenuItems = (): Accessor<Array<MenuItem | null>> => {
           if (!md()) setStorage((storage) => ({ ...storage, sidePanelWidth: 0 }));
         }
       },
+      ...extensions
+        .installedExtensions()
+        .map((installedExtension) => {
+          const page = installedExtension.sandbox?.spec.page;
+          const active = (): boolean => {
+            return Boolean(
+              extensionMatch() && storage().sidePanelView === `ext:${installedExtension.spec.name}`
+            );
+          };
+
+          if (!page) return null;
+
+          return {
+            icon: (
+              <Button
+                class="p-0 m-0 overflow-hidden"
+                variant="text"
+                badge
+                color={active() ? "primary" : "base"}
+              >
+                <ExtensionIcon spec={installedExtension.spec} active={active()} />
+              </Button>
+            ),
+            label: installedExtension.spec.displayName,
+            active,
+            onClick: () => {
+              navigate(`/ext/${installedExtension.spec.name}`);
+              setSidePanelView(`ext:${installedExtension.spec.name}`);
+            }
+          };
+        })
+        .filter(Boolean),
       null,
       activeContentPieceId() && {
         icon: mdiFile,
@@ -258,18 +321,23 @@ const ProfileMenu: Component<{ close(): void }> = (props) => {
             if (!menuItem || !menuItem.inMenu) return null;
 
             return (
-              <IconButton
-                class="m-0 justify-start"
-                path={menuItem.icon}
-                label={menuItem.label}
-                onClick={() => {
-                  menuItem.onClick?.();
-                  props.close();
-                }}
-                variant="text"
-                color="contrast"
-                text="soft"
-              />
+              <Show
+                when={typeof menuItem.icon === "string" && menuItem.icon}
+                fallback={<>{menuItem.icon}</>}
+              >
+                <IconButton
+                  class="m-0 justify-start"
+                  path={`${menuItem.icon}`}
+                  label={menuItem.label}
+                  onClick={() => {
+                    menuItem.onClick?.();
+                    props.close();
+                  }}
+                  variant="text"
+                  color="contrast"
+                  text="soft"
+                />
+              </Show>
             );
           }}
         </For>
@@ -379,20 +447,25 @@ const SidebarMenu: Component = () => {
                           class="w-full h-full md:h-auto md:w-auto relative group overflow-hidden m-0 md:m-1"
                           onClick={menuItem()?.onClick}
                         >
-                          <IconButton
-                            path={menuItem().icon}
-                            variant="text"
-                            badge
-                            color={menuItem().active?.() ? "primary" : "base"}
-                            text={menuItem().active?.() ? "base" : "soft"}
-                            class="rounded-none md:rounded-lg w-full m-0 flex-col h-full pb-[calc(env(safe-area-inset-bottom,0)+0.25rem)] md:pb-1 md:h-auto md:w-auto"
-                            label={
-                              <span class="md:hidden text-xs mt-1 font-semibold">
-                                {menuItem().label}
-                              </span>
-                            }
-                            {...(menuItem().props || {})}
-                          />
+                          <Show
+                            when={typeof menuItem().icon === "string" && menuItem().icon}
+                            fallback={<>{menuItem().icon}</>}
+                          >
+                            <IconButton
+                              path={`${menuItem().icon}`}
+                              variant="text"
+                              badge
+                              color={menuItem().active?.() ? "primary" : "base"}
+                              text={menuItem().active?.() ? "base" : "soft"}
+                              class="rounded-none md:rounded-lg w-full m-0 flex-col h-full pb-[calc(env(safe-area-inset-bottom,0)+0.25rem)] md:pb-1 md:h-auto md:w-auto"
+                              label={
+                                <span class="md:hidden text-xs mt-1 font-semibold">
+                                  {menuItem().label}
+                                </span>
+                              }
+                              {...(menuItem().props || {})}
+                            />
+                          </Show>
                         </button>
                       </Tooltip>
                     );

@@ -60,7 +60,7 @@ interface CommandCategory {
 interface Command {
   name: string;
   category?: string;
-  icon?: string;
+  icon?: string | JSX.Element;
   subCommands?: Array<Omit<Command, "menu">>;
   render?: Component<{
     selected?: boolean;
@@ -652,9 +652,12 @@ const CommandPalette: Component<CommandPaletteProps> = (props) => {
                                       )}
                                       color="base"
                                     >
-                                      <Show when={command.icon}>
+                                      <Show
+                                        when={typeof command.icon === "string" && command.icon}
+                                        fallback={<>{command.icon}</>}
+                                      >
                                         <Icon
-                                          path={command.icon || ""}
+                                          path={`${command.icon || ""}`}
                                           class="h-5 w-5 mr-2 fill-gray-500 dark:fill-gray-400"
                                         />
                                       </Show>

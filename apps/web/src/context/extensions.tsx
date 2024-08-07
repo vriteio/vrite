@@ -34,7 +34,8 @@ const officialExtensions = [
   "https://raw.githubusercontent.com/vriteio/extensions/main/vrite/mdx-transformer/build/spec.json",
   "https://raw.githubusercontent.com/vriteio/extensions/main/vrite/publish-dev/build/spec.json",
   "https://raw.githubusercontent.com/vriteio/extensions/main/vrite/publish-medium/build/spec.json",
-  "https://raw.githubusercontent.com/vriteio/extensions/main/vrite/publish-hashnode/build/spec.json"
+  "https://raw.githubusercontent.com/vriteio/extensions/main/vrite/publish-hashnode/build/spec.json",
+  "http://127.0.0.1:5500/vrite/vrite-pages/build/spec.json"
 ];
 const getAbsoluteSpecPath = (url: string, specPath: string): string => {
   if (specPath.startsWith("http://") || specPath.startsWith("https://")) {

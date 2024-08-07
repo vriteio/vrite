@@ -2,13 +2,14 @@ import { debounce } from "@solid-primitives/scheduled";
 import clsx from "clsx";
 import { createSignal, createMemo, onCleanup, Component, Show } from "solid-js";
 import { Dynamic } from "solid-js/web";
-import { useContentData, useHostConfig, useLocalStorage } from "#context";
+import { useContentData, useExtensions, useHostConfig, useLocalStorage } from "#context";
 import { createRef } from "#lib/utils";
 import { SettingsView } from "#views/settings";
 import { ExtensionsView } from "#views/extensions";
 import { GettingStartedView } from "#views/getting-started";
 import { GitView } from "#views/git";
 import { ContentPieceView } from "#views/content-piece";
+import { ExtensionSidePanelView } from "#views/extension";
 
 const sidePanelViews: Record<string, Component<Record<string, any>>> = {
   contentPiece: ContentPieceView,
@@ -36,13 +37,27 @@ const sidePanelViews: Record<string, Component<Record<string, any>>> = {
 const SidePanel: Component = () => {
   const { storage, setStorage } = useLocalStorage();
   const { activeContentPieceId } = useContentData();
+  const { installedExtensions } = useExtensions();
   const [prevX, setPrevX] = createRef(0);
   const [dragging, setDragging] = createSignal(false);
   const [previousWidth, setPreviousWidth] = createRef(480);
   const [minWidth] = createSignal(375);
   const [maxWidth] = createSignal(640);
   const [handleHover, setHandleHover] = createSignal(false);
-  const view = createMemo(() => sidePanelViews[storage().sidePanelView || ""]);
+  const view = createMemo(() => {
+    if (storage().sidePanelView?.startsWith("ext:")) {
+      const [, extensionName] = storage().sidePanelView?.split(":") || [];
+      const extension = installedExtensions().find((extension) => {
+        return extension.spec.name === extensionName;
+      });
+
+      if (extension) {
+        return () => <ExtensionSidePanelView extension={extension} />;
+      }
+    }
+
+    return sidePanelViews[storage().sidePanelView || ""];
+  });
   const collapsed = createMemo(() => {
     return (storage().sidePanelWidth || 0) < minWidth();
   });

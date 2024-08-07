@@ -164,6 +164,10 @@ interface ExtensionBlockActionSpec {
   blocks: string[];
   view: string;
 }
+interface ExtensionPageSpec {
+  mainView?: string;
+  sidePanelView?: string;
+}
 interface ExtensionElementSpec {
   type: string;
   view: string;
@@ -174,6 +178,7 @@ interface ExtensionRuntimeSpec {
   configurationView?: string;
   contentPieceView?: string;
   blockActions?: ExtensionBlockActionSpec[];
+  page?: ExtensionPageSpec;
   elements?: ExtensionElementSpec[];
 }
 interface Extension {
@@ -318,6 +323,10 @@ interface ExtensionRuntimeConfig<C extends ContextObject = ContextObject> {
       view: View<ExtensionElementViewContext<C, any>>;
     }
   >;
+  page?: {
+    mainView?: View<ExtensionBaseViewContext<C>>;
+    sidePanelView?: View<ExtensionBaseViewContext<C>>;
+  };
 }
 
 const env: ExtensionEnvironment = {
@@ -497,7 +506,13 @@ const createRuntime = <C extends ContextObject = ContextObject>(
         elements: runtimeConfig.elements?.map((element) => ({
           ...element,
           view: element.view[__id]
-        }))
+        })),
+        page:
+          (runtimeConfig.page && {
+            mainView: runtimeConfig.page.mainView?.[__id],
+            sidePanelView: runtimeConfig.page.sidePanelView?.[__id]
+          }) ||
+          undefined
       };
     },
     generateView: async <C extends ExtensionBaseViewContext>(

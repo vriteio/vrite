@@ -27,6 +27,11 @@ const ContentPieceEditorView = lazy(async () => {
 
   return { default: ContentPieceEditorView };
 });
+const ExtensionView = lazy(async () => {
+  const { ExtensionMainView } = await import("#views/extension");
+
+  return { default: ExtensionMainView };
+});
 const SnippetEditorView = lazy(async () => {
   const { SnippetEditorView } = await import("#views/editor");
 
@@ -75,6 +80,7 @@ const App: Component = () => {
         </Route>
         <Route path={["/", "**"]} component={SecuredWrapper}>
           <Route path="/editor/:contentPieceId?" component={ContentPieceEditorView} />
+          <Route path="/ext/:extensionName?" component={ExtensionView} />
           <Route path={["/:contentPieceId?"]} component={DashboardView} />
           <Route path="/snippet/:snippetId?" component={SnippetEditorView} />
           <Route path="/version/:contentPieceId?/:versionId?" component={VersionEditorView} />
