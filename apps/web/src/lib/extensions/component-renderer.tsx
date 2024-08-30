@@ -8,7 +8,6 @@ import {
   JSX,
   Match,
   on,
-  onMount,
   Show,
   splitProps,
   Switch
@@ -18,9 +17,19 @@ import { createStore } from "solid-js/store";
 import { ExtensionElement, ExtensionSpec, ContextObject } from "@vrite/sdk/extensions";
 import { Dynamic } from "solid-js/web";
 import clsx from "clsx";
-import { useNotifications } from "#context";
-import { Button, Card, Icon, IconButton, Loader, Select, Tooltip } from "#components/primitives";
-import { InputField } from "#components/fragments";
+import { mdiChevronLeft, mdiClose } from "@mdi/js";
+import {
+  Button,
+  Card,
+  Heading,
+  Icon,
+  IconButton,
+  Loader,
+  Select,
+  Tooltip
+} from "#components/primitives";
+import { CollapsibleSection, InputField } from "#components/fragments";
+import { ExtensionDetails, useLocalStorage, useNotifications } from "#context";
 
 interface ComponentRendererProps {
   view: ExtensionElement | string;
@@ -28,12 +37,114 @@ interface ComponentRendererProps {
   contentEditable?: boolean;
   components?: Record<string, Component<any>>;
 }
+type SidePanelHeaderSection = {
+  label: string;
+  icon: string;
+  id: string;
+  action?: ExtensionElement;
+};
 type RenderedComponentProps<O = Record<string, any>> = {
   contentEditable?: boolean;
   children: JSX.Element;
+  extension: ExtensionDetails;
+  renderView(view: ExtensionElement): JSX.Element;
 } & O;
 
 const baseComponents = {
+  SidePanelContent: (props: RenderedComponentProps) => {
+    return (
+      <div class="flex-col h-full relative flex overflow-hidden">
+        <div class="w-full h-full overflow-x-hidden overflow-y-auto scrollbar-sm-contrast px-5">
+          <div class="flex justify-start flex-col min-h-full items-start w-full gap-5 pb-5">
+            {props.children}
+          </div>
+        </div>
+      </div>
+    );
+  },
+  SidePanelHeader: (
+    props: RenderedComponentProps<{
+      defaultSection: string;
+      section: string;
+      sections: SidePanelHeaderSection[];
+      onBack?: () => void;
+    }>
+  ) => {
+    const getSection = (sectionId: string): SidePanelHeaderSection => {
+      return (
+        props.sections.find(({ id }) => id === sectionId) ||
+        props.sections[0] || {
+          id: "",
+          label: props.extension.spec.displayName,
+          icon: undefined
+        }
+      );
+    };
+    const section = (): SidePanelHeaderSection => getSection(props.section || props.defaultSection);
+    const defaultSection = (): SidePanelHeaderSection => getSection(props.defaultSection);
+    const isDefaultSection = (): boolean => props.section === props.defaultSection;
+    const { setStorage } = useLocalStorage();
+
+    return (
+      <div
+        class={clsx(
+          "flex justify-start items-start mb-4 px-5 flex-col",
+          isDefaultSection() ? "pt-5" : "pt-2"
+        )}
+      >
+        <IconButton
+          variant="text"
+          class={clsx("m-0 h-6 -mb-1", isDefaultSection() && "hidden")}
+          onClick={() => {
+            if (!isDefaultSection()) {
+              props.onBack?.();
+            }
+          }}
+          label={defaultSection().label}
+          size="small"
+          path={mdiChevronLeft}
+        ></IconButton>
+        <div class="flex justify-center items-center w-full">
+          <Show
+            when={isDefaultSection()}
+            fallback={
+              <>
+                <Show when={section().icon}>
+                  <IconButton
+                    class="m-0 mr-1"
+                    path={section().icon}
+                    variant="text"
+                    hover={false}
+                    badge
+                  />
+                </Show>
+                <Heading level={2} class="flex-1">
+                  {section().label}
+                </Heading>
+              </>
+            }
+          >
+            <IconButton
+              path={mdiClose}
+              text="soft"
+              badge
+              class="flex md:hidden mr-2 m-0"
+              onClick={() => {
+                setStorage((storage) => ({
+                  ...storage,
+                  sidePanelWidth: 0
+                }));
+              }}
+            />
+            <Heading level={1} class="py-1 flex-1">
+              {section().label}
+            </Heading>
+          </Show>
+          <Show when={section().action}>{props.renderView(section().action!)}</Show>
+        </div>
+      </div>
+    );
+  },
   Field: (props: RenderedComponentProps<ComponentProps<typeof InputField>>) => {
     return (
       <InputField
@@ -128,6 +239,25 @@ const baseComponents = {
   Show: (props: RenderedComponentProps<{ when: boolean }>) => {
     return <Show when={props.when}>{props.children}</Show>;
   },
+  CollapsibleSection: (
+    props: RenderedComponentProps<{
+      icon: string;
+      label: string;
+      action?: ExtensionElement;
+      color?: "base" | "primary";
+      defaultOpened?: boolean;
+    }>
+  ) => {
+    return (
+      <CollapsibleSection
+        icon={props.icon}
+        label={props.label}
+        action={props.action ? props.renderView(props.action) : undefined}
+      >
+        {props.children}
+      </CollapsibleSection>
+    );
+  },
   Switch: (props: RenderedComponentProps) => {
     return <Switch>{props.children}</Switch>;
   },
@@ -170,11 +300,11 @@ renderer.link = (href, title, text) => {
 };
 
 const ComponentRenderer: Component<ComponentRendererProps> = (props) => {
+  const { notify } = useNotifications();
   const components = createMemo<Record<string, Component<any>>>(() => ({
     ...baseComponents,
     ...props.components
   }));
-  const { notify } = useNotifications();
   const { envData, setEnvData, extension } = useViewContext();
   const { sandbox } = extension;
 
@@ -190,13 +320,24 @@ const ComponentRenderer: Component<ComponentRendererProps> = (props) => {
   const componentName = props.view.component.match(/^(.+?)(?:\[|\.|$)/)?.[1] || "";
   const [componentProps, setComponentProps] = createStore<Record<string, any>>({});
   const viewProps = props.view.props || {};
+  const renderView = (view: ExtensionElement | string): JSX.Element => {
+    return (
+      <ComponentRenderer
+        view={view}
+        spec={props.spec}
+        contentEditable={props.contentEditable}
+        components={props.components}
+      />
+    );
+  };
 
   Object.keys(viewProps).forEach((key) => {
     const value = viewProps[key];
 
     if (key.startsWith("bind:")) {
       const bindKey = key.slice(5);
-      const pathParts = `${value}`.split(".");
+      const path = `${value}`;
+      const pathParts = path.split(".");
 
       createEffect(
         on(
@@ -218,7 +359,7 @@ const ComponentRenderer: Component<ComponentRendererProps> = (props) => {
       );
       setComponentProps(`set${bindKey[0].toUpperCase()}${bindKey.slice(1)}`, () => {
         return (value: any) => {
-          setEnvData((envData) => {
+          setEnvData([path], (envData) => {
             const newValue = { ...(envData as ContextObject) };
 
             let currentObject = newValue;
@@ -251,8 +392,7 @@ const ComponentRenderer: Component<ComponentRendererProps> = (props) => {
             `${value}`,
             {
               contextFunctions: [],
-              usableEnv: { readable: [], writable: [] },
-              config: {}
+              usableEnv: { readable: [], writable: [] }
             },
             { notify }
           );
@@ -268,19 +408,14 @@ const ComponentRenderer: Component<ComponentRendererProps> = (props) => {
       component={components()[componentName]}
       contentEditable={props.contentEditable}
       view={props.view}
+      renderView={renderView}
+      extension={extension}
       {...componentProps}
     >
       {props.view.slot?.length && (
         <For each={props.view.slot}>
           {(view) => {
-            return (
-              <ComponentRenderer
-                view={view}
-                spec={props.spec}
-                contentEditable={props.contentEditable}
-                components={props.components}
-              />
-            );
+            return renderView(view);
           }}
         </For>
       )}

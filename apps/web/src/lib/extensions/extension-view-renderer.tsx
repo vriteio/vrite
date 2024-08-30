@@ -12,7 +12,6 @@ import {
   on,
   onCleanup,
   onMount,
-  Setter,
   Show,
   useContext
 } from "solid-js";
@@ -33,7 +32,10 @@ type ExtensionViewRendererProps<O> = {
 interface ExtensionViewContextData {
   extension: ExtensionDetails;
   envData: Accessor<ContextObject>;
-  setEnvData: Setter<ContextObject>;
+  setEnvData: (
+    updatedIds: string[],
+    envData: ContextObject | ((previous: ContextObject) => ContextObject)
+  ) => void;
 }
 
 const registeredEffects = new Set<string>();
@@ -64,8 +66,25 @@ const ExtensionViewRenderer = <C extends ExtensionBaseViewContext>(
     createEffect(
       on(
         () => props.usableEnvData,
-        (usableEnvData) => {
-          sandbox?.setEnvData((envData) => {
+        (usableEnvData, previousUsableEnvData) => {
+          const updatedIds = Object.keys(usableEnvData).filter((key) => {
+            if (!previousUsableEnvData || !(key in previousUsableEnvData)) {
+              return true;
+            }
+
+            if (
+              typeof usableEnvData[key] === "object" &&
+              typeof previousUsableEnvData[key] === "object"
+            ) {
+              return (
+                JSON.stringify(usableEnvData[key]) !== JSON.stringify(previousUsableEnvData[key])
+              );
+            }
+
+            return usableEnvData[key] !== previousUsableEnvData[key];
+          });
+
+          sandbox?.setEnvData(updatedIds, (envData) => {
             return {
               ...envData,
               [uid]: {
@@ -123,7 +142,10 @@ const ExtensionViewRenderer = <C extends ExtensionBaseViewContext>(
   });
   onCleanup(() => {
     registeredEffects.delete(uid);
-    sandbox?.removeScope(`view:${uid}`);
+
+    if (viewId && !view) {
+      sandbox?.removeScope(`view:${uid}`);
+    }
   });
 
   return (

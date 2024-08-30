@@ -51,8 +51,7 @@ const ContentPieceCard: Component<ContentPieceProps> = (props) => {
 
   return (
     <Card
-      class="flex flex-col p-3 m-0 contentPiece-card select-none"
-      color="contrast"
+      class="flex flex-col p-3 m-0 contentPiece-card select-none bg-gray-200 bg-opacity-30 overflow-hidden"
       onClick={() => {
         setStorage((storage) => ({
           ...storage,
@@ -82,7 +81,7 @@ const ContentPieceCard: Component<ContentPieceProps> = (props) => {
               <button
                 class={clsx(
                   tagColorClasses[tag.color],
-                  "rounded-lg px-1.5 border-2 h-8 text-base flex justify-start items-center font-semibold",
+                  "rounded-lg px-1.5 border h-8 text-base flex justify-start items-center font-semibold",
                   "border-opacity-50 bg-opacity-20 dark:(border-opacity-50 bg-opacity-20) hover:opacity-80"
                 )}
               >
@@ -97,10 +96,7 @@ const ContentPieceCard: Component<ContentPieceProps> = (props) => {
           </Button>
         </Show>
       </div>
-      <Card
-        color="soft"
-        class="flex items-center justify-start flex-1 -mb-3 -ml-3 -mr-3 mt-2 border-b-0 rounded-t-none rounded-b-xl border-x-0"
-      >
+      <div class="flex items-center justify-start flex-1 p-2 -mb-3 -ml-3 -mr-3 mt-2 border-b-0 rounded-t-none rounded-b-xl border-x-0">
         <Show
           when={props.contentPiece.date}
           fallback={
@@ -141,6 +137,7 @@ const ContentPieceCard: Component<ContentPieceProps> = (props) => {
             text={activeContentPieceId() === props.contentPiece.id ? "primary" : "soft"}
             color={activeContentPieceId() === props.contentPiece.id ? "primary" : "contrast"}
             class="whitespace-nowrap contentPiece-card-edit"
+            variant="text"
             onClick={(event) => {
               event.preventDefault();
               event.stopPropagation();
@@ -153,7 +150,7 @@ const ContentPieceCard: Component<ContentPieceProps> = (props) => {
             }}
           />
         </Tooltip>
-      </Card>
+      </div>
     </Card>
   );
 };

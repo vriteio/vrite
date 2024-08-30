@@ -9,7 +9,7 @@ import {
   ExtensionMetadata,
   generateId
 } from "@vrite/sdk/extensions";
-import { Accessor, Setter, createEffect, createSignal, on } from "solid-js";
+import { Accessor, Setter, createSignal } from "solid-js";
 import { createRef } from "#lib/utils";
 import { useClient } from "#context";
 
@@ -59,9 +59,11 @@ type AsyncSetter<in out T> = {
 interface ExtensionSandbox {
   spec: ExtensionSpec & ExtensionRuntimeSpec;
   envData: Accessor<ContextObject>;
-  setEnvData: Setter<ContextObject>;
+  setEnvData: (
+    updatedIds: string[],
+    envData: ContextObject | ((previous: ContextObject) => ContextObject)
+  ) => void;
   setLocalEnvData: Setter<ContextObject>;
-  setEnvDataAsync: AsyncSetter<ContextObject>;
   destroy(): void;
   generateView<C extends ExtensionBaseViewContext>(
     id: string,
@@ -134,16 +136,12 @@ const loadExtensionSandbox = async (
       ...runtimeSpec
     },
     envData,
-    setEnvData(...args: Parameters<typeof setEnvData>) {
+    setEnvData(updatedIds, ...args: Parameters<typeof setEnvData>) {
       setEnvData(...args);
-      sandbox.connection?.remote.updateEnvData(JSON.parse(JSON.stringify(envData())));
+      sandbox.connection?.remote.updateEnvData(updatedIds, JSON.parse(JSON.stringify(envData())));
     },
     setLocalEnvData(...args: Parameters<typeof setEnvData>) {
       setEnvData(...args);
-    },
-    async setEnvDataAsync(...args: Parameters<typeof setEnvData>) {
-      setEnvData(...args);
-      await sandbox.connection?.remote.updateEnvData(JSON.parse(JSON.stringify(envData())));
     },
     destroy: () => sandbox.destroy(),
     generateView: async <C extends ExtensionBaseViewContext>(

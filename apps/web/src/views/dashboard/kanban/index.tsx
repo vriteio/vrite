@@ -45,17 +45,17 @@ const Kanban: Component = () => {
       />
       <Sortable
         ids={activeContentLevel().groups}
-        ghostClass=":base: border-2 border-gray-200 dark:border-gray-700 children:invisible !p-0 !m-2 !mt-0 !h-unset rounded-2xl"
+        ghostClass=":base: border border-gray-200 dark:border-gray-700 children:invisible !p-0 !m-2 !mt-0 !h-unset rounded-2xl"
         filter=".locked"
         disabled={!hasPermission("manageDashboard")}
         class={clsx(
-          "flex-1 h-full auto-rows-fr grid-flow-column grid-flow-col grid-template-rows grid auto-cols-[calc(100vw-2.5rem)] md:auto-cols-85 overflow-x-scroll scrollbar-dashboard md:px-5",
+          "flex-1 h-full auto-rows-fr grid-flow-column grid-flow-col grid-template-rows grid auto-cols-[calc(100vw-2.5rem)] md:auto-cols-76 overflow-x-scroll scrollbar-dashboard md:px-5",
           snapEnabled() && `snap-mandatory snap-x`
         )}
         ref={setScrollableContainerRef}
         dragImage={(props) => {
           return (
-            <div class="flex whitespace-nowrap gap-1 rounded-lg px-1 py-0.5 border-2 bg-gray-50 border-gray-200 dark:bg-gray-900 dark:border-gray-700">
+            <div class="flex whitespace-nowrap gap-1 rounded-lg px-1 py-0.5 border bg-gray-50 border-gray-200 dark:bg-gray-900 dark:border-gray-700">
               <Icon path={mdiFolder} class="h-6 w-6" />
               {contentGroups[props.id]?.name}
             </div>

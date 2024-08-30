@@ -4,6 +4,8 @@ import * as uninstallExtension from "./handlers/uninstall";
 import * as updateContentPieceData from "./handlers/update-content-piece-data";
 import * as listExtensions from "./handlers/list";
 import * as configureExtension from "./handlers/configure";
+import * as getData from "./handlers/get-data";
+import * as updateData from "./handlers/update-data";
 import { z } from "zod";
 import { subscribeToExtensionEvents } from "#events/extension";
 import { procedure, router } from "#lib/trpc";
@@ -18,6 +20,27 @@ const extensionsRouter = router({
     .output(getExtension.outputSchema)
     .query(async ({ ctx }) => {
       return getExtension.handler(ctx);
+    }),
+  getData: procedure
+    .meta({ openapi: { method: "GET", path: `${basePath}/data` }, requiredConfig: ["extensions"] })
+    .input(z.void())
+    .output(getData.outputSchema)
+    .query(async ({ ctx }) => {
+      return getData.handler(ctx);
+    }),
+  updateData: authenticatedProcedure
+    .meta({
+      openapi: {
+        method: "PUT",
+        path: `${basePath}/data`
+      },
+      requiredConfig: ["extensions"],
+      requiredSubscriptionPlan: "personal"
+    })
+    .input(updateData.inputSchema)
+    .output(z.void())
+    .mutation(async ({ ctx, input }) => {
+      return updateData.handler(ctx, input);
     }),
   updateContentPieceData: authenticatedProcedure
     .meta({

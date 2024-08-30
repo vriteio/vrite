@@ -23,7 +23,8 @@ const extension = z.object({
   name: z.string().describe("Name of the extension"),
   url: z.string().describe("URL of the extension"),
   config: contextObject.describe("Configuration of the extension"),
-  token: z.string().describe("API Token of the extension")
+  token: z.string().describe("API Token of the extension"),
+  data: z.any().optional().describe("Custom data of the extension")
 });
 
 interface Extension<ID extends string | ObjectId = string>

@@ -572,6 +572,7 @@ const Element = BaseElement.extend<
             newNode.type.name !== "element"
           ) {
             if (uid && customViews.has(uid)) {
+              customViews.get(uid)?.extension.sandbox?.removeScope(`view:${uid}`);
               customViews.delete(uid);
             }
 
@@ -590,6 +591,7 @@ const Element = BaseElement.extend<
               storage.customElements[node.attrs.type.toLowerCase()]
           ) {
             if (uid && customViews.has(uid)) {
+              customViews.get(uid)?.extension.sandbox?.removeScope(`view:${uid}`);
               customViews.delete(uid);
             }
 

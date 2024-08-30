@@ -7,7 +7,8 @@ import {
   ExtensionBaseViewContext,
   ExtensionBaseContext,
   Val,
-  generateId
+  generateId,
+  isVal
 } from "@vrite/sdk/extensions";
 
 // eslint-disable-next-line init-declarations
@@ -43,10 +44,13 @@ type SerializedContext<C extends ExtensionBaseContext> = Omit<
 
   const { createClient } = await import("@vrite/sdk/api");
   const client = createClient({
+    ...(location.ancestorOrigins.item(0)?.includes("//localhost") && {
+      baseURL: "http://localhost:4444"
+    }),
     token,
     extensionId
   });
-  const wrapInVal = (value: ContextValue, path: string): Val => {
+  const wrapInVal = (value: ContextValue, path: string, previousVal?: Val): Val => {
     const output = (() => output[metadata!.__value]) as Val;
 
     output[metadata!.__id] = `${path}`;
@@ -64,12 +68,16 @@ type SerializedContext<C extends ExtensionBaseContext> = Omit<
     return output;
   };
   const unwrapVal = (value: Val): ContextValue => {
+    if (!isVal(value as Val<ContextValue>) && typeof value !== "function") {
+      return value as unknown as ContextValue;
+    }
+
     const output = value();
 
     if (typeof output === "object" && !Array.isArray(output) && output !== null) {
       return Object.fromEntries(
         Object.keys(output).map((key) => {
-          return [key, unwrapVal(output[key] as Val)];
+          return [key, unwrapVal(output[key] as Val<ContextValue>)];
         })
       );
     }
@@ -81,7 +89,7 @@ type SerializedContext<C extends ExtensionBaseContext> = Omit<
 
     env.data = {};
     Object.keys(serializedEnvData).forEach((key) => {
-      env!.data[key] = wrapInVal(serializedEnvData[key], key);
+      env!.data[key] = wrapInVal(serializedEnvData[key], key, env!.data[key]);
     });
   };
   const serializeEnvData = (): SerializedEnvData => {
@@ -169,6 +177,7 @@ type SerializedContext<C extends ExtensionBaseContext> = Omit<
               } else if (ctx.usableEnv.writable.includes(parts[1])) {
                 const setter = (value: any): void => {
                   getVal()[metadata!.__value] = wrapInVal(value, path)[metadata!.__value];
+                  extension?.triggerEffects(getVal()[metadata!.__id]);
                 };
 
                 return [getter, setter];
@@ -251,8 +260,13 @@ type SerializedContext<C extends ExtensionBaseContext> = Omit<
         envData: serializeEnvData()
       };
     },
-    updateEnvData: (envData: SerializedEnvData) => {
+    updateEnvData: async (updatedIds: string[], envData: SerializedEnvData) => {
       updateEnvData(envData);
+
+      if (updatedIds.length && extension && "triggerEffects" in extension) {
+        await extension.triggerEffects(...updatedIds);
+        Websandbox.connection?.remote.flush(serializeEnvData());
+      }
 
       return {
         envData: serializeEnvData()

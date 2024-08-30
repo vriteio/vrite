@@ -880,8 +880,8 @@
             if (url.slice(0, 5) !== "data:" && url.slice(0, 5) !== "blob:") {
               if (lastEventId !== "") {
                 var i2 = url.indexOf("?");
-                requestURL = i2 === -1 ? url : url.slice(0, i2 + 1) + url.slice(i2 + 1).replace(/(?:^|&)([^=&]*)(?:=[^&]*)?/g, function(p2, paramName) {
-                  return paramName === lastEventIdQueryParameterName ? "" : p2;
+                requestURL = i2 === -1 ? url : url.slice(0, i2 + 1) + url.slice(i2 + 1).replace(/(?:^|&)([^=&]*)(?:=[^&]*)?/g, function(p, paramName) {
+                  return paramName === lastEventIdQueryParameterName ? "" : p;
                 });
                 requestURL += (url.indexOf("?") === -1 ? "?" : "&") + lastEventIdQueryParameterName + "=" + encodeURIComponent(lastEventId);
               }
@@ -956,30 +956,30 @@
   var require_unfetch = __commonJS({
     "../../node_modules/.pnpm/unfetch@4.2.0/node_modules/unfetch/dist/unfetch.js"(exports, module) {
       module.exports = function(e, n) {
-        return n = n || {}, new Promise(function(t, r) {
-          var s2 = new XMLHttpRequest(), o = [], u2 = [], i2 = {}, a2 = function() {
+        return n = n || {}, new Promise(function(t, r2) {
+          var s2 = new XMLHttpRequest(), o2 = [], u3 = [], i2 = {}, a = function() {
             return { ok: 2 == (s2.status / 100 | 0), statusText: s2.statusText, status: s2.status, url: s2.responseURL, text: function() {
               return Promise.resolve(s2.responseText);
             }, json: function() {
               return Promise.resolve(s2.responseText).then(JSON.parse);
             }, blob: function() {
               return Promise.resolve(new Blob([s2.response]));
-            }, clone: a2, headers: { keys: function() {
-              return o;
+            }, clone: a, headers: { keys: function() {
+              return o2;
             }, entries: function() {
-              return u2;
+              return u3;
             }, get: function(e2) {
               return i2[e2.toLowerCase()];
             }, has: function(e2) {
               return e2.toLowerCase() in i2;
             } } };
           };
-          for (var l2 in s2.open(n.method || "get", e, true), s2.onload = function() {
+          for (var l3 in s2.open(n.method || "get", e, true), s2.onload = function() {
             s2.getAllResponseHeaders().replace(/^(.*?):[^\S\n]*([\s\S]*?)$/gm, function(e2, n2, t2) {
-              o.push(n2 = n2.toLowerCase()), u2.push([n2, t2]), i2[n2] = i2[n2] ? i2[n2] + "," + t2 : t2;
-            }), t(a2());
-          }, s2.onerror = r, s2.withCredentials = "include" == n.credentials, n.headers)
-            s2.setRequestHeader(l2, n.headers[l2]);
+              o2.push(n2 = n2.toLowerCase()), u3.push([n2, t2]), i2[n2] = i2[n2] ? i2[n2] + "," + t2 : t2;
+            }), t(a());
+          }, s2.onerror = r2, s2.withCredentials = "include" == n.credentials, n.headers)
+            s2.setRequestHeader(l3, n.headers[l3]);
           s2.send(n.body || null);
         });
       };
@@ -998,83 +998,83 @@
   __export(api_exports, {
     createClient: () => V
   });
-  var import_eventsource, l, S, g, L, I, P, O, E, x, D, C, T, j, R, v, m, q, k, A, z, w, B, b, M, h, J, u, N, V;
+  var import_eventsource, l2, S, g2, L, D, k, I, E, O, x, C, T, j, R, v, m, q, w2, A, z, b2, B, y2, M, G, J, u2, N, V;
   var init_api = __esm({
     "../../packages/sdk/dist/api.mjs"() {
       "use strict";
       import_eventsource = __toESM(require_browser(), 1);
-      l = "/content-groups";
-      S = (t) => ({ get: (e) => t("GET", `${l}`, { params: e }), list: (e) => t("GET", `${l}/list`, { params: e }), create: (e) => t("POST", `${l}`, { body: e }), update: (e) => t("PUT", `${l}`, { body: e }), delete: (e) => t("DELETE", `${l}`, { params: e }) });
-      g = "/content-pieces";
-      L = (t) => ({ get: (e) => t("GET", `${g}`, { params: e }), create: (e) => t("POST", `${g}`, { body: e }), update: (e) => t("PUT", `${g}`, { body: e }), delete: (e) => t("DELETE", `${g}`, { params: e }), list: ({ contentGroupId: e, ...o }) => t("GET", `${g}/list`, { params: { ...o, ...e && { contentGroupId: typeof e == "string" ? e : e.join(",") } } }) });
-      I = (t) => {
-        let e = t.baseURL || "https://api.vrite.io", o = t.extensionId || "", i2 = t.headers || {}, d2 = null, { token: $ } = t;
-        return { sendRequest: async (s2, a2, c) => {
+      l2 = "/content-groups";
+      S = (t) => ({ get: (e) => t("GET", `${l2}`, { params: e }), list: (e) => t("GET", `${l2}/list`, { params: e }), create: (e) => t("POST", `${l2}`, { body: e }), update: (e) => t("PUT", `${l2}`, { body: e }), delete: (e) => t("DELETE", `${l2}`, { params: e }) });
+      g2 = "/content-pieces";
+      L = (t) => ({ get: (e) => t("GET", `${g2}`, { params: e }), create: (e) => t("POST", `${g2}`, { body: e }), update: (e) => t("PUT", `${g2}`, { body: e }), delete: (e) => t("DELETE", `${g2}`, { params: e }), list: ({ contentGroupId: e, ...o2 }) => t("GET", `${g2}/list`, { params: { ...o2, ...e && { contentGroupId: typeof e == "string" ? e : e.join(",") } } }) });
+      D = (t) => {
+        let e = t.baseURL || "https://api.vrite.io", o2 = t.extensionId || "", i2 = t.headers || {}, $ = null, { token: d2 } = t;
+        return { sendRequest: async (s2, a, c) => {
           try {
-            const { default: p2 } = await Promise.resolve().then(() => __toESM(require_browser2(), 1)), n = await p2(`${e}${a2}/?${encodeURI(Object.entries(c?.params || {}).filter(([, y]) => y).map(([y, U]) => `${y}=${U}`).join("&"))}`, { headers: { Authorization: `Bearer ${$}`, Accept: "application/json", ...c?.body ? { "Content-Type": "application/json" } : {}, ...o ? { "X-Vrite-Extension-ID": o } : {}, ...i2 }, body: c?.body ? JSON.stringify(c.body) : null, signal: d2, method: s2 });
-            d2 = null;
-            let r = null;
+            const { default: p } = await Promise.resolve().then(() => __toESM(require_browser2(), 1)), n = await p(`${e}${a}/?${encodeURI(Object.entries(c?.params || {}).filter(([, h]) => h).map(([h, U]) => `${h}=${U}`).join("&"))}`, { headers: { Authorization: `Bearer ${d2}`, Accept: "application/json", ...c?.body ? { "Content-Type": "application/json" } : {}, ...o2 ? { "X-Vrite-Extension-ID": o2 } : {}, ...i2 }, body: c?.body ? JSON.stringify(c.body) : null, signal: $, method: s2 });
+            $ = null;
+            let r2 = null;
             try {
-              if (r = await n.json(), !r)
+              if (r2 = await n.json(), !r2)
                 return;
             } catch {
               return;
             }
             if (!n.ok)
-              throw r;
-            const G = n.headers.get("x-pagination-total");
-            return G ? Object.assign(r, { meta: { pagination: { total: parseInt(G), pages: parseInt(n.headers.get("x-pagination-pages") || "0"), perPage: parseInt(n.headers.get("x-pagination-per-page") || "0"), page: parseInt(n.headers.get("x-pagination-page") || "0") } } }) : r;
-          } catch (p2) {
-            throw console.error(p2), p2;
+              throw r2;
+            const P = n.headers.get("x-pagination-total");
+            return P ? Object.assign(r2, { meta: { pagination: { total: parseInt(P), pages: parseInt(n.headers.get("x-pagination-pages") || "0"), perPage: parseInt(n.headers.get("x-pagination-per-page") || "0"), page: parseInt(n.headers.get("x-pagination-page") || "0") } } }) : r2;
+          } catch (p) {
+            throw console.error(p), p;
           }
         }, reconfigure: (s2) => {
-          e = s2.baseURL || e, $ = s2.token || $, o = s2.extensionId || o, i2 = s2.headers || i2;
+          e = s2.baseURL || e, d2 = s2.token || d2, o2 = s2.extensionId || o2, i2 = s2.headers || i2;
         }, useSignal: (s2) => {
-          d2 = s2;
-        }, getConfig: () => ({ baseURL: e, token: $, extensionId: o, headers: i2 }), getSignal: () => d2 };
+          $ = s2;
+        }, getConfig: () => ({ baseURL: e, token: d2, extensionId: o2, headers: i2 }), getSignal: () => $ };
       };
-      P = "/user-settings";
-      O = (t) => ({ get: () => t("GET", `${P}`), update: (e) => t("PUT", `${P}`, { body: e }) });
+      k = "/user-settings";
+      I = (t) => ({ get: () => t("GET", `${k}`), update: (e) => t("PUT", `${k}`, { body: e }) });
       E = "/tags";
-      x = (t) => ({ get: (e) => t("GET", `${E}`, { params: e }), update: (e) => t("PUT", `${E}`, { body: e }), create: (e) => t("PUT", `${E}`, { body: e }), delete: (e) => t("DELETE", `${E}`, { params: e }), list: (e) => t("GET", `${E}/list`, { params: e }) });
-      D = "/profile";
-      C = (t) => ({ get: () => t("GET", `${D}`) });
+      O = (t) => ({ get: (e) => t("GET", `${E}`, { params: e }), update: (e) => t("PUT", `${E}`, { body: e }), create: (e) => t("PUT", `${E}`, { body: e }), delete: (e) => t("DELETE", `${E}`, { params: e }), list: (e) => t("GET", `${E}/list`, { params: e }) });
+      x = "/profile";
+      C = (t) => ({ get: () => t("GET", `${x}`) });
       T = "/webhooks";
       j = (t) => ({ get: (e) => t("GET", `${T}`, { params: e }), create: (e) => t("POST", `${T}`, { body: e }), update: (e) => t("PUT", `${T}`, { body: e }), delete: (e) => t("DELETE", `${T}`, { params: e }), list: (e) => t("GET", `${T}/list`, { params: e }) });
       R = "/workspace";
       v = (t) => ({ get: () => t("GET", `${R}`) });
       m = "/roles";
       q = (t) => ({ get: (e) => t("GET", `${m}`, { params: e }), create: (e) => t("POST", `${m}`, { body: e }), update: (e) => t("PUT", `${m}`, { body: e }), delete: (e) => t("DELETE", `${m}`, { params: e }), list: (e) => t("GET", `${m}/list`, { params: e }) });
-      k = "/workspace-settings";
-      A = (t) => ({ get: () => t("GET", `${k}`), update: (e) => t("PUT", `${k}`, { body: e }) });
+      w2 = "/workspace-settings";
+      A = (t) => ({ get: () => t("GET", `${w2}`), update: (e) => t("PUT", `${w2}`, { body: e }) });
       z = (t) => ({ listMembers: (e) => t("GET", "/workspace-memberships/list-members", { params: e }), listWorkspaces: (e) => t("GET", "/workspace-memberships/list-workspaces", { params: e }), create: (e) => t("POST", "/workspace-memberships", { body: e }), update: (e) => t("PUT", "/workspace-memberships", { body: e }), delete: (e) => t("DELETE", "/workspace-memberships", { params: e }) });
-      w = "/extension";
-      B = (t) => ({ get: () => t("GET", `${w}`), updateContentPieceData: (e) => t("POST", `${w}/content-piece-data`, { body: e }) });
-      b = "/variants";
-      M = (t) => ({ create: (e) => t("POST", `${b}`, { body: e }), update: (e) => t("PUT", `${b}`, { body: e }), delete: (e) => t("DELETE", `${b}`, { params: e }), list: () => t("GET", `${b}/list`) });
-      h = "/transformers";
-      J = (t) => ({ create: (e) => t("POST", `${h}`, { body: e }), delete: (e) => t("DELETE", `${h}`, { params: e }), list: () => t("GET", `${h}/list`) });
-      u = "/snippets";
-      N = (t) => ({ get: (e) => t("GET", `${u}`, { params: e }), create: (e) => t("POST", `${u}`, { body: e }), update: (e) => t("PUT", `${u}`, { body: e }), delete: (e) => t("DELETE", `${u}`, { params: e }), list: (e) => t("GET", `${u}/list`, { params: e }) });
+      b2 = "/extension";
+      B = (t) => ({ get: () => t("GET", `${b2}`), getData: () => t("GET", `${b2}/data`), updateData: (e) => t("PUT", `${b2}/data`, { body: e }), updateContentPieceData: (e) => t("POST", `${b2}/content-piece-data`, { body: e }) });
+      y2 = "/variants";
+      M = (t) => ({ create: (e) => t("POST", `${y2}`, { body: e }), update: (e) => t("PUT", `${y2}`, { body: e }), delete: (e) => t("DELETE", `${y2}`, { params: e }), list: () => t("GET", `${y2}/list`) });
+      G = "/transformers";
+      J = (t) => ({ create: (e) => t("POST", `${G}`, { body: e }), delete: (e) => t("DELETE", `${G}`, { params: e }), list: () => t("GET", `${G}/list`) });
+      u2 = "/snippets";
+      N = (t) => ({ get: (e) => t("GET", `${u2}`, { params: e }), create: (e) => t("POST", `${u2}`, { body: e }), update: (e) => t("PUT", `${u2}`, { body: e }), delete: (e) => t("DELETE", `${u2}`, { params: e }), list: (e) => t("GET", `${u2}/list`, { params: e }) });
       V = (t) => {
-        const { sendRequest: e, reconfigure: o, getConfig: i2, getSignal: d2, useSignal: $ } = I(t), s2 = { contentGroups: S(e), contentPieces: L(e), snippets: N(e), tags: x(e), profile: C(e), userSettings: O(e), webhooks: j(e), workspace: v(e), roles: q(e), workspaceSettings: A(e), workspaceMemberships: z(e), extension: B(e), variants: M(e), transformers: J(e), search(a2) {
-          return e("GET", "/search", { params: a2 });
-        }, async ask(a2) {
+        const { sendRequest: e, reconfigure: o2, getConfig: i2, getSignal: $, useSignal: d2 } = D(t), s2 = { contentGroups: S(e), contentPieces: L(e), snippets: N(e), tags: O(e), profile: C(e), userSettings: I(e), webhooks: j(e), workspace: v(e), roles: q(e), workspaceSettings: A(e), workspaceMemberships: z(e), extension: B(e), variants: M(e), transformers: J(e), search(a) {
+          return e("GET", "/search", { params: a });
+        }, async ask(a) {
           let c = "";
-          const p2 = new import_eventsource.default(`${i2().baseURL}/search/ask?query=${encodeURIComponent(a2.query)}`, { headers: { Authorization: `Bearer ${i2().token}`, "Content-Type": "application/json", Accept: "application/json" } });
-          p2.addEventListener("error", (n) => {
-            const r = n;
-            return r.message ? a2.onError?.(r.message) : (p2.close(), a2.onEnd?.(c));
-          }), p2.addEventListener("message", (n) => {
-            const r = decodeURIComponent(n.data);
-            c += r, a2.onChunk?.(r, c);
-          }), d2()?.addEventListener("abort", () => {
-            p2.close();
-          }), $(null);
-        }, useSignal(a2) {
-          return $(a2), s2;
-        }, reconfigure(a2) {
-          return o(a2), s2;
+          const p = new import_eventsource.default(`${i2().baseURL}/search/ask?query=${encodeURIComponent(a.query)}`, { headers: { Authorization: `Bearer ${i2().token}`, "Content-Type": "application/json", Accept: "application/json" } });
+          p.addEventListener("error", (n) => {
+            const r2 = n;
+            return r2.message ? a.onError?.(r2.message) : (p.close(), a.onEnd?.(c));
+          }), p.addEventListener("message", (n) => {
+            const r2 = decodeURIComponent(n.data);
+            c += r2, a.onChunk?.(r2, c);
+          }), $()?.addEventListener("abort", () => {
+            p.close();
+          }), d2(null);
+        }, useSignal(a) {
+          return d2(a), s2;
+        }, reconfigure(a) {
+          return o2(a), s2;
         }, getConfig() {
           return i2();
         } };
@@ -1084,15 +1084,80 @@
   });
 
   // ../../packages/sdk/dist/extensions.mjs
-  var d = Symbol("usableEnv");
-  var i = Symbol("value");
-  var a = Symbol("id");
-  var s = Symbol("componentName");
-  var p = () => `_${Math.random().toString(36).substring(2, 9)}`;
-  var f = new Proxy({}, { get(t, e) {
-    const o = () => {
+  var b = Symbol("usableEnv");
+  var s = Symbol("value");
+  var i = Symbol("id");
+  var l = Symbol("componentName");
+  var o = { data: {}, func: {}, views: {}, effects: [], currentScope: null };
+  var d = async (...e) => {
+    await Promise.all(o.effects.filter((t) => t.dependencies.some((n) => e.includes(n))).map((t) => t.run()));
+  };
+  var f = () => `_${Math.random().toString(36).substring(2, 9)}`;
+  var r = (e) => e && (typeof e == "object" || typeof e == "function") && i in e && s in e;
+  var y = new Proxy({}, { get(e, t) {
+    const n = () => {
     };
-    return Object.defineProperty(o, s, { value: e }), o;
+    return Object.defineProperty(n, l, { value: t }), n;
+  } });
+  function w(e) {
+    if (!o.data.temp) {
+      const a = () => o.data.temp[s];
+      Object.defineProperty(a, i, { value: "temp" }), Object.defineProperty(a, s, { value: {}, writable: true }), o.data.temp = a;
+    }
+    const t = f(), n = (a) => {
+      const p = o.data.temp;
+      p[s][t] && (p[s][t][s] = a), d(`temp.${t}`);
+    }, c = () => o.data.temp[s][t][s];
+    return Object.defineProperty(c, i, { value: `temp.${t}` }), Object.defineProperty(c, s, { value: e, writable: true }), o.data.temp[s][t] = c, o.currentScope && o.currentScope.temp.push(t), [c, n];
+  }
+  function g(e, t, n) {
+    const c = f();
+    o.effects.push({ [i]: c, dependencies: t.map((a) => a[i]), run: e }), o.currentScope && o.currentScope.effects.push(c), n?.initial && e();
+  }
+  var u = Object.assign(function(e, t) {
+    const [n, c] = w(e());
+    return g(() => {
+      c(e());
+    }, t, { initial: true }), n;
+  }, { eq: (...e) => {
+    const t = e.filter(r);
+    return u(() => e.every((n) => (r(n) ? n() : n) === (r(e[0]) ? e[0]() : e[0])), t);
+  }, neq: (...e) => {
+    const t = e.filter(r);
+    return u(() => e.some((n) => (r(n) ? n() : n) !== (r(e[0]) ? e[0]() : e[0])), t);
+  }, gt: (e, t) => {
+    const n = [...r(e) ? [e] : [], ...r(t) ? [t] : []];
+    return u(() => (r(e) ? e() : e) > (r(t) ? t() : t), n);
+  }, lt: (e, t) => {
+    const n = [...r(e) ? [e] : [], ...r(t) ? [t] : []];
+    return u(() => (r(e) ? e() : e) < (r(t) ? t() : t), n);
+  }, and: (...e) => {
+    const t = e.filter(r);
+    return u(() => e.every((n) => r(n) ? n() : n), t);
+  }, or: (...e) => {
+    const t = e.filter(r);
+    return u(() => e.some((n) => r(n) ? n() : n), t);
+  }, not: (e) => u(() => !(r(e) ? e() : e), r(e) ? [e] : []), add: (...e) => {
+    const t = e.filter(r);
+    return u(() => e.reduce((n, c) => n + (r(c) ? c() : c), 0), t);
+  }, join: (...e) => {
+    const t = e.filter(r);
+    return u(() => e.reduce((n, c) => n + (r(c) ? c() : c), ""), t);
+  }, sub: (...e) => {
+    const t = e.filter(r);
+    return u(() => e.reduce((n, c) => n - c(), 0), t);
+  }, mul: (...e) => {
+    const t = e.filter(r);
+    return u(() => e.reduce((n, c) => n * c(), 1), t);
+  }, div: (e, t) => {
+    const n = [...r(e) ? [e] : [], ...r(t) ? [t] : []];
+    return u(() => (r(e) ? e() : e) / (r(t) ? t() : t), n);
+  }, mod: (e, t) => {
+    const n = [...r(e) ? [e] : [], ...r(t) ? [t] : []];
+    return u(() => (r(e) ? e() : e) % (r(t) ? t() : t), n);
+  }, neg: (e) => u(() => -(r(e) ? e() : e), r(e) ? [e] : []), when: (e, t, n) => {
+    const c = r(e) ? [e] : [], a = r(t) ? [t] : [], p = r(n) ? [n] : [];
+    return u(() => (r(e) ? e() : e) ? r(t) ? t() : t : n ? r(n) ? n() : n : null, [...c, ...a, ...p]);
   } });
 
   // scripts/sandbox.ts
@@ -1105,10 +1170,13 @@
     let spec = null;
     const { createClient } = await Promise.resolve().then(() => (init_api(), api_exports));
     const client = createClient({
+      ...location.ancestorOrigins.item(0)?.includes("//localhost") && {
+        baseURL: "http://localhost:4444"
+      },
       token,
       extensionId
     });
-    const wrapInVal = (value, path) => {
+    const wrapInVal = (value, path, previousVal) => {
       const output = () => output[metadata.__value];
       output[metadata.__id] = `${path}`;
       if (typeof value === "object" && !Array.isArray(value) && value !== null) {
@@ -1123,6 +1191,9 @@
       return output;
     };
     const unwrapVal = (value) => {
+      if (!r(value) && typeof value !== "function") {
+        return value;
+      }
       const output = value();
       if (typeof output === "object" && !Array.isArray(output) && output !== null) {
         return Object.fromEntries(
@@ -1138,7 +1209,7 @@
         return;
       env.data = {};
       Object.keys(serializedEnvData).forEach((key) => {
-        env.data[key] = wrapInVal(serializedEnvData[key], key);
+        env.data[key] = wrapInVal(serializedEnvData[key], key, env.data[key]);
       });
     };
     const serializeEnvData = () => {
@@ -1211,6 +1282,7 @@
                 } else if (ctx.usableEnv.writable.includes(parts[1])) {
                   const setter = (value) => {
                     getVal()[metadata.__value] = wrapInVal(value, path)[metadata.__value];
+                    extension?.triggerEffects(getVal()[metadata.__id]);
                   };
                   return [getter, setter];
                 }
@@ -1241,7 +1313,7 @@
         client.reconfigure({ token, extensionId });
         return extension?.generateRuntimeSpec() || null;
       },
-      generateView: async (id, envData, serializedContext, uid = p()) => {
+      generateView: async (id, envData, serializedContext, uid = f()) => {
         updateEnvData(envData);
         let css = "";
         const view = await extension?.generateView(
@@ -1259,7 +1331,7 @@
           envData: serializeEnvData()
         };
       },
-      runFunction: async (id, envData, serializedContext, uid = p()) => {
+      runFunction: async (id, envData, serializedContext, uid = f()) => {
         updateEnvData(envData);
         await extension?.runFunction(
           id,
@@ -1270,8 +1342,12 @@
           envData: serializeEnvData()
         };
       },
-      updateEnvData: (envData) => {
+      updateEnvData: async (updatedIds, envData) => {
         updateEnvData(envData);
+        if (updatedIds.length && extension && "triggerEffects" in extension) {
+          await extension.triggerEffects(...updatedIds);
+          Websandbox.connection?.remote.flush(serializeEnvData());
+        }
         return {
           envData: serializeEnvData()
         };

@@ -1,9 +1,9 @@
 import { z } from "zod";
 import { ObjectId } from "mongodb";
-import { extension, getExtensionsCollection } from "#collections";
+import { getExtensionsCollection } from "#collections";
 import { Context } from "#lib/context";
 
-const outputSchema = extension.omit({ data: true }).partial();
+const outputSchema = z.object({}).passthrough();
 const handler = async (ctx: Context): Promise<z.infer<typeof outputSchema>> => {
   const extensionsCollection = getExtensionsCollection(ctx.db);
   const extensionId = ctx.req.headers["x-vrite-extension-id"] as string | undefined;
@@ -14,12 +14,7 @@ const handler = async (ctx: Context): Promise<z.infer<typeof outputSchema>> => {
     _id: new ObjectId(extensionId)
   });
 
-  if (!extension) return {};
-
-  return {
-    ...extension,
-    id: `${extension._id}`
-  };
+  return extension?.data || {};
 };
 
 export { outputSchema, handler };

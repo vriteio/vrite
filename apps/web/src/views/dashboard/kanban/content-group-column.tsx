@@ -189,8 +189,8 @@ const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
       data-index={props.index}
       {...(props.dataProps || {})}
     >
-      <Card class="flex flex-col items-start justify-start h-full p-4 relative m-0 mb-1 pr-2 md:pr-1 overflow-x-hidden content-group select-none">
-        <div class="flex items-center justify-center mb-2 w-full">
+      <Card class="flex flex-col items-start justify-start h-full relative m-0 mb-1  overflow-x-hidden content-group select-none !bg-transparent border-0 p-0 rounded-none">
+        <div class="flex items-center justify-center mb-2 w-full p-1 pr-0 pl-2 rounded-xl">
           <div class="flex flex-1 justify-center items-center cursor-pointer overflow-x-hidden">
             <div
               class="flex flex-1 justify-center items-center overflow-hidden"
@@ -258,12 +258,13 @@ const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
           <ScrollShadow
             scrollableContainerRef={scrollableContainerRef}
             controller={scrollShadowController}
+            color="contrast"
             onScrollEnd={() => {
               contentLoader.loadContentLevel(props.contentGroup.id);
             }}
           />
           <div
-            class="w-full h-full pr-2 md:pr-1 overflow-x-hidden overflow-y-scroll scrollbar-sm"
+            class="w-full h-full pr-2 md:pr-1 overflow-x-hidden overflow-y-scroll scrollbar-sm-contrast"
             ref={setScrollableContainerRef}
           >
             <Show
@@ -278,12 +279,12 @@ const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
                 class="min-h-[calc(100%-1rem)] flex gap-4 flex-col"
                 ids={columnContentLevel().pieces}
                 group="shared"
-                ghostClass=":base: border-2 border-gray-200 dark:border-gray-700 opacity-50 children:invisible"
+                ghostClass=":base: border border-gray-200 dark:border-gray-700 opacity-50 children:invisible"
                 disabled={!hasPermission("manageDashboard")}
                 sortableId={props.contentGroup.id}
                 dragImage={(props) => {
                   return (
-                    <div class="flex whitespace-nowrap gap-1 rounded-lg px-1 py-0.5 border-2 bg-gray-100 border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+                    <div class="flex whitespace-nowrap gap-1 rounded-lg px-1 py-0.5 border bg-gray-100 border-gray-200 dark:bg-gray-800 dark:border-gray-700">
                       <Icon path={mdiFileDocumentOutline} class="h-6 w-6" />
                       {contentPieces[props.id]?.title}
                     </div>
@@ -382,50 +383,6 @@ const ContentGroupColumn: Component<ContentGroupColumnProps> = (props) => {
             </Show>
           </div>
         </div>
-        <Show when={hasPermission("manageDashboard")}>
-          <div class="w-full h-16" />
-          <Card
-            color="soft"
-            class="absolute bottom-0 left-0 flex items-center justify-center w-full h-16 m-0 border-b-0 rounded-none border-x-0"
-          >
-            <IconButton
-              class="w-full h-full m-0"
-              color="contrast"
-              variant="text"
-              path={mdiFileDocumentPlusOutline}
-              text="soft"
-              label="New content piece"
-              loading={addingNewContentPiece()}
-              onClick={async () => {
-                const newContentPieceData = {
-                  contentGroupId: props.contentGroup.id,
-                  referenceId: columnContentLevel().pieces[0],
-                  tags: [],
-                  members: [],
-                  title: ""
-                };
-
-                try {
-                  setAddingNewContentPiece(true);
-
-                  const { id } = await client.contentPieces.create.mutate(newContentPieceData);
-
-                  setAddingNewContentPiece(false);
-                  notify({ type: "success", text: "New content piece created" });
-                  setStorage((storage) => ({
-                    ...storage,
-                    sidePanelView: "contentPiece",
-                    sidePanelWidth: storage.sidePanelWidth || 375
-                  }));
-                  navigate(`/${id}`);
-                } catch (e) {
-                  setAddingNewContentPiece(false);
-                  notify({ type: "error", text: "Couldn't create new content piece" });
-                }
-              }}
-            />
-          </Card>
-        </Show>
       </Card>
     </div>
   );

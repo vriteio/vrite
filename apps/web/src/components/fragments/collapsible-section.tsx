@@ -1,7 +1,7 @@
 import { Component, JSX, Show, createSignal } from "solid-js";
 import { mdiChevronDown } from "@mdi/js";
 import clsx from "clsx";
-import { Card, Heading, IconButton } from "#components/primitives";
+import { Heading, IconButton } from "#components/primitives";
 
 interface CollapsibleSectionProps {
   icon: JSX.Element;
