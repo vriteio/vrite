@@ -76,7 +76,7 @@ const AddContentGroupColumn: Component<AddContentGroupColumnProps> = (props) => 
       onClick={createNewContentGroup}
     >
       <Card
-        class="flex-col flex justify-center items-center w-full h-full m-0 mb-1 bg-transparent border-2 rounded-2xl dark:border-gray-700 text-gray-500 dark:text-gray-400 @hover-bg-gray-300 dark:@hover-bg-gray-700 @hover:cursor-pointer"
+        class="flex-col flex justify-center items-center w-full h-full m-0 mb-1 bg-transparent border rounded-2xl dark:border-gray-700 text-gray-500 dark:text-gray-400 @hover-bg-gray-300 dark:@hover-bg-gray-700 @hover:cursor-pointer"
         color="contrast"
       >
         <IconButton

@@ -180,7 +180,7 @@ const CollabCursor = (provider: HocuspocusProvider): Extension => {
                 {"\u2060"}
                 <div
                   class={clsx(
-                    "absolute group -top-px -right-px h-2px w-2px flex justify-center items-center ring-2 hover:ring-0 transition-shadow duration-100",
+                    "absolute group -top-px -right-px h-2px w-px flex justify-center items-center ring-2 hover:ring-0 transition-shadow duration-100",
                     selectionClasses[color].cursor
                   )}
                 >
@@ -215,7 +215,7 @@ const CollabCursor = (provider: HocuspocusProvider): Extension => {
                     }}
                     data-collab-cursor="true"
                     class={clsx(
-                      "absolute border-2 rounded-[18px] pointer-events-none",
+                      "absolute border rounded-[18px] pointer-events-none",
                       selectionClasses[color].outline
                     )}
                   >

@@ -37,8 +37,8 @@ const CodeBlockMenu: Component<CodeBlockMenuProps> = (props) => {
   );
 
   return (
-    <div class="pointer-events-auto flex bg-gray-50 dark:bg-gray-900 !md:bg-transparent border-gray-200 dark:border-gray-700 border-y-2 md:border-0 backdrop-blur-sm md:gap-2 w-screen md:flex-1 !md:left-unset relative md:rounded-2xl">
-      <Card class="flex m-0 border-0 md:border-2 p-1 md:p-0 rounded-xl overflow-hidden gap-1 md:gap-0.5">
+    <div class="pointer-events-auto flex bg-gray-50 dark:bg-gray-900 !md:bg-transparent border-gray-200 dark:border-gray-700 border-y md:border-0 backdrop-blur-sm md:gap-2 w-screen md:flex-1 !md:left-unset relative md:rounded-2xl">
+      <Card class="flex m-0 border-0 md:border p-1 md:p-0 rounded-xl overflow-hidden gap-1 md:gap-0.5">
         <Tooltip text="Title" class="mt-1" fixed>
           <IconButton
             path={mdiFileOutline}
@@ -64,7 +64,7 @@ const CodeBlockMenu: Component<CodeBlockMenuProps> = (props) => {
           ></IconButton>
         </Tooltip>
       </Card>
-      <Card class="flex m-0 border-0 md:border-2 px-1 py-1 md:py-0 rounded-xl overflow-hidden flex-1">
+      <Card class="flex m-0 border-0 md:border px-1 py-1 md:py-0 rounded-xl overflow-hidden flex-1">
         <Input
           wrapperClass="flex-1 min-w-unset w-full md:max-w-96"
           placeholder={mode() === "title" ? "Snippet title" : "Language meta"}
@@ -87,7 +87,7 @@ const CodeBlockMenu: Component<CodeBlockMenuProps> = (props) => {
           }}
         />
       </Card>
-      <Card class="flex m-0 border-0 md:border-2 p-1 md:p-0 rounded-xl overflow-hidden">
+      <Card class="flex m-0 border-0 md:border p-1 md:p-0 rounded-xl overflow-hidden">
         <Show when={props.state.editor.isEditable}>
           <Tooltip
             text={formattingAvailable() ? "Format" : "Formatting unavailable"}

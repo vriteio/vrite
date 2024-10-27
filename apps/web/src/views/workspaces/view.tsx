@@ -219,7 +219,7 @@ const WorkspacesView: Component = () => {
                             >
                               <img
                                 src={workspace.logo}
-                                class="h-12 w-12 bg-gray-50 dark:bg-gray-900 rounded-full border-gray-50 dark:border-gray-900 border-2"
+                                class="h-12 w-12 bg-gray-50 dark:bg-gray-900 rounded-full border-gray-50 dark:border-gray-900 border"
                               />
                             </Show>
                             <div class="flex flex-col flex-1 justify-center items-start gap-1 min-h-12 text-start">

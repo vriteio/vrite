@@ -406,7 +406,7 @@ const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
         ref={setEditorContainerRef}
         spellcheck={false}
         class={clsx(
-          "code-block-editor bg-gray-50 dark:bg-gray-900 rounded-2xl rounded-editor-2xl border-2 border-gray-300 dark:border-gray-700 box-content customized-editor"
+          "code-block-editor bg-gray-50 dark:bg-gray-900 rounded-2xl rounded-editor-2xl border border-gray-300 dark:border-gray-700 box-content customized-editor"
         )}
       />
       <Portal mount={document.getElementById("pm-container") || document.body}>
@@ -421,7 +421,7 @@ const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
         </div>
       </Portal>
       <div
-        class="hidden code-block-placeholder bg-gray-50 dark:bg-gray-900 border-2 border-gray-300 dark:border-gray-700 rounded-2xl"
+        class="hidden code-block-placeholder bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-2xl"
         ref={setPlaceholderRef}
       />
     </div>

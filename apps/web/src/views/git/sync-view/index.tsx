@@ -156,7 +156,7 @@ const CommitCard: Component<{ changedRecords: App.GitRecord[] }> = (props) => {
               const { directory, fileName } = extractFileName(record.path);
 
               return (
-                <div class="p-1 border-b-2 last:border-b-0 dark:border-gray-700 w-full text-start !flex group items-center cursor-pointer hover:bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-700 to-transparent">
+                <div class="p-1 border-b last:border-b-0 dark:border-gray-700 w-full text-start !flex group items-center cursor-pointer hover:bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-700 to-transparent">
                   <IconButton
                     path={mdiFileOutline}
                     size="small"
@@ -263,7 +263,7 @@ const PullCard: Component = () => {
               };
 
               return (
-                <div class="p-1 border-b-2 last:border-b-0 dark:border-gray-700 w-full text-start !flex group items-center cursor-pointer">
+                <div class="p-1 border-b last:border-b-0 dark:border-gray-700 w-full text-start !flex group items-center cursor-pointer">
                   <IconButton
                     path={mdiFileOutline}
                     size="small"

@@ -87,7 +87,7 @@ const ConflictView: Component<{ monaco: typeof monaco }> = (props) => {
     <div class="flex flex-col h-full w-full relative">
       <div
         class={clsx(
-          "w-full h-8 border-b-2 hidden md:flex",
+          "w-full h-8 border-b hidden md:flex",
           codeEditorTheme() === "light" && "bg-gray-50 text-gray-500 border-gray-200",
           codeEditorTheme() === "dark" && "bg-gray-900 text-gray-400 border-gray-700"
         )}

@@ -65,7 +65,7 @@ const TagsInput: Component<TagsInputProps> = (props) => {
                 <button
                   class={clsx(
                     tagColorClasses[tag.color],
-                    "rounded-lg px-1.5 border-2 h-8 text-base flex justify-start items-center font-semibold",
+                    "rounded-lg px-1.5 border h-8 text-base flex justify-start items-center font-semibold",
                     "border-opacity-50 bg-opacity-20 dark:(border-opacity-50 bg-opacity-20) hover:opacity-80"
                   )}
                 >

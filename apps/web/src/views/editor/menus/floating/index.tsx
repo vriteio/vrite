@@ -24,7 +24,7 @@ const FloatingMenu: Component<BubbleMenuProps> = (props) => {
           setVisible(false);
           props.editor.chain().insertContent("/").focus().run();
         }}
-        class="h-8 w-8 bg-gray-50 border-2 border-gray-200 hover:border-gray-300 dark:border-gray-900 hover:dark:border-gray-700"
+        class="h-8 w-8 bg-gray-50 border border-gray-200 hover:border-gray-300 dark:border-gray-900 hover:dark:border-gray-700"
         path={mdiSlashForward}
         text="soft"
       />

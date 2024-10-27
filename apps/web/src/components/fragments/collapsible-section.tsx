@@ -64,7 +64,7 @@ const CollapsibleSection: Component<CollapsibleSectionProps> = (props) => {
       </div>
       <div
         class={clsx(
-          "flex flex-col justify-center items-start gap-2 ml-3.5 pl-3.5 w-[calc(100%-0.875rem)] border-l-2 border-gray-200 dark:border-gray-700",
+          "flex flex-col justify-center items-start gap-2 ml-3.5 pl-3.5 w-[calc(100%-0.875rem)] border-l border-gray-200 dark:border-gray-700",
           opened() ? "py-1 my-1" : "max-h-0 overflow-hidden"
         )}
       >

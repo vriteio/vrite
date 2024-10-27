@@ -127,7 +127,7 @@ const EmbedView: Component = () => {
           fallback={
             <div
               class={clsx(
-                "pt-[35%] w-full rounded-2xl bg-gradient-to-tr flex justify-center items-center relative border-2 border-gray-300 dark:border-gray-700"
+                "pt-[35%] w-full rounded-2xl bg-gradient-to-tr flex justify-center items-center relative border border-gray-300 dark:border-gray-700"
               )}
             >
               <div class="absolute flex flex-col items-center justify-center font-bold text-white transform -translate-y-1/2 top-1/2">
@@ -144,7 +144,7 @@ const EmbedView: Component = () => {
         >
           <iframe
             src={attrs().src || ""}
-            class="object-contain w-full m-0 transition-opacity duration-300 border-2 border-gray-300 dark:border-gray-700 aspect-video min-h-96 rounded-2xl"
+            class="object-contain w-full m-0 transition-opacity duration-300 border border-gray-300 dark:border-gray-700 aspect-video min-h-96 rounded-2xl"
           />
         </Show>
         <Show when={state().editor.isEditable}>

@@ -190,7 +190,7 @@ const SlashMenu: Component<SlashMenuProps> = (props) => {
     <Show when={breakpoints.md()}>
       <Card
         class={clsx(
-          "shadow-2xl md:shadow-none rounded-none border-x-0 md:border-x-2 md:rounded-2xl -translate-x-2 md:translate-x-0 w-screen md:w-72 m-0 max-h-96 overflow-hidden transition duration-200 transform origin-top-left p-1"
+          "shadow-2xl md:shadow-none rounded-none border-x-0 md:border-x md:rounded-2xl -translate-x-2 md:translate-x-0 w-screen md:w-72 m-0 max-h-96 overflow-hidden transition duration-200 transform origin-top-left p-1"
         )}
       >
         <div class={clsx("w-full h-full overflow-auto max-h-88 scrollbar-sm")}>

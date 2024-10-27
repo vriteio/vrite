@@ -277,7 +277,7 @@ const HistoryEntry: Component<HistoryEntryProps> = (props) => {
       </div>
       <Show when={expanded() && props.subEntries?.length}>
         <div class="flex relative ml-5.25">
-          <div class="h-full w-0.5 absolute left-0 rounded-full bg-black bg-opacity-5 dark:bg-white dark:bg-opacity-10"></div>
+          <div class="h-full w-px absolute left-0 rounded-full bg-black bg-opacity-5 dark:bg-white dark:bg-opacity-10"></div>
           <div class="flex flex-1 flex-col">
             <For each={props.subEntries}>
               {(entry) => {

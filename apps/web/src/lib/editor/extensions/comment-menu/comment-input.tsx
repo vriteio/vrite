@@ -43,7 +43,7 @@ const CommentInput: Component<{
     <>
       <div class={clsx("relative", props.thread?.resolved && "hidden")}>
         <MiniEditor
-          class="flex-1 min-h-24 prose !text-base border-gray-200 bg-gray-50 dark:bg-gray-900 dark:border-gray-700 px-3 pt-2 pb-12 border-2 rounded-2xl"
+          class="flex-1 min-h-24 prose !text-base border-gray-200 bg-gray-50 dark:bg-gray-900 dark:border-gray-700 px-3 pt-2 pb-12 border rounded-2xl"
           placeholder="Write here..."
           initialValue=""
           inline

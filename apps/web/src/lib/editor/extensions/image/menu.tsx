@@ -52,15 +52,15 @@ const ImageMenu: Component<ImageMenuProps> = (props) => {
   return (
     <div
       class={clsx(
-        "pointer-events-auto flex bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 border-y-2 backdrop-blur-sm relative !md:left-unset",
-        options().cover ? "w-full border-2 rounded-xl overflow-hidden" : "w-screen",
+        "pointer-events-auto flex bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 border-y backdrop-blur-sm relative !md:left-unset",
+        options().cover ? "w-full border rounded-xl overflow-hidden" : "w-screen",
         "md:gap-2 md:flex-1 md:border-0 md:rounded-2xl md:overflow-visible !md:bg-transparent"
       )}
     >
       <Card
         class={clsx(
           "p-1 flex m-0 border-0 overflow-hidden rounded-none gap-1",
-          "md:gap-0.5 md:p-0 md:border-2 md:rounded-xl"
+          "md:gap-0.5 md:p-0 md:border md:rounded-xl"
         )}
       >
         <Tooltip text="Alt" fixed class="mt-1">
@@ -93,7 +93,7 @@ const ImageMenu: Component<ImageMenuProps> = (props) => {
       <Card
         class={clsx(
           "px-1 py-1 m-0 border-0 flex-1 overflow-hidden rounded-none",
-          "md:py-0 md:border-2 md:rounded-xl"
+          "md:py-0 md:border md:rounded-xl"
         )}
       >
         <Input
@@ -122,7 +122,7 @@ const ImageMenu: Component<ImageMenuProps> = (props) => {
       <Card
         class={clsx(
           "p-1 flex m-0 border-0 overflow-hidden rounded-none gap-1",
-          "md:gap-0.5 md:p-0 md:border-2 md:rounded-xl"
+          "md:gap-0.5 md:p-0 md:border md:rounded-xl"
         )}
       >
         <Tooltip text="Image URL" fixed class="mt-1">

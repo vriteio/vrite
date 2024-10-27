@@ -50,7 +50,7 @@ const DashboardTableViewHeader: Component = () => {
   return (
     <Sortable
       ids={columns.map((column) => column.id)}
-      class="flex bg-gray-50 dark:bg-gray-900 sticky top-0 z-1 border-b-2 border-gray-200 dark:border-gray-700"
+      class="flex bg-gray-50 dark:bg-gray-900 sticky top-0 z-1 border-b border-gray-200 dark:border-gray-700"
       filter=".locked"
       onDragChange={(ids) => {
         setColumns(ids.map((id) => columns.find((column) => column?.id === id)!));
@@ -130,7 +130,7 @@ const DashboardTableViewHeader: Component = () => {
         return (
           <Show when={column() && columnDef()}>
             <div
-              class="h-8 flex justify-center items-center border-r-2 first:border-l-0 text-left font-500 border-gray-200 dark:border-gray-700 relative bg-gray-200 bg-opacity-50 dark:bg-gray-700 dark:bg-opacity-30"
+              class="h-8 flex justify-center items-center border-r first:border-l-0 text-left font-500 border-gray-200 dark:border-gray-700 relative bg-gray-200 bg-opacity-50 dark:bg-gray-700 dark:bg-opacity-30"
               ref={(element) => {
                 setColumns(index(), "ref", element);
               }}

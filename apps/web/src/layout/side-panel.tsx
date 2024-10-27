@@ -121,7 +121,7 @@ const SidePanel: Component = () => {
         "transition-transform ease-out duration-350",
         sidePanelEnabled() ? "flex" : "hidden",
         collapsed() && "translate-y-[100vh] md:translate-y-0 z-50",
-        !collapsed() && "md:border-r-2 z-20"
+        !collapsed() && "md:border-r z-20"
       )}
       style={{
         "width": `${storage().sidePanelWidth || 0}px`,

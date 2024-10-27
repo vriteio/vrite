@@ -277,7 +277,7 @@ const ExportMenu: Component<ExportMenuProps> = (props) => {
                   a.click();
                 }}
               />
-              <div class="h-8 pl-1 mr-1 border-r-2 border-gray-500 dark:border-gray-400" />
+              <div class="h-8 pl-1 mr-1 border-r border-gray-500 dark:border-gray-400" />
               <Tooltip text="Copy" class="mt-1">
                 <IconButton
                   path={mdiClipboardOutline}

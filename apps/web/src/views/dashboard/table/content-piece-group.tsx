@@ -78,7 +78,7 @@ const AddContentPieceGroup: Component<AddContentPieceGroupProps> = (props) => {
   return (
     <button
       class={clsx(
-        "h-12 w-full flex justify-start items-center gap-3 group px-2 border-b-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 hover:bg-gray-200 dark:hover:bg-gray-700 hover:cursor-pointer",
+        "h-12 w-full flex justify-start items-center gap-3 group px-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 hover:bg-gray-200 dark:hover:bg-gray-700 hover:cursor-pointer",
         props.class
       )}
       onClick={createNewContentGroup}
@@ -235,8 +235,8 @@ const ContentPieceGroup: Component<ContentPieceGroupProps> = (props) => {
       {...(props.dataProps || {})}
     >
       <div class="flex flex-col overflow-hidden" style={{ "min-width": `${tableWidth()}px` }}>
-        <div class="border-b-2 text-left font-500 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 w-full h-12 relative">
-          <div class="h-12 flex justify-start items-center gap-3 group px-2 border-b-2 border-transparent">
+        <div class="border-b text-left font-500 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 w-full h-12 relative">
+          <div class="h-12 flex justify-start items-center gap-3 group px-2 border-b border-transparent">
             <IconButton
               path={mdiChevronDown}
               class={clsx("m-0", expanded() && "transform rotate-180")}
@@ -319,7 +319,7 @@ const ContentPieceGroup: Component<ContentPieceGroupProps> = (props) => {
           class="flex flex-col items-start overflow-hidden transition-all transform duration-300 ease-in-out"
           fallback={
             <Show when={!activeDraggableContentPieceId() && !columnContentLevel().loading}>
-              <div class="locked border-b-2 border-gray-200 dark:border-gray-700 text-center w-full h-8 flex justify-start px-3 items-center text-gray-500 dark:text-gray-400 text-sm">
+              <div class="locked border-b border-gray-200 dark:border-gray-700 text-center w-full h-8 flex justify-start px-3 items-center text-gray-500 dark:text-gray-400 text-sm">
                 No content pieces
               </div>
             </Show>
@@ -329,13 +329,13 @@ const ContentPieceGroup: Component<ContentPieceGroupProps> = (props) => {
           }}
           ids={columnContentLevel().pieces}
           filter=".locked"
-          ghostClass=":base: border-b-2 border-gray-200 dark:border-gray-700 children:invisible"
+          ghostClass=":base: border-b border-gray-200 dark:border-gray-700 children:invisible"
           group="table-row"
           disabled={!hasPermission("manageDashboard")}
           sortableId={props.contentGroup.id}
           dragImage={(props) => {
             return (
-              <div class="flex whitespace-nowrap gap-1 rounded-lg px-1 py-0.5 border-2 bg-gray-100 border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+              <div class="flex whitespace-nowrap gap-1 rounded-lg px-1 py-0.5 border bg-gray-100 border-gray-200 dark:bg-gray-800 dark:border-gray-700">
                 <Icon path={mdiFileDocumentOutline} class="h-6 w-6" />
                 {contentPieces[props.id]?.title}
               </div>
@@ -435,7 +435,7 @@ const ContentPieceGroup: Component<ContentPieceGroupProps> = (props) => {
       </div>
       <Show when={(columnContentLevel().moreToLoad || columnContentLevel().loading) && expanded()}>
         <Button
-          class="border-b-2 border-r-2 bg-gray-50 rounded-none border-gray-200 dark:border-gray-700 m-0 w-full z-1 flex justify-start items-center"
+          class="border-b border-r bg-gray-50 rounded-none border-gray-200 dark:border-gray-700 m-0 w-full z-1 flex justify-start items-center"
           onClick={() => {
             contentLoader.loadContentLevel(props.contentGroup.id);
           }}

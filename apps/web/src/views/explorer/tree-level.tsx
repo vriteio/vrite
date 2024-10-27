@@ -94,7 +94,7 @@ const TreeLevel: Component<{
       <Show when={props.parentId}>
         <div
           class={clsx(
-            "h-full w-0.5 left-0 absolute rounded-full bg-black bg-opacity-5 dark:bg-white dark:bg-opacity-10",
+            "h-full w-px left-0 absolute rounded-full bg-black bg-opacity-5 dark:bg-white dark:bg-opacity-10",
             ((selected() &&
               !activeDraggableContentGroupId() &&
               !activeDraggableContentPieceId() &&
@@ -133,7 +133,7 @@ const TreeLevel: Component<{
           ids={contentLevels[props.parentId || ""]?.groups || []}
           dragImage={(props) => {
             return (
-              <div class="flex whitespace-nowrap gap-1 rounded-lg px-1 py-0.5 border-2 bg-gray-50 border-gray-200 dark:bg-gray-900 dark:border-gray-700">
+              <div class="flex whitespace-nowrap gap-1 rounded-lg px-1 py-0.5 border bg-gray-50 border-gray-200 dark:bg-gray-900 dark:border-gray-700">
                 <Icon path={mdiFolder} class="h-6 w-6" />
                 {contentGroups[props.id]?.name}
               </div>
@@ -283,7 +283,7 @@ const TreeLevel: Component<{
           handle=".reorder-handle"
           dragImage={(props) => {
             return (
-              <div class="flex whitespace-nowrap gap-1 rounded-lg px-1 py-0.5 border-2 bg-gray-100 border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+              <div class="flex whitespace-nowrap gap-1 rounded-lg px-1 py-0.5 border bg-gray-100 border-gray-200 dark:bg-gray-800 dark:border-gray-700">
                 <Icon path={mdiFileDocumentOutline} class="h-6 w-6" />
                 {contentPieces[props.id]?.title}
               </div>

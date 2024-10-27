@@ -407,7 +407,7 @@ const CommandPalette: Component<CommandPaletteProps> = (props) => {
           setMouseHoverEnabled(true);
         }}
       >
-        <div class="flex w-full justify-center items-center p-2 border-b-2 dark:border-gray-700">
+        <div class="flex w-full justify-center items-center p-2 border-b dark:border-gray-700">
           <IconButton path={getIcon()} text="soft" variant="text" badge hover={false} class="m-0" />
           <Show when={props.openedCommand}>
             <Button badge size="small" text="soft" color="contrast" hover={false} class="m-0 ml-2">
@@ -683,7 +683,7 @@ const CommandPalette: Component<CommandPaletteProps> = (props) => {
             </Switch>
           </div>
         </div>
-        <div class="border-t-2 dark:border-gray-700 px-2 py-1 flex gap-2 bg-gray-100 dark:bg-gray-800">
+        <div class="border-t dark:border-gray-700 px-2 py-1 flex gap-2 bg-gray-100 dark:bg-gray-800">
           <div class="hidden md:flex gap-2">
             <IconButton
               path={mdiSwapVertical}

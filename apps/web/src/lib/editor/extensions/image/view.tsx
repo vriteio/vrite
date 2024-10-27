@@ -211,7 +211,7 @@ const ImageView: Component = () => {
         )}
       >
         <div
-          class={clsx("border-gray-200 dark:border-gray-700 relative group rounded-2xl border-2")}
+          class={clsx("border-gray-200 dark:border-gray-700 relative group rounded-2xl border")}
           ref={setReferenceContainerRef}
         >
           <Show when={state().editor.isEditable}>

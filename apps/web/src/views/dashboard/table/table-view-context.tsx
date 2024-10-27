@@ -197,7 +197,7 @@ const DashboardTableViewDataProvider: ParentComponent<DashboardTableViewDataProv
                   <button
                     class={clsx(
                       tagColorClasses[tag.color],
-                      "rounded-md px-1 border-2 h-6 text-sm flex justify-start items-center font-semibold",
+                      "rounded-md px-1 border h-6 text-sm flex justify-start items-center font-semibold",
                       "border-opacity-50 bg-opacity-20 dark:(border-opacity-50 bg-opacity-20) hover:opacity-80"
                     )}
                   >

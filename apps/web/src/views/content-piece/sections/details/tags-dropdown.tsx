@@ -204,7 +204,7 @@ const TagsDropdown: Component<TagsDropdownProps> = (props) => {
                         <button
                           class={clsx(
                             tagColorClasses[tag.color],
-                            "rounded-l-lg px-1.5 border-2 h-8 text-base flex justify-start items-center font-semibold flex-1",
+                            "rounded-l-lg px-1.5 border h-8 text-base flex justify-start items-center font-semibold flex-1",
                             "border-opacity-50 bg-opacity-20 dark:(border-opacity-50 bg-opacity-20) hover:opacity-80"
                           )}
                           onClick={() => {
@@ -289,7 +289,7 @@ const TagsDropdown: Component<TagsDropdownProps> = (props) => {
                   <Tooltip text={color} class="mt-1 capitalize z-50" fixed>
                     <div
                       class={clsx(
-                        "h-8 w-8 rounded-lg border-2 px-1 flex justify-center items-center",
+                        "h-8 w-8 rounded-lg border px-1 flex justify-center items-center",
                         "border-opacity-50 bg-opacity-20 dark:(border-opacity-50 bg-opacity-20)",
                         tagColorClass
                       )}

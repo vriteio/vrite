@@ -17,7 +17,7 @@ const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
 
   return (
     <div
-      class="flex justify-center items-center border-b-2 text-left font-500 border-gray-200 dark:border-gray-700 relative w-full hover:cursor-pointer hover:bg-gray-200 hover:bg-opacity-40 dark:hover:bg-gray-700 dark:hover:bg-opacity-40"
+      class="flex justify-center items-center border-b text-left font-500 border-gray-200 dark:border-gray-700 relative w-full hover:cursor-pointer hover:bg-gray-200 hover:bg-opacity-40 dark:hover:bg-gray-700 dark:hover:bg-opacity-40"
       onClick={() => {
         setStorage((storage) => ({
           ...storage,
@@ -34,7 +34,7 @@ const ContentPieceRow: Component<ContentPieceRowProps> = (props) => {
         {(column) => {
           return (
             <button
-              class="border-r-2 border-gray-200 dark:border-gray-700 h-8"
+              class="border-r border-gray-200 dark:border-gray-700 h-8"
               style={{
                 "min-width": `${column.width}px`,
                 "max-width": `${column.width}px`

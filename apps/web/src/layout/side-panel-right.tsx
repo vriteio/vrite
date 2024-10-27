@@ -132,7 +132,7 @@ const SidePanelRight: Component = () => {
         "transition-transform ease-out duration-350",
 
         collapsed() && "translate-y-[100vh] md:translate-y-0 z-50",
-        !collapsed() && "md:border-l-2 z-20"
+        !collapsed() && "md:border-l z-20"
       )}
       style={{
         "width": `${storage().rightPanelWidth || 0}px`,

@@ -36,7 +36,7 @@ const MemberCard: Component<MemberCardProps> = (props) => {
       <div
         class={clsx(
           "h-10 w-10 relative mr-1.5 rounded-full",
-          props.assigned && "border-2 border-white border-opacity-80"
+          props.assigned && "border border-white border-opacity-80"
         )}
       >
         <Show

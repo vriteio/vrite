@@ -21,7 +21,7 @@ const Card: Component<CardProps> = (providedProps) => {
   return (
     <div
       {...passedProps}
-      class={clsx(`:base: p-2 m-1 border-2 rounded-2xl`, cardColors[props.color], props.class)}
+      class={clsx(`:base: p-2 m-1 border rounded-2xl`, cardColors[props.color], props.class)}
       ref={props.ref}
     >
       {props.children}

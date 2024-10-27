@@ -22,7 +22,7 @@ const WorkspaceSwitchOverlay: Component<WorkspaceSwitchOverlayProps> = (props) =
         >
           <img
             src={props.destinationWorkspace?.logo}
-            class="h-12 w-12 bg-gray-50 dark:bg-gray-900 rounded-full border-gray-50 dark:border-gray-900 border-2 animate-pulse"
+            class="h-12 w-12 bg-gray-50 dark:bg-gray-900 rounded-full border-gray-50 dark:border-gray-900 border animate-pulse"
           />
         </Show>
         <div class="flex flex-col justify-center items-center gap-1 text-white">

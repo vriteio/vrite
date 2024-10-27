@@ -201,7 +201,7 @@ const BlockActionMenu: Component<BlockActionMenuProps> = (props) => {
                     <Tooltip text={blockAction.label} side="left" class="-ml-1">
                       <Button
                         class={clsx(
-                          "h-8 w-8 p-0 m-0 border-2 flex justify-center items-center",
+                          "h-8 w-8 p-0 m-0 border flex justify-center items-center",
                           props.opened && "border-primary",
                           !props.opened &&
                             "border-gray-200 dark:border-gray-700 hover:border-gray-300 hover:dark:border-gray-700"

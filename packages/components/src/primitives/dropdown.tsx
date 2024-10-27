@@ -254,7 +254,7 @@ const Dropdown: Component<DropdownProps> = (props) => {
           class={clsx(
             `:base-2: z-50 flex flex-col p-2 overflow-hidden transform shadow-2xl duration-250 min-w-fit`,
             !md() &&
-              "fixed !left-0 w-full !max-w-full !max-h-full m-0 p-0 pb-1 border-0 border-t-2 shadow-none rounded-none !top-unset bottom-0 h-unset",
+              "fixed !left-0 w-full !max-w-full !max-h-full m-0 p-0 pb-1 border-0 border-t shadow-none rounded-none !top-unset bottom-0 h-unset",
             props.fixed ? "fixed" : "absolute",
             opened() ? "" : "translate-y-full md:translate-y-0 md:scale-0 !shadow-none",
             opened() ? `:base-2: visible md:opacity-100` : `:base-2: invisible md:opacity-0`,
