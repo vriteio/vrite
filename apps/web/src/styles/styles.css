@@ -44,14 +44,14 @@ html {
   font-family: "NunitoVariable", sans-serif;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: none;
-  @apply h-[100dvh] text-gray-700 bg-gray-100 from-secondary to-primary overflow-hidden;
+  @apply h-[100dvh] text-gray-700 bg-gray-100 from-secondary via-primary to-secondary overflow-hidden;
 }
 html.dark {
-  @apply text-white bg-gray-800;
+  @apply text-white bg-gray-900;
 }
 [data-accent-color="energy"] {
-  --color-primary: theme("colors.orange.500");
-  --color-secondary: theme("colors.red.500");
+  --color-primary: #ef4444;
+  --color-secondary: #ffa166;
 }
 [data-accent-color="neon"] {
   --color-primary: theme("colors.lime.400");
@@ -192,4 +192,24 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   background-size:
     16px 2px,
     100% 2px;
+}
+
+.dots-background {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  background-image: radial-gradient(rgba(75, 85, 99, 0.2) 2px, transparent 0);
+  background-size: 16px 16px;
+  background-position: center center;
+  mask-position: center center;
+  mask-repeat: no-repeat;
+  mask-image: radial-gradient(ellipse at center, transparent 16%, rgba(0, 0, 0, 1));
+  animation: uncover 1s ease-out forwards;
+}
+.dark {
+  .dots-background {
+    background-image: radial-gradient(rgba(75, 85, 99, 0.2) 2px, transparent 0);
+  }
 }
