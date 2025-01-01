@@ -60,7 +60,7 @@ const VerifyEmail: React.FC<VerifyEmailProps> = ({ link = "", user = "" }) => {
               </Link>
               <Text>If you didn't sign up for Vrite, you can ignore this email.</Text>
             </Section>
-            <Text className="text-[12px] my-0">Vrite ©2024</Text>
+            <Text className="text-[12px] my-0">Vrite ©2025</Text>
           </Container>
         </Body>
       </Tailwind>

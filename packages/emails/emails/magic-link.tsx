@@ -55,7 +55,7 @@ const MagicLink: React.FC<MagicLinkProps> = ({ link = "" }) => {
               </Link>
               <Text>If you didn't request a sign-in link, you can ignore this email. </Text>
             </Section>
-            <Text className="text-[12px] my-0">Vrite ©2024</Text>
+            <Text className="text-[12px] my-0">Vrite ©2025</Text>
           </Container>
         </Body>
       </Tailwind>

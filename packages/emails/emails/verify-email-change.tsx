@@ -58,7 +58,7 @@ const VerifyEmailChange: React.FC<VerifyEmailChangeProps> = ({ link = "" }) => {
                 your security settings.
               </Text>
             </Section>
-            <Text className="text-[12px] my-0">Vrite ©2024</Text>
+            <Text className="text-[12px] my-0">Vrite ©2025</Text>
           </Container>
         </Body>
       </Tailwind>

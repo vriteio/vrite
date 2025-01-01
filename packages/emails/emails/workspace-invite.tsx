@@ -63,7 +63,7 @@ const WorkspaceInvite: React.FC<WorkspaceInviteProps> = ({
               </Link>
               <Text>If you don't recognize this invite, you can ignore this email.</Text>
             </Section>
-            <Text className="text-[12px] my-0">Vrite ©2024</Text>
+            <Text className="text-[12px] my-0">Vrite ©2025</Text>
           </Container>
         </Body>
       </Tailwind>

@@ -1,4 +1,4 @@
-Copyright (c) 2024 Vrite, Inc.
+Copyright (c) 2025 Vrite, Inc.
 
 Elastic License 2.0
 
