@@ -52,6 +52,7 @@ const DashboardView: Component = () => {
       url: window.env.PUBLIC_COLLAB_URL.replace("http", "ws"),
       onDisconnect: handleReload,
       onAuthenticationFailed: handleReload,
+      onClose: handleReload,
       onStatus({ status }) {
         if (status === WebSocketStatus.Disconnected) {
           handleReload();

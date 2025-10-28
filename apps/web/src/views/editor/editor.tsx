@@ -224,6 +224,7 @@ const Editor: ParentComponent<
         },
         onDisconnect: handleReload,
         onAuthenticationFailed: handleReload,
+        onClose: handleReload,
         onStatus({ status }) {
           if (status === WebSocketStatus.Disconnected) {
             handleReload();
