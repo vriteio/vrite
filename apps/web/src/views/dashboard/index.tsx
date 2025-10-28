@@ -2,7 +2,7 @@ import { DashboardKanbanView } from "./kanban";
 import { DashboardTableView } from "./table";
 import { DashboardDataProvider } from "./dashboard-context";
 import { Component, Match, Switch, createEffect, on, onCleanup } from "solid-js";
-import { HocuspocusProvider } from "@hocuspocus/provider";
+import { HocuspocusProvider, WebSocketStatus } from "@hocuspocus/provider";
 import * as Y from "yjs";
 import {
   useAuthenticatedUserData,
@@ -52,6 +52,11 @@ const DashboardView: Component = () => {
       url: window.env.PUBLIC_COLLAB_URL.replace("http", "ws"),
       onDisconnect: handleReload,
       onAuthenticationFailed: handleReload,
+      onStatus({ status }) {
+        if (status === WebSocketStatus.Disconnected) {
+          handleReload();
+        }
+      },
       name: `workspace:${workspace()?.id || ""}`,
       document: ydoc
     });

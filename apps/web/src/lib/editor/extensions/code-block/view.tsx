@@ -109,13 +109,14 @@ const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
       props.setUpdatingRef(true);
 
       const { tr } = state().editor.state;
-      const offset = state().getPos() + 1;
+      const pos = state().getPos();
       const model = codeEditor()?.getModel();
 
-      if (!model) {
+      if (!model || typeof pos !== "number") {
         return;
       }
 
+      const offset = pos + 1;
       const range = model.getFullModelRange();
       const start = model.getOffsetAt(props.monaco.Range.getStartPosition(range));
       const end = model.getOffsetAt(props.monaco.Range.getEndPosition(range));
@@ -204,13 +205,14 @@ const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
     codeEditor.onDidChangeModelContent((event) => {
       const updating = props.updatingRef();
       const model = codeEditor.getModel();
+      const pos = state().getPos();
 
-      if (updating || !codeEditor.hasTextFocus() || !model) return;
+      if (updating || !codeEditor.hasTextFocus() || !model || typeof pos !== "number") return;
 
       const { tr } = state().editor.state;
       const previousModel = props.monaco.editor.createModel(currentModelValue() || "");
 
-      let offset = state().getPos() + 1;
+      let offset = pos + 1;
 
       event.changes.forEach((change) => {
         if (change.text.length) {
@@ -336,8 +338,10 @@ const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
       }
     });
     codeEditor.onKeyDown((event) => {
-      if (event.keyCode === props.monaco.KeyCode.Escape) {
-        state().editor.commands.setNodeSelection(state().getPos());
+      const pos = state().getPos();
+
+      if (event.keyCode === props.monaco.KeyCode.Escape && typeof pos === "number") {
+        state().editor.commands.setNodeSelection(pos);
         state().editor.commands.focus();
       }
     });
@@ -346,8 +350,12 @@ const CodeBlockView: Component<CodeBlockViewProps> = (props) => {
       label: "Format with Prettier",
       keybindings: [props.monaco.KeyMod.CtrlCmd | props.monaco.KeyCode.KeyS],
       run: async () => {
+        const pos = state().getPos();
+
+        if (typeof pos !== "number") return;
+
         await format();
-        state().editor.commands.setNodeSelection(state().getPos());
+        state().editor.commands.setNodeSelection(pos);
         state().editor.commands.focus();
       }
     });

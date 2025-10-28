@@ -55,12 +55,12 @@ const CodeBlock = BaseCodeBlock.extend<CodeBlockOptions>({
         onMount(async () => {
           const unbind = emitter.on("focus", () => {
             if (state().selected) {
+              const pos = state().getPos();
+
+              if (typeof pos !== "number") return;
+
               const tr = state().editor.state.tr.setSelection(
-                TextSelection.create(
-                  state().editor.state.doc,
-                  state().getPos() + 1,
-                  state().getPos() + 1
-                )
+                TextSelection.create(state().editor.state.doc, pos + 1, pos + 1)
               );
 
               state().editor.view.dispatch(tr);

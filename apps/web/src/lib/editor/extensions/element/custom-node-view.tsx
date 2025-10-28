@@ -99,6 +99,8 @@ const customNodeView = ({
 
                 const lastPos = props.getPos();
 
+                if (typeof lastPos !== "number") return false;
+
                 buttonContainer.remove();
                 tr.replaceWith(
                   lastPos + 1,

@@ -20,7 +20,7 @@ type CustomView = {
   structure: StructureNode;
   rawView?: boolean;
   lastPos?: number;
-  getPos(): number;
+  getPos(): number | undefined;
   node(): PMNode;
 };
 

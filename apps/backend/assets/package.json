@@ -10,10 +10,10 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.507.0",
-    "@fastify/rate-limit": "^9.1.0",
+    "@fastify/rate-limit": "^10.3.0",
     "@trpc/server": "^10.45.0",
     "@vrite/backend": "workspace:*",
-    "fastify": "^4.26.0",
+    "fastify": "^5.6.1",
     "sharp": "^0.33.2",
     "trpc-openapi": "^1.2.0",
     "zod": "^3.22.4"

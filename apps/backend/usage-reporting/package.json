@@ -8,11 +8,11 @@
     "start": "node ./dist/index.js"
   },
   "dependencies": {
-    "@fastify/cors": "^9.0.1",
-    "@fastify/rate-limit": "^9.1.0",
+    "@fastify/cors": "^11.1.0",
+    "@fastify/rate-limit": "^10.3.0",
     "@trpc/server": "^10.45.0",
     "@vrite/backend": "workspace:*",
-    "fastify": "^4.26.0",
+    "fastify": "^5.6.1",
     "trpc-openapi": "^1.2.0"
   },
   "devDependencies": {

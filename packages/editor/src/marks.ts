@@ -133,6 +133,7 @@ const Link = BaseLink.extend({
   priority: 100,
   addOptions() {
     return {
+      ...this.parent?.(),
       linkOnPaste: true,
       autolink: true,
       protocols: [],

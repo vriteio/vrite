@@ -30,6 +30,7 @@ import { GapCursor } from "@tiptap/pm/gapcursor";
 import { createSignal } from "solid-js";
 import { ExtensionElementSpec } from "@vrite/sdk/extensions";
 import { CellSelection } from "@tiptap/pm/tables";
+import { ViewMutationRecord } from "@tiptap/pm/view";
 import { ExtensionDetails, ExtensionsContextData } from "#context";
 import { optimizeContentSlice } from "#lib/utils";
 
@@ -451,15 +452,17 @@ const Element = BaseElement.extend<
 
       wrapper.setAttribute("data-element", "true");
       requestAnimationFrame(async () => {
-        if (typeof props.getPos !== "function" || typeof props.getPos() !== "number") return;
+        const pos = typeof props.getPos === "function" ? props.getPos() : null;
+
+        if (typeof pos !== "number") return;
 
         const { customElements } = this.storage;
         const customNodeType = node.attrs.type.toLowerCase();
         const customElement = customNodeType ? customElements[customNodeType] : null;
-        const resolvedPos = editor.state.doc.resolve(props.getPos());
+        const resolvedPos = editor.state.doc.resolve(pos);
         const path = getElementPath(resolvedPos, customElements);
 
-        uid = (await getTreeUID(editor, props.getPos())) || uid;
+        uid = (await getTreeUID(editor, pos)) || uid;
 
         if (customElement) {
           const customView = await createCustomView(
@@ -483,9 +486,9 @@ const Element = BaseElement.extend<
             if (node.content.size <= 2) {
               editor
                 .chain()
-                .setMeta("elementViewContentInsert", { uid, pos: props.getPos() })
+                .setMeta("elementViewContentInsert", { uid, pos })
                 .insertContentAt(
-                  { from: props.getPos() + 1, to: props.getPos() + node.content.size + 1 },
+                  { from: pos + 1, to: pos + node.content.size + 1 },
                   content.content || []
                 )
                 .run();
@@ -538,7 +541,7 @@ const Element = BaseElement.extend<
       return {
         dom: wrapper,
         contentDOM: contentWrapper,
-        ignoreMutation(mutation: MutationRecord | { type: "selection"; target: Element }) {
+        ignoreMutation(mutation: ViewMutationRecord) {
           if (mutation.type === "selection") {
             return false;
           }

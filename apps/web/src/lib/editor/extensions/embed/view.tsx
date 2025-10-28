@@ -33,7 +33,11 @@ const EmbedView: Component = () => {
     return state().selected;
   };
   const isTopLevel = (): boolean => {
-    return state().editor.state.doc.resolve(state().getPos()).parent.type.name === "doc";
+    const pos = state().getPos();
+
+    if (typeof pos !== "number") return false;
+
+    return state().editor.state.doc.resolve(pos).parent.type.name === "doc";
   };
   const attrs = (): EmbedAttributes => {
     return state().node.attrs;
@@ -117,7 +121,11 @@ const EmbedView: Component = () => {
               stroke-linejoin="round"
               stroke-width={2}
               onMouseDown={() => {
-                state().editor.commands.setNodeSelection(state().getPos());
+                const pos = state().getPos();
+
+                if (typeof pos !== "number") return;
+
+                state().editor.commands.setNodeSelection(pos);
               }}
             />
           </div>

@@ -1006,7 +1006,7 @@
       l = "/content-groups";
       f2 = (t) => ({ get: (e) => t("GET", `${l}`, { params: e }), list: (e) => t("GET", `${l}/list`, { params: e }), create: (e) => t("POST", `${l}`, { body: e }), update: (e) => t("PUT", `${l}`, { body: e }), delete: (e) => t("DELETE", `${l}`, { params: e }) });
       E = "/content-pieces";
-      S = (t) => ({ get: (e) => t("GET", `${E}`, { params: e }), create: (e) => t("POST", `${E}`, { body: e }), update: (e) => t("PUT", `${E}`, { body: e }), delete: (e) => t("DELETE", `${E}`, { params: e }), list: ({ contentGroupId: e, ...o }) => t("GET", `${E}/list`, { params: { ...o, contentGroupId: typeof e == "string" ? e : e.join(",") } }) });
+      S = (t) => ({ get: (e) => t("GET", `${E}`, { params: e }), create: (e) => t("POST", `${E}`, { body: e }), update: (e) => t("PUT", `${E}`, { body: e }), delete: (e) => t("DELETE", `${E}`, { params: e }), list: ({ contentGroupId: e, ...o }) => t("GET", `${E}/list`, { params: { ...o, ...e && { contentGroupId: typeof e == "string" ? e : e.join(",") } } }) });
       L = (t) => {
         let e = t.baseURL || "https://api.vrite.io", o = t.extensionId || "", p2 = t.headers || {}, $ = null, { token: c } = t;
         return { sendRequest: async (s2, a2, i) => {

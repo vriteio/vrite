@@ -27,7 +27,7 @@ import {
 import { Gapcursor } from "@tiptap/extension-gapcursor";
 import { Dropcursor } from "@tiptap/extension-dropcursor";
 import { Typography } from "@tiptap/extension-typography";
-import { HocuspocusProvider } from "@hocuspocus/provider";
+import { HocuspocusProvider, WebSocketStatus } from "@hocuspocus/provider";
 import { CharacterCount } from "@tiptap/extension-character-count";
 import * as Y from "yjs";
 import { useLocation, useNavigate } from "@solidjs/router";
@@ -224,6 +224,11 @@ const Editor: ParentComponent<
         },
         onDisconnect: handleReload,
         onAuthenticationFailed: handleReload,
+        onStatus({ status }) {
+          if (status === WebSocketStatus.Disconnected) {
+            handleReload();
+          }
+        },
         name: props.docName,
         document: ydoc
       })) ||

@@ -48,7 +48,11 @@ const xmlNodeView = ({
   const selectionBackground = document.createElement("div");
   const handleCodeClick = (event: MouseEvent): void => {
     if (typeof props.getPos === "function") {
-      editor.commands.setElementSelection(props.getPos(), true);
+      const pos = props.getPos();
+
+      if (typeof pos !== "number") return;
+
+      editor.commands.setElementSelection(pos, true);
     }
 
     event.preventDefault();
@@ -102,7 +106,7 @@ const xmlNodeView = ({
     const selectionPos = selection.$from.pos;
 
     code.style.minHeight = "unset";
-    if (pos === null) return { selected: false, active: false };
+    if (typeof pos !== "number") return { selected: false, active: false };
 
     if (
       pos === selectionPos &&
