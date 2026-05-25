@@ -1,6 +1,3 @@
 packages:
+  - "packages/**/*"
   - "apps/*"
-  - "apps/**/*"
-  - "packages/*"
-  - "packages/extensions/*"
-  - "packages/sdk/*"

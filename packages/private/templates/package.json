@@ -1,0 +1,19 @@
+{
+  "name": "@andesine/templates",
+  "type": "module",
+  "private": true,
+  "main": "./src/index.tsx",
+  "types": "./src/index.tsx",
+  "scripts": {
+    "dev:email": "email dev --port 4000"
+  },
+  "devDependencies": {
+    "react-email": "4.0.16"
+  },
+  "dependencies": {
+    "@react-email/components": "0.1.0",
+    "@react-email/render": "1.1.2",
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
+  }
+}

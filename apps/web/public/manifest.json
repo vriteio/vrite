@@ -1,6 +1,6 @@
 {
-  "short_name": "Vrite",
-  "name": "Vrite",
+  "short_name": "Andesine",
+  "name": "Andesine",
   "icons": [
     {
       "src": "favicon.svg",
@@ -15,5 +15,5 @@
   "display": "standalone",
   "scope": "/",
   "theme_color": "#e65100",
-  "description": "Open-source headless Content Management System (CMS) for your programming blogs, documentation, and more."
+  "description": "Andesine, the adaptive content workspace"
 }

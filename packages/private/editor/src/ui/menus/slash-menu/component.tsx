@@ -1,0 +1,304 @@
+import { SolidEditor } from "@andesine/tiptap-solid";
+import { SuggestionKeyDownProps, SuggestionProps } from "@tiptap/suggestion";
+import { Component, createEffect, createSignal, For, on, onMount, Show } from "solid-js";
+import { Range } from "@tiptap/core";
+import clsx from "clsx";
+import { scrollIntoView } from "seamless-scroll-polyfill";
+import {
+  Button,
+  Card,
+  createRef,
+  Fragment,
+  Loader,
+  Ref,
+  ScrollShadow,
+  Shortcut,
+  Tooltip
+} from "@andesine/components";
+import { Dynamic } from "solid-js/web";
+
+interface SlashMenuItem {
+  icon: string;
+  label: string;
+  group: string;
+  markdown?: string;
+  shortcut?: string;
+  ref: Ref<HTMLElement | null>;
+  command(params: { editor: SolidEditor; range: Range }): any | Promise<any>;
+}
+interface SlashMenuState extends SuggestionProps<SlashMenuItem> {
+  close(): void;
+  onKeyDown?(props: SuggestionKeyDownProps): boolean;
+  setOnKeyDown(callback: (props: SuggestionKeyDownProps) => boolean): void;
+}
+interface SlashMenuProps {
+  state: SlashMenuState;
+}
+
+const BlockMenu: Component<{ items: SlashMenuItem[]; editor: SolidEditor; close(): void }> = (
+  props
+) => {
+  const [loading, setLoading] = createSignal(-1);
+  const selectItem = (index: number): void => {
+    const item = props.items[index];
+
+    if (item) {
+      const commandResult = item.command({
+        editor: props.editor,
+        range: props.editor.state.selection
+      });
+
+      if (commandResult instanceof Promise) {
+        setLoading(index);
+        commandResult.finally(() => {
+          setLoading(-1);
+          props.close();
+        });
+      } else {
+        props.close();
+      }
+    }
+  };
+
+  return (
+    <>
+      <For
+        each={props.items}
+        fallback={
+          <Button
+            variant="text"
+            text="soft"
+            class="justify-start text-start w-[calc(100%-0.5rem)]"
+            disabled
+          >
+            No results
+          </Button>
+        }
+      >
+        {(menuItem, index) => {
+          return (
+            <>
+              <Show when={menuItem.group !== props.items[index() - 1]?.group}>
+                <div class="px-2 font-semibold">{menuItem.group}</div>
+              </Show>
+              <Button
+                loading={loading() === index()}
+                ref={menuItem.ref[1]}
+                onClick={() => selectItem(index())}
+                variant="text"
+                class="justify-start w-[calc(100%-0.5rem)] flex items-center p-1"
+              >
+                <Show
+                  when={loading() !== index()}
+                  fallback={
+                    <div class="flex justify-center items-center h-6 w-6">
+                      <Loader class="h-5 w-5" />
+                    </div>
+                  }
+                >
+                  <div class={clsx("h-6 w-6", menuItem.icon)} />
+                </Show>
+                <span class="pl-1">{menuItem.label}</span>
+              </Button>
+            </>
+          );
+        }}
+      </For>
+    </>
+  );
+};
+const SlashMenu: Component<SlashMenuProps> = (props) => {
+  const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
+  const [selectedIndex, setSelectedIndex] = createSignal(0);
+  const [loading, setLoading] = createSignal(-1);
+  const [blockHoverSelect, setBlockHoverSelect] = createSignal(false);
+  const selectItem = (index: number): void => {
+    const item = props.state.items[index];
+    const editor = props.state.editor as SolidEditor;
+
+    if (item) {
+      const commandResult = item.command({
+        editor,
+        range: props.state.range
+      });
+
+      if (commandResult instanceof Promise) {
+        setLoading(index);
+        commandResult.finally(() => {
+          setLoading(-1);
+          props.state.close();
+        });
+      } else {
+        props.state.close();
+      }
+    }
+  };
+  const scrollToSelectedItem = (): void => {
+    const item = props.state.items[selectedIndex()];
+
+    if (item) {
+      const [elementRef] = item.ref;
+      const element = elementRef();
+
+      if (element) {
+        scrollIntoView(element, { behavior: "smooth", block: "center" }, { duration: 150 });
+      }
+    }
+  };
+  const upHandler = (): void => {
+    setSelectedIndex((selectedIndex() + props.state.items.length - 1) % props.state.items.length);
+    scrollToSelectedItem();
+  };
+  const downHandler = (): void => {
+    setSelectedIndex((selectedIndex() + 1) % props.state.items.length);
+    scrollToSelectedItem();
+  };
+  const enterHandler = (): void => {
+    selectItem(selectedIndex());
+  };
+  const onKeyDown = ({ event }: SuggestionKeyDownProps): boolean => {
+    setBlockHoverSelect(true);
+    if (event.key === "ArrowUp") {
+      upHandler();
+
+      return true;
+    }
+
+    if (event.key === "ArrowDown") {
+      downHandler();
+
+      return true;
+    }
+
+    if (event.key === "Enter") {
+      enterHandler();
+
+      return true;
+    }
+
+    return false;
+  };
+
+  onMount(() => {
+    return Promise.resolve().then(() => {
+      if (!props.state.onKeyDown) {
+        props.state.setOnKeyDown(onKeyDown);
+      }
+    });
+  });
+  createEffect(
+    on(
+      () => props.state,
+      () => {
+        setSelectedIndex(0);
+      }
+    )
+  );
+
+  return (
+    <Card
+      class={clsx(
+        "md:w-64 m-0 overflow-hidden transition duration-200 transform origin-top-left p-2 pt-1 relative"
+      )}
+      shade
+    >
+      <ScrollShadow
+        scrollableContainerRef={scrollableContainerRef}
+        offset={{ top: "0.25rem", bottom: "0.5rem" }}
+      />
+      <div
+        class={clsx("w-full h-full overflow-auto max-h-96 scrollbar-sm")}
+        ref={setScrollableContainerRef}
+      >
+        <For
+          each={props.state.items}
+          fallback={
+            <Button
+              variant="text"
+              text="soft"
+              size="small"
+              class="justify-start text-start w-[calc(100%-0.5rem)]"
+              disabled
+            >
+              No results
+            </Button>
+          }
+        >
+          {(menuItem, index) => {
+            return (
+              <>
+                <Show when={menuItem.group !== props.state.items[index() - 1]?.group}>
+                  <div class="px-2 font-medium text-gray-400 text-xs h-6 flex items-center justify-start">
+                    {menuItem.group}
+                  </div>
+                </Show>
+                <Dynamic
+                  component={menuItem.shortcut ? Tooltip : Fragment}
+                  {...(menuItem.shortcut && {
+                    wrapperClass:
+                      props.state.items.length > 11 ? "w-[calc(100%-0.25rem)]" : "w-full",
+                    enabled: !blockHoverSelect(),
+                    text: <Shortcut shortcut={menuItem.shortcut || ""} />,
+                    fixed: true,
+                    side: "right"
+                  })}
+                >
+                  <Button
+                    ref={menuItem.ref[1]}
+                    hover="none"
+                    size="small"
+                    onClick={() => selectItem(index())}
+                    onPointerMove={() => {
+                      setBlockHoverSelect(false);
+                    }}
+                    onPointerEnter={() => {
+                      if (!blockHoverSelect()) {
+                        setSelectedIndex(index());
+                      }
+                    }}
+                    variant="text"
+                    class={clsx(
+                      "justify-start flex items-center pl-1 pr-0.5 py-0.5",
+                      menuItem.shortcut || props.state.items.length <= 10
+                        ? "w-full"
+                        : "w-[calc(100%-0.25rem)]",
+                      selectedIndex() === index()
+                        ? "bg-gradient-to-r from-gray-500/10 to-transparent"
+                        : ""
+                    )}
+                  >
+                    <Show
+                      when={loading() !== index()}
+                      fallback={
+                        <div class="flex justify-center items-center h-6 w-6">
+                          <Loader class="h-5 w-5" />
+                        </div>
+                      }
+                    >
+                      <div class="flex justify-center items-center h-6 w-6">
+                        <div
+                          class={clsx(
+                            "h-5 w-5",
+                            selectedIndex() === index() ? "bg-gray-500" : "bg-gray-400",
+                            menuItem.icon
+                          )}
+                        />
+                      </div>
+                    </Show>
+                    <div class="flex flex-col pl-1 flex-1 text-left">
+                      <span>{menuItem.label}</span>
+                    </div>
+                    <span class="font-mono text-gray-400 text-xs pr-2">{menuItem.markdown}</span>
+                  </Button>
+                </Dynamic>
+              </>
+            );
+          }}
+        </For>
+      </div>
+    </Card>
+  );
+};
+
+export { SlashMenu, BlockMenu };
+export type { SlashMenuState, SlashMenuItem };

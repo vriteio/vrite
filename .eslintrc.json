@@ -1,18 +1,177 @@
 {
   "parser": "@typescript-eslint/parser",
-  "plugins": ["solid", "@typescript-eslint"],
+  "plugins": ["solid", "@typescript-eslint", "sonarjs", "import", "prettier"],
   "ignorePatterns": ["!**/*", "**/*.js", "**/*.mjs", "**/*.cjs", "**/*.d.ts"],
   "extends": [
-    "xtrict/configs/errors",
-    "xtrict/configs/es6",
-    "xtrict/configs/modules",
-    "xtrict/configs/style",
-    "xtrict/configs/variables"
+    "eslint:recommended",
+    "plugin:sonarjs/recommended",
+    "prettier",
+    "prettier/@typescript-eslint"
   ],
   "overrides": [
     {
       "files": ["*.ts", "*.tsx", "*.js", "*.jsx"],
       "rules": {
+        "no-await-in-loop": "error",
+        "no-console": "error",
+        "no-template-curly-in-string": "error",
+        "import/exports-last": "error",
+        "import/group-exports": "error",
+        "arrow-body-style": "error",
+        "arrow-parens": "error",
+        "arrow-spacing": "error",
+        "generator-star-spacing": ["error", "after"],
+        "no-confusing-arrow": "error",
+        "no-useless-computed-key": "error",
+        "no-useless-rename": "error",
+        "no-var": "error",
+        "object-shorthand": [
+          "error",
+          "always",
+          { "avoidQuotes": true, "ignoreConstructors": true }
+        ],
+        "prefer-arrow-callback": "error",
+        "prefer-const": "error",
+        "prefer-destructuring": "error",
+        "prefer-numeric-literals": "error",
+        "prefer-rest-params": "error",
+        "prefer-spread": "error",
+        "prefer-template": "error",
+        "rest-spread-spacing": "error",
+        "symbol-description": "error",
+        "template-curly-spacing": "error",
+        "yield-star-spacing": ["error", "after"],
+        "array-bracket-newline": ["error", "consistent"],
+        "array-bracket-spacing": "error",
+        "array-element-newline": ["error", "consistent"],
+        "block-spacing": "error",
+        "brace-style": "error",
+        "comma-dangle": ["error", "never"],
+        "comma-spacing": "error",
+        "comma-style": "error",
+        "computed-property-spacing": "error",
+        "consistent-this": "error",
+        "eol-last": "error",
+        "func-name-matching": "error",
+        "func-names": ["error", "never"],
+        "func-style": "error",
+        "implicit-arrow-linebreak": "error",
+        "key-spacing": "error",
+        "keyword-spacing": "error",
+        "line-comment-position": "error",
+        "lines-between-class-members": ["error", "always"],
+        "max-depth": "error",
+        "max-statements-per-line": "error",
+        "multiline-ternary": ["error", "never"],
+        "new-cap": ["error", { "capIsNew": false }],
+        "new-parens": "error",
+        "no-array-constructor": "error",
+        "no-inline-comments": "error",
+        "no-lonely-if": "error",
+        "no-multi-assign": "error",
+        "no-multiple-empty-lines": ["error", { "max": 1 }],
+        "no-negated-condition": "error",
+        "no-nested-ternary": "error",
+        "no-new-object": "error",
+        "no-plusplus": ["error", { "allowForLoopAfterthoughts": true }],
+        "no-trailing-spaces": "error",
+        "no-unneeded-ternary": ["error", { "defaultAssignment": false }],
+        "no-whitespace-before-property": "error",
+        "nonblock-statement-body-position": "error",
+        "object-curly-newline": "off",
+        "object-curly-spacing": ["error", "always"],
+        "one-var": ["error", "never"],
+        "one-var-declaration-per-line": ["error", "always"],
+        "operator-assignment": "error",
+        "operator-linebreak": ["error", "after"],
+        "padding-line-between-statements": [
+          "error",
+          {
+            "blankLine": "always",
+            "prev": ["const", "let", "var"],
+            "next": "*"
+          },
+          {
+            "blankLine": "always",
+            "prev": "*",
+            "next": ["const", "let", "var"]
+          },
+          {
+            "blankLine": "always",
+            "prev": "*",
+            "next": ["block", "block-like"]
+          },
+          {
+            "blankLine": "always",
+            "prev": ["block", "block-like"],
+            "next": "*"
+          },
+          {
+            "blankLine": "always",
+            "prev": "*",
+            "next": "export"
+          },
+          {
+            "blankLine": "never",
+            "prev": "export",
+            "next": "export"
+          },
+          {
+            "blankLine": "always",
+            "prev": "import",
+            "next": "*"
+          },
+          { "blankLine": "never", "prev": "import", "next": "import" },
+          {
+            "blankLine": "always",
+            "prev": "*",
+            "next": "expression"
+          },
+          { "blankLine": "never", "prev": "expression", "next": "expression" },
+          {
+            "blankLine": "always",
+            "prev": "*",
+            "next": "return"
+          },
+          {
+            "blankLine": "always",
+            "prev": ["const", "let", "var"],
+            "next": ["const", "let", "var"]
+          },
+          {
+            "blankLine": "never",
+            "prev": "const",
+            "next": "const"
+          },
+          {
+            "blankLine": "never",
+            "prev": "let",
+            "next": "let"
+          },
+          {
+            "blankLine": "never",
+            "prev": "var",
+            "next": "var"
+          }
+        ],
+        "prefer-object-spread": "error",
+        "quote-props": ["error", "consistent-as-needed"],
+        "quotes": ["error", "double", { "avoidEscape": true, "allowTemplateLiterals": true }],
+        "semi-spacing": "error",
+        "semi-style": "error",
+        "sort-vars": "error",
+        "space-before-blocks": "error",
+        "space-in-parens": "error",
+        "space-infix-ops": "error",
+        "space-unary-ops": ["error", { "words": true, "nonwords": false }],
+        "spaced-comment": "error",
+        "switch-colon-spacing": "error",
+        "template-tag-spacing": "error",
+        "wrap-regex": "error",
+        "init-declarations": "error",
+        "no-label-var": "error",
+        "no-undef-init": "error",
+        "no-use-before-define": "error",
         "import/order": [
           "error",
           {

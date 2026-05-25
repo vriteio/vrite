@@ -1,13 +1,27 @@
-export * from "./client";
-export * from "./confirmation-modal";
+import { ParentComponent } from "solid-js";
+import { ShortcutsProvider } from "@andesine/components/context";
+import { ContentProvider } from "./content";
+import { NotificationsProvider } from "./notifications";
+import { UpdatesProvider } from "./updates";
+import { LayoutProvider } from "./layout";
+
+const AppProvider: ParentComponent = (props) => {
+  return (
+    <UpdatesProvider>
+      <NotificationsProvider>
+        <ContentProvider>
+          <LayoutProvider>
+            <ShortcutsProvider>{props.children}</ShortcutsProvider>
+          </LayoutProvider>
+        </ContentProvider>
+      </NotificationsProvider>
+    </UpdatesProvider>
+  );
+};
+
+export { AppProvider };
+export * from "./updates";
 export * from "./notifications";
-export * from "./local-storage";
-export * from "./appearance";
-export * from "./authenticated-user-data";
-export * from "./extensions";
-export * from "./shared-state";
-export * from "./command-palette";
-export * from "./host-config";
 export * from "./content";
-export * from "./history";
-export * from "./meta";
+export * from "./layout";
+export * from "@andesine/components/context";

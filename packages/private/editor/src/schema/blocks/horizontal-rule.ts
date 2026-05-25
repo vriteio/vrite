@@ -1,0 +1,23 @@
+import { nodeInputRule, nodePasteRule } from "#editor/lib";
+import { HorizontalRule as BaseHorizontalRule } from "@tiptap/extension-horizontal-rule";
+
+const HorizontalRule = BaseHorizontalRule.extend({
+  addInputRules() {
+    return [
+      nodeInputRule({
+        find: /^(?:---|—-|___\s|\*\*\*\s)$/,
+        type: this.type
+      })
+    ];
+  },
+  addPasteRules() {
+    return [
+      nodePasteRule({
+        find: /^(?:---|—-|___|\*\*\*)\s*$/g,
+        type: this.type
+      })
+    ];
+  }
+});
+
+export { HorizontalRule };

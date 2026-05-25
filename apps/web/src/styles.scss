@@ -1,0 +1,101 @@
+@import "@unocss/reset/tailwind.css";
+@font-face {
+  font-family: "NunitoVariable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 200 1000;
+  src: url("/nunito-latin-variable-wghtOnly-normal.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074,
+    U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "NunitoVariable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 200 1000;
+  src: url("/nunito-latin-ext-variable-wghtOnly-normal.woff2") format("woff2");
+  unicode-range:
+    U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+@font-face {
+  font-family: "JetBrainsMonoVariable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400 800;
+  src: url("/jetbrains-mono-wghtOnly-normal.woff2") format("woff2");
+}
+
+:root {
+  --color-primary: #ef4444;
+  --color-secondary: #ffa166;
+}
+
+// Structure
+html {
+  @apply h-[100dvh] text-gray-700 bg-gray-100 from-secondary via-primary to-secondary overflow-hidden;
+  font-family: "NunitoVariable", sans-serif;
+  overscroll-behavior-y: none;
+  -webkit-overflow-scrolling: touch;
+}
+html.dark {
+  @apply text-white bg-gray-800;
+}
+body {
+  @apply flex min-h-full;
+}
+
+#app {
+  @apply flex flex-col flex-1 w-full h-screen;
+}
+
+// Custom classes
+.dots-background {
+  @apply absolute h-full w-full top-0 left-0;
+  background-image: radial-gradient(rgba(229, 231, 235, 0.8) 2px, transparent 0);
+  background-size: 16px 16px;
+  background-position: center center;
+  z-index: -1;
+}
+.dark {
+  .dots-background {
+    background-image: radial-gradient(rgba(75, 85, 99, 0.2) 2px, transparent 0);
+  }
+}
+
+// Utilities
+.font-mono {
+  font-family: "JetBrainsMonoVariable", monospace !important;
+}
+
+@keyframes animate-caret-blink {
+  0%,
+  70%,
+  100% {
+    opacity: 1;
+  }
+
+  20%,
+  50% {
+    opacity: 0;
+  }
+}
+.animate-caret-blink {
+  animation: animate-caret-blink 1.25s ease-out infinite;
+}
+.dropdown-opened #app {
+  @apply pointer-events-none;
+}
+::-webkit-scrollbar {
+  @apply w-3 bg-gray-50;
+}
+::-webkit-scrollbar-track {
+  @apply my-4;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-100 shadow-inner border border-solid border-gray-50 rounded-lg;
+}
+.scrollbar-sm::-webkit-scrollbar-track {
+  @apply my-1;
+}

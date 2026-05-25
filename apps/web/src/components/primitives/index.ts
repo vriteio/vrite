@@ -1,2 +1,1 @@
-export * from "./sortable";
-export * from "@vrite/components";
+export * from "@andesine/components/primitives";

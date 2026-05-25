@@ -1,0 +1,53 @@
+{
+  "name": "@andesine/tiptap-solid",
+  "version": "1.0.0",
+  "description": "TipTap integration for Solid.js",
+  "type": "module",
+  "scripts": {
+    "dev": "rollup -c -w",
+    "build": "rollup -c",
+    "prepublish": "pnpm build"
+  },
+  "source": "src/index.tsx",
+  "main": "dist/cjs/index.js",
+  "module": "dist/esm/index.js",
+  "types": "dist/types/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "solid": "./dist/source/index.jsx",
+      "import": "./dist/esm/index.js",
+      "browser": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js",
+      "node": "./dist/cjs/index.js",
+      "types": "./dist/types/index.d.ts"
+    }
+  },
+  "keywords": [
+    "tiptap",
+    "wysiwyg",
+    "solid",
+    "solidjs"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@tiptap/extension-bubble-menu": "2.23.0",
+    "@tiptap/extension-floating-menu": "2.23.0",
+    "nanoid": "^5.1.4"
+  },
+  "devDependencies": {
+    "@tiptap/core": "2.23.0",
+    "@tiptap/pm": "2.23.0",
+    "rollup": "^4.36.0",
+    "rollup-preset-solid": "^3.0.0",
+    "solid-js": "^1.9.5",
+    "typescript": "^5.8.2"
+  },
+  "peerDependencies": {
+    "@tiptap/core": "2.23.0",
+    "@tiptap/pm": "2.23.0",
+    "solid-js": "^1.9.5"
+  }
+}

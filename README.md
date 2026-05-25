@@ -1,3 +1,6 @@
+> [!IMPORTANT]
+> This is a WIP branch for *Andesine* (the v2 rewrite of Vrite). For the latest stable version of Vrite, please check out the [main branch](https://github.com/vriteio/vrite/tree/main)
+
 <p align="center">
     <a href="https://vrite.io">
         <img src=".github/assets/cover.png"/>
