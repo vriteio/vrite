@@ -5,6 +5,7 @@ const configSchema = z.object({
   // Hosts
   PUBLIC_API_HOST: z.string().describe("Public host of the API"),
   PUBLIC_APP_HOST: z.string().describe("Public host of the app"),
+  PUBLIC_COOKIE_DOMAIN: z.string().optional().describe("Domain to set for cookies in cross-subdomain setups"),
   PUBLIC_SECURE: z
     .stringbool()
     .optional()

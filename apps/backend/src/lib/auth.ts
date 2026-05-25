@@ -19,7 +19,21 @@ const auth = betterAuth({
   basePath: "/auth",
   logger: { level: config.NODE_ENV === "production" ? "error" : "debug" },
   database: mongodbAdapter(db, { client: mongoClient, transaction: false }),
-  trustedOrigins: [config.PUBLIC_APP_URL, config.PUBLIC_API_URL],
+  trustedOrigins: [
+    ...(config.PUBLIC_COOKIE_DOMAIN
+      ? [`${config.PUBLIC_SECURE ? "https://" : "http://"}${config.PUBLIC_COOKIE_DOMAIN}`]
+      : []),
+    config.PUBLIC_APP_URL,
+    config.PUBLIC_API_URL
+  ],
+  ...(config.PUBLIC_COOKIE_DOMAIN && {
+    advanced: {
+      crossSubDomainCookies: {
+        enabled: true,
+        domain: config.PUBLIC_COOKIE_DOMAIN
+      }
+    }
+  }),
   secondaryStorage: {
     get: async (key) => {
       return await redis.get(`auth:${key}`);
