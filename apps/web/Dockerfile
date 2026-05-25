@@ -17,6 +17,12 @@ RUN pnpm install --frozen-lockfile --prod
 
 FROM base AS builder
 WORKDIR /app
+ARG PUBLIC_API_HOST
+ARG PUBLIC_APP_HOST
+ARG PUBLIC_SECURE
+ENV PUBLIC_API_HOST="$PUBLIC_API_HOST"
+ENV PUBLIC_APP_HOST="$PUBLIC_APP_HOST"
+ENV PUBLIC_SECURE="$PUBLIC_SECURE"
 COPY --from=pruner /app/out/json/ ./
 RUN pnpm install --frozen-lockfile
 COPY --from=pruner /app/out/full/ ./
@@ -31,9 +37,15 @@ COPY --from=builder /app/apps/web/.vinxi ./apps/web/.vinxi
 FROM node:24-alpine AS runner
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
+ARG PUBLIC_API_HOST
+ARG PUBLIC_APP_HOST
+ARG PUBLIC_SECURE
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
 ENV PORT=3000
+ENV PUBLIC_API_HOST="$PUBLIC_API_HOST"
+ENV PUBLIC_APP_HOST="$PUBLIC_APP_HOST"
+ENV PUBLIC_SECURE="$PUBLIC_SECURE"
 RUN corepack enable
 WORKDIR /app
 COPY --from=packager --chown=node:node /app ./

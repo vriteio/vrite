@@ -6,6 +6,12 @@ export default defineConfig({
   middleware: "./src/middleware.ts",
   vite: {
     envPrefix: "PUBLIC_",
+    ssr: {
+      noExternal: [
+        /^@atlaskit\/pragmatic-drag-and-drop(?:$|\/)/,
+        /^@atlaskit\/pragmatic-drag-and-drop-hitbox(?:$|\/)/
+      ]
+    },
     plugins: [tsconfigPaths(), unoCSS()]
   }
 });

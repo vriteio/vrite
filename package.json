@@ -4,6 +4,7 @@
   "license": "AGPL-3.0-only",
   "private": true,
   "scripts": {
+    "start": "dotenv -- turbo start",
     "build": "dotenv -- turbo build",
     "dev": "dotenv -- turbo dev"
   },
