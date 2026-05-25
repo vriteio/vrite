@@ -1,5 +1,6 @@
 /// <reference types="@solidjs/start/env" />
 interface ImportMetaEnv {
-  readonly PUBLIC_API_URL: string;
-  readonly PUBLIC_COLLAB_URL: string;
+  readonly PUBLIC_API_HOST: string;
+  readonly PUBLIC_APP_HOST: string;
+  readonly PUBLIC_SECURE: string;
 }

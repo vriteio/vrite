@@ -1,14 +1,5 @@
-import {
-  Component,
-  createEffect,
-  createMemo,
-  createSignal,
-  For,
-  JSX,
-  Match,
-  onCleanup,
-  Switch
-} from "solid-js";
+import { createListCollection, Listbox } from "@ark-ui/solid";
+import { Component, createMemo, For, JSX, Match, Switch } from "solid-js";
 import { Dynamic } from "solid-js/web";
 
 interface Option {
@@ -27,8 +18,6 @@ interface OptionsListProps<O extends Option> {
 }
 
 const OptionsList = <O extends Option>(props: OptionsListProps<O>): JSX.Element => {
-  const [selected, setSelected] = createSignal(props.value);
-  const [query, setQuery] = createSignal("");
   const flattenOptionsAndSeparators = createMemo<Array<string | O>>(() => {
     return props.options
       .map((option, index) => {
@@ -48,105 +37,63 @@ const OptionsList = <O extends Option>(props: OptionsListProps<O>): JSX.Element 
     return flattenOptionsAndSeparators().filter((option) => option !== "separator") as O[];
   });
 
-  createEffect(() => {
-    let timeoutHandle = 0;
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key.length > 1) return;
-
-      const newQuery = query() + event.key;
-      const match = flattenOptions().find((option) => {
-        const formattedQuery = newQuery.toLowerCase().trim();
-        const formattedLabel = option.label.toLowerCase().trim();
-        return (
-          formattedLabel.startsWith(formattedQuery) ||
-          formattedLabel.split(" ").some((word) => word.startsWith(formattedQuery))
-        );
-      })?.value;
-
-      setQuery(match ? newQuery : event.key);
-      setSelected((selected) => match || selected);
-      timeoutHandle = window.setTimeout(() => {
-        setQuery("");
-      }, 2000);
-    };
-
-    if (props.searchable) {
-      document.body.addEventListener("keydown", handleKeyDown);
-    }
-
-    onCleanup(() => {
-      document.body.removeEventListener("keydown", handleKeyDown);
-      clearTimeout(timeoutHandle);
-      setQuery("");
-    });
-  });
-  createEffect(() => {
-    const handleArrowKeys = (event: KeyboardEvent) => {
-      if (event.key === "ArrowDown") {
-        const index = flattenOptions().findIndex((option) => option.value === selected());
-        setSelected(flattenOptions()[(index + 1) % flattenOptions().length].value);
-      } else if (event.key === "ArrowUp") {
-        const index = flattenOptions().findIndex((option) => option.value === selected());
-        setSelected(
-          flattenOptions()[(index - 1 + flattenOptions().length) % flattenOptions().length].value
-        );
-      }
-      if (event.key === "Enter" && selected()) {
-        props.onSelect?.(
-          selected()!,
-          flattenOptions().find((option) => option.value === selected()) as O
-        );
-      }
-
-      event.preventDefault();
-      event.stopPropagation();
-    };
-
-    document.body.addEventListener("keydown", handleArrowKeys);
-
-    onCleanup(() => {
-      document.body.removeEventListener("keydown", handleArrowKeys);
-    });
-  });
+  const collection = createMemo(() =>
+    createListCollection<O>({
+      items: flattenOptions(),
+      itemToString: (option) => option.label,
+      itemToValue: (option) => option.value
+    })
+  );
+  const selectedValue = createMemo(() => (props.value ? [props.value] : []));
 
   return (
-    <div class="flex flex-col w-full">
-      <For each={flattenOptionsAndSeparators()}>
-        {(optionOrSeparator) => {
-          return (
-            <Switch>
-              <Match when={optionOrSeparator === "separator" && props.separator}>
-                <Dynamic component={props.separator} />
-              </Match>
-              <Match when={optionOrSeparator !== "separator"}>
-                {(_) => {
-                  const option = optionOrSeparator as O;
+    <Listbox.Root
+      class="flex flex-col w-full"
+      collection={collection()}
+      selectionMode="single"
+      value={selectedValue()}
+      typeahead={props.searchable}
+      onValueChange={(details) => {
+        const value = details.value[0];
 
-                  return (
-                    <div
-                      class="contents"
-                      onPointerEnter={() => setSelected(option.value)}
-                      onClick={(event) => {
-                        props.onSelect?.(option.value, option);
-                        event.preventDefault();
-                        event.stopPropagation();
-                      }}
-                    >
-                      <Dynamic
-                        component={props.children}
-                        {...option}
-                        selected={option.value === selected()}
-                      />
-                    </div>
-                  );
-                }}
-              </Match>
-            </Switch>
-          );
-        }}
-      </For>
-    </div>
+        if (!value) return;
+
+        const option = flattenOptions().find((item) => item.value === value);
+
+        if (option) {
+          props.onSelect?.(value, option);
+        }
+      }}
+    >
+      <Listbox.Content class="flex flex-col w-full">
+        <For each={flattenOptionsAndSeparators()}>
+          {(optionOrSeparator) => {
+            return (
+              <Switch>
+                <Match when={optionOrSeparator === "separator" && props.separator}>
+                  <Dynamic component={props.separator} />
+                </Match>
+                <Match when={optionOrSeparator !== "separator"}>
+                  {(_) => {
+                    const option = optionOrSeparator as O;
+
+                    return (
+                      <Listbox.Item item={option} class="contents">
+                        <Dynamic
+                          component={props.children}
+                          {...option}
+                          selected={option.value === props.value}
+                        />
+                      </Listbox.Item>
+                    );
+                  }}
+                </Match>
+              </Switch>
+            );
+          }}
+        </For>
+      </Listbox.Content>
+    </Listbox.Root>
   );
 };
 

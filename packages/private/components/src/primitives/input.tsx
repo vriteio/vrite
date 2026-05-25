@@ -1,4 +1,4 @@
-import { Component, createSignal, JSX, Show, splitProps } from "solid-js";
+import { Component, JSX, Show, splitProps } from "solid-js";
 import { Dynamic } from "solid-js/web";
 import clsx from "clsx";
 import { Ref } from "../ref";
@@ -13,26 +13,40 @@ const inputVariants = {
   outlined: `:base: outline outline-1 shadow-md focus:outline-1 focus:bg-gray-100 dark:focus:bg-gray-950`
 };
 
-interface InputProps extends JSX.InputHTMLAttributes<HTMLInputElement> {
+interface InputProps extends Omit<JSX.InputHTMLAttributes<HTMLInputElement>, "slot"> {
   value?: string;
   class?: string;
   labelClass?: string;
   labelWrapperClass?: string;
-  adornmentWrapperClass?: string;
-  textarea?: boolean;
-  autoResize?: boolean;
+  slotWrapperClass?: string;
   label?: string;
-  size?: "small" | "medium";
+  size?: "xs" | "small" | "medium";
   color?: keyof typeof inputColors;
   variant?: keyof typeof inputVariants;
   ref?: Ref<HTMLInputElement>[1];
-  adornment?(): JSX.Element;
+  slot?(): JSX.Element;
   setValue?(value: string): void;
   onEnter?(event: KeyboardEvent): void;
 }
 
+const inputSizes = {
+  xs: {
+    label: ":base: text-xs",
+    input: ":base: h-6.5 max-h-6.5",
+    field: ":base: p-0.5 px-1.5 text-sm"
+  },
+  small: {
+    label: ":base: text-xs",
+    input: ":base: h-7 max-h-7",
+    field: ":base: p-1 px-2 text-sm"
+  },
+  medium: {
+    label: ":base: text-sm",
+    input: ":base: h-8 max-h-8",
+    field: ":base: p-2"
+  }
+};
 const Input: Component<InputProps> = (props) => {
-  const [focused, setFocused] = createSignal(false);
   const [, passedProps] = splitProps(props, [
     "onEnter",
     "onBlur",
@@ -40,11 +54,10 @@ const Input: Component<InputProps> = (props) => {
     "class",
     "value",
     "setValue",
-    "adornment",
+    "slot",
     "labelClass",
     "labelWrapperClass",
-    "adornmentWrapperClass",
-    "autoResize",
+    "slotWrapperClass",
     "color",
     "ref",
     "variant",
@@ -59,11 +72,8 @@ const Input: Component<InputProps> = (props) => {
       <Show when={props.label}>
         <label
           class={clsx(
-            ":base: leading-[1]",
-            props.size === "small" ? ":base: text-xs" : ":base: text-sm",
-            focused()
-              ? ":base: text-gray-500 dark:text-gray-400"
-              : ":base: text-gray-400 dark:text-gray-500",
+            ":base: leading-[1] text-gray-400 dark:text-gray-500 group-focus-within:text-gray-500 group-focus-within:dark:text-gray-400",
+            inputSizes[props.size || "medium"].label,
             props.labelClass
           )}
         >
@@ -71,18 +81,16 @@ const Input: Component<InputProps> = (props) => {
         </label>
       </Show>
       <Dynamic
-        component={props.adornment ? "div" : Fragment}
-        class={clsx(":base: flex items-center relative", props.adornmentWrapperClass)}
+        component={props.slot ? "div" : Fragment}
+        class={clsx(":base: flex items-center relative", props.slotWrapperClass)}
       >
         <Dynamic
           ref={props.ref}
-          component={props.textarea ? "textarea" : "input"}
+          component="input"
           class={clsx(
             `:base: flex items-center justify-start flex-1 rounded-lg ring-offset-1 placeholder:opacity-50`,
-            props.size === "small" ? ":base: p-1 px-2 text-sm" : ":base: p-2",
-            !props.textarea &&
-              (props.size === "small" ? ":base: h-7 max-h-7" : ":base: h-8 max-h-8"),
-            props.textarea && ":base: min-h-16",
+            inputSizes[props.size || "medium"].field,
+            inputSizes[props.size || "medium"].input,
             inputColors[props.color || "base"],
             inputVariants[props.variant || "solid"],
             props.class
@@ -94,7 +102,6 @@ const Input: Component<InputProps> = (props) => {
               target: HTMLInputElement;
             }
           ) => {
-            setFocused(true);
             if (typeof props.onFocus === "function") {
               props.onFocus?.(event);
             }
@@ -105,7 +112,6 @@ const Input: Component<InputProps> = (props) => {
               target: HTMLInputElement;
             }
           ) => {
-            setFocused(false);
             if (typeof props.onBlur === "function") {
               props.onBlur?.(event);
             }
@@ -115,9 +121,6 @@ const Input: Component<InputProps> = (props) => {
           ) => {
             if (event.key === "Enter") {
               props.onEnter?.(event);
-            }
-            if (event.key === "Escape") {
-              event.currentTarget.blur();
             }
 
             if (typeof props.onKeyDown === "function") {
@@ -134,17 +137,12 @@ const Input: Component<InputProps> = (props) => {
               props.onInput?.(event);
             }
 
-            if (props.autoResize) {
-              event.currentTarget.style.height = "0px";
-              event.currentTarget.style.height = `${event.currentTarget.scrollHeight}px`;
-            }
-
             props.setValue?.(event.currentTarget.value);
           }}
           {...passedProps}
         />
-        <Show when={props.adornment} keyed>
-          {(adornment) => <Dynamic component={adornment} />}
+        <Show when={props.slot} keyed>
+          {(slot) => <Dynamic component={slot} />}
         </Show>
       </Dynamic>
     </Dynamic>

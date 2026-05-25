@@ -38,29 +38,20 @@ const BlockSelectionExtension = Extension.create({
 
               const resolvedPos = doc.resolve(pos);
               const node = resolvedPos.node(1) || resolvedPos.nodeAfter;
-              const from = resolvedPos.start(1);
-              const to = from + (node?.nodeSize || 0) - 2;
-              const selectionsOverlap = selection.from <= to && selection.to >= from;
 
               if (!node) return false;
 
-              if (
-                node &&
-                (!isTextSelection(selection) || selection.empty) &&
-                (!isBlockSelection(selection) || !selectionsOverlap)
-              ) {
-                editor
-                  .chain()
-                  .setBlockSelection({
-                    from,
-                    to
-                  })
-                  .focus()
-                  .run();
-                event.preventDefault();
-                event.stopPropagation();
-                return true;
+              const from = resolvedPos.start(1);
+              const to = from + (node.nodeSize || 0) - 2;
+
+              // If block selection already covers this node, keep existing selection
+              if (!(isBlockSelection(selection) && selection.from <= from && selection.to >= to)) {
+                editor.chain().setBlockSelection({ from, to }).focus().run();
               }
+
+              event.preventDefault();
+
+              return true;
             }
           },
           decorations(state) {
@@ -97,6 +88,48 @@ const BlockSelectionExtension = Extension.create({
 
           return true;
         };
+      }
+    };
+  },
+  addKeyboardShortcuts() {
+    return {
+      "Mod-a": ({ editor }) => {
+        const { state } = editor;
+        const { selection, doc } = state;
+        const resolvedPos = selection.$from;
+        const depth = resolvedPos.depth > 0 ? 1 : 0;
+        const currentNode = resolvedPos.node(depth);
+
+        // In title node: always select all text within the title
+        if (currentNode?.type.name === "title") {
+          const from = resolvedPos.start(depth);
+          const to = from + currentNode.nodeSize - 2;
+
+          return editor.commands.setTextSelection({ from, to });
+        }
+
+        // If block selection already covers current block(s), expand to entire doc (excluding title)
+        if (isBlockSelection(selection)) {
+          const titleNode = doc.firstChild;
+
+          if (!titleNode) return false;
+
+          const contentFrom = titleNode.nodeSize + 1;
+          const contentTo = doc.content.size - 1;
+          const alreadyFull = selection.from <= contentFrom && selection.to >= contentTo;
+
+          if (alreadyFull) return true;
+
+          return editor.chain().setBlockSelection({ from: contentFrom, to: contentTo }).run();
+        }
+
+        // First press: block-select current node
+        if (!currentNode) return false;
+
+        const from = resolvedPos.start(depth);
+        const to = from + currentNode.nodeSize - 2;
+
+        return editor.chain().setBlockSelection({ from, to }).run();
       }
     };
   }

@@ -1,7 +1,7 @@
 import { entryType } from "#backend/db";
 import { emitEvent, EmitEvent, subscribeToEvent, SubscribeToEvent } from "#backend/lib/events";
 import { objectID } from "#backend/lib/mongo";
-import { Static, t } from "elysia";
+import * as z from "zod";
 
 declare module "#backend/lib/events" {
   interface Events {
@@ -9,34 +9,37 @@ declare module "#backend/lib/events" {
   }
 }
 
-const entryEventType = t.Union([
-  t.Object({
-    action: t.Literal("entry:create"),
-    userID: objectID(),
+const entryEventType = z.union([
+  z.object({
+    action: z.literal("entry:create"),
+    memberID: objectID().optional(),
     data: entryType
   }),
-  t.Object({
-    action: t.Literal("entry:update"),
-    userID: objectID(),
-    data: t.Intersect([t.Pick(entryType, ["id"]), t.Partial(t.Omit(entryType, ["id"]))])
+  z.object({
+    action: z.literal("entry:update"),
+    memberID: objectID().optional(),
+    data: z.object({
+      ...entryType.pick({ id: true }).shape,
+      ...entryType.omit({ id: true }).partial().shape
+    })
   }),
-  t.Object({
-    action: t.Literal("entry:delete"),
-    userID: objectID(),
-    data: t.Object({ ids: t.Array(objectID()) })
+  z.object({
+    action: z.literal("entry:delete"),
+    memberID: objectID().optional(),
+    data: z.object({ ids: z.array(objectID()) })
   }),
-  t.Object({
-    action: t.Literal("entry:move"),
-    userID: objectID(),
-    data: t.Object({
+  z.object({
+    action: z.literal("entry:move"),
+    memberID: objectID().optional(),
+    data: z.object({
       id: objectID(),
-      followingEntryID: t.Optional(objectID()),
-      precedingEntryID: t.Optional(objectID())
+      collectionID: objectID().nullable().optional(),
+      order: z.string().optional()
     })
   })
 ]);
 
-type EntryEvent = Static<typeof entryEventType>;
+type EntryEvent = z.infer<typeof entryEventType>;
 
 const emitEntryEvent: EmitEvent<{
   [workspaceID: string]: EntryEvent;

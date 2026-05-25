@@ -1,3 +1,9 @@
 packages:
   - "packages/**/*"
   - "apps/*"
+allowBuilds:
+  '@parcel/watcher': false
+  esbuild: true
+  sharp: true
+  sqlite3: false
+minimumReleaseAge: 1440

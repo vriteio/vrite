@@ -1,5 +1,3 @@
 {
-  "typescript.tsdk": "node_modules/typescript/lib",
-  "cSpell.words": ["collab", "Elysia", "Hocuspocus", "HOTP", "Lexo", "tinykeys", "totp"],
-  "svg.preview.background": "custom"
+  "cSpell.words": ["COLLAB", "Lexo", "ORPC", "stringbool", "Unflushed", "unsign", "WSRPC"]
 }

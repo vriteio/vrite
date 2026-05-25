@@ -1,168 +1,177 @@
 import clsx from "clsx";
-import { Component, For, createSignal } from "solid-js";
-import { SolidEditor } from "@andesine/tiptap-solid";
-import { nanoid } from "nanoid";
-import { generateHTML } from "@tiptap/core";
-import { Card, IconButton, Shortcut, Tooltip } from "@andesine/components";
-import { optimizeContentSlice } from "#editor/lib";
+import { Component, For, createMemo, createSignal, onCleanup, useContext } from "solid-js";
+import { Editor } from "@tiptap/core";
+import { Card, createRef, IconButton, Shortcut, Tooltip } from "@andesine/components";
+import { BlockMenuContext } from "#editor/ui/menus/block-menu";
+
+type BubbleMenuMode = "format" | "link";
+
+interface FormatMenuItemGroup {
+  left: number;
+  width: number;
+  items: number;
+}
 
 const FormatMenu: Component<{
   class?: string;
-  mode: string;
-  opened: boolean;
-  editor: SolidEditor;
-  blur?(): void;
-  setMode(mode: string): void;
+  editor: Editor;
+  setMode(mode: BubbleMenuMode): void;
 }> = (props) => {
+  const { openMenu } = useContext(BlockMenuContext)!;
   const [activeMarks, setActiveMarks] = createSignal<string[]>([]);
-  const commentMenuItem = {
-    icon: "i-lucide:message-square-text",
-    mark: "comment",
-    label: "Comment",
-    async onClick() {
-      if (props.editor.isActive("comment")) {
-        props.editor.commands.unsetComment();
-      } else {
-        const threadFragment = nanoid();
-        const slice = optimizeContentSlice(props.editor.state.selection.content());
-        const html = generateHTML(
-          { type: "doc", content: slice.toJSON().content },
-          props.editor.extensionManager.extensions
-        );
-
-        props.editor.chain().setComment({ thread: threadFragment }).focus().run();
-
-        try {
-          const x = 10;
-        } catch (error) {
-          props.editor.commands.unsetComment();
-        }
+  const menuItems: Array<{
+    icon: string;
+    mark?: string;
+    label: string;
+    shortcut?: string;
+    onClick?(): void;
+  }> = [
+    { icon: "i-lucide:bold", mark: "bold", label: "Bold", shortcut: "$mod+B" },
+    { icon: "i-lucide:italic", mark: "italic", label: "Italic", shortcut: "$mod+I" },
+    {
+      icon: "i-lucide:strikethrough",
+      mark: "strike",
+      label: "Strikethrough",
+      shortcut: "$mod+Shift+X"
+    },
+    { icon: "i-lucide:code", mark: "code", label: "Code", shortcut: "$mod+E" },
+    {
+      icon: "i-lucide:link-2",
+      mark: "link",
+      label: "Link",
+      shortcut: "$mod+K",
+      onClick() {
+        props.setMode("link");
       }
-    }
+    },
+    {
+      icon: "i-lucide:highlighter",
+      mark: "highlight",
+      label: "Highlight",
+      shortcut: "$mod+Shift+H"
+    },
+    { icon: "i-lucide:subscript", mark: "subscript", label: "Subscript" },
+    { icon: "i-lucide:superscript", mark: "superscript", label: "Superscript" }
+  ];
+  const markNames = menuItems.map((menu) => menu.mark).filter(Boolean) as string[];
+  const updateActiveMarks = (): void => {
+    setActiveMarks(markNames.filter((mark) => props.editor.isActive(mark)));
   };
-  const closeKeyboardItem = {
-    icon: "i-lucide:keyboard-off",
-    label: "Close keyboard",
-    async onClick() {
-      props.blur?.();
-    }
-  };
-  const menus = (
-    [
-      {
-        icon: "i-lucide:bold",
-        mark: "bold",
-        label: "Bold"
-      },
-      {
-        icon: "i-lucide:italic",
-        mark: "italic",
-        label: "Italic"
-      },
-      {
-        icon: "i-lucide:strikethrough",
-        mark: "strike",
-        label: "Strike"
-      },
-      {
-        icon: "i-lucide:underline",
-        mark: "underline",
-        label: "Underline"
-      },
-      {
-        icon: "i-lucide:code",
-        mark: "code",
-        label: "Code"
-      },
-      {
-        icon: "i-lucide:link-2",
-        mark: "link",
-        label: "Link",
-        onClick() {
-          props.setMode("link");
+  const activeGroups = () => {
+    const active = activeMarks();
+    const gap = 4;
+    const padding = 4;
+    const menuOptionWidth = 26;
+    const activeGroups: FormatMenuItemGroup[] = [];
+
+    let left = padding;
+    let currentGroup: FormatMenuItemGroup | null = null;
+
+    menuItems.forEach((item) => {
+      const isActive = item.mark ? active.includes(item.mark) : false;
+
+      if (isActive) {
+        if (currentGroup) {
+          currentGroup.width += menuOptionWidth + gap;
+          currentGroup.items += 1;
+        } else {
+          currentGroup = { left, width: menuOptionWidth, items: 1 };
         }
-      },
-      { icon: "i-lucide:highlighter", mark: "highlight", label: "Highlight" },
-      { icon: "i-lucide:subscript", mark: "subscript", label: "Subscript" },
-      { icon: "i-lucide:superscript", mark: "superscript", label: "Superscript" }
-      //...(activeContentPieceId() && breakpoints.md() ? [commentMenuItem] : []),
-      //...(breakpoints.md() ? [] : [closeKeyboardItem])
-    ] as Array<{ icon: string; mark?: string; label: string; onClick?(): void }>
-  ).filter(({ mark }) => {
-    if (!mark || mark === "comment") return true;
+      } else if (currentGroup) {
+        activeGroups.push(currentGroup);
+        currentGroup = null;
+      }
 
-    return true;
-  });
-  const marks = menus.map((menu) => menu.mark);
+      left += menuOptionWidth + gap;
+    });
 
-  props.editor.on("update", () => {
-    setActiveMarks(marks.filter((mark) => mark && props.editor.isActive(mark)) as string[]);
-  });
-  props.editor.on("selectionUpdate", () => {
-    setActiveMarks(marks.filter((mark) => mark && props.editor.isActive(mark)) as string[]);
+    if (currentGroup) {
+      activeGroups.push(currentGroup);
+    }
+
+    return activeGroups;
+  };
+
+  props.editor.on("update", updateActiveMarks);
+  props.editor.on("selectionUpdate", updateActiveMarks);
+  updateActiveMarks();
+  onCleanup(() => {
+    props.editor.off("update", updateActiveMarks);
+    props.editor.off("selectionUpdate", updateActiveMarks);
   });
 
   return (
     <Card
+      data-menu="format"
       class={clsx(
-        "relative flex p-1 gap-1 rounded-xl overflow-x-auto scrollbar-hidden md:overflow-initial not-prose bg-white items-center",
+        "z-10 relative flex p-1 gap-1 rounded-xl overflow-x-auto scrollbar-hidden md:overflow-initial not-prose bg-white items-center",
         props.class
       )}
       shade
     >
-      <For
-        each={menus}
-        fallback={<span class="px-1.5 py-0.5 text-base">No available options</span>}
-      >
+      <For each={activeGroups()}>
+        {(group) => (
+          <div
+            class="absolute top-1 bottom-1 -z-1 rounded-lg bg-gradient-to-tr opacity-10 pointer-events-none"
+            style={{ left: `${group.left}px`, width: `${group.width}px` }}
+          />
+        )}
+      </For>
+      <For each={menuItems}>
         {(menu) => {
           const active = (): boolean => {
             return Boolean(menu.mark && activeMarks().includes(menu.mark));
           };
 
           return (
-            <Tooltip
-              text={
-                <div class="flex flex-col items-center justify-center gap-0.5">
-                  <span>{menu.label}</span>
-                  <Shortcut
-                    class="opacity-50 font-mono text-[80%]"
-                    shortcut={`$mod+${menu.label[0]}`}
-                  />
-                </div>
-              }
-              side="bottom"
-              wrapperClass="snap-start"
-            >
-              <IconButton
-                variant={active() ? "solid" : "text"}
-                color={active() ? "primary" : "base"}
-                icon={menu.icon}
-                size="small"
-                iconProps={{ class: "h-4.5 w-4.5" }}
-                onClick={(event) => {
-                  const chain = props.editor.chain();
+            <div class="snap-start">
+              <Tooltip
+                content={
+                  <div class="flex flex-col items-center justify-center gap-0.5">
+                    <span>{menu.label}</span>
+                    {menu.shortcut && (
+                      <Shortcut class="opacity-50 font-mono text-[80%]" shortcut={menu.shortcut} />
+                    )}
+                  </div>
+                }
+                side="bottom"
+              >
+                <IconButton
+                  class={clsx(active() && "group/menu-item hover:bg-gradient-to-tr")}
+                  iconProps={{
+                    class: clsx(
+                      active() &&
+                        "bg-gradient-to-tr group-hover/menu-item:from-white group-hover/menu-item:to-white"
+                    )
+                  }}
+                  icon={menu.icon}
+                  variant="text"
+                  size="xs"
+                  onClick={(event) => {
+                    if (menu.onClick) {
+                      menu.onClick();
+                    } else if (menu.mark) {
+                      const chain = props.editor.chain();
 
-                  if (menu.onClick) {
-                    menu.onClick();
-                  } else if (menu.mark) {
-                    if (menu.mark !== "code") {
-                      chain.unsetCode();
+                      if (menu.mark !== "code") {
+                        chain.unsetCode();
+                      }
+
+                      chain.toggleMark(menu.mark).focus().run();
                     }
 
-                    chain.toggleMark(menu.mark).focus().run();
-                  }
-
-                  event.preventDefault();
-                  event.stopPropagation();
-                }}
-              />
-            </Tooltip>
+                    event.preventDefault();
+                    event.stopPropagation();
+                  }}
+                />
+              </Tooltip>
+            </div>
           );
         }}
       </For>
       <div class="w-px h-6 rounded-full bg-gray-200" />
       <Tooltip
-        text={
+        content={
           <div class="flex flex-col items-center justify-center gap-0.5">
             <span>More</span>
           </div>
@@ -173,11 +182,9 @@ const FormatMenu: Component<{
         <IconButton
           variant="text"
           icon="i-lucide:ellipsis"
-          size="small"
-          iconProps={{ class: "h-4.5 w-4.5" }}
+          size="xs"
           onClick={() => {
             const { selection, doc } = props.editor.state;
-
             let from = 0;
             let to = 0;
 
@@ -187,8 +194,8 @@ const FormatMenu: Component<{
 
               return false;
             });
-
             props.editor.chain().setBlockSelection({ from, to }).focus().run();
+            openMenu();
           }}
         />
       </Tooltip>
@@ -197,3 +204,4 @@ const FormatMenu: Component<{
 };
 
 export { FormatMenu };
+export type { BubbleMenuMode };

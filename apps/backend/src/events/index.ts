@@ -1,6 +1,11 @@
-import { Static, t } from "elysia";
 import { SubscribeToEvent, subscribeToEvent } from "#backend/lib/events";
-import { EntryEvent, entryEventType, emitEntryEvent, subscribeToEntryEvents } from "./entries";
+import { entryEventType } from "./entries";
+import { keyEventType } from "./keys";
+import { membershipEventType } from "./memberships";
+import { collectionEventType } from "./collections";
+import { roleEventType } from "./roles";
+import { workspaceStateEventType } from "./workspaces";
+import * as z from "zod";
 
 declare module "#backend/lib/events" {
   interface Events {
@@ -8,9 +13,23 @@ declare module "#backend/lib/events" {
   }
 }
 
-const workspaceEventType = t.Union([entryEventType]);
+const workspaceEventType = z.union([
+  entryEventType,
+  collectionEventType,
+  membershipEventType,
+  roleEventType,
+  keyEventType,
+  workspaceStateEventType
+]);
+const workspaceSettingsEventType = z.union([
+  membershipEventType,
+  roleEventType,
+  keyEventType,
+  workspaceStateEventType
+]);
 
-type WorkspaceEvent = Static<typeof workspaceEventType>;
+type WorkspaceEvent = z.infer<typeof workspaceEventType>;
+type WorkspaceSettingsEvent = z.infer<typeof workspaceSettingsEventType>;
 
 const subscribeToWorkspaceEvents: SubscribeToEvent<{
   [workspaceID: string]: WorkspaceEvent;
@@ -18,11 +37,11 @@ const subscribeToWorkspaceEvents: SubscribeToEvent<{
   return subscribeToEvent(`${workspaceID}:*`, callback, options);
 };
 
-export {
-  entryEventType,
-  workspaceEventType,
-  emitEntryEvent,
-  subscribeToEntryEvents,
-  subscribeToWorkspaceEvents
-};
-export type { WorkspaceEvent, EntryEvent };
+export { workspaceEventType, workspaceSettingsEventType, subscribeToWorkspaceEvents };
+export type { WorkspaceEvent, WorkspaceSettingsEvent };
+export * from "./entries";
+export * from "./collections";
+export * from "./memberships";
+export * from "./roles";
+export * from "./keys";
+export * from "./workspaces";

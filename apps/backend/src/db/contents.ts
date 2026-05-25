@@ -12,8 +12,11 @@ interface FullContent<ID extends string | ObjectId = string> extends Content<ID>
 
 const contentsDB = db.collection<UnderscoreID<FullContent<ObjectId>>>("contents");
 
-await contentsDB.createIndex({ contentPieceId: 1 });
-await contentsDB.createIndex({ workspaceId: 1 });
+await contentsDB.createIndex(
+  { entryID: 1, workspaceId: 1 },
+  { unique: true, name: "entryID_1_workspaceID_1" }
+);
+await contentsDB.createIndex({ workspaceID: 1 }, { name: "workspaceID_1" });
 
 export { contentsDB };
 export type { Content, FullContent };

@@ -1,5 +1,5 @@
+import { createListCollection, Select as ArkSelect } from "@ark-ui/solid";
 import clsx from "clsx";
-import { Button } from "./button";
 import { Dropdown } from "./dropdown";
 import { Option, OptionsList } from "./options-list";
 import { createSignal, createEffect, Component, JSX, Show, createMemo } from "solid-js";
@@ -18,6 +18,13 @@ interface SelectProps<O extends Option> {
 
 const Select = <O extends Option>(props: SelectProps<O>): JSX.Element => {
   const [opened, setOpened] = createSignal(props.opened || false);
+  const collection = createMemo(() =>
+    createListCollection<O>({
+      items: props.options,
+      itemToString: (option) => option.label,
+      itemToValue: (option) => option.value
+    })
+  );
   const selectedOption = createMemo(() => {
     return props.options.find((option) => option.value === props.value);
   });
@@ -33,30 +40,47 @@ const Select = <O extends Option>(props: SelectProps<O>): JSX.Element => {
     <Dropdown
       placement="bottom-end"
       class={props.class}
-      activatorButton={() => {
+      trigger={() => {
         return (
-          <Button
-            class="flex items-center pl-1 w-full"
-            size="small"
-            color="contrast"
-            variant="outlined"
+          <ArkSelect.Root
+            class="w-full"
+            collection={collection()}
+            value={props.value ? [props.value] : []}
+            open={opened()}
+            onOpenChange={(details) => setOpened(details.open)}
+            onValueChange={(details) => {
+              const value = details.value[0];
+
+              if (value) {
+                props.setValue?.(value);
+              }
+            }}
           >
-            <div class="flex-1 flex items-start">
-              <Show
-                when={selectedOption()}
-                fallback={
-                  <span class="text-gray-400 dark:text-gray-500 mx-1">
-                    {props.placeholder || "Select"}
-                  </span>
-                }
+            <ArkSelect.Trigger
+              class={clsx(
+                ":base: transition-all relative ease-out duration-200 font-medium !ring-0 !outline-none !focus:ring-0 !focus:outline-none cursor-pointer px-1.5 py-1 text-sm rounded-lg border shadow-md flex items-center pl-1 w-full bg-white dark:bg-gray-950 border-gray-200 dark:border-gray-700 shadow-gray-200 dark:shadow-gray-950 hover:bg-gray-100 dark:hover:bg-gray-800 hover:border-gray-200 dark:hover:border-gray-700"
+              )}
+            >
+              <ArkSelect.ValueText
+                class="flex-1 flex items-start text-start"
+                placeholder={props.placeholder || "Select"}
               >
-                <Show when={props.children} fallback={selectedOption()?.label}>
-                  <Dynamic component={props.children} {...selectedOption()!} selected />
+                <Show
+                  when={selectedOption()}
+                  fallback={
+                    <span class="text-gray-400 dark:text-gray-500 mx-1">
+                      {props.placeholder || "Select"}
+                    </span>
+                  }
+                >
+                  <Show when={props.children} fallback={selectedOption()?.label}>
+                    <Dynamic component={props.children} {...selectedOption()!} selected />
+                  </Show>
                 </Show>
-              </Show>
-            </div>
-            <div class="i-lucide:chevrons-up-down text-gray-400 dark:text-gray-500" />
-          </Button>
+              </ArkSelect.ValueText>
+              <ArkSelect.Indicator class="i-lucide:chevrons-up-down text-gray-400 dark:text-gray-500" />
+            </ArkSelect.Trigger>
+          </ArkSelect.Root>
         );
       }}
       cardProps={{

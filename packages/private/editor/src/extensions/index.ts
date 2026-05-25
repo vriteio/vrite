@@ -1,8 +1,9 @@
 export * from "./trailing-node";
-export * from "./separator";
 export * from "./placeholder";
 export * from "./unique-id";
 export * from "./block-selection";
+export * from "./drop-cursor";
 export { Collaboration } from "@tiptap/extension-collaboration";
-export { CollaborationCursor } from "@tiptap/extension-collaboration-cursor";
-export { History } from "@tiptap/extension-history";
+export { CollaborationCaret } from "@tiptap/extension-collaboration-caret";
+export { NodeRange } from "@tiptap/extension-node-range";
+export { Gapcursor } from "@tiptap/extension-gapcursor";

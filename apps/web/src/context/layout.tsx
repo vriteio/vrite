@@ -1,46 +1,71 @@
-import { createAsync, query } from "@solidjs/router";
 import { createContext, ParentComponent, createEffect, useContext, on } from "solid-js";
 import { createStore, SetStoreFunction } from "solid-js/store";
 import { getRequestEvent } from "solid-js/web";
-import { getCookie } from "vinxi/http";
+
+type ActivePanel = "explorer" | "help";
 
 interface Layout {
   leftSidePanelWidth: number;
-  rightSidePanelWidth: number;
+  activePanel: ActivePanel;
 }
 
-const loadLayout = query(async () => {
-  "use server";
+const defaultLayout: Layout = {
+  leftSidePanelWidth: 0,
+  activePanel: "explorer"
+};
+
+const readCookieValue = (cookieHeader: string, name: string) => {
+  const prefix = `${name}=`;
+
+  return cookieHeader
+    .split(";")
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(prefix))
+    ?.slice(prefix.length);
+};
+
+const readLayoutCookie = () => {
   const event = getRequestEvent();
-  const layoutCookie = event ? getCookie(event.nativeEvent, "layout") : "";
-  const layout: Layout = layoutCookie
-    ? JSON.parse(layoutCookie)
-    : {
-        leftSidePanelWidth: 0,
-        rightSidePanelWidth: 0
-      };
-  return layout;
-}, "layout");
+
+  if (event) {
+    const layoutCookie = readCookieValue(event.request.headers.get("cookie") || "", "layout");
+    const parsedLayout = layoutCookie ? JSON.parse(decodeURIComponent(layoutCookie)) : null;
+
+    return {
+      ...defaultLayout,
+      ...(parsedLayout ?? {})
+    } satisfies Layout;
+  }
+
+  if (typeof document === "undefined") {
+    return defaultLayout;
+  }
+
+  const layoutCookie = readCookieValue(document.cookie, "layout");
+  const parsedLayout = layoutCookie ? JSON.parse(decodeURIComponent(layoutCookie)) : null;
+
+  return {
+    ...defaultLayout,
+    ...(parsedLayout ?? {})
+  } satisfies Layout;
+};
 const LayoutContext = createContext<{
   layout: Layout;
   setLayout: SetStoreFunction<Layout>;
 }>();
 const LayoutProvider: ParentComponent = (props) => {
-  const initialLayout = createAsync(() => loadLayout(), { deferStream: true });
-  const [layout, setLayout] = createStore<Layout>({
-    leftSidePanelWidth: 0,
-    rightSidePanelWidth: 0
-  });
+  const [layout, setLayout] = createStore<Layout>(readLayoutCookie());
 
-  setLayout({ ...initialLayout() });
   createEffect(
     on(
-      [() => layout.leftSidePanelWidth, () => layout.rightSidePanelWidth],
-      ([leftSidePanelWidth, rightSidePanelWidth]) => {
-        document.cookie = `layout=${JSON.stringify({
-          leftSidePanelWidth,
-          rightSidePanelWidth
-        })}`;
+      [() => layout.leftSidePanelWidth, () => layout.activePanel],
+      ([leftSidePanelWidth, activePanel]) => {
+        document.cookie = `layout=${encodeURIComponent(
+          JSON.stringify({
+            leftSidePanelWidth,
+            activePanel
+          })
+        )}; path=/; SameSite=Lax`;
       },
       { defer: true }
     )
@@ -62,3 +87,4 @@ const useLayout = () => {
 };
 
 export { LayoutProvider, useLayout };
+export type { ActivePanel, Layout };

@@ -1,7 +1,51 @@
 import { Component } from "solid-js";
-import { IconButton, Button } from "#web/components/primitives";
+import { IconButton, Button } from "@andesine/components";
+import { authClient } from "#web/lib/client";
+import { action, useAction, useSearchParams, useSubmission } from "@solidjs/router";
+import { appendRedirectTo, normalizeRedirectTo, toCallbackURL } from "#web/lib/auth-redirect";
+import { useNotify } from "#web/context/notifications";
+
+const signUpWithSocialAction = action(
+  async (input: { provider: "google" | "github"; callbackURL: string }) => {
+    const { error } = await authClient.signIn.social({
+      provider: input.provider,
+      callbackURL: input.callbackURL
+    });
+
+    if (error) throw error;
+
+    return true;
+  }
+);
 
 const SignUpPage: Component = () => {
+  const [searchParams] = useSearchParams();
+  const notify = useNotify();
+  const signUpWithSocial = useAction(signUpWithSocialAction);
+  const signUpWithGoogleSubmission = useSubmission(signUpWithSocialAction, (input) => {
+    return input[0]?.provider === "google";
+  });
+  const signUpWithGitHubSubmission = useSubmission(signUpWithSocialAction, (input) => {
+    return input[0]?.provider === "github";
+  });
+  const redirectTo = () =>
+    normalizeRedirectTo(
+      Array.isArray(searchParams.redirectTo) ? searchParams.redirectTo[0] : searchParams.redirectTo
+    );
+  const signUpWithProvider = async (provider: "google" | "github") => {
+    try {
+      await signUpWithSocial({
+        provider,
+        callbackURL: toCallbackURL(redirectTo())
+      });
+    } catch (error) {
+      notify({
+        type: "error",
+        text: `${provider === "google" ? "Google" : "GitHub"} sign-up failed`
+      });
+    }
+  };
+
   return (
     <div class="flex flex-col gap-4">
       <div>
@@ -39,8 +83,15 @@ const SignUpPage: Component = () => {
           iconProps={{ class: "h-5.5 w-5.5" }}
           variant="outlined"
           color="contrast"
-          label="Continue with Google"
-          link={`${import.meta.env.PUBLIC_API_URL}/auth/google`}
+          label={
+            signUpWithGoogleSubmission.pending
+              ? "Continuing with Google..."
+              : "Continue with Google"
+          }
+          disabled={signUpWithGoogleSubmission.pending || signUpWithGitHubSubmission.pending}
+          onClick={() => {
+            void signUpWithProvider("google");
+          }}
         />
         <IconButton
           icon="i-mdi:github"
@@ -48,8 +99,15 @@ const SignUpPage: Component = () => {
           iconProps={{ class: "text-black dark:text-white" }}
           variant="outlined"
           color="contrast"
-          label="Continue with GitHub"
-          link={`${import.meta.env.PUBLIC_API_URL}/auth/github`}
+          label={
+            signUpWithGitHubSubmission.pending
+              ? "Continuing with GitHub..."
+              : "Continue with GitHub"
+          }
+          disabled={signUpWithGoogleSubmission.pending || signUpWithGitHubSubmission.pending}
+          onClick={() => {
+            void signUpWithProvider("github");
+          }}
         />
 
         <div class="flex items-center justify-start gap-2 text-gray-400 dark:text-gray-500 text-xs">
@@ -60,12 +118,12 @@ const SignUpPage: Component = () => {
         <div class="flex items-center justify-center gap-1">
           <IconButton
             label="Email"
-            class="w-full @hover:bg-gray-50"
+            class="w-full @hover:bg-gray-50 gap-1"
             color="contrast"
             variant="outlined"
-            iconProps={{ class: "h-5.5 w-5.5 text-gray-500 dark:text-gray-400" }}
+            iconProps={{ class: "h-5.5 w-5.5 text-gray-400 dark:text-gray-500" }}
             icon="i-fluent:mail-16-filled"
-            link="/auth/email"
+            link={appendRedirectTo("/auth/email?mode=sign-up", redirectTo())}
           />
         </div>
       </div>
@@ -77,7 +135,7 @@ const SignUpPage: Component = () => {
           text="primary"
           color="primary"
           size="small"
-          link="/auth/sign-in"
+          link={appendRedirectTo("/auth/sign-in", redirectTo())}
           label={() => <span>Sign in</span>}
           iconProps={{ class: "w-4 h-4" }}
           hover="underline"

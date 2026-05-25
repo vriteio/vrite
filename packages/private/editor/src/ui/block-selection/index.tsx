@@ -1,11 +1,11 @@
 import { Ref } from "@andesine/components";
-import { SolidEditor } from "@andesine/tiptap-solid";
+import { Editor } from "@tiptap/core";
 import { nanoid } from "nanoid";
 import { createSignal, createEffect, onCleanup, Show, ParentComponent } from "solid-js";
 import { Portal } from "solid-js/web";
 
 interface BlockSelectionProps {
-  editor: SolidEditor;
+  editor: Editor | null;
   scrollableContainerRef: Ref<HTMLElement | null>[0];
 }
 interface AutoScrollOptions {
@@ -58,10 +58,11 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
     return 0;
   };
   const updateSelection = (position: { clientX: number; clientY: number }) => {
+    const editor = props.editor;
     const container = props.scrollableContainerRef();
     const containerRect = scrollableContainerRect();
 
-    if (!pointerDown() || !container || !containerRect) return;
+    if (!editor || !pointerDown() || !container || !containerRect) return;
 
     const marginY = 16;
     const localX = Math.max(
@@ -95,7 +96,7 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
     if (!newBoxSelection.active) return;
 
     const selectedIDs: string[] = [];
-    const commandChain = props.editor.chain();
+    const commandChain = editor.chain();
 
     Object.entries(nodes()).forEach(([id, { rect }]) => {
       if (!rect) return;
@@ -121,7 +122,7 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
       commandChain.setBlockSelection({ from, to });
     } else {
       const { inside = 0 } =
-        props.editor.view.posAtCoords({
+        editor.view.posAtCoords({
           left: newBoxSelection.x,
           top: newBoxSelection.y
         }) || {};
@@ -159,8 +160,15 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
     setAutoScrollHandle("");
   };
   const onPointerDown = (event: PointerEvent) => {
+    const editor = props.editor;
+
+    if (event.target instanceof HTMLElement && event.target.closest("[data-menu]")) return;
+    if (event.target instanceof HTMLElement && event.target.closest("[data-drag-handle]")) return;
+
+    if (!editor) return;
+
     const container = props.scrollableContainerRef();
-    const pos = props.editor.view.posAtCoords({
+    const pos = editor.view.posAtCoords({
       left: event.clientX,
       top: event.clientY
     });
@@ -204,8 +212,8 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
       width: 0,
       height: 0
     });
-    props.editor.state.doc.descendants((node, pos) => {
-      const dom = props.editor.view.nodeDOM(pos);
+    editor.state.doc.descendants((node, pos) => {
+      const dom = editor.view.nodeDOM(pos);
 
       if (dom instanceof HTMLElement) {
         const rect = dom.getBoundingClientRect();
@@ -225,7 +233,7 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
       return false;
     });
     setNodes(boundingBoxes);
-    props.editor.chain().setTextSelection(0).run();
+    editor.chain().setTextSelection(0).run();
   };
   const onPointerMove = (event: PointerEvent) => {
     const container = props.scrollableContainerRef();
@@ -261,11 +269,13 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
     updateSelection(event);
   };
   const onPointerEnd = () => {
+    const editor = props.editor;
+
     setPointerDown(false);
     stopAutoScroll();
     document.documentElement.classList.remove("select-none", "cursor-crosshair");
 
-    if (boxSelection().active) {
+    if (boxSelection().active && editor) {
       setBoxSelection({
         active: false,
         x: 0,
@@ -275,7 +285,7 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
         currentX: 0,
         currentY: 0
       });
-      props.editor.chain().focus(undefined, { scrollIntoView: false }).run();
+      editor.chain().focus(undefined, { scrollIntoView: false }).run();
     }
   };
 

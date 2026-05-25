@@ -6,3 +6,4 @@ const Editor = clientOnly(async () => ({
 }));
 
 export { Editor };
+export type { EditorProps, EditorProvider, EditorProviderSetup } from "./client";

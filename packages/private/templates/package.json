@@ -8,12 +8,15 @@
     "dev:email": "email dev --port 4000"
   },
   "devDependencies": {
-    "react-email": "4.0.16"
+    "@react-email/preview-server": "5.2.10",
+    "@types/node": "^25.6.0",
+    "@types/react": "^19.2.14",
+    "react-email": "6.0.0"
   },
   "dependencies": {
-    "@react-email/components": "0.1.0",
-    "@react-email/render": "1.1.2",
-    "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "@react-email/components": "1.0.12",
+    "@react-email/render": "2.0.7",
+    "react": "19.2.5",
+    "react-dom": "19.2.5"
   }
 }

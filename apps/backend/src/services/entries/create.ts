@@ -1,7 +1,8 @@
-import { contentsDB, entriesDB, Entry, entryID, FullContent, FullEntry } from "#backend/db";
+import { contentsDB, entriesDB, Entry, toEntryID, FullContent, FullEntry } from "#backend/db";
 import { toObjectID, UnderscoreID } from "#backend/lib/mongo";
-import { ObjectId } from "mongodb";
+import { toCollectionID } from "#backend/db/collections";
 import { LexoRank } from "lexorank";
+import { ObjectId } from "mongodb";
 
 const createEntry = async (
   input: Partial<Entry> & {
@@ -12,7 +13,8 @@ const createEntry = async (
     _id: new ObjectId(),
     name: input.name || "",
     order: `${LexoRank.min()}`,
-    workspaceID: toObjectID(input.workspaceID)
+    workspaceID: toObjectID(input.workspaceID),
+    collectionID: input.collectionID ? toObjectID(input.collectionID) : undefined
   };
   const content: UnderscoreID<FullContent<ObjectId>> = {
     _id: new ObjectId(),
@@ -32,7 +34,8 @@ const createEntry = async (
 
   return {
     ...entry,
-    id: entryID(entry._id)
+    collectionID: entry.collectionID ? toCollectionID(entry.collectionID) : undefined,
+    id: toEntryID(entry._id)
   };
 };
 

@@ -52,7 +52,6 @@ const TrailingNode = Extension.create<TrailingNodeOptions>({
             }
 
             const lastNode = tr.doc.lastChild;
-            console.log(lastNode);
 
             return lastNode ? !nodeEqualsType(lastNode, disabledNodes) : false;
           }

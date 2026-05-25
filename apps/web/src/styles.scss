@@ -28,8 +28,8 @@
 }
 
 :root {
-  --color-primary: #ef4444;
-  --color-secondary: #ffa166;
+  --color-primary: #ff3617;
+  --color-secondary: #f88f52;
 }
 
 // Structure
@@ -98,4 +98,9 @@ body {
 }
 .scrollbar-sm::-webkit-scrollbar-track {
   @apply my-1;
+}
+
+// ARK UI Styles; TODO: PUT SOMEWHERE ELSE
+[hidden] {
+  @apply hidden!;
 }

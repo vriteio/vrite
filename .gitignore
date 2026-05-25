@@ -26,6 +26,8 @@ coverage
 out/
 build
 dist
+.output
+.vinxi
 
 
 # Debug

@@ -5,17 +5,11 @@ import {
   Show,
   useContext,
   createContext,
-  For,
-  createEffect
+  For
 } from "solid-js";
 import clsx from "clsx";
-import { createRef } from "#web/lib/ref";
-import { Card, Button, Loader } from "#web/components/primitives";
-import { createListTransition } from "@solid-primitives/transition-group";
-import { resolveElements } from "@solid-primitives/refs";
-import { animate } from "motion";
+import { Card, Button, Spinner } from "@andesine/components";
 
-// TODO: Fix broken animations
 interface NotificationData {
   type: "success" | "error" | "loading";
   text: string;
@@ -41,7 +35,10 @@ const Notification: Component<NotificationProps> = (props) => {
           props.showContent === false && "opacity-0"
         )}
       >
-        <Show when={props.type !== "loading"} fallback={<Loader class="h-6 w-6" color="primary" />}>
+        <Show
+          when={props.type !== "loading"}
+          fallback={<Spinner class="h-6 w-6" color="primary" />}
+        >
           <div
             class={clsx(
               "h-6 w-6",
@@ -67,98 +64,6 @@ const Notification: Component<NotificationProps> = (props) => {
 const NotificationsContext = createContext<NotificationsContextData>();
 const NotificationsProvider: ParentComponent = (props) => {
   const [notifications, setNotifications] = createSignal<NotificationData[]>([]);
-  const [expanded, setExpanded] = createSignal(false);
-  const [timeoutHandleRef, setTimeoutHandleRef] = createRef<number>(0);
-  const resolved = resolveElements(() => (
-    <For each={notifications()}>
-      {(notification, index) => {
-        return (
-          <div
-            class="absolute right-0 w-full"
-            data-index={index()}
-            style={{
-              "z-index": `${-index()}`
-            }}
-          >
-            <Notification
-              showContent={index() === 0}
-              onDismiss={() =>
-                setNotifications((notifications) => {
-                  return notifications.filter((_, filteredIndex) => {
-                    return filteredIndex !== index();
-                  });
-                })
-              }
-              {...notification}
-            />
-          </div>
-        );
-      }}
-    </For>
-  ));
-  const transition = createListTransition(resolved.toArray, {
-    appear: true,
-    onChange({ added, unchanged, removed, finishRemoved }) {
-      added.forEach((element) => {
-        const index = () => Number(element.getAttribute("data-index"));
-
-        queueMicrotask(() => {
-          animate(
-            element,
-            { opacity: [0, 1 - index() * 0.1], y: [40, index() * 8] },
-            { duration: 0.25, delay: 0.05 }
-          );
-        });
-      });
-      unchanged.forEach((element) => {
-        const index = () => Number(element.getAttribute("data-index"));
-
-        queueMicrotask(() => {
-          if (index() > 2) {
-            animate(element, { opacity: 0 }, { duration: 0.15 });
-          } else {
-            animate(
-              element,
-              { opacity: 1 - index() * 0.05, y: index() * 8, scale: 1 - index() * 0.05 },
-              { duration: 0.15 }
-            );
-          }
-        });
-      });
-      removed.forEach((element) => {
-        animate(
-          element,
-          { opacity: 0, y: -20 },
-          { duration: 0.25, opacity: { duration: 0.15 } }
-        ).then(() => finishRemoved([element]));
-      });
-    }
-  });
-
-  createEffect(() => {
-    if (expanded()) {
-      const elements = resolved.toArray();
-      let currentY = 0;
-      elements.forEach((element) => {
-        const index = () => Number(element.getAttribute("data-index"));
-
-        animate(element, { opacity: 1, y: currentY, scale: 1 }, { duration: 0.15 });
-        currentY -= element.getBoundingClientRect().height + 8;
-      });
-    } else {
-      const elements = resolved.toArray();
-
-      elements.forEach((element) => {
-        const index = () => Number(element.getAttribute("data-index"));
-
-        animate(
-          element,
-          { opacity: 1 - index() * 0.05, y: index() * 8, scale: 1 - index() * 0.05 },
-          { duration: 0.15, ease: "easeOut" }
-        );
-      });
-    }
-  });
 
   return (
     <NotificationsContext.Provider
@@ -175,36 +80,48 @@ const NotificationsProvider: ParentComponent = (props) => {
               });
             });
           } else {
-            setTimeoutHandleRef(
-              window.setTimeout(() => {
-                setNotifications((notifications) => {
-                  return notifications.filter(
-                    (filteredNotification) => filteredNotification !== notification
-                  );
-                });
-              }, 3000)
-            );
+            window.setTimeout(() => {
+              setNotifications((notifications) => {
+                return notifications.filter(
+                  (filteredNotification) => filteredNotification !== notification
+                );
+              });
+            }, 3000);
           }
         }
       }}
     >
       {props.children}
-      <div
-        class="fixed w-92 max-w-full flex flex-col-reverse z-60 bottom-[calc(1.5rem+env(safe-area-inset-bottom,0px))] left-6 md:left-unset md:bottom-6 md:right-6 w-[calc(100%-2rem)]"
-        onPointerEnter={() => {
-          setExpanded(true);
-        }}
-        onPointerLeave={() => {
-          setExpanded(false);
-        }}
-      >
-        {transition()}
+      <div class="fixed w-92 max-w-full flex flex-col-reverse gap-2 z-60 bottom-[calc(1.5rem+env(safe-area-inset-bottom,0px))] left-6 md:left-unset md:bottom-6 md:right-6 w-[calc(100%-2rem)]">
+        <For each={notifications()}>
+          {(notification, index) => {
+            return (
+              <div
+                class="transition-all duration-200"
+                style={{
+                  opacity: `${Math.max(0.55, 1 - index() * 0.12)}`,
+                  transform: `scale(${Math.max(0.92, 1 - index() * 0.04)})`
+                }}
+              >
+                <Notification
+                  showContent={index() === 0}
+                  onDismiss={() =>
+                    setNotifications((notifications) => {
+                      return notifications.filter((_, filteredIndex) => filteredIndex !== index());
+                    })
+                  }
+                  {...notification}
+                />
+              </div>
+            );
+          }}
+        </For>
       </div>
     </NotificationsContext.Provider>
   );
 };
 const useNotify = (): NotificationsContextData["notify"] => {
-  return useContext(NotificationsContext)!.notify;
+  return useContext(NotificationsContext)?.notify ?? (() => {});
 };
 
 export { NotificationsProvider, useNotify };

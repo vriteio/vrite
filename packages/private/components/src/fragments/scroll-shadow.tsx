@@ -15,6 +15,7 @@ interface ScrollShadowProps {
   direction?: "horizontal" | "vertical";
   color?: "contrast" | "base";
   offset?: string | { top?: string; right?: string; bottom?: string; left?: string };
+  show?: boolean | { top?: boolean; right?: boolean; bottom?: boolean; left?: boolean };
   onScrollEnd?(): void;
 }
 
@@ -35,9 +36,6 @@ const createScrollShadowController = (): ScrollShadowController => {
 const ScrollShadow: Component<ScrollShadowProps> = (props) => {
   const controller = props.controller || createScrollShadowController();
   const [scrollState, setScrollState] = createSignal<"start" | "mid" | "end" | "none">("none");
-  const resizeObserver = new ResizeObserver(() => {
-    controller.processScrollState();
-  });
   const onScrollEnd = debounce(() => props.onScrollEnd?.(), 250);
   const processScrollState = (element: HTMLElement): void => {
     onScrollEnd.clear();
@@ -97,6 +95,9 @@ const ScrollShadow: Component<ScrollShadowProps> = (props) => {
   });
   onMount(() => {
     const scrollableContainer = props.scrollableContainerRef();
+    const resizeObserver = new ResizeObserver(() => {
+      controller.processScrollState();
+    });
 
     if (scrollableContainer) {
       scrollableContainer.addEventListener("scroll", () => {
@@ -105,11 +106,12 @@ const ScrollShadow: Component<ScrollShadowProps> = (props) => {
       resizeObserver.observe(scrollableContainer);
       controller.processScrollState();
     }
-  });
-  window.addEventListener("resize", handleWindowResize);
-  onCleanup(() => {
-    window.removeEventListener("resize", handleWindowResize);
-    resizeObserver.disconnect();
+
+    window.addEventListener("resize", handleWindowResize);
+    onCleanup(() => {
+      window.removeEventListener("resize", handleWindowResize);
+      resizeObserver.disconnect();
+    });
   });
 
   return (
@@ -121,7 +123,10 @@ const ScrollShadow: Component<ScrollShadowProps> = (props) => {
           props.direction !== "horizontal" && "h-16 w-full bg-gradient-to-b",
           props.color === "contrast" && "from-gray-100 dark:from-gray-800",
           props.color !== "contrast" && "from-gray-50 dark:from-gray-900",
-          ["start", "none"].includes(scrollState()) && "opacity-0"
+          ["start", "none"].includes(scrollState()) && "opacity-0",
+          (props.show === false ||
+            (typeof props.show === "object" && props.show[firstAnchor()] === false)) &&
+            "hidden!"
         )}
         style={{
           [firstAnchor()]: firstOffset(),
@@ -135,7 +140,10 @@ const ScrollShadow: Component<ScrollShadowProps> = (props) => {
           props.direction !== "horizontal" && "h-16 w-full bg-gradient-to-t",
           props.color === "contrast" && "from-gray-100 dark:from-gray-800",
           props.color !== "contrast" && "from-gray-50 dark:from-gray-900",
-          ["end", "none"].includes(scrollState()) && "opacity-0"
+          ["end", "none"].includes(scrollState()) && "opacity-0",
+          (props.show === false ||
+            (typeof props.show === "object" && props.show[secondAnchor()] === false)) &&
+            "hidden!"
         )}
         style={{
           [secondAnchor()]: secondOffset(),

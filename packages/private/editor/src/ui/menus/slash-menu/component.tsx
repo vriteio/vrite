@@ -1,15 +1,12 @@
-import { SolidEditor } from "@andesine/tiptap-solid";
 import { SuggestionKeyDownProps, SuggestionProps } from "@tiptap/suggestion";
 import { Component, createEffect, createSignal, For, on, onMount, Show } from "solid-js";
-import { Range } from "@tiptap/core";
+import { Editor, Range } from "@tiptap/core";
 import clsx from "clsx";
-import { scrollIntoView } from "seamless-scroll-polyfill";
 import {
   Button,
   Card,
   createRef,
   Fragment,
-  Loader,
   Ref,
   ScrollShadow,
   Shortcut,
@@ -24,9 +21,17 @@ interface SlashMenuItem {
   markdown?: string;
   shortcut?: string;
   ref: Ref<HTMLElement | null>;
-  command(params: { editor: SolidEditor; range: Range }): any | Promise<any>;
+  command(params: { editor: Editor; range: Range }): any | Promise<any>;
 }
-interface SlashMenuState extends SuggestionProps<SlashMenuItem> {
+interface SlashMenuState {
+  readonly items: SlashMenuItem[];
+  readonly range: { from: number; to: number };
+  readonly query: string;
+  readonly editor: any;
+  readonly clientRect: SuggestionProps<SlashMenuItem>["clientRect"];
+  readonly decorationNode: SuggestionProps<SlashMenuItem>["decorationNode"];
+  readonly text: string;
+  command(item: SlashMenuItem): void;
   close(): void;
   onKeyDown?(props: SuggestionKeyDownProps): boolean;
   setOnKeyDown(callback: (props: SuggestionKeyDownProps) => boolean): void;
@@ -35,113 +40,51 @@ interface SlashMenuProps {
   state: SlashMenuState;
 }
 
-const BlockMenu: Component<{ items: SlashMenuItem[]; editor: SolidEditor; close(): void }> = (
-  props
-) => {
-  const [loading, setLoading] = createSignal(-1);
-  const selectItem = (index: number): void => {
-    const item = props.items[index];
-
-    if (item) {
-      const commandResult = item.command({
-        editor: props.editor,
-        range: props.editor.state.selection
-      });
-
-      if (commandResult instanceof Promise) {
-        setLoading(index);
-        commandResult.finally(() => {
-          setLoading(-1);
-          props.close();
-        });
-      } else {
-        props.close();
-      }
-    }
-  };
-
-  return (
-    <>
-      <For
-        each={props.items}
-        fallback={
-          <Button
-            variant="text"
-            text="soft"
-            class="justify-start text-start w-[calc(100%-0.5rem)]"
-            disabled
-          >
-            No results
-          </Button>
-        }
-      >
-        {(menuItem, index) => {
-          return (
-            <>
-              <Show when={menuItem.group !== props.items[index() - 1]?.group}>
-                <div class="px-2 font-semibold">{menuItem.group}</div>
-              </Show>
-              <Button
-                loading={loading() === index()}
-                ref={menuItem.ref[1]}
-                onClick={() => selectItem(index())}
-                variant="text"
-                class="justify-start w-[calc(100%-0.5rem)] flex items-center p-1"
-              >
-                <Show
-                  when={loading() !== index()}
-                  fallback={
-                    <div class="flex justify-center items-center h-6 w-6">
-                      <Loader class="h-5 w-5" />
-                    </div>
-                  }
-                >
-                  <div class={clsx("h-6 w-6", menuItem.icon)} />
-                </Show>
-                <span class="pl-1">{menuItem.label}</span>
-              </Button>
-            </>
-          );
-        }}
-      </For>
-    </>
-  );
-};
+const SECTION_HEADING_HEIGHT = 24;
+const ITEM_HEIGHT = 28;
+const MENU_PADDING_TOP = 4;
 const SlashMenu: Component<SlashMenuProps> = (props) => {
   const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
   const [selectedIndex, setSelectedIndex] = createSignal(0);
-  const [loading, setLoading] = createSignal(-1);
   const [blockHoverSelect, setBlockHoverSelect] = createSignal(false);
   const selectItem = (index: number): void => {
     const item = props.state.items[index];
-    const editor = props.state.editor as SolidEditor;
 
     if (item) {
-      const commandResult = item.command({
-        editor,
-        range: props.state.range
-      });
+      props.state.command(item);
+    }
+  };
+  const getItemPosition = (items: SlashMenuItem[], index: number): number => {
+    let position = MENU_PADDING_TOP;
 
-      if (commandResult instanceof Promise) {
-        setLoading(index);
-        commandResult.finally(() => {
-          setLoading(-1);
-          props.state.close();
-        });
-      } else {
-        props.state.close();
+    for (let i = 0; i < index; i++) {
+      position += ITEM_HEIGHT;
+
+      if (i === 0 || items[i].group !== items[i - 1].group) {
+        position += SECTION_HEADING_HEIGHT;
       }
     }
+
+    return position;
   };
   const scrollToSelectedItem = (): void => {
     const item = props.state.items[selectedIndex()];
 
     if (item) {
-      const [elementRef] = item.ref;
-      const element = elementRef();
+      const scrollableContainer = scrollableContainerRef();
 
-      if (element) {
-        scrollIntoView(element, { behavior: "smooth", block: "center" }, { duration: 150 });
+      if (scrollableContainer) {
+        const itemIndex = selectedIndex();
+        const itemTop = getItemPosition(props.state.items, itemIndex);
+        const newTop = itemTop - scrollableContainer.clientHeight / 2 + ITEM_HEIGHT / 2;
+        const height = scrollableContainer.clientHeight;
+        const top = scrollableContainer.scrollTop;
+        const distance = Math.abs(top - newTop);
+
+        scrollableContainer.scrollTo({
+          behavior: distance > height / 2 ? "smooth" : "auto",
+          top: newTop
+        });
       }
     }
   };
@@ -188,7 +131,7 @@ const SlashMenu: Component<SlashMenuProps> = (props) => {
   });
   createEffect(
     on(
-      () => props.state,
+      () => props.state.items,
       () => {
         setSelectedIndex(0);
       }
@@ -198,7 +141,7 @@ const SlashMenu: Component<SlashMenuProps> = (props) => {
   return (
     <Card
       class={clsx(
-        "md:w-64 m-0 overflow-hidden transition duration-200 transform origin-top-left p-2 pt-1 relative"
+        "md:w-64 m-0 overflow-hidden transition duration-200 transform origin-top-left p-2 pt-1 relative bg-white"
       )}
       shade
     >
@@ -238,7 +181,7 @@ const SlashMenu: Component<SlashMenuProps> = (props) => {
                     wrapperClass:
                       props.state.items.length > 11 ? "w-[calc(100%-0.25rem)]" : "w-full",
                     enabled: !blockHoverSelect(),
-                    text: <Shortcut shortcut={menuItem.shortcut || ""} />,
+                    content: <Shortcut shortcut={menuItem.shortcut || ""} />,
                     fixed: true,
                     side: "right"
                   })}
@@ -267,24 +210,15 @@ const SlashMenu: Component<SlashMenuProps> = (props) => {
                         : ""
                     )}
                   >
-                    <Show
-                      when={loading() !== index()}
-                      fallback={
-                        <div class="flex justify-center items-center h-6 w-6">
-                          <Loader class="h-5 w-5" />
-                        </div>
-                      }
-                    >
-                      <div class="flex justify-center items-center h-6 w-6">
-                        <div
-                          class={clsx(
-                            "h-5 w-5",
-                            selectedIndex() === index() ? "bg-gray-500" : "bg-gray-400",
-                            menuItem.icon
-                          )}
-                        />
-                      </div>
-                    </Show>
+                    <div class="flex justify-center items-center h-6 w-6">
+                      <div
+                        class={clsx(
+                          "h-5 w-5",
+                          selectedIndex() === index() ? "bg-gray-500" : "bg-gray-400",
+                          menuItem.icon
+                        )}
+                      />
+                    </div>
                     <div class="flex flex-col pl-1 flex-1 text-left">
                       <span>{menuItem.label}</span>
                     </div>
@@ -300,5 +234,5 @@ const SlashMenu: Component<SlashMenuProps> = (props) => {
   );
 };
 
-export { SlashMenu, BlockMenu };
+export { SlashMenu };
 export type { SlashMenuState, SlashMenuItem };

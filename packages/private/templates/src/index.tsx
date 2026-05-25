@@ -1,16 +1,35 @@
-import { render } from "@react-email/render";
-import { VerifyEmail, type VerifyEmailProps } from "../emails/verify-email";
-import type React from "react";
+/** @jsxImportSource react */
 
-type EmailTemplates = Record<"verify-email", { component: React.FC; subject: string }>;
+import { render } from "@react-email/render";
+import { VerificationOTP, type VerificationOTPProps } from "../emails/verification-otp";
+import { WorkspaceInvite, type WorkspaceInviteProps } from "../emails/workspace-invite";
+import React from "react";
+
 type EmailTemplateProps = {
-  "verify-email": VerifyEmailProps;
+  "verification-otp": VerificationOTPProps;
+  "workspace-invite": WorkspaceInviteProps;
+};
+type EmailTemplates = {
+  [E in keyof EmailTemplateProps]: {
+    component: React.FC<EmailTemplateProps[E]>;
+    subject: (props: EmailTemplateProps[E]) => string;
+  };
 };
 
 const emails: EmailTemplates = {
-  "verify-email": {
-    component: VerifyEmail,
-    subject: "Verify email | Andesine"
+  "verification-otp": {
+    component: VerificationOTP,
+    subject: (props) => {
+      if (props.type === "sign-in") {
+        return "Your sign-in code | Andesine";
+      }
+
+      return "Verify your email | Andesine";
+    }
+  },
+  "workspace-invite": {
+    component: WorkspaceInvite,
+    subject: () => "You've been invited to a workspace | Andesine"
   }
 };
 const getEmailContent = <E extends keyof EmailTemplates>(
@@ -22,8 +41,11 @@ const getEmailContent = <E extends keyof EmailTemplates>(
 
   return render(<Component {...props} />, { plainText: options?.plainText });
 };
-const getEmailSubject = <E extends keyof EmailTemplates>(template: E): string => {
-  return emails[template].subject;
+const getEmailSubject = <E extends keyof EmailTemplates>(
+  template: E,
+  props: EmailTemplateProps[E]
+): string => {
+  return emails[template].subject(props);
 };
 
 export { getEmailContent, getEmailSubject };

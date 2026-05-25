@@ -11,7 +11,7 @@ const ShortcutsHandler = () => {
       Object.fromEntries(
         Object.entries(shortcuts()).map(([key, handler]) => [
           key,
-          (event) => {
+          (event: KeyboardEvent) => {
             const handled = handler(event);
 
             if (handled) {

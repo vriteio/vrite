@@ -36,7 +36,7 @@ const validateEmail = async (email: string): Promise<boolean> => {
 
     if (result.status === 429) {
       // Too many requests
-      return true;
+      return false;
     }
 
     return false;

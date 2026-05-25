@@ -27,7 +27,32 @@ const subscribeToEvent: SubscribeToEvent<Events> = (event, callback, { unsubscri
   } else {
     eventListeners[event] = [callback];
     subscriberRedis.pSubscribe(event, (payload) => {
-      callback(JSON.parse(payload));
+      let parsedPayload: Events[typeof event];
+
+      try {
+        parsedPayload = JSON.parse(payload);
+      } catch (error) {
+        console.error("Failed to parse event payload", {
+          event,
+          payload,
+          error
+        });
+        return;
+      }
+
+      const callbacks = eventListeners[event] || [];
+
+      for (const listener of callbacks) {
+        try {
+          listener(parsedPayload);
+        } catch (error) {
+          console.error("Event listener failed", {
+            event,
+            error
+          });
+          continue;
+        }
+      }
     });
   }
   const unsubscribe = () => {
@@ -58,5 +83,52 @@ const unsubscribeFromEventByKey = (key: string) => {
   }
 };
 
-export { emitEvent, subscribeToEvent, unsubscribeFromEventByKey };
+async function* viaIterator<
+  Events extends Record<string, Record<string, any>>,
+  E extends Extract<keyof Events, string>
+>(subscribe: SubscribeToEvent<Events>, event: E, options?: { signal?: AbortSignal }) {
+  const queue: Array<Events[E]> = [];
+
+  let resolveNext: (() => void) | null = null;
+  let done = false;
+
+  const unsubscribe = subscribe(event, (payload) => {
+    if (done) return;
+
+    queue.push(payload);
+
+    if (resolveNext) {
+      resolveNext();
+      resolveNext = null;
+    }
+  });
+
+  if (options?.signal) {
+    options.signal.addEventListener("abort", () => {
+      done = true;
+      if (resolveNext) {
+        resolveNext();
+      } else {
+        unsubscribe();
+      }
+    });
+  }
+
+  try {
+    while (!done) {
+      if (queue.length > 0) {
+        yield queue.shift()!;
+      } else {
+        await new Promise<void>((resolve) => {
+          resolveNext = resolve;
+        });
+      }
+    }
+  } finally {
+    done = true;
+    unsubscribe();
+  }
+}
+
+export { emitEvent, subscribeToEvent, unsubscribeFromEventByKey, viaIterator };
 export type { Events, EmitEvent, SubscribeToEvent };

@@ -1,154 +1,152 @@
 import { entryType } from "#backend/db";
 import { emitEntryEvent } from "#backend/events";
+import { authorized } from "#backend/lib/middleware";
 import { objectID } from "#backend/lib/mongo";
-import { sessionPlugin } from "#backend/plugins";
+import { base } from "#backend/lib/orpc";
 import { Entries } from "#backend/services/entries";
-import Elysia, { t } from "elysia";
+import * as z from "zod";
 
-const entriesRouterPlugin = new Elysia({
-  prefix: "/entries"
-})
-  .use(sessionPlugin)
-  .post(
-    "/",
-    async ({ body, session }) => {
+const entriesRouter = base.prefix("/entries").router({
+  create: base
+    .route({ method: "POST", path: "/" })
+    .meta({
+      required: {
+        session: ["content"],
+        key: ["entries"]
+      }
+    })
+    .use(authorized)
+    .input(entryType.omit({ id: true, order: true }).partial())
+    .output(entryType)
+    .handler(async ({ context, input }) => {
       const newEntry = await Entries.create({
-        ...body,
-        workspaceID: session.workspaceID
+        ...input,
+        workspaceID: context.auth.workspaceID
       });
 
-      emitEntryEvent(session.workspaceID, {
+      emitEntryEvent(context.auth.workspaceID, {
         action: "entry:create",
-        userID: session.userID,
+        memberID: context.auth.session?.memberID,
         data: newEntry
       });
 
       return newEntry;
-    },
-    {
-      authorize: true,
-      body: t.Partial(t.Omit(entryType, ["id", "order"])),
-      response: entryType
-    }
-  )
-  .delete(
-    "/",
-    async ({ session, query }) => {
+    }),
+  delete: base
+    .route({ method: "DELETE", path: "/" })
+    .meta({
+      required: {
+        session: ["content"],
+        key: ["entries"]
+      }
+    })
+    .use(authorized)
+    .input(
+      z.object({
+        ids: z.array(objectID()).describe("Comma-separated IDs of the entries to be deleted")
+      })
+    )
+    .output(z.void())
+    .handler(async ({ context, input }) => {
       await Entries.delete({
-        workspaceID: session.workspaceID,
-        ids: query.ids
+        workspaceID: context.auth.workspaceID,
+        ids: input.ids
       });
 
-      emitEntryEvent(session.workspaceID, {
+      emitEntryEvent(context.auth.workspaceID, {
         action: "entry:delete",
-        data: { ids: query.ids },
-        userID: session.userID
+        data: { ids: input.ids },
+        memberID: context.auth.session?.memberID
       });
-    },
-    {
-      authorize: true,
-      query: t.Object({
-        ids: t.Array(
-          objectID({
-            description: "Comma-separated IDs of the entries to be deleted"
-          })
-        )
-      }),
-      response: t.Void()
-    }
-  )
-  .put(
-    "/:id",
-    async ({ session, params, body }) => {
+    }),
+  update: base
+    .route({ method: "PUT", path: "/:id" })
+    .meta({
+      required: {
+        session: ["content"],
+        key: ["entries"]
+      }
+    })
+    .use(authorized)
+    .input(
+      z.object({
+        id: objectID().describe("ID of the entry to be updated"),
+        name: z.string().optional().describe("New name of the entry")
+      })
+    )
+    .output(z.void())
+    .handler(async ({ context, input }) => {
       await Entries.update({
-        id: params.id,
-        workspaceID: session.workspaceID,
-        ...body
+        id: input.id,
+        workspaceID: context.auth.workspaceID,
+        name: input.name
       });
 
-      emitEntryEvent(session.workspaceID, {
+      emitEntryEvent(context.auth.workspaceID, {
         action: "entry:update",
-        data: { id: params.id, ...body },
-        userID: session.userID
+        data: { id: input.id, name: input.name },
+        memberID: context.auth.session?.memberID
       });
-    },
-    {
-      authorize: true,
-      params: t.Object({
-        id: objectID({ description: "ID of the entry to be updated" })
-      }),
-      body: t.Partial(t.Pick(entryType, ["name"])),
-      response: t.Void()
-    }
-  )
-  .put(
-    "/move/:id",
-    async ({ session, params, body }) => {
+    }),
+  move: base
+    .meta({
+      required: {
+        session: ["content"]
+      }
+    })
+    .input(
+      z.object({
+        id: objectID().describe("ID of the entry to be moved"),
+        order: z.string().describe("New LexoRank order of the entry"),
+        collectionID: objectID().optional().nullable().describe("ID of the new parent collection")
+      })
+    )
+    .use(authorized)
+    .output(z.void())
+    .handler(async ({ context, input }) => {
       await Entries.move({
-        id: params.id,
-        workspaceID: session.workspaceID,
-        ...body
+        id: input.id,
+        workspaceID: context.auth.workspaceID,
+        order: input.order,
+        collectionID: input.collectionID
       });
-
-      emitEntryEvent(session.workspaceID, {
+      emitEntryEvent(context.auth.workspaceID, {
         action: "entry:move",
-        data: { id: params.id, ...body },
-        userID: session.userID
+        data: {
+          id: input.id,
+          order: input.order,
+          collectionID: input.collectionID
+        },
+        memberID: context.auth.session?.memberID
       });
-    },
-    {
-      authorize: true,
-      params: t.Object({
-        id: objectID({
-          description: "ID of the entry to be moved"
-        })
-      }),
-      body: t.Partial(
-        t.Object({
-          followingEntryID: objectID({
-            description: "ID of the sibling entry, behind which the entry will be moved"
-          }),
-          precedingEntryID: objectID({
-            description: "ID of the sibling entry, in front of which the entry will be moved"
-          })
-        })
-      ),
-      response: t.Void()
-    }
-  )
-  .get(
-    "/list",
-    async ({ query, session }) => {
+    }),
+  list: base
+    .route({ method: "GET", path: "/list" })
+    .meta({
+      required: {
+        session: ["content"],
+        key: ["read:entries"]
+      }
+    })
+    .use(authorized)
+    .input(
+      z.object({
+        collectionID: z.string().optional().describe("ID of the collection to get entries from"),
+        lastOrder: z.string().optional().describe("Last order to get entries from"),
+        perPage: z.number().optional().describe("Number of entries to get per page"),
+        page: z.number().optional().describe("Page number")
+      })
+    )
+    .output(z.array(entryType))
+    .handler(async ({ context, input }) => {
       return Entries.list({
-        workspaceID: session.workspaceID,
-        lastOrder: query?.lastOrder,
-        perPage: query?.perPage,
-        page: query?.page
+        workspaceID: context.auth.workspaceID,
+        collectionID: input.collectionID,
+        lastOrder: input.lastOrder,
+        perPage: input.perPage,
+        page: input.page
       });
-    },
-    {
-      authorize: true,
-      response: t.Array(entryType),
-      query: t.Optional(
-        t.Object({
-          lastOrder: t.Optional(
-            t.String({
-              description: "Last order to get entries from"
-            })
-          ),
-          perPage: t.Optional(
-            t.Number({
-              description: "Number of entries to get per page"
-            })
-          ),
-          page: t.Optional(
-            t.Number({
-              description: "Page number"
-            })
-          )
-        })
-      )
-    }
-  );
+    })
+});
 
-export { entriesRouterPlugin };
+export { entriesRouter };

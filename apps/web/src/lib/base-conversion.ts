@@ -1,0 +1,18 @@
+import basex from "base-x";
+
+const b16 = basex("0123456789abcdef");
+const b62 = basex("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
+const hexToBytes = (hex: string) => {
+  return b16.decode(hex);
+};
+const bytesToHex = (bytes: Uint8Array) => {
+  return b16.encode(bytes);
+};
+const base62ToBytes = (base62: string) => {
+  return b62.decode(base62);
+};
+const bytesToBase62 = (bytes: Uint8Array) => {
+  return b62.encode(bytes);
+};
+
+export { bytesToHex, hexToBytes, base62ToBytes, bytesToBase62 };

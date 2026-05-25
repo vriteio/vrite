@@ -11,6 +11,7 @@ const Link = BaseLink.extend({
       autolink: true,
       protocols: [],
       defaultProtocol: "http",
+      enableClickSelection: false,
       HTMLAttributes: {
         target: "_blank",
         rel: "noopener noreferrer nofollow",

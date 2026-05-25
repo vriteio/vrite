@@ -1,100 +1,49 @@
 import { db, fromObjectID, objectID, UnderscoreID } from "#backend/lib/mongo";
 import { ObjectId } from "mongodb";
-import { Static, t } from "elysia";
+import * as z from "zod";
 
-const uiThemeType = t.UnionEnum(["light", "dark", "system"]);
-const accentColorType = t.UnionEnum(["andesine", "aquamarine", "amethyst", "amber", "emerald"]);
-const userSettingsType = t.Object({
-  uiTheme: uiThemeType,
-  accentColor: accentColorType
+const userType = z.object({
+  id: objectID().describe("ID of the user"),
+  name: z.string().max(320).optional().describe("User's full name"),
+  email: z.email().max(320).describe("Email address"),
+  emailVerified: z.boolean().describe("Whether the user's email is verified"),
+  image: z.string().optional().describe("URL of the user's avatar image"),
+  createdAt: z.iso.datetime().describe("The creation date of the user record"),
+  updatedAt: z.iso.datetime().describe("The date of the last update of the user record"),
+  currentWorkspaceID: objectID().optional().describe("ID of the user's latest active workspace")
 });
-const userType = t.Object({
-  id: objectID({ description: "ID of the user" }),
-  username: t.String({
-    description: "Short username",
-    minLength: 1,
-    maxLength: 50
-  }),
-  email: t.String({
-    description: "Email address",
-    format: "email",
-    maxLength: 320
-  }),
-  avatar: t.Optional(
-    t.String({
-      description: "URL of the user's profile image"
-    })
-  ),
-  fullName: t.Optional(
-    t.String({
-      description: "User's full name",
-      maxLength: 320
-    })
-  ),
-  emailVerificationToken: t.Optional(
-    t.String({
-      description: "Token used to generate email verification OTP"
-    })
-  ),
-  emailVerificationTokenExpiresAt: t.Optional(
-    t.String({
-      description: "Date when the email verification token expires",
-      format: "date-time"
-    })
-  ),
-  totpSecret: t.Optional(
-    t.String({
-      description: "Secret used for TOTP two-factor authentication"
-    })
-  ),
-  currentWorkspaceID: t.Optional(
-    objectID({ description: "ID of the user's latest active workspace" })
-  ),
-  settings: userSettingsType
+const userProfileType = userType.pick({
+  id: true,
+  name: true,
+  email: true,
+  image: true
 });
-const verificationDetailsType = t.Object({
-  newEmailChangeInVerification: t.Boolean({
-    description: "Whether a new email is in verification after a change"
-  }),
-  oldEmailChangeInVerification: t.Boolean({
-    description: "Whether an old email is in verification after a change"
-  }),
-  passwordChangeInVerification: t.Boolean({
-    description: "Whether a password change is in verification"
-  }),
-  emailInVerification: t.Boolean({
-    description: "Whether the email is in verification after a sign up"
-  })
-});
-const profileType = t.Pick(userType, ["id", "avatar", "username", "bio", "fullName", "email"]);
 
-interface UserSettings extends Static<typeof userSettingsType> {}
-interface VerificationDetails extends Static<typeof verificationDetailsType> {}
-interface User<ID extends string | ObjectId = string>
-  extends Omit<
-    Static<typeof userType>,
-    "emailVerificationTokenExpiresAt" | "id" | "currentWorkspaceID"
-  > {
+interface User<ID extends string | ObjectId = string> extends Omit<
+  z.infer<typeof userType>,
+  "id" | "currentWorkspaceID" | "createdAt" | "updatedAt"
+> {
   id: ID;
-  emailVerificationTokenExpiresAt?: ID extends ObjectId ? Date : string;
   currentWorkspaceID?: ID;
+  createdAt: ID extends string ? string : Date;
+  updatedAt: ID extends string ? string : Date;
 }
-interface Profile<ID extends string | ObjectId = string>
-  extends Omit<Static<typeof profileType>, "id"> {
+interface UserProfile<ID extends string | ObjectId = string> extends Omit<
+  z.infer<typeof userProfileType>,
+  "id"
+> {
   id: ID;
 }
-interface FullUser<ID extends string | ObjectId = string> extends User<ID> {
-  hash?: string;
-}
+interface FullUser<ID extends string | ObjectId = string> extends User<ID> {}
 
-const userID = (id: ObjectId) => fromObjectID(id, "usr");
+const toUserID = (id: ObjectId) => fromObjectID(id, "usr");
 const usersDB = db.collection<UnderscoreID<FullUser<ObjectId>>>("users");
 
 await usersDB.createIndex(
   { emailVerificationCodeExpiresAt: 1 },
-  { expireAfterSeconds: 0, sparse: true }
+  { expireAfterSeconds: 0, sparse: true, name: "emailVerificationCodeExpiresAt_1" }
 );
-await usersDB.createIndex({ email: 1 }, { unique: true });
+await usersDB.createIndex({ email: 1 }, { unique: true, name: "email_1" });
 
-export { userType, profileType, verificationDetailsType, usersDB, userID };
-export type { User, Profile, FullUser, VerificationDetails, UserSettings };
+export { userType, userProfileType, usersDB, toUserID };
+export type { User, UserProfile, FullUser };

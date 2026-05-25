@@ -1,6 +1,6 @@
 import { entriesDB, Entry } from "#backend/db";
 import { toObjectID } from "#backend/lib/mongo";
-import { status } from "elysia";
+import { ORPCError } from "@orpc/server";
 
 const updateEntry = async (
   input: {
@@ -14,7 +14,7 @@ const updateEntry = async (
     { $set: setProperties }
   );
 
-  if (matchedCount !== 1) throw status("Not Found");
+  if (matchedCount !== 1) throw new ORPCError("NOT_FOUND");
 };
 
 export { updateEntry };

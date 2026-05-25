@@ -1,5 +1,10 @@
 import { nodePasteRule } from "#editor/lib";
-import { mergeAttributes, Node, textblockTypeInputRule } from "@tiptap/core";
+import {
+  ExtendedRegExpMatchArray,
+  mergeAttributes,
+  Node,
+  textblockTypeInputRule
+} from "@tiptap/core";
 import { convert as convertToSlug } from "url-slug";
 
 type Level = 1 | 2 | 3 | 4 | 5 | 6;
@@ -121,7 +126,7 @@ const Heading = Node.create<HeadingOptions>({
             level
           };
         },
-        getContent(match) {
+        getContent(match: ExtendedRegExpMatchArray) {
           return match[1];
         }
       });

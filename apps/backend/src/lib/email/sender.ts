@@ -1,8 +1,7 @@
-import SMTPTransport from "nodemailer/lib/smtp-transport";
 import * as nodemailer from "nodemailer";
 import { Resend } from "resend";
 import { config } from "#backend/lib/config";
-import { status } from "elysia";
+import { ORPCError } from "@orpc/server";
 
 type EmailSender = (
   to: string,
@@ -11,11 +10,18 @@ type EmailSender = (
     html: string;
     text?: string;
   }
-) => Promise<void>;
+) => Promise<EmailDeliveryResult>;
+
+interface EmailDeliveryResult {
+  status: "sent" | "manual";
+}
 
 const createEmailSender = (): {
   sendEmail: EmailSender;
-  client: Resend | nodemailer.Transporter<SMTPTransport.SentMessageInfo> | null;
+  client:
+    | Resend
+    | nodemailer.Transporter<nodemailer.SentMessageInfo, nodemailer.TransportOptions>
+    | null;
 } => {
   if (config.RESEND_API_KEY) {
     const resend = new Resend(config.RESEND_API_KEY);
@@ -31,10 +37,14 @@ const createEmailSender = (): {
             html: email.html,
             text: email.text
           });
+
+          return { status: "sent" };
         } catch (e) {
           console.error(e);
 
-          throw status("Internal Server Error");
+          throw new ORPCError("INTERNAL_SERVER_ERROR", {
+            message: "Failed to send email"
+          });
         }
       }
     };
@@ -65,10 +75,14 @@ const createEmailSender = (): {
             html: email.html,
             text: email.text
           });
+
+          return { status: "sent" };
         } catch (e) {
           console.error(e);
 
-          throw status("Internal Server Error");
+          throw new ORPCError("INTERNAL_SERVER_ERROR", {
+            message: "Failed to send email"
+          });
         }
       }
     };
@@ -76,13 +90,19 @@ const createEmailSender = (): {
 
   return {
     client: null,
-    sendEmail: async () => {
-      console.error("No email service configured");
+    sendEmail: async (to, email) => {
+      console.log("No email service configured", {
+        from: `${config.SENDER_NAME} <${config.SENDER_EMAIL}>`,
+        to,
+        subject: email.subject,
+        html: email.html,
+        text: email.text
+      });
 
-      throw status("Internal Server Error");
+      return { status: "manual" };
     }
   };
 };
 
 export { createEmailSender };
-export type { EmailSender };
+export type { EmailSender, EmailDeliveryResult };

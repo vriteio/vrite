@@ -5,7 +5,6 @@ const errorMessages: Record<string, JSX.Element> = {
   invalidCredentials: "Invalid credentials",
   emailNotVerified: "Email not verified",
   magicLinkAlreadySent: "Wait 1 min before requesting a new magic link",
-  totpTokenInvalid: "Invalid 2FA code",
   resourceNotFound: "User not found",
   alreadyExists: "User already exists",
   disposableEmail: (

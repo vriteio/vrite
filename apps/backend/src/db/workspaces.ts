@@ -1,62 +1,39 @@
-import { db, fromObjectID, objectID } from "#backend/lib/mongo";
+import { db, fromObjectID, objectID, UnderscoreID } from "#backend/lib/mongo";
 import { ObjectId } from "mongodb";
-import { Static, t } from "elysia";
+import * as z from "zod";
 
-const workspaceSettingsType = t.Object({
-  prettierConfig: t.String({ description: "JSON-stringified Prettier configuration" })
-});
-const workspaceType = t.Object({
-  id: objectID({
-    description: "ID of the workspace"
-  }),
-  name: t.String({
-    description: "Name of the workspace",
-    minLength: 1,
-    maxLength: 50
-  }),
-  logo: t.Optional(
-    t.String({
-      description: "URL of the workspace logo"
-    })
-  ),
-  customerID: t.Optional(
-    t.String({
-      description: "ID of the Stripe customer associated with the workspace"
-    })
-  ),
-  subscriptionStatus: t.Optional(
-    t.String({
-      description: "Status of the workspace's subscription"
-    })
-  ),
-  subscriptionPlan: t.Optional(
-    t.String({
-      description: "Identifier of the workspace's subscription plan"
-    })
-  ),
-  subscriptionData: t.Optional(
-    t.String({
-      description: "JSON-stringified Stripe subscription data associated with the workspace"
-    })
-  ),
-  subscriptionExpiresAt: t.Optional(
-    t.String({
-      description: "Expiration date of the current workspace's billing cycle",
-      format: "date-time"
-    })
-  ),
-  settings: workspaceSettingsType
+const workspaceType = z.object({
+  id: objectID().describe("ID of the workspace"),
+  name: z.string().min(1).max(50).describe("Name of the workspace"),
+  customerID: z
+    .string()
+    .optional()
+    .describe("ID of the Stripe customer associated with the workspace"),
+  subscriptionStatus: z.string().optional().describe("Status of the workspace's subscription"),
+  subscriptionPlan: z
+    .string()
+    .optional()
+    .describe("Identifier of the workspace's subscription plan"),
+  subscriptionData: z
+    .string()
+    .optional()
+    .describe("JSON-stringified Stripe subscription data associated with the workspace"),
+  subscriptionExpiresAt: z.iso
+    .datetime()
+    .optional()
+    .describe("Expiration date of the current workspace's billing cycle")
 });
 
-interface WorkspaceSettings extends Static<typeof workspaceSettingsType> {}
-interface Workspace<ID extends string | ObjectId = string>
-  extends Omit<Static<typeof workspaceType>, "id"> {
+interface Workspace<ID extends string | ObjectId = string> extends Omit<
+  z.infer<typeof workspaceType>,
+  "id"
+> {
   id: ID;
 }
 interface FullWorkspace<ID extends string | ObjectId = string> extends Workspace<ID> {}
 
-const workspaceID = (id: ObjectId) => fromObjectID(id, "ws");
-const workspacesDB = db.collection("workspaces");
+const toWorkspaceID = (id: ObjectId) => fromObjectID(id, "ws");
+const workspacesDB = db.collection<UnderscoreID<FullWorkspace<ObjectId>>>("workspaces");
 
-export { workspaceType, workspacesDB, workspaceID };
-export type { WorkspaceSettings, Workspace, FullWorkspace };
+export { workspaceType, workspacesDB, toWorkspaceID };
+export type { Workspace, FullWorkspace };

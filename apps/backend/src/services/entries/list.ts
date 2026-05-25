@@ -1,8 +1,9 @@
-import { entriesDB, Entry, entryID } from "#backend/db";
+import { toCollectionID, entriesDB, Entry, toEntryID } from "#backend/db";
 import { toObjectID } from "#backend/lib/mongo";
 
 const listEntries = async (input: {
   workspaceID: string;
+  collectionID?: string;
   lastOrder?: string;
   perPage?: number;
   page?: number;
@@ -12,7 +13,10 @@ const listEntries = async (input: {
   const cursor = entriesDB
     .find({
       workspaceID: toObjectID(input.workspaceID),
-      ...(input.lastOrder && { order: { $lt: input.lastOrder } })
+      ...(input.lastOrder && { order: { $lt: input.lastOrder } }),
+      ...(input.collectionID !== undefined && {
+        collectionID: toObjectID(input.collectionID)
+      })
     })
     .sort({ order: -1 });
 
@@ -24,9 +28,10 @@ const listEntries = async (input: {
 
   return entries.map((entry) => {
     return {
-      id: entryID(entry._id),
+      id: toEntryID(entry._id),
       name: entry.name,
-      order: entry.order
+      order: entry.order,
+      collectionID: entry.collectionID ? toCollectionID(entry.collectionID) : undefined
     };
   });
 };

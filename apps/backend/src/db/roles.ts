@@ -1,26 +1,37 @@
 import { db, fromObjectID, objectID, UnderscoreID } from "#backend/lib/mongo";
 import { ObjectId } from "mongodb";
-import { Static, t } from "elysia";
+import * as z from "zod";
 
-// TODO: Roles, groups, collaborators, etc.
-const permissionType = t.UnionEnum([""]);
-const roleType = t.Object({
-  id: objectID({ description: "ID of the role" }),
-  name: t.String({ description: "Name of the role", minLength: 1, maxLength: 50 }),
-  permissions: t.Array(permissionType, { description: "Permissions granted to the role" })
+const permissionType = z.enum([
+  "content",
+  "api_keys",
+  "read:api_keys",
+  "billing",
+  "read:billing",
+  "workspace"
+]);
+const baseRoleType = z.enum(["admin", "viewer"]);
+const roleType = z.object({
+  id: objectID().describe("ID of the role"),
+  name: z.string().min(1).max(50).describe("Name of the role"),
+  permissions: z.array(permissionType).describe("Permissions granted to the role"),
+  baseRole: baseRoleType.optional().describe("If this role is an unremovable base role")
 });
 
-interface Role<ID extends string | ObjectId = string> extends Omit<Static<typeof roleType>, "id"> {
+type Permission = z.infer<typeof permissionType>;
+type BaseRole = z.infer<typeof baseRoleType>;
+
+interface Role<ID extends string | ObjectId = string> extends Omit<z.infer<typeof roleType>, "id"> {
   id: ID;
 }
 interface FullRole<ID extends string | ObjectId = string> extends Role<ID> {
   workspaceID: ID;
 }
 
-const roleID = (id: ObjectId) => fromObjectID(id, "rl");
+const toRoleID = (id: ObjectId) => fromObjectID(id, "rl");
 const rolesDB = db.collection<UnderscoreID<FullRole<ObjectId>>>("roles");
 
-await rolesDB.createIndex({ workspaceId: 1 });
+await rolesDB.createIndex({ workspaceID: 1 }, { name: "workspaceID_1" });
 
-export { permissionType, roleType, rolesDB, roleID };
-export { Role, FullRole };
+export { permissionType, baseRoleType, roleType, rolesDB, toRoleID };
+export type { Permission, BaseRole, Role, FullRole };
