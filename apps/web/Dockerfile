@@ -1,0 +1,42 @@
+# syntax=docker/dockerfile:1.7
+
+FROM node:24-alpine AS base
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
+
+FROM base AS pruner
+WORKDIR /app
+COPY . .
+RUN pnpm dlx turbo@2.9.14 prune @andesine/web --docker
+
+FROM base AS prod-deps
+WORKDIR /app
+COPY --from=pruner /app/out/json/ ./
+RUN pnpm install --frozen-lockfile --prod
+
+FROM base AS builder
+WORKDIR /app
+COPY --from=pruner /app/out/json/ ./
+RUN pnpm install --frozen-lockfile
+COPY --from=pruner /app/out/full/ ./
+RUN pnpm turbo build --filter=@andesine/web
+
+FROM prod-deps AS packager
+WORKDIR /app
+COPY --from=pruner /app/out/full/ ./
+COPY --from=builder /app/apps/web/.output ./apps/web/.output
+COPY --from=builder /app/apps/web/.vinxi ./apps/web/.vinxi
+
+FROM node:24-alpine AS runner
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+ENV NODE_ENV=production
+ENV HOST=0.0.0.0
+ENV PORT=3000
+RUN corepack enable
+WORKDIR /app
+COPY --from=packager --chown=node:node /app ./
+USER node
+EXPOSE 3000
+CMD ["pnpm", "--filter", "@andesine/web", "start"]

@@ -2,6 +2,7 @@ import { invitesDB, toInviteID, toRoleID, toMembershipID, type Invite } from "#b
 import { toObjectID } from "#backend/lib/mongo";
 
 interface InviteDetails extends Invite {
+  workspaceID: string;
   invitedBy?: string;
 }
 
