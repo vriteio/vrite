@@ -1,4 +1,3 @@
-import { createServer as createViteServer } from "vite";
 import { serve } from "srvx";
 import { isProduction, port, viteConfigPath } from "./config.mjs";
 import { createModuleLoader, createTemplateLoader } from "./loaders.mjs";
@@ -37,6 +36,8 @@ const start = async () => {
   });
 
   if (!isProduction) {
+    const { createServer: createViteServer } = await import("vite");
+
     vite = await createViteServer({
       configFile: viteConfigPath,
       appType: "custom",
