@@ -12,7 +12,6 @@ import { passkeyClient } from "@better-auth/passkey/client";
 import { config } from "#web/lib/config";
 import { createSignal } from "solid-js";
 import { getRequestEvent } from "solid-js/web";
-import { redirect } from "@solidjs/router";
 
 // Using signal to track workspace ID changes
 const [currentWorkspaceID, setCurrentWorkspaceID] = createSignal("");
@@ -48,7 +47,13 @@ const link = new RPCLink({
       if (error instanceof ORPCError) {
         if (error.code === "UNAUTHORIZED") {
           setCurrentWorkspaceID("");
-          throw redirect("/auth/login");
+
+          if (typeof window !== "undefined") {
+            window.location.assign("/auth/sign-in");
+            return;
+          }
+
+          throw error;
         }
       }
     })

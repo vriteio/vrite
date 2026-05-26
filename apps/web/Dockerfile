@@ -33,8 +33,7 @@ RUN pnpm turbo build --filter=@andesine/web
 FROM prod-deps AS packager
 WORKDIR /app
 COPY --from=pruner /app/out/full/ ./
-COPY --from=builder /app/apps/web/.output ./apps/web/.output
-COPY --from=builder /app/apps/web/.vinxi ./apps/web/.vinxi
+COPY --from=builder /app/apps/web/dist ./apps/web/dist
 
 FROM node:24-alpine AS runner
 ENV PNPM_HOME="/pnpm"

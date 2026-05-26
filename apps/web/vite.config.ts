@@ -1,10 +1,10 @@
-import { defineConfig } from "@solidjs/start/config";
+import { defineConfig } from "vite";
+import solid from "vite-plugin-solid";
 import tsconfigPaths from "vite-tsconfig-paths";
 import unoCSS from "unocss/vite";
 
-export default defineConfig({
-  middleware: "./src/middleware.ts",
-  vite: {
+export default defineConfig(() => {
+  return {
     envPrefix: "PUBLIC_",
     ssr: {
       noExternal: [
@@ -12,6 +12,6 @@ export default defineConfig({
         /^@atlaskit\/pragmatic-drag-and-drop-hitbox(?:$|\/)/
       ]
     },
-    plugins: [tsconfigPaths(), unoCSS()]
-  }
+    plugins: [solid({ ssr: true }), tsconfigPaths(), unoCSS()]
+  };
 });
