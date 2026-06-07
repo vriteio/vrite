@@ -1,18 +1,19 @@
+import { FastifyReply, FastifyRequest } from "fastify";
 import { workspacesDB } from "../db";
 import { config } from "../lib/config";
 import { toObjectID } from "../lib/mongo";
 import { stripe } from "../lib/stripe";
 
-const handleStripeWebhook = async (request: Request): Promise<Response> => {
+const handleStripeWebhook = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
   if (!stripe || !config.STRIPE_WEBHOOK_SECRET) {
-    return new Response(JSON.stringify({ error: "Stripe not configured" }), { status: 500 });
+    return reply.status(500).send({ error: "Stripe not configured" });
   }
 
-  const body = await request.text();
-  const sig = request.headers.get("stripe-signature");
+  const body = request.body as string;
+  const sig = request.headers["stripe-signature"];
 
   if (!sig) {
-    return new Response(JSON.stringify({ error: "Missing signature" }), { status: 400 });
+    return reply.status(400).send({ error: "Missing signature" });
   }
 
   let event;
@@ -20,7 +21,7 @@ const handleStripeWebhook = async (request: Request): Promise<Response> => {
   try {
     event = stripe.webhooks.constructEvent(body, sig, config.STRIPE_WEBHOOK_SECRET);
   } catch {
-    return new Response(JSON.stringify({ error: "Invalid signature" }), { status: 400 });
+    return reply.status(400).send({ error: "Invalid signature" });
   }
 
   switch (event.type) {
@@ -132,7 +133,7 @@ const handleStripeWebhook = async (request: Request): Promise<Response> => {
     }
   }
 
-  return new Response(JSON.stringify({ received: true }), { status: 200 });
+  return reply.status(200).send({ received: true });
 };
 
 export { handleStripeWebhook };

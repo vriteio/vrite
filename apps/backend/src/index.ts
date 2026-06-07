@@ -1,85 +1,21 @@
 import { Hocuspocus } from "@hocuspocus/server";
 import { Database } from "@hocuspocus/extension-database";
-import { router } from "#backend/router";
+import { router, routerPlugin } from "#backend/router";
 import "./events";
 import { contentsDB } from "#backend/db";
 import { toObjectID } from "./lib/mongo";
 import { Binary } from "mongodb";
-import { onError, ORPCError } from "@orpc/server";
-import { RPCHandler } from "@orpc/server/fetch";
-import { CORSPlugin, RequestHeadersPlugin, ResponseHeadersPlugin } from "@orpc/server/plugins";
-import { OpenAPIHandler } from "@orpc/openapi/fetch";
-import { serve } from "crossws/server";
-import { auth } from "./lib/auth";
 import { config } from "./lib/config";
 import { Billing } from "./services";
-import { handleStripeWebhook } from "./webhooks/stripe";
-import { ServerMiddleware } from "srvx";
+import Fastify, { FastifyRequest } from "fastify";
+import corsPlugin from "@fastify/cors";
+import websocketPlugin from "@fastify/websocket";
+import { webhooksPlugin } from "./webhooks";
+import { auth } from "./lib/auth";
 
-const allowedOrigins = new Set([config.PUBLIC_APP_URL, config.PUBLIC_API_URL]);
-const resolveAllowedOrigin = (origin?: string) => {
-  return origin && allowedOrigins.has(origin) ? origin : config.PUBLIC_APP_URL;
-};
-const corsHeaders = {
-  allowCredentials: "true",
-  allowMethods: "GET, HEAD, PUT, POST, DELETE, PATCH, OPTIONS",
-  allowHeaders: "Content-Type, Authorization, X-Workspace-ID"
-};
-const applyCORSHeaders = (response: Response, origin?: string) => {
-  response.headers.set("Access-Control-Allow-Origin", resolveAllowedOrigin(origin));
-  response.headers.set("Access-Control-Allow-Credentials", corsHeaders.allowCredentials);
-  response.headers.set("Access-Control-Allow-Methods", corsHeaders.allowMethods);
-  response.headers.set("Access-Control-Allow-Headers", corsHeaders.allowHeaders);
-  response.headers.set("Vary", "Origin");
-
-  return response;
-};
-const logORPCError = (error: unknown, options?: unknown) => {
-  if (error instanceof ORPCError) {
-    const cause = (error as any).cause;
-
-    console.error(error.message, {
-      code: error.code,
-      cause,
-      options
-    });
-    return;
-  }
-
-  console.error(error, { options });
-};
-const openAPIHandler = new OpenAPIHandler(router, {
-  plugins: [
-    new RequestHeadersPlugin(),
-    new ResponseHeadersPlugin(),
-    new CORSPlugin({
-      credentials: true,
-      origin: (origin) => resolveAllowedOrigin(origin),
-      allowMethods: ["GET", "HEAD", "PUT", "POST", "DELETE", "PATCH"]
-    })
-  ],
-  interceptors: [
-    onError((error, options) => {
-      logORPCError(error, options);
-    })
-  ]
-});
-const rpcHandler = new RPCHandler(router, {
-  plugins: [
-    new RequestHeadersPlugin(),
-    new ResponseHeadersPlugin(),
-    new CORSPlugin({
-      credentials: true,
-      origin: (origin) => resolveAllowedOrigin(origin),
-      allowMethods: ["GET", "HEAD", "PUT", "POST", "DELETE", "PATCH"]
-    })
-  ],
-  interceptors: [
-    onError((error, options) => {
-      logORPCError(error, options);
-    })
-  ]
-});
+const allowedOrigins = [...new Set([config.PUBLIC_APP_URL, config.PUBLIC_API_URL])];
+const allowedMethods = ["GET", "PUT", "POST", "DELETE", "PATCH", "OPTIONS"];
+const allowedHeaders = ["Content-Type", "Authorization", "X-Workspace-ID", "X-Requested-With"];
 const hocuspocus = new Hocuspocus({
   extensions: [
     new Database({
@@ -106,108 +42,87 @@ const hocuspocus = new Hocuspocus({
     })
   ]
 });
-const cors: ServerMiddleware = async (req, next) => {
-  const origin = req.headers.get("origin") || "";
-  const response = await next();
-  const pathname = new URL(req.url).pathname;
 
-  if (pathname.startsWith("/rpc")) {
-    return response;
+const app = Fastify();
+const createWebRequest = (fastifyRequest: FastifyRequest): Request => {
+  const url = new URL(
+    fastifyRequest.url,
+    `${config.PUBLIC_SECURE ? "https" : "http"}://${fastifyRequest.headers.host}`
+  );
+  const hasBody = fastifyRequest.method !== "GET";
+  const body = fastifyRequest.body;
+
+  let webBody: any = null;
+
+  if (hasBody && body) {
+    webBody = JSON.stringify(body);
   }
 
-  return applyCORSHeaders(response, origin);
+  return new Request(url, {
+    method: fastifyRequest.method,
+    // @ts-expect-error
+    headers: new Headers(fastifyRequest.headers),
+    ...(webBody && { body: webBody })
+  });
 };
 
-const clientConnections = new Map<string, ReturnType<Hocuspocus["handleConnection"]>>();
+app.register(corsPlugin, {
+  origin: allowedOrigins,
+  methods: allowedMethods,
+  allowedHeaders: allowedHeaders,
+  credentials: true,
+  maxAge: 86400
+});
+await app.register(websocketPlugin, {
+  options: { maxPayload: 1048576 }
+});
+app.get("/collab", { websocket: true }, (socket, request) => {
+  const webRequest = createWebRequest(request);
+  const clientConnection = hocuspocus.handleConnection(socket, webRequest);
 
-serve({
-  middleware: [cors],
-  websocket: {
-    resolve: (req) => {
-      const url = new URL(req.url);
-      const method = req.method.toUpperCase();
-
-      if (method === "GET" && url.pathname.startsWith("/collab")) {
-        return {
-          open(peer) {
-            const wsLike = {
-              get readyState() {
-                return peer.websocket.readyState ?? 3; // 3 = CLOSED
-              },
-              send(data: Uint8Array) {
-                peer.send(data);
-              },
-              close(code?: number, reason?: string) {
-                peer.close(code, reason);
-              }
-            };
-            const clientConnection = hocuspocus.handleConnection(wsLike, peer.request as Request);
-
-            clientConnections.set(peer.id, clientConnection);
-          },
-          message(peer, message) {
-            clientConnections.get(peer.id)?.handleMessage(message.uint8Array());
-          },
-          close(peer, event) {
-            clientConnections.get(peer.id)?.handleClose({
-              code: event.code || 1000,
-              reason: event.reason || "Normal Closure"
-            });
-          },
-          error(peer, error) {
-            console.error("WebSocket error for peer:", peer.id);
-            console.error(error);
-          }
-        };
-      }
-
-      return {};
-    }
-  },
-  fetch: async (req) => {
-    const url = new URL(req.url);
-    const method = req.method.toUpperCase();
-
-    if (method === "OPTIONS") {
-      const origin = req.headers.get("origin") || "";
-
-      return applyCORSHeaders(new Response(null, { status: 204 }), origin);
-    }
-
-    if (url.pathname.startsWith("/webhooks/stripe")) {
-      return handleStripeWebhook(req);
-    }
-
-    if (url.pathname.startsWith("/rpc")) {
-      const { matched, response } = await rpcHandler.handle(req, {
-        prefix: "/rpc",
-        context: {}
-      });
-
-      if (matched) {
-        return response;
-      }
-
-      return new Response("Not found", { status: 404 });
-    }
-
-    if (url.pathname.startsWith("/auth/")) {
-      return auth.handler(req);
-    }
-
-    const { matched, response } = await openAPIHandler.handle(req, {
-      prefix: "/",
-      context: {}
+  socket.on("message", (message) => {
+    clientConnection.handleMessage(new Uint8Array(message as ArrayBuffer));
+  });
+  socket.on("close", (code) => {
+    clientConnection.handleClose({
+      code: code || 1000,
+      reason: "Normal Closure"
     });
+  });
+  socket.on("error", (error) => {
+    console.error(error);
+  });
+});
+app.route({
+  method: ["GET", "POST"],
+  url: "/auth/*",
+  handler: async (request, reply) => {
+    try {
+      const webRequest = createWebRequest(request);
+      const webResponse = await auth.handler(webRequest);
 
-    if (matched) {
-      return response;
+      reply.status(webResponse.status);
+
+      for (const [key, value] of webResponse.headers) {
+        reply.header(key, value);
+      }
+
+      return reply.send(webResponse.body ? webResponse.body : null);
+    } catch (error) {
+      console.error("Authentication error:", error);
+      return reply.status(500).send({
+        error: "Internal authentication error",
+        code: "AUTH_FAILURE"
+      });
     }
-
-    return new Response("Not found", { status: 404 });
-  },
+  }
+});
+app.register(webhooksPlugin);
+app.register(routerPlugin);
+await app.listen({
   port: Number(process.env.PORT || 3333)
 });
+console.log(`Server is running on port ${process.env.PORT || 3333}`);
 
 const shutdown = async (): Promise<void> => {
   await Billing.Metering.flushUsage();

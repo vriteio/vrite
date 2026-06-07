@@ -11,11 +11,12 @@
     "allowJs": true,
     "noEmit": true,
     "strict": true,
-    "types": ["vite/client"],
+    "types": ["vite/client", "node"],
     "isolatedModules": true,
     "paths": {
       "#web/*": ["./src/*"],
       "#backend/*": ["../backend/src/*"]
     }
-  }
+  },
+  "include": ["./src/**/*.ts", "./src/**/*.tsx"]
 }

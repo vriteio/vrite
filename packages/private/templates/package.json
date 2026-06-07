@@ -9,14 +9,14 @@
   },
   "devDependencies": {
     "@react-email/preview-server": "5.2.10",
-    "@types/node": "^25.6.0",
-    "@types/react": "^19.2.14",
-    "react-email": "6.0.0"
+    "@types/node": "^25.9.1",
+    "@types/react": "^19.2.15",
+    "react-email": "6.5.0"
   },
   "dependencies": {
     "@react-email/components": "1.0.12",
-    "@react-email/render": "2.0.7",
-    "react": "19.2.5",
-    "react-dom": "19.2.5"
+    "@react-email/render": "2.0.8",
+    "react": "19.2.6",
+    "react-dom": "19.2.6"
   }
 }

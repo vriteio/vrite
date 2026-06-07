@@ -1,4 +1,4 @@
-// @refresh reload
+/* @refresh reload */
 import { hydrate } from "solid-js/web";
 import App from "./app";
 
