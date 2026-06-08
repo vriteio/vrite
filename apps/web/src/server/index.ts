@@ -9,4 +9,4 @@ app.register(viteSSRPlugin);
 
 await app.listen({ host, port });
 
-console.log(`Server is running on port ${port}`);
+console.log(`Server is running on ${host}:${port}`);

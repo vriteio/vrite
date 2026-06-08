@@ -46,7 +46,7 @@ const viteSSRPlugin: FastifyPluginAsync = async (app) => {
   } else {
     await app.register(fastifyStatic, {
       root: clientDistPath,
-      wildcard: false
+      serve: false
     });
   }
 
@@ -55,6 +55,10 @@ const viteSSRPlugin: FastifyPluginAsync = async (app) => {
     url: "*",
     async handler(request, reply) {
       const requestUrl = new URL(request.url, `http://${request.headers.host ?? "localhost"}`);
+
+      if (path.extname(requestUrl.pathname)) {
+        return reply.sendFile(requestUrl.pathname);
+      }
 
       try {
         const ssrUrl = `${requestUrl.pathname}${requestUrl.search}`;

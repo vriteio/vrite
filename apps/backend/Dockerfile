@@ -20,6 +20,7 @@ RUN pnpm --config.inject-workspace-packages=true --filter @andesine/backend --pr
 
 FROM node:24-alpine AS runner
 ENV NODE_ENV=production
+ENV HOST=0.0.0.0
 ENV PORT=3333
 WORKDIR /app
 COPY --from=builder --chown=node:node /app/deploy ./

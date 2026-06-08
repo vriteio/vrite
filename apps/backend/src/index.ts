@@ -14,8 +14,10 @@ import { webhooksPlugin } from "./webhooks";
 import { auth } from "./lib/auth";
 
 const allowedOrigins = [...new Set([config.PUBLIC_APP_URL, config.PUBLIC_API_URL])];
-const allowedMethods = ["GET", "PUT", "POST", "DELETE", "PATCH", "OPTIONS"];
+const allowedMethods = ["GET", "HEAD", "PUT", "POST", "DELETE", "PATCH", "OPTIONS"];
 const allowedHeaders = ["Content-Type", "Authorization", "X-Workspace-ID", "X-Requested-With"];
+const host = process.env.HOST ?? "0.0.0.0";
+const port = Number(process.env.PORT ?? 3333);
 const hocuspocus = new Hocuspocus({
   extensions: [
     new Database({
@@ -49,7 +51,7 @@ const createWebRequest = (fastifyRequest: FastifyRequest): Request => {
     fastifyRequest.url,
     `${config.PUBLIC_SECURE ? "https" : "http"}://${fastifyRequest.headers.host}`
   );
-  const hasBody = fastifyRequest.method !== "GET";
+  const hasBody = !["GET", "HEAD"].includes(fastifyRequest.method);
   const body = fastifyRequest.body;
 
   let webBody: any = null;
@@ -66,7 +68,7 @@ const createWebRequest = (fastifyRequest: FastifyRequest): Request => {
   });
 };
 
-app.register(corsPlugin, {
+await app.register(corsPlugin, {
   origin: allowedOrigins,
   methods: allowedMethods,
   allowedHeaders: allowedHeaders,
@@ -119,10 +121,13 @@ app.route({
 });
 app.register(webhooksPlugin);
 app.register(routerPlugin);
+
 await app.listen({
-  port: Number(process.env.PORT || 3333)
+  host,
+  port
 });
-console.log(`Server is running on port ${process.env.PORT || 3333}`);
+
+console.log(`Server is running on ${host}:${port}`);
 
 const shutdown = async (): Promise<void> => {
   await Billing.Metering.flushUsage();

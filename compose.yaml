@@ -1,0 +1,25 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+    env_file:
+      - .env
+    ports:
+      - "3333:3333"
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        PUBLIC_API_HOST: ${PUBLIC_API_HOST}
+        PUBLIC_APP_HOST: ${PUBLIC_APP_HOST}
+        PUBLIC_COOKIE_DOMAIN: ${PUBLIC_COOKIE_DOMAIN}
+        PUBLIC_SECURE: ${PUBLIC_SECURE}
+    depends_on:
+      - backend
+    env_file:
+      - .env
+    ports:
+      - "3000:3000"
