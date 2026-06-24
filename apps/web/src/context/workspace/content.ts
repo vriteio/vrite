@@ -1,147 +1,143 @@
 import { Collection as LocalDBCollection } from "@signaldb/core";
-import { createIndexedDBAdapter } from "./persistence";
+import { createWorkspaceContentOperations } from "./content-operations";
+import { createIndexedDBAdapter, deleteIndexedDBDatabase } from "./persistence";
 import { Collection, Entry, client } from "#web/lib/client";
 import solidReactivityAdapter from "@signaldb/solid";
 import { useConnectivitySignal } from "@solid-primitives/connectivity";
-import { ObjectId } from "bson";
-import { toEntryID } from "#web/lib/id";
-import { LexoRank } from "lexorank";
-import { Accessor } from "solid-js";
+import { Accessor, createEffect, createSignal, on } from "solid-js";
 import { createAsync, query } from "@solidjs/router";
 
-const explorerTreeQuery = query(async () => {
+const explorerTreeQuery = query(async (workspaceID?: string) => {
+  if (!workspaceID) {
+    return { collections: [], entries: [] };
+  }
+
   const explorerTree = await client.sync.getExplorerTree();
 
   return explorerTree;
 }, "explorerTree");
+const getWorkspaceContentDatabaseName = (workspaceID?: string) => {
+  return `andesine:${workspaceID || "ephemeral"}`;
+};
+const createWorkspaceCollections = (workspaceID?: string) => {
+  const databaseName = getWorkspaceContentDatabaseName(workspaceID);
+  const storeNames = ["entries", "collections"];
+  const entries = new LocalDBCollection<Entry>({
+    name: `${databaseName}:entries`,
+    persistence: workspaceID
+      ? createIndexedDBAdapter("entries", {
+          databaseName,
+          storeName: "entries",
+          stores: storeNames
+        })
+      : undefined,
+    reactivity: solidReactivityAdapter
+  });
+  const collections = new LocalDBCollection<Collection>({
+    name: `${databaseName}:collections`,
+    persistence: workspaceID
+      ? createIndexedDBAdapter("collections", {
+          databaseName,
+          storeName: "collections",
+          stores: storeNames
+        })
+      : undefined,
+    reactivity: solidReactivityAdapter
+  });
+
+  return { workspaceID, entries, collections };
+};
+const clearWorkspaceContent = async (workspaceID: string) => {
+  await deleteIndexedDBDatabase(getWorkspaceContentDatabaseName(workspaceID));
+};
 const useWorkspaceContent = (workspaceID: Accessor<string>) => {
-  const explorerTree = createAsync(() => explorerTreeQuery());
-  const entriesCollection = new LocalDBCollection<Entry>({
-    persistence: createIndexedDBAdapter("entries", {
-      databaseName: "andesine",
-      prefix: "",
-      storeName: "entries"
-    }),
-    reactivity: solidReactivityAdapter
+  const explorerTree = createAsync(() => {
+    return explorerTreeQuery(workspaceID());
   });
-  const collectionsCollection = new LocalDBCollection<Collection>({
-    persistence: createIndexedDBAdapter("collections", {
-      databaseName: "andesine",
-      prefix: "",
-      storeName: "collections"
-    }),
-    reactivity: solidReactivityAdapter
-  });
-  const getContentTreeLevel = (ancestorID: string | null) => {
-    const collections = () => {
-      return collectionsCollection
-        .find({
-          ...(ancestorID === null
-            ? { ancestors: { $size: 0 } }
-            : {
-                $and: [
-                  { "ancestors.0": { $exists: true } },
-                  {
-                    $expr: {
-                      $eq: [{ $last: "$ancestors" }, ancestorID]
-                    }
-                  }
-                ]
-              })
-        })
-        .fetch();
-    };
-    const entries = () => {
-      return entriesCollection
-        .find({
-          ...(ancestorID === null
-            ? { collectionID: { $exists: false } }
-            : { collectionID: ancestorID })
-        })
-        .fetch();
-    };
-
-    return { collections, entries };
-  };
   const isOnline = useConnectivitySignal();
-  const readOnly = () => !isOnline();
-  const loading = () => false;
-  const getCollection = (id: string) => {
-    return collectionsCollection.findOne({ id });
+  const [contentCollections, setContentCollections] = createSignal(createWorkspaceCollections());
+  const entriesCollection = () => contentCollections().entries;
+  const collectionsCollection = () => contentCollections().collections;
+  const contentOperations = createWorkspaceContentOperations({
+    entriesCollection,
+    collectionsCollection
+  });
+  const disposeWorkspaceContent = async (targetWorkspaceID: string) => {
+    const currentCollections = contentCollections();
+
+    if (currentCollections.workspaceID === targetWorkspaceID) {
+      const nextCollections = createWorkspaceCollections();
+
+      setContentCollections(nextCollections);
+      await currentCollections.entries.dispose();
+      await currentCollections.collections.dispose();
+    }
+
+    await clearWorkspaceContent(targetWorkspaceID);
   };
-  const getEntry = (id: string) => {
-    return entriesCollection.findOne({ id });
+
+  const loading = () => {
+    const { entries, collections } = contentCollections();
+
+    return entries.isLoading() || collections.isLoading();
   };
-  const createEntry = (collectionID?: string): Entry => {
-    const entry: Entry = {
-      id: toEntryID(new ObjectId()),
-      order: `${LexoRank.min()}`,
-      name: "Untitled",
-      collectionID
-    };
-    entriesCollection.insert(entry);
-    client.entries.create(entry).catch((error) => {
-      entriesCollection.removeOne({ id: entry.id });
+  const readOnly = () => {
+    return !isOnline() || !contentCollections().workspaceID;
+  };
+
+  createEffect(
+    on(workspaceID, async (currentWorkspaceID, previousWorkspaceID) => {
+      const previousCollections = contentCollections();
+      const nextCollections = createWorkspaceCollections(currentWorkspaceID);
+
+      setContentCollections(nextCollections);
+
+      await previousCollections.entries.dispose();
+      await previousCollections.collections.dispose();
+
+      if (previousWorkspaceID && !currentWorkspaceID) {
+        await clearWorkspaceContent(previousWorkspaceID);
+      }
+    })
+  );
+
+  createEffect(async () => {
+    const tree = explorerTree();
+    const treeWorkspaceID = workspaceID();
+
+    if (!tree || !treeWorkspaceID) {
+      return;
+    }
+
+    const { workspaceID: currentWorkspaceID, entries, collections } = contentCollections();
+
+    if (currentWorkspaceID !== treeWorkspaceID) {
+      return;
+    }
+
+    await Promise.all([entries.isReady(), collections.isReady()]);
+
+    if (contentCollections().workspaceID !== treeWorkspaceID) {
+      return;
+    }
+
+    entries.batch(() => {
+      entries.removeMany({});
+      entries.insertMany(tree.entries);
     });
-
-    return entry;
-  };
-  const createCollection = (collectionID?: string): Collection => {
-    const collection: Collection = {
-      id: toEntryID(new ObjectId()),
-      name: "Untitled",
-      descendants: [],
-      ancestors: collectionID
-        ? [...(getCollection(collectionID)?.ancestors || []), collectionID]
-        : []
-    };
-
-    collectionsCollection.insert(collection);
-    client.collections.create(collection).catch((error) => {
-      collectionsCollection.removeOne({ id: collection.id });
+    collections.batch(() => {
+      collections.removeMany({});
+      collections.insertMany(tree.collections);
     });
-
-    return collection;
-  };
-  const updateCollection = (collectionID: string, props: Partial<Collection>) => {
-    const original = getCollection(collectionID);
-    if (!original) return;
-
-    const updated = { ...original, ...props };
-    collectionsCollection.updateOne({ id: collectionID }, { $set: props });
-    client.collections.update(updated).catch((error) => {
-      collectionsCollection.updateOne({ id: collectionID }, { $set: original });
-    });
-  };
-  const updateEntry = (entryID: string, props: Partial<Entry>) => {
-    const original = getEntry(entryID);
-
-    if (!original) return;
-
-    const updated = { ...original, ...props };
-
-    entriesCollection.updateOne({ id: entryID }, { $set: props });
-    client.entries.update(updated).catch((error) => {
-      entriesCollection.updateOne({ id: entryID }, { $set: original });
-    });
-  };
-  const deleteCollections = (collectionIDs: string[]) => {};
-  const deleteEntries = (entryIDs: string[]) => {};
+  });
 
   return {
     entriesCollection,
     collectionsCollection,
+    disposeWorkspaceContent,
     loading,
     readOnly,
-    getContentTreeLevel,
-    getCollection,
-    getEntry,
-    createEntry,
-    createCollection,
-    updateCollection,
-    updateEntry,
-    deleteCollections,
-    deleteEntries
+    ...contentOperations
   };
 };
 

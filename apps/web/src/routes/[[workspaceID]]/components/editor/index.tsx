@@ -1,5 +1,5 @@
-import { Card, Spinner, Tooltip } from "@andesine/components";
-import { Component, createEffect, createSignal, Show } from "solid-js";
+import { Card, Skeleton, Spinner, Tooltip } from "@andesine/components";
+import { Component, createEffect, createSignal, Show, Suspense } from "solid-js";
 import { Editor, type EditorProvider } from "@andesine/editor";
 import { useParams } from "@solidjs/router";
 import { useNotify } from "#web/context/notifications";
@@ -283,14 +283,16 @@ const EditorPane: Component = () => {
                     <span>Syncing</span>
                   </div>
                 </Show>
-                <Editor
-                  doc={entryID}
-                  url={`${config.PUBLIC_WS_API_URL}/collab`}
-                  notify={(type, text) => notify({ type, text })}
-                  collaborationUser={collaborationUser()}
-                  beforeProviderAttach={handleBeforeProviderAttach}
-                  onProvider={handleProvider}
-                />
+                <Suspense fallback={<Skeleton />}>
+                  <Editor
+                    doc={entryID}
+                    url={`${config.PUBLIC_WS_API_URL}/collab`}
+                    notify={(type, text) => notify({ type, text })}
+                    collaborationUser={collaborationUser()}
+                    beforeProviderAttach={handleBeforeProviderAttach}
+                    onProvider={handleProvider}
+                  />
+                </Suspense>
               </div>
             )}
           </Show>

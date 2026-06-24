@@ -1,80 +1,72 @@
 import { createPersistenceAdapter } from "@signaldb/core";
-import { openDB, type IDBPDatabase } from "idb";
+import { deleteDB, openDB, type IDBPDatabase } from "idb";
 
 interface IndexedDBAdapterOptions {
-  prefix?: string;
   databaseName?: string;
   storeName?: string;
   stores?: string[];
-  legacyDatabaseName?: string;
 }
 
 const LEGACY_STORE_NAME = "items";
-const databaseOperationQueues = new Map<string, Promise<unknown>>();
 const isIndexedDBAvailable = () => {
   return typeof window !== "undefined" && typeof indexedDB !== "undefined";
+};
+const deleteIndexedDBDatabase = async (name: string) => {
+  if (!isIndexedDBAvailable()) {
+    return;
+  }
+
+  await deleteDB(name);
 };
 const createIndexedDBAdapter = <T extends { id: I } & Record<string, any>, I extends IDBValidKey>(
   name: string,
   options?: IndexedDBAdapterOptions
 ) => {
   const {
-    prefix = "signaldb-",
     databaseName: explicitDatabaseName,
     storeName = LEGACY_STORE_NAME,
-    stores = [],
-    legacyDatabaseName: explicitLegacyDatabaseName
+    stores = []
   } = options || {};
-  const databaseName = `${prefix}${explicitDatabaseName ?? name}`;
-  const legacyDatabaseName = explicitLegacyDatabaseName
-    ? `${prefix}${explicitLegacyDatabaseName}`
-    : null;
+  const databaseName = explicitDatabaseName || name;
   const requestedStores = Array.from(new Set([storeName, ...stores]));
-
-  function queueDatabaseOperation<R>(targetDatabaseName: string, task: () => Promise<R>) {
-    const previous = databaseOperationQueues.get(targetDatabaseName) ?? Promise.resolve();
-    const next = previous.catch(() => undefined).then(task);
-
-    databaseOperationQueues.set(
-      targetDatabaseName,
-      next.catch(() => undefined)
-    );
-
-    return next;
-  }
 
   async function openDatabase(
     targetDatabaseName: string,
     targetStoreNames: string[]
   ): Promise<IDBPDatabase | null> {
-    return queueDatabaseOperation(targetDatabaseName, async () => {
-      if (!isIndexedDBAvailable()) {
-        return null;
-      }
+    if (!isIndexedDBAvailable()) {
+      return null;
+    }
 
-      const database = await openDB(targetDatabaseName);
-      const missingStores = targetStoreNames.filter(
-        (targetStoreName) => !database.objectStoreNames.contains(targetStoreName)
-      );
+    const database = await openDB(targetDatabaseName);
 
-      if (missingStores.length === 0) {
-        return database;
-      }
+    database.addEventListener("versionchange", () => database.close());
 
-      const nextVersion = database.version + 1;
+    const missingStores = targetStoreNames.filter(
+      (targetStoreName) => !database.objectStoreNames.contains(targetStoreName)
+    );
 
-      database.close();
+    if (missingStores.length === 0) {
+      return database;
+    }
 
-      return openDB(targetDatabaseName, nextVersion, {
-        upgrade(upgradeDatabase) {
-          for (const targetStoreName of targetStoreNames) {
-            if (!upgradeDatabase.objectStoreNames.contains(targetStoreName)) {
-              upgradeDatabase.createObjectStore(targetStoreName, { keyPath: "id" });
-            }
+    const nextVersion = database.version + 1;
+
+    database.close();
+
+    const upgradedDatabase = await openDB(targetDatabaseName, nextVersion, {
+      upgrade(upgradeDatabase) {
+        for (const targetStoreName of targetStoreNames) {
+          if (!upgradeDatabase.objectStoreNames.contains(targetStoreName)) {
+            upgradeDatabase.createObjectStore(targetStoreName, { keyPath: "id" });
           }
         }
-      });
+      }
     });
+
+    upgradedDatabase.addEventListener("versionchange", () => upgradedDatabase.close());
+
+    return upgradedDatabase;
   }
 
   async function readAllItems(
@@ -86,48 +78,12 @@ const createIndexedDBAdapter = <T extends { id: I } & Record<string, any>, I ext
 
     if (!database || !database.objectStoreNames.contains(targetStoreName)) {
       database?.close();
+
       return [];
     }
 
     try {
       return (await database.getAll(targetStoreName)) as T[];
-    } finally {
-      database.close();
-    }
-  }
-
-  async function databaseExists(targetDatabaseName: string): Promise<boolean> {
-    if (!isIndexedDBAvailable() || typeof indexedDB.databases !== "function") {
-      return false;
-    }
-
-    const databases = await indexedDB.databases();
-
-    return databases.some((database) => database.name === targetDatabaseName);
-  }
-
-  async function persistChanges(options: {
-    added?: T[];
-    modified?: T[];
-    removed?: Array<{ id: I }>;
-  }): Promise<void> {
-    const database = await openDatabase(databaseName, requestedStores);
-
-    if (!database) {
-      return;
-    }
-
-    const transaction = database.transaction(storeName, "readwrite");
-    const store = transaction.objectStore(storeName);
-
-    try {
-      // Sync can reclassify an existing record as added when reconciling snapshots,
-      // so all writes need to be idempotent to avoid aborting the whole transaction.
-      (options.added ?? []).forEach((item) => store.put(item));
-      (options.modified ?? []).forEach((item) => store.put(item));
-      (options.removed ?? []).forEach((item) => store.delete(item.id));
-
-      await transaction.done;
     } finally {
       database.close();
     }
@@ -149,26 +105,27 @@ const createIndexedDBAdapter = <T extends { id: I } & Record<string, any>, I ext
 
       const items = await getAllItems();
 
-      if (items.length > 0 || !legacyDatabaseName || legacyDatabaseName === databaseName) {
-        return { items };
-      }
-
-      if (!(await databaseExists(legacyDatabaseName))) {
-        return { items };
-      }
-
-      const legacyItems = await readAllItems(legacyDatabaseName, LEGACY_STORE_NAME);
-
-      if (legacyItems.length > 0) {
-        await persistChanges({ added: legacyItems });
-      }
-
-      return { items: legacyItems };
+      return { items };
     },
-    async save(items, { added, modified, removed }) {
-      void items;
+    async save(_items, { added, modified, removed }) {
+      const database = await openDatabase(databaseName, requestedStores);
 
-      await persistChanges({ added, modified, removed });
+      if (!database) {
+        return;
+      }
+
+      const transaction = database.transaction(storeName, "readwrite");
+      const store = transaction.objectStore(storeName);
+
+      try {
+        added.forEach((item) => store.put(item));
+        modified.forEach((item) => store.put(item));
+        removed.forEach((item) => store.delete(item.id));
+
+        await transaction.done;
+      } finally {
+        database.close();
+      }
     },
     async register() {
       return;
@@ -176,4 +133,4 @@ const createIndexedDBAdapter = <T extends { id: I } & Record<string, any>, I ext
   });
 };
 
-export { createIndexedDBAdapter };
+export { createIndexedDBAdapter, deleteIndexedDBDatabase };

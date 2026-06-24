@@ -71,7 +71,11 @@ const switchEnvironmentAction = action(
 
 const WorkspaceContext = createContext<WorkspaceContextValue>();
 const WorkspaceProvider: ParentComponent<WorkspaceProviderProps> = (props) => {
-  const content = useWorkspaceContent();
+  if (validateWorkspaceID(props.workspaceID)) {
+    setCurrentWorkspaceID(props.workspaceID);
+  }
+
+  const content = useWorkspaceContent(currentWorkspaceID);
   const sessions = createAsync(() => listSessionsQuery());
   const workspaces = createAsync(() => listWorkspacesQuery());
   const switchEnvironment = useAction(switchEnvironmentAction);
@@ -116,9 +120,15 @@ const WorkspaceProvider: ParentComponent<WorkspaceProviderProps> = (props) => {
     )
   );
 
-  if (validateWorkspaceID(props.workspaceID)) {
-    setCurrentWorkspaceID(props.workspaceID);
-  }
+  createEffect(() => {
+    const id = currentWorkspaceID();
+    const workspaceList = workspaces();
+
+    if (!id || !workspaceList) return;
+    if (workspaceList.some((workspace) => workspace.id === id)) return;
+
+    setCurrentWorkspaceID("");
+  });
 
   return (
     <WorkspaceContext.Provider
