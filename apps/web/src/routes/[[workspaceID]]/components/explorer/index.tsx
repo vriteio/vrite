@@ -5,7 +5,8 @@ import {
   Skeleton,
   Shortcut,
   useShortcuts,
-  createRef
+  createRef,
+  createDebounced
 } from "@andesine/components";
 import { TreeSelection, useTree } from "#web/components/tree";
 import { ExplorerProvider } from "./explorer-context";
@@ -37,6 +38,7 @@ const Explorer = () => {
     width: 0,
     height: 0
   });
+  const contentLoading = createDebounced(content.loading, 100);
   const onPointerDown = (event: PointerEvent) => {
     if (!(event.target instanceof HTMLElement)) return;
     if (
@@ -342,7 +344,7 @@ const Explorer = () => {
       >
         <div class="my-0.5 flex items-center gap-2">
           <h2 class="text-2xl font-semibold">Explorer</h2>
-          <Show when={content.readOnly()}>
+          <Show when={content.offline()}>
             <span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
               Offline: read-only
             </span>
@@ -351,7 +353,7 @@ const Explorer = () => {
         <div ref={setTreeContainerRef} class="flex flex-col flex-1 relative w-full">
           <TreeSelection />
           <Show
-            when={!content.loading()}
+            when={!contentLoading()}
             fallback={
               <div class="flex flex-col gap-1.5 py-1">
                 <div class="flex gap-1 items-center pl-1">

@@ -4,18 +4,14 @@ import { createIndexedDBAdapter, deleteIndexedDBDatabase } from "./persistence";
 import { Collection, Entry, client } from "#web/lib/client";
 import solidReactivityAdapter from "@signaldb/solid";
 import { useConnectivitySignal } from "@solid-primitives/connectivity";
-import { Accessor, createEffect, createSignal, on } from "solid-js";
-import { createAsync, query } from "@solidjs/router";
+import { Accessor, createEffect, createResource, createSignal, on } from "solid-js";
+import { isServer } from "solid-js/web";
 
-const explorerTreeQuery = query(async (workspaceID?: string) => {
-  if (!workspaceID) {
-    return { collections: [], entries: [] };
-  }
-
-  const explorerTree = await client.sync.getExplorerTree();
-
-  return explorerTree;
-}, "explorerTree");
+type ExplorerTree = {
+  workspaceID: string;
+  collections: Collection[];
+  entries: Entry[];
+};
 const getWorkspaceContentDatabaseName = (workspaceID?: string) => {
   return `andesine:${workspaceID || "ephemeral"}`;
 };
@@ -44,18 +40,57 @@ const createWorkspaceCollections = (workspaceID?: string) => {
       : undefined,
     reactivity: solidReactivityAdapter
   });
+  const isReady = async () => {
+    await Promise.all([entries.isReady(), collections.isReady()]);
+  };
+  const dispose = async () => {
+    await Promise.all([entries.dispose(), collections.dispose()]);
+  };
 
-  return { workspaceID, entries, collections };
+  return { workspaceID, entries, collections, isReady, dispose };
 };
 const clearWorkspaceContent = async (workspaceID: string) => {
   await deleteIndexedDBDatabase(getWorkspaceContentDatabaseName(workspaceID));
 };
-const useWorkspaceContent = (workspaceID: Accessor<string>) => {
-  const explorerTree = createAsync(() => {
-    return explorerTreeQuery(workspaceID());
+const hasLocalContent = (collections: ReturnType<typeof createWorkspaceCollections>) => {
+  return Boolean(collections.entries.findOne({}) || collections.collections.findOne({}));
+};
+const applyCollectionSnapshot = <T extends { id: IDBValidKey } & Record<string, any>>(
+  collection: LocalDBCollection<T>,
+  snapshot: T[]
+) => {
+  const snapshotIDs = new Set(snapshot.map((item) => item.id));
+  const existingItems = collection.find().fetch();
+
+  collection.batch(() => {
+    for (const item of existingItems) {
+      if (!snapshotIDs.has(item.id)) {
+        collection.removeOne({ id: item.id } as any);
+      }
+    }
+
+    for (const item of snapshot) {
+      collection.replaceOne({ id: item.id } as any, item, { upsert: true });
+    }
   });
+};
+const useWorkspaceContent = (workspaceID: Accessor<string>) => {
+  const [explorerTree] = createResource<ExplorerTree, string>(
+    () => (isServer ? "" : workspaceID()),
+    async (workspaceID) => {
+      if (!workspaceID) {
+        return { workspaceID: "", collections: [], entries: [] };
+      }
+
+      const explorerTree = await client.sync.getExplorerTree();
+
+      return { workspaceID, ...explorerTree };
+    },
+    { initialValue: { workspaceID: "", collections: [], entries: [] } }
+  );
   const isOnline = useConnectivitySignal();
   const [contentCollections, setContentCollections] = createSignal(createWorkspaceCollections());
+  const [loading, setLoading] = createSignal(Boolean(workspaceID()));
   const entriesCollection = () => contentCollections().entries;
   const collectionsCollection = () => contentCollections().collections;
   const contentOperations = createWorkspaceContentOperations({
@@ -76,59 +111,78 @@ const useWorkspaceContent = (workspaceID: Accessor<string>) => {
     await clearWorkspaceContent(targetWorkspaceID);
   };
 
-  const loading = () => {
-    const { entries, collections } = contentCollections();
-
-    return entries.isLoading() || collections.isLoading();
-  };
   const readOnly = () => {
     return !isOnline() || !contentCollections().workspaceID;
   };
+  const offline = () => {
+    return !isOnline();
+  };
+  const switchWorkspace = async (currentWorkspaceID: string, previousWorkspaceID?: string) => {
+    setLoading(Boolean(currentWorkspaceID));
+
+    const previousCollections = contentCollections();
+    const nextCollections = createWorkspaceCollections(currentWorkspaceID);
+
+    setContentCollections(nextCollections);
+    previousCollections.dispose();
+
+    if (previousWorkspaceID && !currentWorkspaceID) {
+      await clearWorkspaceContent(previousWorkspaceID);
+    }
+
+    if (!currentWorkspaceID) {
+      setLoading(false);
+      return;
+    }
+
+    await nextCollections.isReady();
+
+    if (
+      contentCollections().workspaceID === currentWorkspaceID &&
+      hasLocalContent(nextCollections)
+    ) {
+      setLoading(false);
+    }
+  };
+
+  const applyExplorerTree = async (tree: ExplorerTree) => {
+    const {
+      workspaceID: collectionsWorkspaceID,
+      entries,
+      collections,
+      isReady
+    } = contentCollections();
+
+    if (collectionsWorkspaceID !== tree.workspaceID) {
+      return;
+    }
+
+    await isReady();
+
+    if (contentCollections().workspaceID !== tree.workspaceID) {
+      return;
+    }
+
+    applyCollectionSnapshot(entries, tree.entries);
+    applyCollectionSnapshot(collections, tree.collections);
+    setLoading(false);
+  };
 
   createEffect(
-    on(workspaceID, async (currentWorkspaceID, previousWorkspaceID) => {
-      const previousCollections = contentCollections();
-      const nextCollections = createWorkspaceCollections(currentWorkspaceID);
-
-      setContentCollections(nextCollections);
-
-      await previousCollections.entries.dispose();
-      await previousCollections.collections.dispose();
-
-      if (previousWorkspaceID && !currentWorkspaceID) {
-        await clearWorkspaceContent(previousWorkspaceID);
-      }
+    on(workspaceID, (currentWorkspaceID, previousWorkspaceID) => {
+      switchWorkspace(currentWorkspaceID, previousWorkspaceID);
     })
   );
 
-  createEffect(async () => {
+  createEffect(() => {
     const tree = explorerTree();
-    const treeWorkspaceID = workspaceID();
+    const currentWorkspaceID = workspaceID();
 
-    if (!tree || !treeWorkspaceID) {
+    if (!tree || !currentWorkspaceID || tree.workspaceID !== currentWorkspaceID) {
       return;
     }
 
-    const { workspaceID: currentWorkspaceID, entries, collections } = contentCollections();
-
-    if (currentWorkspaceID !== treeWorkspaceID) {
-      return;
-    }
-
-    await Promise.all([entries.isReady(), collections.isReady()]);
-
-    if (contentCollections().workspaceID !== treeWorkspaceID) {
-      return;
-    }
-
-    entries.batch(() => {
-      entries.removeMany({});
-      entries.insertMany(tree.entries);
-    });
-    collections.batch(() => {
-      collections.removeMany({});
-      collections.insertMany(tree.collections);
-    });
+    applyExplorerTree(tree);
   });
 
   return {
@@ -137,6 +191,7 @@ const useWorkspaceContent = (workspaceID: Accessor<string>) => {
     disposeWorkspaceContent,
     loading,
     readOnly,
+    offline,
     ...contentOperations
   };
 };

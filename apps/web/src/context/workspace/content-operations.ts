@@ -33,11 +33,18 @@ const createWorkspaceContentOperations = (input: WorkspaceContentOperationsInput
     };
     const entries = () => {
       return entriesCollection()
-        .find({
-          ...(ancestorID === null
-            ? { collectionID: { $exists: false } }
-            : { collectionID: ancestorID })
-        })
+        .find(
+          {
+            ...(ancestorID === null
+              ? { collectionID: { $exists: false } }
+              : { collectionID: ancestorID })
+          },
+          {
+            sort: {
+              order: -1
+            }
+          }
+        )
         .fetch();
     };
 

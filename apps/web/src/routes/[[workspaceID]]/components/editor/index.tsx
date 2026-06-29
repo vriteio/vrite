@@ -92,9 +92,8 @@ const EntryContentSkeleton: Component = () => {
 };
 
 const EditorPane: Component = () => {
-  // TODO: Finalize
-  const isContentLoading = () => false;
-  const { currentWorkspace, sessions } = useWorkspace();
+  const { currentWorkspace, sessions, content } = useWorkspace();
+  const isContentLoading = () => content.loading();
   const params = useParams();
   const notify = useNotify();
   const [entryLoadState, setEntryLoadState] = createSignal<EntryLoadState>(

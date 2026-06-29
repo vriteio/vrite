@@ -107,7 +107,7 @@ const createIndexedDBAdapter = <T extends { id: I } & Record<string, any>, I ext
 
       return { items };
     },
-    async save(_items, { added, modified, removed }) {
+    async save(items, { added, modified, removed }) {
       const database = await openDatabase(databaseName, requestedStores);
 
       if (!database) {
@@ -116,11 +116,16 @@ const createIndexedDBAdapter = <T extends { id: I } & Record<string, any>, I ext
 
       const transaction = database.transaction(storeName, "readwrite");
       const store = transaction.objectStore(storeName);
+      const currentIDs = new Set(items.map((item) => item.id));
 
       try {
+        removed.forEach((item) => {
+          if (!currentIDs.has(item.id)) {
+            store.delete(item.id);
+          }
+        });
         added.forEach((item) => store.put(item));
         modified.forEach((item) => store.put(item));
-        removed.forEach((item) => store.delete(item.id));
 
         await transaction.done;
       } finally {
