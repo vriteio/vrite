@@ -82,7 +82,7 @@ const ClientEditor: Component<EditorProps> = (props) => {
 
     setProvider(nextProvider);
 
-    void (async () => {
+    (async () => {
       try {
         beforeAttachCleanup = await props.beforeProviderAttach?.(nextProvider);
       } catch {

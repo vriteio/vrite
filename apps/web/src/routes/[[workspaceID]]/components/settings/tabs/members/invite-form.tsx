@@ -149,7 +149,7 @@ const InviteFormPage: Component<InviteFormPageProps> = (props) => {
             setValue={setEmail}
             class="w-full"
             onEnter={() => {
-              void handleSubmit();
+              handleSubmit();
             }}
           />
         </div>

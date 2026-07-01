@@ -88,7 +88,7 @@ const WorkspaceGeneralTab: Component<SettingsTabProps> = (props) => {
       () => props.opened,
       (opened, previous) => {
         if (previous && opened === false) {
-          void saveWorkspaceName();
+          saveWorkspaceName();
         }
       }
     )
@@ -148,7 +148,7 @@ const WorkspaceGeneralTab: Component<SettingsTabProps> = (props) => {
                 disabled={!canManageWorkspace()}
                 onBlur={saveWorkspaceName}
                 onEnter={() => {
-                  void saveWorkspaceName();
+                  saveWorkspaceName();
                 }}
               />
             </div>

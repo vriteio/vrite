@@ -54,8 +54,8 @@ const workspacesRouter = base.router({
         userID: context.auth.session!.userID
       });
 
-      void result.then((workspace) => {
-        void emitWorkspaceStateEvent(workspace.id, {
+      result.then((workspace) => {
+        emitWorkspaceStateEvent(workspace.id, {
           action: "workspace:create",
           data: workspace
         });
@@ -82,10 +82,10 @@ const workspacesRouter = base.router({
         name: input.name
       });
 
-      void result.then(() => {
+      result.then(() => {
         if (input.name === undefined) return;
 
-        void emitWorkspaceStateEvent(context.auth.workspaceID, {
+        emitWorkspaceStateEvent(context.auth.workspaceID, {
           action: "workspace:update",
           memberID: context.auth.session?.memberID,
           data: {
@@ -111,8 +111,8 @@ const workspacesRouter = base.router({
         userID: context.auth.session!.userID
       });
 
-      void result.then(() => {
-        void emitWorkspaceStateEvent(context.auth.workspaceID, {
+      result.then(() => {
+        emitWorkspaceStateEvent(context.auth.workspaceID, {
           action: "workspace:delete",
           memberID: context.auth.session?.memberID,
           data: {

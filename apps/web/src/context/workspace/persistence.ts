@@ -7,6 +7,7 @@ interface IndexedDBAdapterOptions {
   stores?: string[];
 }
 
+const WORKSPACE_DATA_PREFIX = "andesine:";
 const LEGACY_STORE_NAME = "items";
 const isIndexedDBAvailable = () => {
   return typeof window !== "undefined" && typeof indexedDB !== "undefined";
@@ -17,6 +18,16 @@ const deleteIndexedDBDatabase = async (name: string) => {
   }
 
   await deleteDB(name);
+};
+const clearWorkspaceData = async () => {
+  if (!isIndexedDBAvailable() || typeof window.indexedDB.databases !== "function") return;
+
+  const databases = await window.indexedDB.databases();
+  const databaseNames = databases.flatMap((database) => {
+    return database.name && database.name.startsWith(WORKSPACE_DATA_PREFIX) ? [database.name] : [];
+  });
+
+  await Promise.allSettled(databaseNames.map((name) => deleteIndexedDBDatabase(name)));
 };
 const createIndexedDBAdapter = <T extends { id: I } & Record<string, any>, I extends IDBValidKey>(
   name: string,
@@ -138,4 +149,9 @@ const createIndexedDBAdapter = <T extends { id: I } & Record<string, any>, I ext
   });
 };
 
-export { createIndexedDBAdapter, deleteIndexedDBDatabase };
+export {
+  WORKSPACE_DATA_PREFIX,
+  clearWorkspaceData,
+  createIndexedDBAdapter,
+  deleteIndexedDBDatabase
+};

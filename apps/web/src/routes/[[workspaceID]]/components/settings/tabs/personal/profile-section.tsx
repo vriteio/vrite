@@ -88,7 +88,7 @@ const ProfileSection: Component<ProfileSectionProps> = (props) => {
       () => props.opened,
       (opened, previous) => {
         if (previous && opened === false) {
-          void saveProfileName();
+          saveProfileName();
         }
       }
     )
@@ -136,7 +136,7 @@ const ProfileSection: Component<ProfileSectionProps> = (props) => {
               setValue={setLocalName}
               onBlur={saveProfileName}
               onEnter={() => {
-                void saveProfileName();
+                saveProfileName();
               }}
             />
           </div>

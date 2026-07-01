@@ -2,7 +2,7 @@ import { Component, createMemo, createSignal, onMount, Match, Switch, Show } fro
 import { action, useAction, useLocation, useNavigate, useSubmission } from "@solidjs/router";
 import { authClient, client } from "#web/lib/client";
 import { Button, Spinner } from "@andesine/components";
-import { appendRedirectTo } from "#web/lib/auth-redirect";
+import { appendRedirectTo } from "#web/lib/redirects";
 
 const acceptInviteAction = action((input: { token: string }) => {
   return client.memberships.acceptInvite({ token: input.token });

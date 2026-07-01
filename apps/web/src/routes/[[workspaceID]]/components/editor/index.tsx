@@ -27,49 +27,17 @@ const getCollaborationColor = (seed: string) => {
   return collaborationColors[Math.abs(hash) % collaborationColors.length];
 };
 
-const createEntryLoadState = (
-  entryID: string | null,
-  options?: { hasKnownLocalSnapshot?: boolean }
-): EntryLoadState => {
-  const hasKnownLocalSnapshot = options?.hasKnownLocalSnapshot ?? false;
-
+const createEntryLoadState = (entryID: string | null): EntryLoadState => {
   return {
     entryID,
-    isCheckingLocal: Boolean(entryID) && !hasKnownLocalSnapshot,
-    hasLocalSnapshot: hasKnownLocalSnapshot,
-    isRemoteSyncing: hasKnownLocalSnapshot
+    isCheckingLocal: Boolean(entryID),
+    hasLocalSnapshot: false,
+    isRemoteSyncing: false
   };
 };
 
 const getEntryPersistenceKey = (workspaceID: string, entryID: string) => {
   return `andesine:entry:${workspaceID}:${entryID}`;
-};
-
-const getEntryPersistenceHintKey = (workspaceID: string, entryID: string) => {
-  return `${getEntryPersistenceKey(workspaceID, entryID)}:has-local-snapshot`;
-};
-
-const hasKnownLocalSnapshot = (workspaceID: string, entryID: string) => {
-  if (typeof window === "undefined") {
-    return false;
-  }
-
-  return window.localStorage.getItem(getEntryPersistenceHintKey(workspaceID, entryID)) === "1";
-};
-
-const setKnownLocalSnapshot = (workspaceID: string, entryID: string, value: boolean) => {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  const key = getEntryPersistenceHintKey(workspaceID, entryID);
-
-  if (value) {
-    window.localStorage.setItem(key, "1");
-    return;
-  }
-
-  window.localStorage.removeItem(key);
 };
 
 const EntryContentSkeleton: Component = () => {
@@ -132,11 +100,7 @@ const EditorPane: Component = () => {
       return;
     }
 
-    setEntryLoadState(
-      createEntryLoadState(entryID, {
-        hasKnownLocalSnapshot: hasKnownLocalSnapshot(workspaceID(), entryID)
-      })
-    );
+    setEntryLoadState(createEntryLoadState(entryID));
   });
 
   const handleBeforeProviderAttach = async (provider: EditorProvider) => {
@@ -155,8 +119,6 @@ const EditorPane: Component = () => {
 
     const hasLocalSnapshot = provider.document.store.clients.size > 0;
 
-    setKnownLocalSnapshot(currentWorkspaceID, entryID, hasLocalSnapshot);
-
     setEntryLoadState((currentState) => {
       if (currentState.entryID !== entryID) {
         return currentState;
@@ -171,19 +133,14 @@ const EditorPane: Component = () => {
     });
 
     return () => {
-      void persistence.destroy();
+      persistence.destroy();
     };
   };
 
   const handleProvider = (provider: EditorProvider) => {
     const docID = provider.configuration.name;
-    const currentWorkspaceID = workspaceID();
 
     const handleSynced = (event: { state: boolean }) => {
-      if (event.state) {
-        setKnownLocalSnapshot(currentWorkspaceID, docID, true);
-      }
-
       setEntryLoadState((currentState) => {
         if (currentState.entryID !== docID) {
           return currentState;

@@ -2,7 +2,7 @@ import { Component } from "solid-js";
 import { IconButton, Button } from "@andesine/components";
 import { authClient } from "#web/lib/client";
 import { action, useAction, useSearchParams, useSubmission } from "@solidjs/router";
-import { appendRedirectTo, normalizeRedirectTo, toCallbackURL } from "#web/lib/auth-redirect";
+import { appendRedirectTo, normalizeRedirectTo, toCallbackURL } from "#web/lib/redirects";
 import { useNotify } from "#web/context/notifications";
 
 const signUpWithSocialAction = action(
@@ -90,7 +90,7 @@ const SignUpPage: Component = () => {
           }
           disabled={signUpWithGoogleSubmission.pending || signUpWithGitHubSubmission.pending}
           onClick={() => {
-            void signUpWithProvider("google");
+            signUpWithProvider("google");
           }}
         />
         <IconButton
@@ -106,7 +106,7 @@ const SignUpPage: Component = () => {
           }
           disabled={signUpWithGoogleSubmission.pending || signUpWithGitHubSubmission.pending}
           onClick={() => {
-            void signUpWithProvider("github");
+            signUpWithProvider("github");
           }}
         />
 

@@ -196,7 +196,7 @@ const KeyFormPage: Component<KeyFormPageProps> = (props) => {
             setValue={setKeyName}
             class="w-full"
             onEnter={() => {
-              void handleSubmit();
+              handleSubmit();
             }}
           />
         </div>

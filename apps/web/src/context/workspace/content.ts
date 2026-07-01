@@ -1,11 +1,14 @@
 import { Collection as LocalDBCollection } from "@signaldb/core";
 import { createWorkspaceContentOperations } from "./content-operations";
-import { createIndexedDBAdapter, deleteIndexedDBDatabase } from "./persistence";
+import {
+  WORKSPACE_DATA_PREFIX,
+  createIndexedDBAdapter,
+  deleteIndexedDBDatabase
+} from "./persistence";
 import { Collection, Entry, client } from "#web/lib/client";
 import solidReactivityAdapter from "@signaldb/solid";
 import { useConnectivitySignal } from "@solid-primitives/connectivity";
-import { Accessor, createEffect, createResource, createSignal, on } from "solid-js";
-import { isServer } from "solid-js/web";
+import { Accessor, createEffect, createSignal, on } from "solid-js";
 
 type ExplorerTree = {
   workspaceID: string;
@@ -13,7 +16,7 @@ type ExplorerTree = {
   entries: Entry[];
 };
 const getWorkspaceContentDatabaseName = (workspaceID?: string) => {
-  return `andesine:${workspaceID || "ephemeral"}`;
+  return `${WORKSPACE_DATA_PREFIX}${workspaceID || "ephemeral"}`;
 };
 const createWorkspaceCollections = (workspaceID?: string) => {
   const databaseName = getWorkspaceContentDatabaseName(workspaceID);
@@ -75,19 +78,6 @@ const applyCollectionSnapshot = <T extends { id: IDBValidKey } & Record<string, 
   });
 };
 const useWorkspaceContent = (workspaceID: Accessor<string>) => {
-  const [explorerTree] = createResource<ExplorerTree, string>(
-    () => (isServer ? "" : workspaceID()),
-    async (workspaceID) => {
-      if (!workspaceID) {
-        return { workspaceID: "", collections: [], entries: [] };
-      }
-
-      const explorerTree = await client.sync.getExplorerTree();
-
-      return { workspaceID, ...explorerTree };
-    },
-    { initialValue: { workspaceID: "", collections: [], entries: [] } }
-  );
   const isOnline = useConnectivitySignal();
   const [contentCollections, setContentCollections] = createSignal(createWorkspaceCollections());
   const [loading, setLoading] = createSignal(Boolean(workspaceID()));
@@ -117,6 +107,24 @@ const useWorkspaceContent = (workspaceID: Accessor<string>) => {
   const offline = () => {
     return !isOnline();
   };
+  const applyExplorerTree = async (
+    tree: ExplorerTree,
+    targetCollections: ReturnType<typeof createWorkspaceCollections>
+  ) => {
+    if (targetCollections.workspaceID !== tree.workspaceID) {
+      return;
+    }
+
+    await targetCollections.isReady();
+
+    if (contentCollections().workspaceID !== tree.workspaceID) {
+      return;
+    }
+
+    applyCollectionSnapshot(targetCollections.entries, tree.entries);
+    applyCollectionSnapshot(targetCollections.collections, tree.collections);
+    setLoading(false);
+  };
   const switchWorkspace = async (currentWorkspaceID: string, previousWorkspaceID?: string) => {
     setLoading(Boolean(currentWorkspaceID));
 
@@ -137,35 +145,26 @@ const useWorkspaceContent = (workspaceID: Accessor<string>) => {
 
     await nextCollections.isReady();
 
-    if (
-      contentCollections().workspaceID === currentWorkspaceID &&
-      hasLocalContent(nextCollections)
-    ) {
+    if (contentCollections().workspaceID !== currentWorkspaceID) {
+      return;
+    }
+
+    if (hasLocalContent(nextCollections)) {
       setLoading(false);
     }
-  };
 
-  const applyExplorerTree = async (tree: ExplorerTree) => {
-    const {
-      workspaceID: collectionsWorkspaceID,
-      entries,
-      collections,
-      isReady
-    } = contentCollections();
+    try {
+      const explorerTree = await client.sync.getExplorerTree();
 
-    if (collectionsWorkspaceID !== tree.workspaceID) {
-      return;
+      await applyExplorerTree(
+        { workspaceID: currentWorkspaceID, ...explorerTree },
+        nextCollections
+      );
+    } catch (error) {
+      if (contentCollections().workspaceID === currentWorkspaceID) {
+        setLoading(false);
+      }
     }
-
-    await isReady();
-
-    if (contentCollections().workspaceID !== tree.workspaceID) {
-      return;
-    }
-
-    applyCollectionSnapshot(entries, tree.entries);
-    applyCollectionSnapshot(collections, tree.collections);
-    setLoading(false);
   };
 
   createEffect(
@@ -173,17 +172,6 @@ const useWorkspaceContent = (workspaceID: Accessor<string>) => {
       switchWorkspace(currentWorkspaceID, previousWorkspaceID);
     })
   );
-
-  createEffect(() => {
-    const tree = explorerTree();
-    const currentWorkspaceID = workspaceID();
-
-    if (!tree || !currentWorkspaceID || tree.workspaceID !== currentWorkspaceID) {
-      return;
-    }
-
-    applyExplorerTree(tree);
-  });
 
   return {
     entriesCollection,

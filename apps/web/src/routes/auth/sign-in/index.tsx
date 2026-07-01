@@ -1,9 +1,14 @@
-import { action, useAction, useNavigate, useSearchParams, useSubmission } from "@solidjs/router";
+import { action, useAction, useSearchParams, useSubmission } from "@solidjs/router";
 import { Component, createMemo } from "solid-js";
 import { IconButton, Button } from "@andesine/components";
 import { useNotify } from "#web/context/notifications";
 import { authClient } from "#web/lib/client";
-import { appendRedirectTo, normalizeRedirectTo, toCallbackURL } from "#web/lib/auth-redirect";
+import {
+  appendRedirectTo,
+  normalizeRedirectTo,
+  redirectAfterAuth,
+  toCallbackURL
+} from "#web/lib/redirects";
 
 const signInWithPasskeyAction = action(async () => {
   const { error } = await authClient.signIn.passkey();
@@ -26,7 +31,6 @@ const signInWithSocialAction = action(
 );
 
 const SignInPage: Component = () => {
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const notify = useNotify();
   const signInWithPasskeyActionHandler = useAction(signInWithPasskeyAction);
@@ -48,7 +52,7 @@ const SignInPage: Component = () => {
     try {
       await signInWithPasskeyActionHandler();
 
-      navigate(redirectTo() || "/");
+      await redirectAfterAuth(redirectTo());
     } catch (error) {
       notify({ type: "error", text: "Passkey sign-in failed" });
     }
@@ -100,7 +104,7 @@ const SignInPage: Component = () => {
           }
           disabled={signInWithGoogleSubmission.pending || signInWithGitHubSubmission.pending}
           onClick={() => {
-            void signInWithProvider("google");
+            signInWithProvider("google");
           }}
         />
         <IconButton
@@ -116,7 +120,7 @@ const SignInPage: Component = () => {
           }
           disabled={signInWithGoogleSubmission.pending || signInWithGitHubSubmission.pending}
           onClick={() => {
-            void signInWithProvider("github");
+            signInWithProvider("github");
           }}
         />
         <div class="flex items-center justify-start gap-2 text-gray-400 dark:text-gray-500 text-xs">

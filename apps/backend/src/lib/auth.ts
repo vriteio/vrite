@@ -82,7 +82,7 @@ const auth = betterAuth({
     user: {
       create: {
         after: async (user) => {
-          void Workspaces.create({
+          Workspaces.create({
             name: `${user.name || user.email.split("@")[0]} (Personal Workspace)`,
             userID: user.id
           });
@@ -102,7 +102,7 @@ const auth = betterAuth({
             expiresAt: add(new Date(), { seconds: 300 })
           });
 
-          void sendEmail(email, "verification-otp", {
+          sendEmail(email, "verification-otp", {
             code: otp,
             type,
             link: `${config.PUBLIC_APP_URL}/auth/email?mode=${type === "email-verification" ? "sign-in" : "sign-up"}&token=${otpToken}`

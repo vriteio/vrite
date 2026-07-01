@@ -516,7 +516,7 @@ const APISettingsTab: Component<SettingsTabProps> = (props) => {
                                   }}
                                   onDelete={(ids) => {
                                     if (!mutationPending()) {
-                                      void handleDelete(ids);
+                                      handleDelete(ids);
                                     }
                                   }}
                                 />

@@ -184,7 +184,11 @@ const BillingSettingsTab: Component<BillingSettingsTabProps> = (props) => {
                   disabled={loading() || !canManageBilling()}
                   onClick={() => {
                     if (canManageBilling()) {
-                      void (isPro() ? handleManage() : handleUpgrade());
+                      if (isPro()) {
+                        handleManage();
+                      } else {
+                        handleUpgrade();
+                      }
                     }
                   }}
                 >

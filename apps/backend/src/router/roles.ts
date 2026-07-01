@@ -53,8 +53,8 @@ const rolesRouter = base.prefix("/roles").router({
         permissions: input.permissions
       });
 
-      void result.then((role) => {
-        void emitRoleEvent(context.auth.workspaceID, {
+      result.then((role) => {
+        emitRoleEvent(context.auth.workspaceID, {
           action: "role:create",
           memberID: context.auth.session?.memberID,
           data: role
@@ -91,8 +91,8 @@ const rolesRouter = base.prefix("/roles").router({
         permissions: input.permissions
       });
 
-      void result.then(() => {
-        void emitRoleEvent(context.auth.workspaceID, {
+      result.then(() => {
+        emitRoleEvent(context.auth.workspaceID, {
           action: "role:update",
           memberID: context.auth.session?.memberID,
           data: {
@@ -129,8 +129,8 @@ const rolesRouter = base.prefix("/roles").router({
         workspaceID: context.auth.workspaceID
       });
 
-      void result.then(() => {
-        void emitRoleEvent(context.auth.workspaceID, {
+      result.then(() => {
+        emitRoleEvent(context.auth.workspaceID, {
           action: "role:delete",
           memberID: context.auth.session?.memberID,
           data: {

@@ -144,7 +144,7 @@ const RoleFormPage: Component<RoleFormPageProps> = (props) => {
             setValue={setRoleName}
             class="w-full"
             onEnter={() => {
-              void handleSubmit();
+              handleSubmit();
             }}
           />
         </div>

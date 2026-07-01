@@ -3,6 +3,7 @@ import { DropdownArea, DropdownMenu, MenuItem } from "@andesine/components";
 import { Component, createMemo, createSignal, JSX } from "solid-js";
 import { action, useAction, useNavigate, useSubmission } from "@solidjs/router";
 import { useWorkspace } from "#web/context/workspace";
+import { clearWorkspaceData } from "#web/context/workspace/persistence";
 import clsx from "clsx";
 
 interface ProfileMenuProps {
@@ -142,13 +143,13 @@ const ProfileMenu: Component<ProfileMenuProps> = (props) => {
           if (logoutPending()) return;
 
           const sessionList = sessions();
+          await clearWorkspaceData();
 
           if (sessionList.length > 1) {
             const current = currentWorkspace();
             const currentSession = sessionList.find((s) => s.user.id === current?.userID);
 
             if (currentSession) {
-              // TODO: await clearAllLocalData();
               await revokeSession({
                 sessionToken: currentSession.sessionToken
               });
@@ -166,7 +167,6 @@ const ProfileMenu: Component<ProfileMenuProps> = (props) => {
               window.location.reload();
             }
           } else {
-            // TODO: await clearAllLocalData();
             await signOut();
             window.location.href = "/auth/sign-in";
           }

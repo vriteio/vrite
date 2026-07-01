@@ -4,7 +4,6 @@ import {
   action,
   createAsync,
   query,
-  redirect,
   useAction,
   useSearchParams,
   useSubmission
@@ -12,7 +11,7 @@ import {
 import { useNotify } from "#web/context/notifications";
 import { authClient, client } from "#web/lib/client";
 import { validateEmail } from "#web/lib/validate";
-import { appendRedirectTo, normalizeRedirectTo } from "#web/lib/auth-redirect";
+import { appendRedirectTo, normalizeRedirectTo, redirectAfterAuth } from "#web/lib/redirects";
 
 const verifyOTPTokenQuery = query(async (input: { token?: string }) => {
   if (!input.token) return null;
@@ -56,7 +55,7 @@ const verifyOTPAction = action(
       if (error) throw error;
     }
 
-    return redirect(normalizeRedirectTo(input.redirectTo) || "/");
+    return true;
   }
 );
 const EmailPage: Component = () => {
@@ -95,6 +94,7 @@ const EmailPage: Component = () => {
 
     try {
       await verifyOTP({ email: email(), otp: otp(), mode: mode(), redirectTo: redirectTo() });
+      await redirectAfterAuth(redirectTo());
     } catch (error) {
       notify({ type: "error", text: "Couldn't verify email" });
     }

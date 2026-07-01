@@ -12,6 +12,7 @@ import { passkeyClient } from "@better-auth/passkey/client";
 import { config } from "#web/lib/config";
 import { createSignal } from "solid-js";
 import { getRequestEvent } from "solid-js/web";
+import { clearWorkspaceData } from "#web/context/workspace/persistence";
 
 // Using signal to track workspace ID changes
 const [currentWorkspaceID, setCurrentWorkspaceID] = createSignal("");
@@ -49,6 +50,7 @@ const link = new RPCLink({
           setCurrentWorkspaceID("");
 
           if (typeof window !== "undefined") {
+            clearWorkspaceData();
             window.location.assign("/auth/sign-in");
             return;
           }

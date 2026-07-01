@@ -199,7 +199,7 @@ const SecuritySection: Component = () => {
       await addPasskeyRequest();
 
       notify({ type: "success", text: "Passkey added" });
-      void revalidate("listUserPasskeys");
+      revalidate("listUserPasskeys");
     } catch (error) {
       notify({ type: "error", text: "Failed to add passkey" });
     }
@@ -213,7 +213,7 @@ const SecuritySection: Component = () => {
         type: "success",
         text: passkeyIDs.length > 1 ? `${passkeyIDs.length} passkeys deleted` : "Passkey deleted"
       });
-      void revalidate("listUserPasskeys");
+      revalidate("listUserPasskeys");
     } catch (error) {
       notify({ type: "error", text: "Failed to delete passkey" });
     }
@@ -228,7 +228,7 @@ const SecuritySection: Component = () => {
       await renamePasskeyRequest({ id, name: trimmed });
 
       notify({ type: "success", text: "Passkey renamed" });
-      void revalidate("listUserPasskeys");
+      revalidate("listUserPasskeys");
     } catch (error) {
       notify({ type: "error", text: "Failed to rename passkey" });
     }

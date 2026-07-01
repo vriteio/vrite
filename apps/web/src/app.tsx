@@ -13,16 +13,18 @@ import WorkspaceLayout from "./routes/[[workspaceID]]";
 import HomePage from "./routes/[[workspaceID]]/[...slug]";
 import { authClient } from "./lib/client";
 import { getRequestEvent } from "solid-js/web";
-import { appendRedirectTo, normalizeRedirectTo } from "./lib/auth-redirect";
+import { appendRedirectTo, normalizeRedirectTo } from "./lib/redirects";
 import { validateWorkspaceID } from "./lib/validate";
 
 const rootRedirectQuery = query(async () => {
   const event = getRequestEvent();
 
-  if (!event) throw new Error("No request event found");
+  if (!event && typeof window === "undefined") {
+    return { success: true };
+  }
 
   const { data } = await authClient.getSession();
-  const url = new URL(event.request.url);
+  const url = new URL(event ? event.request.url : window.location.href);
   const isAuthRoute = url.pathname.startsWith("/auth");
   const workspaceID = url.pathname.split("/")[1] || "";
   const isAddAccount = url.searchParams.get("addAccount") === "true";

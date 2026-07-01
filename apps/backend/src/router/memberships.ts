@@ -76,8 +76,8 @@ const membershipsRouter = base.prefix("/memberships").router({
         roleID: input.roleID
       });
 
-      void result.then(() => {
-        void emitMembershipEvent(context.auth.workspaceID, {
+      result.then(() => {
+        emitMembershipEvent(context.auth.workspaceID, {
           action: "membership:update",
           memberID: context.auth.session?.memberID,
           data: {
@@ -113,8 +113,8 @@ const membershipsRouter = base.prefix("/memberships").router({
         workspaceID: context.auth.workspaceID
       });
 
-      void result.then(() => {
-        void emitMembershipEvent(context.auth.workspaceID, {
+      result.then(() => {
+        emitMembershipEvent(context.auth.workspaceID, {
           action: "membership:remove",
           memberID: context.auth.session?.memberID,
           data: {
@@ -152,8 +152,8 @@ const membershipsRouter = base.prefix("/memberships").router({
         inviterID: context.auth.session?.memberID
       });
 
-      void result.then((inviteResult) => {
-        void emitMembershipEvent(context.auth.workspaceID, {
+      result.then((inviteResult) => {
+        emitMembershipEvent(context.auth.workspaceID, {
           action: "invite:create",
           memberID: context.auth.session?.memberID,
           data: inviteResult.invite
