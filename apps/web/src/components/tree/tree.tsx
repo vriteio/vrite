@@ -1,5 +1,5 @@
 import { Accessor, JSX, ParentComponent } from "solid-js";
-import { TreeProvider, type TreeMap } from "./tree-context";
+import { TREE_ROOT_ID, TreeProvider, type TreeMap } from "./tree-context";
 import { TreeSelection } from "./tree-selection";
 import { TreeLevel } from "./tree-level";
 
@@ -16,7 +16,7 @@ const Tree: ParentComponent<TreeProps> = (props) => {
     <TreeProvider tree={props.tree} levelIDs={props.levelIDs}>
       <TreeSelection />
       <TreeLevel
-        levelID="*"
+        levelID={TREE_ROOT_ID}
         tree={props.tree}
         renderLevel={props.renderLevel}
         renderItem={props.renderItem}

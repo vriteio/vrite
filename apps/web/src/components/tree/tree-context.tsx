@@ -16,26 +16,42 @@ interface TreeData {
 }
 
 type TreeMap = Record<string, TreeData>;
+type TreeFocusSource = "hover" | "keyboard";
+type TreeSelectionMode = "normal" | "exact";
+type TreeLayoutItem = {
+  id: string;
+  top: number;
+  height: number;
+};
 
 interface TreeContextValue {
   selection: Accessor<string[]>;
   expanded: Accessor<string[]>;
+  focusedID: Accessor<string | null>;
+  focusedSource: Accessor<TreeFocusSource | null>;
   itemHeight: number;
   isSelected(id: string): boolean;
+  isFocused(id: string): boolean;
   isRenaming(id: string): boolean;
   isExpanded(id: string): boolean;
+  getItemHeight(id: string): number;
   flattenedOrder(): string[];
+  flattenedLayout(): TreeLayoutItem[];
 }
 
 interface TreeContextActions {
   setSelection: Setter<string[]>;
+  setExactSelection(selection: string[]): void;
   setExpanded: Setter<string[]>;
+  setFocusedID: Setter<string | null>;
+  setFocusedItem(id: string | null, source: TreeFocusSource | null): void;
   setRenaming: Setter<string | null>;
   toggleExpanded(id: string): void;
 }
 
 type TreeContextType = [TreeContextValue, TreeContextActions];
 
+const TREE_ROOT_ID = "~";
 const TreeContext = createContext<TreeContextType>();
 
 interface TreeProviderProps {
@@ -50,10 +66,23 @@ interface TreeProviderProps {
 
 const TreeProvider: ParentComponent<TreeProviderProps> = (props) => {
   const [rawSelection, setRawSelection] = createSignal<string[]>([]);
+  const [selectionMode, setSelectionMode] = createSignal<TreeSelectionMode>("normal");
   const [expanded, setExpanded] = createSignal<string[]>(props.initialExpanded?.() ?? []);
+  const [focusedID, setFocusedID] = createSignal<string | null>(null);
+  const [focusedSource, setFocusedSource] = createSignal<TreeFocusSource | null>(null);
   const [renaming, setRenaming] = createSignal<string | null>(null);
   const isRenaming = (id: string) => renaming() === id;
   const isExpanded = (id: string) => expanded().includes(id);
+  const getItemHeight = (id: string) => {
+    const itemHeight = props.itemHeight ?? 28;
+    const level = props.tree()[id];
+
+    if (!level || !isExpanded(id)) return itemHeight;
+
+    if (!level.items.length && !level.levels.length) return itemHeight * 2;
+
+    return itemHeight;
+  };
   const toggleExpanded = (id: string) => {
     setExpanded((prev) =>
       prev.includes(id) ? prev.filter((expandedId) => expandedId !== id) : [...prev, id]
@@ -68,7 +97,6 @@ const TreeProvider: ParentComponent<TreeProviderProps> = (props) => {
       const level = tree[levelID];
 
       if (!level || (!level.items.length && !level.levels.length)) {
-        order.push(levelID);
         return;
       }
 
@@ -85,9 +113,53 @@ const TreeProvider: ParentComponent<TreeProviderProps> = (props) => {
       }
     };
 
-    traverse("*");
+    traverse(TREE_ROOT_ID);
 
     return order;
+  };
+  const flattenedLayout = (): TreeLayoutItem[] => {
+    const layout: TreeLayoutItem[] = [];
+    const tree = props.tree();
+    const itemHeight = props.itemHeight ?? 28;
+    let top = 0;
+
+    const traverse = (levelID: string) => {
+      const level = tree[levelID];
+
+      if (!level || (!level.items.length && !level.levels.length)) {
+        return;
+      }
+
+      for (const childLevelID of level.levels) {
+        const childLevel = tree[childLevelID];
+        const childExpanded = isExpanded(childLevelID);
+        const isEmptyExpanded =
+          Boolean(childLevel) &&
+          childExpanded &&
+          !childLevel!.items.length &&
+          !childLevel!.levels.length;
+
+        layout.push({
+          id: childLevelID,
+          top,
+          height: isEmptyExpanded ? itemHeight * 2 : itemHeight
+        });
+        top += isEmptyExpanded ? itemHeight * 2 : itemHeight;
+
+        if (childLevel && childExpanded && !isEmptyExpanded) {
+          traverse(childLevelID);
+        }
+      }
+
+      for (const itemID of level.items) {
+        layout.push({ id: itemID, top, height: itemHeight });
+        top += itemHeight;
+      }
+    };
+
+    traverse(TREE_ROOT_ID);
+
+    return layout;
   };
 
   const getDescendants = (levelID: string): string[] => {
@@ -113,7 +185,7 @@ const TreeProvider: ParentComponent<TreeProviderProps> = (props) => {
   const selection = createMemo<string[]>(() => {
     const raw = rawSelection();
 
-    if (raw.length <= 1) return raw;
+    if (raw.length <= 1 || selectionMode() === "exact") return raw;
 
     const levelMap = props.levelIDs?.() || {};
     const selectedSet = new Set(raw);
@@ -142,8 +214,30 @@ const TreeProvider: ParentComponent<TreeProviderProps> = (props) => {
   const isSelected = (id: string) => {
     return selection().includes(id);
   };
+  const isFocused = (id: string) => {
+    return focusedID() === id;
+  };
   const setSelection: Setter<string[]> = (value) => {
+    setSelectionMode("normal");
+
     return setRawSelection<string[]>(typeof value === "function" ? value(selection()) : value);
+  };
+  const setExactSelection = (selection: string[]) => {
+    setSelectionMode("exact");
+    setRawSelection(selection);
+  };
+  const setFocusedIDAction: Setter<string | null> = (value) => {
+    return setFocusedID((prev) => {
+      const next = typeof value === "function" ? value(prev) : value;
+
+      setFocusedSource(null);
+
+      return next;
+    });
+  };
+  const setFocusedItem = (id: string | null, source: TreeFocusSource | null) => {
+    setFocusedID(id);
+    setFocusedSource(id ? source : null);
   };
 
   createEffect(
@@ -182,15 +276,23 @@ const TreeProvider: ParentComponent<TreeProviderProps> = (props) => {
         {
           selection,
           expanded,
+          focusedID,
+          focusedSource,
           itemHeight: props.itemHeight ?? 28,
           isSelected,
+          isFocused,
           isRenaming,
           isExpanded,
-          flattenedOrder
+          getItemHeight,
+          flattenedOrder,
+          flattenedLayout
         },
         {
           setSelection,
+          setExactSelection,
           setExpanded,
+          setFocusedID: setFocusedIDAction,
+          setFocusedItem,
           setRenaming,
           toggleExpanded
         }
@@ -205,5 +307,5 @@ const useTree = () => {
   return useContext(TreeContext)!;
 };
 
-export { TreeProvider, useTree };
+export { TREE_ROOT_ID, TreeProvider, useTree };
 export type { TreeData, TreeMap, TreeContextType };

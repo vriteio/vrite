@@ -25,7 +25,9 @@ const hasPermission = (granted: string, required: string): boolean => {
 };
 const authorized = base.middleware(async ({ procedure, context, next }) => {
   const meta = procedure["~orpc"].meta;
-  const sessionData = await Auth.getSessionData(context.reqHeaders!);
+  const sessionData = await Auth.getSessionData(context.reqHeaders!, {
+    requireWorkspace: meta.requireWorkspace !== false
+  });
   const isAdmin = sessionData.session?.admin === true;
 
   // Perform permission checks
@@ -33,6 +35,10 @@ const authorized = base.middleware(async ({ procedure, context, next }) => {
     // Admin sessions bypass all permission checks
     if (!isAdmin) {
       if (!meta.required[sessionData.type]) {
+        throw new ORPCError("FORBIDDEN");
+      }
+
+      if (meta.required[sessionData.type] === "admin") {
         throw new ORPCError("FORBIDDEN");
       }
 

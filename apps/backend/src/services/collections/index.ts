@@ -1,3 +1,4 @@
+import { ROOT_COLLECTION_NAME, getRootCollection } from "./root";
 import { createCollection } from "./create";
 import { deleteCollections } from "./delete";
 import { listCollections } from "./list";
@@ -9,7 +10,8 @@ const Collections = {
   list: listCollections,
   delete: deleteCollections,
   update: updateCollection,
-  move: moveCollection
+  move: moveCollection,
+  getRoot: getRootCollection
 };
 
-export { Collections };
+export { ROOT_COLLECTION_NAME, Collections };

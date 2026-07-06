@@ -6,6 +6,7 @@ node_modules
 .pnp.js
 
 # Local env files
+TODO.md
 .env
 .env.local
 .env.development.local

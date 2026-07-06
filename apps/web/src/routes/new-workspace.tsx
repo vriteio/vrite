@@ -1,24 +1,19 @@
-import { action, useAction, useSubmission, useNavigate } from "@solidjs/router";
+import { useNavigate } from "@solidjs/router";
 import { Component, createMemo, createSignal } from "solid-js";
 import { AnimatedGradientCard } from "#web/components/animated-gradient-card";
 import { Button, IconButton, Input } from "@andesine/components";
-import { client } from "#web/lib/client";
-
-const createWorkspaceAction = action(async (input: { name: string }) => {
-  const createdWorkspace = await client.workspaces.create(input);
-
-  return createdWorkspace.id;
-});
+import { client, setCurrentWorkspaceID } from "#web/lib/client";
 
 const NewWorkspacePage: Component = () => {
   const navigate = useNavigate();
-  const createWorkspace = useAction(createWorkspaceAction);
-  const createWorkspaceSubmission = useSubmission(createWorkspaceAction);
   const [name, setName] = createSignal("");
   const [error, setError] = createSignal("");
-  const loading = createMemo(() => createWorkspaceSubmission.pending);
+  const [creating, setCreating] = createSignal(false);
+  const loading = createMemo(() => creating());
 
   const handleCreate = async () => {
+    if (creating()) return;
+
     const trimmedName = name().trim();
 
     if (!trimmedName) {
@@ -28,13 +23,16 @@ const NewWorkspacePage: Component = () => {
     }
 
     setError("");
+    setCreating(true);
 
     try {
-      const workspaceID = await createWorkspace({ name: trimmedName });
+      const workspace = await client.workspaces.create({ name: trimmedName });
 
-      navigate(`/${workspaceID}/`);
+      setCurrentWorkspaceID(workspace.id);
+      navigate(`/${workspace.id}/`, { replace: true });
     } catch (createError) {
       setError("Failed to create workspace");
+      setCreating(false);
     }
   };
 

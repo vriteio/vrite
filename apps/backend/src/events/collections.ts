@@ -33,7 +33,8 @@ const collectionEventType = z.union([
     memberID: objectID().optional(),
     data: z.object({
       id: objectID(),
-      newParentID: objectID().nullable().optional()
+      newParentID: objectID().nullable().optional(),
+      index: z.number().int().min(0).optional()
     })
   })
 ]);

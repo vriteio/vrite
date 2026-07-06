@@ -1,18 +1,12 @@
 import { Component, createMemo, createSignal, onMount, Match, Switch, Show } from "solid-js";
-import { action, useAction, useLocation, useNavigate, useSubmission } from "@solidjs/router";
-import { authClient, client } from "#web/lib/client";
+import { useLocation, useNavigate } from "@solidjs/router";
+import { authClient, client, setCurrentWorkspaceID } from "#web/lib/client";
 import { Button, Spinner } from "@andesine/components";
 import { appendRedirectTo } from "#web/lib/redirects";
-
-const acceptInviteAction = action((input: { token: string }) => {
-  return client.memberships.acceptInvite({ token: input.token });
-});
 
 const InvitePage: Component = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const acceptInvite = useAction(acceptInviteAction);
-  const acceptInviteSubmission = useSubmission(acceptInviteAction);
   const [status, setStatus] = createSignal<"loading" | "success" | "error">("loading");
   const [errorMessage, setErrorMessage] = createSignal("Something went wrong");
   const [workspaceName, setWorkspaceName] = createSignal<string | null>(null);
@@ -47,8 +41,9 @@ const InvitePage: Component = () => {
     }
 
     try {
-      const result = await acceptInvite({ token });
+      const result = await client.memberships.acceptInvite({ token });
 
+      setCurrentWorkspaceID(result.workspaceID);
       setWorkspaceName(result.workspaceName);
       setStatus("success");
       setTimeout(() => navigate(`/${result.workspaceID}/`), 1600);
@@ -62,7 +57,7 @@ const InvitePage: Component = () => {
     <div class="flex h-full w-full items-center justify-center">
       <div class="flex flex-col items-center gap-4 text-center max-w-sm px-4">
         <Switch>
-          <Match when={status() === "loading" || acceptInviteSubmission.pending}>
+          <Match when={status() === "loading"}>
             <Spinner class="h-12 w-12" />
             <span class="text-lg font-medium">Checking your invite...</span>
           </Match>

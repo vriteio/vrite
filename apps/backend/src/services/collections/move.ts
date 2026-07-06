@@ -1,91 +1,79 @@
 import { collectionsDB, toCollectionID } from "#backend/db";
 import { toObjectID } from "#backend/lib/mongo";
 import { ORPCError } from "@orpc/server";
+import { ROOT_COLLECTION_NAME, getRootCollection } from "./root";
 
 const moveCollection = async (input: {
   id: string;
   workspaceID: string;
   newParentID?: string | null;
+  index?: number;
 }): Promise<void> => {
   const workspaceID = toObjectID(input.workspaceID);
   const collectionObjID = toObjectID(input.id);
-
-  const collection = await collectionsDB.findOne({
-    _id: collectionObjID,
-    workspaceID
-  });
+  const collection = await collectionsDB.findOne({ _id: collectionObjID, workspaceID });
 
   if (!collection) throw new ORPCError("NOT_FOUND");
+  if (collection.name === ROOT_COLLECTION_NAME) {
+    throw new ORPCError("BAD_REQUEST", { message: "Cannot move the root collection" });
+  }
 
-  const ancestors = collection.ancestors || [];
-  const currentParentID =
-    ancestors.length > 0 ? ancestors[ancestors.length - 1]?.toString() || null : null;
   const newParentID = input.newParentID ?? null;
+  const currentParent = collection.ancestors[collection.ancestors.length - 1];
+  const currentParentID = currentParent ? toCollectionID(currentParent) : null;
+  const parentChanged = currentParentID !== newParentID;
 
-  // Prevent moving to the same parent (no-op)
-  const currentParentStr = currentParentID
-    ? toCollectionID(ancestors[ancestors.length - 1]!)
-    : null;
-
-  if (currentParentStr === newParentID) return;
-
-  // Prevent moving a collection into itself
+  if (!parentChanged && input.index === undefined) return;
   if (newParentID === input.id) {
     throw new ORPCError("BAD_REQUEST", { message: "Cannot move a collection into itself" });
   }
 
-  // Compute new ancestors
-  let newAncestors: string[] = [];
+  const rootCollection = await getRootCollection({ workspaceID });
+  const rootCollectionID = toObjectID(rootCollection.id);
+  const parentObjID = newParentID ? toObjectID(newParentID) : rootCollectionID;
+  const newParent = await collectionsDB.findOne({ _id: parentObjID, workspaceID });
 
-  if (newParentID) {
-    const newParent = await collectionsDB.findOne({
-      _id: toObjectID(newParentID),
-      workspaceID
+  if (!newParent) throw new ORPCError("NOT_FOUND");
+
+  if (
+    newParent._id.equals(collectionObjID) ||
+    newParent.ancestors.some((ancestorID) => ancestorID.equals(collectionObjID))
+  ) {
+    throw new ORPCError("BAD_REQUEST", {
+      message: "Cannot move a collection into one of its descendants"
     });
-
-    if (!newParent) throw new ORPCError("NOT_FOUND");
-
-    // Prevent cyclic: newParent must not be a descendant of the collection being moved
-    const newParentAncestorStrs = newParent.ancestors.map((a) => toCollectionID(a));
-
-    if (newParentAncestorStrs.includes(input.id) || toCollectionID(newParent._id) === input.id) {
-      throw new ORPCError("BAD_REQUEST", {
-        message: "Cannot move a collection into one of its descendants"
-      });
-    }
-
-    newAncestors = [...newParent.ancestors.map((a) => toCollectionID(a)), newParentID];
   }
 
-  const oldAncestors = collection.ancestors.map((a) => toCollectionID(a));
+  const newAncestors = newParentID ? [...newParent.ancestors, newParent._id] : [];
 
-  // Update the moved collection's ancestors
-  await collectionsDB.updateOne(
-    { _id: collectionObjID },
-    { $set: { ancestors: newAncestors.map(toObjectID) } }
-  );
-
-  // Remove from old parent's descendants
-  if (currentParentStr) {
+  if (parentChanged) {
     await collectionsDB.updateOne(
-      { _id: toObjectID(currentParentStr), workspaceID },
+      { _id: collectionObjID, workspaceID },
+      { $set: { ancestors: newAncestors } }
+    );
+
+    const previousParentID = currentParentID ? toObjectID(currentParentID) : rootCollectionID;
+
+    await collectionsDB.updateOne(
+      { _id: previousParentID, workspaceID },
       { $pull: { descendants: collectionObjID } }
     );
   }
 
-  // Add to new parent's descendants
-  if (newParentID) {
-    await collectionsDB.updateOne(
-      { _id: toObjectID(newParentID), workspaceID },
-      { $addToSet: { descendants: collectionObjID } }
-    );
-  }
+  const descendants = newParent.descendants.filter((id) => !id.equals(collectionObjID));
+  const index =
+    input.index === undefined
+      ? descendants.length
+      : Math.min(Math.max(input.index, 0), descendants.length);
 
-  // Recursively update all descendant collections' ancestors
-  // Old prefix: [...oldAncestors, input.id]
-  // New prefix: [...newAncestors, input.id]
-  const oldPrefix = [...oldAncestors, input.id];
-  const newPrefix = [...newAncestors, input.id];
+  descendants.splice(index, 0, collectionObjID);
+
+  await collectionsDB.updateOne({ _id: parentObjID, workspaceID }, { $set: { descendants } });
+
+  if (!parentChanged) return;
+
+  const oldPrefix = [...collection.ancestors, collectionObjID];
+  const newPrefix = [...newAncestors, collectionObjID];
 
   const allDescendants = await collectionsDB
     .find({
@@ -94,17 +82,20 @@ const moveCollection = async (input: {
     })
     .toArray();
 
-  for (const descendant of allDescendants) {
-    const descAncestors = descendant.ancestors.map((a) => toCollectionID(a));
-    // Replace the old prefix with the new prefix
-    const prefixLength = oldPrefix.length;
-    const updatedAncestors = [...newPrefix, ...descAncestors.slice(prefixLength)];
+  if (allDescendants.length === 0) return;
 
-    await collectionsDB.updateOne(
-      { _id: descendant._id },
-      { $set: { ancestors: updatedAncestors.map(toObjectID) } }
-    );
-  }
+  await collectionsDB.bulkWrite(
+    allDescendants.map((descendant) => ({
+      updateOne: {
+        filter: { _id: descendant._id, workspaceID },
+        update: {
+          $set: {
+            ancestors: [...newPrefix, ...descendant.ancestors.slice(oldPrefix.length)]
+          }
+        }
+      }
+    }))
+  );
 };
 
 export { moveCollection };

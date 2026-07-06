@@ -10,7 +10,7 @@ const createEntry = async (
   }
 ): Promise<Entry> => {
   const entry: UnderscoreID<FullEntry<ObjectId>> = {
-    _id: new ObjectId(),
+    _id: input.id ? toObjectID(input.id) : new ObjectId(),
     name: input.name || "",
     order: `${LexoRank.min()}`,
     workspaceID: toObjectID(input.workspaceID),

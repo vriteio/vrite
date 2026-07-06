@@ -18,6 +18,7 @@ const workspaceListItemType = workspaceSummaryType.extend({
 const workspacesRouter = base.router({
   list: base
     .meta({
+      requireWorkspace: false,
       required: {
         session: true
       }
@@ -37,6 +38,7 @@ const workspacesRouter = base.router({
     }),
   create: base
     .meta({
+      requireWorkspace: false,
       required: {
         session: true
       }
@@ -125,6 +127,7 @@ const workspacesRouter = base.router({
     }),
   switch: base
     .meta({
+      requireWorkspace: false,
       required: {
         session: true
       }

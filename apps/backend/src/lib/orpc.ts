@@ -8,6 +8,7 @@ interface WSORPCContext {
   auth: SessionData;
 }
 interface ORPCMeta {
+  requireWorkspace?: boolean;
   trackUsage?: boolean;
   required?: {
     key?: KeyPermission[] | true;

@@ -1,5 +1,5 @@
 import { Collection as LocalDBCollection } from "@signaldb/core";
-import { createWorkspaceContentOperations } from "./content-operations";
+import { createWorkspaceContentOperations } from "./operations";
 import {
   WORKSPACE_DATA_PREFIX,
   createIndexedDBAdapter,

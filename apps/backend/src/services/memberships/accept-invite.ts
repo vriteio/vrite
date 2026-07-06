@@ -67,7 +67,15 @@ const acceptInvite = async (input: {
 
   if (existingMembership) {
     // Mark invite as accepted but don't create duplicate membership
-    await invitesDB.updateOne({ _id: invite._id }, { $set: { status: "accepted" } });
+    await Promise.all([
+      invitesDB.updateOne({ _id: invite._id }, { $set: { status: "accepted" } }),
+      usersDB.updateOne({ _id: userID }, { $set: { currentWorkspaceID: invite.workspaceID } })
+    ]);
+
+    await Auth.invalidateSessionData({
+      userID: input.userID,
+      workspaceID: toWorkspaceID(workspace._id)
+    });
 
     return {
       workspaceID: toWorkspaceID(workspace._id),

@@ -9,7 +9,7 @@ import { Workspaces } from "#backend/services";
 import { redis } from "./redis";
 import { Auth } from "#backend/services/auth";
 import { add } from "date-fns";
-import { toWorkspaceID } from "#backend/db";
+import { toUserID, toWorkspaceID } from "#backend/db";
 import { ObjectId } from "mongodb";
 
 const auth = betterAuth({
@@ -72,8 +72,16 @@ const auth = betterAuth({
         type: "string",
         required: false,
         transform: {
-          input: (value) => toObjectID(value as string) as unknown as string,
-          output: (value) => toWorkspaceID(value as unknown as ObjectId)
+          input: (value) => {
+            if (!value) return null;
+
+            return toObjectID(value as string) as unknown as string;
+          },
+          output: (value) => {
+            if (!value) return null;
+
+            return toWorkspaceID(value as unknown as ObjectId);
+          }
         }
       }
     }
@@ -81,11 +89,22 @@ const auth = betterAuth({
   databaseHooks: {
     user: {
       create: {
-        after: async (user) => {
-          Workspaces.create({
-            name: `${user.name || user.email.split("@")[0]} (Personal Workspace)`,
-            userID: user.id
+        before: async (user) => {
+          const userID = toUserID(new ObjectId());
+          const name = user.name || user.email.split("@")[0];
+          const workspace = await Workspaces.create({
+            name: `${name} (Personal Workspace)`,
+            userID
           });
+
+          return {
+            data: {
+              ...user,
+              name,
+              id: `${toObjectID(userID)}`,
+              currentWorkspaceID: workspace.id
+            }
+          };
         }
       }
     }

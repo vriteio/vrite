@@ -1,6 +1,6 @@
-import { createMemo, ParentComponent } from "solid-js";
+import { ParentComponent } from "solid-js";
 import { useParams } from "@solidjs/router";
-import { TreeProvider, useTree, type TreeMap } from "#web/components/tree";
+import { TreeProvider, useTree } from "#web/components/tree";
 import { getRequestEvent } from "solid-js/web";
 import { useWorkspace } from "#web/context/workspace";
 
@@ -62,21 +62,6 @@ const readExplorerStateCookie = () => {
 const ExplorerProvider: ParentComponent = (props) => {
   const { content } = useWorkspace();
   const params = useParams<{ workspaceID?: string }>();
-
-  const tree = createMemo<TreeMap>(() => {
-    // TODO: Finalize full contentTree retrieval
-    const ct = {} as Record<string, { entries: string[]; collections: string[] }>;
-    const result: TreeMap = {};
-
-    for (const [key, value] of Object.entries(ct)) {
-      result[key] = {
-        items: value.entries,
-        levels: value.collections
-      };
-    }
-
-    return result;
-  });
   const currentWorkspaceID = () => params.workspaceID || null;
   const expandedSourceKey = currentWorkspaceID;
   const initialExpanded = () => {
@@ -111,10 +96,10 @@ const ExplorerProvider: ParentComponent = (props) => {
       JSON.stringify(nextExpandedState)
     )}; path=/; SameSite=Lax`;
   };
-
   return (
     <TreeProvider
-      tree={tree}
+      tree={content.getContentTree}
+      levelIDs={content.getCollectionIDs}
       initialExpanded={initialExpanded}
       expandedSourceKey={expandedSourceKey}
       persistExpandedReady={() => !content.loading()}

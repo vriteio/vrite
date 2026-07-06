@@ -1,6 +1,14 @@
-import { membershipDB, usersDB, workspacesDB, toWorkspaceID, rolesDB } from "#backend/db";
-import type { FullRole, FullWorkspace, Permission } from "#backend/db";
-import { UnderscoreID } from "#backend/lib/mongo";
+import {
+  collectionsDB,
+  membershipDB,
+  usersDB,
+  workspacesDB,
+  toWorkspaceID,
+  rolesDB
+} from "#backend/db";
+import type { FullCollection, FullRole, FullWorkspace, Permission } from "#backend/db";
+import { toObjectID, UnderscoreID } from "#backend/lib/mongo";
+import { ROOT_COLLECTION_NAME } from "#backend/services/collections";
 import { ORPCError } from "@orpc/server";
 import { ObjectId } from "mongodb";
 
@@ -36,6 +44,13 @@ const createWorkspace = async (input: { name: string; userID: string }) => {
     _id: new ObjectId(),
     name: input.name
   };
+  const rootCollection: UnderscoreID<FullCollection<ObjectId>> = {
+    _id: new ObjectId(),
+    workspaceID: workspace._id,
+    name: ROOT_COLLECTION_NAME,
+    ancestors: [],
+    descendants: []
+  };
   const roles: Array<UnderscoreID<FullRole<ObjectId>>> = DEFAULT_ROLES.map((role) => ({
     _id: new ObjectId(),
     workspaceID: workspace._id,
@@ -54,15 +69,16 @@ const createWorkspace = async (input: { name: string; userID: string }) => {
   }
 
   await workspacesDB.insertOne(workspace);
+  await collectionsDB.insertOne(rootCollection);
   await rolesDB.insertMany(roles);
   await membershipDB.insertOne({
     _id: new ObjectId(),
-    userID: new ObjectId(input.userID),
+    userID: toObjectID(input.userID),
     workspaceID: workspace._id,
     roleID: adminRole._id
   });
   await usersDB.updateOne(
-    { _id: new ObjectId(input.userID) },
+    { _id: toObjectID(input.userID) },
     { $set: { currentWorkspaceID: workspace._id } }
   );
 

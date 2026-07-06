@@ -16,7 +16,7 @@ const collectionsRouter = base.prefix("/collections").router({
       }
     })
     .use(authorized)
-    .input(collectionType.omit({ id: true }).partial())
+    .input(collectionType.partial())
     .output(collectionType)
     .handler(async ({ context, input }) => {
       const newCollection = await Collections.create({
@@ -89,11 +89,9 @@ const collectionsRouter = base.prefix("/collections").router({
       });
     }),
   move: base
-    .route({ method: "PUT", path: "/move/{id}" })
     .meta({
       required: {
-        session: ["content"],
-        key: ["collections"]
+        session: ["content"]
       }
     })
     .use(authorized)
@@ -103,7 +101,13 @@ const collectionsRouter = base.prefix("/collections").router({
         newParentID: objectID()
           .nullable()
           .optional()
-          .describe("ID of the new parent collection, or null for root")
+          .describe("ID of the new parent collection, or null for root"),
+        index: z
+          .number()
+          .int()
+          .min(0)
+          .optional()
+          .describe("New zero-based index in the parent collection's descendants array")
       })
     )
     .output(z.void())
@@ -112,14 +116,16 @@ const collectionsRouter = base.prefix("/collections").router({
       await Collections.move({
         id: input.id,
         workspaceID: context.auth.workspaceID,
-        newParentID: input.newParentID
+        newParentID: input.newParentID,
+        index: input.index
       });
 
       emitCollectionEvent(context.auth.workspaceID, {
         action: "collection:move",
         data: {
           id: input.id,
-          newParentID: input.newParentID
+          newParentID: input.newParentID,
+          index: input.index
         },
         memberID: context.auth.session?.memberID
       });

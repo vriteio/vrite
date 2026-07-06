@@ -218,6 +218,7 @@ const membershipsRouter = base.prefix("/memberships").router({
       path: "/accept"
     })
     .meta({
+      requireWorkspace: false,
       required: {
         session: true
       }

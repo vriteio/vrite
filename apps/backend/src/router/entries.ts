@@ -16,7 +16,7 @@ const entriesRouter = base.prefix("/entries").router({
       }
     })
     .use(authorized)
-    .input(entryType.omit({ id: true, order: true }).partial())
+    .input(entryType.omit({ order: true }).partial())
     .output(entryType)
     .handler(async ({ context, input }) => {
       const newEntry = await Entries.create({

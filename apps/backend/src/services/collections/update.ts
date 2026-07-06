@@ -1,6 +1,7 @@
 import { Collection, collectionsDB } from "#backend/db";
 import { toObjectID } from "#backend/lib/mongo";
 import { ORPCError } from "@orpc/server";
+import { ROOT_COLLECTION_NAME } from "./root";
 
 const updateCollection = async (
   input: {
@@ -9,6 +10,16 @@ const updateCollection = async (
   } & Partial<Pick<Collection, "name">>
 ) => {
   const { id, workspaceID, ...setProperties } = input;
+  const collection = await collectionsDB.findOne({
+    _id: toObjectID(input.id),
+    workspaceID: toObjectID(input.workspaceID)
+  });
+
+  if (!collection) throw new ORPCError("NOT_FOUND");
+  if (collection.name === ROOT_COLLECTION_NAME || input.name === ROOT_COLLECTION_NAME) {
+    throw new ORPCError("BAD_REQUEST", { message: "Reserved collection name" });
+  }
+
   const { matchedCount } = await collectionsDB.updateOne(
     { _id: toObjectID(input.id), workspaceID: toObjectID(input.workspaceID) },
     { $set: setProperties }

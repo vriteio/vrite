@@ -25,10 +25,12 @@ import {
   type Edge,
   extractClosestEdge
 } from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge";
+import { canOrderEntries, createDragData } from "./explorer-dnd";
 
 interface ExplorerEntryProps {
   entry: Entry;
   topLevel?: boolean;
+  onParentDragHighlightChange?(highlighted: boolean): void;
 }
 
 const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
@@ -36,10 +38,48 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
   const notify = useNotify();
   const navigate = useNavigate();
   const { workspaceID, content } = useWorkspace();
-  const [{ selection }, { setRenaming, setSelection }] = useTree();
+  const [{ isSelected, selection, flattenedOrder }, { setRenaming, setSelection }] = useTree();
   const [elementRef, setElementRef] = createRef<HTMLElement | null>(null);
   const [closestEdge, setClosestEdge] = createSignal<Edge | null>(null);
   const [menuOpened, setMenuOpened] = createSignal(false);
+  const getCollectionParentID = (collectionID: string) => {
+    const collection = content.getCollection(collectionID);
+
+    return collection?.ancestors.at(-1) ?? null;
+  };
+  const getSiblingCollectionIDs = (parentID: string | null) => {
+    return content
+      .getContentTreeLevel(parentID)
+      .collections()
+      .map((collection) => collection.id);
+  };
+  const changesEntryParent = (source: { data: Record<string | symbol, unknown> }) => {
+    const entryIDs =
+      source.data.type === "entry"
+        ? [source.data.id as string]
+        : source.data.type === "multi"
+          ? ((source.data.entries as string[] | undefined) ?? [])
+          : [];
+
+    return entryIDs.some((entryID) => {
+      return (
+        (content.getEntry(entryID)?.collectionID ?? null) !== (props.entry.collectionID ?? null)
+      );
+    });
+  };
+  const setDropLine = (
+    source: { data: Record<string | symbol, unknown> },
+    data: Record<string | symbol, unknown>
+  ) => {
+    const edge = canOrderEntries(source.data) ? extractClosestEdge(data) : null;
+
+    setClosestEdge(edge);
+    props.onParentDragHighlightChange?.(Boolean(edge) && changesEntryParent(source));
+  };
+  const clearDropLine = () => {
+    setClosestEdge(null);
+    props.onParentDragHighlightChange?.(false);
+  };
   const dropdownOptions = createMemo(() => {
     const dropdownOptions: Array<MenuItem[]> = [];
     const selectedCount = selection().length;
@@ -62,9 +102,11 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
           label: "Rename entry",
           icon: "i-lucide:pencil",
           onClick: () => {
+            if (content.readOnly()) return;
+
             setRenaming(props.entry.id);
           },
-          shortcut: "enter"
+          shortcut: "shift+r"
         }
       ]);
     }
@@ -75,12 +117,10 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
         icon: "i-lucide:trash",
         onClick: () => {
           const ids = isMulti ? selection() : [props.entry.id];
-          // TODO: const colMap = collectionsMap();
-          const collectionIDs = [] as string[]; // TODO: ids.filter((id) => colMap[id]);
-          const entryIDs = [] as string[]; // TODO: ids.filter((id) => !colMap[id]);
 
-          if (entryIDs.length > 0) content.deleteEntries(entryIDs);
-          if (collectionIDs.length > 0) content.deleteCollections(collectionIDs);
+          if (content.readOnly()) return;
+
+          content.deleteContent(ids);
           setSelection([]);
         },
         color: "danger",
@@ -111,14 +151,20 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
           const isDraggingSelected = sel.includes(props.entry.id);
 
           if (isDraggingSelected && sel.length > 1) {
-            //TODO: const colMap = collectionsMap();
+            return createDragData({
+              draggedID: props.entry.id,
+              draggedType: "entry",
+              selection: sel,
+              splitContentIDs: content.splitContentIDs,
+              flattenedOrder: flattenedOrder(),
+              isCollection: (id) => Boolean(content.getCollection(id)),
+              getCollectionParentID,
+              getSiblingCollectionIDs
+            });
+          }
 
-            return {
-              type: "multi",
-              ids: sel,
-              entries: [], //TODO: sel.filter((id) => !colMap[id]),
-              collections: [] //TODO:sel.filter((id) => colMap[id])
-            };
+          if (!isDraggingSelected && sel.length > 0) {
+            setSelection([]);
           }
 
           return { type: "entry", id: props.entry.id };
@@ -146,6 +192,7 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
       }),
       dropTargetForElements({
         element,
+        canDrop: ({ source }) => !content.readOnly() && canOrderEntries(source.data),
         getData: ({ input }) => {
           return attachClosestEdge(
             {
@@ -160,19 +207,17 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
             }
           );
         },
-        onDragEnter: ({ self }) => {
-          const closestEdge = extractClosestEdge(self.data);
-          setClosestEdge(closestEdge);
+        onDragEnter: ({ source, self }) => {
+          setDropLine(source, self.data);
         },
-        onDrag: ({ self }) => {
-          const closestEdge = extractClosestEdge(self.data);
-          setClosestEdge(closestEdge);
+        onDrag: ({ source, self }) => {
+          setDropLine(source, self.data);
         },
         onDragLeave: () => {
-          setClosestEdge(null);
+          clearDropLine();
         },
         onDrop: () => {
-          setClosestEdge(null);
+          clearDropLine();
         }
       })
     );
@@ -193,11 +238,20 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
           id={props.entry.id}
           label={props.entry.name}
           topLevel={props.topLevel}
-          icon={<div class="h-full w-full text-gray-400 dark:text-gray-500 i-lucide:file-text" />}
+          icon={
+            <div
+              class={clsx(
+                "h-full w-full text-gray-400 dark:text-gray-500 i-lucide:file-text",
+                isSelected(props.entry.id) && "bg-gradient-to-tr"
+              )}
+            />
+          }
           selectable
           ref={setElementRef}
           onClick={handleClick}
           onRename={(name) => {
+            if (content.readOnly()) return;
+
             content.updateEntry(props.entry.id, { name });
           }}
           actions={

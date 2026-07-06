@@ -36,14 +36,21 @@ interface SessionData {
   };
 }
 
-const getSessionData = async (headers: Headers): Promise<SessionData> => {
+interface GetSessionDataOptions {
+  requireWorkspace?: boolean;
+}
+
+const getSessionData = async (
+  headers: Headers,
+  options: GetSessionDataOptions = {}
+): Promise<SessionData> => {
   const authHeader = headers.get("authorization");
 
   if (authHeader?.startsWith("Bearer ")) {
     return getKeySessionData(headers);
   }
 
-  return getUserSessionData(headers);
+  return getUserSessionData(headers, options);
 };
 const tryResolveObjectID = (id: string | undefined | null) => {
   if (!id) return null;
@@ -57,7 +64,10 @@ const tryResolveObjectID = (id: string | undefined | null) => {
 const getUserSessionCacheKey = (userID: string, workspaceID: string) => {
   return `session:user:${userID}:${workspaceID}`;
 };
-const getUserSessionData = async (headers: Headers): Promise<SessionData> => {
+const getUserSessionData = async (
+  headers: Headers,
+  options: GetSessionDataOptions = {}
+): Promise<SessionData> => {
   const { session } =
     (await auth.api.getSession({
       headers
@@ -70,12 +80,29 @@ const getUserSessionData = async (headers: Headers): Promise<SessionData> => {
 
   if (!user) throw new ORPCError("UNAUTHORIZED");
 
+  const basicSessionData = (): SessionData => ({
+    id: `session:user:${session.userId}:no-workspace`,
+    type: "session",
+    subscriptionPlan: "free",
+    workspaceID: "",
+    session: {
+      userID: toUserID(user._id),
+      memberID: "",
+      roleID: "",
+      permissions: [],
+      admin: false
+    }
+  });
   const requestedWorkspaceID = tryResolveObjectID(headers.get("x-workspace-id"));
   const fallbackWorkspaceID =
     typeof user.currentWorkspaceID === "string"
       ? tryResolveObjectID(user.currentWorkspaceID)
       : user.currentWorkspaceID || null;
   const resolvedWorkspaceID = requestedWorkspaceID || fallbackWorkspaceID;
+
+  if (options.requireWorkspace === false) {
+    return basicSessionData();
+  }
 
   if (!resolvedWorkspaceID) {
     throw new ORPCError("UNAUTHORIZED");
