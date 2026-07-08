@@ -1,5 +1,5 @@
 import { workspacesDB } from "#backend/db";
-import { toObjectID } from "#backend/lib/mongo";
+import { toUUID } from "#backend/lib/mongo";
 import { ORPCError } from "@orpc/server";
 
 const updateWorkspace = async (input: { workspaceID: string; name?: string; logo?: string }) => {
@@ -11,7 +11,7 @@ const updateWorkspace = async (input: { workspaceID: string; name?: string; logo
   if (Object.keys(updates).length === 0) return;
 
   const result = await workspacesDB.updateOne(
-    { _id: toObjectID(input.workspaceID) },
+    { _id: toUUID(input.workspaceID) },
     { $set: updates }
   );
 

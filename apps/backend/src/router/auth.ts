@@ -1,6 +1,6 @@
 import { permissionType } from "#backend/db";
 import { authorized } from "#backend/lib/middleware";
-import { objectID } from "#backend/lib/mongo";
+import { id } from "#backend/lib/mongo";
 import { base } from "#backend/lib/orpc";
 import { Auth } from "#backend/services/auth";
 import * as z from "zod";
@@ -19,11 +19,11 @@ const authRouter = base.router({
     .use(authorized)
     .output(
       z.object({
-        workspaceID: objectID(),
+        workspaceID: id(),
         subscriptionPlan: z.string(),
-        memberID: objectID(),
-        userID: objectID(),
-        roleID: objectID(),
+        memberID: id(),
+        userID: id(),
+        roleID: id(),
         permissions: z.array(permissionType),
         admin: z.boolean()
       })

@@ -1,7 +1,7 @@
 import { entryType } from "#backend/db";
 import { emitEntryEvent } from "#backend/events";
 import { authorized } from "#backend/lib/middleware";
-import { objectID } from "#backend/lib/mongo";
+import { id } from "#backend/lib/mongo";
 import { base } from "#backend/lib/orpc";
 import { Entries } from "#backend/services/entries";
 import * as z from "zod";
@@ -43,7 +43,7 @@ const entriesRouter = base.prefix("/entries").router({
     .use(authorized)
     .input(
       z.object({
-        ids: z.array(objectID()).describe("Comma-separated IDs of the entries to be deleted")
+        ids: z.array(id()).describe("Comma-separated IDs of the entries to be deleted")
       })
     )
     .output(z.void())
@@ -70,7 +70,7 @@ const entriesRouter = base.prefix("/entries").router({
     .use(authorized)
     .input(
       z.object({
-        id: objectID().describe("ID of the entry to be updated"),
+        id: id().describe("ID of the entry to be updated"),
         name: z.string().optional().describe("New name of the entry")
       })
     )
@@ -96,9 +96,9 @@ const entriesRouter = base.prefix("/entries").router({
     })
     .input(
       z.object({
-        id: objectID().describe("ID of the entry to be moved"),
+        id: id().describe("ID of the entry to be moved"),
         order: z.string().describe("New LexoRank order of the entry"),
-        collectionID: objectID().optional().nullable().describe("ID of the new parent collection")
+        collectionID: id().optional().nullable().describe("ID of the new parent collection")
       })
     )
     .use(authorized)

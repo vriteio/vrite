@@ -1,5 +1,5 @@
 import { Collection, collectionsDB } from "#backend/db";
-import { toObjectID } from "#backend/lib/mongo";
+import { toUUID } from "#backend/lib/mongo";
 import { ORPCError } from "@orpc/server";
 import { ROOT_COLLECTION_NAME } from "./root";
 
@@ -11,8 +11,8 @@ const updateCollection = async (
 ) => {
   const { id, workspaceID, ...setProperties } = input;
   const collection = await collectionsDB.findOne({
-    _id: toObjectID(input.id),
-    workspaceID: toObjectID(input.workspaceID)
+    _id: toUUID(input.id),
+    workspaceID: toUUID(input.workspaceID)
   });
 
   if (!collection) throw new ORPCError("NOT_FOUND");
@@ -21,7 +21,7 @@ const updateCollection = async (
   }
 
   const { matchedCount } = await collectionsDB.updateOne(
-    { _id: toObjectID(input.id), workspaceID: toObjectID(input.workspaceID) },
+    { _id: toUUID(input.id), workspaceID: toUUID(input.workspaceID) },
     { $set: setProperties }
   );
 

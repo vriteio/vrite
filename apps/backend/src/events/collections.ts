@@ -1,6 +1,6 @@
 import { collectionType } from "#backend/db";
 import { emitEvent, EmitEvent, subscribeToEvent, SubscribeToEvent } from "#backend/lib/events";
-import { objectID } from "#backend/lib/mongo";
+import { id } from "#backend/lib/mongo";
 import * as z from "zod";
 
 declare module "#backend/lib/events" {
@@ -12,12 +12,12 @@ declare module "#backend/lib/events" {
 const collectionEventType = z.union([
   z.object({
     action: z.literal("collection:create"),
-    memberID: objectID().optional(),
+    memberID: id().optional(),
     data: collectionType
   }),
   z.object({
     action: z.literal("collection:update"),
-    memberID: objectID().optional(),
+    memberID: id().optional(),
     data: z.object({
       ...collectionType.pick({ id: true }).shape,
       ...collectionType.omit({ id: true }).partial().shape
@@ -25,15 +25,15 @@ const collectionEventType = z.union([
   }),
   z.object({
     action: z.literal("collection:delete"),
-    memberID: objectID().optional(),
-    data: z.object({ ids: z.array(objectID()) })
+    memberID: id().optional(),
+    data: z.object({ ids: z.array(id()) })
   }),
   z.object({
     action: z.literal("collection:move"),
-    memberID: objectID().optional(),
+    memberID: id().optional(),
     data: z.object({
-      id: objectID(),
-      newParentID: objectID().nullable().optional(),
+      id: id(),
+      newParentID: id().nullable().optional(),
       index: z.number().int().min(0).optional()
     })
   })

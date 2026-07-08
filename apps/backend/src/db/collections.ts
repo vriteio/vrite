@@ -1,17 +1,17 @@
-import { db, fromObjectID, objectID, UnderscoreID } from "#backend/lib/mongo";
-import { ObjectId } from "mongodb";
+import { db, fromUUID, id, UnderscoreID } from "#backend/lib/mongo";
+import type { UUID } from "#backend/lib/mongo";
 import * as z from "zod";
 
 const collectionType = z.object({
-  id: objectID().describe("ID of the collection"),
+  id: id().describe("ID of the collection"),
   name: z.string().describe("Name of the collection"),
   ancestors: z.array(
-    objectID().describe("IDs of the ancestor collections - from furthest to closest")
+    id().describe("IDs of the ancestor collections - from furthest to closest")
   ),
-  descendants: z.array(objectID().describe("IDs of the directly-descendant collections"))
+  descendants: z.array(id().describe("IDs of the directly-descendant collections"))
 });
 
-interface Collection<ID extends string | ObjectId = string> extends Omit<
+interface Collection<ID extends string | UUID = string> extends Omit<
   z.infer<typeof collectionType>,
   "id" | "descendants" | "ancestors"
 > {
@@ -20,12 +20,12 @@ interface Collection<ID extends string | ObjectId = string> extends Omit<
   ancestors: ID[];
 }
 
-interface FullCollection<ID extends string | ObjectId = string> extends Collection<ID> {
+interface FullCollection<ID extends string | UUID = string> extends Collection<ID> {
   workspaceID: ID;
 }
 
-const toCollectionID = (id: ObjectId) => fromObjectID(id, "coll");
-const collectionsDB = db.collection<UnderscoreID<FullCollection<ObjectId>>>("collections");
+const toCollectionID = (id: UUID) => fromUUID(id, "coll");
+const collectionsDB = db.collection<UnderscoreID<FullCollection<UUID>>>("collections");
 
 await collectionsDB.createIndex({ workspaceID: 1 }, { name: "workspaceID_1" });
 

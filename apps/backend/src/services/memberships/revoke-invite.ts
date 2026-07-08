@@ -1,11 +1,11 @@
 import { invitesDB } from "#backend/db";
-import { toObjectID } from "#backend/lib/mongo";
+import { toUUID } from "#backend/lib/mongo";
 import { ORPCError } from "@orpc/server";
 
 const revokeInvite = async (input: { id: string; workspaceID: string }): Promise<void> => {
   const result = await invitesDB.deleteOne({
-    _id: toObjectID(input.id),
-    workspaceID: toObjectID(input.workspaceID),
+    _id: toUUID(input.id),
+    workspaceID: toUUID(input.workspaceID),
     status: "pending"
   });
 

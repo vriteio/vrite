@@ -1,7 +1,7 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { workspacesDB } from "../db";
 import { config } from "../lib/config";
-import { toObjectID } from "../lib/mongo";
+import { toUUID } from "../lib/mongo";
 import { stripe } from "../lib/stripe";
 
 const handleStripeWebhook = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
@@ -39,7 +39,7 @@ const handleStripeWebhook = async (request: FastifyRequest, reply: FastifyReply)
         );
 
         await workspacesDB.updateOne(
-          { _id: toObjectID(workspaceID) },
+          { _id: toUUID(workspaceID) },
           {
             $set: {
               subscriptionPlan: "pro",
@@ -72,7 +72,7 @@ const handleStripeWebhook = async (request: FastifyRequest, reply: FastifyReply)
         );
 
         await workspacesDB.updateOne(
-          { _id: toObjectID(workspaceID) },
+          { _id: toUUID(workspaceID) },
           {
             $set: {
               subscriptionStatus: subscription.status,
@@ -97,7 +97,7 @@ const handleStripeWebhook = async (request: FastifyRequest, reply: FastifyReply)
 
       if (workspaceID) {
         await workspacesDB.updateOne(
-          { _id: toObjectID(workspaceID) },
+          { _id: toUUID(workspaceID) },
           {
             $set: {
               subscriptionPlan: "free",
@@ -123,7 +123,7 @@ const handleStripeWebhook = async (request: FastifyRequest, reply: FastifyReply)
 
         if (workspaceID) {
           await workspacesDB.updateOne(
-            { _id: toObjectID(workspaceID) },
+            { _id: toUUID(workspaceID) },
             { $set: { subscriptionStatus: "past_due" } }
           );
         }

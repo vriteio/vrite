@@ -1,5 +1,5 @@
 import { collectionsDB, Collection, toCollectionID } from "#backend/db";
-import { toObjectID } from "#backend/lib/mongo";
+import { toUUID } from "#backend/lib/mongo";
 import { getRootCollection, ROOT_COLLECTION_NAME } from "./root";
 
 const listCollections = async (input: {
@@ -10,14 +10,14 @@ const listCollections = async (input: {
 }): Promise<Collection[]> => {
   const perPage = input.perPage || 50;
   const page = input.page || 1;
-  const workspaceID = toObjectID(input.workspaceID);
+  const workspaceID = toUUID(input.workspaceID);
   const parentCollection = input.ancestorID
     ? await collectionsDB.findOne({
-        _id: toObjectID(input.ancestorID),
+        _id: toUUID(input.ancestorID),
         workspaceID
       })
     : await getRootCollection({ workspaceID });
-  const descendantIDs = (parentCollection?.descendants ?? []).map(toObjectID);
+  const descendantIDs = (parentCollection?.descendants ?? []).map(toUUID);
   const pageIDs = descendantIDs.slice((page - 1) * perPage, page * perPage);
 
   if (pageIDs.length === 0) return [];

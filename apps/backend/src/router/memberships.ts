@@ -1,7 +1,7 @@
 import { emitMembershipEvent } from "#backend/events";
 import { inviteType, membershipType, userProfileType } from "#backend/db";
 import { authorized } from "#backend/lib/middleware";
-import { objectID } from "#backend/lib/mongo";
+import { id } from "#backend/lib/mongo";
 import { base } from "#backend/lib/orpc";
 import { Memberships } from "#backend/services/memberships";
 import { auth } from "#backend/lib/auth";
@@ -17,7 +17,7 @@ const memberDetailsType = z.object({
   profile: userProfileType.describe("Public profile information for the member")
 });
 const inviteDetailsType = inviteType.extend({
-  workspaceID: objectID().describe("ID of the workspace the invite belongs to")
+  workspaceID: id().describe("ID of the workspace the invite belongs to")
 });
 const membershipInviteResultType = z.object({
   inviteID: inviteType.shape.id,
@@ -27,7 +27,7 @@ const membershipInviteResultType = z.object({
     .describe("Whether the invite email was sent, must be shared manually, or failed")
 });
 const acceptedInviteType = z.object({
-  workspaceID: objectID().describe("ID of the workspace that was joined"),
+  workspaceID: id().describe("ID of the workspace that was joined"),
   workspaceName: z.string().describe("Name of the workspace that was joined")
 });
 
@@ -64,8 +64,8 @@ const membershipsRouter = base.prefix("/memberships").router({
     .use(authorized)
     .input(
       z.object({
-        id: objectID().describe("ID of the membership to update"),
-        roleID: objectID().describe("New role ID")
+        id: id().describe("ID of the membership to update"),
+        roleID: id().describe("New role ID")
       })
     )
     .output(z.void())
@@ -103,7 +103,7 @@ const membershipsRouter = base.prefix("/memberships").router({
     .use(authorized)
     .input(
       z.object({
-        id: objectID().describe("ID of the membership to remove")
+        id: id().describe("ID of the membership to remove")
       })
     )
     .output(z.void())
@@ -140,7 +140,7 @@ const membershipsRouter = base.prefix("/memberships").router({
     .input(
       z.object({
         email: z.email().describe("Email address of the user to invite"),
-        roleID: objectID().describe("ID of the role to assign")
+        roleID: id().describe("ID of the role to assign")
       })
     )
     .output(membershipInviteResultType)
@@ -193,7 +193,7 @@ const membershipsRouter = base.prefix("/memberships").router({
     })
     .input(
       z.object({
-        id: objectID().describe("ID of the invite to revoke")
+        id: id().describe("ID of the invite to revoke")
       })
     )
     .use(authorized)

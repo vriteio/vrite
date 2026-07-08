@@ -1,23 +1,23 @@
 import { contentsDB, entriesDB, Entry, toEntryID, FullContent, FullEntry } from "#backend/db";
-import { toObjectID, UnderscoreID } from "#backend/lib/mongo";
+import { generateUUID, toUUID, UnderscoreID } from "#backend/lib/mongo";
 import { toCollectionID } from "#backend/db/collections";
 import { LexoRank } from "lexorank";
-import { ObjectId } from "mongodb";
+import type { UUID } from "#backend/lib/mongo";
 
 const createEntry = async (
   input: Partial<Entry> & {
     workspaceID: string;
   }
 ): Promise<Entry> => {
-  const entry: UnderscoreID<FullEntry<ObjectId>> = {
-    _id: input.id ? toObjectID(input.id) : new ObjectId(),
+  const entry: UnderscoreID<FullEntry<UUID>> = {
+    _id: input.id ? toUUID(input.id) : generateUUID(),
     name: input.name || "",
     order: `${LexoRank.min()}`,
-    workspaceID: toObjectID(input.workspaceID),
-    collectionID: input.collectionID ? toObjectID(input.collectionID) : undefined
+    workspaceID: toUUID(input.workspaceID),
+    collectionID: input.collectionID ? toUUID(input.collectionID) : undefined
   };
-  const content: UnderscoreID<FullContent<ObjectId>> = {
-    _id: new ObjectId(),
+  const content: UnderscoreID<FullContent<UUID>> = {
+    _id: generateUUID(),
     entryID: entry._id,
     workspaceID: entry.workspaceID
   };

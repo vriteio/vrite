@@ -2,7 +2,7 @@ import { betterAuth } from "better-auth";
 import { mongodbAdapter } from "@better-auth/mongo-adapter";
 import { emailOTP, multiSession } from "better-auth/plugins";
 import { passkey } from "@better-auth/passkey";
-import { db, mongoClient, toObjectID } from "./mongo";
+import { db, generateUUID, mongoClient, toUUID } from "./mongo";
 import { config } from "./config";
 import { sendEmail } from "./email";
 import { Workspaces } from "#backend/services";
@@ -10,7 +10,7 @@ import { redis } from "./redis";
 import { Auth } from "#backend/services/auth";
 import { add } from "date-fns";
 import { toUserID, toWorkspaceID } from "#backend/db";
-import { ObjectId } from "mongodb";
+import type { UUID } from "#backend/lib/mongo";
 
 const auth = betterAuth({
   appName: "Andesine",
@@ -26,14 +26,17 @@ const auth = betterAuth({
     config.PUBLIC_APP_URL,
     config.PUBLIC_API_URL
   ],
-  ...(config.PUBLIC_COOKIE_DOMAIN && {
-    advanced: {
+  advanced: {
+    database: {
+      generateId: "uuid"
+    },
+    ...(config.PUBLIC_COOKIE_DOMAIN && {
       crossSubDomainCookies: {
         enabled: true,
         domain: config.PUBLIC_COOKIE_DOMAIN
       }
-    }
-  }),
+    })
+  },
   secondaryStorage: {
     get: async (key) => {
       return await redis.get(`auth:${key}`);
@@ -75,12 +78,12 @@ const auth = betterAuth({
           input: (value) => {
             if (!value) return null;
 
-            return toObjectID(value as string) as unknown as string;
+            return toUUID(value as string) as unknown as string;
           },
           output: (value) => {
             if (!value) return null;
 
-            return toWorkspaceID(value as unknown as ObjectId);
+            return toWorkspaceID(value as unknown as UUID);
           }
         }
       }
@@ -90,7 +93,7 @@ const auth = betterAuth({
     user: {
       create: {
         before: async (user) => {
-          const userID = toUserID(new ObjectId());
+          const userID = toUserID(generateUUID());
           const name = user.name || user.email.split("@")[0];
           const workspace = await Workspaces.create({
             name: `${name} (Personal Workspace)`,
@@ -101,7 +104,7 @@ const auth = betterAuth({
             data: {
               ...user,
               name,
-              id: `${toObjectID(userID)}`,
+              id: `${toUUID(userID)}`,
               currentWorkspaceID: workspace.id
             }
           };

@@ -1,6 +1,6 @@
 import { roleType } from "#backend/db";
 import { emitEvent, EmitEvent, subscribeToEvent, SubscribeToEvent } from "#backend/lib/events";
-import { objectID } from "#backend/lib/mongo";
+import { id } from "#backend/lib/mongo";
 import * as z from "zod";
 
 declare module "#backend/lib/events" {
@@ -12,12 +12,12 @@ declare module "#backend/lib/events" {
 const roleEventType = z.union([
   z.object({
     action: z.literal("role:create"),
-    memberID: objectID().optional(),
+    memberID: id().optional(),
     data: roleType
   }),
   z.object({
     action: z.literal("role:update"),
-    memberID: objectID().optional(),
+    memberID: id().optional(),
     data: z.object({
       ...roleType.pick({ id: true }).shape,
       ...roleType.omit({ id: true }).partial().shape
@@ -25,7 +25,7 @@ const roleEventType = z.union([
   }),
   z.object({
     action: z.literal("role:delete"),
-    memberID: objectID().optional(),
+    memberID: id().optional(),
     data: z.object({ id: roleType.shape.id })
   })
 ]);

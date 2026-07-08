@@ -1,11 +1,11 @@
 import { collectionsDB, contentsDB, entriesDB } from "#backend/db";
-import { toObjectID } from "#backend/lib/mongo";
+import { toUUID } from "#backend/lib/mongo";
 import { ROOT_COLLECTION_NAME, getRootCollection } from "./root";
 import { ORPCError } from "@orpc/server";
 
 const deleteCollections = async (input: { ids: string[]; workspaceID: string }): Promise<void> => {
-  const ids = input.ids.map(toObjectID);
-  const workspaceID = toObjectID(input.workspaceID);
+  const ids = input.ids.map(toUUID);
+  const workspaceID = toUUID(input.workspaceID);
   const rootCollection = await getRootCollection({ workspaceID });
   const collections = await collectionsDB
     .find({
@@ -13,7 +13,7 @@ const deleteCollections = async (input: { ids: string[]; workspaceID: string }):
       $or: [{ _id: { $in: ids } }, { ancestors: { $in: ids } }]
     })
     .toArray();
-  const rootCollectionObjectID = toObjectID(rootCollection.id);
+  const rootCollectionUUID = toUUID(rootCollection.id);
   const rootCollectionSelected = collections.some((collection) => {
     return collection.name === ROOT_COLLECTION_NAME && collection.ancestors.length === 0;
   });
@@ -21,7 +21,7 @@ const deleteCollections = async (input: { ids: string[]; workspaceID: string }):
 
   if (deletedIDs.length === 0) return;
 
-  if (rootCollectionSelected || ids.some((id) => id.equals(rootCollectionObjectID))) {
+  if (rootCollectionSelected || ids.some((id) => id.equals(rootCollectionUUID))) {
     throw new ORPCError("BAD_REQUEST", { message: "Cannot delete the root collection" });
   }
 

@@ -16,7 +16,7 @@ const validateURL = (input: string): boolean => {
   return url.protocol === "http:" || url.protocol === "https:";
 };
 const validateWorkspaceID = (value: string | undefined) => {
-  return !!value && /^(?:[a-f\d]{24})|(?:\w+?_[A-Za-z\d]{16})$/.test(value);
+  return !!value && /^\w+?_[A-Za-z\d]{1,22}$/.test(value);
 };
 
 export { validateEmail, validateURL, validateWorkspaceID };

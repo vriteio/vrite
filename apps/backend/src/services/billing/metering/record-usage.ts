@@ -2,7 +2,7 @@ import { redis } from "#backend/lib/redis";
 import { stripe } from "#backend/lib/stripe";
 import { config } from "#backend/lib/config";
 import { usageDB, workspacesDB } from "#backend/db";
-import { toObjectID } from "#backend/lib/mongo";
+import { toUUID } from "#backend/lib/mongo";
 import { randomUUID } from "node:crypto";
 import { format, parse } from "date-fns";
 
@@ -95,7 +95,7 @@ const flushUsage = async (): Promise<void> => {
       for (const entry of data.entries) {
         await usageDB.updateOne(
           {
-            workspaceID: toObjectID(workspaceID),
+            workspaceID: toUUID(workspaceID),
             year: entry.year,
             month: entry.month,
             day: entry.day
@@ -108,7 +108,7 @@ const flushUsage = async (): Promise<void> => {
       // Send to Stripe
       if (stripe && config.STRIPE_PRO_API_CALL_METER_EVENT_NAME && data.total > 0) {
         const workspace = await workspacesDB.findOne({
-          _id: toObjectID(workspaceID)
+          _id: toUUID(workspaceID)
         });
 
         if (workspace?.customerID && workspace.subscriptionPlan === "pro") {

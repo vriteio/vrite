@@ -7,7 +7,7 @@ import {
   toUserID,
   UserProfile
 } from "#backend/db";
-import { toObjectID } from "#backend/lib/mongo";
+import { toUUID } from "#backend/lib/mongo";
 
 interface MemberDetails {
   id: string;
@@ -19,8 +19,8 @@ interface MemberDetails {
 }
 
 const listMembers = async (input: { workspaceID: string }): Promise<MemberDetails[]> => {
-  const workspaceOID = toObjectID(input.workspaceID);
-  const memberships = await membershipDB.find({ workspaceID: workspaceOID }).toArray();
+  const workspaceUUID = toUUID(input.workspaceID);
+  const memberships = await membershipDB.find({ workspaceID: workspaceUUID }).toArray();
 
   const userIDs = memberships.map((m) => m.userID);
   const roleIDs = memberships.filter((m) => m.roleID).map((m) => m.roleID!);
@@ -30,13 +30,13 @@ const listMembers = async (input: { workspaceID: string }): Promise<MemberDetail
     roleIDs.length > 0 ? rolesDB.find({ _id: { $in: roleIDs } }).toArray() : Promise.resolve([])
   ]);
 
-  const userMap = new Map(users.map((u) => [u._id.toHexString(), u]));
-  const roleMap = new Map(roles.map((r) => [r._id.toHexString(), r]));
+  const userMap = new Map(users.map((u) => [u._id, u]));
+  const roleMap = new Map(roles.map((r) => [r._id, r]));
 
   return memberships
     .map((m) => {
-      const user = userMap.get(m.userID.toHexString());
-      const role = m.roleID ? roleMap.get(m.roleID.toHexString()) : undefined;
+      const user = userMap.get(m.userID);
+      const role = m.roleID ? roleMap.get(m.roleID) : undefined;
 
       if (!user) return null;
 

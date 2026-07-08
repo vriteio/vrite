@@ -1,5 +1,5 @@
 import { workspacesDB } from "#backend/db";
-import { toObjectID } from "#backend/lib/mongo";
+import { toUUID } from "#backend/lib/mongo";
 import { stripe } from "#backend/lib/stripe";
 import { config } from "#backend/lib/config";
 import { membershipDB } from "#backend/db";
@@ -16,13 +16,13 @@ const createCheckout = async (input: {
     throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Stripe price IDs not configured" });
   }
 
-  const workspaceOID = toObjectID(input.workspaceID);
-  const workspace = await workspacesDB.findOne({ _id: workspaceOID });
+  const workspaceUUID = toUUID(input.workspaceID);
+  const workspace = await workspacesDB.findOne({ _id: workspaceUUID });
 
   if (!workspace) throw new ORPCError("NOT_FOUND", { message: "Workspace not found" });
 
   // Count current seats (memberships)
-  const seatCount = await membershipDB.countDocuments({ workspaceID: workspaceOID });
+  const seatCount = await membershipDB.countDocuments({ workspaceID: workspaceUUID });
 
   // Create or reuse Stripe customer
   let customerID = workspace.customerID;
@@ -34,7 +34,7 @@ const createCheckout = async (input: {
     });
 
     customerID = customer.id;
-    await workspacesDB.updateOne({ _id: workspaceOID }, { $set: { customerID } });
+    await workspacesDB.updateOne({ _id: workspaceUUID }, { $set: { customerID } });
   }
 
   const session = await stripe.checkout.sessions.create({

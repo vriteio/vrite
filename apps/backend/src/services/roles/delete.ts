@@ -1,13 +1,13 @@
 import { rolesDB, membershipDB, toUserID } from "#backend/db";
-import { toObjectID } from "#backend/lib/mongo";
+import { toUUID } from "#backend/lib/mongo";
 import { Auth } from "#backend/services/auth";
 import { ORPCError } from "@orpc/server";
 
 const deleteRole = async (input: { id: string; workspaceID: string }): Promise<void> => {
-  const workspaceID = toObjectID(input.workspaceID);
-  const roleObjectID = toObjectID(input.id);
+  const workspaceID = toUUID(input.workspaceID);
+  const roleUUID = toUUID(input.id);
 
-  const role = await rolesDB.findOne({ _id: roleObjectID, workspaceID });
+  const role = await rolesDB.findOne({ _id: roleUUID, workspaceID });
 
   if (!role) throw new ORPCError("NOT_FOUND", { message: "Role not found" });
   if (role.baseRole) {
@@ -16,7 +16,7 @@ const deleteRole = async (input: { id: string; workspaceID: string }): Promise<v
 
   // Collect affected members before reassignment
   const affectedMemberships = await membershipDB
-    .find({ roleID: roleObjectID, workspaceID })
+    .find({ roleID: roleUUID, workspaceID })
     .toArray();
 
   // Find the Viewer role to reassign affected memberships
@@ -28,12 +28,12 @@ const deleteRole = async (input: { id: string; workspaceID: string }): Promise<v
 
   if (viewerRole) {
     await membershipDB.updateMany(
-      { roleID: roleObjectID, workspaceID },
+      { roleID: roleUUID, workspaceID },
       { $set: { roleID: viewerRole._id } }
     );
   }
 
-  await rolesDB.deleteOne({ _id: roleObjectID, workspaceID });
+  await rolesDB.deleteOne({ _id: roleUUID, workspaceID });
   await Promise.all(
     affectedMemberships.map((membership) => {
       return Auth.invalidateSessionData({

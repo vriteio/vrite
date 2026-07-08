@@ -1,5 +1,5 @@
 import { toCollectionID, entriesDB, Entry, toEntryID } from "#backend/db";
-import { toObjectID } from "#backend/lib/mongo";
+import { toUUID } from "#backend/lib/mongo";
 
 const listEntries = async (input: {
   workspaceID: string;
@@ -12,10 +12,10 @@ const listEntries = async (input: {
   const page = input.page || 1;
   const cursor = entriesDB
     .find({
-      workspaceID: toObjectID(input.workspaceID),
+      workspaceID: toUUID(input.workspaceID),
       ...(input.lastOrder && { order: { $lt: input.lastOrder } }),
       ...(input.collectionID !== undefined && {
-        collectionID: toObjectID(input.collectionID)
+        collectionID: toUUID(input.collectionID)
       })
     })
     .sort({ order: -1 });

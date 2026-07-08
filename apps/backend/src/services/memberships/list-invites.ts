@@ -1,5 +1,5 @@
 import { invitesDB, toInviteID, toRoleID, toMembershipID, type Invite } from "#backend/db";
-import { toObjectID } from "#backend/lib/mongo";
+import { toUUID } from "#backend/lib/mongo";
 
 interface InviteDetails extends Invite {
   workspaceID: string;
@@ -7,8 +7,8 @@ interface InviteDetails extends Invite {
 }
 
 const listInvites = async (input: { workspaceID: string }): Promise<InviteDetails[]> => {
-  const workspaceOID = toObjectID(input.workspaceID);
-  const invites = await invitesDB.find({ workspaceID: workspaceOID, status: "pending" }).toArray();
+  const workspaceUUID = toUUID(input.workspaceID);
+  const invites = await invitesDB.find({ workspaceID: workspaceUUID, status: "pending" }).toArray();
 
   return invites.map((inv) => ({
     id: toInviteID(inv._id),

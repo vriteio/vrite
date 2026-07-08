@@ -7,10 +7,10 @@ import {
   rolesDB
 } from "#backend/db";
 import type { FullCollection, FullRole, FullWorkspace, Permission } from "#backend/db";
-import { toObjectID, UnderscoreID } from "#backend/lib/mongo";
+import { generateUUID, toUUID, UnderscoreID } from "#backend/lib/mongo";
 import { ROOT_COLLECTION_NAME } from "#backend/services/collections";
 import { ORPCError } from "@orpc/server";
-import { ObjectId } from "mongodb";
+import type { UUID } from "#backend/lib/mongo";
 
 const DEFAULT_ROLES: Array<{
   name: string;
@@ -40,19 +40,19 @@ const DEFAULT_ROLES: Array<{
 ];
 
 const createWorkspace = async (input: { name: string; userID: string }) => {
-  const workspace: UnderscoreID<FullWorkspace<ObjectId>> = {
-    _id: new ObjectId(),
+  const workspace: UnderscoreID<FullWorkspace<UUID>> = {
+    _id: generateUUID(),
     name: input.name
   };
-  const rootCollection: UnderscoreID<FullCollection<ObjectId>> = {
-    _id: new ObjectId(),
+  const rootCollection: UnderscoreID<FullCollection<UUID>> = {
+    _id: generateUUID(),
     workspaceID: workspace._id,
     name: ROOT_COLLECTION_NAME,
     ancestors: [],
     descendants: []
   };
-  const roles: Array<UnderscoreID<FullRole<ObjectId>>> = DEFAULT_ROLES.map((role) => ({
-    _id: new ObjectId(),
+  const roles: Array<UnderscoreID<FullRole<UUID>>> = DEFAULT_ROLES.map((role) => ({
+    _id: generateUUID(),
     workspaceID: workspace._id,
     name: role.name,
     permissions: role.permissions,
@@ -72,13 +72,13 @@ const createWorkspace = async (input: { name: string; userID: string }) => {
   await collectionsDB.insertOne(rootCollection);
   await rolesDB.insertMany(roles);
   await membershipDB.insertOne({
-    _id: new ObjectId(),
-    userID: toObjectID(input.userID),
+    _id: generateUUID(),
+    userID: toUUID(input.userID),
     workspaceID: workspace._id,
     roleID: adminRole._id
   });
   await usersDB.updateOne(
-    { _id: toObjectID(input.userID) },
+    { _id: toUUID(input.userID) },
     { $set: { currentWorkspaceID: workspace._id } }
   );
 

@@ -1,7 +1,7 @@
 import { keyPermissionType, keyType } from "#backend/db";
 import { emitKeyEvent } from "#backend/events";
 import { authorized } from "#backend/lib/middleware";
-import { objectID } from "#backend/lib/mongo";
+import { id } from "#backend/lib/mongo";
 import { base } from "#backend/lib/orpc";
 import { Keys } from "#backend/services/keys";
 import { ORPCError } from "@orpc/server";
@@ -72,7 +72,7 @@ const keysRouter = base.prefix("/keys").router({
     .use(authorized)
     .input(
       z.object({
-        ids: z.array(objectID()).describe("IDs of the API keys to delete")
+        ids: z.array(id()).describe("IDs of the API keys to delete")
       })
     )
     .output(z.void())
@@ -99,7 +99,7 @@ const keysRouter = base.prefix("/keys").router({
     .use(authorized)
     .input(
       z.object({
-        id: objectID().describe("ID of the API key to update"),
+        id: id().describe("ID of the API key to update"),
         name: z.string().min(1).max(100).optional().describe("New name for the API key"),
         permissions: z
           .array(keyPermissionType)
@@ -135,7 +135,7 @@ const keysRouter = base.prefix("/keys").router({
     .use(authorized)
     .input(
       z.object({
-        id: objectID().describe("ID of the API key to rotate"),
+        id: id().describe("ID of the API key to rotate"),
         expiresIn: z.enum(["now", "1h", "24h", "7d"]).describe("When the old key should expire")
       })
     )

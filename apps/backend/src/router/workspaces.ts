@@ -2,7 +2,7 @@ import { toUserID, workspaceType } from "#backend/db";
 import { emitWorkspaceStateEvent } from "#backend/events";
 import { auth } from "#backend/lib/auth";
 import { authorized } from "#backend/lib/middleware";
-import { objectID, toObjectID } from "#backend/lib/mongo";
+import { id, toUUID } from "#backend/lib/mongo";
 import { base } from "#backend/lib/orpc";
 import { Workspaces } from "#backend/services/workspaces";
 import * as z from "zod";
@@ -12,7 +12,7 @@ const workspaceSummaryType = workspaceType.pick({
   name: true
 });
 const workspaceListItemType = workspaceSummaryType.extend({
-  userID: objectID().describe("ID of the user associated with this workspace membership")
+  userID: id().describe("ID of the user associated with this workspace membership")
 });
 
 const workspacesRouter = base.router({
@@ -32,7 +32,7 @@ const workspacesRouter = base.router({
 
       return Workspaces.list({
         userIDs: sessions.map((session) => {
-          return toUserID(toObjectID(session.user.id));
+          return toUserID(toUUID(session.user.id));
         })
       });
     }),
@@ -135,7 +135,7 @@ const workspacesRouter = base.router({
     .use(authorized)
     .input(
       z.object({
-        workspaceID: objectID().describe("ID of the workspace to switch to")
+        workspaceID: id().describe("ID of the workspace to switch to")
       })
     )
     .output(z.void())

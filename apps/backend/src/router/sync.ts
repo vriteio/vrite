@@ -20,7 +20,7 @@ import { authorized } from "#backend/lib/middleware";
 import { base } from "#backend/lib/orpc";
 import { Sync } from "#backend/services/sync";
 import * as z from "zod";
-import { objectID } from "#backend/lib/mongo";
+import { id } from "#backend/lib/mongo";
 
 const explorerTreeType = z.object({
   collections: z.array(collectionType),
@@ -39,27 +39,27 @@ const memberDetailsType = z.object({
   profile: userProfileType
 });
 const inviteDetailsType = inviteType.extend({
-  workspaceID: objectID()
+  workspaceID: id()
 });
 const viewerAccessType = z.union([
   z.object({
     type: z.literal("session"),
-    workspaceID: objectID(),
+    workspaceID: id(),
     subscriptionPlan: z.string(),
     session: z.object({
-      memberID: objectID(),
-      userID: objectID(),
-      roleID: objectID(),
+      memberID: id(),
+      userID: id(),
+      roleID: id(),
       permissions: z.array(permissionType),
       admin: z.boolean()
     })
   }),
   z.object({
     type: z.literal("key"),
-    workspaceID: objectID(),
+    workspaceID: id(),
     subscriptionPlan: z.string(),
     key: z.object({
-      keyID: objectID(),
+      keyID: id(),
       permissions: z.array(keyPermissionType)
     })
   })

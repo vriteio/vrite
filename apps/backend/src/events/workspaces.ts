@@ -1,6 +1,6 @@
 import { workspaceType } from "#backend/db";
 import { emitEvent, EmitEvent, subscribeToEvent, SubscribeToEvent } from "#backend/lib/events";
-import { objectID } from "#backend/lib/mongo";
+import { id } from "#backend/lib/mongo";
 import * as z from "zod";
 
 declare module "#backend/lib/events" {
@@ -16,12 +16,12 @@ const workspaceSummaryEventType = workspaceType.pick({
 const workspaceStateEventType = z.union([
   z.object({
     action: z.literal("workspace:create"),
-    memberID: objectID().optional(),
+    memberID: id().optional(),
     data: workspaceSummaryEventType
   }),
   z.object({
     action: z.literal("workspace:update"),
-    memberID: objectID().optional(),
+    memberID: id().optional(),
     data: z.object({
       ...workspaceSummaryEventType.pick({ id: true }).shape,
       ...workspaceSummaryEventType.omit({ id: true }).partial().shape
@@ -29,7 +29,7 @@ const workspaceStateEventType = z.union([
   }),
   z.object({
     action: z.literal("workspace:delete"),
-    memberID: objectID().optional(),
+    memberID: id().optional(),
     data: z.object({ id: workspaceSummaryEventType.shape.id })
   })
 ]);

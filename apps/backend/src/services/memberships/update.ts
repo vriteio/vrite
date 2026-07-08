@@ -1,5 +1,5 @@
 import { membershipDB, rolesDB, toUserID } from "#backend/db";
-import { toObjectID } from "#backend/lib/mongo";
+import { toUUID } from "#backend/lib/mongo";
 import { ORPCError } from "@orpc/server";
 import { Auth } from "#backend/services/auth";
 
@@ -8,19 +8,19 @@ const updateMember = async (input: {
   workspaceID: string;
   roleID: string;
 }): Promise<void> => {
-  const workspaceID = toObjectID(input.workspaceID);
-  const memberOID = toObjectID(input.id);
+  const workspaceID = toUUID(input.workspaceID);
+  const memberUUID = toUUID(input.id);
 
-  const membership = await membershipDB.findOne({ _id: memberOID, workspaceID });
+  const membership = await membershipDB.findOne({ _id: memberUUID, workspaceID });
 
   if (!membership) throw new ORPCError("NOT_FOUND", { message: "Membership not found" });
 
   const existingMembershipRole = await rolesDB.findOne({
-    _id: toObjectID(membership.roleID),
+    _id: toUUID(membership.roleID),
     workspaceID
   });
   const newMembershipRole = await rolesDB.findOne({
-    _id: toObjectID(input.roleID),
+    _id: toUUID(input.roleID),
     workspaceID
   });
 
@@ -39,7 +39,7 @@ const updateMember = async (input: {
   }
 
   await membershipDB.updateOne(
-    { _id: memberOID, workspaceID },
+    { _id: memberUUID, workspaceID },
     {
       $set: {
         roleID: newMembershipRole._id

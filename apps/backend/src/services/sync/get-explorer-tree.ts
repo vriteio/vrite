@@ -6,12 +6,12 @@ import {
   Entry,
   toEntryID
 } from "#backend/db";
-import { toObjectID } from "#backend/lib/mongo";
+import { toUUID } from "#backend/lib/mongo";
 
 const getExplorerTree = async (input: {
   workspaceID: string;
 }): Promise<{ collections: Collection[]; entries: Entry[] }> => {
-  const workspaceID = toObjectID(input.workspaceID);
+  const workspaceID = toUUID(input.workspaceID);
   const [rawCollections, rawEntries] = await Promise.all([
     collectionsDB.find({ workspaceID }).toArray(),
     entriesDB.find({ workspaceID }).sort({ order: -1 }).toArray()

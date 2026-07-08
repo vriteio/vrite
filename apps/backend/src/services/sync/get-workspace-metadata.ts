@@ -9,7 +9,7 @@ import {
   workspacesDB
 } from "#backend/db";
 import { hasPermission, type SessionData } from "#backend/lib/middleware";
-import { toObjectID } from "#backend/lib/mongo";
+import { toUUID } from "#backend/lib/mongo";
 import { Keys } from "#backend/services/keys";
 import { Memberships } from "#backend/services/memberships";
 import { Roles } from "#backend/services/roles";
@@ -173,7 +173,7 @@ const getViewerAccess = (auth: SessionData): ViewerAccess => {
 
 const getWorkspaceSummary = async (workspaceID: string): Promise<WorkspaceSummary> => {
   const workspace = await workspacesDB.findOne({
-    _id: toObjectID(workspaceID)
+    _id: toUUID(workspaceID)
   });
 
   if (!workspace) {

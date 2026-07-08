@@ -216,9 +216,6 @@ importers:
       better-auth:
         specifier: ^1.6.11
         version: 1.6.11(mongodb@7.2.0)(next@16.1.7(@babel/core@7.28.5)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(sass@1.100.0))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(solid-js@1.9.13)
-      bson:
-        specifier: ^7.2.0
-        version: 7.2.0
       clsx:
         specifier: ^2.1.1
         version: 2.1.1

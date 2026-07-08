@@ -1,6 +1,6 @@
 import { inviteType, membershipType } from "#backend/db";
 import { emitEvent, EmitEvent, subscribeToEvent, SubscribeToEvent } from "#backend/lib/events";
-import { objectID } from "#backend/lib/mongo";
+import { id } from "#backend/lib/mongo";
 import * as z from "zod";
 
 declare module "#backend/lib/events" {
@@ -12,12 +12,12 @@ declare module "#backend/lib/events" {
 const membershipEventType = z.union([
   z.object({
     action: z.literal("membership:add"),
-    memberID: objectID().optional(),
+    memberID: id().optional(),
     data: membershipType
   }),
   z.object({
     action: z.literal("membership:update"),
-    memberID: objectID().optional(),
+    memberID: id().optional(),
     data: z.object({
       ...membershipType.pick({ id: true }).shape,
       ...membershipType.omit({ id: true }).partial().shape
@@ -25,17 +25,17 @@ const membershipEventType = z.union([
   }),
   z.object({
     action: z.literal("membership:remove"),
-    memberID: objectID().optional(),
+    memberID: id().optional(),
     data: z.object({ id: membershipType.shape.id })
   }),
   z.object({
     action: z.literal("invite:create"),
-    memberID: objectID().optional(),
+    memberID: id().optional(),
     data: inviteType
   }),
   z.object({
     action: z.literal("invite:revoke"),
-    memberID: objectID().optional(),
+    memberID: id().optional(),
     data: z.object({ id: inviteType.shape.id })
   })
 ]);

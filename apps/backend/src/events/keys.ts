@@ -1,6 +1,6 @@
 import { keyType } from "#backend/db";
 import { emitEvent, EmitEvent, subscribeToEvent, SubscribeToEvent } from "#backend/lib/events";
-import { objectID } from "#backend/lib/mongo";
+import { id } from "#backend/lib/mongo";
 import * as z from "zod";
 
 declare module "#backend/lib/events" {
@@ -12,12 +12,12 @@ declare module "#backend/lib/events" {
 const keyEventType = z.union([
   z.object({
     action: z.literal("key:create"),
-    memberID: objectID().optional(),
+    memberID: id().optional(),
     data: keyType
   }),
   z.object({
     action: z.literal("key:update"),
-    memberID: objectID().optional(),
+    memberID: id().optional(),
     data: z.object({
       ...keyType.pick({ id: true }).shape,
       ...keyType.omit({ id: true }).partial().shape
@@ -25,12 +25,12 @@ const keyEventType = z.union([
   }),
   z.object({
     action: z.literal("key:delete"),
-    memberID: objectID().optional(),
+    memberID: id().optional(),
     data: z.object({ ids: z.array(keyType.shape.id) })
   }),
   z.object({
     action: z.literal("key:rotate"),
-    memberID: objectID().optional(),
+    memberID: id().optional(),
     data: z.object({
       previousKeyID: keyType.shape.id,
       key: keyType

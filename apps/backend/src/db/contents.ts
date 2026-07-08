@@ -1,16 +1,17 @@
 import { db, UnderscoreID } from "#backend/lib/mongo";
-import { ObjectId, Binary } from "mongodb";
+import { Binary } from "mongodb";
+import type { UUID } from "#backend/lib/mongo";
 
-interface Content<ID extends string | ObjectId = string> {
+interface Content<ID extends string | UUID = string> {
   id: ID;
   entryID: ID;
   content?: Binary;
 }
-interface FullContent<ID extends string | ObjectId = string> extends Content<ID> {
+interface FullContent<ID extends string | UUID = string> extends Content<ID> {
   workspaceID: ID;
 }
 
-const contentsDB = db.collection<UnderscoreID<FullContent<ObjectId>>>("contents");
+const contentsDB = db.collection<UnderscoreID<FullContent<UUID>>>("contents");
 
 await contentsDB.createIndex(
   { entryID: 1, workspaceId: 1 },

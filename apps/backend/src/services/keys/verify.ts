@@ -1,8 +1,8 @@
 import { keysDB, FullKey } from "#backend/db";
 import { hashKey } from "#backend/lib/utils";
-import { ObjectId } from "mongodb";
+import type { UUID } from "#backend/lib/mongo";
 
-const verifyKey = async (rawKey: string): Promise<FullKey<ObjectId> | null> => {
+const verifyKey = async (rawKey: string): Promise<FullKey<UUID> | null> => {
   const prefix = rawKey.slice(0, 12);
   const candidates = await keysDB.find({ prefix }).toArray();
 

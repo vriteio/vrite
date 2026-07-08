@@ -1,6 +1,5 @@
 import { Entry, client } from "#web/lib/client";
-import { toEntryID } from "#web/lib/id";
-import { ObjectId } from "bson";
+import { generateUUID, toEntryID } from "#web/lib/id";
 import { LexoRank } from "lexorank";
 import { WorkspaceContentOperationsInput } from "./types";
 import { untrack } from "solid-js";
@@ -64,7 +63,7 @@ const createEntryOperations = (input: WorkspaceContentOperationsInput) => {
   const createEntry = (collectionID?: string): Entry | undefined => {
     const entries = entriesCollection();
     const entry: Entry = {
-      id: toEntryID(new ObjectId()),
+      id: toEntryID(generateUUID()),
       order: `${LexoRank.min()}`,
       name: "Untitled",
       collectionID

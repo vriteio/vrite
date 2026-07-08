@@ -1,5 +1,5 @@
 import { workspacesDB, membershipDB } from "#backend/db";
-import { toObjectID } from "#backend/lib/mongo";
+import { toUUID } from "#backend/lib/mongo";
 import { ORPCError } from "@orpc/server";
 
 interface SubscriptionInfo {
@@ -11,7 +11,7 @@ interface SubscriptionInfo {
 }
 
 const getSubscription = async (input: { workspaceID: string }): Promise<SubscriptionInfo> => {
-  const workspaceID = toObjectID(input.workspaceID);
+  const workspaceID = toUUID(input.workspaceID);
   const workspace = await workspacesDB.findOne({ _id: workspaceID });
 
   if (!workspace) throw new ORPCError("NOT_FOUND", { message: "Workspace not found" });

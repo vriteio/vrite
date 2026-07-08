@@ -3,6 +3,7 @@ import {
   membershipDB,
   toMembershipID,
   toRoleID,
+  toKeyID,
   rolesDB,
   toUserID,
   usersDB,
@@ -10,7 +11,7 @@ import {
   workspacesDB
 } from "#backend/db";
 import type { KeyPermission, Permission } from "#backend/db";
-import { toObjectID } from "#backend/lib/mongo";
+import { toUUID } from "#backend/lib/mongo";
 import { redis } from "#backend/lib/redis";
 import { Keys } from "#backend/services/keys";
 import { ORPCError } from "@orpc/server";
@@ -52,11 +53,11 @@ const getSessionData = async (
 
   return getUserSessionData(headers, options);
 };
-const tryResolveObjectID = (id: string | undefined | null) => {
+const tryResolveUUID = (id: string | undefined | null) => {
   if (!id) return null;
 
   try {
-    return toObjectID(id);
+    return toUUID(id);
   } catch {
     return null;
   }
@@ -75,8 +76,10 @@ const getUserSessionData = async (
 
   if (!session) throw new ORPCError("UNAUTHORIZED");
 
-  const userID = toObjectID(session.userId);
-  const user = await usersDB.findOne({ _id: userID });
+  const userID = toUUID(session.userId);
+  const user =
+    (await usersDB.findOne({ _id: userID })) ||
+    (await usersDB.findOne({ _id: session.userId as any }));
 
   if (!user) throw new ORPCError("UNAUTHORIZED");
 
@@ -86,17 +89,17 @@ const getUserSessionData = async (
     subscriptionPlan: "free",
     workspaceID: "",
     session: {
-      userID: toUserID(user._id),
+      userID: toUserID(userID),
       memberID: "",
       roleID: "",
       permissions: [],
       admin: false
     }
   });
-  const requestedWorkspaceID = tryResolveObjectID(headers.get("x-workspace-id"));
+  const requestedWorkspaceID = tryResolveUUID(headers.get("x-workspace-id"));
   const fallbackWorkspaceID =
     typeof user.currentWorkspaceID === "string"
-      ? tryResolveObjectID(user.currentWorkspaceID)
+      ? tryResolveUUID(user.currentWorkspaceID)
       : user.currentWorkspaceID || null;
   const resolvedWorkspaceID = requestedWorkspaceID || fallbackWorkspaceID;
 
@@ -109,7 +112,7 @@ const getUserSessionData = async (
   }
 
   // Try cache first
-  const cacheKey = getUserSessionCacheKey(session.userId, resolvedWorkspaceID.toHexString());
+  const cacheKey = getUserSessionCacheKey(session.userId, resolvedWorkspaceID.toString());
   const cached = await redis.get(cacheKey);
 
   if (cached) {
@@ -138,7 +141,7 @@ const getUserSessionData = async (
     customerID: workspace.customerID,
     workspaceID: toWorkspaceID(workspace._id),
     session: {
-      userID: toUserID(user._id),
+      userID: toUserID(userID),
       memberID: toMembershipID(membership._id),
       roleID: toRoleID(membership.roleID),
       permissions: role.permissions,
@@ -156,8 +159,8 @@ const getKeySessionData = async (headers: Headers): Promise<SessionData> => {
 
   if (!key) throw new ORPCError("UNAUTHORIZED");
 
-  const keyID = key.id.toHexString();
-  const cacheKey = `session:key:${keyID}`;
+  const keyUUID = key.id;
+  const cacheKey = `session:key:${keyUUID.toString()}`;
   const cached = await redis.get(cacheKey);
 
   if (cached) {
@@ -175,7 +178,7 @@ const getKeySessionData = async (headers: Headers): Promise<SessionData> => {
     customerID: workspace.customerID,
     workspaceID: toWorkspaceID(workspace._id),
     key: {
-      keyID,
+      keyID: toKeyID(keyUUID),
       permissions: key.permissions
     }
   };

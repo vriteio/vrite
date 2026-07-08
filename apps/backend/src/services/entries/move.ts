@@ -1,5 +1,5 @@
 import { entriesDB } from "#backend/db";
-import { toObjectID } from "#backend/lib/mongo";
+import { toUUID } from "#backend/lib/mongo";
 import { ORPCError } from "@orpc/server";
 
 const moveEntry = async (input: {
@@ -8,21 +8,21 @@ const moveEntry = async (input: {
   order: string;
   collectionID?: string | null;
 }) => {
-  const workspaceID = toObjectID(input.workspaceID);
+  const workspaceID = toUUID(input.workspaceID);
   const entry = await entriesDB.findOne({
-    _id: toObjectID(input.id),
+    _id: toUUID(input.id),
     workspaceID
   });
 
   if (!entry) throw new ORPCError("NOT_FOUND");
 
   await entriesDB.updateOne(
-    { _id: toObjectID(input.id) },
+    { _id: toUUID(input.id) },
     {
       $set: {
         order: input.order,
         ...(input.collectionID && {
-          collectionID: toObjectID(input.collectionID)
+          collectionID: toUUID(input.collectionID)
         })
       },
       ...(input.collectionID === null && { $unset: { collectionID: true } })

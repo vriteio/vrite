@@ -2,7 +2,7 @@ import { permissionType } from "#backend/db";
 import { roleType } from "#backend/db";
 import { emitRoleEvent } from "#backend/events";
 import { authorized } from "#backend/lib/middleware";
-import { objectID } from "#backend/lib/mongo";
+import { id } from "#backend/lib/mongo";
 import { base } from "#backend/lib/orpc";
 import { Roles } from "#backend/services/roles";
 import { ORPCError } from "@orpc/server";
@@ -77,7 +77,7 @@ const rolesRouter = base.prefix("/roles").router({
     .use(authorized)
     .input(
       z.object({
-        id: objectID().describe("ID of the role to update"),
+        id: id().describe("ID of the role to update"),
         name: z.string().min(1).max(50).optional().describe("New name for the role"),
         permissions: z.array(permissionType).optional().describe("New permissions for the role")
       })
@@ -119,7 +119,7 @@ const rolesRouter = base.prefix("/roles").router({
     .use(authorized)
     .input(
       z.object({
-        id: objectID().describe("ID of the role to delete")
+        id: id().describe("ID of the role to delete")
       })
     )
     .output(z.void())

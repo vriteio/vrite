@@ -1,6 +1,6 @@
 import { entryType } from "#backend/db";
 import { emitEvent, EmitEvent, subscribeToEvent, SubscribeToEvent } from "#backend/lib/events";
-import { objectID } from "#backend/lib/mongo";
+import { id } from "#backend/lib/mongo";
 import * as z from "zod";
 
 declare module "#backend/lib/events" {
@@ -12,12 +12,12 @@ declare module "#backend/lib/events" {
 const entryEventType = z.union([
   z.object({
     action: z.literal("entry:create"),
-    memberID: objectID().optional(),
+    memberID: id().optional(),
     data: entryType
   }),
   z.object({
     action: z.literal("entry:update"),
-    memberID: objectID().optional(),
+    memberID: id().optional(),
     data: z.object({
       ...entryType.pick({ id: true }).shape,
       ...entryType.omit({ id: true }).partial().shape
@@ -25,15 +25,15 @@ const entryEventType = z.union([
   }),
   z.object({
     action: z.literal("entry:delete"),
-    memberID: objectID().optional(),
-    data: z.object({ ids: z.array(objectID()) })
+    memberID: id().optional(),
+    data: z.object({ ids: z.array(id()) })
   }),
   z.object({
     action: z.literal("entry:move"),
-    memberID: objectID().optional(),
+    memberID: id().optional(),
     data: z.object({
-      id: objectID(),
-      collectionID: objectID().nullable().optional(),
+      id: id(),
+      collectionID: id().nullable().optional(),
       order: z.string().optional()
     })
   })

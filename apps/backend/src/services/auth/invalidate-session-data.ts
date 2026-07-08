@@ -1,4 +1,4 @@
-import { toObjectID } from "#backend/lib/mongo";
+import { toUUID } from "#backend/lib/mongo";
 import { redis } from "#backend/lib/redis";
 import { getUserSessionCacheKey, SessionData } from "./get-session-data";
 
@@ -9,10 +9,10 @@ const invalidateUserSessionData = async (input: {
   userID: string;
   workspaceID: string;
 }): Promise<void> => {
-  const userObjectID = toObjectID(input.userID);
+  const userUUID = toUUID(input.userID);
   const cacheKey = getUserSessionCacheKey(
-    userObjectID.toHexString(),
-    toObjectID(input.workspaceID).toHexString()
+    userUUID.toString(),
+    toUUID(input.workspaceID).toString()
   );
 
   await redis.del(cacheKey);
@@ -22,7 +22,7 @@ const invalidateUserSessionData = async (input: {
  * Invalidate cached session data for a specific API key.
  */
 const invalidateKeySessionData = async (keyID: string): Promise<void> => {
-  const cacheKey = `session:key:${toObjectID(keyID).toHexString()}`;
+  const cacheKey = `session:key:${toUUID(keyID).toString()}`;
 
   await redis.del(cacheKey);
 };
@@ -32,8 +32,8 @@ const invalidateKeySessionData = async (keyID: string): Promise<void> => {
  * Uses SCAN to avoid blocking Redis.
  */
 const invalidateWorkspaceSessionData = async (workspaceID: string): Promise<void> => {
-  const wsObjectID = toObjectID(workspaceID).toHexString();
-  const patterns = [`session:user:*:${wsObjectID}`, `session:key:*`];
+  const wsUUID = toUUID(workspaceID).toString();
+  const patterns = [`session:user:*:${wsUUID}`, `session:key:*`];
 
   for (const pattern of patterns) {
     for await (const keys of redis.scanIterator({ MATCH: pattern, COUNT: 100 })) {

@@ -1,17 +1,17 @@
 import { Collection, collectionsDB, toCollectionID } from "#backend/db";
-import { toObjectID } from "#backend/lib/mongo";
+import { toUUID } from "#backend/lib/mongo";
 import { ORPCError } from "@orpc/server";
-import { ObjectId } from "mongodb";
+import type { UUID } from "#backend/lib/mongo";
 
 const ROOT_COLLECTION_NAME = "~";
 
 const getRootCollection = async (input: {
-  workspaceID: string | ObjectId;
+  workspaceID: string | UUID;
 }): Promise<Collection> => {
-  const workspaceObjectID =
-    typeof input.workspaceID === "string" ? toObjectID(input.workspaceID) : input.workspaceID;
+  const workspaceUUID =
+    typeof input.workspaceID === "string" ? toUUID(input.workspaceID) : input.workspaceID;
   const rootCollection = await collectionsDB.findOne({
-    workspaceID: workspaceObjectID,
+    workspaceID: workspaceUUID,
     name: ROOT_COLLECTION_NAME,
     ancestors: { $size: 0 }
   });

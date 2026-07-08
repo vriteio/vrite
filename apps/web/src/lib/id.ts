@@ -1,22 +1,23 @@
-import { ObjectId } from "bson";
-import { base62ToBytes, bytesToBase62, hexToBytes } from "./base-conversion";
+import { base62ToBytes, bytesToBase62, bytesToHex, hexToBytes } from "./base-conversion";
 
-const toObjectID = (id: string | ObjectId): ObjectId => {
-  if (typeof id !== "string") return id;
+const UUID_REGEX = /^[a-f\d]{8}-[a-f\d]{4}-[1-8][a-f\d]{3}-[89ab][a-f\d]{3}-[a-f\d]{12}$/i;
 
-  // Handle raw hex ObjectId strings (e.g. from better-auth)
-  if (/^[a-f\d]{24}$/.test(id)) return new ObjectId(id);
+const generateUUID = () => crypto.randomUUID();
+const toUUID = (id: string): string => {
+  if (UUID_REGEX.test(id)) return id;
 
   const bytes = base62ToBytes(id.split("_").pop() || "");
+  if (bytes.length > 16) throw new Error("Invalid ID");
 
-  return new ObjectId(bytes);
+  const hex = bytesToHex(bytes).padStart(32, "0");
+
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 };
-const fromObjectID = (id: ObjectId, prefix?: string): string => {
-  const bytes = hexToBytes(`${id}`);
+const fromUUID = (uuid: string, prefix?: string): string => {
+  const bytes = hexToBytes(uuid.replaceAll("-", ""));
 
   return `${prefix || ""}${prefix ? "_" : ""}${bytesToBase62(bytes)}`;
 };
-const toEntryID = (id: ObjectId) => fromObjectID(id, "ent");
-const toCollectionID = (id: ObjectId) => fromObjectID(id, "coll");
+const toEntryID = (uuid: string) => fromUUID(uuid, "ent");
 
-export { toObjectID, fromObjectID, toEntryID };
+export { generateUUID, toUUID, fromUUID, toEntryID };

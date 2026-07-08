@@ -9,7 +9,7 @@ import {
   workspacesDB
 } from "#backend/db";
 import { createHash } from "node:crypto";
-import { ObjectId } from "mongodb";
+import { generateUUID, toUUID } from "#backend/lib/mongo";
 import { Auth } from "#backend/services/auth";
 import { ORPCError } from "@orpc/server";
 
@@ -39,7 +39,7 @@ const acceptInvite = async (input: {
     throw new ORPCError("BAD_REQUEST", { message: "Invite has expired" });
   }
 
-  const userID = new ObjectId(input.userID);
+  const userID = toUUID(input.userID);
   const [workspace, user] = await Promise.all([
     workspacesDB.findOne({ _id: invite.workspaceID }),
     usersDB.findOne({ _id: userID })
@@ -89,7 +89,7 @@ const acceptInvite = async (input: {
   }
 
   // Create membership
-  const membershipID = new ObjectId();
+  const membershipID = generateUUID();
   await membershipDB.insertOne({
     _id: membershipID,
     userID,

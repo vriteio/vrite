@@ -3,7 +3,7 @@ import { Database } from "@hocuspocus/extension-database";
 import { router, routerPlugin } from "#backend/router";
 import "./events";
 import { contentsDB } from "#backend/db";
-import { toObjectID } from "./lib/mongo";
+import { toUUID } from "./lib/mongo";
 import { Binary } from "mongodb";
 import { config } from "./lib/config";
 import { Billing } from "./services";
@@ -25,7 +25,7 @@ const hocuspocus = new Hocuspocus({
         if (documentName === "explorer") return null;
         const entryID = documentName;
         const content = await contentsDB.findOne({
-          entryID: toObjectID(entryID)
+          entryID: toUUID(entryID)
         });
 
         if (content && content.content) {
@@ -36,7 +36,7 @@ const hocuspocus = new Hocuspocus({
       },
       async store({ documentName, state }) {
         await contentsDB?.updateOne(
-          { entryID: toObjectID(documentName) },
+          { entryID: toUUID(documentName) },
           { $set: { content: new Binary(state) } },
           { upsert: true }
         );

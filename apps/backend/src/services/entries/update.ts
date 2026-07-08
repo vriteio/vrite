@@ -1,5 +1,5 @@
 import { entriesDB, Entry } from "#backend/db";
-import { toObjectID } from "#backend/lib/mongo";
+import { toUUID } from "#backend/lib/mongo";
 import { ORPCError } from "@orpc/server";
 
 const updateEntry = async (
@@ -10,7 +10,7 @@ const updateEntry = async (
 ) => {
   const { id, workspaceID, ...setProperties } = input;
   const { matchedCount } = await entriesDB.updateOne(
-    { _id: toObjectID(input.id), workspaceID: toObjectID(input.workspaceID) },
+    { _id: toUUID(input.id), workspaceID: toUUID(input.workspaceID) },
     { $set: setProperties }
   );
 

@@ -1,14 +1,14 @@
-import { db, fromObjectID, objectID, UnderscoreID } from "#backend/lib/mongo";
-import { ObjectId } from "mongodb";
+import { db, fromUUID, id, UnderscoreID } from "#backend/lib/mongo";
+import type { UUID } from "#backend/lib/mongo";
 import * as z from "zod";
 
 const membershipType = z.object({
-  id: objectID().describe("ID of the membership"),
-  userID: objectID().describe("ID of the user"),
-  roleID: objectID().describe("ID of the role")
+  id: id().describe("ID of the membership"),
+  userID: id().describe("ID of the user"),
+  roleID: id().describe("ID of the role")
 });
 
-interface Membership<ID extends string | ObjectId = string> extends Omit<
+interface Membership<ID extends string | UUID = string> extends Omit<
   z.infer<typeof membershipType>,
   "id" | "userID" | "workspaceID" | "roleID"
 > {
@@ -16,12 +16,12 @@ interface Membership<ID extends string | ObjectId = string> extends Omit<
   userID: ID;
   roleID: ID;
 }
-interface FullMembership<ID extends string | ObjectId = string> extends Membership<ID> {
+interface FullMembership<ID extends string | UUID = string> extends Membership<ID> {
   workspaceID: ID;
 }
 
-const toMembershipID = (id: ObjectId) => fromObjectID(id, "ms");
-const membershipDB = db.collection<UnderscoreID<FullMembership<ObjectId>>>("memberships");
+const toMembershipID = (id: UUID) => fromUUID(id, "ms");
+const membershipDB = db.collection<UnderscoreID<FullMembership<UUID>>>("memberships");
 
 await membershipDB.createIndex(
   { userID: 1, workspaceID: 1 },

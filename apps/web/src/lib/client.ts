@@ -17,7 +17,7 @@ import { clearWorkspaceData } from "#web/context/workspace/persistence";
 // Using signal to track workspace ID changes
 const [currentWorkspaceID, setCurrentWorkspaceID] = createSignal("");
 const isWorkspaceID = (value: string) => {
-  return /^(?:[a-f\d]{24})|(?:\w+?_[A-Za-z\d]{16})$/.test(value);
+  return /^\w+?_[A-Za-z\d]{1,22}$/.test(value);
 };
 const getRouteWorkspaceID = () => {
   if (typeof window !== "undefined") {

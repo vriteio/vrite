@@ -1,7 +1,7 @@
 import { collectionsDB, Collection, toCollectionID, FullCollection } from "#backend/db";
-import { toObjectID, UnderscoreID } from "#backend/lib/mongo";
+import { generateUUID, toUUID, UnderscoreID } from "#backend/lib/mongo";
 import { ORPCError } from "@orpc/server";
-import { ObjectId } from "mongodb";
+import type { UUID } from "#backend/lib/mongo";
 import { getRootCollection, ROOT_COLLECTION_NAME } from "./root";
 
 const createCollection = async (
@@ -13,12 +13,12 @@ const createCollection = async (
     throw new ORPCError("BAD_REQUEST", { message: "Reserved collection name" });
   }
 
-  const workspaceID = toObjectID(input.workspaceID);
-  const collection: UnderscoreID<FullCollection<ObjectId>> = {
-    _id: input.id ? toObjectID(input.id) : new ObjectId(),
+  const workspaceID = toUUID(input.workspaceID);
+  const collection: UnderscoreID<FullCollection<UUID>> = {
+    _id: input.id ? toUUID(input.id) : generateUUID(),
     name: input.name || "",
-    ancestors: (input.ancestors || []).map(toObjectID),
-    descendants: (input.descendants || []).map(toObjectID),
+    ancestors: (input.ancestors || []).map(toUUID),
+    descendants: (input.descendants || []).map(toUUID),
     workspaceID
   };
 
@@ -29,7 +29,7 @@ const createCollection = async (
   if (!parentID) {
     const rootCollection = await getRootCollection({ workspaceID });
 
-    parentID = toObjectID(rootCollection.id);
+    parentID = toUUID(rootCollection.id);
   }
 
   if (parentID) {

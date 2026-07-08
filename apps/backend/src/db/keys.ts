@@ -1,5 +1,5 @@
-import { db, fromObjectID, objectID, UnderscoreID } from "#backend/lib/mongo";
-import { ObjectId } from "mongodb";
+import { db, fromUUID, id, UnderscoreID } from "#backend/lib/mongo";
+import type { UUID } from "#backend/lib/mongo";
 import * as z from "zod";
 
 const keyPermissionType = z.enum([
@@ -13,11 +13,11 @@ const keyPermissionType = z.enum([
   "read:roles"
 ]);
 const keyType = z.object({
-  id: objectID().describe("The ID of the API key"),
+  id: id().describe("The ID of the API key"),
   name: z.string().describe("The name for the API key"),
   permissions: z.array(keyPermissionType).describe("The permissions of the API key"),
   prefix: z.string().describe("The first 8 characters of the raw key (for display)"),
-  memberID: objectID().describe("The ID of the workspace member who created the API key"),
+  memberID: id().describe("The ID of the workspace member who created the API key"),
   createdAt: z.iso.datetime().describe("The creation date of the API key"),
   updatedAt: z.iso.datetime().describe("The date of the last update of the API key"),
   expiresAt: z.iso.datetime().nullable().describe("The expiration date of the API key")
@@ -25,24 +25,24 @@ const keyType = z.object({
 
 type KeyPermission = z.infer<typeof keyPermissionType>;
 
-interface Key<ID extends string | ObjectId = string> extends Omit<
+interface Key<ID extends string | UUID = string> extends Omit<
   z.infer<typeof keyType>,
   "id" | "memberID" | "createdAt" | "updatedAt" | "expiresAt"
 > {
   id: ID;
   memberID: ID;
-  createdAt: ID extends string ? string : Date;
-  updatedAt: ID extends string ? string : Date;
-  expiresAt: ID extends string ? string | null : Date | null;
+  createdAt: ID extends UUID ? Date : string;
+  updatedAt: ID extends UUID ? Date : string;
+  expiresAt: ID extends UUID ? Date | null : string | null;
 }
-interface FullKey<ID extends string | ObjectId = string> extends Key<ID> {
+interface FullKey<ID extends string | UUID = string> extends Key<ID> {
   workspaceID: ID;
   hash: string;
   salt: string;
 }
 
-const toKeyID = (id: ObjectId) => fromObjectID(id, "sk");
-const keysDB = db.collection<UnderscoreID<FullKey<ObjectId>>>("keys");
+const toKeyID = (id: UUID) => fromUUID(id, "sk");
+const keysDB = db.collection<UnderscoreID<FullKey<UUID>>>("keys");
 
 await keysDB.createIndex({ workspaceID: 1 }, { name: "workspaceID_1" });
 await keysDB.createIndex({ prefix: 1 }, { name: "prefix_1" });

@@ -1,6 +1,5 @@
 import { Collection, client } from "#web/lib/client";
-import { fromObjectID } from "#web/lib/id";
-import { ObjectId } from "bson";
+import { fromUUID, generateUUID } from "#web/lib/id";
 import { ROOT_COLLECTION_NAME, WorkspaceContentOperationsInput } from "./types";
 import { untrack } from "solid-js";
 
@@ -137,7 +136,7 @@ const createCollectionOperations = (input: WorkspaceContentOperationsInput) => {
     const collections = collectionsCollection();
     const parent = collectionID ? getCollection(collectionID) : getRootCollection();
     const collection: Collection = {
-      id: fromObjectID(new ObjectId(), "coll"),
+      id: fromUUID(generateUUID(), "coll"),
       name: "Untitled",
       descendants: [],
       ancestors: collectionID ? [...(parent?.ancestors || []), collectionID] : []

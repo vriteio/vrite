@@ -1,7 +1,7 @@
 import { collectionType } from "#backend/db";
 import { emitCollectionEvent } from "#backend/events";
 import { authorized } from "#backend/lib/middleware";
-import { objectID } from "#backend/lib/mongo";
+import { id } from "#backend/lib/mongo";
 import { base } from "#backend/lib/orpc";
 import { Collections } from "#backend/services/collections";
 import * as z from "zod";
@@ -43,7 +43,7 @@ const collectionsRouter = base.prefix("/collections").router({
     .use(authorized)
     .input(
       z.object({
-        ids: z.array(objectID()).describe("Comma-separated IDs of the collections to be deleted")
+        ids: z.array(id()).describe("Comma-separated IDs of the collections to be deleted")
       })
     )
     .output(z.void())
@@ -70,7 +70,7 @@ const collectionsRouter = base.prefix("/collections").router({
     .use(authorized)
     .input(
       z.object({
-        id: objectID().describe("ID of the collection to be updated"),
+        id: id().describe("ID of the collection to be updated"),
         name: z.string().optional().describe("New name of the collection")
       })
     )
@@ -97,8 +97,8 @@ const collectionsRouter = base.prefix("/collections").router({
     .use(authorized)
     .input(
       z.object({
-        id: objectID().describe("ID of the collection to be moved"),
-        newParentID: objectID()
+        id: id().describe("ID of the collection to be moved"),
+        newParentID: id()
           .nullable()
           .optional()
           .describe("ID of the new parent collection, or null for root"),

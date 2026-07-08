@@ -1,8 +1,8 @@
 import { keysDB, Key, toKeyID, toMembershipID } from "#backend/db";
-import { toObjectID } from "#backend/lib/mongo";
+import { toUUID } from "#backend/lib/mongo";
 
 const listKeys = async (input: { workspaceID: string }): Promise<Key[]> => {
-  const keys = await keysDB.find({ workspaceID: toObjectID(input.workspaceID) }).toArray();
+  const keys = await keysDB.find({ workspaceID: toUUID(input.workspaceID) }).toArray();
 
   return keys.map((key) => ({
     id: toKeyID(key._id),

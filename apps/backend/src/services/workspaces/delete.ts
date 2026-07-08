@@ -1,14 +1,14 @@
 import { membershipDB, rolesDB, workspacesDB, usersDB } from "#backend/db";
-import { toObjectID } from "#backend/lib/mongo";
+import { toUUID } from "#backend/lib/mongo";
 import { ORPCError } from "@orpc/server";
 import { Auth } from "#backend/services/auth";
 
 const deleteWorkspace = async (input: { workspaceID: string; userID: string }) => {
-  const wsId = toObjectID(input.workspaceID);
+  const workspaceUUID = toUUID(input.workspaceID);
 
   // Ensure the user has at least one other workspace
   const memberCount = await membershipDB.countDocuments({
-    userID: toObjectID(input.userID)
+    userID: toUUID(input.userID)
   });
 
   if (memberCount <= 1) {
@@ -22,22 +22,22 @@ const deleteWorkspace = async (input: { workspaceID: string; userID: string }) =
 
   // Remove workspace and all associated data
   await Promise.all([
-    workspacesDB.deleteOne({ _id: wsId }),
-    membershipDB.deleteMany({ workspaceID: wsId }),
-    rolesDB.deleteMany({ workspaceID: wsId })
+    workspacesDB.deleteOne({ _id: workspaceUUID }),
+    membershipDB.deleteMany({ workspaceID: workspaceUUID }),
+    rolesDB.deleteMany({ workspaceID: workspaceUUID })
   ]);
 
   // If the user's currentWorkspaceID pointed to the deleted workspace, clear it
-  const user = await usersDB.findOne({ _id: toObjectID(input.userID) });
+  const user = await usersDB.findOne({ _id: toUUID(input.userID) });
 
-  if (user && user.currentWorkspaceID && user.currentWorkspaceID.equals(wsId)) {
+  if (user && user.currentWorkspaceID && user.currentWorkspaceID.equals(workspaceUUID)) {
     // Set to another workspace the user is a member of
     const anotherMembership = await membershipDB.findOne({
-      userID: toObjectID(input.userID)
+      userID: toUUID(input.userID)
     });
 
     await usersDB.updateOne(
-      { _id: toObjectID(input.userID) },
+      { _id: toUUID(input.userID) },
       { $set: { currentWorkspaceID: anotherMembership?.workspaceID } }
     );
   }

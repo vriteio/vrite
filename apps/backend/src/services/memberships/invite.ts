@@ -7,11 +7,11 @@ import {
   workspacesDB,
   type FullInvite
 } from "#backend/db";
-import { toObjectID, type UnderscoreID } from "#backend/lib/mongo";
+import { generateUUID, toUUID, type UnderscoreID } from "#backend/lib/mongo";
 import { generateInviteToken } from "#backend/lib/utils";
 import { sendEmail } from "#backend/lib/email";
 import { config } from "#backend/lib/config";
-import { ObjectId } from "mongodb";
+import type { UUID } from "#backend/lib/mongo";
 import { ORPCError } from "@orpc/server";
 
 const inviteMember = async (input: {
@@ -33,12 +33,12 @@ const inviteMember = async (input: {
     expiresAt: string;
   };
 }> => {
-  const workspaceID = toObjectID(input.workspaceID);
-  const roleOID = toObjectID(input.roleID);
+  const workspaceID = toUUID(input.workspaceID);
+  const roleUUID = toUUID(input.roleID);
   const normalizedEmail = input.email.trim().toLowerCase();
 
   const [role, workspace, invitedUser] = await Promise.all([
-    rolesDB.findOne({ _id: roleOID, workspaceID }),
+    rolesDB.findOne({ _id: roleUUID, workspaceID }),
     workspacesDB.findOne({ _id: workspaceID }),
     usersDB.findOne({ email: normalizedEmail })
   ]);
@@ -81,12 +81,12 @@ const inviteMember = async (input: {
   const now = new Date();
   const expiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
-  const invite: UnderscoreID<FullInvite<ObjectId>> = {
-    _id: new ObjectId(),
+  const invite: UnderscoreID<FullInvite<UUID>> = {
+    _id: generateUUID(),
     workspaceID,
     email: normalizedEmail,
-    roleID: roleOID,
-    ...(input.inviterID && { invitedBy: toObjectID(input.inviterID) }),
+    roleID: roleUUID,
+    ...(input.inviterID && { invitedBy: toUUID(input.inviterID) }),
     token: hash,
     status: "pending",
     createdAt: now,
@@ -99,7 +99,7 @@ const inviteMember = async (input: {
   let inviterName = "Someone";
 
   if (input.inviterID) {
-    const inviterMembership = await membershipDB.findOne({ _id: toObjectID(input.inviterID) });
+    const inviterMembership = await membershipDB.findOne({ _id: toUUID(input.inviterID) });
 
     if (inviterMembership) {
       const inviter = await usersDB.findOne({ _id: inviterMembership.userID });

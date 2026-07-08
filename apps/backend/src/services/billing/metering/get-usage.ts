@@ -1,6 +1,6 @@
 import { usageDB } from "#backend/db";
 import { config } from "#backend/lib/config";
-import { toObjectID } from "#backend/lib/mongo";
+import { toUUID } from "#backend/lib/mongo";
 import { endOfMonth, format, startOfMonth } from "date-fns";
 import { meterKey, parseMeterKey } from "./record-usage";
 import { redis } from "#backend/lib/redis";
@@ -64,7 +64,7 @@ const getUsage = async (input: {
   // Flushed data from MongoDB
   const flushedRecords = await usageDB
     .find({
-      workspaceID: toObjectID(input.workspaceID),
+      workspaceID: toUUID(input.workspaceID),
       year,
       month
     })

@@ -1,12 +1,12 @@
 import { membershipDB, usersDB } from "#backend/db";
-import { toObjectID } from "#backend/lib/mongo";
+import { toUUID } from "#backend/lib/mongo";
 import { ORPCError } from "@orpc/server";
 
 const switchWorkspace = async (input: { workspaceID: string; userID: string }) => {
   // Verify the user has a membership in the target workspace
   const membership = await membershipDB.findOne({
-    userID: toObjectID(input.userID),
-    workspaceID: toObjectID(input.workspaceID)
+    userID: toUUID(input.userID),
+    workspaceID: toUUID(input.workspaceID)
   });
 
   if (!membership) {
@@ -16,8 +16,8 @@ const switchWorkspace = async (input: { workspaceID: string; userID: string }) =
   }
 
   await usersDB.updateOne(
-    { _id: toObjectID(input.userID) },
-    { $set: { currentWorkspaceID: toObjectID(input.workspaceID) } }
+    { _id: toUUID(input.userID) },
+    { $set: { currentWorkspaceID: toUUID(input.workspaceID) } }
   );
 };
 

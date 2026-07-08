@@ -1,5 +1,5 @@
 import { keysDB } from "#backend/db";
-import { toObjectID } from "#backend/lib/mongo";
+import { toUUID } from "#backend/lib/mongo";
 import type { z } from "zod";
 import type { keyPermissionType } from "#backend/db";
 import { Auth } from "#backend/services/auth";
@@ -18,7 +18,7 @@ const updateKey = async (input: {
   if (Object.keys(update).length === 0) return;
 
   await keysDB.updateOne(
-    { _id: toObjectID(input.id), workspaceID: toObjectID(input.workspaceID) },
+    { _id: toUUID(input.id), workspaceID: toUUID(input.workspaceID) },
     { $set: update }
   );
 

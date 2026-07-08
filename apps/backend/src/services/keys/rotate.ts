@@ -1,7 +1,7 @@
 import { keysDB, Key, toKeyID, toMembershipID } from "#backend/db";
-import { toObjectID, UnderscoreID } from "#backend/lib/mongo";
+import { generateUUID, toUUID, UnderscoreID } from "#backend/lib/mongo";
 import { generateKeyValue, generateSalt, hashKey } from "#backend/lib/utils";
-import { ObjectId } from "mongodb";
+import type { UUID } from "#backend/lib/mongo";
 import type { FullKey } from "#backend/db";
 import { Auth } from "#backend/services/auth";
 import { ORPCError } from "@orpc/server";
@@ -28,9 +28,9 @@ const rotateKey = async (input: {
   memberID: string;
   expiresIn: ExpirationOption;
 }): Promise<Key & { rawKey: string }> => {
-  const workspaceID = toObjectID(input.workspaceID);
+  const workspaceID = toUUID(input.workspaceID);
   const oldKey = await keysDB.findOne({
-    _id: toObjectID(input.id),
+    _id: toUUID(input.id),
     workspaceID
   });
 
@@ -47,12 +47,12 @@ const rotateKey = async (input: {
   const salt = generateSalt();
   const hash = hashKey(raw, salt);
   const now = new Date();
-  const newKey: UnderscoreID<FullKey<ObjectId>> = {
-    _id: new ObjectId(),
+  const newKey: UnderscoreID<FullKey<UUID>> = {
+    _id: generateUUID(),
     name: oldKey.name,
     permissions: oldKey.permissions,
     prefix,
-    memberID: toObjectID(input.memberID),
+    memberID: toUUID(input.memberID),
     createdAt: now,
     updatedAt: now,
     expiresAt: null,

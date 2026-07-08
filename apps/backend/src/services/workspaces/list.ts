@@ -1,15 +1,15 @@
-import { membershipDB, workspacesDB, toWorkspaceID } from "#backend/db";
-import { toObjectID } from "#backend/lib/mongo";
+import { membershipDB, toUserID, workspacesDB, toWorkspaceID } from "#backend/db";
+import { toUUID } from "#backend/lib/mongo";
 
 const listWorkspaces = async (input: { userIDs: string[] }) => {
-  const userIDs = input.userIDs.map((id) => toObjectID(id));
+  const userIDs = input.userIDs.map((id) => toUUID(id));
   const memberships = await membershipDB.find({ userID: { $in: userIDs } }).toArray();
 
   if (memberships.length === 0) return [];
 
   const workspaceIDs = [...new Set(memberships.map((m) => toWorkspaceID(m.workspaceID)))].map(
     (id) => {
-      return toObjectID(id);
+      return toUUID(id);
     }
   );
   const workspaces = await workspacesDB.find({ _id: { $in: workspaceIDs } }).toArray();
@@ -24,7 +24,7 @@ const listWorkspaces = async (input: { userIDs: string[] }) => {
       return {
         id: toWorkspaceID(ws._id),
         name: ws.name,
-        userID: m.userID.toString()
+        userID: toUserID(m.userID)
       };
     })
     .filter(

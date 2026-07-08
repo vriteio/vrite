@@ -1,17 +1,17 @@
 import { membershipDB, rolesDB, toUserID } from "#backend/db";
-import { toObjectID } from "#backend/lib/mongo";
+import { toUUID } from "#backend/lib/mongo";
 import { Auth } from "#backend/services/auth";
 import { ORPCError } from "@orpc/server";
 
 const removeMember = async (input: { id: string; workspaceID: string }): Promise<void> => {
-  const workspaceID = toObjectID(input.workspaceID);
-  const memberOID = toObjectID(input.id);
+  const workspaceID = toUUID(input.workspaceID);
+  const memberUUID = toUUID(input.id);
 
-  const membership = await membershipDB.findOne({ _id: memberOID, workspaceID });
+  const membership = await membershipDB.findOne({ _id: memberUUID, workspaceID });
 
   if (!membership) throw new ORPCError("NOT_FOUND", { message: "Membership not found" });
 
-  const role = await rolesDB.findOne({ _id: toObjectID(membership.roleID), workspaceID });
+  const role = await rolesDB.findOne({ _id: toUUID(membership.roleID), workspaceID });
 
   if (!role) throw new ORPCError("NOT_FOUND", { message: "Role not found" });
 
@@ -29,7 +29,7 @@ const removeMember = async (input: { id: string; workspaceID: string }): Promise
     }
   }
 
-  await membershipDB.deleteOne({ _id: memberOID, workspaceID });
+  await membershipDB.deleteOne({ _id: memberUUID, workspaceID });
 
   await Auth.invalidateSessionData({
     userID: toUserID(membership.userID),
