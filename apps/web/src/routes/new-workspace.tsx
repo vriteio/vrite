@@ -3,16 +3,19 @@ import { Component, createMemo, createSignal } from "solid-js";
 import { AnimatedGradientCard } from "#web/components/animated-gradient-card";
 import { Button, IconButton, Input } from "@andesine/components";
 import { client, setCurrentWorkspaceID } from "#web/lib/client";
+import { createMutation } from "@tanstack/solid-query";
 
 const NewWorkspacePage: Component = () => {
   const navigate = useNavigate();
   const [name, setName] = createSignal("");
   const [error, setError] = createSignal("");
-  const [creating, setCreating] = createSignal(false);
-  const loading = createMemo(() => creating());
-
+  const createWorkspaceMutation = createMutation(() => ({
+    mutationFn: (input: { name: string }) => {
+      return client.workspaces.create(input);
+    }
+  }));
   const handleCreate = async () => {
-    if (creating()) return;
+    if (createWorkspaceMutation.isPending) return;
 
     const trimmedName = name().trim();
 
@@ -23,16 +26,14 @@ const NewWorkspacePage: Component = () => {
     }
 
     setError("");
-    setCreating(true);
 
     try {
-      const workspace = await client.workspaces.create({ name: trimmedName });
+      const workspace = await createWorkspaceMutation.mutateAsync({ name: trimmedName });
 
       setCurrentWorkspaceID(workspace.id);
       navigate(`/${workspace.id}/`, { replace: true });
     } catch (createError) {
       setError("Failed to create workspace");
-      setCreating(false);
     }
   };
 
@@ -72,7 +73,12 @@ const NewWorkspacePage: Component = () => {
                 onEnter={handleCreate}
               />
               {error() && <div class="text-red-500 text-sm">{error()}</div>}
-              <Button class="w-full" color="primary" onClick={handleCreate} loading={loading()}>
+              <Button
+                class="w-full"
+                color="primary"
+                onClick={handleCreate}
+                loading={createWorkspaceMutation.isPending}
+              >
                 Create workspace
               </Button>
             </div>

@@ -1,40 +1,37 @@
 import { Component } from "solid-js";
 import { IconButton, Button } from "@andesine/components";
 import { authClient } from "#web/lib/client";
-import { action, useAction, useSearchParams, useSubmission } from "@solidjs/router";
+import { useSearchParams } from "@solidjs/router";
 import { appendRedirectTo, normalizeRedirectTo, toCallbackURL } from "#web/lib/redirects";
 import { useNotify } from "#web/context/notifications";
-
-const signUpWithSocialAction = action(
-  async (input: { provider: "google" | "github"; callbackURL: string }) => {
-    const { error } = await authClient.signIn.social({
-      provider: input.provider,
-      callbackURL: input.callbackURL
-    });
-
-    if (error) throw error;
-
-    return true;
-  }
-);
+import { createMutation } from "@tanstack/solid-query";
 
 const SignUpPage: Component = () => {
   const [searchParams] = useSearchParams();
   const notify = useNotify();
-  const signUpWithSocial = useAction(signUpWithSocialAction);
-  const signUpWithGoogleSubmission = useSubmission(signUpWithSocialAction, (input) => {
-    return input[0]?.provider === "google";
-  });
-  const signUpWithGitHubSubmission = useSubmission(signUpWithSocialAction, (input) => {
-    return input[0]?.provider === "github";
-  });
+  const signUpWithSocialMutation = createMutation(() => ({
+    mutationFn: async (input: { provider: "google" | "github"; callbackURL: string }) => {
+      const { error } = await authClient.signIn.social({
+        provider: input.provider,
+        callbackURL: input.callbackURL
+      });
+
+      if (error) throw error;
+
+      return true;
+    }
+  }));
+  const signingUpWithGoogle = () =>
+    signUpWithSocialMutation.isPending && signUpWithSocialMutation.variables?.provider === "google";
+  const signingUpWithGitHub = () =>
+    signUpWithSocialMutation.isPending && signUpWithSocialMutation.variables?.provider === "github";
   const redirectTo = () =>
     normalizeRedirectTo(
       Array.isArray(searchParams.redirectTo) ? searchParams.redirectTo[0] : searchParams.redirectTo
     );
   const signUpWithProvider = async (provider: "google" | "github") => {
     try {
-      await signUpWithSocial({
+      await signUpWithSocialMutation.mutateAsync({
         provider,
         callbackURL: toCallbackURL(redirectTo())
       });
@@ -83,12 +80,8 @@ const SignUpPage: Component = () => {
           iconProps={{ class: "h-5.5 w-5.5" }}
           variant="outlined"
           color="contrast"
-          label={
-            signUpWithGoogleSubmission.pending
-              ? "Continuing with Google..."
-              : "Continue with Google"
-          }
-          disabled={signUpWithGoogleSubmission.pending || signUpWithGitHubSubmission.pending}
+          label={signingUpWithGoogle() ? "Continuing with Google..." : "Continue with Google"}
+          disabled={signingUpWithGoogle() || signingUpWithGitHub()}
           onClick={() => {
             signUpWithProvider("google");
           }}
@@ -99,12 +92,8 @@ const SignUpPage: Component = () => {
           iconProps={{ class: "text-black dark:text-white" }}
           variant="outlined"
           color="contrast"
-          label={
-            signUpWithGitHubSubmission.pending
-              ? "Continuing with GitHub..."
-              : "Continue with GitHub"
-          }
-          disabled={signUpWithGoogleSubmission.pending || signUpWithGitHubSubmission.pending}
+          label={signingUpWithGitHub() ? "Continuing with GitHub..." : "Continue with GitHub"}
+          disabled={signingUpWithGoogle() || signingUpWithGitHub()}
           onClick={() => {
             signUpWithProvider("github");
           }}

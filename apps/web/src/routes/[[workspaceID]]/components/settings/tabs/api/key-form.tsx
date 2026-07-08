@@ -1,8 +1,8 @@
 import { Button, Input, ToggleGroup } from "@andesine/components";
-import { action, useAction, useSubmission } from "@solidjs/router";
 import { Component, createMemo, createSignal, For } from "solid-js";
 import { client, type KeyPermission } from "#web/lib/client";
 import { useNotify } from "#web/context/notifications";
+import { createMutation } from "@tanstack/solid-query";
 
 type AccessLevel = "none" | "read" | "write";
 type Resource = "entries" | "collections" | "memberships" | "roles";
@@ -85,18 +85,6 @@ const emptyAccess = (): ResourceAccess => ({
   roles: "none"
 });
 
-const createKeyAction = action((input: { name: string; permissions: KeyPermission[] }) => {
-  return client.keys.create(input);
-});
-
-const updateKeyAction = action(
-  async (input: { id: string; name: string; permissions: KeyPermission[] }) => {
-    await client.keys.update(input);
-
-    return true;
-  }
-);
-
 // ── Component ─────────────────────────────────────────────────────────────────
 interface KeyFormPageBaseProps {
   goBack(): void;
@@ -124,15 +112,21 @@ const KeyFormPage: Component<KeyFormPageProps> = (props) => {
     props.mode === "edit"
       ? { name: props.initialName, access: permissionsToAccess(props.initialPermissions) }
       : { name: "", access: emptyAccess() };
-  const createKey = useAction(createKeyAction);
-  const updateKey = useAction(updateKeyAction);
-  const createSubmission = useSubmission(createKeyAction);
-  const updateSubmission = useSubmission(updateKeyAction);
+  const createKeyMutation = createMutation(() => ({
+    mutationFn: (input: { name: string; permissions: KeyPermission[] }) => client.keys.create(input)
+  }));
+  const updateKeyMutation = createMutation(() => ({
+    mutationFn: async (input: { id: string; name: string; permissions: KeyPermission[] }) => {
+      await client.keys.update(input);
+
+      return true;
+    }
+  }));
 
   const [keyName, setKeyName] = createSignal(initial().name);
   const [resourceAccess, setResourceAccess] = createSignal<ResourceAccess>(initial().access);
   const loading = createMemo(() =>
-    props.mode === "edit" ? updateSubmission.pending : createSubmission.pending
+    props.mode === "edit" ? updateKeyMutation.isPending : createKeyMutation.isPending
   );
   const selectedPermissionCount = createMemo(() => accessToPermissions(resourceAccess()).length);
 
@@ -159,12 +153,12 @@ const KeyFormPage: Component<KeyFormPageProps> = (props) => {
 
     try {
       if (props.mode === "create") {
-        const data = await createKey({ name, permissions });
+        const data = await createKeyMutation.mutateAsync({ name, permissions });
 
         notify({ type: "success", text: "API key created" });
         props.onCreated(data.rawKey);
       } else {
-        await updateKey({
+        await updateKeyMutation.mutateAsync({
           id: props.keyId,
           name,
           permissions

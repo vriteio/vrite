@@ -1,8 +1,10 @@
 import { createContext, createEffect, on, ParentComponent, useContext } from "solid-js";
-import { action, createAsync, query, redirect, reload, useAction } from "@solidjs/router";
+import { createAsync, query, revalidate } from "@solidjs/router";
 import { client, authClient, currentWorkspaceID, setCurrentWorkspaceID } from "#web/lib/client";
 import { validateWorkspaceID } from "#web/lib/validate";
 import { useWorkspaceContent } from "./content";
+import { createMutation } from "@tanstack/solid-query";
+import { toUserID } from "#web/lib/id";
 
 interface WorkspaceProviderProps {
   workspaceID: string;
@@ -26,6 +28,7 @@ interface SessionInfo {
 interface WorkspaceContextValue {
   currentWorkspace(): WorkspaceInfo | undefined;
   workspaces(): WorkspaceInfo[];
+  refreshWorkspaces(): Promise<void>;
   workspaceID(): string;
   sessions(): SessionInfo[];
   switchWorkspace(id: string): Promise<void>;
@@ -40,7 +43,8 @@ const listSessionsQuery = query(async () => {
   return data.map(
     (entry: { session: { token: string }; user: { id: string; name: string; email: string } }) => ({
       user: {
-        id: entry.user.id,
+        // entry.user.id returned from authClient is a UUID, convert it to the API user ID format
+        id: toUserID(entry.user.id),
         name: entry.user.name,
         email: entry.user.email
       },
@@ -51,24 +55,6 @@ const listSessionsQuery = query(async () => {
 const listWorkspacesQuery = query(() => {
   return client.workspaces.list();
 }, "workspaces");
-const switchEnvironmentAction = action(
-  async (input: { workspaceID?: string; sessionToken?: string }) => {
-    if (input.sessionToken) {
-      await authClient.multiSession.setActive({ sessionToken: input.sessionToken });
-    }
-
-    if (input.workspaceID) {
-      await client.workspaces.switch({
-        workspaceID: input.workspaceID
-      });
-
-      return redirect(`/${input.workspaceID}/`);
-    }
-
-    return reload();
-  }
-);
-
 const WorkspaceContext = createContext<WorkspaceContextValue>();
 const WorkspaceProvider: ParentComponent<WorkspaceProviderProps> = (props) => {
   if (validateWorkspaceID(props.workspaceID)) {
@@ -78,7 +64,24 @@ const WorkspaceProvider: ParentComponent<WorkspaceProviderProps> = (props) => {
   const content = useWorkspaceContent(currentWorkspaceID);
   const sessions = createAsync(() => listSessionsQuery());
   const workspaces = createAsync(() => listWorkspacesQuery());
-  const switchEnvironment = useAction(switchEnvironmentAction);
+  const refreshWorkspaces = () => revalidate("workspaces");
+  const switchEnvironment = createMutation(() => ({
+    mutationFn: async (input: { workspaceID?: string; sessionToken?: string }) => {
+      if (input.sessionToken) {
+        await authClient.multiSession.setActive({ sessionToken: input.sessionToken });
+      }
+
+      if (input.workspaceID) {
+        await client.workspaces.switch({
+          workspaceID: input.workspaceID
+        });
+
+        return input.workspaceID;
+      }
+
+      return "";
+    }
+  }));
   const currentWorkspace = () => {
     const workspaceList = workspaces() ?? [];
     const id = currentWorkspaceID();
@@ -102,10 +105,16 @@ const WorkspaceProvider: ParentComponent<WorkspaceProviderProps> = (props) => {
       sessionToken = targetSession?.sessionToken || "";
     }
 
-    await switchEnvironment({
+    const nextWorkspaceID = await switchEnvironment.mutateAsync({
       ...(sessionToken && { sessionToken }),
       workspaceID
     });
+
+    if (nextWorkspaceID) {
+      window.location.href = `/${nextWorkspaceID}/`;
+    } else {
+      window.location.reload();
+    }
   };
 
   createEffect(
@@ -136,6 +145,7 @@ const WorkspaceProvider: ParentComponent<WorkspaceProviderProps> = (props) => {
         currentWorkspace,
         workspaceID: currentWorkspaceID,
         workspaces: () => workspaces() ?? [],
+        refreshWorkspaces,
         sessions: () => sessions() ?? [],
         switchWorkspace,
         content

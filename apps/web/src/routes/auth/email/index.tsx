@@ -1,63 +1,17 @@
 import { Component, createEffect, createSignal, Match, Switch } from "solid-js";
 import { IconButton, Button, OTPInput, Input, Tooltip } from "@andesine/components";
-import {
-  action,
-  createAsync,
-  query,
-  useAction,
-  useSearchParams,
-  useSubmission
-} from "@solidjs/router";
+import { createAsync, query, useSearchParams } from "@solidjs/router";
 import { useNotify } from "#web/context/notifications";
 import { authClient, client } from "#web/lib/client";
 import { validateEmail } from "#web/lib/validate";
 import { appendRedirectTo, normalizeRedirectTo, redirectAfterAuth } from "#web/lib/redirects";
+import { createMutation } from "@tanstack/solid-query";
 
 const verifyOTPTokenQuery = query(async (input: { token?: string }) => {
   if (!input.token) return null;
 
   return client.auth.verifyOTPToken({ token: input.token });
 }, "verify-otp-token");
-const sendOTPAction = action(async (input: { email: string; mode: "sign-in" | "sign-up" }) => {
-  // If the mode is sign in, only send OTP to verify the email, otherwise "sign-in" automatically creates an account if it doesn't exist (sign up)
-  const type = input.mode === "sign-in" ? "email-verification" : "sign-in";
-  const { error } = await authClient.emailOtp.sendVerificationOtp({
-    email: input.email,
-    type
-  });
-
-  if (error) throw error;
-
-  return true;
-});
-const verifyOTPAction = action(
-  async (input: {
-    email: string;
-    otp: string;
-    mode: "sign-in" | "sign-up";
-    redirectTo?: string | null;
-  }) => {
-    if (input.mode === "sign-in") {
-      // Just verify email and sign the user in if it exists.
-      const { error } = await authClient.emailOtp.verifyEmail({
-        email: input.email,
-        otp: input.otp
-      });
-
-      if (error) throw error;
-    } else {
-      // Auto-creates an account if it doesn't exist (sign up)
-      const { error } = await authClient.signIn.emailOtp({
-        email: input.email,
-        otp: input.otp
-      });
-
-      if (error) throw error;
-    }
-
-    return true;
-  }
-);
 const EmailPage: Component = () => {
   const notify = useNotify();
   const [searchParams] = useSearchParams();
@@ -74,15 +28,48 @@ const EmailPage: Component = () => {
   const verifyOTPTokenResult = createAsync(() => {
     return verifyOTPTokenQuery({ token: otpToken() });
   });
-  const sendOTP = useAction(sendOTPAction);
-  const verifyOTP = useAction(verifyOTPAction);
-  const sendOTPSubmission = useSubmission(sendOTPAction);
-  const verifyOTPSubmission = useSubmission(verifyOTPAction);
+  const sendOTPMutation = createMutation(() => ({
+    mutationFn: async (input: { email: string; mode: "sign-in" | "sign-up" }) => {
+      // If the mode is sign in, only send OTP to verify the email, otherwise "sign-in" automatically creates an account if it doesn't exist (sign up)
+      const type = input.mode === "sign-in" ? "email-verification" : "sign-in";
+      const { error } = await authClient.emailOtp.sendVerificationOtp({
+        email: input.email,
+        type
+      });
+
+      if (error) throw error;
+
+      return true;
+    }
+  }));
+  const verifyOTPMutation = createMutation(() => ({
+    mutationFn: async (input: { email: string; otp: string; mode: "sign-in" | "sign-up" }) => {
+      if (input.mode === "sign-in") {
+        // Just verify email and sign the user in if it exists.
+        const { error } = await authClient.emailOtp.verifyEmail({
+          email: input.email,
+          otp: input.otp
+        });
+
+        if (error) throw error;
+      } else {
+        // Auto-creates an account if it doesn't exist (sign up)
+        const { error } = await authClient.signIn.emailOtp({
+          email: input.email,
+          otp: input.otp
+        });
+
+        if (error) throw error;
+      }
+
+      return true;
+    }
+  }));
   const handleSendOTP = async () => {
-    if (!validateEmail(email()) || verifyOTPSubmission.pending) return;
+    if (!validateEmail(email()) || verifyOTPMutation.isPending) return;
 
     try {
-      await sendOTP({ email: email(), mode: mode() });
+      await sendOTPMutation.mutateAsync({ email: email(), mode: mode() });
 
       setView("otp");
     } catch (error) {
@@ -93,7 +80,7 @@ const EmailPage: Component = () => {
     if (!otpFilled()) return;
 
     try {
-      await verifyOTP({ email: email(), otp: otp(), mode: mode(), redirectTo: redirectTo() });
+      await verifyOTPMutation.mutateAsync({ email: email(), otp: otp(), mode: mode() });
       await redirectAfterAuth(redirectTo());
     } catch (error) {
       notify({ type: "error", text: "Couldn't verify email" });
@@ -101,7 +88,7 @@ const EmailPage: Component = () => {
   };
   const handleResendOTP = async () => {
     try {
-      await sendOTP({ email: email(), mode: mode() });
+      await sendOTPMutation.mutateAsync({ email: email(), mode: mode() });
       notify({ type: "success", text: "Code resent" });
     } catch (error) {
       notify({ type: "error", text: "Couldn't resend code" });
@@ -156,7 +143,7 @@ const EmailPage: Component = () => {
               slot={() => (
                 <Tooltip content="Continue">
                   <IconButton
-                    disabled={!validateEmail(email()) || sendOTPSubmission.pending}
+                    disabled={!validateEmail(email()) || sendOTPMutation.isPending}
                     icon="i-lucide:arrow-right"
                     color="primary"
                     onClick={handleSendOTP}
@@ -227,7 +214,7 @@ const EmailPage: Component = () => {
           <div class="flex flex-col my-4 gap-2.5">
             <OTPInput value={otp()} setValue={setOTP} onEnter={handleVerifyOTP} />
             <Button
-              loading={verifyOTPSubmission.pending}
+              loading={verifyOTPMutation.isPending}
               color="primary"
               disabled={!otpFilled()}
               class="w-full mt-1"

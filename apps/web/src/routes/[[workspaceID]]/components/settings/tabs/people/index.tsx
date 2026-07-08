@@ -4,7 +4,7 @@ import { useNotify } from "#web/context/notifications";
 import { Skeleton } from "@andesine/components";
 import { InviteFormPage } from "../members/invite-form";
 import { RoleFormPage } from "../roles/role-form";
-import { action, useAction, useSubmission } from "@solidjs/router";
+import { createMutation } from "@tanstack/solid-query";
 import { createMemo } from "solid-js";
 import { MembersSection } from "./members-section";
 import { RolesSection } from "./roles-section";
@@ -18,42 +18,35 @@ interface SettingsTabProps {
   opened?: boolean;
 }
 
-const updateMemberRoleAction = action(async (input: { memberIDs: string[]; roleID: string }) => {
-  for (const memberID of input.memberIDs) {
-    const [error] = await client.memberships.update({ id: memberID, roleID: input.roleID });
-
-    if (error) throw error;
-  }
-
-  return input;
-});
-const removeMembersAction = action(async (input: { memberIDs: string[] }) => {
-  for (const id of input.memberIDs) {
-    const [error] = await client.memberships.remove({ id });
-
-    if (error) throw error;
-  }
-
-  return input;
-});
-const revokeInvitesAction = action(async (input: { inviteIDs: string[] }) => {
-  for (const id of input.inviteIDs) {
-    const [error] = await client.memberships.revokeInvite({ id });
-
-    if (error) throw error;
-  }
-
-  return input;
-});
-
 const PeopleSettingsTab: Component<SettingsTabProps> = (props) => {
   const notify = useNotify();
-  const updateMemberRole = useAction(updateMemberRoleAction);
-  const removeMembers = useAction(removeMembersAction);
-  const revokeInvites = useAction(revokeInvitesAction);
-  const updateRoleSubmission = useSubmission(updateMemberRoleAction);
-  const removeMembersSubmission = useSubmission(removeMembersAction);
-  const revokeInvitesSubmission = useSubmission(revokeInvitesAction);
+  const updateMemberRoleMutation = createMutation(() => ({
+    mutationFn: async (input: { memberIDs: string[]; roleID: string }) => {
+      for (const memberID of input.memberIDs) {
+        await client.memberships.update({ id: memberID, roleID: input.roleID });
+      }
+
+      return input;
+    }
+  }));
+  const removeMembersMutation = createMutation(() => ({
+    mutationFn: async (input: { memberIDs: string[] }) => {
+      for (const id of input.memberIDs) {
+        await client.memberships.remove({ id });
+      }
+
+      return input;
+    }
+  }));
+  const revokeInvitesMutation = createMutation(() => ({
+    mutationFn: async (input: { inviteIDs: string[] }) => {
+      for (const id of input.inviteIDs) {
+        await client.memberships.revokeInvite({ id });
+      }
+
+      return input;
+    }
+  }));
 
   // ── Sub-page ──────────────────────────────────────────────────────────────
   type Page =
@@ -64,20 +57,20 @@ const PeopleSettingsTab: Component<SettingsTabProps> = (props) => {
   const [page, setPage] = createSignal<Page>({ id: "list" });
 
   const memberMutationText = createMemo(() => {
-    if (updateRoleSubmission.pending) {
-      const count = updateRoleSubmission.input?.[0]?.memberIDs.length ?? 0;
+    if (updateMemberRoleMutation.isPending) {
+      const count = updateMemberRoleMutation.variables?.memberIDs.length ?? 0;
 
       return count > 1 ? `Updating roles for ${count} members...` : "Updating member role...";
     }
 
-    if (removeMembersSubmission.pending) {
-      const count = removeMembersSubmission.input?.[0]?.memberIDs.length ?? 0;
+    if (removeMembersMutation.isPending) {
+      const count = removeMembersMutation.variables?.memberIDs.length ?? 0;
 
       return count > 1 ? `Removing ${count} members...` : "Removing member...";
     }
 
-    if (revokeInvitesSubmission.pending) {
-      const count = revokeInvitesSubmission.input?.[0]?.inviteIDs.length ?? 0;
+    if (revokeInvitesMutation.isPending) {
+      const count = revokeInvitesMutation.variables?.inviteIDs.length ?? 0;
 
       return count > 1 ? `Revoking ${count} invitations...` : "Revoking invitation...";
     }
@@ -88,7 +81,7 @@ const PeopleSettingsTab: Component<SettingsTabProps> = (props) => {
   // ── Handlers ──────────────────────────────────────────────────────────────
   const handleUpdateRole = async (memberIDs: string[], roleID: string) => {
     try {
-      await updateMemberRole({ memberIDs, roleID });
+      await updateMemberRoleMutation.mutateAsync({ memberIDs, roleID });
       await syncMetadata("memberships");
       await syncMetadata("viewer");
 
@@ -109,7 +102,7 @@ const PeopleSettingsTab: Component<SettingsTabProps> = (props) => {
 
   const handleRemove = async (memberIDs: string[]) => {
     try {
-      await removeMembers({ memberIDs });
+      await removeMembersMutation.mutateAsync({ memberIDs });
       await syncMetadata("memberships");
       await syncMetadata("viewer");
 
@@ -126,7 +119,7 @@ const PeopleSettingsTab: Component<SettingsTabProps> = (props) => {
 
   const handleRevokeInvite = async (inviteIDs: string[]) => {
     try {
-      await revokeInvites({ inviteIDs });
+      await revokeInvitesMutation.mutateAsync({ inviteIDs });
       await syncMetadata("invites");
 
       notify({

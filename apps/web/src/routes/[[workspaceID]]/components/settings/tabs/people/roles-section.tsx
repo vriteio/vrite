@@ -20,17 +20,7 @@ import {
   useTree,
   type TreeMap
 } from "#web/components/tree";
-import { action, useAction, useSubmission } from "@solidjs/router";
-
-const deleteRolesAction = action(async (input: { ids: string[] }) => {
-  for (const id of input.ids) {
-    const [error] = await client.roles.delete({ id });
-
-    if (error) throw error;
-  }
-
-  return input;
-});
+import { createMutation } from "@tanstack/solid-query";
 
 const permissionLabels: Record<string, string> = {
   "content": "Content",
@@ -182,14 +172,21 @@ const RoleItem: Component<{
 
 const RolesSection: Component<RolesSectionProps> = (props) => {
   const notify = useNotify();
-  const deleteRoles = useAction(deleteRolesAction);
-  const deleteRolesSubmission = useSubmission(deleteRolesAction);
+  const deleteRolesMutation = createMutation(() => ({
+    mutationFn: async (input: { ids: string[] }) => {
+      for (const id of input.ids) {
+        await client.roles.delete({ id });
+      }
+
+      return input;
+    }
+  }));
   const mutationText = createMemo(() => {
-    if (!deleteRolesSubmission.pending) {
+    if (!deleteRolesMutation.isPending) {
       return null;
     }
 
-    const count = deleteRolesSubmission.input?.[0]?.ids.length ?? 0;
+    const count = deleteRolesMutation.variables?.ids.length ?? 0;
 
     return count > 1 ? `Deleting ${count} roles...` : "Deleting role...";
   });
@@ -203,7 +200,7 @@ const RolesSection: Component<RolesSectionProps> = (props) => {
 
   const handleDeleteRoles = async (ids: string[]) => {
     try {
-      await deleteRoles({ ids });
+      await deleteRolesMutation.mutateAsync({ ids });
       await props.onRolesChanged?.();
 
       notify({

@@ -1,38 +1,38 @@
 import { authClient } from "#web/lib/client";
 import { DropdownArea, DropdownMenu, MenuItem } from "@andesine/components";
 import { Component, createMemo, createSignal, JSX } from "solid-js";
-import { action, useAction, useNavigate, useSubmission } from "@solidjs/router";
+import { useNavigate } from "@solidjs/router";
 import { useWorkspace } from "#web/context/workspace";
 import { clearWorkspaceData } from "#web/context/workspace/persistence";
 import clsx from "clsx";
+import { createMutation } from "@tanstack/solid-query";
 
 interface ProfileMenuProps {
   color?: "base" | "contrast";
   class?: string;
 }
 
-const revokeSessionAction = action(async (input: { sessionToken: string }) => {
-  await authClient.multiSession.revoke(input);
-
-  return true;
-});
-
-const signOutAction = action(async () => {
-  await authClient.signOut();
-
-  return true;
-});
 const ProfileMenu: Component<ProfileMenuProps> = (props) => {
   const { currentWorkspace, workspaces, sessions, switchWorkspace } = useWorkspace();
   const navigate = useNavigate();
-  const revokeSession = useAction(revokeSessionAction);
-  const signOut = useAction(signOutAction);
-  const revokeSessionSubmission = useSubmission(revokeSessionAction);
-  const signOutSubmission = useSubmission(signOutAction);
+  const revokeSessionMutation = createMutation(() => ({
+    mutationFn: async (input: { sessionToken: string }) => {
+      await authClient.multiSession.revoke(input);
+
+      return true;
+    }
+  }));
+  const signOutMutation = createMutation(() => ({
+    mutationFn: async () => {
+      await authClient.signOut();
+
+      return true;
+    }
+  }));
   const [menuOpened, setMenuOpened] = createSignal(false);
-  const logoutPending = createMemo(() => {
-    return revokeSessionSubmission.pending || signOutSubmission.pending;
-  });
+  const logoutPending = () => {
+    return revokeSessionMutation.isPending || signOutMutation.isPending;
+  };
 
   const dropdownOptions = createMemo(() => {
     const dropdownOptions: Array<Array<MenuItem | (() => JSX.Element)>> = [];
@@ -150,7 +150,7 @@ const ProfileMenu: Component<ProfileMenuProps> = (props) => {
             const currentSession = sessionList.find((s) => s.user.id === current?.userID);
 
             if (currentSession) {
-              await revokeSession({
+              await revokeSessionMutation.mutateAsync({
                 sessionToken: currentSession.sessionToken
               });
             }
@@ -167,7 +167,7 @@ const ProfileMenu: Component<ProfileMenuProps> = (props) => {
               window.location.reload();
             }
           } else {
-            await signOut();
+            await signOutMutation.mutateAsync();
             window.location.href = "/auth/sign-in";
           }
         }

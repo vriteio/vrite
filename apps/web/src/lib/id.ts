@@ -19,5 +19,6 @@ const fromUUID = (uuid: string, prefix?: string): string => {
   return `${prefix || ""}${prefix ? "_" : ""}${bytesToBase62(bytes)}`;
 };
 const toEntryID = (uuid: string) => fromUUID(uuid, "ent");
+const toUserID = (uuid: string) => fromUUID(uuid, "usr");
 
-export { generateUUID, toUUID, fromUUID, toEntryID };
+export { generateUUID, toUUID, fromUUID, toEntryID, toUserID };

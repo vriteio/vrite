@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "@solidjs/router";
 import { authClient, client, setCurrentWorkspaceID } from "#web/lib/client";
 import { Button, Spinner } from "@andesine/components";
 import { appendRedirectTo } from "#web/lib/redirects";
+import { createMutation } from "@tanstack/solid-query";
 
 const InvitePage: Component = () => {
   const location = useLocation();
@@ -10,6 +11,11 @@ const InvitePage: Component = () => {
   const [status, setStatus] = createSignal<"loading" | "success" | "error">("loading");
   const [errorMessage, setErrorMessage] = createSignal("Something went wrong");
   const [workspaceName, setWorkspaceName] = createSignal<string | null>(null);
+  const acceptInviteMutation = createMutation(() => ({
+    mutationFn: (input: { token: string }) => {
+      return client.memberships.acceptInvite(input);
+    }
+  }));
   const redirectTarget = createMemo(() => `${location.pathname}${location.search}${location.hash}`);
   const signInLink = createMemo(() => appendRedirectTo("/auth/sign-in", redirectTarget()));
   const switchAccountLink = createMemo(() =>
@@ -41,7 +47,7 @@ const InvitePage: Component = () => {
     }
 
     try {
-      const result = await client.memberships.acceptInvite({ token });
+      const result = await acceptInviteMutation.mutateAsync({ token });
 
       setCurrentWorkspaceID(result.workspaceID);
       setWorkspaceName(result.workspaceName);

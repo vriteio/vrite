@@ -1,12 +1,8 @@
 import { Button, Card, Input, Overlay } from "@andesine/components";
-import { action, useAction, useSubmission } from "@solidjs/router";
 import { Component, createMemo, createSignal, For, Show } from "solid-js";
 import { client } from "#web/lib/client";
 import { useNotify } from "#web/context/notifications";
-
-const inviteMemberAction = action((input: { email: string; roleID: string }) => {
-  return client.memberships.invite(input);
-});
+import { createMutation } from "@tanstack/solid-query";
 
 interface InviteFormPageProps {
   goBack(): void;
@@ -16,14 +12,15 @@ interface InviteFormPageProps {
 
 const InviteFormPage: Component<InviteFormPageProps> = (props) => {
   const notify = useNotify();
-  const inviteMember = useAction(inviteMemberAction);
-  const inviteSubmission = useSubmission(inviteMemberAction);
+  const inviteMemberMutation = createMutation(() => ({
+    mutationFn: (input: { email: string; roleID: string }) => client.memberships.invite(input)
+  }));
   const [email, setEmail] = createSignal("");
   const [selectedRoleID, setSelectedRoleID] = createSignal(props.roles[0]?.id || "");
   const [inviteLink, setInviteLink] = createSignal<string | null>(null);
   const [inviteDelivery, setInviteDelivery] = createSignal<"sent" | "manual" | "failed">("sent");
   const [copied, setCopied] = createSignal(false);
-  const loading = () => inviteSubmission.pending;
+  const loading = () => inviteMemberMutation.isPending;
 
   const inviteLinkCopy = createMemo(() => {
     switch (inviteDelivery()) {
@@ -71,7 +68,7 @@ const InviteFormPage: Component<InviteFormPageProps> = (props) => {
     }
 
     try {
-      const data = await inviteMember({
+      const data = await inviteMemberMutation.mutateAsync({
         email: emailValue,
         roleID: selectedRoleID()
       });

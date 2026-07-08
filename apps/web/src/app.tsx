@@ -1,6 +1,7 @@
 import { Route, Router, createAsync, query, redirect } from "@solidjs/router";
 import { TooltipProvider, ShortcutsProvider } from "@andesine/components";
-import { Component, ParentComponent, Suspense } from "solid-js";
+import { QueryClient, QueryClientProvider } from "@tanstack/solid-query";
+import { ParentComponent, Suspense } from "solid-js";
 import { NotificationsProvider } from "./context/notifications";
 import { LayoutProvider } from "./context/layout";
 import AuthLayout from "./routes/auth";
@@ -64,18 +65,22 @@ const rootRedirectQuery = query(async () => {
 }, "root-redirect");
 
 const RootLayout: ParentComponent = (props) => {
+  const queryClient = new QueryClient();
+
   createAsync(() => rootRedirectQuery(), { deferStream: true });
 
   return (
-    <TooltipProvider>
-      <ShortcutsProvider>
-        <NotificationsProvider>
-          <LayoutProvider>
-            <Suspense>{props.children}</Suspense>
-          </LayoutProvider>
-        </NotificationsProvider>
-      </ShortcutsProvider>
-    </TooltipProvider>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <ShortcutsProvider>
+          <NotificationsProvider>
+            <LayoutProvider>
+              <Suspense>{props.children}</Suspense>
+            </LayoutProvider>
+          </NotificationsProvider>
+        </ShortcutsProvider>
+      </TooltipProvider>
+    </QueryClientProvider>
   );
 };
 

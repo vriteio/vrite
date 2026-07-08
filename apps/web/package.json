@@ -36,6 +36,7 @@
     "@solid-primitives/scheduled": "^1.5.3",
     "@solid-primitives/transition-group": "^1.1.2",
     "@solidjs/router": "^0.16.1",
+    "@tanstack/solid-query": "^5.101.2",
     "base-x": "^5.0.1",
     "better-auth": "^1.6.11",
     "clsx": "^2.1.1",

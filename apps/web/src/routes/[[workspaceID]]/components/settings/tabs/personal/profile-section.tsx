@@ -4,27 +4,28 @@ import { Input } from "@andesine/components";
 import { Setting } from "../../setting";
 import { useNotify } from "#web/context/notifications";
 import { useWorkspace } from "#web/context/workspace";
-import { useAction, useSubmission, revalidate, action } from "@solidjs/router";
+import { revalidate } from "@solidjs/router";
 import { authClient } from "#web/lib/client";
+import { createMutation } from "@tanstack/solid-query";
 
 interface ProfileSectionProps {
   opened?: boolean;
 }
 
-const updateProfileNameAction = action(async (input: { name: string }) => {
-  const { error } = await authClient.updateUser({
-    name: input.name
-  });
-
-  if (error) throw error;
-
-  return input.name;
-});
 const ProfileSection: Component<ProfileSectionProps> = (props) => {
   const notify = useNotify();
   const { currentWorkspace, sessions } = useWorkspace();
-  const updateProfileName = useAction(updateProfileNameAction);
-  const updateProfileNameSubmission = useSubmission(updateProfileNameAction);
+  const updateProfileNameMutation = createMutation(() => ({
+    mutationFn: async (input: { name: string }) => {
+      const { error } = await authClient.updateUser({
+        name: input.name
+      });
+
+      if (error) throw error;
+
+      return input.name;
+    }
+  }));
 
   const [localName, setLocalName] = createSignal("");
   const [saveState, setSaveState] = createSignal<"idle" | "saved">("idle");
@@ -48,7 +49,7 @@ const ProfileSection: Component<ProfileSectionProps> = (props) => {
 
     return Boolean(currentUser()) && nextName !== currentName;
   });
-  const isProfileSaving = createMemo(() => updateProfileNameSubmission.pending);
+  const isProfileSaving = createMemo(() => updateProfileNameMutation.isPending);
   const saveIndicatorState = createMemo(() => {
     if (isProfileSaving()) return "saving" as const;
     if (saveState() === "saved" && !isDirty()) return "saved" as const;
@@ -102,7 +103,7 @@ const ProfileSection: Component<ProfileSectionProps> = (props) => {
     if (!currentUser() || nextName === currentDisplayName() || isProfileSaving()) return;
 
     try {
-      await updateProfileName({ name: nextName });
+      await updateProfileNameMutation.mutateAsync({ name: nextName });
 
       await revalidate("sessions");
       setLocalName(nextName);

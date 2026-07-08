@@ -1,8 +1,8 @@
 import { Button, Checkbox, Input } from "@andesine/components";
-import { action, useAction, useSubmission } from "@solidjs/router";
 import { Component, createMemo, createSignal, For } from "solid-js";
 import { client, Permission } from "#web/lib/client";
 import { useNotify } from "#web/context/notifications";
+import { createMutation } from "@tanstack/solid-query";
 
 // TODO: Move to a shared file with the backend
 const permissions: Array<{ id: Permission; label: string; description: string }> = [
@@ -27,24 +27,6 @@ const permissions: Array<{ id: Permission; label: string; description: string }>
     description: "Manage workspace settings, roles, and members"
   }
 ];
-
-const createRoleAction = action(async (input: { name: string; permissions: Permission[] }) => {
-  const [error] = await client.roles.create(input);
-
-  if (error) throw error;
-
-  return true;
-});
-
-const updateRoleAction = action(
-  async (input: { id: string; name: string; permissions: Permission[] }) => {
-    const [error] = await client.roles.update(input);
-
-    if (error) throw error;
-
-    return true;
-  }
-);
 
 interface RoleFormPageBaseProps {
   goBack(): void;
@@ -72,17 +54,27 @@ const RoleFormPage: Component<RoleFormPageProps> = (props) => {
     props.mode === "edit"
       ? { name: props.initialName, permissions: props.initialPermissions }
       : { name: "", permissions: [] as Permission[] };
-  const createRole = useAction(createRoleAction);
-  const updateRole = useAction(updateRoleAction);
-  const createSubmission = useSubmission(createRoleAction);
-  const updateSubmission = useSubmission(updateRoleAction);
+  const createRoleMutation = createMutation(() => ({
+    mutationFn: async (input: { name: string; permissions: Permission[] }) => {
+      await client.roles.create(input);
+
+      return true;
+    }
+  }));
+  const updateRoleMutation = createMutation(() => ({
+    mutationFn: async (input: { id: string; name: string; permissions: Permission[] }) => {
+      await client.roles.update(input);
+
+      return true;
+    }
+  }));
 
   const [roleName, setRoleName] = createSignal(initial().name);
   const [selectedPermissions, setSelectedPermissions] = createSignal<Permission[]>(
     initial().permissions
   );
   const loading = createMemo(() =>
-    props.mode === "edit" ? updateSubmission.pending : createSubmission.pending
+    props.mode === "edit" ? updateRoleMutation.isPending : createRoleMutation.isPending
   );
   const selectedPermissionCount = createMemo(() => selectedPermissions().length);
 
@@ -104,7 +96,7 @@ const RoleFormPage: Component<RoleFormPageProps> = (props) => {
 
     try {
       if (props.mode === "create") {
-        await createRole({
+        await createRoleMutation.mutateAsync({
           name,
           permissions: selectedPermissions()
         });
@@ -112,7 +104,7 @@ const RoleFormPage: Component<RoleFormPageProps> = (props) => {
         notify({ type: "success", text: "Role created" });
         props.onCreated();
       } else {
-        await updateRole({
+        await updateRoleMutation.mutateAsync({
           id: props.roleId,
           name,
           permissions: selectedPermissions()

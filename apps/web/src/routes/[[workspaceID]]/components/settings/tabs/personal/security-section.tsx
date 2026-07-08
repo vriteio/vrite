@@ -14,8 +14,9 @@ import clsx from "clsx";
 import { format } from "date-fns";
 import { useWorkspace } from "#web/context/workspace";
 import { authClient } from "#web/lib/client";
-import { query, action, useAction, useSubmission, createAsync, revalidate } from "@solidjs/router";
+import { query, createAsync, revalidate } from "@solidjs/router";
 import { useNotify } from "#web/context/notifications";
+import { createMutation } from "@tanstack/solid-query";
 
 const PasskeyItem: Component<{
   id: string;
@@ -124,57 +125,60 @@ const listUserPasskeys = query(async () => {
 
   return data ?? [];
 }, "listUserPasskeys");
-const addPasskeyAction = action(async () => {
-  const { error } = await authClient.passkey.addPasskey({
-    name: new Date().toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric"
-    })
-  });
-
-  if (error) throw error;
-
-  return true;
-});
-const deletePasskeyAction = action(async (input: { ids: string[] }) => {
-  for (const id of input.ids) {
-    const { error } = await authClient.passkey.deletePasskey({ id });
-
-    if (error) throw error;
-  }
-
-  return input.ids;
-});
-const renamePasskeyAction = action(async (input: { id: string; name: string }) => {
-  const { error } = await authClient.passkey.updatePasskey({ id: input.id, name: input.name });
-
-  if (error) throw error;
-
-  return input;
-});
 const SecuritySection: Component = () => {
   const notify = useNotify();
   const { currentWorkspace, sessions } = useWorkspace();
-  const addPasskeyRequest = useAction(addPasskeyAction);
-  const deletePasskeyRequest = useAction(deletePasskeyAction);
-  const renamePasskeyRequest = useAction(renamePasskeyAction);
-  const addPasskeySubmission = useSubmission(addPasskeyAction);
-  const deletePasskeySubmission = useSubmission(deletePasskeyAction);
-  const renamePasskeySubmission = useSubmission(renamePasskeyAction);
+  const addPasskeyMutation = createMutation(() => ({
+    mutationFn: async () => {
+      const { error } = await authClient.passkey.addPasskey({
+        name: new Date().toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric"
+        })
+      });
+
+      if (error) throw error;
+
+      return true;
+    }
+  }));
+  const deletePasskeyMutation = createMutation(() => ({
+    mutationFn: async (input: { ids: string[] }) => {
+      for (const id of input.ids) {
+        const { error } = await authClient.passkey.deletePasskey({ id });
+
+        if (error) throw error;
+      }
+
+      return input.ids;
+    }
+  }));
+  const renamePasskeyMutation = createMutation(() => ({
+    mutationFn: async (input: { id: string; name: string }) => {
+      const { error } = await authClient.passkey.updatePasskey({
+        id: input.id,
+        name: input.name
+      });
+
+      if (error) throw error;
+
+      return input;
+    }
+  }));
   const passkeys = createAsync(() => listUserPasskeys());
   const passkeyMutationText = createMemo(() => {
-    if (addPasskeySubmission.pending) {
+    if (addPasskeyMutation.isPending) {
       return "Adding passkey...";
     }
 
-    if (deletePasskeySubmission.pending) {
-      const count = deletePasskeySubmission.input?.[0]?.ids.length ?? 0;
+    if (deletePasskeyMutation.isPending) {
+      const count = deletePasskeyMutation.variables?.ids.length ?? 0;
 
       return count > 1 ? `Deleting ${count} passkeys...` : "Deleting passkey...";
     }
 
-    if (renamePasskeySubmission.pending) {
+    if (renamePasskeyMutation.isPending) {
       return "Renaming passkey...";
     }
 
@@ -196,7 +200,7 @@ const SecuritySection: Component = () => {
     }
 
     try {
-      await addPasskeyRequest();
+      await addPasskeyMutation.mutateAsync();
 
       notify({ type: "success", text: "Passkey added" });
       revalidate("listUserPasskeys");
@@ -207,7 +211,7 @@ const SecuritySection: Component = () => {
 
   const deletePasskey = async (passkeyIDs: string[]) => {
     try {
-      await deletePasskeyRequest({ ids: passkeyIDs });
+      await deletePasskeyMutation.mutateAsync({ ids: passkeyIDs });
 
       notify({
         type: "success",
@@ -225,7 +229,7 @@ const SecuritySection: Component = () => {
     if (!trimmed) return;
 
     try {
-      await renamePasskeyRequest({ id, name: trimmed });
+      await renamePasskeyMutation.mutateAsync({ id, name: trimmed });
 
       notify({ type: "success", text: "Passkey renamed" });
       revalidate("listUserPasskeys");

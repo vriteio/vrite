@@ -1,4 +1,4 @@
-import { action, useAction, useSearchParams, useSubmission } from "@solidjs/router";
+import { useSearchParams } from "@solidjs/router";
 import { Component, createMemo } from "solid-js";
 import { IconButton, Button } from "@andesine/components";
 import { useNotify } from "#web/context/notifications";
@@ -9,40 +9,43 @@ import {
   redirectAfterAuth,
   toCallbackURL
 } from "#web/lib/redirects";
-
-const signInWithPasskeyAction = action(async () => {
-  const { error } = await authClient.signIn.passkey();
-
-  if (error) throw error;
-
-  return true;
-});
-const signInWithSocialAction = action(
-  async (input: { provider: "google" | "github"; callbackURL: string }) => {
-    const { error } = await authClient.signIn.social({
-      provider: input.provider,
-      callbackURL: input.callbackURL
-    });
-
-    if (error) throw error;
-
-    return true;
-  }
-);
+import { createMutation } from "@tanstack/solid-query";
 
 const SignInPage: Component = () => {
   const [searchParams] = useSearchParams();
   const notify = useNotify();
-  const signInWithPasskeyActionHandler = useAction(signInWithPasskeyAction);
-  const signInWithSocial = useAction(signInWithSocialAction);
-  const signInWithPasskeySubmission = useSubmission(signInWithPasskeyAction);
-  const signInWithGoogleSubmission = useSubmission(signInWithSocialAction, (input) => {
-    return input[0]?.provider === "google";
-  });
-  const signInWithGitHubSubmission = useSubmission(signInWithSocialAction, (input) => {
-    return input[0]?.provider === "github";
-  });
-  const signingInWithPasskey = createMemo(() => signInWithPasskeySubmission.pending);
+  const signInWithPasskeyMutation = createMutation(() => ({
+    mutationFn: async () => {
+      const { error } = await authClient.signIn.passkey();
+
+      if (error) throw error;
+
+      return true;
+    }
+  }));
+  const signInWithSocialMutation = createMutation(() => ({
+    mutationFn: async (input: { provider: "google" | "github"; callbackURL: string }) => {
+      const { error } = await authClient.signIn.social({
+        provider: input.provider,
+        callbackURL: input.callbackURL
+      });
+
+      if (error) throw error;
+
+      return true;
+    }
+  }));
+  const signingInWithPasskey = createMemo(() => signInWithPasskeyMutation.isPending);
+  const signingInWithGoogle = createMemo(
+    () =>
+      signInWithSocialMutation.isPending &&
+      signInWithSocialMutation.variables?.provider === "google"
+  );
+  const signingInWithGitHub = createMemo(
+    () =>
+      signInWithSocialMutation.isPending &&
+      signInWithSocialMutation.variables?.provider === "github"
+  );
   const redirectTo = () =>
     normalizeRedirectTo(
       Array.isArray(searchParams.redirectTo) ? searchParams.redirectTo[0] : searchParams.redirectTo
@@ -50,7 +53,7 @@ const SignInPage: Component = () => {
 
   const signInWithPasskey = async () => {
     try {
-      await signInWithPasskeyActionHandler();
+      await signInWithPasskeyMutation.mutateAsync();
 
       await redirectAfterAuth(redirectTo());
     } catch (error) {
@@ -59,7 +62,7 @@ const SignInPage: Component = () => {
   };
   const signInWithProvider = async (provider: "google" | "github") => {
     try {
-      await signInWithSocial({
+      await signInWithSocialMutation.mutateAsync({
         provider,
         callbackURL: toCallbackURL(redirectTo())
       });
@@ -97,12 +100,8 @@ const SignInPage: Component = () => {
           iconProps={{ class: "h-5.5 w-5.5" }}
           variant="outlined"
           color="contrast"
-          label={
-            signInWithGoogleSubmission.pending
-              ? "Continuing with Google..."
-              : "Continue with Google"
-          }
-          disabled={signInWithGoogleSubmission.pending || signInWithGitHubSubmission.pending}
+          label={signingInWithGoogle() ? "Continuing with Google..." : "Continue with Google"}
+          disabled={signingInWithGoogle() || signingInWithGitHub()}
           onClick={() => {
             signInWithProvider("google");
           }}
@@ -113,12 +112,8 @@ const SignInPage: Component = () => {
           iconProps={{ class: "text-black dark:text-white" }}
           variant="outlined"
           color="contrast"
-          label={
-            signInWithGitHubSubmission.pending
-              ? "Continuing with GitHub..."
-              : "Continue with GitHub"
-          }
-          disabled={signInWithGoogleSubmission.pending || signInWithGitHubSubmission.pending}
+          label={signingInWithGitHub() ? "Continuing with GitHub..." : "Continue with GitHub"}
+          disabled={signingInWithGoogle() || signingInWithGitHub()}
           onClick={() => {
             signInWithProvider("github");
           }}
@@ -136,11 +131,7 @@ const SignInPage: Component = () => {
           color="contrast"
           label="Passkey"
           onClick={signInWithPasskey}
-          disabled={
-            signingInWithPasskey() ||
-            signInWithGoogleSubmission.pending ||
-            signInWithGitHubSubmission.pending
-          }
+          disabled={signingInWithPasskey() || signingInWithGoogle() || signingInWithGitHub()}
         />
       </div>
       <div class="flex flex-col items-start justify-center w-full transform -bottom-16 text-sm text-gray-400 dark:text-gray-500">

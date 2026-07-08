@@ -7,7 +7,6 @@ import {
   Overlay,
   Skeleton
 } from "@andesine/components";
-import { action, useAction, useSubmission } from "@solidjs/router";
 import {
   Component,
   createEffect,
@@ -32,6 +31,7 @@ import {
   useTree,
   type TreeMap
 } from "#web/components/tree";
+import { createMutation } from "@tanstack/solid-query";
 
 interface SettingsTabProps {
   setTab(tabId: string): void;
@@ -60,15 +60,6 @@ const expirationOptions: Array<{ value: ExpirationOption; label: string }> = [
   { value: "24h", label: "In 24 hours" },
   { value: "7d", label: "In 7 days" }
 ];
-
-const rotateKeyAction = action((input: { id: string; expiresIn: ExpirationOption }) => {
-  return client.keys.rotate(input);
-});
-const deleteKeyAction = action(async (input: { ids: string[] }) => {
-  await client.keys.delete({ ids: input.ids });
-
-  return input.ids;
-});
 
 const APIKeyItem: Component<{
   id: string;
@@ -200,10 +191,16 @@ const APISettingsTab: Component<SettingsTabProps> = (props) => {
   const notify = useNotify();
   const keys = () => contentState.keys();
   const { syncMetadata } = contentActions;
-  const rotateKey = useAction(rotateKeyAction);
-  const deleteKey = useAction(deleteKeyAction);
-  const rotateSubmission = useSubmission(rotateKeyAction);
-  const deleteSubmission = useSubmission(deleteKeyAction);
+  const rotateKeyMutation = createMutation(() => ({
+    mutationFn: (input: { id: string; expiresIn: ExpirationOption }) => client.keys.rotate(input)
+  }));
+  const deleteKeyMutation = createMutation(() => ({
+    mutationFn: async (input: { ids: string[] }) => {
+      await client.keys.delete({ ids: input.ids });
+
+      return input.ids;
+    }
+  }));
 
   // ── Sub-page ──────────────────────────────────────────────────────────────
   type Page =
@@ -213,14 +210,16 @@ const APISettingsTab: Component<SettingsTabProps> = (props) => {
   const [page, setPage] = createSignal<Page>({ id: "list" });
 
   // ── Keys list ─────────────────────────────────────────────────────────────
-  const mutationPending = createMemo(() => rotateSubmission.pending || deleteSubmission.pending);
+  const mutationPending = createMemo(
+    () => rotateKeyMutation.isPending || deleteKeyMutation.isPending
+  );
   const keyMutationText = createMemo(() => {
-    if (rotateSubmission.pending) {
+    if (rotateKeyMutation.isPending) {
       return "Rotating API key...";
     }
 
-    if (deleteSubmission.pending) {
-      const count = deleteSubmission.input?.[0]?.ids.length ?? 0;
+    if (deleteKeyMutation.isPending) {
+      const count = deleteKeyMutation.variables?.ids.length ?? 0;
 
       return count > 1 ? `Deleting ${count} API keys...` : "Deleting API key...";
     }
@@ -254,7 +253,7 @@ const APISettingsTab: Component<SettingsTabProps> = (props) => {
 
   const handleRotate = async (id: string, expiresIn: ExpirationOption) => {
     try {
-      const data = await rotateKey({ id, expiresIn });
+      const data = await rotateKeyMutation.mutateAsync({ id, expiresIn });
       await syncMetadata("keys");
 
       batch(() => {
@@ -274,7 +273,7 @@ const APISettingsTab: Component<SettingsTabProps> = (props) => {
   // ── Delete ────────────────────────────────────────────────────────────────
   const handleDelete = async (ids: string[]) => {
     try {
-      await deleteKey({ ids });
+      await deleteKeyMutation.mutateAsync({ ids });
       await syncMetadata("keys");
 
       notify({
@@ -381,10 +380,10 @@ const APISettingsTab: Component<SettingsTabProps> = (props) => {
                     text="soft"
                     size="small"
                     class="justify-start"
-                    disabled={rotateSubmission.pending}
+                    disabled={rotateKeyMutation.isPending}
                     onClick={() => handleRotate(rotatingId()!, opt.value)}
                   >
-                    {rotateSubmission.pending ? "Rotating..." : opt.label}
+                    {rotateKeyMutation.isPending ? "Rotating..." : opt.label}
                   </Button>
                 )}
               </For>
@@ -394,7 +393,7 @@ const APISettingsTab: Component<SettingsTabProps> = (props) => {
                 variant="text"
                 text="soft"
                 size="small"
-                disabled={rotateSubmission.pending}
+                disabled={rotateKeyMutation.isPending}
                 onClick={() => setRotatingId(null)}
               >
                 Cancel

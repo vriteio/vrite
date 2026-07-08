@@ -6,7 +6,7 @@ import { InputSaveIndicator } from "../../input-save-indicator";
 import { client } from "#web/lib/client";
 import { useNotify } from "#web/context/notifications";
 import { useWorkspace } from "#web/context/workspace";
-import { action, useAction, useSubmission } from "@solidjs/router";
+import { createMutation } from "@tanstack/solid-query";
 
 interface SettingsTabProps {
   setTab(tabId: string): void;
@@ -14,25 +14,22 @@ interface SettingsTabProps {
   opened?: boolean;
 }
 
-const updateWorkspaceAction = action(async (input: { name: string }) => {
-  const [error] = await client.workspaces.update({ name: input.name });
-
-  if (error) throw error;
-
-  return input.name;
-});
-
 const WorkspaceGeneralTab: Component<SettingsTabProps> = (props) => {
   const notify = useNotify();
   const { refreshWorkspaces } = useWorkspace();
-  const updateWorkspace = useAction(updateWorkspaceAction);
-  const updateWorkspaceSubmission = useSubmission(updateWorkspaceAction);
+  const updateWorkspaceMutation = createMutation(() => ({
+    mutationFn: async (input: { name: string }) => {
+      await client.workspaces.update({ name: input.name });
+
+      return input.name;
+    }
+  }));
 
   const [localName, setLocalName] = createSignal(workspace()?.name ?? "");
   const [saveState, setSaveState] = createSignal<"idle" | "saved">("idle");
   let lastSavedName = workspace()?.name ?? "";
   let savedIndicatorTimeout: ReturnType<typeof setTimeout> | undefined;
-  const isSaving = createMemo(() => updateWorkspaceSubmission.pending);
+  const isSaving = createMemo(() => updateWorkspaceMutation.isPending);
   const canManageWorkspace = createMemo(() => props.canManageWorkspace ?? false);
 
   const isDirty = createMemo(() => {
@@ -100,7 +97,7 @@ const WorkspaceGeneralTab: Component<SettingsTabProps> = (props) => {
     if (!canManageWorkspace() || !trimmed || trimmed === lastSavedName || isSaving()) return;
 
     try {
-      await updateWorkspace({ name: trimmed });
+      await updateWorkspaceMutation.mutateAsync({ name: trimmed });
       await syncMetadata("workspace");
 
       lastSavedName = trimmed;

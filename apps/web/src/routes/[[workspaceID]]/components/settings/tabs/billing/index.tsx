@@ -1,12 +1,12 @@
 import { Button, Spinner } from "@andesine/components";
-import { Component, Show, For, createMemo, createResource, createSignal } from "solid-js";
+import { Component, Show, For, createMemo } from "solid-js";
 import { Setting } from "../../setting";
 import { SettingsSection } from "../../settings-section";
 import { UsageChart } from "./usage-chart";
 import { client } from "#web/lib/client";
 import { useNotify } from "#web/context/notifications";
 import clsx from "clsx";
-import { action, useAction, useSubmission } from "@solidjs/router";
+import { createMutation, createQuery, useQueryClient } from "@tanstack/solid-query";
 
 interface BillingSettingsTabProps {
   setTab(tabId: string): void;
@@ -19,16 +19,6 @@ interface PriceTagProps {
   text?: "soft" | "base";
   class?: string;
 }
-const startBillingCheckoutAction = action(async () => {
-  const { url } = await client.billing.checkout();
-
-  return url;
-});
-const openBillingPortalAction = action(async () => {
-  const { url } = await client.billing.portal();
-
-  return url;
-});
 const PriceTag: Component<PriceTagProps> = (props) => {
   const currencyFormatter = new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -62,32 +52,43 @@ const formatNumber = (n: number): string => {
 };
 const BillingSettingsTab: Component<BillingSettingsTabProps> = (props) => {
   const notify = useNotify();
-  const startBillingCheckout = useAction(startBillingCheckoutAction);
-  const openBillingPortal = useAction(openBillingPortalAction);
-  const checkoutSubmission = useSubmission(startBillingCheckoutAction);
-  const portalSubmission = useSubmission(openBillingPortalAction);
-  const [refreshKey, setRefreshKey] = createSignal(0);
+  const queryClient = useQueryClient();
+  const checkoutMutation = createMutation(() => ({
+    mutationFn: async () => {
+      const { url } = await client.billing.checkout();
 
-  const [subscription] = createResource(refreshKey, () => {
-    return client.billing.subscription();
-  });
-  const [usage] = createResource(refreshKey, () => {
-    return client.billing.usage();
-  });
+      return url;
+    }
+  }));
+  const portalMutation = createMutation(() => ({
+    mutationFn: async () => {
+      const { url } = await client.billing.portal();
+
+      return url;
+    }
+  }));
+  const subscription = createQuery(() => ({
+    queryKey: ["billing", "subscription"],
+    queryFn: () => client.billing.subscription()
+  }));
+  const usage = createQuery(() => ({
+    queryKey: ["billing", "usage"],
+    queryFn: () => client.billing.usage()
+  }));
   const loading = createMemo(() => {
     return (
-      checkoutSubmission.pending ||
-      portalSubmission.pending ||
-      subscription.loading ||
-      usage.loading
+      checkoutMutation.isPending ||
+      portalMutation.isPending ||
+      subscription.isLoading ||
+      usage.isLoading
     );
   });
   const loadError = createMemo(() => {
     return subscription.error || usage.error;
   });
-  const isPro = () => subscription()?.plan === "pro";
+  const isPro = () => subscription.data?.plan === "pro";
   const daysUntilExpiry = () => {
-    const expiresAt = subscription()?.expiresAt;
+    const expiresAt = subscription.data?.expiresAt;
 
     if (!expiresAt) return null;
 
@@ -98,21 +99,21 @@ const BillingSettingsTab: Component<BillingSettingsTabProps> = (props) => {
 
   const handleUpgrade = async () => {
     try {
-      window.location.href = await startBillingCheckout();
+      window.location.href = await checkoutMutation.mutateAsync();
     } catch {
       notify({ text: "Failed to start checkout", type: "error" });
     }
   };
   const handleManage = async () => {
     try {
-      window.location.href = await openBillingPortal();
+      window.location.href = await portalMutation.mutateAsync();
     } catch {
       notify({ text: "Failed to open billing portal", type: "error" });
     }
   };
   const canManageBilling = () => props.canManageBilling ?? false;
   const retryLoad = () => {
-    setRefreshKey((current) => current + 1);
+    queryClient.invalidateQueries({ queryKey: ["billing"] });
   };
 
   return (
@@ -127,7 +128,7 @@ const BillingSettingsTab: Component<BillingSettingsTabProps> = (props) => {
           }
         >
           <Show
-            when={!loadError() && subscription() && usage()}
+            when={!loadError() && subscription.data && usage.data}
             fallback={
               <div class="flex flex-col gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
                 <span>Failed to load billing details.</span>
@@ -218,7 +219,7 @@ const BillingSettingsTab: Component<BillingSettingsTabProps> = (props) => {
                     access.
                   </span>
                 </Show>
-                <Show when={isPro() && subscription()?.expiresAt}>
+                <Show when={isPro() && subscription.data?.expiresAt}>
                   <span class="text-xs text-gray-400 dark:text-gray-500">
                     Current period ends in {daysUntilExpiry()} day
                     {daysUntilExpiry() === 1 ? "" : "s"}.
@@ -227,7 +228,7 @@ const BillingSettingsTab: Component<BillingSettingsTabProps> = (props) => {
               </div>
             </Setting>
             <SettingsSection label="API Usage">
-              <Show when={usage()}>
+              <Show when={usage.data}>
                 {(usageData) => {
                   const now = new Date();
                   const currentDay = now.getDate();
