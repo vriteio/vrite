@@ -3,21 +3,15 @@ import {
   IconButton,
   DropdownMenu,
   MenuItem,
+  Spinner,
   Skeleton,
-  Spinner
+  Card
 } from "@andesine/components";
 import clsx from "clsx";
 import { Component, createEffect, createMemo, createSignal, Show } from "solid-js";
 import { Setting } from "../../setting";
 import { SettingsSection } from "../../settings-section";
-import {
-  TreeProvider,
-  TreeSelection,
-  TreeLevel,
-  TreeItem,
-  useTree,
-  type TreeMap
-} from "#web/components/tree";
+import { Tree, TreeItem, TREE_ROOT_ID, useTree, type TreeMap } from "#web/components/tree";
 
 interface Member {
   id: string;
@@ -42,6 +36,7 @@ interface MembersSectionProps {
   onUpdateRole: (memberIDs: string[], roleID: string) => void;
   onRemove: (memberIDs: string[]) => void;
   onRevokeInvite: (inviteIDs: string[]) => void;
+  loading?: boolean;
 }
 
 const MemberItem: Component<{
@@ -104,7 +99,7 @@ const MemberItem: Component<{
         id={props.id}
         label={props.name}
         topLevel
-        selectable={!props.disabled}
+        checkboxesEnabled={!props.disabled}
         class="px-1 py-0.5"
         icon={<div class="i-lucide:user h-5 w-5 text-gray-400 dark:text-gray-500" />}
         actions={
@@ -197,7 +192,7 @@ const InviteItem: Component<{
         id={props.id}
         label={props.email}
         topLevel
-        selectable={!props.disabled}
+        checkboxesEnabled={!props.disabled}
         class="px-1 py-0.5"
         icon={<div class="i-lucide:mail h-5 w-5 text-gray-400 dark:text-gray-500" />}
         actions={
@@ -255,11 +250,11 @@ const MembersSection: Component<MembersSectionProps> = (props) => {
   };
 
   const membersTree = createMemo<TreeMap>(() => ({
-    "*": { items: props.members.map((m) => m.id), levels: [] }
+    [TREE_ROOT_ID]: { items: props.members.map((m) => m.id), levels: [] }
   }));
 
   const invitesTree = createMemo<TreeMap>(() => ({
-    "*": { items: props.invites.map((i) => i.id), levels: [] }
+    [TREE_ROOT_ID]: { items: props.invites.map((i) => i.id), levels: [] }
   }));
 
   return (
@@ -269,18 +264,20 @@ const MembersSection: Component<MembersSectionProps> = (props) => {
           label="Workspace Members"
           description="Manage people who have access to this workspace"
         >
-          <IconButton
-            label={() => <span class="px-1">Invite</span>}
-            class="flex-row-reverse pr-1"
-            onClick={props.onInvite}
-            iconProps={{ class: "h-4 w-4" }}
-            icon="i-lucide:plus"
-            size="small"
-            color="contrast"
-            variant="outlined"
-            text="soft"
-            disabled={isMutating()}
-          />
+          <Show when={!props.loading} fallback={<Skeleton class="h-8 w-20 rounded-lg" />}>
+            <IconButton
+              label={() => <span class="px-1">Invite</span>}
+              class="flex-row-reverse pr-1"
+              onClick={props.onInvite}
+              iconProps={{ class: "h-4 w-4" }}
+              icon="i-lucide:plus"
+              size="small"
+              color="contrast"
+              variant="outlined"
+              text="soft"
+              disabled={isMutating()}
+            />
+          </Show>
         </Setting>
         <Show when={props.mutationText}>
           <div class="flex items-center gap-2 rounded-xl bg-gray-100 px-3 py-2 text-sm text-gray-500 dark:bg-gray-800 dark:text-gray-400">
@@ -289,94 +286,96 @@ const MembersSection: Component<MembersSectionProps> = (props) => {
           </div>
         </Show>
         <div class="w-full flex flex-col gap-1.5">
+          <Show when={props.loading}>
+            <Skeleton class={["h-8", "h-8", "h-8"]} />
+          </Show>
           <Show
-            when={props.members.length}
+            when={!props.loading && props.members.length}
             fallback={
-              <span class="text-sm text-gray-400 dark:text-gray-500">
-                No members yet. Invite teammates to start collaborating in this workspace.
-              </span>
+              <Show when={!props.loading}>
+                <Card>
+                  No members yet. Invite teammates to start collaborating in this workspace.
+                </Card>
+              </Show>
             }
           >
-            <TreeProvider tree={membersTree} itemHeight={32}>
-              <div class="relative flex flex-col">
-                <TreeSelection />
-                <TreeLevel
-                  levelID="*"
-                  tree={membersTree}
-                  renderLevel={() => <></>}
-                  renderItem={(itemID) => {
-                    const member = () => props.members.find((m) => m.id === itemID);
+            <Tree
+              tree={membersTree}
+              renderLevel={() => <></>}
+              renderItem={(itemID) => {
+                const member = () => props.members.find((m) => m.id === itemID);
 
-                    return (
-                      <Show when={member()}>
-                        {(m) => (
-                          <div class="relative">
-                            <MemberItem
-                              id={m().id}
-                              name={m().profile.name || m().profile.email || "Unknown"}
-                              email={m().profile.email}
-                              roleID={m().roleID}
-                              admin={m().admin}
-                              disabled={isMutating()}
-                              roles={props.roles}
-                              getRoleName={getRoleName}
-                              onUpdateRole={(roleID, memberIDs) =>
-                                props.onUpdateRole(memberIDs, roleID)
-                              }
-                              onRemove={props.onRemove}
-                            />
-                          </div>
-                        )}
-                      </Show>
-                    );
-                  }}
-                />
-              </div>
-            </TreeProvider>
+                return (
+                  <Show when={member()}>
+                    {(m) => (
+                      <div class="relative">
+                        <MemberItem
+                          id={m().id}
+                          name={m().profile.name || m().profile.email || "Unknown"}
+                          email={m().profile.email}
+                          roleID={m().roleID}
+                          admin={m().admin}
+                          disabled={isMutating()}
+                          roles={props.roles}
+                          getRoleName={getRoleName}
+                          onUpdateRole={(roleID, memberIDs) =>
+                            props.onUpdateRole(memberIDs, roleID)
+                          }
+                          onRemove={props.onRemove}
+                        />
+                      </div>
+                    )}
+                  </Show>
+                );
+              }}
+            />
           </Show>
         </div>
       </SettingsSection>
 
       <SettingsSection label="Pending Invites">
+        <Setting
+          label="Pending invitations"
+          description="Invitations that have not yet been accepted or revoked"
+        />
         <div class="w-full flex flex-col gap-1.5">
+          <Show when={props.loading}>
+            <Skeleton class={["h-8", "h-8"]} />
+          </Show>
           <Show
-            when={props.invites.length > 0}
+            when={!props.loading && props.invites.length > 0}
             fallback={
-              <span class="text-sm text-gray-400 dark:text-gray-500">
-                No pending invites. New invitations will show up here until they are accepted.
-              </span>
+              <Show when={!props.loading}>
+                <Card class="rounded-lg text-gray-500 bg-white text-sm px-2 py-1.5" shade>
+                  No pending invites. New invitations will show up here until they are accepted.
+                </Card>
+              </Show>
             }
           >
-            <TreeProvider tree={invitesTree} itemHeight={32}>
-              <div class="relative flex flex-col">
-                <TreeSelection />
-                <TreeLevel
-                  levelID="*"
-                  tree={invitesTree}
-                  renderLevel={() => <></>}
-                  renderItem={(itemID) => {
-                    const invite = () => props.invites.find((i) => i.id === itemID);
-                    return (
-                      <Show when={invite()}>
-                        {(inv) => (
-                          <div class="relative">
-                            <InviteItem
-                              id={inv().id}
-                              email={inv().email}
-                              roleID={inv().roleID}
-                              createdAt={inv().createdAt}
-                              disabled={isMutating()}
-                              getRoleName={getRoleName}
-                              onRevoke={props.onRevokeInvite}
-                            />
-                          </div>
-                        )}
-                      </Show>
-                    );
-                  }}
-                />
-              </div>
-            </TreeProvider>
+            <Tree
+              tree={invitesTree}
+              renderLevel={() => <></>}
+              renderItem={(itemID) => {
+                const invite = () => props.invites.find((i) => i.id === itemID);
+                return (
+                  <Show when={invite()}>
+                    {(inv) => (
+                      <div class="relative">
+                        <InviteItem
+                          id={inv().id}
+                          email={inv().email}
+                          roleID={inv().roleID}
+                          createdAt={inv().createdAt}
+                          disabled={isMutating()}
+                          getRoleName={getRoleName}
+                          onRevoke={props.onRevokeInvite}
+                        />
+                      </div>
+                    )}
+                  </Show>
+                );
+              }}
+            />
           </Show>
         </div>
       </SettingsSection>

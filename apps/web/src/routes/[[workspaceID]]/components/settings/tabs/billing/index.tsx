@@ -1,5 +1,5 @@
-import { Button, Spinner } from "@andesine/components";
-import { Component, Show, For, createMemo } from "solid-js";
+import { Button, Skeleton } from "@andesine/components";
+import { Component, Show, For, createEffect, createMemo } from "solid-js";
 import { Setting } from "../../setting";
 import { SettingsSection } from "../../settings-section";
 import { UsageChart } from "./usage-chart";
@@ -7,11 +7,14 @@ import { client } from "#web/lib/client";
 import { useNotify } from "#web/context/notifications";
 import clsx from "clsx";
 import { createMutation, createQuery, useQueryClient } from "@tanstack/solid-query";
+import { useSearchParams } from "@solidjs/router";
+import { useWorkspace } from "#web/context/workspace";
 
 interface BillingSettingsTabProps {
   setTab(tabId: string): void;
   canManageBilling?: boolean;
   opened?: boolean;
+  clientReady?: boolean;
 }
 interface PriceTagProps {
   perSeat?: boolean;
@@ -53,6 +56,8 @@ const formatNumber = (n: number): string => {
 const BillingSettingsTab: Component<BillingSettingsTabProps> = (props) => {
   const notify = useNotify();
   const queryClient = useQueryClient();
+  const { workspaceID } = useWorkspace();
+  const [searchParams, setSearchParams] = useSearchParams();
   const checkoutMutation = createMutation(() => ({
     mutationFn: async () => {
       const { url } = await client.billing.checkout();
@@ -68,25 +73,46 @@ const BillingSettingsTab: Component<BillingSettingsTabProps> = (props) => {
     }
   }));
   const subscription = createQuery(() => ({
-    queryKey: ["billing", "subscription"],
+    queryKey: ["billing", workspaceID(), "subscription"],
+    enabled: Boolean(props.clientReady && workspaceID()),
     queryFn: () => client.billing.subscription()
   }));
   const usage = createQuery(() => ({
-    queryKey: ["billing", "usage"],
+    queryKey: ["billing", workspaceID(), "usage"],
+    enabled: Boolean(props.clientReady && workspaceID()),
     queryFn: () => client.billing.usage()
   }));
-  const loading = createMemo(() => {
-    return (
-      checkoutMutation.isPending ||
-      portalMutation.isPending ||
-      subscription.isLoading ||
-      usage.isLoading
-    );
-  });
-  const loadError = createMemo(() => {
-    return subscription.error || usage.error;
-  });
   const isPro = () => subscription.data?.plan === "pro";
+  const billingStatus = createMemo(() => {
+    const status = subscription.data?.status;
+
+    if (status === "trialing") {
+      return { tone: "primary", title: "Trial active", text: "Your Pro trial is active." } as const;
+    }
+    if (status === "past_due" || status === "unpaid") {
+      return {
+        tone: "danger",
+        title: "Payment required",
+        text: "Your latest payment failed. Update your payment method to prevent interruption."
+      } as const;
+    }
+    if (status === "canceled" || status === "inactive") {
+      return {
+        tone: "muted",
+        title: "Subscription canceled",
+        text: "This workspace is on the Free plan. You can upgrade again at any time."
+      } as const;
+    }
+    if (status === "incomplete" || status === "incomplete_expired") {
+      return {
+        tone: "danger",
+        title: "Subscription incomplete",
+        text: "Checkout was not completed. Start a new checkout to activate Pro."
+      } as const;
+    }
+
+    return null;
+  });
   const daysUntilExpiry = () => {
     const expiresAt = subscription.data?.expiresAt;
 
@@ -111,24 +137,42 @@ const BillingSettingsTab: Component<BillingSettingsTabProps> = (props) => {
       notify({ text: "Failed to open billing portal", type: "error" });
     }
   };
-  const canManageBilling = () => props.canManageBilling ?? false;
+  const canManageBilling = () => props.canManageBilling ?? true;
   const retryLoad = () => {
     queryClient.invalidateQueries({ queryKey: ["billing"] });
   };
 
+  createEffect(() => {
+    const result = searchParams.billing;
+
+    if (!result) return;
+
+    if (result === "success") {
+      notify({ type: "success", text: "Checkout completed. Refreshing your subscription..." });
+    } else if (result === "cancel") {
+      notify({ type: "success", text: "Checkout canceled" });
+    }
+
+    queryClient.invalidateQueries({ queryKey: ["billing", workspaceID()] });
+    setSearchParams({ billing: undefined }, { replace: true });
+  });
+
   return (
-    <div class="flex h-full min-w-0 flex-col gap-3 overflow-x-hidden">
+    <div class="flex h-full min-w-0 flex-col gap-3">
       <SettingsSection label="Subscription">
         <Show
-          when={!loading()}
+          when={!subscription.isPending}
           fallback={
-            <div class="flex justify-center py-4">
-              <Spinner />
-            </div>
+            <Setting
+              label="Andesine Pro"
+              description="Upgrade for unlimited team members, priority support, and higher API limits"
+            >
+              <Skeleton class="h-16 w-full max-w-64 rounded-xl" />
+            </Setting>
           }
         >
           <Show
-            when={!loadError() && subscription.data && usage.data}
+            when={!subscription.error && subscription.data}
             fallback={
               <div class="flex flex-col gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
                 <span>Failed to load billing details.</span>
@@ -140,6 +184,24 @@ const BillingSettingsTab: Component<BillingSettingsTabProps> = (props) => {
               </div>
             }
           >
+            <Show when={billingStatus()}>
+              {(state) => (
+                <div
+                  class={clsx(
+                    "flex flex-col gap-0.5 rounded-xl border p-3 text-sm",
+                    state().tone === "danger" &&
+                      "border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300",
+                    state().tone === "primary" &&
+                      "border-primary-200 bg-primary-50 text-primary-700 dark:border-primary-900 dark:bg-primary-950/40 dark:text-primary-300",
+                    state().tone === "muted" &&
+                      "border-gray-200 bg-gray-50 text-gray-600 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300"
+                  )}
+                >
+                  <span class="font-semibold">{state().title}</span>
+                  <span>{state().text}</span>
+                </div>
+              )}
+            </Show>
             <Setting
               label={
                 <div class="inline-flex items-center gap-1 font-semibold">
@@ -182,7 +244,9 @@ const BillingSettingsTab: Component<BillingSettingsTabProps> = (props) => {
                 <Button
                   color="primary"
                   class="flex flex-col items-start rounded-xl px-3 py-2"
-                  disabled={loading() || !canManageBilling()}
+                  disabled={
+                    checkoutMutation.isPending || portalMutation.isPending || !canManageBilling()
+                  }
                   onClick={() => {
                     if (canManageBilling()) {
                       if (isPro()) {
@@ -194,7 +258,7 @@ const BillingSettingsTab: Component<BillingSettingsTabProps> = (props) => {
                   }}
                 >
                   <span class="opacity-50 text-xs font-semibold w-full text-start">
-                    {loading()
+                    {checkoutMutation.isPending || portalMutation.isPending
                       ? "Redirecting"
                       : canManageBilling()
                         ? isPro()
@@ -227,56 +291,69 @@ const BillingSettingsTab: Component<BillingSettingsTabProps> = (props) => {
                 </Show>
               </div>
             </Setting>
-            <SettingsSection label="API Usage">
-              <Show when={usage.data}>
-                {(usageData) => {
-                  const now = new Date();
-                  const currentDay = now.getDate();
-                  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+          </Show>
+        </Show>
+      </SettingsSection>
+      <SettingsSection label="API Usage">
+        <Setting
+          label="Monthly API calls"
+          description="Requests made during the current billing period"
+        />
+        <Show
+          when={!usage.isPending}
+          fallback={
+            <div class="flex flex-col gap-2">
+              <Skeleton class="h-5 w-40" />
+              <Skeleton class="h-32 w-full rounded-xl" />
+            </div>
+          }
+        >
+          <Show
+            when={!usage.error && usage.data}
+            fallback={
+              <div class="flex items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
+                <span>Failed to load API usage.</span>
+                <Button size="small" variant="outlined" onClick={retryLoad}>
+                  Retry
+                </Button>
+              </div>
+            }
+          >
+            {(usageData) => {
+              const now = new Date();
+              const currentDay = now.getDate();
+              const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
 
-                  return (
-                    <>
-                      <div class="flex items-end gap-3">
-                        <div class="flex flex-col gap-1">
-                          <div class="text-xs text-gray-400 dark:text-gray-500">Current usage</div>
-                          <div class="flex items-end gap-2">
-                            <div class="text-lg font-semibold">
-                              {formatNumber(usageData().totalUsage)}
-                            </div>
-                            <div class="pb-0.5 text-xs text-gray-400 dark:text-gray-500">
-                              of {formatNumber(usageData().limit)} limit
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div class="mt-1">
-                        <UsageChart
-                          daily={usageData().dailyUsage}
-                          currentDay={currentDay}
-                          limit={usageData().limit}
-                          daysInMonth={daysInMonth}
-                          year={usageData().startDate.getFullYear()}
-                          month={usageData().startDate.getMonth() + 1}
-                        />
-                      </div>
-
-                      <Show when={usageData().totalUsage >= usageData().limit}>
-                        <div class="bg-amber-50 dark:bg-amber-900 dark:bg-opacity-20 rounded-lg p-3 text-sm text-amber-600 dark:text-amber-400">
-                          <Show
-                            when={isPro()}
-                            fallback="You've reached the Free plan API limit. Upgrade to Pro for higher limits."
-                          >
-                            You've exceeded the included 500K requests. Additional usage will be
-                            billed at $1 per 50K requests.
-                          </Show>
-                        </div>
+              return (
+                <div class="flex flex-col gap-2">
+                  <div class="flex items-end gap-2">
+                    <div class="text-lg font-semibold">{formatNumber(usageData().totalUsage)}</div>
+                    <div class="pb-0.5 text-xs text-gray-400 dark:text-gray-500">
+                      of {formatNumber(usageData().limit)} limit
+                    </div>
+                  </div>
+                  <UsageChart
+                    daily={usageData().dailyUsage}
+                    currentDay={currentDay}
+                    limit={usageData().limit}
+                    daysInMonth={daysInMonth}
+                    year={usageData().startDate.getFullYear()}
+                    month={usageData().startDate.getMonth() + 1}
+                  />
+                  <Show when={usageData().totalUsage >= usageData().limit}>
+                    <div class="bg-amber-50 dark:bg-amber-900 dark:bg-opacity-20 rounded-lg p-3 text-sm text-amber-600 dark:text-amber-400">
+                      <Show
+                        when={isPro()}
+                        fallback="You've reached the Free plan API limit. Upgrade to Pro for higher limits."
+                      >
+                        You've exceeded the included 500K requests. Additional usage will be billed
+                        at $1 per 50K requests.
                       </Show>
-                    </>
-                  );
-                }}
-              </Show>
-            </SettingsSection>
+                    </div>
+                  </Show>
+                </div>
+              );
+            }}
           </Show>
         </Show>
       </SettingsSection>

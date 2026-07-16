@@ -3,6 +3,8 @@ import { Component, createMemo, createSignal, For } from "solid-js";
 import { client, type KeyPermission } from "#web/lib/client";
 import { useNotify } from "#web/context/notifications";
 import { createMutation } from "@tanstack/solid-query";
+import { Setting } from "../../setting";
+import { SettingsSection } from "../../settings-section";
 
 type AccessLevel = "none" | "read" | "write";
 type Resource = "entries" | "collections" | "memberships" | "roles";
@@ -92,7 +94,8 @@ interface KeyFormPageBaseProps {
 
 interface CreateKeyFormProps extends KeyFormPageBaseProps {
   mode: "create";
-  onCreated(rawKey: string): void;
+  onCreated(rawKey: string): Promise<void> | void;
+  goBackOnSuccess?: boolean;
 }
 
 interface EditKeyFormProps extends KeyFormPageBaseProps {
@@ -100,7 +103,7 @@ interface EditKeyFormProps extends KeyFormPageBaseProps {
   keyId: string;
   initialName: string;
   initialPermissions: KeyPermission[];
-  onUpdated(): void;
+  onUpdated(): Promise<void> | void;
 }
 
 type KeyFormPageProps = CreateKeyFormProps | EditKeyFormProps;
@@ -156,7 +159,7 @@ const KeyFormPage: Component<KeyFormPageProps> = (props) => {
         const data = await createKeyMutation.mutateAsync({ name, permissions });
 
         notify({ type: "success", text: "API key created" });
-        props.onCreated(data.rawKey);
+        await props.onCreated(data.rawKey);
       } else {
         await updateKeyMutation.mutateAsync({
           id: props.keyId,
@@ -165,53 +168,47 @@ const KeyFormPage: Component<KeyFormPageProps> = (props) => {
         });
 
         notify({ type: "success", text: "API key updated" });
-        props.onUpdated();
+        await props.onUpdated();
       }
 
-      props.goBack();
+      if (props.mode === "edit" || props.goBackOnSuccess !== false) {
+        props.goBack();
+      }
     } catch (error) {
       notify({
         type: "error",
-        text: `Failed to ${isEdit() ? "update" : "create"} API key`
+        text:
+          error instanceof Error && error.message
+            ? error.message
+            : `Failed to ${isEdit() ? "update" : "create"} API key`
       });
     }
   };
 
   return (
-    <div class="flex flex-col gap-4 h-full">
-      {/* ── Form ─────────────────────────────────────────────────────────── */}
-      <div class="flex flex-col gap-5 flex-1">
-        {/* Name */}
-        <div class="flex flex-col gap-1.5">
-          <label class="text-sm font-medium">Name</label>
+    <div class="flex min-w-0 flex-col">
+      <SettingsSection label="Key details">
+        <Setting label="Name" description="Identify where this API key will be used">
           <Input
             placeholder="e.g. CI/CD pipeline"
             value={keyName()}
             setValue={setKeyName}
-            class="w-full"
+            class="w-full max-w-md"
             onEnter={() => {
               handleSubmit();
             }}
           />
-        </div>
-
-        {/* Permissions */}
-        <div class="flex flex-col gap-2">
-          <div class="flex flex-col gap-0.5">
-            <span class="text-sm font-medium">Permissions</span>
-            <span class="text-xs text-gray-400 dark:text-gray-500">
-              Set the access level for each resource
-            </span>
-            <span class="text-xs text-gray-400 dark:text-gray-500">
-              {selectedPermissionCount() === 0
-                ? "No permissions selected"
-                : `${selectedPermissionCount()} permission${selectedPermissionCount() === 1 ? "" : "s"} selected`}
-            </span>
-          </div>
-          <div class="flex flex-col gap-2">
+        </Setting>
+      </SettingsSection>
+      <SettingsSection label="Access">
+        <Setting
+          label="Permissions"
+          description={`${selectedPermissionCount()} permission${selectedPermissionCount() === 1 ? "" : "s"} selected across API resources`}
+        >
+          <div class="flex w-full flex-col gap-2">
             <For each={resources}>
               {(resource) => (
-                <div class="flex items-center justify-between gap-4 rounded-xl bg-gray-50 px-3 py-2.5 dark:bg-gray-900/60">
+                <div class="flex items-center justify-between gap-4 rounded-xl border border-gray-200 px-3 py-2.5 dark:border-gray-700">
                   {/* Resource info */}
                   <div class="flex flex-col gap-0.5 min-w-0">
                     <span class="text-sm font-medium leading-none">{resource.label}</span>
@@ -235,36 +232,41 @@ const KeyFormPage: Component<KeyFormPageProps> = (props) => {
               )}
             </For>
           </div>
-        </div>
-      </div>
-
-      {/* ── Actions ───────────────────────────────────────────────────────── */}
-      <div class="flex justify-end gap-2 pt-2 border-t border-gray-200 dark:border-gray-800">
-        <Button
-          variant="outlined"
-          text="soft"
-          size="small"
-          onClick={props.goBack}
-          disabled={loading()}
+        </Setting>
+      </SettingsSection>
+      <SettingsSection label="Actions">
+        <Setting
+          label={isEdit() ? "Save API key" : "Create API key"}
+          description="Apply the key name and selected resource access"
         >
-          Cancel
-        </Button>
-        <Button
-          color="primary"
-          variant="solid"
-          size="small"
-          onClick={handleSubmit}
-          disabled={loading()}
-        >
-          {loading()
-            ? isEdit()
-              ? "Saving..."
-              : "Creating..."
-            : isEdit()
-              ? "Save changes"
-              : "Create key"}
-        </Button>
-      </div>
+          <div class="flex w-full justify-end gap-2">
+            <Button
+              variant="outlined"
+              text="soft"
+              size="small"
+              onClick={props.goBack}
+              disabled={loading()}
+            >
+              Cancel
+            </Button>
+            <Button
+              color="primary"
+              variant="solid"
+              size="small"
+              onClick={handleSubmit}
+              disabled={loading()}
+            >
+              {loading()
+                ? isEdit()
+                  ? "Saving..."
+                  : "Creating..."
+                : isEdit()
+                  ? "Save changes"
+                  : "Create key"}
+            </Button>
+          </div>
+        </Setting>
+      </SettingsSection>
     </div>
   );
 };

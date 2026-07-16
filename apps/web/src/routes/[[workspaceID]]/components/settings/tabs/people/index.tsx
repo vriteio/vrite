@@ -1,13 +1,13 @@
-import { Component, createEffect, createSignal, Show, Suspense } from "solid-js";
+import { Component, createEffect, createSignal, Show } from "solid-js";
 import { client, Permission } from "#web/lib/client";
 import { useNotify } from "#web/context/notifications";
-import { Skeleton } from "@andesine/components";
 import { InviteFormPage } from "../members/invite-form";
 import { RoleFormPage } from "../roles/role-form";
-import { createMutation } from "@tanstack/solid-query";
+import { createMutation, createQuery, useQueryClient } from "@tanstack/solid-query";
 import { createMemo } from "solid-js";
 import { MembersSection } from "./members-section";
 import { RolesSection } from "./roles-section";
+import { useWorkspace } from "#web/context/workspace";
 
 type BreadcrumbPart = string | { label: string; onClick: () => void };
 
@@ -15,11 +15,41 @@ interface SettingsTabProps {
   setTab(tabId: string): void;
   setBreadcrumb?(parts: BreadcrumbPart[]): void;
   canManageWorkspace?: boolean;
+  clientReady?: boolean;
   opened?: boolean;
 }
 
 const PeopleSettingsTab: Component<SettingsTabProps> = (props) => {
   const notify = useNotify();
+  const queryClient = useQueryClient();
+  const { workspaceID } = useWorkspace();
+  const queryPrefix = () => ["settings", workspaceID(), "people"] as const;
+  const rolesQuery = createQuery(() => ({
+    queryKey: [...queryPrefix(), "roles"],
+    enabled: Boolean(props.clientReady && workspaceID()),
+    queryFn: () => client.roles.list()
+  }));
+  const membershipsQuery = createQuery(() => ({
+    queryKey: [...queryPrefix(), "memberships"],
+    enabled: Boolean(props.clientReady && workspaceID()),
+    queryFn: () => client.memberships.list()
+  }));
+  const invitesQuery = createQuery(() => ({
+    queryKey: [...queryPrefix(), "invites"],
+    enabled: Boolean(props.clientReady && workspaceID()),
+    queryFn: () => client.memberships.listInvites()
+  }));
+  const roles = () => rolesQuery.data ?? [];
+  const memberships = () => membershipsQuery.data ?? [];
+  const invites = () => invitesQuery.data ?? [];
+  const invalidatePeople = async (...parts: Array<"roles" | "memberships" | "invites">) => {
+    await Promise.all(
+      parts.map((part) => queryClient.invalidateQueries({ queryKey: [...queryPrefix(), part] }))
+    );
+  };
+  const getErrorText = (error: unknown, fallback: string) => {
+    return error instanceof Error && error.message ? error.message : fallback;
+  };
   const updateMemberRoleMutation = createMutation(() => ({
     mutationFn: async (input: { memberIDs: string[]; roleID: string }) => {
       for (const memberID of input.memberIDs) {
@@ -82,8 +112,7 @@ const PeopleSettingsTab: Component<SettingsTabProps> = (props) => {
   const handleUpdateRole = async (memberIDs: string[], roleID: string) => {
     try {
       await updateMemberRoleMutation.mutateAsync({ memberIDs, roleID });
-      await syncMetadata("memberships");
-      await syncMetadata("viewer");
+      await invalidatePeople("memberships");
 
       notify({
         type: "success",
@@ -93,34 +122,31 @@ const PeopleSettingsTab: Component<SettingsTabProps> = (props) => {
     } catch (error) {
       notify({
         type: "error",
-        text: "Failed to update member role"
+        text: getErrorText(error, "Failed to update member role")
       });
-      await syncMetadata("memberships");
-      await syncMetadata("viewer");
+      await invalidatePeople("memberships");
     }
   };
 
   const handleRemove = async (memberIDs: string[]) => {
     try {
       await removeMembersMutation.mutateAsync({ memberIDs });
-      await syncMetadata("memberships");
-      await syncMetadata("viewer");
+      await invalidatePeople("memberships");
 
       notify({
         type: "success",
         text: memberIDs.length > 1 ? `${memberIDs.length} members removed` : "Member removed"
       });
     } catch (error) {
-      notify({ type: "error", text: "Failed to remove member" });
-      await syncMetadata("memberships");
-      await syncMetadata("viewer");
+      notify({ type: "error", text: getErrorText(error, "Failed to remove member") });
+      await invalidatePeople("memberships");
     }
   };
 
   const handleRevokeInvite = async (inviteIDs: string[]) => {
     try {
       await revokeInvitesMutation.mutateAsync({ inviteIDs });
-      await syncMetadata("invites");
+      await invalidatePeople("invites");
 
       notify({
         type: "success",
@@ -130,9 +156,9 @@ const PeopleSettingsTab: Component<SettingsTabProps> = (props) => {
     } catch (error) {
       notify({
         type: "error",
-        text: "Failed to revoke invitation"
+        text: getErrorText(error, "Failed to revoke invitation")
       });
-      await syncMetadata("invites");
+      await invalidatePeople("invites");
     }
   };
 
@@ -143,7 +169,7 @@ const PeopleSettingsTab: Component<SettingsTabProps> = (props) => {
     const currentPage = page();
 
     if (
-      !props.canManageWorkspace &&
+      props.canManageWorkspace === false &&
       (currentPage.id === "create-role" || currentPage.id === "edit-role")
     ) {
       setPage({ id: "list" });
@@ -165,19 +191,19 @@ const PeopleSettingsTab: Component<SettingsTabProps> = (props) => {
   });
 
   return (
-    <div class="flex h-full min-w-0 flex-col gap-3 overflow-x-hidden">
+    <div class="flex h-full min-w-0 flex-col gap-3">
       {/* ── Sub-page: Invite ──────────────────────────────────────────── */}
       <Show when={page().id === "invite"}>
         <InviteFormPage
           goBack={goToList}
-          onInvited={() => syncMetadata("invites")}
+          onInvited={() => invalidatePeople("invites")}
           roles={roles().map((r) => ({ id: r.id, name: r.name }))}
         />
       </Show>
 
       {/* ── Sub-page: Create Role ─────────────────────────────────────── */}
       <Show when={page().id === "create-role"}>
-        <RoleFormPage mode="create" goBack={goToList} onCreated={() => syncMetadata("roles")} />
+        <RoleFormPage mode="create" goBack={goToList} onCreated={() => invalidatePeople("roles")} />
       </Show>
 
       {/* ── Sub-page: Edit Role ───────────────────────────────────────── */}
@@ -193,9 +219,7 @@ const PeopleSettingsTab: Component<SettingsTabProps> = (props) => {
               initialPermissions={p.permissions}
               goBack={goToList}
               onUpdated={async () => {
-                await syncMetadata("roles");
-                await syncMetadata("memberships");
-                await syncMetadata("viewer");
+                await invalidatePeople("roles", "memberships");
               }}
             />
           );
@@ -205,53 +229,65 @@ const PeopleSettingsTab: Component<SettingsTabProps> = (props) => {
       {/* ── Sub-page: List ────────────────────────────────────────────── */}
       <Show when={page().id === "list"}>
         <div class="flex flex-col gap-3">
-          <Suspense fallback={<Skeleton class={["h-7", "h-7", "h-7"]} />}>
-            <MembersSection
-              roles={roles().map((role) => ({ id: role.id, name: role.name }))}
-              members={memberships().map((membership) => ({
-                id: membership.id,
-                profile: membership.profile,
-                roleID: membership.roleID,
-                admin: membership.admin
-              }))}
-              invites={invites().map((invite) => ({
-                id: invite.id,
-                email: invite.email,
-                roleID: invite.roleID,
-                createdAt: invite.createdAt
-              }))}
-              mutationText={memberMutationText()}
-              onInvite={() => setPage({ id: "invite" })}
-              onUpdateRole={handleUpdateRole}
-              onRemove={handleRemove}
-              onRevokeInvite={handleRevokeInvite}
-            />
-          </Suspense>
-          <Suspense fallback={<Skeleton class={["h-7", "h-7", "h-7"]} />}>
-            <RolesSection
-              roles={roles().map((role) => ({
-                id: role.id,
+          <Show when={rolesQuery.error || membershipsQuery.error || invitesQuery.error}>
+            <div class="flex items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
+              <span>Workspace people could not be loaded.</span>
+              <button
+                class="font-semibold hover:underline"
+                onClick={() => invalidatePeople("roles", "memberships", "invites")}
+              >
+                Retry
+              </button>
+            </div>
+          </Show>
+          <MembersSection
+            roles={roles().map((role) => ({ id: role.id, name: role.name }))}
+            members={memberships().map((membership) => ({
+              id: membership.id,
+              profile: membership.profile,
+              roleID: membership.roleID,
+              admin: membership.admin
+            }))}
+            invites={invites().map((invite) => ({
+              id: invite.id,
+              email: invite.email,
+              roleID: invite.roleID,
+              createdAt: invite.createdAt
+            }))}
+            mutationText={memberMutationText()}
+            onInvite={() => setPage({ id: "invite" })}
+            onUpdateRole={handleUpdateRole}
+            onRemove={handleRemove}
+            onRevokeInvite={handleRevokeInvite}
+            loading={
+              membershipsQuery.isPending ||
+              invitesQuery.isPending ||
+              rolesQuery.isPending ||
+              Boolean(membershipsQuery.error || invitesQuery.error || rolesQuery.error)
+            }
+          />
+          <RolesSection
+            roles={roles().map((role) => ({
+              id: role.id,
+              name: role.name,
+              baseRole: role.baseRole,
+              permissions: role.permissions
+            }))}
+            canManageRoles={props.canManageWorkspace ?? true}
+            onCreateRole={() => setPage({ id: "create-role" })}
+            onRolesChanged={async () => {
+              await invalidatePeople("roles", "memberships");
+            }}
+            onEditRole={(role) =>
+              setPage({
+                id: "edit-role",
+                roleId: role.id,
                 name: role.name,
-                baseRole: role.baseRole,
                 permissions: role.permissions
-              }))}
-              canManageRoles={props.canManageWorkspace ?? false}
-              onCreateRole={() => setPage({ id: "create-role" })}
-              onRolesChanged={async () => {
-                await syncMetadata("roles");
-                await syncMetadata("memberships");
-                await syncMetadata("viewer");
-              }}
-              onEditRole={(role) =>
-                setPage({
-                  id: "edit-role",
-                  roleId: role.id,
-                  name: role.name,
-                  permissions: role.permissions
-                })
-              }
-            />
-          </Suspense>
+              })
+            }
+            loading={rolesQuery.isPending || Boolean(rolesQuery.error)}
+          />
         </div>
       </Show>
     </div>

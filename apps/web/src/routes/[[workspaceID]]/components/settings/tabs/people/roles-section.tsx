@@ -1,10 +1,11 @@
 import {
   DropdownArea,
   IconButton,
-  Skeleton,
   DropdownMenu,
   MenuItem,
-  Spinner
+  Spinner,
+  Skeleton,
+  Card
 } from "@andesine/components";
 import clsx from "clsx";
 import { Component, createEffect, createMemo, createSignal, For, Show } from "solid-js";
@@ -12,24 +13,8 @@ import { Setting } from "../../setting";
 import { SettingsSection } from "../../settings-section";
 import { client, Permission } from "#web/lib/client";
 import { useNotify } from "#web/context/notifications";
-import {
-  TreeProvider,
-  TreeSelection,
-  TreeLevel,
-  TreeItem,
-  useTree,
-  type TreeMap
-} from "#web/components/tree";
+import { Tree, TreeItem, TREE_ROOT_ID, useTree, type TreeMap } from "#web/components/tree";
 import { createMutation } from "@tanstack/solid-query";
-
-const permissionLabels: Record<string, string> = {
-  "content": "Content",
-  "api_keys": "API Keys",
-  "read:api_keys": "Read API Keys",
-  "billing": "Billing",
-  "read:billing": "Read Billing",
-  "workspace": "Workspace"
-};
 
 interface Role {
   id: string;
@@ -44,7 +29,17 @@ interface RolesSectionProps {
   onCreateRole: () => void;
   onEditRole: (role: { id: string; name: string; permissions: Permission[] }) => void;
   onRolesChanged?: () => Promise<void> | void;
+  loading?: boolean;
 }
+
+const rolePermissionLabels: Record<Permission, string> = {
+  "content": "Content",
+  "api_keys": "API keys",
+  "read:api_keys": "Read API keys",
+  "billing": "Billing",
+  "read:billing": "Read billing",
+  "workspace": "Workspace"
+};
 
 const RoleItem: Component<{
   id: string;
@@ -110,7 +105,7 @@ const RoleItem: Component<{
         id={props.id}
         label={props.name}
         topLevel
-        selectable={props.canManageRoles && !props.baseRole}
+        checkboxesEnabled={props.canManageRoles && !props.baseRole}
         class="px-1 py-0.5"
         icon={<div class="i-lucide:shield h-5.5 w-5.5 text-gray-400 dark:text-gray-500" />}
         onClick={() => {
@@ -154,7 +149,7 @@ const RoleItem: Component<{
               <For each={props.permissions}>
                 {(perm) => (
                   <span class="text-xs px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
-                    {permissionLabels[perm] || perm}
+                    {rolePermissionLabels[perm as Permission] || perm}
                   </span>
                 )}
               </For>
@@ -191,7 +186,7 @@ const RolesSection: Component<RolesSectionProps> = (props) => {
     return count > 1 ? `Deleting ${count} roles...` : "Deleting role...";
   });
   const rolesTree = createMemo<TreeMap>(() => ({
-    "*": {
+    [TREE_ROOT_ID]: {
       items: props.roles.map((r) => r.id),
       levels: []
     }
@@ -220,19 +215,26 @@ const RolesSection: Component<RolesSectionProps> = (props) => {
           label="Roles"
           description="Manage roles and their permissions for workspace members"
         >
-          <Show when={props.canManageRoles}>
-            <IconButton
-              label={() => <span class="px-1">Create role</span>}
-              class="flex-row-reverse pr-1"
-              onClick={props.onCreateRole}
-              iconProps={{ class: "h-4 w-4" }}
-              icon="i-lucide:plus"
-              size="small"
-              color="contrast"
-              variant="outlined"
-              text="soft"
-              disabled={Boolean(mutationText())}
-            />
+          <Show
+            when={props.loading}
+            fallback={
+              <Show when={props.canManageRoles}>
+                <IconButton
+                  label={() => <span class="px-1">Create role</span>}
+                  class="flex-row-reverse pr-1"
+                  onClick={props.onCreateRole}
+                  iconProps={{ class: "h-4 w-4" }}
+                  icon="i-lucide:plus"
+                  size="small"
+                  color="contrast"
+                  variant="outlined"
+                  text="soft"
+                  disabled={Boolean(mutationText())}
+                />
+              </Show>
+            }
+          >
+            <Skeleton class="h-8 w-24 rounded-lg" />
           </Show>
         </Setting>
         <Show when={mutationText()}>
@@ -242,52 +244,51 @@ const RolesSection: Component<RolesSectionProps> = (props) => {
           </div>
         </Show>
         <div class="w-full flex flex-col gap-1.5">
+          <Show when={props.loading}>
+            <Skeleton class={["h-8", "h-8", "h-8"]} />
+          </Show>
           <Show
-            when={props.roles.length}
+            when={!props.loading && props.roles.length}
             fallback={
-              <span class="text-sm text-gray-400 dark:text-gray-500">
-                No roles yet. Create a role to grant a custom set of workspace permissions.
-              </span>
+              <Show when={!props.loading}>
+                <Card>
+                  No roles yet. Create a role to grant a custom set of workspace permissions.
+                </Card>
+              </Show>
             }
           >
-            <TreeProvider tree={rolesTree} itemHeight={32}>
-              <div class="relative flex flex-col">
-                <TreeSelection />
-                <TreeLevel
-                  levelID="*"
-                  tree={rolesTree}
-                  renderLevel={() => <></>}
-                  renderItem={(itemID) => {
-                    const role = () => findRole(itemID);
+            <Tree
+              tree={rolesTree}
+              renderLevel={() => <></>}
+              renderItem={(itemID) => {
+                const role = () => findRole(itemID);
 
-                    return (
-                      <Show when={role()}>
-                        {(r) => (
-                          <div class="relative">
-                            <RoleItem
-                              id={r().id}
-                              name={r().name}
-                              baseRole={r().baseRole ?? undefined}
-                              permissions={r().permissions}
-                              canManageRoles={props.canManageRoles && !mutationText()}
-                              onEdit={() =>
-                                props.onEditRole({
-                                  id: r().id,
-                                  name: r().name,
-                                  permissions: r().permissions as Permission[]
-                                })
-                              }
-                              onDeleteRoles={handleDeleteRoles}
-                              findRole={findRole}
-                            />
-                          </div>
-                        )}
-                      </Show>
-                    );
-                  }}
-                />
-              </div>
-            </TreeProvider>
+                return (
+                  <Show when={role()}>
+                    {(r) => (
+                      <div class="relative">
+                        <RoleItem
+                          id={r().id}
+                          name={r().name}
+                          baseRole={r().baseRole ?? undefined}
+                          permissions={r().permissions}
+                          canManageRoles={props.canManageRoles && !mutationText()}
+                          onEdit={() =>
+                            props.onEditRole({
+                              id: r().id,
+                              name: r().name,
+                              permissions: r().permissions as Permission[]
+                            })
+                          }
+                          onDeleteRoles={handleDeleteRoles}
+                          findRole={findRole}
+                        />
+                      </div>
+                    )}
+                  </Show>
+                );
+              }}
+            />
           </Show>
         </div>
       </div>
