@@ -1,19 +1,24 @@
-import { Overlay, Card, IconButton, Fragment, ScrollShadow, createRef } from "@andesine/components";
+import { Overlay, Card, IconButton, ScrollShadow, createRef } from "@andesine/components";
 import clsx from "clsx";
-import { Component, createMemo, For, Show } from "solid-js";
+import { Component, createEffect, createMemo, createSignal, For, Show } from "solid-js";
 import { Dynamic } from "solid-js/web";
 
 import { PersonalTab } from "./tabs/personal";
 import { useWorkspace } from "#web/context/workspace";
+import { APISettingsTab } from "./tabs/api";
+import { BillingSettingsTab } from "./tabs/billing";
+import { PeopleSettingsTab } from "./tabs/people";
+import { WorkspaceGeneralTab } from "./tabs/workspace";
 
 interface SettingsProps {
-  activeTab: string;
-  setActiveTab(tab: string): void;
+  activeTabID: string;
+  setActiveTabID(tabID: string): void;
 }
 
 const Settings: Component<SettingsProps> = (props) => {
   const { sessions, currentWorkspace } = useWorkspace();
   const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
+  const [visibleTabID, setVisibleTabID] = createSignal(props.activeTabID);
   const userName = createMemo(() => {
     const sessionList = sessions();
     const user = sessionList.find((s) => s.user.id === currentWorkspace()?.userID)?.user;
@@ -44,20 +49,20 @@ const Settings: Component<SettingsProps> = (props) => {
                   label: "General",
                   id: "workspace",
                   description: "Manage your workspace profile",
-                  tab: Fragment // WorkspaceGeneralTab
+                  tab: WorkspaceGeneralTab
                 },
                 {
                   icon: "i-lucide:users",
                   label: "People",
                   id: "people",
-                  tab: Fragment, //PeopleSettingsTab,
+                  tab: PeopleSettingsTab,
                   description: "Manage workspace members, invitations, and roles"
                 },
                 {
                   icon: "i-lucide:credit-card",
                   label: "Billing",
                   id: "billing",
-                  tab: Fragment, //BillingSettingsTab,
+                  tab: BillingSettingsTab,
                   description: "Manage your billing information"
                 },
 
@@ -65,7 +70,7 @@ const Settings: Component<SettingsProps> = (props) => {
                   icon: "i-lucide:code-xml",
                   label: "API",
                   id: "api",
-                  tab: Fragment, //APISettingsTab,
+                  tab: APISettingsTab,
                   description: "Manage your workspace API access"
                 }
               ]
@@ -84,12 +89,18 @@ const Settings: Component<SettingsProps> = (props) => {
     }>;
   });
   const menuItems = createMemo(() => menu().flatMap((subMenu) => subMenu.items));
-  const activeTab = createMemo(() => {
-    return menuItems().find((item) => item.id === props.activeTab);
+  const visibleTab = createMemo(() => {
+    return menuItems().find((item) => item.id === visibleTabID());
+  });
+
+  createEffect(() => {
+    if (props.activeTabID) {
+      setVisibleTabID(props.activeTabID);
+    }
   });
 
   return (
-    <Overlay opened={Boolean(props.activeTab)} onOverlayClick={() => props.setActiveTab("")}>
+    <Overlay opened={Boolean(props.activeTabID)} onOverlayClick={() => props.setActiveTabID("")}>
       <Card
         class="flex h-[min(92dvh,42rem)] w-[min(96vw,72rem)] flex-col gap-3 overflow-hidden rounded-[1.25rem] p-3 outline-0 lg:flex-row"
         color="contrast"
@@ -112,7 +123,7 @@ const Settings: Component<SettingsProps> = (props) => {
                                 <span
                                   class={clsx(
                                     "ml-1.5",
-                                    props.activeTab !== item.id && "text-gray-700 dark:text-white"
+                                    visibleTabID() !== item.id && "text-gray-700 dark:text-white"
                                   )}
                                 >
                                   {item.label}
@@ -120,11 +131,11 @@ const Settings: Component<SettingsProps> = (props) => {
                               )}
                               icon={item.icon}
                               iconProps={{ class: "w-5 h-5" }}
-                              variant={props.activeTab === item.id ? "solid" : "text"}
-                              text={props.activeTab === item.id ? "primary" : "soft"}
-                              color={props.activeTab === item.id ? "primary" : "base"}
+                              variant={visibleTabID() === item.id ? "solid" : "text"}
+                              text={visibleTabID() === item.id ? "primary" : "soft"}
+                              color={visibleTabID() === item.id ? "primary" : "base"}
                               class="justify-start whitespace-nowrap p-0.5 pl-1"
-                              onClick={() => props.setActiveTab(item.id)}
+                              onClick={() => props.setActiveTabID(item.id)}
                             ></IconButton>
                           );
                         }}
@@ -142,9 +153,9 @@ const Settings: Component<SettingsProps> = (props) => {
           shade
         >
           <div class="flex flex-col px-4 pb-3 pt-4">
-            <h2 class="text-xl font-semibold leading-tight">{activeTab()?.label || "Settings"}</h2>
-            <Show when={activeTab()?.description}>
-              <p class="text-sm text-gray-400 dark:text-gray-500">{activeTab()?.description}</p>
+            <h2 class="text-xl font-semibold leading-tight">{visibleTab()?.label || "Settings"}</h2>
+            <Show when={visibleTab()?.description}>
+              <p class="text-sm text-gray-400 dark:text-gray-500">{visibleTab()?.description}</p>
             </Show>
           </div>
           <ScrollShadow scrollableContainerRef={scrollableContainerRef} show={{ top: false }} />
@@ -152,7 +163,7 @@ const Settings: Component<SettingsProps> = (props) => {
             class="flex-1 overflow-y-auto overflow-x-hidden px-4 pb-4 scrollbar-sm flex flex-col"
             ref={setScrollableContainerRef}
           >
-            <Dynamic component={activeTab()?.tab} setTab={props.setActiveTab} />
+            <Dynamic component={visibleTab()?.tab} setTab={props.setActiveTabID} />
           </div>
         </Card>
       </Card>

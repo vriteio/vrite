@@ -1,5 +1,20 @@
-import { membershipDB, toUserID, workspacesDB, toWorkspaceID } from "#backend/db";
+import {
+  membershipDB,
+  rolesDB,
+  toUserID,
+  workspacesDB,
+  toWorkspaceID,
+  toRoleID,
+  Workspace,
+  Permission
+} from "#backend/db";
 import { toUUID } from "#backend/lib/mongo";
+
+interface WorkspaceListItem extends Pick<Workspace, "id" | "name"> {
+  userID: string;
+  permissions: Permission[];
+  admin: boolean;
+}
 
 const listWorkspaces = async (input: { userIDs: string[] }) => {
   const userIDs = input.userIDs.map((id) => toUUID(id));
@@ -7,35 +22,37 @@ const listWorkspaces = async (input: { userIDs: string[] }) => {
 
   if (memberships.length === 0) return [];
 
-  const workspaceIDs = [...new Set(memberships.map((m) => toWorkspaceID(m.workspaceID)))].map(
-    (id) => {
-      return toUUID(id);
-    }
+  const workspaceIDs = memberships.map((membership) => membership.workspaceID);
+  const roleIDs = memberships.map((membership) => membership.roleID);
+  const [workspaces, roles] = await Promise.all([
+    workspacesDB.find({ _id: { $in: workspaceIDs } }).toArray(),
+    rolesDB.find({ _id: { $in: roleIDs } }).toArray()
+  ]);
+  const workspaceMap = new Map(
+    workspaces.map((workspace) => {
+      return [toWorkspaceID(workspace._id), workspace];
+    })
   );
-  const workspaces = await workspacesDB.find({ _id: { $in: workspaceIDs } }).toArray();
-  const workspaceMap = new Map(workspaces.map((ws) => [ws._id.toString(), ws]));
+  const roleMap = new Map(roles.map((role) => [toRoleID(role._id), role]));
 
   return memberships
-    .map((m) => {
-      const ws = workspaceMap.get(m.workspaceID.toString());
+    .map((membership) => {
+      const workspace = workspaceMap.get(toWorkspaceID(membership.workspaceID));
+      const role = roleMap.get(toRoleID(membership.roleID));
 
-      if (!ws) return null;
+      if (!workspace || !role) return null;
 
       return {
-        id: toWorkspaceID(ws._id),
-        name: ws.name,
-        userID: toUserID(m.userID)
+        id: toWorkspaceID(workspace._id),
+        name: workspace.name,
+        userID: toUserID(membership.userID),
+        permissions: role.permissions,
+        admin: role.baseRole === "admin"
       };
     })
-    .filter(
-      (
-        workspace
-      ): workspace is {
-        id: string;
-        name: string;
-        userID: string;
-      } => workspace !== null
-    );
+    .filter((workspace): workspace is WorkspaceListItem => {
+      return workspace !== null;
+    });
 };
 
 export { listWorkspaces };

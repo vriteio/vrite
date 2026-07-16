@@ -209,7 +209,7 @@ const Button: Component<ButtonProps> = (providedProps) => {
       </div>
       <Show when={props.loading}>
         <div class="flex justify-center items-center absolute w-full h-full p-1.5 top-0 left-0">
-          <Spinner class="h-full fill-currentColor" />
+          <Spinner class="h-full" />
         </div>
       </Show>
     </Dynamic>

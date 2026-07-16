@@ -544,6 +544,7 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
                   class: "w-48"
                 }}
                 opened={menuOpened()}
+                portal={false}
                 setOpened={setMenuOpened}
                 trigger={() => (
                   <IconButton

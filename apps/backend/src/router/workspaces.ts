@@ -1,4 +1,4 @@
-import { toUserID, workspaceType } from "#backend/db";
+import { permissionType, toUserID, workspaceType } from "#backend/db";
 import { emitWorkspaceStateEvent } from "#backend/events";
 import { auth } from "#backend/lib/auth";
 import { authorized } from "#backend/lib/middleware";
@@ -12,7 +12,9 @@ const workspaceSummaryType = workspaceType.pick({
   name: true
 });
 const workspaceListItemType = workspaceSummaryType.extend({
-  userID: id().describe("ID of the user associated with this workspace membership")
+  userID: id().describe("ID of the user associated with this workspace membership"),
+  permissions: z.array(permissionType).describe("Permissions granted to the current member"),
+  admin: z.boolean().describe("Whether the current member has the system admin role")
 });
 
 const workspacesRouter = base.router({

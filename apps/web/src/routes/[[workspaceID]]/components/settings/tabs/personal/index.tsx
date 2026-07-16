@@ -6,7 +6,7 @@ import { SettingsTab, SettingsTabProps } from "../../settings-tab";
 const PersonalTab: Component<SettingsTabProps> = (props) => {
   return (
     <SettingsTab {...props}>
-      <ProfileSection opened={props.opened} />
+      <ProfileSection />
       <SecuritySection />
     </SettingsTab>
   );

@@ -5,10 +5,10 @@ import { TREE_ROOT_ID, TreeMap, useTree } from "./tree-context";
 interface TreeLevelProps {
   levelID: string;
   tree: Accessor<TreeMap>;
-  renderLevel: (levelID: string) => JSX.Element;
-  renderItem: (itemID: string, index: number) => JSX.Element;
-  renderCollectionBoundary?: () => JSX.Element;
-  renderEntryBoundary?: () => JSX.Element;
+  renderLevel?(levelID: string): JSX.Element;
+  renderItem?(itemID: string, index: number): JSX.Element;
+  renderCollectionBoundary?(): JSX.Element;
+  renderEntryBoundary?(): JSX.Element;
   emptyMessage?: string;
   highlighted?: boolean;
   highlightBackground?: boolean;
@@ -20,6 +20,10 @@ const TreeLevel: Component<TreeLevelProps> = (props) => {
   const levelData = () => props.tree()[props.levelID];
   const childLevelIDs = () => levelData()?.levels || [];
   const childItemIDs = () => levelData()?.items || [];
+  const renderLevel = (levelID: string) => props.renderLevel?.(levelID) || <></>;
+  const renderItem = (itemID: string, index: Accessor<number>) => {
+    return props.renderItem?.(itemID, index()) || <></>;
+  };
   const PlaceholderHighlight = () => (
     <Show when={props.highlighted && (props.highlightBackground ?? true)}>
       <div class="absolute inset-0 -z-10 rounded-r-lg opacity-10 from-secondary via-primary to-transparent bg-gradient-to-r" />
@@ -54,20 +58,16 @@ const TreeLevel: Component<TreeLevelProps> = (props) => {
                 </span>
               </div>
             </Show>
-            <For each={childLevelIDs()}>{(id) => props.renderLevel(id)}</For>
+            <For each={childLevelIDs()}>{renderLevel}</For>
             {props.renderCollectionBoundary?.()}
-            <For each={childItemIDs()}>{(id, index) => props.renderItem(id, index())}</For>
+            <For each={childItemIDs()}>{renderItem}</For>
             {props.renderEntryBoundary?.()}
           </div>
         </div>
       </Show>
       <Show when={isRoot()}>
-        <div>
-          <For each={childLevelIDs()}>{(id, index) => props.renderLevel(id)}</For>
-        </div>
-        <div>
-          <For each={childItemIDs()}>{(id, index) => props.renderItem(id, index())}</For>
-        </div>
+        <For each={childLevelIDs()}>{renderLevel}</For>
+        <For each={childItemIDs()}>{renderItem}</For>
       </Show>
     </Show>
   );

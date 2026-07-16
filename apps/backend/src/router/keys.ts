@@ -15,7 +15,7 @@ const keysRouter = base.prefix("/keys").router({
   create: base
     .meta({
       required: {
-        session: ["workspace"]
+        session: ["api_keys"]
       }
     })
     .use(authorized)
@@ -53,7 +53,7 @@ const keysRouter = base.prefix("/keys").router({
   list: base
     .meta({
       required: {
-        session: ["workspace"]
+        session: ["read:api_keys"]
       }
     })
     .use(authorized)
@@ -66,7 +66,7 @@ const keysRouter = base.prefix("/keys").router({
   delete: base
     .meta({
       required: {
-        session: ["workspace"]
+        session: ["api_keys"]
       }
     })
     .use(authorized)
@@ -93,7 +93,7 @@ const keysRouter = base.prefix("/keys").router({
   update: base
     .meta({
       required: {
-        session: ["workspace"]
+        session: ["api_keys"]
       }
     })
     .use(authorized)
@@ -129,7 +129,7 @@ const keysRouter = base.prefix("/keys").router({
   rotate: base
     .meta({
       required: {
-        session: ["workspace"]
+        session: ["api_keys"]
       }
     })
     .use(authorized)

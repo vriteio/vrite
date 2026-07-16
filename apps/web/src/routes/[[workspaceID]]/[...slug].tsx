@@ -17,8 +17,8 @@ const HomePage: Component<RouteSectionProps> = () => {
   const registerShortcuts = useShortcuts();
   const [searchParams, setSearchParams] = useSearchParams();
   const maxSidePanelWidth = 640;
-  const settingsTab = () => `${searchParams.settings || ""}`;
-  const setSettingsTab = (settingsTab: string) => {
+  const settingsTabID = () => `${searchParams.settings || ""}`;
+  const setSettingsTabID = (settingsTab: string) => {
     setSearchParams({
       settings: settingsTab
     });
@@ -132,7 +132,7 @@ const HomePage: Component<RouteSectionProps> = () => {
         </div>
         <div class="w-3" />
       </div>
-      <Settings activeTab={settingsTab()} setActiveTab={setSettingsTab} />
+      <Settings activeTabID={settingsTabID()} setActiveTabID={setSettingsTabID} />
     </div>
   );
 };

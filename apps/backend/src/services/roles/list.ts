@@ -8,7 +8,7 @@ const listRoles = async (input: { workspaceID: string }): Promise<Role[]> => {
     id: toRoleID(role._id),
     name: role.name,
     permissions: role.permissions,
-    baseRole: role.baseRole
+    ...(role.baseRole && { baseRole: role.baseRole })
   }));
 };
 

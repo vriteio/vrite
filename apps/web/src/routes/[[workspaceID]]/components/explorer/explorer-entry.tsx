@@ -261,6 +261,7 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
                   class: "w-48"
                 }}
                 opened={menuOpened()}
+                portal={false}
                 setOpened={setMenuOpened}
                 onClick={(event) => event.stopPropagation()}
                 trigger={() => (

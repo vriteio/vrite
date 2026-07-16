@@ -1,6 +1,12 @@
 import { createContext, createEffect, on, ParentComponent, useContext } from "solid-js";
 import { createAsync, query, revalidate } from "@solidjs/router";
-import { client, authClient, currentWorkspaceID, setCurrentWorkspaceID } from "#web/lib/client";
+import {
+  client,
+  authClient,
+  currentWorkspaceID,
+  setCurrentWorkspaceID,
+  type Permission
+} from "#web/lib/client";
 import { validateWorkspaceID } from "#web/lib/validate";
 import { useWorkspaceContent } from "./content";
 import { createMutation } from "@tanstack/solid-query";
@@ -14,6 +20,8 @@ interface WorkspaceInfo {
   name: string;
   logo?: string;
   userID: string;
+  permissions: Permission[];
+  admin: boolean;
 }
 
 interface SessionInfo {

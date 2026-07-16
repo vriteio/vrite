@@ -8,7 +8,7 @@ import {
   createRef,
   createDebounced
 } from "@andesine/components";
-import { TreeSelection, useTree } from "#web/components/tree";
+import { TreeRoot, TreeSelection, useTree } from "#web/components/tree";
 import { ExplorerProvider } from "./explorer-context";
 import { createEffect, createSignal, For, onCleanup, onMount, Show } from "solid-js";
 import { useNavigate } from "@solidjs/router";
@@ -495,21 +495,6 @@ const Explorer = () => {
         currentX: 0,
         currentY: 0
       });
-    } else if (!event.metaKey && !event.shiftKey && event.type !== "pointerleave") {
-      const isContextMenu = event.button === 2;
-      const contentID =
-        (event.target as HTMLElement).closest("[data-entry]")?.getAttribute("data-entry") ||
-        (event.target as HTMLElement).closest("[data-collection]")?.getAttribute("data-collection");
-
-      if (!contentID || !selection().includes(contentID)) {
-        setSelection((selection) => {
-          if (contentID && isContextMenu) {
-            return [contentID];
-          }
-
-          return selection.length >= 1 ? [] : selection;
-        });
-      }
     }
   };
   const dropdownOptions = [
@@ -818,132 +803,138 @@ const Explorer = () => {
 
   return (
     <DropdownArea>
-      <div
-        data-explorer-panel
-        tabIndex={0}
-        class="flex flex-col flex-1 justify-center items-start px-1 outline-none"
-        onFocusIn={onExplorerFocusIn}
-        onFocusOut={onExplorerFocusOut}
-        onPointerDown={onPointerDown}
-        onPointerEnter={onExplorerPointerEnter}
-        onPointerLeave={onExplorerPointerLeave}
-      >
-        <div class="my-0.5 flex items-center gap-2">
-          <h2 class="text-2xl font-semibold">Explorer</h2>
-          <Show when={content.offline()}>
-            <span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
-              Offline: read-only
-            </span>
-          </Show>
-        </div>
-        <div ref={setTreeContainerRef} class="flex flex-col flex-1 relative w-full overflow-y-auto">
-          <TreeSelection />
-          <Show
-            when={!contentLoading()}
-            fallback={
-              <div class="flex flex-col gap-1.5 py-1">
-                <div class="flex gap-1 items-center pl-1">
-                  <Skeleton class="h-6 w-6 rounded" />
-                  <Skeleton class="h-4 w-24" />
-                </div>
-                <div class="flex gap-1 items-center pl-1">
-                  <Skeleton class="h-6 w-6 rounded" />
-                  <Skeleton class="h-4 w-32" />
-                </div>
-                <div class="flex gap-1 items-center pl-1">
-                  <Skeleton class="h-6 w-6 rounded" />
-                  <Skeleton class="h-4 w-20" />
-                </div>
-                <div class="flex gap-1 items-center pl-1">
-                  <Skeleton class="h-6 w-6 rounded" />
-                  <Skeleton class="h-4 w-28" />
-                </div>
-              </div>
-            }
-          >
-            <div>
-              <For each={collections()}>
-                {(collection) => {
-                  return (
-                    <Show when={collection}>
-                      <DropdownArea>
-                        <ExplorerCollection collection={collection!} topLevel />
-                      </DropdownArea>
-                    </Show>
-                  );
-                }}
-              </For>
-            </div>
-            <div>
-              <For each={entries()}>
-                {(entry) => {
-                  return (
-                    <div>
-                      <Show when={entry}>
-                        <DropdownArea>
-                          <ExplorerEntry entry={entry} topLevel />
-                        </DropdownArea>
-                      </Show>
-                    </div>
-                  );
-                }}
-              </For>
-            </div>
-            <Show when={!collections().length && !entries().length}>
-              <div>
-                {dropdownOptions.map((option) => {
-                  return (
-                    <IconButton
-                      icon={option.icon}
-                      class="flex justify-start items-center w-full group/button"
-                      disabled={dropdownMenuOpened() || content.readOnly()}
-                      onClick={option.onClick}
-                      label={() => (
-                        <div class="px-1 flex flex-1 gap-4">
-                          <span class="flex-1 text-start">{option.label}</span>
-                          <Show when={option.shortcut}>
-                            <Shortcut
-                              class="opacity-0 group-hover/button:opacity-50 font-mono text-[90%]"
-                              shortcut={option.shortcut!}
-                            />
-                          </Show>
-                        </div>
-                      )}
-                      variant="text"
-                      text="softer"
-                      size="small"
-                    />
-                  );
-                })}
-              </div>
-            </Show>
-          </Show>
-          <div ref={setElementRef} class="flex-1">
-            <Show when={isDraggedOver()}>
-              <div class="top-0 left-0 -z-10 rounded-lg absolute h-full w-full opacity-10 bg-gradient-to-tr" />
+      <TreeRoot>
+        <div
+          data-explorer-panel
+          tabIndex={0}
+          class="flex flex-col flex-1 justify-center items-start px-1 outline-none"
+          onFocusIn={onExplorerFocusIn}
+          onFocusOut={onExplorerFocusOut}
+          onPointerDown={onPointerDown}
+          onPointerEnter={onExplorerPointerEnter}
+          onPointerLeave={onExplorerPointerLeave}
+        >
+          <div class="my-0.5 flex items-center gap-2">
+            <h2 class="text-2xl font-semibold">Explorer</h2>
+            <Show when={content.offline()}>
+              <span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
+                Offline: read-only
+              </span>
             </Show>
           </div>
-        </div>
-        <Show when={boxSelection().active}>
           <div
-            class="fixed bg-gradient-to-tr opacity-10 rounded-lg"
-            style={{
-              top: `${Math.min(boxSelection().y, boxSelection().currentY ?? boxSelection().y)}px`,
-              left: `${Math.min(boxSelection().x, boxSelection().currentX ?? boxSelection().x)}px`,
-              width: `${boxSelection().width}px`,
-              height: `${boxSelection().height}px`
+            ref={setTreeContainerRef}
+            class="flex flex-col flex-1 relative w-full overflow-y-auto"
+          >
+            <TreeSelection />
+            <Show
+              when={!contentLoading()}
+              fallback={
+                <div class="flex flex-col gap-1.5 py-1">
+                  <div class="flex gap-1 items-center pl-1">
+                    <Skeleton class="h-6 w-6 rounded" />
+                    <Skeleton class="h-4 w-24" />
+                  </div>
+                  <div class="flex gap-1 items-center pl-1">
+                    <Skeleton class="h-6 w-6 rounded" />
+                    <Skeleton class="h-4 w-32" />
+                  </div>
+                  <div class="flex gap-1 items-center pl-1">
+                    <Skeleton class="h-6 w-6 rounded" />
+                    <Skeleton class="h-4 w-20" />
+                  </div>
+                  <div class="flex gap-1 items-center pl-1">
+                    <Skeleton class="h-6 w-6 rounded" />
+                    <Skeleton class="h-4 w-28" />
+                  </div>
+                </div>
+              }
+            >
+              <div>
+                <For each={collections()}>
+                  {(collection) => {
+                    return (
+                      <Show when={collection}>
+                        <DropdownArea>
+                          <ExplorerCollection collection={collection!} topLevel />
+                        </DropdownArea>
+                      </Show>
+                    );
+                  }}
+                </For>
+              </div>
+              <div>
+                <For each={entries()}>
+                  {(entry) => {
+                    return (
+                      <div>
+                        <Show when={entry}>
+                          <DropdownArea>
+                            <ExplorerEntry entry={entry} topLevel />
+                          </DropdownArea>
+                        </Show>
+                      </div>
+                    );
+                  }}
+                </For>
+              </div>
+              <Show when={!collections().length && !entries().length}>
+                <div>
+                  {dropdownOptions.map((option) => {
+                    return (
+                      <IconButton
+                        icon={option.icon}
+                        class="flex justify-start items-center w-full group/button"
+                        disabled={dropdownMenuOpened() || content.readOnly()}
+                        onClick={option.onClick}
+                        label={() => (
+                          <div class="px-1 flex flex-1 gap-4">
+                            <span class="flex-1 text-start">{option.label}</span>
+                            <Show when={option.shortcut}>
+                              <Shortcut
+                                class="opacity-0 group-hover/button:opacity-50 font-mono text-[90%]"
+                                shortcut={option.shortcut!}
+                              />
+                            </Show>
+                          </div>
+                        )}
+                        variant="text"
+                        text="softer"
+                        size="small"
+                      />
+                    );
+                  })}
+                </div>
+              </Show>
+            </Show>
+            <div ref={setElementRef} class="flex-1">
+              <Show when={isDraggedOver()}>
+                <div class="top-0 left-0 -z-10 rounded-lg absolute h-full w-full opacity-10 bg-gradient-to-tr" />
+              </Show>
+            </div>
+          </div>
+          <Show when={boxSelection().active}>
+            <div
+              class="fixed bg-gradient-to-tr opacity-10 rounded-lg"
+              style={{
+                top: `${Math.min(boxSelection().y, boxSelection().currentY ?? boxSelection().y)}px`,
+                left: `${Math.min(boxSelection().x, boxSelection().currentX ?? boxSelection().x)}px`,
+                width: `${boxSelection().width}px`,
+                height: `${boxSelection().height}px`
+              }}
+            />
+          </Show>
+          <DropdownMenu
+            cardProps={{
+              class: "w-52"
             }}
+            items={dropdownOptions}
+            opened={dropdownMenuOpened()}
+            portal={false}
+            setOpened={setDropdownMenuOpened}
           />
-        </Show>
-        <DropdownMenu
-          cardProps={{
-            class: "w-52"
-          }}
-          items={dropdownOptions}
-          opened={dropdownMenuOpened()}
-          setOpened={setDropdownMenuOpened}
-        />
-      </div>
+        </div>
+      </TreeRoot>
     </DropdownArea>
   );
 };

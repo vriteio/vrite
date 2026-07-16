@@ -1,36 +1,17 @@
-import { Component, createEffect, createMemo, createSignal, on, onCleanup } from "solid-js";
+import { Component, createEffect, createMemo, createSignal, Show, Suspense } from "solid-js";
 import { SettingsSection } from "../../settings-section";
-import { Input } from "@andesine/components";
+import { Input, Spinner } from "@andesine/components";
 import { Setting } from "../../setting";
 import { useNotify } from "#web/context/notifications";
 import { useWorkspace } from "#web/context/workspace";
 import { revalidate } from "@solidjs/router";
 import { authClient } from "#web/lib/client";
 import { createMutation } from "@tanstack/solid-query";
+import clsx from "clsx";
 
-interface ProfileSectionProps {
-  opened?: boolean;
-}
-
-const ProfileSection: Component<ProfileSectionProps> = (props) => {
+const ProfileSection: Component = () => {
   const notify = useNotify();
   const { currentWorkspace, sessions } = useWorkspace();
-  const updateProfileNameMutation = createMutation(() => ({
-    mutationFn: async (input: { name: string }) => {
-      const { error } = await authClient.updateUser({
-        name: input.name
-      });
-
-      if (error) throw error;
-
-      return input.name;
-    }
-  }));
-
-  const [localName, setLocalName] = createSignal("");
-  const [saveState, setSaveState] = createSignal<"idle" | "saved">("idle");
-  let savedIndicatorTimeout: ReturnType<typeof setTimeout> | undefined;
-
   const currentUser = createMemo(() => {
     const workspace = currentWorkspace();
 
@@ -38,106 +19,63 @@ const ProfileSection: Component<ProfileSectionProps> = (props) => {
 
     return sessions().find((session) => session.user.id === workspace.userID)?.user || null;
   });
-  const currentDisplayName = createMemo(() => {
-    return currentUser()?.name?.trim() || currentUser()?.email || "";
-  });
-  const isDirty = createMemo(() => {
-    const currentName = currentDisplayName();
-    const trimmed = localName().trim();
-    const fallbackName = currentUser()?.email || "";
-    const nextName = trimmed || fallbackName;
+  const [name, setName] = createSignal(currentUser()?.name || "");
 
-    return Boolean(currentUser()) && nextName !== currentName;
-  });
-  const isProfileSaving = createMemo(() => updateProfileNameMutation.isPending);
-  const saveIndicatorState = createMemo(() => {
-    if (isProfileSaving()) return "saving" as const;
-    if (saveState() === "saved" && !isDirty()) return "saved" as const;
-    if (isDirty()) return "unsaved" as const;
+  const updateProfileNameMutation = createMutation(() => ({
+    onSuccess: () => {
+      revalidate("sessions");
+    },
+    onError: (error) => {
+      console.error(error);
+      setName(currentUser()?.name || "");
+      notify({
+        type: "error",
+        text: "Failed to update profile name"
+      });
+    },
+    mutationFn: async (input: { name: string }) => {
+      const { error } = await authClient.updateUser({
+        name: input.name
+      });
 
-    return "idle" as const;
-  });
+      if (error) throw error;
+    }
+  }));
 
   createEffect(() => {
-    setLocalName(currentDisplayName());
-    setSaveState("idle");
-  });
-
-  createEffect(() => {
-    localName();
-
-    if (saveState() === "saved" && isDirty()) {
-      setSaveState("idle");
-    }
-  });
-
-  createEffect(() => {
-    if (savedIndicatorTimeout) {
-      clearTimeout(savedIndicatorTimeout);
-      savedIndicatorTimeout = undefined;
-    }
-
-    if (saveState() !== "saved" || isDirty()) return;
-
-    savedIndicatorTimeout = setTimeout(() => {
-      setSaveState("idle");
-    }, 1500);
-  });
-
-  createEffect(
-    on(
-      () => props.opened,
-      (opened, previous) => {
-        if (previous && opened === false) {
-          saveProfileName();
-        }
-      }
-    )
-  );
-
-  const saveProfileName = async () => {
-    const trimmed = localName().trim();
-    const fallbackName = currentUser()?.email || "";
-    const nextName = trimmed || fallbackName;
-
-    if (!currentUser() || nextName === currentDisplayName() || isProfileSaving()) return;
-
-    try {
-      await updateProfileNameMutation.mutateAsync({ name: nextName });
-
-      await revalidate("sessions");
-      setLocalName(nextName);
-      setSaveState("saved");
-      notify({ text: "Profile saved", type: "success" });
-    } catch (error) {
-      setLocalName(currentDisplayName());
-      setSaveState("idle");
-      notify({ text: "Failed to save profile", type: "error" });
-    }
-  };
-
-  onCleanup(() => {
-    if (savedIndicatorTimeout) {
-      clearTimeout(savedIndicatorTimeout);
-    }
+    setName(currentUser()?.name || "");
   });
 
   return (
     <SettingsSection label="Profile">
-      <Setting label="Full name" description="Your full name">
+      <Setting label="Full name" description="Your full name" fade={false}>
         <div class="flex w-full max-w-md flex-col gap-2">
           <div class="relative">
             <Input
               placeholder="Your name"
-              class="w-full pr-28"
+              class={clsx("w-full pr-28", updateProfileNameMutation.isPending && "animate-pulse")}
+              disabled={updateProfileNameMutation.isPending}
               size="small"
               color="contrast"
               variant="outlined"
-              value={localName()}
-              setValue={setLocalName}
-              onBlur={saveProfileName}
-              onEnter={() => {
-                saveProfileName();
+              value={name()}
+              setValue={setName}
+              slot={() => {
+                return (
+                  <Show when={updateProfileNameMutation.isPending}>
+                    <div class="absolute right-0 p-1.5">
+                      <Spinner class="h-4 w-4" color="primary" />
+                    </div>
+                  </Show>
+                );
+              }}
+              onConfirm={() => {
+                if (name() !== currentUser()?.name) {
+                  updateProfileNameMutation.mutate({ name: name() });
+                }
+              }}
+              onCancel={() => {
+                setName(currentUser()?.name || "");
               }}
             />
           </div>

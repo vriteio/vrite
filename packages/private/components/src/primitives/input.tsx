@@ -1,7 +1,7 @@
 import { Component, JSX, Show, splitProps } from "solid-js";
 import { Dynamic } from "solid-js/web";
 import clsx from "clsx";
-import { Ref } from "../ref";
+import { createRef, Ref } from "../ref";
 import { Fragment } from "./fragment";
 
 const inputColors = {
@@ -13,7 +13,7 @@ const inputVariants = {
   outlined: `:base: outline outline-1 shadow-md focus:outline-1 focus:bg-gray-100 dark:focus:bg-gray-950`
 };
 
-interface InputProps extends Omit<JSX.InputHTMLAttributes<HTMLInputElement>, "slot"> {
+interface InputProps extends Omit<JSX.InputHTMLAttributes<HTMLInputElement>, "slot" | "onCancel"> {
   value?: string;
   class?: string;
   labelClass?: string;
@@ -27,6 +27,8 @@ interface InputProps extends Omit<JSX.InputHTMLAttributes<HTMLInputElement>, "sl
   slot?(): JSX.Element;
   setValue?(value: string): void;
   onEnter?(event: KeyboardEvent): void;
+  onConfirm?(event: KeyboardEvent | FocusEvent): void;
+  onCancel?(event: KeyboardEvent): void;
 }
 
 const inputSizes = {
@@ -47,8 +49,12 @@ const inputSizes = {
   }
 };
 const Input: Component<InputProps> = (props) => {
+  const [cancelled, setCancelled] = createRef(false);
+  const [confirmed, setConfirmed] = createRef(false);
   const [, passedProps] = splitProps(props, [
     "onEnter",
+    "onConfirm",
+    "onCancel",
     "onBlur",
     "onFocus",
     "class",
@@ -84,9 +90,8 @@ const Input: Component<InputProps> = (props) => {
         component={props.slot ? "div" : Fragment}
         class={clsx(":base: flex items-center relative", props.slotWrapperClass)}
       >
-        <Dynamic
+        <input
           ref={props.ref}
-          component="input"
           class={clsx(
             `:base: flex items-center justify-start flex-1 rounded-lg ring-offset-1 placeholder:opacity-50`,
             inputSizes[props.size || "medium"].field,
@@ -112,15 +117,34 @@ const Input: Component<InputProps> = (props) => {
               target: HTMLInputElement;
             }
           ) => {
+            if (!cancelled() && !confirmed()) {
+              props.onConfirm?.(event);
+            }
+
             if (typeof props.onBlur === "function") {
               props.onBlur?.(event);
             }
+
+            setConfirmed(false);
+            setCancelled(false);
           }}
           onKeyDown={(
             event: KeyboardEvent & { currentTarget: HTMLInputElement; target: Element }
           ) => {
             if (event.key === "Enter") {
               props.onEnter?.(event);
+            }
+
+            if (event.key === "Enter" && props.onConfirm) {
+              props.onConfirm(event);
+              setConfirmed(true);
+              event.currentTarget.blur();
+            }
+
+            if (event.key === "Escape" && props.onCancel) {
+              props.onCancel(event);
+              setCancelled(true);
+              event.currentTarget.blur();
             }
 
             if (typeof props.onKeyDown === "function") {
