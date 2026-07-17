@@ -1,41 +1,60 @@
-import { Component, createEffect, createSignal, onCleanup, Show } from "solid-js";
-import { RouteSectionProps, useSearchParams } from "@solidjs/router";
-import { Settings } from "./components/settings";
-import { useShortcuts } from "@andesine/components";
-import { useLayout } from "#web/context/layout";
+import { Component, createEffect, onCleanup, Show } from "solid-js";
+import { RouteSectionProps, useNavigate, useParams } from "@solidjs/router";
+import { Card, useShortcuts } from "@andesine/components";
+import { ActivePanel, useLayout } from "#web/context/layout";
 import { ProfileMenu } from "./components/profile-menu";
 import { Menu, MenuItem } from "./components/menu";
 import { EditorPane } from "./components/editor";
 import { HelpPanel } from "./components/help";
 import { ExplorerPanel } from "./components/explorer";
 import { VerticalResizeHandle } from "./components/vertical-resize-handle";
+import { SettingsMenu } from "./components/settings-menu";
+import { SettingsPane } from "./components/settings-pane";
 
 const DEFAULT_SIDE_PANEL_WIDTH = 240;
 
 const HomePage: Component<RouteSectionProps> = () => {
   const { layout, setLayout } = useLayout();
   const registerShortcuts = useShortcuts();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const params = useParams<{ workspaceID?: string; tabID?: string }>();
   const maxSidePanelWidth = 640;
-  const settingsTabID = () => `${searchParams.settings || ""}`;
-  const setSettingsTabID = (settingsTab: string) => {
-    setSearchParams({
-      settings: settingsTab
-    });
-  };
-  const openPanel = (panel: typeof layout.activePanel) => {
-    setLayout("activePanel", panel);
+  const isSettingsRoute = () => Boolean(params.tabID);
+  const workspacePath = () => `/${params.workspaceID || ""}`;
+  const openPanel = (panel: ActivePanel) => {
+    if (panel === "settings") {
+      if (!isSettingsRoute()) {
+        navigate(`${workspacePath()}/settings/personal`);
+      }
+    } else {
+      if (isSettingsRoute()) {
+        navigate(`${workspacePath()}/`);
+      }
+
+      setLayout("activePanel", panel);
+    }
+
     if (layout.leftSidePanelWidth === 0) {
       setLayout("leftSidePanelWidth", DEFAULT_SIDE_PANEL_WIDTH);
     }
   };
+
+  createEffect(() => {
+    if (isSettingsRoute()) {
+      if (layout.activePanel !== "settings") {
+        setLayout("activePanel", "settings");
+      }
+    } else if (layout.activePanel === "settings") {
+      setLayout("activePanel", "explorer");
+    }
+  });
 
   const menu: MenuItem[] = [
     {
       label: "Explorer",
       icon: "i-lucide:files",
       get active() {
-        return layout.leftSidePanelWidth > 0 && layout.activePanel === "explorer";
+        return layout.activePanel === "explorer";
       },
       onClick() {
         openPanel("explorer");
@@ -58,13 +77,11 @@ const HomePage: Component<RouteSectionProps> = () => {
       label: "Settings",
       shortcut: "$mod+,",
       icon: "i-lucide:settings-2",
+      get active() {
+        return layout.activePanel === "settings";
+      },
       onClick() {
-        if (searchParams.settings) return false;
-
-        setSearchParams({
-          settings: "profile"
-        });
-
+        openPanel("settings");
         return true;
       }
     }
@@ -118,6 +135,9 @@ const HomePage: Component<RouteSectionProps> = () => {
             <Show when={layout.activePanel === "help"}>
               <HelpPanel />
             </Show>
+            <Show when={layout.activePanel === "settings"}>
+              <SettingsMenu />
+            </Show>
             <ProfileMenu />
           </div>
         </div>
@@ -128,11 +148,17 @@ const HomePage: Component<RouteSectionProps> = () => {
           }}
         />
         <div class="h-full flex-1 min-w-60 flex">
-          <EditorPane />
+          <Card
+            class="relative flex h-full flex-1 flex-col items-center justify-center overflow-hidden p-0"
+            shade
+          >
+            <Show when={layout.activePanel === "settings"} fallback={<EditorPane />}>
+              <SettingsPane />
+            </Show>
+          </Card>
         </div>
         <div class="w-3" />
       </div>
-      <Settings activeTabID={settingsTabID()} setActiveTabID={setSettingsTabID} />
     </div>
   );
 };

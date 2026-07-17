@@ -100,6 +100,7 @@ const App = (props: AppProps) => {
       <Route path="/new-workspace" component={NewWorkspacePage} />
       <Route path="/:workspaceID" component={WorkspaceLayout}>
         <Route path="/" component={HomePage} />
+        <Route path="/settings/:tabID" component={HomePage} />
         <Route path="/*slug" component={HomePage} />
       </Route>
     </Router>

@@ -1,4 +1,4 @@
-import { Card, Skeleton, Spinner, Tooltip } from "@andesine/components";
+import { Skeleton, Spinner, Tooltip } from "@andesine/components";
 import { Component, createEffect, createSignal, Show, Suspense } from "solid-js";
 import { Editor, type EditorProvider } from "@andesine/editor";
 import { useParams } from "@solidjs/router";
@@ -176,10 +176,7 @@ const EditorPane: Component = () => {
   };
 
   return (
-    <Card
-      class="flex justify-center items-center flex-col flex-1 h-full p-0 overflow-hidden relative"
-      shade
-    >
+    <>
       <div class="flex h-11 gap-2 p-2 pl-4 w-full items-center justify-center">
         {selectedEntryID() ? (
           <>
@@ -254,7 +251,7 @@ const EditorPane: Component = () => {
           </Show>
         </Show>
       </div>
-    </Card>
+    </>
   );
 };
 

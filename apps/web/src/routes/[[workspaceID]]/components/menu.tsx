@@ -49,17 +49,19 @@ const Menu: Component<MenuProps> = (props) => {
                     side={props.direction === "vertical" ? "right" : "bottom"}
                     fixed
                   >
-                    <IconButton
-                      variant={item().active ? "solid" : "text"}
-                      text={item().active ? undefined : "soft"}
-                      color={item().active ? "primary" : undefined}
-                      iconProps={{ class: "h-5 w-5" }}
-                      onClick={item().onClick}
-                    >
-                      <div class="h-full w-full justify-center items-center flex">
-                        <div class={clsx("h-5 w-5", item().icon)} />
-                      </div>
-                    </IconButton>
+                    <div class="flex justify-center items-center relative">
+                      <Show when={item().active}>
+                        <div class="bg-gradient-to-tr opacity-10 h-full w-full absolute top-0 left-0 rounded-lg" />
+                      </Show>
+                      <IconButton
+                        variant={item().active ? "solid" : "text"}
+                        text={item().active ? "primary" : "soft"}
+                        color={item().active ? "primary" : undefined}
+                        iconProps={{ class: "h-5 w-5" }}
+                        onClick={item().onClick}
+                        icon={item().icon}
+                      />
+                    </div>
                   </Tooltip>
                 );
               }}

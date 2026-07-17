@@ -2,7 +2,7 @@ import { createContext, ParentComponent, createEffect, useContext, on } from "so
 import { createStore, SetStoreFunction } from "solid-js/store";
 import { getRequestEvent } from "solid-js/web";
 
-type ActivePanel = "explorer" | "help";
+type ActivePanel = "explorer" | "help" | "settings";
 
 interface Layout {
   leftSidePanelWidth: number;
