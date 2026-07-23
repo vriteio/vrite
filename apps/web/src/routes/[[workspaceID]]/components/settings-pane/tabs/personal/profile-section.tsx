@@ -11,15 +11,8 @@ import clsx from "clsx";
 
 const ProfileSection: Component = () => {
   const notify = useNotify();
-  const { currentWorkspace, sessions } = useWorkspace();
-  const currentUser = createMemo(() => {
-    const workspace = currentWorkspace();
-
-    if (!workspace) return null;
-
-    return sessions().find((session) => session.user.id === workspace.userID)?.user || null;
-  });
-  const [name, setName] = createSignal(currentUser()?.name || "");
+  const { currentSession } = useWorkspace();
+  const [name, setName] = createSignal(currentSession()?.user?.name || "");
 
   const updateProfileNameMutation = createMutation(() => ({
     onSuccess: () => {
@@ -27,7 +20,7 @@ const ProfileSection: Component = () => {
     },
     onError: (error) => {
       console.error(error);
-      setName(currentUser()?.name || "");
+      setName(currentSession()?.user?.name || "");
       notify({
         type: "error",
         text: "Failed to update profile name"
@@ -43,7 +36,7 @@ const ProfileSection: Component = () => {
   }));
 
   createEffect(() => {
-    setName(currentUser()?.name || "");
+    setName(currentSession()?.user?.name || "");
   });
 
   return (
@@ -53,7 +46,7 @@ const ProfileSection: Component = () => {
           <div class="relative">
             <Input
               placeholder="Your name"
-              class={clsx("w-full pr-28", updateProfileNameMutation.isPending && "animate-pulse")}
+              class={clsx("w-full", updateProfileNameMutation.isPending && "animate-pulse")}
               disabled={updateProfileNameMutation.isPending}
               size="small"
               color="contrast"
@@ -70,12 +63,12 @@ const ProfileSection: Component = () => {
                 );
               }}
               onConfirm={() => {
-                if (name() !== currentUser()?.name) {
+                if (name() !== currentSession()?.user?.name) {
                   updateProfileNameMutation.mutate({ name: name() });
                 }
               }}
               onCancel={() => {
-                setName(currentUser()?.name || "");
+                setName(currentSession()?.user?.name || "");
               }}
             />
           </div>

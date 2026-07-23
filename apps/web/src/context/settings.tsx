@@ -7,6 +7,7 @@ interface SettingsMenuItem {
   icon: string;
   label: string;
   id: string;
+  subItems?: SettingsMenuItem[];
 }
 
 interface SettingsMenuGroup {
@@ -47,6 +48,9 @@ const SettingsProvider: ParentComponent = (props) => {
     return user?.name || user?.email || "Profile";
   });
   const menu = createMemo<SettingsMenuGroup[]>(() => {
+    const editingKey = activeTabID().startsWith("key-");
+    const editingRole = activeTabID().startsWith("role-");
+
     return [
       {
         label: "Personal",
@@ -71,7 +75,19 @@ const SettingsProvider: ParentComponent = (props) => {
                 {
                   icon: "i-lucide:users",
                   label: "People",
-                  id: "people"
+                  id: "people",
+                  subItems: [
+                    {
+                      icon: "i-lucide:user-plus",
+                      label: "Invite member",
+                      id: "invite"
+                    },
+                    {
+                      icon: "i-lucide:shield-plus",
+                      label: editingRole ? "Edit role" : "Create role",
+                      id: editingRole ? activeTabID() : "role"
+                    }
+                  ]
                 },
                 {
                   icon: "i-lucide:credit-card",
@@ -81,7 +97,14 @@ const SettingsProvider: ParentComponent = (props) => {
                 {
                   icon: "i-lucide:code-xml",
                   label: "API",
-                  id: "api"
+                  id: "api",
+                  subItems: [
+                    {
+                      icon: "i-lucide:key-round",
+                      label: editingKey ? "Edit key" : "Create key",
+                      id: editingKey ? activeTabID() : "key"
+                    }
+                  ]
                 }
               ]
             }

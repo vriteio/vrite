@@ -4,14 +4,10 @@ import { authorized } from "#backend/lib/middleware";
 import { id } from "#backend/lib/mongo";
 import { base } from "#backend/lib/orpc";
 import { Memberships } from "#backend/services/memberships";
-import { auth } from "#backend/lib/auth";
 import { ORPCError } from "@orpc/server";
 import * as z from "zod";
 
-const memberDetailsType = z.object({
-  id: membershipType.shape.id,
-  userID: userProfileType.shape.id,
-  roleID: membershipType.shape.roleID.optional(),
+const memberDetailsType = membershipType.extend({
   roleName: z.string().optional().describe("Name of the member's assigned role"),
   admin: z.boolean().optional().describe("Whether the member is an admin"),
   profile: userProfileType.describe("Public profile information for the member")

@@ -15,7 +15,14 @@ import { auth } from "./lib/auth";
 
 const allowedOrigins = [...new Set([config.PUBLIC_APP_URL, config.PUBLIC_API_URL])];
 const allowedMethods = ["GET", "HEAD", "PUT", "POST", "DELETE", "PATCH", "OPTIONS"];
-const allowedHeaders = ["Content-Type", "Authorization", "X-Workspace-ID", "X-Requested-With"];
+const allowedHeaders = [
+  "Content-Type",
+  "Authorization",
+  "X-Workspace-ID",
+  "X-Requested-With",
+  "X-Session-Verification",
+  "X-Session-Verification-Callback"
+];
 const host = process.env.HOST ?? "0.0.0.0";
 const port = Number(process.env.PORT ?? 3333);
 const hocuspocus = new Hocuspocus({

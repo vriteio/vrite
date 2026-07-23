@@ -1,4 +1,4 @@
-import { createContext, createEffect, on, ParentComponent, useContext } from "solid-js";
+import { createContext, createEffect, createMemo, on, ParentComponent, useContext } from "solid-js";
 import { createAsync, query, revalidate } from "@solidjs/router";
 import {
   client,
@@ -35,6 +35,7 @@ interface SessionInfo {
 
 interface WorkspaceContextValue {
   currentWorkspace(): WorkspaceInfo | undefined;
+  currentSession(): SessionInfo | undefined;
   workspaces(): WorkspaceInfo[];
   refreshWorkspaces(): Promise<void>;
   workspaceID(): string;
@@ -90,12 +91,18 @@ const WorkspaceProvider: ParentComponent<WorkspaceProviderProps> = (props) => {
       return "";
     }
   }));
-  const currentWorkspace = () => {
+  const currentWorkspace = createMemo(() => {
     const workspaceList = workspaces() ?? [];
     const id = currentWorkspaceID();
 
     return workspaceList.find((workspace) => workspace.id === id);
-  };
+  });
+  const currentSession = createMemo(() => {
+    const sessionList = sessions() ?? [];
+    const id = currentWorkspace()?.userID;
+
+    return sessionList.find((session) => session.user.id === id);
+  });
   const switchWorkspace = async (workspaceID: string) => {
     if (workspaceID === currentWorkspaceID()) return;
 
@@ -151,6 +158,7 @@ const WorkspaceProvider: ParentComponent<WorkspaceProviderProps> = (props) => {
     <WorkspaceContext.Provider
       value={{
         currentWorkspace,
+        currentSession,
         workspaceID: currentWorkspaceID,
         workspaces: () => workspaces() ?? [],
         refreshWorkspaces,

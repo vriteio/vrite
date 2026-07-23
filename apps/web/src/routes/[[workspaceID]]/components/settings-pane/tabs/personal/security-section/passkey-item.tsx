@@ -25,7 +25,6 @@ const PasskeyItem: Component<{
               {
                 label: "Rename",
                 icon: "i-lucide:pencil",
-                shortcut: "enter",
                 onClick: () => setRenaming(props.id)
               }
             ]
@@ -36,7 +35,6 @@ const PasskeyItem: Component<{
           label: isMulti ? `Delete ${selectedIDs.length} passkeys` : "Delete",
           icon: "i-lucide:trash",
           color: "danger" as const,
-          shortcut: !isMulti ? "$mod+backspace" : undefined,
           onClick: () => {
             props.onDelete(isMulti ? selectedIDs : [props.id]);
             setSelection([]);
@@ -89,7 +87,7 @@ const PasskeyItem: Component<{
               trigger={() => (
                 <div
                   class={clsx(
-                    !menuOpened() && !props.loading && "opacity-0 group-hover:opacity-100"
+                    !menuOpened() && !props.loading && "opacity-20 group-hover:opacity-100"
                   )}
                 >
                   <IconButton

@@ -1,47 +1,67 @@
-import { Fragment, ScrollShadow, Tooltip, createRef } from "@andesine/components";
+import { Fragment, ScrollShadow, createRef } from "@andesine/components";
 import { Component, createMemo } from "solid-js";
 import { Dynamic } from "solid-js/web";
+import { Breadcrumbs } from "#web/components/breadcrumbs";
 import { useSettings } from "#web/context/settings";
 import { PersonalTab } from "./tabs/personal";
-import { WorkspaceGeneralTab } from "./tabs/workspace";
-import { PeopleSettingsTab } from "./tabs/people";
-import { BillingSettingsTab } from "./tabs/billing";
-import { APISettingsTab } from "./tabs/api";
+import { WorkspaceTab } from "./tabs/workspace";
+import { InviteTab, PeopleTab, RoleTab } from "./tabs/people";
+import { BillingTab } from "./tabs/billing";
+import { APITab, KeyTab } from "./tabs/api";
+import { SettingsPaneProvider } from "./settings-pane-context";
+import { VerificationDialog } from "./verification-dialog";
 
 const SettingsPane: Component = () => {
   const settings = useSettings();
   const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
-  const menuItems = createMemo(() => settings.menu().flatMap((subMenu) => subMenu.items));
-  const activeTab = createMemo(() => menuItems().find((item) => item.id === settings.activeTabID));
+  const parentTabs = createMemo(() => settings.menu().flatMap((subMenu) => subMenu.items));
+  const activeParentTab = createMemo(() => {
+    return parentTabs().find((item) => {
+      return (
+        item.id === settings.activeTabID ||
+        item.subItems?.some((item) => item.id === settings.activeTabID)
+      );
+    });
+  });
+  const activeChildTab = createMemo(() => {
+    return activeParentTab()?.subItems?.find((item) => item.id === settings.activeTabID);
+  });
+  const activeTab = () => activeChildTab() || activeParentTab();
   const activeTabComponent = createMemo(() => {
     switch (settings.activeTabID) {
       case "personal":
         return PersonalTab;
       case "workspace":
-        return WorkspaceGeneralTab;
+        return WorkspaceTab;
       case "people":
-        return PeopleSettingsTab;
+        return PeopleTab;
+      case "invite":
+        return InviteTab;
       case "billing":
-        return BillingSettingsTab;
+        return BillingTab;
       case "api":
-        return APISettingsTab;
+        return APITab;
       default:
-        return Fragment;
+        if (settings.activeTabID === "key" || settings.activeTabID.startsWith("key-")) {
+          return KeyTab;
+        }
+
+        return settings.activeTabID === "role" || settings.activeTabID.startsWith("role-")
+          ? RoleTab
+          : Fragment;
     }
   });
 
   return (
-    <>
-      <div class="flex h-11 w-full items-center justify-center gap-2 p-2 pl-4">
-        <span class="inline-flex items-center justify-center text-base font-medium leading-[1]">
-          <Tooltip content="Settings" fixed>
-            <span class="i-lucide:settings-2 h-5 w-5" />
-          </Tooltip>
-          <span class="i-lucide:chevron-right h-4 w-4 text-gray-400" />
-          <span>{activeTab()?.label || "Settings"}</span>
-        </span>
-        <div class="flex-1" />
-      </div>
+    <SettingsPaneProvider setTab={settings.setActiveTabID}>
+      <Breadcrumbs
+        icon={<span class="i-lucide:settings-2 h-5 w-5" />}
+        iconTooltip="Settings"
+        items={[
+          { label: activeParentTab()?.label || "Settings" },
+          ...(activeChildTab() ? [{ label: activeChildTab()!.label }] : [])
+        ]}
+      />
       <div class="flex w-full flex-1 overflow-hidden px-4">
         <div class="relative flex h-full w-full overflow-hidden">
           <ScrollShadow scrollableContainerRef={scrollableContainerRef} />
@@ -49,13 +69,14 @@ const SettingsPane: Component = () => {
             <div class="flex w-full flex-col items-center">
               <div class="relative my-2 flex w-full max-w-[44rem] flex-col">
                 <h1 class="my-3 text-5xl font-semibold">{activeTab()?.label || "Settings"}</h1>
-                <Dynamic component={activeTabComponent()} setTab={settings.setActiveTabID} />
+                <Dynamic component={activeTabComponent()} />
               </div>
             </div>
           </div>
         </div>
       </div>
-    </>
+      <VerificationDialog />
+    </SettingsPaneProvider>
   );
 };
 

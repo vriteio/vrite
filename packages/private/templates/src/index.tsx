@@ -3,10 +3,12 @@
 import { render } from "@react-email/render";
 import { VerificationOTP, type VerificationOTPProps } from "../emails/verification-otp";
 import { WorkspaceInvite, type WorkspaceInviteProps } from "../emails/workspace-invite";
+import { SessionVerification, type SessionVerificationProps } from "../emails/session-verification";
 import React from "react";
 
 type EmailTemplateProps = {
   "verification-otp": VerificationOTPProps;
+  "session-verification": SessionVerificationProps;
   "workspace-invite": WorkspaceInviteProps;
 };
 type EmailTemplates = {
@@ -26,6 +28,10 @@ const emails: EmailTemplates = {
 
       return "Verify your email | Andesine";
     }
+  },
+  "session-verification": {
+    component: SessionVerification,
+    subject: () => "Verify it's you | Andesine"
   },
   "workspace-invite": {
     component: WorkspaceInvite,

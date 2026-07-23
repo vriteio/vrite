@@ -228,7 +228,7 @@ const EmailPage: Component = () => {
             <IconButton
               icon="i-lucide:rotate-cw"
               iconProps={{
-                class: "w-4 h-4"
+                class: "w-3.5 h-3.5"
               }}
               variant="text"
               text="primary"

@@ -1,4 +1,4 @@
-import { Skeleton, Spinner, Tooltip } from "@andesine/components";
+import { Skeleton, Spinner } from "@andesine/components";
 import { Component, createEffect, createSignal, Show, Suspense } from "solid-js";
 import { Editor, type EditorProvider } from "@andesine/editor";
 import { useParams } from "@solidjs/router";
@@ -6,6 +6,7 @@ import { useNotify } from "#web/context/notifications";
 import { config } from "#web/lib/config";
 import { useWorkspace } from "#web/context/workspace";
 import { IndexeddbPersistence } from "y-indexeddb";
+import { Breadcrumbs } from "#web/components/breadcrumbs";
 
 type EntryLoadState = {
   entryID: string | null;
@@ -60,7 +61,7 @@ const EntryContentSkeleton: Component = () => {
 };
 
 const EditorPane: Component = () => {
-  const { currentWorkspace, sessions, content } = useWorkspace();
+  const { currentWorkspace, currentSession, content } = useWorkspace();
   const isContentLoading = () => content.loading();
   const params = useParams();
   const notify = useNotify();
@@ -162,10 +163,8 @@ const EditorPane: Component = () => {
     };
   };
   const collaborationUser = () => {
-    const workspace = currentWorkspace();
-    const user = workspace
-      ? sessions().find((session) => session.user.id === workspace.userID)?.user
-      : null;
+    const session = currentSession();
+    const user = session?.user;
     const name = user?.name || user?.email || "Anonymous";
     const id = user?.id || name;
 
@@ -177,23 +176,12 @@ const EditorPane: Component = () => {
 
   return (
     <>
-      <div class="flex h-11 gap-2 p-2 pl-4 w-full items-center justify-center">
-        {selectedEntryID() ? (
-          <>
-            <span class="text-base font-medium inline-flex items-center justify-center leading-[1]">
-              <Tooltip content="Workspace" fixed>
-                <span class="i-lucide:hexagon h-5 w-5" />
-              </Tooltip>
-              <span class="text-gray-400 i-lucide:chevron-right h-4 w-4"></span>
-              {/* TODO: Use selected entry name */}
-              <span>{selectedEntryID()}</span>
-            </span>
-            <div class="flex-1" />
-          </>
-        ) : (
-          <div class="flex-1" />
-        )}
-      </div>
+      <Breadcrumbs
+        icon={<span class="i-lucide:hexagon h-5 w-5" />}
+        iconTooltip="Workspace"
+        // TODO: Use selected entry name
+        items={selectedEntryID() ? [{ label: selectedEntryID() }] : []}
+      />
       <div class="flex flex-1 px-4 overflow-hidden w-full">
         <Show
           when={selectedEntryID()}

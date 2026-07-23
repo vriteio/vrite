@@ -1,11 +1,11 @@
 import { Component } from "solid-js";
 import { ProfileSection } from "./profile-section";
 import { SecuritySection } from "./security-section";
-import { SettingsTab, SettingsTabProps } from "../../settings-tab";
+import { SettingsTab } from "../../settings-tab";
 
-const PersonalTab: Component<SettingsTabProps> = (props) => {
+const PersonalTab: Component = () => {
   return (
-    <SettingsTab {...props}>
+    <SettingsTab>
       <ProfileSection />
       <SecuritySection />
     </SettingsTab>

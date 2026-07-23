@@ -63,7 +63,7 @@ const Overlay: Component<OverlayProps> = (props) => {
         >
           <Dialog.Backdrop
             class={clsx(
-              `:base: absolute w-full h-full bg-gradient-to-b from-black from-opacity-70 to-black opacity-70`,
+              `:base: absolute w-full h-full bg-gradient-to-b from-black from-opacity-20 to-black to-opacity-60`,
               props.shadeClass
             )}
             onPointerDown={(event) => {

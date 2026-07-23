@@ -9,6 +9,7 @@ import { createMutation } from "@tanstack/solid-query";
 import { createAsync, query, revalidate } from "@solidjs/router";
 import { PasskeyItem } from "./passkey-item";
 import { Passkey } from "@better-auth/passkey/client";
+import { useSettingsPane } from "../../../settings-pane-context";
 
 interface PasskeyListProps {
   passkeys: Passkey[];
@@ -25,6 +26,7 @@ const passkeysQuery = query(async () => {
 }, "passkeys");
 const PasskeyList: Component<PasskeyListProps> = (props) => {
   const notify = useNotify();
+  const { openVerificationDialog } = useSettingsPane();
   const addPasskeyMutation = createMutation(() => ({
     onSuccess: () => {
       props.refreshPasskeys(() => addPasskeyMutation.reset());
@@ -42,11 +44,11 @@ const PasskeyList: Component<PasskeyListProps> = (props) => {
     },
     mutationFn: async () => {
       const { error, data } = await authClient.passkey.addPasskey({
-        name: new Date().toLocaleDateString("en-US", {
+        name: `Andesine (${new Date().toLocaleDateString("en-US", {
           month: "short",
           day: "numeric",
           year: "numeric"
-        })
+        })})`
       });
 
       if (error) throw error;
@@ -60,6 +62,11 @@ const PasskeyList: Component<PasskeyListProps> = (props) => {
     },
     onError: (error, { ids }) => {
       console.error(error);
+
+      if ("code" in error && error.code === "SESSION_NOT_FRESH") {
+        return openVerificationDialog(() => deletePasskeysMutation.mutate({ ids }));
+      }
+
       notify({
         text: `Failed to delete passkey${ids.length > 1 ? "s" : ""}`,
         type: "error"
@@ -171,6 +178,7 @@ const PasskeyList: Component<PasskeyListProps> = (props) => {
 };
 const SecuritySection: Component = () => {
   const notify = useNotify();
+  const { openVerificationDialog } = useSettingsPane();
   const passkeys = createAsync(() => passkeysQuery(), { initialValue: [] });
   const [passkeysRefreshing, startPasskeysRefresh] = useTransition();
   const refreshPasskeys = (onRevalidate: () => void) => {
@@ -189,6 +197,11 @@ const SecuritySection: Component = () => {
     },
     onError: (error) => {
       console.error(error);
+
+      if ("code" in error && error.code === "SESSION_NOT_FRESH") {
+        return openVerificationDialog(() => addPasskeyMutation.mutate());
+      }
+
       notify({
         text: "Failed to add passkey",
         type: "error"
@@ -220,9 +233,7 @@ const SecuritySection: Component = () => {
             <IconButton
               label={() => <span class="px-1">Add a passkey</span>}
               class="flex-row-reverse pr-1"
-              onClick={() => {
-                addPasskeyMutation.mutate();
-              }}
+              onClick={() => addPasskeyMutation.mutate()}
               loading={addPasskeyMutation.isPending}
               iconProps={{ class: "h-4 w-4" }}
               icon="i-lucide:plus"

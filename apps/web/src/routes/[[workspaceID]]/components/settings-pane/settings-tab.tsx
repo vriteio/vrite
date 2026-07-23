@@ -1,13 +1,7 @@
 import { ParentComponent } from "solid-js";
 
-interface SettingsTabProps {
-  setTab(tabId: string): void;
-  opened?: boolean;
-}
-
-const SettingsTab: ParentComponent<SettingsTabProps> = (props) => {
+const SettingsTab: ParentComponent = (props) => {
   return <>{props.children}</>;
 };
 
 export { SettingsTab };
-export type { SettingsTabProps };

@@ -53,7 +53,7 @@ const formatNumber = (n: number): string => {
 
   return `${n}`;
 };
-const BillingSettingsTab: Component<BillingSettingsTabProps> = (props) => {
+const BillingTab: Component<BillingSettingsTabProps> = (props) => {
   const notify = useNotify();
   const queryClient = useQueryClient();
   const { workspaceID } = useWorkspace();
@@ -361,4 +361,4 @@ const BillingSettingsTab: Component<BillingSettingsTabProps> = (props) => {
   );
 };
 
-export { BillingSettingsTab };
+export { BillingTab };

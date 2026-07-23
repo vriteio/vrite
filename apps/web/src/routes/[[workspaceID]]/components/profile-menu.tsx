@@ -187,7 +187,7 @@ const ProfileMenu: Component<ProfileMenuProps> = (props) => {
           trigger={() => (
             <button
               class={clsx(
-                "flex gap-1 items-center w-full rounded-lg px-1 py-1 transition-colors",
+                "flex gap-1 items-center w-full rounded-lg px-1 py-1 transition-colors focus:outline-none",
                 "hover:bg-gray-100 dark:hover:bg-gray-800"
               )}
             >

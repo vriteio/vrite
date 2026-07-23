@@ -48,10 +48,7 @@ const WorkspaceProfileSection: Component = () => {
             <div class="relative">
               <Input
                 placeholder="My Workspace"
-                class={clsx(
-                  "w-full pr-28",
-                  updateWorkspaceNameMutation.isPending && "animate-pulse"
-                )}
+                class={clsx("w-full", updateWorkspaceNameMutation.isPending && "animate-pulse")}
                 disabled={updateWorkspaceNameMutation.isPending}
                 size="small"
                 color="contrast"

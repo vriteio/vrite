@@ -1,13 +1,13 @@
 import { Component } from "solid-js";
-import { SettingsTab, SettingsTabProps } from "../../settings-tab";
+import { SettingsTab } from "../../settings-tab";
 import { WorkspaceProfileSection } from "./profile-section";
 
-const WorkspaceGeneralTab: Component<SettingsTabProps> = (props) => {
+const WorkspaceTab: Component = () => {
   return (
-    <SettingsTab {...props}>
+    <SettingsTab>
       <WorkspaceProfileSection />
     </SettingsTab>
   );
 };
 
-export { WorkspaceGeneralTab };
+export { WorkspaceTab };

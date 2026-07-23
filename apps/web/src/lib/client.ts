@@ -92,9 +92,12 @@ const authClient = createAuthClient({
     customFetchImpl(input, init) {
       const event = getRequestEvent();
       const requestHeaders = Object.fromEntries(event?.request.headers.entries() || []);
+      const initHeaders = Object.fromEntries(new Headers(init?.headers).entries());
       const headers: Record<string, string> = {
+        ...initHeaders,
         "cookie": requestHeaders["cookie"] || "",
-        "content-type": requestHeaders["content-type"] || "application/json"
+        "content-type":
+          initHeaders["content-type"] || requestHeaders["content-type"] || "application/json"
       };
 
       const workspaceID = getActiveWorkspaceID();

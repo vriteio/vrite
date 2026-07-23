@@ -6,14 +6,24 @@ interface OTPInputSlotProps {
   index: number;
   length: number;
   color?: "base" | "contrast";
+  variant?: "solid" | "outlined";
 }
 interface OTPInputProps extends JSX.InputHTMLAttributes<HTMLInputElement> {
   length?: number;
   color?: "base" | "contrast";
+  variant?: "solid" | "outlined";
   value: string;
   setValue?(value: string): void;
   onEnter?(event: KeyboardEvent): void;
 }
+const OTPInputColors = {
+  base: `:base: bg-gray-200 dark:bg-gray-800 outline-gray-200 dark:outline-gray-800`,
+  contrast: `:base: bg-white dark:bg-gray-850 outline-gray-200 dark:outline-gray-700 shadow-gray-200 dark:shadow-gray-900`
+};
+const OTPInputVariants = {
+  solid: `:base: focus:outline-none focus:shadow-inner`,
+  outlined: `:base: outline outline-1 shadow-md focus:outline-1 focus:bg-gray-100 dark:focus:bg-gray-950`
+};
 
 const OTPInputSlot: Component<OTPInputSlotProps> = (props) => {
   return (
@@ -21,9 +31,9 @@ const OTPInputSlot: Component<OTPInputSlotProps> = (props) => {
       <PinInput.Input
         index={props.index}
         class={clsx(
-          "rounded-md h-full w-full flex justify-center items-center text-2xl font-semibold text-center focus:outline-none focus:shadow-inner",
-          (!props.color || props.color === "base") && "bg-gray-200 dark:bg-gray-900",
-          props.color === "contrast" && "bg-gray-200 dark:bg-gray-800",
+          ":base: rounded-md h-full w-full flex justify-center items-center text-2xl font-semibold text-center",
+          OTPInputColors[props.color || "base"],
+          OTPInputVariants[props.variant || "solid"],
           props.index === 0 && "rounded-l-lg",
           props.index === props.length - 1 && "rounded-r-lg"
         )}
@@ -59,7 +69,12 @@ const OTPInput: Component<OTPInputProps> = (props) => {
           {(index) => {
             return (
               <>
-                <OTPInputSlot index={index()} length={length()} color={props.color} />
+                <OTPInputSlot
+                  index={index()}
+                  length={length()}
+                  color={props.color}
+                  variant={props.variant}
+                />
                 <Show when={index() + 1 === length() / 2}>
                   <div class="w-4 flex justify-center items-center">
                     <div class="h-0.5 w-full bg-gray-400 dark:text-gray-500 rounded-full"></div>
