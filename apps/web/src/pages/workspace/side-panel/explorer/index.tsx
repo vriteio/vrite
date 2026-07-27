@@ -34,7 +34,7 @@ const Explorer = () => {
   const notify = useNotify();
   const navigate = useNavigate();
   const [
-    { focusedID, selection, flattenedLayout, flattenedOrder },
+    { focusedID, selection, flattenedLayout, flattenedOrder, gap },
     {
       setExactSelection,
       setExpanded,
@@ -825,6 +825,7 @@ const Explorer = () => {
           <div
             ref={setTreeContainerRef}
             class="flex flex-col flex-1 relative w-full overflow-y-auto"
+            style={{ gap: `${gap}px` }}
           >
             <TreeSelection />
             <Show
@@ -850,7 +851,7 @@ const Explorer = () => {
                 </div>
               }
             >
-              <div>
+              <div class="contents">
                 <For each={collections()}>
                   {(collection) => {
                     return (
@@ -863,7 +864,7 @@ const Explorer = () => {
                   }}
                 </For>
               </div>
-              <div>
+              <div class="contents">
                 <For each={entries()}>
                   {(entry) => {
                     return (

@@ -161,7 +161,7 @@ const SettingsMenu: Component = () => {
                   {subMenu.label}
                 </span>
               </Show>
-              <div class="flex flex-col">
+              <div class="flex flex-col gap-0.5">
                 <For each={subMenu.items}>
                   {(item) => {
                     const activeChild = () => item.subItems?.find((subItem) => subItem.active);

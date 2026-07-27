@@ -1,5 +1,5 @@
-import { Accessor, JSX, onCleanup, onMount, ParentComponent } from "solid-js";
-import { TREE_ROOT_ID, TreeProvider, type TreeMap, useTree } from "./tree-context";
+import { Accessor, JSX, ParentComponent } from "solid-js";
+import { TREE_ROOT_ID, TreeProvider, type TreeMap } from "./tree-context";
 import { TreeSelection } from "./tree-selection";
 import { TreeLevel } from "./tree-level";
 import { TreeRoot } from "./tree-root";
@@ -11,11 +11,17 @@ interface TreeProps {
   renderItem?(itemID: string): JSX.Element;
   emptyMessage?: string;
   itemHeight?: number;
+  gap?: number;
 }
 
 const Tree: ParentComponent<TreeProps> = (props) => {
   return (
-    <TreeProvider tree={props.tree} levelIDs={props.levelIDs} itemHeight={props.itemHeight}>
+    <TreeProvider
+      tree={props.tree}
+      levelIDs={props.levelIDs}
+      itemHeight={props.itemHeight}
+      gap={props.gap}
+    >
       <TreeRoot>
         <TreeSelection />
         <TreeLevel

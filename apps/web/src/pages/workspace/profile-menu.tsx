@@ -188,7 +188,7 @@ const ProfileMenu: Component<ProfileMenuProps> = (props) => {
             <button
               class={clsx(
                 "flex gap-1 items-center w-full rounded-lg px-1 py-1 transition-colors focus:outline-none",
-                "hover:bg-gray-100 dark:hover:bg-gray-800"
+                "hover:bg-gray-200 dark:hover:bg-gray-800"
               )}
             >
               <div class="i-lucide:hexagon h-5 w-5 text-gray-500 dark:text-gray-400" />

@@ -15,7 +15,7 @@ interface TreeLevelProps {
 }
 
 const TreeLevel: Component<TreeLevelProps> = (props) => {
-  const [{ isSelected, isExpanded }] = useTree();
+  const [{ isSelected, isExpanded, gap }] = useTree();
   const isRoot = () => props.levelID === TREE_ROOT_ID;
   const levelData = () => props.tree()[props.levelID];
   const childLevelIDs = () => levelData()?.levels || [];
@@ -33,7 +33,7 @@ const TreeLevel: Component<TreeLevelProps> = (props) => {
   return (
     <Show when={isRoot() || isExpanded(props.levelID)}>
       <Show when={!isRoot()}>
-        <div class="flex">
+        <div class="flex" style={{ "margin-top": `${gap}px` }}>
           <div class="min-w-3.5 pl-0.5 flex justify-end items-center">
             <div
               class={clsx(
@@ -58,16 +58,29 @@ const TreeLevel: Component<TreeLevelProps> = (props) => {
                 </span>
               </div>
             </Show>
-            <For each={childLevelIDs()}>{renderLevel}</For>
+            <div class="flex flex-col" style={{ gap: `${gap}px` }}>
+              <For each={childLevelIDs()}>{renderLevel}</For>
+            </div>
             {props.renderCollectionBoundary?.()}
-            <For each={childItemIDs()}>{renderItem}</For>
+            <div
+              class="flex flex-col"
+              style={{
+                "gap": `${gap}px`,
+                "margin-top":
+                  childLevelIDs().length && childItemIDs().length ? `${gap}px` : undefined
+              }}
+            >
+              <For each={childItemIDs()}>{renderItem}</For>
+            </div>
             {props.renderEntryBoundary?.()}
           </div>
         </div>
       </Show>
       <Show when={isRoot()}>
-        <For each={childLevelIDs()}>{renderLevel}</For>
-        <For each={childItemIDs()}>{renderItem}</For>
+        <div class="flex flex-col" style={{ gap: `${gap}px` }}>
+          <For each={childLevelIDs()}>{renderLevel}</For>
+          <For each={childItemIDs()}>{renderItem}</For>
+        </div>
       </Show>
     </Show>
   );

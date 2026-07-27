@@ -23,7 +23,7 @@ const Breadcrumbs: Component = () => {
   });
 
   return (
-    <div class="flex h-11 w-full items-center justify-center gap-2 p-2 pl-4">
+    <div class="flex h-11 w-full items-center justify-center gap-2 p-2">
       <Show when={items().length > 0}>
         <span class="inline-flex items-center justify-center text-base font-medium leading-[1]">
           <IconButton
@@ -45,7 +45,7 @@ const Breadcrumbs: Component = () => {
                   size="small"
                   variant="text"
                   color="base"
-                  class="px-0 mx-1 pb-0.5 mb-0.5"
+                  class="text-sm p-0.5 m-0.5"
                 >
                   {item.label}
                 </Button>

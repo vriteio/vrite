@@ -150,7 +150,7 @@ const Dropdown: Component<DropdownProps> = (props) => {
       positioning={{
         flip: Array.isArray(props.placement) ? props.placement.slice(1) : true,
         offset: {
-          mainAxis: props.offset?.mainAxis || 0,
+          mainAxis: props.offset?.mainAxis || 4,
           crossAxis: props.offset?.crossAxis || 0
         },
         placement: placement(),
