@@ -146,6 +146,15 @@ const getUnderlineClasses = (
   if (variant === "text" && text === "soft") {
     return clsx(baseUnderline, ":base: after:bg-gray-400 dark:after:bg-gray-500");
   }
+
+  if (variant === "text" && text === "softer") {
+    return clsx(baseUnderline, ":base: after:bg-gray-300 dark:after:bg-gray-600");
+  }
+
+  if (variant === "text" && (!text || text === "base")) {
+    return clsx(baseUnderline, ":base: after:bg-gray-700 dark:after:bg-gray-300");
+  }
+
   return "";
 };
 const Button: Component<ButtonProps> = (providedProps) => {

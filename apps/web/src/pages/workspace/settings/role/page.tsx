@@ -8,7 +8,6 @@ import { useNotify } from "#web/context/notifications";
 import { client, type Permission } from "#web/lib/client";
 import { Setting } from "../setting";
 import { SettingsSection } from "../settings-section";
-import { SettingsPage } from "../settings-page";
 
 type AccessLevel = "default" | "read" | "write";
 type Resource = "api_keys" | "billing" | "content" | "workspace";
@@ -145,7 +144,7 @@ const RoleSettingsPage: Component = () => {
   });
 
   return (
-    <SettingsPage title={params.roleID ? "Edit role" : "Create role"} parentTitle="People">
+    <>
       <div class="flex min-w-0 flex-col">
         <SettingsSection label="Role details">
           <Setting
@@ -241,7 +240,7 @@ const RoleSettingsPage: Component = () => {
           </Dynamic>
         </div>
       </div>
-    </SettingsPage>
+    </>
   );
 };
 

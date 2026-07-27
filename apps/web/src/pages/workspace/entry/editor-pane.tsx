@@ -6,7 +6,6 @@ import { useNotify } from "#web/context/notifications";
 import { config } from "#web/lib/config";
 import { useWorkspace } from "#web/context/workspace";
 import { IndexeddbPersistence } from "y-indexeddb";
-import { Breadcrumbs } from "#web/components/breadcrumbs";
 
 type EntryLoadState = {
   entryID: string | null;
@@ -175,71 +174,63 @@ const EditorPane: Component = () => {
   };
 
   return (
-    <>
-      <Breadcrumbs
-        icon={<span class="i-lucide:hexagon h-5 w-5" />}
-        iconTooltip="Workspace"
-        // TODO: Use selected entry name
-        items={selectedEntryID() ? [{ label: selectedEntryID() }] : []}
-      />
-      <div class="flex flex-1 px-4 overflow-hidden w-full">
+    <div class="flex flex-1 px-4 overflow-hidden w-full">
+      <Show
+        when={selectedEntryID()}
+        fallback={
+          <div class="flex flex-col items-center justify-center gap-2 h-full w-full">
+            <div class="i-lucide:file-pen text-gray-200 h-12 w-12" />
+            <span class="text-xs text-gray-300 dark:text-gray-600">
+              Select an entry to start editing
+            </span>
+          </div>
+        }
+      >
         <Show
           when={selectedEntryID()}
+          keyed
           fallback={
-            <div class="flex flex-col items-center justify-center gap-2 h-full w-full">
-              <div class="i-lucide:file-pen text-gray-200 h-12 w-12" />
-              <span class="text-xs text-gray-300 dark:text-gray-600">
-                Select an entry to start editing
-              </span>
-            </div>
+            <Show
+              when={isContentLoading()}
+              fallback={
+                <div class="flex flex-col items-center justify-center gap-2 h-full w-full">
+                  <div class="i-lucide:file-x text-gray-200 h-12 w-12" />
+                  <span class="text-xs text-gray-300 dark:text-gray-600">Entry not found</span>
+                </div>
+              }
+            >
+              <div class="relative h-full w-full overflow-hidden">
+                <EntryContentSkeleton />
+              </div>
+            </Show>
           }
         >
-          <Show
-            when={selectedEntryID()}
-            keyed
-            fallback={
-              <Show
-                when={isContentLoading()}
-                fallback={
-                  <div class="flex flex-col items-center justify-center gap-2 h-full w-full">
-                    <div class="i-lucide:file-x text-gray-200 h-12 w-12" />
-                    <span class="text-xs text-gray-300 dark:text-gray-600">Entry not found</span>
-                  </div>
-                }
-              >
-                <div class="relative h-full w-full overflow-hidden">
-                  <EntryContentSkeleton />
+          {(entryID) => (
+            <div class="relative flex h-full w-full overflow-hidden">
+              <Show when={isShowingContentSkeleton()}>
+                <EntryContentSkeleton />
+              </Show>
+              <Show when={isRemoteSyncing()}>
+                <div class="absolute bottom-4 right-4 z-20 inline-flex items-center gap-2 rounded-full border border-sky-200 bg-white/95 px-3 py-1.5 text-xs text-sky-700 shadow-sm dark:border-sky-900 dark:bg-gray-950/95 dark:text-sky-300">
+                  <Spinner class="h-3.5 w-3.5" color="primary" />
+                  <span>Syncing</span>
                 </div>
               </Show>
-            }
-          >
-            {(entryID) => (
-              <div class="relative flex h-full w-full overflow-hidden">
-                <Show when={isShowingContentSkeleton()}>
-                  <EntryContentSkeleton />
-                </Show>
-                <Show when={isRemoteSyncing()}>
-                  <div class="absolute bottom-4 right-4 z-20 inline-flex items-center gap-2 rounded-full border border-sky-200 bg-white/95 px-3 py-1.5 text-xs text-sky-700 shadow-sm dark:border-sky-900 dark:bg-gray-950/95 dark:text-sky-300">
-                    <Spinner class="h-3.5 w-3.5" color="primary" />
-                    <span>Syncing</span>
-                  </div>
-                </Show>
-                <Suspense fallback={<Skeleton />}>
-                  <Editor
-                    doc={entryID}
-                    url={`${config.PUBLIC_WS_API_URL}/collab`}
-                    notify={(type, text) => notify({ type, text })}
-                    collaborationUser={collaborationUser()}
-                    beforeProviderAttach={handleBeforeProviderAttach}
-                    onProvider={handleProvider}
-                  />
-                </Suspense>
-              </div>
-            )}
-          </Show>
+              <Suspense fallback={<Skeleton />}>
+                <Editor
+                  doc={entryID}
+                  url={`${config.PUBLIC_WS_API_URL}/collab`}
+                  notify={(type, text) => notify({ type, text })}
+                  collaborationUser={collaborationUser()}
+                  beforeProviderAttach={handleBeforeProviderAttach}
+                  onProvider={handleProvider}
+                />
+              </Suspense>
+            </div>
+          )}
         </Show>
-      </div>
-    </>
+      </Show>
+    </div>
   );
 };
 

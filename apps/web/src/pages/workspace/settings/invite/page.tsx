@@ -17,7 +17,6 @@ import { client } from "#web/lib/client";
 import { Setting } from "../setting";
 import { SettingsSection } from "../settings-section";
 import { NewInviteDialog } from "./new-invite-dialog";
-import { SettingsPage } from "../settings-page";
 
 const rolesQuery = query(() => client.roles.list(), "roles");
 
@@ -77,7 +76,7 @@ const InviteSettingsPage: Component = () => {
   });
 
   return (
-    <SettingsPage title="Invite member" parentTitle="People">
+    <>
       <NewInviteDialog
         link={inviteLink()}
         delivery={delivery()}
@@ -173,7 +172,7 @@ const InviteSettingsPage: Component = () => {
           </Dynamic>
         </div>
       </div>
-    </SettingsPage>
+    </>
   );
 };
 

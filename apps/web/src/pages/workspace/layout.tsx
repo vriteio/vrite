@@ -3,6 +3,7 @@ import { RouteSectionProps, useNavigate, useParams, useSearchParams } from "@sol
 import { Component, createEffect, onCleanup, Show } from "solid-js";
 import { useLayout } from "#web/context/layout";
 import { WorkspaceProvider } from "#web/context/workspace";
+import { Breadcrumbs } from "./breadcrumbs";
 import { Menu, MenuItem } from "./menu";
 import { ProfileMenu } from "./profile-menu";
 import { PrimaryPanel, SidePanel, usePrimaryPanel } from "./side-panel";
@@ -10,6 +11,7 @@ import { VerticalResizeHandle } from "./vertical-resize-handle";
 
 const DEFAULT_SIDE_PANEL_WIDTH = 240;
 const MAX_SIDE_PANEL_WIDTH = 640;
+
 const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
   const params = useParams<{ workspaceID: string }>();
   const { layout, setLayout } = useLayout();
@@ -108,6 +110,7 @@ const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
               class="relative flex h-full flex-1 flex-col items-center justify-center overflow-hidden p-0"
               shade
             >
+              <Breadcrumbs />
               {props.children}
             </Card>
           </div>

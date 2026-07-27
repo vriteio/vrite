@@ -1,6 +1,5 @@
 import { Component, createEffect } from "solid-js";
 
-import { SettingsPage } from "../settings-page";
 import { useNotify } from "#web/context/notifications";
 import { useWorkspace } from "#web/context/workspace";
 import { useSearchParams, revalidate } from "@solidjs/router";
@@ -29,10 +28,10 @@ const BillingSettingsPage: Component = () => {
   });
 
   return (
-    <SettingsPage title="Billing">
+    <>
       <SubscriptionSection />
       <UsageSection />
-    </SettingsPage>
+    </>
   );
 };
 

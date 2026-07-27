@@ -2,7 +2,7 @@ import { Title } from "@solidjs/meta";
 import { useParams } from "@solidjs/router";
 import { Component } from "solid-js";
 import { useWorkspace } from "#web/context/workspace";
-import { EditorPane } from "./components/editor-pane";
+import { EditorPane } from "./editor-pane";
 
 const EntryPage: Component = () => {
   const params = useParams<{ slug?: string }>();

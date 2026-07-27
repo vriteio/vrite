@@ -9,7 +9,6 @@ import { Setting } from "../setting";
 import { SettingsSection } from "../settings-section";
 import { NewKeyDialog } from "../new-key-dialog";
 import { Dynamic } from "solid-js/web";
-import { SettingsPage } from "../settings-page";
 
 type AccessLevel = "none" | "read" | "write";
 type Resource = "entries" | "collections" | "memberships" | "roles";
@@ -161,7 +160,7 @@ const KeySettingsPage: Component = () => {
   });
 
   return (
-    <SettingsPage title={params.keyID ? "Edit key" : "Create key"} parentTitle="API">
+    <>
       <NewKeyDialog
         key={revealedKey()}
         onClose={() => {
@@ -248,7 +247,7 @@ const KeySettingsPage: Component = () => {
           </Dynamic>
         </div>
       </div>
-    </SettingsPage>
+    </>
   );
 };
 
