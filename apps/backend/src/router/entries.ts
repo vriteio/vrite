@@ -124,8 +124,8 @@ const entriesRouter = base.prefix("/entries").router({
     .route({ method: "GET", path: "/list" })
     .meta({
       required: {
-        session: ["content"],
-        key: ["read:entries"]
+        key: ["read:entries"],
+        session: true
       }
     })
     .use(authorized)

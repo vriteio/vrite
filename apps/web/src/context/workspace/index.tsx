@@ -95,7 +95,7 @@ const WorkspaceProvider: ParentComponent<WorkspaceProviderProps> = (props) => {
     const workspaceList = workspaces() ?? [];
     const id = currentWorkspaceID();
 
-    return workspaceList.find((workspace) => workspace.id === id);
+    return workspaceList.find((workspace) => workspace.id === id) || workspaceList[0];
   });
   const currentSession = createMemo(() => {
     const sessionList = sessions() ?? [];

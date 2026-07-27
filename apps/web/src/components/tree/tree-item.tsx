@@ -196,9 +196,7 @@ const TreeItem: Component<TreeItemProps> = (props) => {
               />
             }
           >
-            <span class="flex-1 line-clamp-1" title={props.label}>
-              {props.label}
-            </span>
+            <span class="flex-1 line-clamp-1">{props.label}</span>
           </Show>
         )}
       >

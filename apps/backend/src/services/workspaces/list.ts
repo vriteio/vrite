@@ -16,7 +16,7 @@ interface WorkspaceListItem extends Pick<Workspace, "id" | "name"> {
   admin: boolean;
 }
 
-const listWorkspaces = async (input: { userIDs: string[] }) => {
+const listWorkspaces = async (input: { activeUserID: string; userIDs: string[] }) => {
   const userIDs = input.userIDs.map((id) => toUUID(id));
   const memberships = await membershipDB.find({ userID: { $in: userIDs } }).toArray();
 
@@ -52,6 +52,13 @@ const listWorkspaces = async (input: { userIDs: string[] }) => {
     })
     .filter((workspace): workspace is WorkspaceListItem => {
       return workspace !== null;
+    })
+    .sort((workspaceA, workspaceB) => {
+      // Sort workspaces so that the active user's workspace appears first
+      return (
+        Number(workspaceB.userID === input.activeUserID) -
+        Number(workspaceA.userID === input.activeUserID)
+      );
     });
 };
 

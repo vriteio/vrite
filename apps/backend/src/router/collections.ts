@@ -134,7 +134,8 @@ const collectionsRouter = base.prefix("/collections").router({
     .route({ method: "GET", path: "/list" })
     .meta({
       required: {
-        key: ["read:collections"]
+        key: ["read:collections"],
+        session: true
       }
     })
     .input(

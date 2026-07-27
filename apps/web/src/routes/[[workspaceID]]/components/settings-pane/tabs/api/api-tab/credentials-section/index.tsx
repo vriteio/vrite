@@ -1,7 +1,7 @@
 import { Card, IconButton, Skeleton } from "@andesine/components";
 import { Tree, TREE_ROOT_ID, type TreeMap } from "#web/components/tree";
 import { useNotify } from "#web/context/notifications";
-import { client, type KeyPermission } from "#web/lib/client";
+import { client, Key, type KeyPermission } from "#web/lib/client";
 import { createAsync, query, revalidate } from "@solidjs/router";
 import { createMutation } from "@tanstack/solid-query";
 import {
@@ -19,11 +19,10 @@ import { useSettingsPane } from "../../../../settings-pane-context";
 import { APIKeyItem } from "./api-key-item";
 import { NewKeyDialog } from "../../new-key-dialog";
 
-type APIKey = Awaited<ReturnType<typeof client.keys.list>>[number];
 type ExpirationOption = "now" | "1h" | "24h" | "7d";
 
 interface APIKeyListProps {
-  keys: APIKey[];
+  keys: Key[];
   keysRefreshing?: boolean;
   refreshKeys(onRevalidate?: () => void): void;
 }
@@ -33,7 +32,7 @@ const apiKeysQuery = query(() => client.keys.list(), "api-keys");
 const APIKeyList: Component<APIKeyListProps> = (props) => {
   const notify = useNotify();
   const { setTab } = useSettingsPane();
-  const [revealedKey, setRevealedKey] = createSignal<string | null>(null);
+  const [revealedKey, setRevealedKey] = createSignal<string>("");
   const rotateKeyMutation = createMutation(() => ({
     onSuccess: (data) => {
       props.refreshKeys(() => {
@@ -87,7 +86,7 @@ const APIKeyList: Component<APIKeyListProps> = (props) => {
 
   return (
     <>
-      <NewKeyDialog key={revealedKey()} onClose={() => setRevealedKey(null)} />
+      <NewKeyDialog key={revealedKey()} onClose={() => setRevealedKey("")} />
       <Show
         when={visibleKeys().length}
         fallback={

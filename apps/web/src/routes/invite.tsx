@@ -12,7 +12,7 @@ const InvitePage: Component = () => {
   const [errorMessage, setErrorMessage] = createSignal("Something went wrong");
   const [workspaceName, setWorkspaceName] = createSignal<string | null>(null);
   const acceptInviteMutation = createMutation(() => ({
-    mutationFn: (input: { token: string }) => {
+    mutationFn: (input: { id: string; expires: number; signature: string }) => {
       return client.memberships.acceptInvite(input);
     }
   }));
@@ -29,9 +29,11 @@ const InvitePage: Component = () => {
 
   onMount(async () => {
     const params = new URLSearchParams(location.search);
-    const token = params.get("token");
+    const id = params.get("id");
+    const expires = Number(params.get("expires"));
+    const signature = params.get("signature");
 
-    if (!token) {
+    if (!id || !Number.isSafeInteger(expires) || !signature) {
       setErrorMessage("Invalid invite link");
       setStatus("error");
 
@@ -47,14 +49,16 @@ const InvitePage: Component = () => {
     }
 
     try {
-      const result = await acceptInviteMutation.mutateAsync({ token });
+      const result = await acceptInviteMutation.mutateAsync({ id, expires, signature });
 
       setCurrentWorkspaceID(result.workspaceID);
       setWorkspaceName(result.workspaceName);
       setStatus("success");
       setTimeout(() => navigate(`/${result.workspaceID}/`), 1600);
     } catch (error) {
-      setErrorMessage("Failed to accept invite");
+      setErrorMessage(
+        error instanceof Error && error.message ? error.message : "Failed to accept invite"
+      );
       setStatus("error");
     }
   });

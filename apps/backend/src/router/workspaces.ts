@@ -33,6 +33,7 @@ const workspacesRouter = base.router({
       });
 
       return Workspaces.list({
+        activeUserID: context.auth.session!.userID,
         userIDs: sessions.map((session) => {
           return toUserID(toUUID(session.user.id));
         })
@@ -52,20 +53,18 @@ const workspacesRouter = base.router({
       })
     )
     .output(workspaceSummaryType)
-    .handler(({ context, input }) => {
-      const result = Workspaces.create({
+    .handler(async ({ context, input }) => {
+      const newWorkspace = await Workspaces.create({
         name: input.name,
         userID: context.auth.session!.userID
       });
 
-      result.then((workspace) => {
-        emitWorkspaceStateEvent(workspace.id, {
-          action: "workspace:create",
-          data: workspace
-        });
+      emitWorkspaceStateEvent(newWorkspace.id, {
+        action: "workspace:create",
+        data: newWorkspace
       });
 
-      return result;
+      return newWorkspace;
     }),
   update: base
     .meta({
@@ -80,26 +79,22 @@ const workspacesRouter = base.router({
       })
     )
     .output(z.void())
-    .handler(({ context, input }) => {
-      const result = Workspaces.update({
+    .handler(async ({ context, input }) => {
+      if (input.name === undefined) return;
+
+      await Workspaces.update({
         workspaceID: context.auth.workspaceID,
         name: input.name
       });
 
-      result.then(() => {
-        if (input.name === undefined) return;
-
-        emitWorkspaceStateEvent(context.auth.workspaceID, {
-          action: "workspace:update",
-          memberID: context.auth.session?.memberID,
-          data: {
-            id: context.auth.workspaceID,
-            name: input.name
-          }
-        });
+      emitWorkspaceStateEvent(context.auth.workspaceID, {
+        action: "workspace:update",
+        memberID: context.auth.session?.memberID,
+        data: {
+          id: context.auth.workspaceID,
+          name: input.name
+        }
       });
-
-      return result;
     }),
   delete: base
     .meta({
@@ -109,23 +104,19 @@ const workspacesRouter = base.router({
     })
     .use(authorized)
     .output(z.void())
-    .handler(({ context }) => {
-      const result = Workspaces.delete({
+    .handler(async ({ context }) => {
+      await Workspaces.delete({
         workspaceID: context.auth.workspaceID,
         userID: context.auth.session!.userID
       });
 
-      result.then(() => {
-        emitWorkspaceStateEvent(context.auth.workspaceID, {
-          action: "workspace:delete",
-          memberID: context.auth.session?.memberID,
-          data: {
-            id: context.auth.workspaceID
-          }
-        });
+      emitWorkspaceStateEvent(context.auth.workspaceID, {
+        action: "workspace:delete",
+        memberID: context.auth.session?.memberID,
+        data: {
+          id: context.auth.workspaceID
+        }
       });
-
-      return result;
     }),
   switch: base
     .meta({

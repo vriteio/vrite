@@ -8,7 +8,6 @@ export * from "./card";
 export * from "./checkbox";
 export * from "./overlay";
 export * from "./dropdown";
-export * from "./options-list";
 export * from "./select";
 export * from "./dropdown-menu";
 export * from "./shortcut";

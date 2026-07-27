@@ -10,6 +10,7 @@ import { createAsync, query, revalidate } from "@solidjs/router";
 import { PasskeyItem } from "./passkey-item";
 import { Passkey } from "@better-auth/passkey/client";
 import { useSettingsPane } from "../../../settings-pane-context";
+import { format } from "date-fns";
 
 interface PasskeyListProps {
   passkeys: Passkey[];
@@ -100,7 +101,7 @@ const PasskeyList: Component<PasskeyListProps> = (props) => {
       if (error) throw error;
     }
   }));
-  const optimisticPasskeys = createMemo((): Array<Passkey & { optimistic?: boolean }> => {
+  const optimisticPasskeys = createMemo<Array<Passkey & { optimistic?: boolean }>>(() => {
     if (props.passkeysRefreshing && addPasskeyMutation.data) {
       return [...props.passkeys, { ...addPasskeyMutation.data, optimistic: true }];
     }
@@ -209,11 +210,7 @@ const SecuritySection: Component = () => {
     },
     mutationFn: async () => {
       const { error, data } = await authClient.passkey.addPasskey({
-        name: new Date().toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric"
-        })
+        name: format(new Date(), "MMM d, yyyy")
       });
 
       if (error) throw error;

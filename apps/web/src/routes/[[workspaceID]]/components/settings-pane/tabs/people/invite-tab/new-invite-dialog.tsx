@@ -1,0 +1,83 @@
+import { Button, Card, IconButton, Overlay } from "@andesine/components";
+import { Component, createEffect, createSignal } from "solid-js";
+
+import { useNotify } from "#web/context/notifications";
+
+interface NewInviteDialogProps {
+  delivery: "sent" | "manual" | "failed";
+  link: string;
+  onClose(): void;
+}
+
+const NewInviteDialog: Component<NewInviteDialogProps> = (props) => {
+  const notify = useNotify();
+  const [copied, setCopied] = createSignal(false);
+  const description = () => {
+    if (props.delivery === "manual") {
+      return "Email delivery is not configured. Share this link directly with the invitee.";
+    }
+
+    if (props.delivery === "failed") {
+      return "The invitation was created, but its email could not be delivered. Share this link manually.";
+    }
+
+    return "The invitation email was sent. You can also share this link directly.";
+  };
+  const copyLink = async () => {
+    if (!props.link || copied()) return;
+
+    try {
+      await navigator.clipboard.writeText(props.link);
+      setCopied(true);
+      notify({ type: "success", text: "Invite link copied to clipboard" });
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      notify({ type: "error", text: "Failed to copy invite link" });
+    }
+  };
+
+  createEffect(() => {
+    if (props.link) setCopied(false);
+  });
+
+  return (
+    <Overlay opened={Boolean(props.link)} onOverlayClick={props.onClose} aria-label="Invite link">
+      <Card color="contrast" class="p-1.5">
+        <Card class="flex w-lg flex-col gap-3 rounded-xl p-4" shade>
+          <div class="flex flex-col gap-0.5">
+            <h3 class="text-lg font-semibold leading-tight">Invitation created</h3>
+            <p class="text-sm leading-tight text-gray-400 dark:text-gray-500">{description()}</p>
+          </div>
+          <Card
+            class="flex min-h-16 items-center justify-center break-all rounded-xl border-0 p-3 font-mono text-sm select-all"
+            color="contrast"
+          >
+            {props.link}
+          </Card>
+          <div class="flex gap-2">
+            <IconButton
+              variant="outlined"
+              color="contrast"
+              text="soft"
+              size="small"
+              icon="i-lucide:x"
+              onClick={props.onClose}
+            />
+            <Button
+              color="primary"
+              variant="outlined"
+              size="small"
+              onClick={copyLink}
+              disabled={copied()}
+              class="flex-1"
+            >
+              {copied() ? "Copied!" : "Copy link"}
+            </Button>
+          </div>
+        </Card>
+      </Card>
+    </Overlay>
+  );
+};
+
+export { NewInviteDialog };

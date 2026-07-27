@@ -25,7 +25,6 @@ interface Invite<ID extends string | UUID = string> extends Omit<
 }
 interface FullInvite<ID extends string | UUID = string> extends Invite<ID> {
   workspaceID: ID;
-  token: string;
 }
 
 const toInviteID = (id: UUID) => fromUUID(id, "inv");
@@ -36,7 +35,6 @@ await invitesDB.createIndex(
   { email: 1, workspaceID: 1, status: 1 },
   { unique: true, name: "email_1_workspaceID_1_status_1" }
 );
-await invitesDB.createIndex({ token: 1 }, { unique: true, name: "token_1" });
 await invitesDB.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0, name: "expiresAt_1" });
 
 export { inviteStatusType, inviteType, invitesDB, toInviteID };
