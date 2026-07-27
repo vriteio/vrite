@@ -11,7 +11,7 @@ import {
 import { hasPermission, type SessionData } from "#backend/lib/middleware";
 import { toUUID } from "#backend/lib/mongo";
 import { Keys } from "#backend/services/keys";
-import { Memberships } from "#backend/services/memberships";
+import { InviteDetails, MemberDetails, Memberships } from "#backend/services/memberships";
 import { Roles } from "#backend/services/roles";
 import { ORPCError } from "@orpc/server";
 import { getExplorerTree } from "./get-explorer-tree";
@@ -49,8 +49,8 @@ interface WorkspaceMetadata {
   workspace?: WorkspaceSummary;
   entries?: Entry[];
   collections?: Collection[];
-  memberships?: Awaited<ReturnType<typeof Memberships.list>>;
-  invites?: Awaited<ReturnType<typeof Memberships.listInvites>>;
+  memberships?: MemberDetails[];
+  invites?: InviteDetails[];
   roles?: Role[];
   keys?: Key[];
 }

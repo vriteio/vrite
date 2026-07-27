@@ -8,23 +8,33 @@ import {
   usersDB,
   workspacesDB
 } from "#backend/db";
-import { createHash } from "node:crypto";
 import { generateUUID, toUUID } from "#backend/lib/mongo";
 import { Auth } from "#backend/services/auth";
 import { ORPCError } from "@orpc/server";
+import { verifyInviteLink } from "#backend/lib/invites";
 
 const acceptInvite = async (input: {
-  token: string;
+  expires: number;
+  id: string;
+  signature: string;
   userID: string;
 }): Promise<{
   workspaceID: string;
   workspaceName: string;
   membership: { id: string; userID: string; roleID: string };
 }> => {
-  const tokenHash = createHash("sha256").update(input.token).digest("hex");
+  if (
+    !verifyInviteLink({
+      id: input.id,
+      expires: input.expires,
+      signature: input.signature
+    })
+  ) {
+    throw new ORPCError("BAD_REQUEST", { message: "Invalid or expired invite" });
+  }
 
   const invite = await invitesDB.findOne({
-    token: tokenHash,
+    _id: toUUID(input.id),
     status: "pending"
   });
 

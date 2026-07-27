@@ -1,10 +1,10 @@
 import { ToggleGroup as BaseToggleGroup } from "@ark-ui/solid/toggle-group";
 import clsx from "clsx";
-import { Component, For, JSX, Show } from "solid-js";
+import { Component, For, JSX, Match, Switch } from "solid-js";
 
 interface ToggleGroupOption {
   value: string;
-  label: JSX.Element;
+  label?: JSX.Element;
   icon?: string;
 }
 
@@ -14,8 +14,9 @@ interface ToggleGroupProps {
   options: ToggleGroupOption[];
   multiple?: boolean;
   disabled?: boolean;
-  class?: string;
+  wrapperClass?: string;
   itemClass?: string;
+  iconClass?: string;
 }
 
 const ToggleGroup: Component<ToggleGroupProps> = (props) => {
@@ -28,33 +29,43 @@ const ToggleGroup: Component<ToggleGroupProps> = (props) => {
         props.setValue(props.multiple ? details.value : (details.value[0] ?? ""));
       }}
       class={clsx(
-        "flex items-center gap-1 rounded-xl bg-gray-100 p-1 dark:bg-gray-900",
-        props.class
+        ":base: flex items-center justify-center rounded-lg bg-gray-100 text-sm text-gray-400 p-1 gap-1",
+        props.wrapperClass
       )}
     >
       <For each={props.options}>
-        {(option) => (
-          <BaseToggleGroup.Item
-            value={option.value}
-            class={clsx(
-              "group/toggle relative flex items-center justify-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium text-gray-500 outline-none transition-all hover:text-gray-700 data-[focus]:ring-0 data-[state=on]:text-white dark:text-gray-400 dark:hover:text-gray-200",
-              props.itemClass
-            )}
-          >
-            <div class="absolute inset-0 -z-10 rounded-lg bg-gradient-to-tr opacity-0 transition-opacity group-data-[state=on]/toggle:opacity-100" />
-            <div class="absolute inset-px -z-10 rounded-[calc(0.5rem-1px)] bg-white opacity-0 transition-opacity group-data-[state=on]/toggle:opacity-0 dark:bg-gray-800" />
-            <Show when={option.icon}>
-              <div
-                class={clsx(
-                  "h-4 w-4 text-current",
-                  option.icon,
-                  "group-data-[state=on]/toggle:text-white"
-                )}
-              />
-            </Show>
-            <span>{option.label}</span>
-          </BaseToggleGroup.Item>
-        )}
+        {(option) => {
+          const active = () => {
+            return Array.isArray(props.value)
+              ? props.value.includes(option.value)
+              : props.value === option.value;
+          };
+
+          return (
+            <BaseToggleGroup.Item
+              value={option.value}
+              class={clsx(
+                ":base: relative flex items-center justify-center gap-1 rounded-md font-medium text-gray-700",
+                active() && ":base: bg-white outline-gray-200 outline outline-1 shadow-md",
+                option.label ? ":base: px-1.5 py-0.5" : ":base: p-1",
+                props.itemClass
+              )}
+            >
+              <Switch>
+                <Match when={option.icon}>
+                  <div
+                    class={clsx(
+                      ":base: relative h-4.5 w-4.5 text-current",
+                      props.iconClass,
+                      option.icon
+                    )}
+                  />
+                </Match>
+                <Match when={option.label}>{option.label}</Match>
+              </Switch>
+            </BaseToggleGroup.Item>
+          );
+        }}
       </For>
     </BaseToggleGroup.Root>
   );

@@ -32,7 +32,7 @@ interface WorkspaceInviteProps {
 const WorkspaceInvite: React.FC<WorkspaceInviteProps> = ({
   workspaceName = "My Workspace",
   inviterName = "Someone",
-  inviteLink = `${PUBLIC_APP_URL}/invite?token=abc123`
+  inviteLink = `${PUBLIC_APP_URL}/invite?id=inv_example&expires=1893456000&signature=example`
 }) => {
   return (
     <Html>
@@ -120,7 +120,7 @@ const WorkspaceInvite: React.FC<WorkspaceInviteProps> = ({
 WorkspaceInvite.PreviewProps = {
   workspaceName: "Acme Corp",
   inviterName: "John Doe",
-  inviteLink: `${PUBLIC_APP_URL}/invite?token=abc123`
+  inviteLink: `${PUBLIC_APP_URL}/invite?id=inv_example&expires=1893456000&signature=example`
 };
 
 export { WorkspaceInvite };

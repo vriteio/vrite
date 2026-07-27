@@ -6,6 +6,7 @@ import { max } from "d3-array";
 import { nanoid } from "nanoid";
 
 interface LineChartDataPoint {
+  defined?: boolean;
   x: string;
   y: number;
 }
@@ -18,13 +19,14 @@ interface LineChartProps {
   tooltipContent?: (point: LineChartDataPoint) => JSX.Element;
   tooltipClass?: string;
   tooltipPlacement?: "point" | "top-right";
+  integerYTicks?: boolean;
   lineColor?: string;
-  useThemeGradient?: boolean;
 }
 
-const PAD = { top: 12, right: 16, bottom: 30, left: 44 };
+const PAD = { top: 12, right: 12, bottom: 16, left: 32 };
 const MAX_X_TICKS = 10;
 const Y_TICK_COUNT = 4;
+const MIN_Y_TICK_COUNT = 4;
 const curve = curveCatmullRom.alpha(0.5);
 
 const defaultFormatY = (v: number): string => {
@@ -33,15 +35,17 @@ const defaultFormatY = (v: number): string => {
   return `${v}`;
 };
 const LineChart: Component<LineChartProps> = (props) => {
-  const areaGradientId = nanoid(8);
-  const lineGradientId = nanoid(8);
+  const areaGradientID = nanoid(8);
+  const areaNoisePatternID = nanoid(8);
+  const areaMaskID = nanoid(8);
+  const lineGradientID = nanoid(8);
   const svgH = () => props.height ?? 176;
   const lineColor = () => props.lineColor ?? "var(--color-primary)";
   const formatY = () => props.formatY ?? defaultFormatY;
   const tooltipPlacement = () => props.tooltipPlacement ?? "point";
 
   let containerEl!: HTMLDivElement;
-  const [svgWidth, setSvgWidth] = createSignal(500);
+  const [svgWidth, setSvgWidth] = createSignal(0);
   const [hoverIdx, setHoverIdx] = createSignal<number | null>(null);
   const plotW = () => svgWidth() - PAD.left - PAD.right;
   const plotH = () => svgH() - PAD.top - PAD.bottom;
@@ -51,15 +55,26 @@ const LineChart: Component<LineChartProps> = (props) => {
       .range([PAD.left, PAD.left + plotW()]);
   });
   const yScale = createMemo(() => {
-    return scaleLinear()
-      .domain([0, max(props.data, (d) => d.y) || 1])
-      .range([PAD.top + plotH(), PAD.top])
-      .nice(Y_TICK_COUNT);
+    const maxY =
+      max(props.data, (d) => (d.defined === false ? undefined : d.y)) || MIN_Y_TICK_COUNT - 1;
+
+    return (
+      scaleLinear()
+        // Add 10% headroom to the top of the chart so that the line doesn't touch the top of the chart
+        .domain([0, maxY * 1.1])
+        .range([PAD.top + plotH(), PAD.top])
+        .nice(Y_TICK_COUNT)
+    );
   });
-  const yTicks = createMemo(() => yScale().ticks(Y_TICK_COUNT));
+  const yTicks = createMemo(() => {
+    const ticks = yScale().ticks(Y_TICK_COUNT);
+
+    return props.integerYTicks ? ticks.filter(Number.isInteger) : ticks;
+  });
   const linePath = createMemo(() => {
     return (
       line<LineChartDataPoint>()
+        .defined((d) => d.defined !== false)
         .x((_, i) => xScale()(i))
         .y((d) => yScale()(d.y))
         .curve(curve)(props.data) ?? ""
@@ -68,6 +83,7 @@ const LineChart: Component<LineChartProps> = (props) => {
   const areaPath = createMemo(() => {
     return (
       area<LineChartDataPoint>()
+        .defined((d) => d.defined !== false)
         .x((_, i) => xScale()(i))
         .y0(PAD.top + plotH())
         .y1((d) => yScale()(d.y))
@@ -95,7 +111,7 @@ const LineChart: Component<LineChartProps> = (props) => {
   const hoverPoint = createMemo(() => {
     const idx = hoverIdx();
     const dp = idx !== null ? props.data[idx] : null;
-    return dp ? { dp, px: xScale()(idx!), py: yScale()(dp.y) } : null;
+    return dp && dp.defined !== false ? { dp, px: xScale()(idx!), py: yScale()(dp.y) } : null;
   });
 
   const defaultTooltipContent = (point: LineChartDataPoint): JSX.Element => (
@@ -126,19 +142,42 @@ const LineChart: Component<LineChartProps> = (props) => {
       <svg
         width={svgWidth()}
         height={svgH()}
-        style="display:block;overflow:visible"
+        style={{
+          display: "block",
+          overflow: "visible",
+          visibility: svgWidth() > 0 ? "visible" : "hidden"
+        }}
         onMouseMove={handleMouseMove}
         onMouseLeave={() => setHoverIdx(null)}
       >
         <defs>
-          <linearGradient id={areaGradientId} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="var(--color-primary)" stop-opacity="0.3" />
-            <stop offset="100%" stop-color="var(--color-secondary)" stop-opacity="0" />
+          <linearGradient id={areaGradientID} x1="1" y1="1" x2="0" y2="0">
+            <stop offset="0%" stop-color="var(--color-secondary)" />
+            <stop offset="35%" stop-color="var(--color-primary)" />
+            <stop offset="100%" stop-color="var(--color-secondary)" />
           </linearGradient>
-          <linearGradient id={lineGradientId} x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stop-color="var(--color-primary)" stop-opacity="0.25" />
-            <stop offset="100%" stop-color="var(--color-secondary)" stop-opacity="1" />
+          <linearGradient id={lineGradientID} x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="var(--color-secondary)" />
+            <stop offset="50%" stop-color="var(--color-primary)" />
+            <stop offset="100%" stop-color="var(--color-secondary)" />
           </linearGradient>
+          <pattern id={areaNoisePatternID} width="96" height="96" patternUnits="userSpaceOnUse">
+            <image href="/assets/noise.png" width="96" height="96" />
+          </pattern>
+          <linearGradient id={`${areaMaskID}-gradient`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="white" stop-opacity="0.75" />
+            <stop offset="100%" stop-color="white" stop-opacity="0.05" />
+          </linearGradient>
+          <mask
+            id={areaMaskID}
+            x="0"
+            y="0"
+            width="1"
+            height="1"
+            maskContentUnits="objectBoundingBox"
+          >
+            <rect width="1" height="1" fill={`url(#${areaMaskID}-gradient)`} />
+          </mask>
         </defs>
         <For each={yTicks()}>
           {(tick) => (
@@ -164,14 +203,21 @@ const LineChart: Component<LineChartProps> = (props) => {
             </>
           )}
         </For>
-        <path d={areaPath()} fill={`url(#${areaGradientId})`} />
+        <g mask={`url(#${areaMaskID})`}>
+          <path d={areaPath()} fill={`url(#${areaGradientID})`} />
+          <path
+            d={areaPath()}
+            fill={`url(#${areaNoisePatternID})`}
+            pointer-events="none"
+            style={{ "mix-blend-mode": "overlay" }}
+          />
+        </g>
         <path
           d={linePath()}
           fill="none"
-          stroke={props.useThemeGradient ? `url(#${lineGradientId})` : lineColor()}
-          stroke-width="2"
+          stroke={`url(#${lineGradientID})`}
+          stroke-width="1"
           stroke-linecap="round"
-          stroke-linejoin="round"
         />
         <For each={xTickIndices()}>
           {(xTickIndex) => (
@@ -192,7 +238,7 @@ const LineChart: Component<LineChartProps> = (props) => {
             y1={PAD.top}
             x2={hoverPoint()!.px}
             y2={PAD.top + plotH()}
-            stroke="rgba(156,163,175,0.4)"
+            stroke="rgba(255,255,255,1)"
             stroke-width="1"
             stroke-dasharray="3 3"
           />

@@ -11,7 +11,7 @@ import clsx from "clsx";
 import { Card, Button, Spinner } from "@andesine/components";
 
 interface NotificationData {
-  type: "success" | "error" | "loading";
+  type: "success" | "error" | "info" | "loading";
   text: string;
   promise?: Promise<any>;
 }
@@ -42,8 +42,9 @@ const Notification: Component<NotificationProps> = (props) => {
           <div
             class={clsx(
               "h-6 w-6",
-              props.type === "success" ? "text-green-500" : "text-red-500",
-              props.type === "success" ? "i-lucide:circle-check" : "i-lucide:circle-alert"
+              props.type === "success" && "text-green-500 i-lucide:circle-check",
+              props.type === "error" && "text-red-500 i-lucide:circle-alert",
+              props.type === "info" && "text-blue-500 i-lucide:info"
             )}
           />
         </Show>

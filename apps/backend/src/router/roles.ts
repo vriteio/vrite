@@ -5,7 +5,6 @@ import { authorized } from "#backend/lib/middleware";
 import { id } from "#backend/lib/mongo";
 import { base } from "#backend/lib/orpc";
 import { Roles } from "#backend/services/roles";
-import { ORPCError } from "@orpc/server";
 import * as z from "zod";
 
 const rolesRouter = base.prefix("/roles").router({
@@ -46,22 +45,20 @@ const rolesRouter = base.prefix("/roles").router({
       })
     )
     .output(roleType)
-    .handler(({ context, input }) => {
-      const result = Roles.create({
+    .handler(async ({ context, input }) => {
+      const newRole = await Roles.create({
         workspaceID: context.auth.workspaceID,
         name: input.name,
         permissions: input.permissions
       });
 
-      result.then((role) => {
-        emitRoleEvent(context.auth.workspaceID, {
-          action: "role:create",
-          memberID: context.auth.session?.memberID,
-          data: role
-        });
+      emitRoleEvent(context.auth.workspaceID, {
+        action: "role:create",
+        memberID: context.auth.session?.memberID,
+        data: newRole
       });
 
-      return result;
+      return newRole;
     }),
   update: base
     .route({
@@ -83,27 +80,23 @@ const rolesRouter = base.prefix("/roles").router({
       })
     )
     .output(z.void())
-    .handler(({ context, input }) => {
-      const result = Roles.update({
+    .handler(async ({ context, input }) => {
+      await Roles.update({
         id: input.id,
         workspaceID: context.auth.workspaceID,
         name: input.name,
         permissions: input.permissions
       });
 
-      result.then(() => {
-        emitRoleEvent(context.auth.workspaceID, {
-          action: "role:update",
-          memberID: context.auth.session?.memberID,
-          data: {
-            id: input.id,
-            ...(input.name !== undefined && { name: input.name }),
-            ...(input.permissions !== undefined && { permissions: input.permissions })
-          }
-        });
+      emitRoleEvent(context.auth.workspaceID, {
+        action: "role:update",
+        memberID: context.auth.session?.memberID,
+        data: {
+          id: input.id,
+          ...(input.name !== undefined && { name: input.name }),
+          ...(input.permissions !== undefined && { permissions: input.permissions })
+        }
       });
-
-      return result;
     }),
   delete: base
     .route({
@@ -123,23 +116,19 @@ const rolesRouter = base.prefix("/roles").router({
       })
     )
     .output(z.void())
-    .handler(({ context, input }) => {
-      const result = Roles.delete({
+    .handler(async ({ context, input }) => {
+      await Roles.delete({
         id: input.id,
         workspaceID: context.auth.workspaceID
       });
 
-      result.then(() => {
-        emitRoleEvent(context.auth.workspaceID, {
-          action: "role:delete",
-          memberID: context.auth.session?.memberID,
-          data: {
-            id: input.id
-          }
-        });
+      emitRoleEvent(context.auth.workspaceID, {
+        action: "role:delete",
+        memberID: context.auth.session?.memberID,
+        data: {
+          id: input.id
+        }
       });
-
-      return result;
     })
 });
 

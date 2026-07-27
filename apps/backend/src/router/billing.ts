@@ -70,8 +70,8 @@ const billingRouter = base.router({
     .handler(async ({ context }) => {
       return Billing.createCheckout({
         workspaceID: context.auth.workspaceID,
-        successURL: `${config.PUBLIC_APP_URL}/?billing=success`,
-        cancelURL: `${config.PUBLIC_APP_URL}/?billing=cancel`
+        successURL: `${config.PUBLIC_APP_URL}/${context.auth.workspaceID}/?settings=billing&billing=success`,
+        cancelURL: `${config.PUBLIC_APP_URL}/${context.auth.workspaceID}/?settings=billing&billing=cancel`
       });
     }),
   portal: base
@@ -85,7 +85,7 @@ const billingRouter = base.router({
     .handler(async ({ context }) => {
       return Billing.createPortal({
         workspaceID: context.auth.workspaceID,
-        returnURL: config.PUBLIC_APP_URL || ""
+        returnURL: `${config.PUBLIC_APP_URL}/${context.auth.workspaceID}/?settings=billing&billing=portal`
       });
     })
 });

@@ -1,6 +1,6 @@
-import { Checkbox } from "@andesine/components";
+import { Checkbox, createRef } from "@andesine/components";
 import clsx from "clsx";
-import { Component, createEffect, createSignal, JSX, onCleanup, onMount, Show } from "solid-js";
+import { Component, createEffect, createSignal, JSX, Show } from "solid-js";
 import { useTree } from "./tree-context";
 
 interface TreeItemProps {
@@ -10,6 +10,7 @@ interface TreeItemProps {
   topLevel?: boolean;
   icon: JSX.Element;
   selectable?: boolean;
+  checkbox?: boolean;
   actions?: JSX.Element;
   highlighted?: boolean;
   dataAttributes?: Record<string, string>;
@@ -26,13 +27,8 @@ const TreeItem: Component<TreeItemProps> = (props) => {
     { setFocusedItem, setSelection, setRenaming }
   ] = useTree();
   const [currentName, setCurrentName] = createSignal("");
-  const [selectionModifierPressed, setSelectionModifierPressed] = createSignal(false);
-
-  const updateSelectionModifier = (event: KeyboardEvent | MouseEvent | PointerEvent) => {
-    setSelectionModifierPressed(event.metaKey || event.ctrlKey);
-  };
-  const focusItem = (event: MouseEvent | PointerEvent) => {
-    updateSelectionModifier(event);
+  const [cancelledRef, setCancelledRef] = createRef(false);
+  const focusItem = () => {
     setFocusedItem(props.id, "hover");
   };
   const clearHoverFocus = () => {
@@ -40,39 +36,24 @@ const TreeItem: Component<TreeItemProps> = (props) => {
       setFocusedItem(null, null);
     }
   };
-
-  createEffect(() => {
-    if (isRenaming(props.id)) {
-      setCurrentName(props.label);
-    }
-  });
-
-  onMount(() => {
-    const onKeyDown = (event: KeyboardEvent) => updateSelectionModifier(event);
-    const onKeyUp = (event: KeyboardEvent) => updateSelectionModifier(event);
-    const onBlur = () => setSelectionModifierPressed(false);
-
-    window.addEventListener("keydown", onKeyDown);
-    window.addEventListener("keyup", onKeyUp);
-    window.addEventListener("blur", onBlur);
-
-    onCleanup(() => {
-      window.removeEventListener("keydown", onKeyDown);
-      window.removeEventListener("keyup", onKeyUp);
-      window.removeEventListener("blur", onBlur);
-    });
-  });
-
   const handleClick = (event: MouseEvent) => {
+    const selected = isSelected(props.id);
+
     event.stopPropagation();
 
     if (
       props.selectable &&
-      isSelected(props.id) &&
+      (selected || props.checkbox) &&
       event.target instanceof HTMLElement &&
       event.target.closest("[data-tree-selectable]")
     ) {
-      setSelection((sel) => sel.filter((id) => id !== props.id));
+      setSelection((sel) => {
+        if (selected) {
+          return sel.filter((id) => id !== props.id);
+        } else {
+          return [...sel, props.id];
+        }
+      });
 
       return;
     }
@@ -110,47 +91,18 @@ const TreeItem: Component<TreeItemProps> = (props) => {
     }
   };
 
-  const selectableIcon = () => {
-    if (!props.selectable) return props.icon;
-
-    const selected = isSelected(props.id);
-
-    return (
-      <div data-tree-selectable class="flex items-center justify-center h-6 w-6">
-        <Show
-          when={selected}
-          fallback={
-            <div
-              class={clsx(
-                "h-6 w-6 flex justify-center items-center",
-                selectionModifierPressed() && "group-hover:hidden"
-              )}
-            >
-              {props.icon}
-            </div>
-          }
-        >
-          <div class={clsx("h-6 w-6 flex justify-center items-center", "group-hover:hidden")}>
-            {props.icon}
-          </div>
-          <div class="hidden group-hover:block">
-            <Checkbox size="small" checked={true} />
-          </div>
-        </Show>
-        <Show when={!selected}>
-          <div class={selectionModifierPressed() ? "hidden group-hover:block" : "hidden"}>
-            <Checkbox size="small" checked={false} />
-          </div>
-        </Show>
-      </div>
-    );
-  };
+  createEffect(() => {
+    if (isRenaming(props.id)) {
+      setCurrentName(props.label);
+    }
+  });
 
   return (
     <div
       class={clsx(
         ":base: relative flex flex-1 gap-1 min-h-7 font-medium items-center pl-0.5 rounded-r-lg group hover:cursor-pointer w-full overflow-hidden select-none",
-        isFocused(props.id) &&
+        props.selectable &&
+          isFocused(props.id) &&
           !isSelected(props.id) &&
           !props.highlighted &&
           ":base: bg-gradient-to-r from-gray-500/10 to-transparent",
@@ -161,7 +113,6 @@ const TreeItem: Component<TreeItemProps> = (props) => {
       onClick={handleClick}
       onPointerEnter={focusItem}
       onPointerLeave={clearHoverFocus}
-      onPointerMove={updateSelectionModifier}
       data-tree-item={props.id}
       {...Object.fromEntries(
         Object.entries(props.dataAttributes || {}).map(([k, v]) => [`data-${k}`, v])
@@ -175,8 +126,28 @@ const TreeItem: Component<TreeItemProps> = (props) => {
           )}
         />
       </Show>
-      {selectableIcon()}
-
+      <Show
+        when={props.selectable}
+        fallback={<div class="flex items-center justify-center h-6 w-6">{props.icon}</div>}
+      >
+        <div data-tree-selectable class="flex items-center justify-center h-6 w-6">
+          <Show when={!props.checkbox || !isSelected(props.id)}>
+            <div
+              class={clsx(
+                "h-6 w-6 flex justify-center items-center",
+                props.checkbox && "group-hover:hidden"
+              )}
+            >
+              {props.icon}
+            </div>
+          </Show>
+          <Show when={props.checkbox}>
+            <div class={clsx(!isSelected(props.id) && "hidden group-hover:block")}>
+              <Checkbox size="small" checked={isSelected(props.id)} />
+            </div>
+          </Show>
+        </div>
+      </Show>
       <Show
         when={props.children}
         fallback={(props.renderLabel || ((label) => label))(
@@ -202,7 +173,10 @@ const TreeItem: Component<TreeItemProps> = (props) => {
                   setCurrentName(e.currentTarget.textContent || "");
                 }}
                 onBlur={() => {
+                  if (cancelledRef()) return;
+
                   props.onRename?.(currentName());
+                  setSelection([]);
                   setRenaming("");
                 }}
                 onKeyDown={(e) => {
@@ -211,13 +185,18 @@ const TreeItem: Component<TreeItemProps> = (props) => {
                     e.stopPropagation();
                     setRenaming("");
                   }
+
+                  if (e.key === "Escape") {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setRenaming("");
+                    setCancelledRef(true);
+                  }
                 }}
               />
             }
           >
-            <span class="flex-1 line-clamp-1" title={props.label}>
-              {props.label}
-            </span>
+            <span class="flex-1 line-clamp-1">{props.label}</span>
           </Show>
         )}
       >

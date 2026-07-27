@@ -115,14 +115,33 @@ const auth = betterAuth({
   emailVerification: { autoSignInAfterVerification: true },
   plugins: [
     emailOTP({
-      async sendVerificationOTP({ email, otp, type }) {
+      async sendVerificationOTP({ email, otp, type }, ctx) {
         if (type !== "forget-password" && type !== "change-email") {
+          const headers = ctx?.headers || ctx?.request?.headers;
+          const sessionVerification = headers?.get("x-session-verification") === "true";
+          const sessionVerificationCallback = headers?.get("x-session-verification-callback");
           const otpToken = Auth.createOTPToken({
             email,
             otp,
             type,
             expiresAt: add(new Date(), { seconds: 300 })
           });
+
+          if (sessionVerification) {
+            const query = new URLSearchParams({
+              mode: "sign-in",
+              token: otpToken,
+              addAccount: "true",
+              redirectTo: sessionVerificationCallback || "/"
+            });
+
+            sendEmail(email, "session-verification", {
+              code: otp,
+              link: `${config.PUBLIC_APP_URL}/auth/email?${query}`
+            });
+
+            return;
+          }
 
           sendEmail(email, "verification-otp", {
             code: otp,

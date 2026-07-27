@@ -1,5 +1,5 @@
 /* @refresh reload */
-import { generateHydrationScript, renderToStream } from "solid-js/web";
+import { generateHydrationScript, renderToStream, ssr } from "solid-js/web";
 import { provideRequestEvent } from "solid-js/web/storage";
 import { FastifyReply, FastifyRequest } from "fastify";
 import { PassThrough, Readable } from "node:stream";
@@ -71,18 +71,16 @@ const render: Render = async (ctx, config) => {
   const stream = new PassThrough();
 
   const appStream = provideRequestEvent(webCtx, () => {
-    return renderToStream(() => <App url={ctx.request.url} />, {
+    return renderToStream(() => ssr([templateStart, templateEnd], <App url={ctx.request.url} />), {
       onCompleteShell() {
         resolveShellReady?.();
       },
-      onCompleteAll({ write }) {
-        write(templateEnd);
+      onCompleteAll() {
         resolveShellReady?.();
       }
     });
   });
 
-  stream.write(templateStart);
   appStream.pipe(stream);
 
   await shellReady.catch((error) => {

@@ -30,6 +30,7 @@ interface TreeContextValue {
   focusedID: Accessor<string | null>;
   focusedSource: Accessor<TreeFocusSource | null>;
   itemHeight: number;
+  gap: number;
   isSelected(id: string): boolean;
   isFocused(id: string): boolean;
   isRenaming(id: string): boolean;
@@ -58,6 +59,7 @@ interface TreeProviderProps {
   tree: Accessor<TreeMap>;
   levelIDs?: Accessor<Record<string, unknown>>;
   itemHeight?: number;
+  gap?: number;
   initialExpanded?: Accessor<string[] | undefined>;
   expandedSourceKey?: Accessor<string | null>;
   persistExpandedReady?: Accessor<boolean>;
@@ -121,6 +123,7 @@ const TreeProvider: ParentComponent<TreeProviderProps> = (props) => {
     const layout: TreeLayoutItem[] = [];
     const tree = props.tree();
     const itemHeight = props.itemHeight ?? 28;
+    const gap = props.gap ?? 2;
     let top = 0;
 
     const traverse = (levelID: string) => {
@@ -139,12 +142,14 @@ const TreeProvider: ParentComponent<TreeProviderProps> = (props) => {
           !childLevel!.items.length &&
           !childLevel!.levels.length;
 
+        const height = isEmptyExpanded ? itemHeight * 2 + gap : itemHeight;
+
         layout.push({
           id: childLevelID,
           top,
-          height: isEmptyExpanded ? itemHeight * 2 : itemHeight
+          height
         });
-        top += isEmptyExpanded ? itemHeight * 2 : itemHeight;
+        top += height + gap;
 
         if (childLevel && childExpanded && !isEmptyExpanded) {
           traverse(childLevelID);
@@ -153,7 +158,7 @@ const TreeProvider: ParentComponent<TreeProviderProps> = (props) => {
 
       for (const itemID of level.items) {
         layout.push({ id: itemID, top, height: itemHeight });
-        top += itemHeight;
+        top += itemHeight + gap;
       }
     };
 
@@ -279,6 +284,7 @@ const TreeProvider: ParentComponent<TreeProviderProps> = (props) => {
           focusedID,
           focusedSource,
           itemHeight: props.itemHeight ?? 28,
+          gap: props.gap ?? 2,
           isSelected,
           isFocused,
           isRenaming,

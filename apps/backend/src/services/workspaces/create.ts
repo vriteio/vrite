@@ -56,7 +56,7 @@ const createWorkspace = async (input: { name: string; userID: string }) => {
     workspaceID: workspace._id,
     name: role.name,
     permissions: role.permissions,
-    baseRole: role.baseRole
+    ...(role.baseRole && { baseRole: role.baseRole })
   }));
   const adminRole = roles.find((role) => {
     return role.baseRole === "admin";

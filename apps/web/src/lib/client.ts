@@ -10,36 +10,22 @@ import {
 } from "better-auth/client/plugins";
 import { passkeyClient } from "@better-auth/passkey/client";
 import { config } from "#web/lib/config";
-import { createSignal } from "solid-js";
 import { getRequestEvent } from "solid-js/web";
 import { clearWorkspaceData } from "#web/context/workspace/persistence";
+import { validateWorkspaceID } from "#web/lib/validate";
 
-// Using signal to track workspace ID changes
-const [currentWorkspaceID, setCurrentWorkspaceID] = createSignal("");
-const isWorkspaceID = (value: string) => {
-  return /^\w+?_[A-Za-z\d]{1,22}$/.test(value);
-};
 const getRouteWorkspaceID = () => {
   if (typeof window !== "undefined") {
     const routeSegment = window.location.pathname.split("/").filter(Boolean)[0] || "";
 
-    return isWorkspaceID(routeSegment) ? routeSegment : "";
+    return validateWorkspaceID(routeSegment) ? routeSegment : "";
   }
 
   const event = getRequestEvent();
   const pathname = event ? new URL(event.request.url).pathname : "";
   const routeSegment = pathname.split("/").filter(Boolean)[0] || "";
 
-  return isWorkspaceID(routeSegment) ? routeSegment : "";
-};
-const getActiveWorkspaceID = () => {
-  const workspaceID = currentWorkspaceID();
-
-  if (workspaceID && isWorkspaceID(workspaceID)) {
-    return workspaceID;
-  }
-
-  return getRouteWorkspaceID();
+  return validateWorkspaceID(routeSegment) ? routeSegment : "";
 };
 const link = new RPCLink({
   url: `${config.PUBLIC_API_URL}/rpc`,
@@ -47,8 +33,6 @@ const link = new RPCLink({
     onError((error) => {
       if (error instanceof ORPCError) {
         if (error.code === "UNAUTHORIZED") {
-          setCurrentWorkspaceID("");
-
           if (typeof window !== "undefined") {
             clearWorkspaceData();
             window.location.assign("/auth/sign-in");
@@ -67,9 +51,9 @@ const link = new RPCLink({
       "content-type": requestHeaders["content-type"] || "application/json",
       "cookie": requestHeaders["cookie"] || ""
     };
-    const workspaceID = getActiveWorkspaceID();
+    const workspaceID = getRouteWorkspaceID();
 
-    if (workspaceID && isWorkspaceID(workspaceID)) {
+    if (workspaceID) {
       headers["x-workspace-id"] = workspaceID;
     }
 
@@ -92,14 +76,17 @@ const authClient = createAuthClient({
     customFetchImpl(input, init) {
       const event = getRequestEvent();
       const requestHeaders = Object.fromEntries(event?.request.headers.entries() || []);
+      const initHeaders = Object.fromEntries(new Headers(init?.headers).entries());
       const headers: Record<string, string> = {
+        ...initHeaders,
         "cookie": requestHeaders["cookie"] || "",
-        "content-type": requestHeaders["content-type"] || "application/json"
+        "content-type":
+          initHeaders["content-type"] || requestHeaders["content-type"] || "application/json"
       };
 
-      const workspaceID = getActiveWorkspaceID();
+      const workspaceID = getRouteWorkspaceID();
 
-      if (workspaceID && isWorkspaceID(workspaceID)) {
+      if (workspaceID) {
         headers["x-workspace-id"] = workspaceID;
       }
 
@@ -118,5 +105,5 @@ const authClient = createAuthClient({
   ]
 });
 
-export { client, authClient, setCurrentWorkspaceID, currentWorkspaceID };
+export { client, authClient };
 export type * from "@andesine/backend";

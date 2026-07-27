@@ -24,11 +24,13 @@ interface DropdownAreaProps {
 }
 interface DropdownProps extends JSX.HTMLAttributes<HTMLDivElement> {
   cardProps?: Partial<ComponentProps<typeof Card>>;
+  disabled?: boolean;
   placement?: Placement | Placement[];
   children: JSX.Element;
   opened?: boolean;
   portal?: boolean;
   trigger?: Component<{ opened: boolean }>;
+  offset?: { mainAxis?: number; crossAxis?: number };
   setOpened?(opened: boolean): void;
 }
 
@@ -147,7 +149,10 @@ const Dropdown: Component<DropdownProps> = (props) => {
       onOpenChange={handleOpenChange}
       positioning={{
         flip: Array.isArray(props.placement) ? props.placement.slice(1) : true,
-        offset: { mainAxis: 0 },
+        offset: {
+          mainAxis: props.offset?.mainAxis || 4,
+          crossAxis: props.offset?.crossAxis || 0
+        },
         placement: placement(),
         strategy: "fixed",
         getAnchorElement
@@ -172,6 +177,7 @@ const Dropdown: Component<DropdownProps> = (props) => {
         />
         <Show when={props.trigger}>
           <Menu.Trigger
+            disabled={props.disabled}
             onClick={(event) => {
               event.stopPropagation();
             }}

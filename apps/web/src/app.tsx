@@ -1,21 +1,15 @@
-import { Route, Router, createAsync, query, redirect } from "@solidjs/router";
+import { Params, Router, createAsync, query, redirect } from "@solidjs/router";
+import { MetaProvider } from "@solidjs/meta";
 import { TooltipProvider, ShortcutsProvider } from "@andesine/components";
 import { QueryClient, QueryClientProvider } from "@tanstack/solid-query";
 import { ParentComponent, Suspense } from "solid-js";
 import { NotificationsProvider } from "./context/notifications";
 import { LayoutProvider } from "./context/layout";
-import AuthLayout from "./routes/auth";
-import EmailPage from "./routes/auth/email";
-import SignInPage from "./routes/auth/sign-in";
-import SignUpPage from "./routes/auth/sign-up";
-import InvitePage from "./routes/invite";
-import NewWorkspacePage from "./routes/new-workspace";
-import WorkspaceLayout from "./routes/[[workspaceID]]";
-import HomePage from "./routes/[[workspaceID]]/[...slug]";
 import { authClient } from "./lib/client";
 import { getRequestEvent } from "solid-js/web";
 import { appendRedirectTo, normalizeRedirectTo } from "./lib/redirects";
 import { validateWorkspaceID } from "./lib/validate";
+import { routes } from "./lib/routes";
 
 const rootRedirectQuery = query(async () => {
   const event = getRequestEvent();
@@ -70,17 +64,19 @@ const RootLayout: ParentComponent = (props) => {
   createAsync(() => rootRedirectQuery(), { deferStream: true });
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <ShortcutsProvider>
-          <NotificationsProvider>
-            <LayoutProvider>
-              <Suspense>{props.children}</Suspense>
-            </LayoutProvider>
-          </NotificationsProvider>
-        </ShortcutsProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <MetaProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <ShortcutsProvider>
+            <NotificationsProvider>
+              <LayoutProvider>
+                <Suspense>{props.children}</Suspense>
+              </LayoutProvider>
+            </NotificationsProvider>
+          </ShortcutsProvider>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </MetaProvider>
   );
 };
 
@@ -91,17 +87,7 @@ interface AppProps {
 const App = (props: AppProps) => {
   return (
     <Router url={props.url} root={RootLayout}>
-      <Route path="/auth" component={AuthLayout}>
-        <Route path="/sign-in" component={SignInPage} />
-        <Route path="/sign-up" component={SignUpPage} />
-        <Route path="/email" component={EmailPage} />
-      </Route>
-      <Route path="/invite" component={InvitePage} />
-      <Route path="/new-workspace" component={NewWorkspacePage} />
-      <Route path="/:workspaceID" component={WorkspaceLayout}>
-        <Route path="/" component={HomePage} />
-        <Route path="/*slug" component={HomePage} />
-      </Route>
+      {routes}
     </Router>
   );
 };

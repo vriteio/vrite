@@ -15,7 +15,7 @@ const keysRouter = base.prefix("/keys").router({
   create: base
     .meta({
       required: {
-        session: ["workspace"]
+        session: ["api_keys"]
       }
     })
     .use(authorized)
@@ -50,10 +50,29 @@ const keysRouter = base.prefix("/keys").router({
 
       return key;
     }),
+  get: base
+    .meta({
+      required: {
+        session: ["read:api_keys"]
+      }
+    })
+    .use(authorized)
+    .input(
+      z.object({
+        id: id().describe("ID of the API key to retrieve")
+      })
+    )
+    .output(keyType)
+    .handler(({ context, input }) => {
+      return Keys.get({
+        keyID: input.id,
+        workspaceID: context.auth.workspaceID
+      });
+    }),
   list: base
     .meta({
       required: {
-        session: ["workspace"]
+        session: ["read:api_keys"]
       }
     })
     .use(authorized)
@@ -66,7 +85,7 @@ const keysRouter = base.prefix("/keys").router({
   delete: base
     .meta({
       required: {
-        session: ["workspace"]
+        session: ["api_keys"]
       }
     })
     .use(authorized)
@@ -93,7 +112,7 @@ const keysRouter = base.prefix("/keys").router({
   update: base
     .meta({
       required: {
-        session: ["workspace"]
+        session: ["api_keys"]
       }
     })
     .use(authorized)
@@ -129,7 +148,7 @@ const keysRouter = base.prefix("/keys").router({
   rotate: base
     .meta({
       required: {
-        session: ["workspace"]
+        session: ["api_keys"]
       }
     })
     .use(authorized)

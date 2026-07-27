@@ -5,14 +5,12 @@ import {
   toRoleID,
   usersDB,
   toUserID,
-  UserProfile
+  UserProfile,
+  Membership
 } from "#backend/db";
 import { toUUID } from "#backend/lib/mongo";
 
-interface MemberDetails {
-  id: string;
-  userID: string;
-  roleID?: string;
+interface MemberDetails extends Membership {
   roleName?: string;
   admin?: boolean;
   profile: UserProfile;
@@ -29,28 +27,27 @@ const listMembers = async (input: { workspaceID: string }): Promise<MemberDetail
     usersDB.find({ _id: { $in: userIDs } }).toArray(),
     roleIDs.length > 0 ? rolesDB.find({ _id: { $in: roleIDs } }).toArray() : Promise.resolve([])
   ]);
-
-  const userMap = new Map(users.map((u) => [u._id, u]));
-  const roleMap = new Map(roles.map((r) => [r._id, r]));
+  const userMap = new Map(users.map((user) => [toUserID(user._id), user]));
+  const roleMap = new Map(roles.map((role) => [toRoleID(role._id), role]));
 
   return memberships
-    .map((m) => {
-      const user = userMap.get(m.userID);
-      const role = m.roleID ? roleMap.get(m.roleID) : undefined;
+    .map((membership) => {
+      const user = userMap.get(toUserID(membership.userID));
+      const role = membership.roleID ? roleMap.get(toRoleID(membership.roleID)) : undefined;
 
       if (!user) return null;
 
       return {
-        id: toMembershipID(m._id),
-        userID: toUserID(m.userID),
-        roleID: m.roleID ? toRoleID(m.roleID) : undefined,
+        id: toMembershipID(membership._id),
+        userID: toUserID(membership.userID),
+        roleID: membership.roleID ? toRoleID(membership.roleID) : undefined,
         roleName: role?.name,
         admin: role?.baseRole === "admin",
         profile: {
-          id: toUserID(user?._id),
-          name: user?.name || "",
-          email: user?.email || "",
-          image: user?.image || ""
+          id: toUserID(user._id),
+          name: user.name || "",
+          email: user.email || "",
+          image: user.image || ""
         }
       } as MemberDetails;
     })

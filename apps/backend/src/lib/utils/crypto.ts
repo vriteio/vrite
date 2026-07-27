@@ -44,11 +44,4 @@ const generateKeyValue = (): { raw: string; prefix: string } => {
 
   return { raw, prefix };
 };
-const generateInviteToken = (): { raw: string; hash: string } => {
-  const raw = bytesToBase62(randomBytes(32));
-  const hash = createHash("sha256").update(raw).digest("hex");
-
-  return { raw, hash };
-};
-
-export { generateSalt, hashKey, generateKeyValue, generateInviteToken, encrypt, decrypt };
+export { generateSalt, hashKey, generateKeyValue, encrypt, decrypt };

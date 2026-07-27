@@ -1,10 +1,11 @@
-import { listMembers } from "./list";
+import { MemberDetails, listMembers } from "./list";
 import { updateMember } from "./update";
 import { removeMember } from "./remove";
 import { inviteMember } from "./invite";
 import { acceptInvite } from "./accept-invite";
-import { listInvites } from "./list-invites";
+import { InviteDetails, listInvites } from "./list-invites";
 import { revokeInvite } from "./revoke-invite";
+import { resendInvite } from "./resend-invite";
 
 const Memberships = {
   list: listMembers,
@@ -13,7 +14,9 @@ const Memberships = {
   invite: inviteMember,
   acceptInvite,
   listInvites,
-  revokeInvite
+  revokeInvite,
+  resendInvite
 };
 
 export { Memberships };
+export type { MemberDetails, InviteDetails };
