@@ -180,7 +180,7 @@ const PasskeyList: Component<PasskeyListProps> = (props) => {
 const SecuritySection: Component = () => {
   const notify = useNotify();
   const { openVerificationDialog } = useSettings();
-  const passkeys = createAsync(() => passkeysQuery(), { initialValue: [] });
+  const passkeys = createAsync(() => passkeysQuery());
   const [passkeysRefreshing, startPasskeysRefresh] = useTransition();
   const refreshPasskeys = (onRevalidate: () => void) => {
     startPasskeysRefresh(async () => {
@@ -255,7 +255,7 @@ const SecuritySection: Component = () => {
             }
           >
             <PasskeyList
-              passkeys={passkeys()}
+              passkeys={passkeys() || []}
               passkeysRefreshing={passkeysRefreshing()}
               refreshPasskeys={refreshPasskeys}
             />

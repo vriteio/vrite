@@ -1,7 +1,7 @@
 import { Component, createMemo, createSignal, onMount, Match, Switch, Show } from "solid-js";
 import { Title } from "@solidjs/meta";
-import { useLocation, useNavigate } from "@solidjs/router";
-import { authClient, client, setCurrentWorkspaceID } from "#web/lib/client";
+import { revalidate, useLocation, useNavigate } from "@solidjs/router";
+import { authClient, client } from "#web/lib/client";
 import { Button, Spinner } from "@andesine/components";
 import { appendRedirectTo } from "#web/lib/redirects";
 import { createMutation } from "@tanstack/solid-query";
@@ -52,7 +52,7 @@ const InvitePage: Component = () => {
     try {
       const result = await acceptInviteMutation.mutateAsync({ id, expires, signature });
 
-      setCurrentWorkspaceID(result.workspaceID);
+      await revalidate("workspaces");
       setWorkspaceName(result.workspaceName);
       setStatus("success");
       setTimeout(() => navigate(`/${result.workspaceID}/`), 1600);

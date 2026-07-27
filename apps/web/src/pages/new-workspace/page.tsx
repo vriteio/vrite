@@ -1,9 +1,9 @@
-import { useNavigate } from "@solidjs/router";
+import { revalidate, useNavigate } from "@solidjs/router";
 import { Title } from "@solidjs/meta";
 import { Component, createSignal } from "solid-js";
 import { AnimatedGradientCard } from "#web/components/animated-gradient-card";
 import { Button, IconButton, Input } from "@andesine/components";
-import { client, setCurrentWorkspaceID } from "#web/lib/client";
+import { client } from "#web/lib/client";
 import { createMutation } from "@tanstack/solid-query";
 
 const NewWorkspacePage: Component = () => {
@@ -31,7 +31,7 @@ const NewWorkspacePage: Component = () => {
     try {
       const workspace = await createWorkspaceMutation.mutateAsync({ name: trimmedName });
 
-      setCurrentWorkspaceID(workspace.id);
+      await revalidate("workspaces");
       navigate(`/${workspace.id}/`, { replace: true });
     } catch (createError) {
       setError("Failed to create workspace");

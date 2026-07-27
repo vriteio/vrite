@@ -1,20 +1,11 @@
-import { createContext, createEffect, createMemo, on, ParentComponent, useContext } from "solid-js";
-import { createAsync, query, revalidate } from "@solidjs/router";
-import {
-  client,
-  authClient,
-  currentWorkspaceID,
-  setCurrentWorkspaceID,
-  type Permission
-} from "#web/lib/client";
+import { createContext, createMemo, ParentComponent, useContext } from "solid-js";
+import { createAsync, query, revalidate, useParams } from "@solidjs/router";
+import { client, authClient, type Permission } from "#web/lib/client";
 import { validateWorkspaceID } from "#web/lib/validate";
 import { useWorkspaceContent } from "./content";
 import { createMutation } from "@tanstack/solid-query";
 import { toUserID } from "#web/lib/id";
 
-interface WorkspaceProviderProps {
-  workspaceID: string;
-}
 interface WorkspaceInfo {
   id: string;
   name: string;
@@ -65,12 +56,10 @@ const listWorkspacesQuery = query(() => {
   return client.workspaces.list();
 }, "workspaces");
 const WorkspaceContext = createContext<WorkspaceContextValue>();
-const WorkspaceProvider: ParentComponent<WorkspaceProviderProps> = (props) => {
-  if (validateWorkspaceID(props.workspaceID)) {
-    setCurrentWorkspaceID(props.workspaceID);
-  }
-
-  const content = useWorkspaceContent(currentWorkspaceID);
+const WorkspaceProvider: ParentComponent = (props) => {
+  const params = useParams<{ workspaceID: string }>();
+  const workspaceID = () => (validateWorkspaceID(params.workspaceID) ? params.workspaceID : "");
+  const content = useWorkspaceContent(workspaceID);
   const sessions = createAsync(() => listSessionsQuery());
   const workspaces = createAsync(() => listWorkspacesQuery());
   const refreshWorkspaces = () => revalidate("workspaces");
@@ -93,9 +82,9 @@ const WorkspaceProvider: ParentComponent<WorkspaceProviderProps> = (props) => {
   }));
   const currentWorkspace = createMemo(() => {
     const workspaceList = workspaces() ?? [];
-    const id = currentWorkspaceID();
+    const id = workspaceID();
 
-    return workspaceList.find((workspace) => workspace.id === id) || workspaceList[0];
+    return workspaceList.find((workspace) => workspace.id === id);
   });
   const currentSession = createMemo(() => {
     const sessionList = sessions() ?? [];
@@ -104,7 +93,7 @@ const WorkspaceProvider: ParentComponent<WorkspaceProviderProps> = (props) => {
     return sessionList.find((session) => session.user.id === id);
   });
   const switchWorkspace = async (workspaceID: string) => {
-    if (workspaceID === currentWorkspaceID()) return;
+    if (workspaceID === params.workspaceID) return;
 
     const targetWorkspace = (workspaces() ?? []).find((workspace) => workspace.id === workspaceID);
     const current = currentWorkspace();
@@ -132,34 +121,12 @@ const WorkspaceProvider: ParentComponent<WorkspaceProviderProps> = (props) => {
     }
   };
 
-  createEffect(
-    on(
-      () => props.workspaceID,
-      (id) => {
-        if (validateWorkspaceID(id)) {
-          setCurrentWorkspaceID(id);
-        }
-      },
-      { defer: true }
-    )
-  );
-
-  createEffect(() => {
-    const id = currentWorkspaceID();
-    const workspaceList = workspaces();
-
-    if (!id || !workspaceList) return;
-    if (workspaceList.some((workspace) => workspace.id === id)) return;
-
-    setCurrentWorkspaceID("");
-  });
-
   return (
     <WorkspaceContext.Provider
       value={{
         currentWorkspace,
         currentSession,
-        workspaceID: currentWorkspaceID,
+        workspaceID,
         workspaces: () => workspaces() ?? [],
         refreshWorkspaces,
         sessions: () => sessions() ?? [],

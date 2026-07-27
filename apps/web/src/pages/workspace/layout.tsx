@@ -82,7 +82,7 @@ const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
   });
 
   return (
-    <WorkspaceProvider workspaceID={params.workspaceID}>
+    <WorkspaceProvider>
       <div class="flex h-full w-full">
         <div class="flex w-full py-3">
           <Show when={layout.leftSidePanelWidth === 0}>

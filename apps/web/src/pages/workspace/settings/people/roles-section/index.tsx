@@ -109,7 +109,11 @@ const RolesSection: Component = () => {
 
   return (
     <SettingsSection label="Roles & permissions">
-      <Setting label="Roles" description="Control what workspace members can see and manage">
+      <Setting
+        label="Roles"
+        description="Control what workspace members can see and manage"
+        fade={false}
+      >
         <Show when={canManage()}>
           <IconButton
             label={() => <span class="px-1">Create role</span>}

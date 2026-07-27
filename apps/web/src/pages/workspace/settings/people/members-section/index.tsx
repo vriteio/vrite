@@ -34,6 +34,11 @@ interface InviteListProps {
   roles: Role[];
 }
 
+interface InvitationSubsectionProps {
+  invites: InviteDetails[];
+  roles: Role[];
+}
+
 const membershipsQuery = query(() => client.memberships.list(), "memberships");
 const invitesQuery = query(() => client.memberships.listInvites(), "invites");
 const rolesQuery = query(() => client.roles.list(), "roles");
@@ -256,24 +261,46 @@ const InviteList: Component<InviteListProps> = (props) => {
   );
 };
 
-const MembersSection: Component = () => {
-  const navigate = useNavigate();
-  const params = useParams<{ workspaceID?: string }>();
-  const members = createAsync(() => membershipsQuery(), { initialValue: [] });
-  const invites = createAsync(() => invitesQuery(), { initialValue: [] });
-  const roles = createAsync(() => rolesQuery(), { initialValue: [] });
-  const showInvites = createMemo((visible) => visible || invites().length > 0, false);
-  const [membersRefreshing, startMembersRefresh] = useTransition();
+const InvitationsSubsection: Component<InvitationSubsectionProps> = (props) => {
   const [invitesRefreshing, startInvitesRefresh] = useTransition();
-  const refreshMembers = (onRevalidated = () => {}) => {
-    startMembersRefresh(async () => {
-      await revalidate(membershipsQuery.key);
-      onRevalidated();
-    });
-  };
+  const showInvites = createMemo((visible) => visible || props.invites?.length || 0 > 0, false);
   const refreshInvites = (onRevalidated = () => {}) => {
     startInvitesRefresh(async () => {
       await revalidate(invitesQuery.key);
+      onRevalidated();
+    });
+  };
+  return (
+    <Show when={showInvites()}>
+      <Setting
+        label="Invitations"
+        description="Invitations remain here until they are accepted or revoked"
+        fade={false}
+      />
+      <div class="relative flex w-full flex-col">
+        <Suspense fallback={<ListSkeleton />}>
+          <InviteList
+            invites={props.invites || []}
+            roles={props.roles || []}
+            invitesRefreshing={invitesRefreshing()}
+            refreshInvites={refreshInvites}
+          />
+        </Suspense>
+      </div>
+    </Show>
+  );
+};
+
+const MembersSection: Component = () => {
+  const navigate = useNavigate();
+  const params = useParams<{ workspaceID?: string }>();
+  const members = createAsync(() => membershipsQuery());
+  const invites = createAsync(() => invitesQuery());
+  const roles = createAsync(() => rolesQuery());
+  const [membersRefreshing, startMembersRefresh] = useTransition();
+  const refreshMembers = (onRevalidated = () => {}) => {
+    startMembersRefresh(async () => {
+      await revalidate(membershipsQuery.key);
       onRevalidated();
     });
   };
@@ -301,30 +328,16 @@ const MembersSection: Component = () => {
         <div class="relative flex w-full flex-col">
           <Suspense fallback={<ListSkeleton />}>
             <WorkspaceMemberList
-              members={members()}
-              roles={roles()}
+              members={members() || []}
+              roles={roles() || []}
               membersRefreshing={membersRefreshing()}
               refreshMembers={refreshMembers}
             />
           </Suspense>
         </div>
-        <Show when={showInvites()}>
-          <Setting
-            label="Invitations"
-            description="Invitations remain here until they are accepted or revoked"
-            fade={false}
-          />
-          <div class="relative flex w-full flex-col">
-            <Suspense fallback={<ListSkeleton />}>
-              <InviteList
-                invites={invites()}
-                roles={roles()}
-                invitesRefreshing={invitesRefreshing()}
-                refreshInvites={refreshInvites}
-              />
-            </Suspense>
-          </div>
-        </Show>
+        <Suspense>
+          <InvitationsSubsection invites={invites() || []} roles={roles() || []} />
+        </Suspense>
       </div>
     </SettingsSection>
   );
