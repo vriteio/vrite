@@ -2,16 +2,12 @@ import { createContext, ParentComponent, createEffect, useContext, on } from "so
 import { createStore, SetStoreFunction } from "solid-js/store";
 import { getRequestEvent } from "solid-js/web";
 
-type ActivePanel = "explorer" | "help" | "settings";
-
 interface Layout {
   leftSidePanelWidth: number;
-  activePanel: ActivePanel;
 }
 
 const defaultLayout: Layout = {
-  leftSidePanelWidth: 0,
-  activePanel: "explorer"
+  leftSidePanelWidth: 0
 };
 
 const readCookieValue = (cookieHeader: string, name: string) => {
@@ -58,12 +54,11 @@ const LayoutProvider: ParentComponent = (props) => {
 
   createEffect(
     on(
-      [() => layout.leftSidePanelWidth, () => layout.activePanel],
-      ([leftSidePanelWidth, activePanel]) => {
+      () => layout.leftSidePanelWidth,
+      (leftSidePanelWidth) => {
         document.cookie = `layout=${encodeURIComponent(
           JSON.stringify({
-            leftSidePanelWidth,
-            activePanel
+            leftSidePanelWidth
           })
         )}; path=/; SameSite=Lax`;
       },
@@ -87,4 +82,4 @@ const useLayout = () => {
 };
 
 export { LayoutProvider, useLayout };
-export type { ActivePanel, Layout };
+export type { Layout };

@@ -1,17 +1,27 @@
 import { Route, Router, createAsync, query, redirect } from "@solidjs/router";
+import { MetaProvider } from "@solidjs/meta";
 import { TooltipProvider, ShortcutsProvider } from "@andesine/components";
 import { QueryClient, QueryClientProvider } from "@tanstack/solid-query";
 import { ParentComponent, Suspense } from "solid-js";
 import { NotificationsProvider } from "./context/notifications";
 import { LayoutProvider } from "./context/layout";
-import AuthLayout from "./routes/auth";
-import EmailPage from "./routes/auth/email";
-import SignInPage from "./routes/auth/sign-in";
-import SignUpPage from "./routes/auth/sign-up";
-import InvitePage from "./routes/invite";
-import NewWorkspacePage from "./routes/new-workspace";
-import WorkspaceLayout from "./routes/[[workspaceID]]";
-import HomePage from "./routes/[[workspaceID]]/[...slug]";
+import AuthLayout from "./pages/auth/layout";
+import EmailPage from "./pages/auth/email/page";
+import SignInPage from "./pages/auth/sign-in/page";
+import SignUpPage from "./pages/auth/sign-up/page";
+import InvitePage from "./pages/invite/page";
+import NewWorkspacePage from "./pages/new-workspace/page";
+import WorkspaceLayout from "./pages/workspace/layout";
+import HomePage from "./pages/workspace/entry/page";
+import SettingsLayout from "./pages/workspace/settings/layout";
+import PersonalSettingsPage from "./pages/workspace/settings/people/page";
+import WorkspaceSettingsPage from "./pages/workspace/settings/workspace/page";
+import PeopleSettingsPage from "./pages/workspace/settings/personal/page";
+import InviteSettingsPage from "./pages/workspace/settings/invite/page";
+import RoleSettingsPage from "./pages/workspace/settings/role/page";
+import BillingSettingsPage from "./pages/workspace/settings/billing/page";
+import APISettingsPage from "./pages/workspace/settings/api/page";
+import KeySettingsPage from "./pages/workspace/settings/key/page";
 import { authClient } from "./lib/client";
 import { getRequestEvent } from "solid-js/web";
 import { appendRedirectTo, normalizeRedirectTo } from "./lib/redirects";
@@ -70,17 +80,19 @@ const RootLayout: ParentComponent = (props) => {
   createAsync(() => rootRedirectQuery(), { deferStream: true });
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <ShortcutsProvider>
-          <NotificationsProvider>
-            <LayoutProvider>
-              <Suspense>{props.children}</Suspense>
-            </LayoutProvider>
-          </NotificationsProvider>
-        </ShortcutsProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <MetaProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <ShortcutsProvider>
+            <NotificationsProvider>
+              <LayoutProvider>
+                <Suspense>{props.children}</Suspense>
+              </LayoutProvider>
+            </NotificationsProvider>
+          </ShortcutsProvider>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </MetaProvider>
   );
 };
 
@@ -99,8 +111,17 @@ const App = (props: AppProps) => {
       <Route path="/invite" component={InvitePage} />
       <Route path="/new-workspace" component={NewWorkspacePage} />
       <Route path="/:workspaceID" component={WorkspaceLayout}>
+        <Route path="/settings" component={SettingsLayout}>
+          <Route path={["/", "/personal"]} component={PersonalSettingsPage} />
+          <Route path="/workspace" component={WorkspaceSettingsPage} />
+          <Route path="/people" component={PeopleSettingsPage} />
+          <Route path="/invite" component={InviteSettingsPage} />
+          <Route path="/role/:roleID?" component={RoleSettingsPage} />
+          <Route path="/billing" component={BillingSettingsPage} />
+          <Route path="/api" component={APISettingsPage} />
+          <Route path="/key/:keyID?" component={KeySettingsPage} />
+        </Route>
         <Route path="/" component={HomePage} />
-        <Route path="/settings/:tabID" component={HomePage} />
         <Route path="/*slug" component={HomePage} />
       </Route>
     </Router>
