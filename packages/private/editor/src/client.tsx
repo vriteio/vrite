@@ -58,6 +58,8 @@ interface EditorProps {
   };
   beforeProviderAttach?: EditorProviderSetup;
   onProvider?(provider: EditorProvider): EditorCleanup;
+  onEditor?(editor: Editor): EditorCleanup;
+  onTitleChange?(title: string): void;
 }
 
 const ClientEditor: Component<EditorProps> = (props) => {
@@ -178,7 +180,14 @@ const ClientEditor: Component<EditorProps> = (props) => {
         TrailingNode,
         Placeholder
       ],
-      editorProps: { attributes: { class: `outline-none min-h-full` } }
+      editorProps: { attributes: { class: `outline-none min-h-full` } },
+      onUpdate: ({ editor }) => {
+        const titleNode = editor.state.doc.firstChild;
+
+        if (titleNode?.type.name === "title") {
+          props.onTitleChange?.(titleNode.textContent.trim() || "Untitled");
+        }
+      }
     });
   });
 
@@ -191,6 +200,18 @@ const ClientEditor: Component<EditorProps> = (props) => {
 
     return currentEditor;
   }, null);
+
+  createEffect(() => {
+    const currentEditor = editor();
+
+    if (!currentEditor) return;
+
+    const cleanup = props.onEditor?.(currentEditor);
+
+    onCleanup(() => {
+      cleanup?.();
+    });
+  });
 
   onCleanup(() => {
     editor()?.destroy();
@@ -227,10 +248,10 @@ const ClientEditor: Component<EditorProps> = (props) => {
 
   return (
     <BlockSelectionMenu editor={editor()} scrollableContainerRef={scrollableContainerRef}>
-      <BlockMenuArea editor={editor()}>
-        <div class="overflow-hidden relative flex h-full w-full">
-          <ScrollShadow scrollableContainerRef={scrollableContainerRef} />
-          <div class="p-5 overflow-auto w-full z-0 relative" ref={setScrollableContainerRef}>
+      <div class="overflow-hidden relative flex h-full w-full">
+        <ScrollShadow scrollableContainerRef={scrollableContainerRef} />
+        <div class="p-5 overflow-auto w-full z-0 relative" ref={setScrollableContainerRef}>
+          <BlockMenuArea editor={editor()}>
             <div class="w-full flex flex-col items-center">
               <div
                 class="w-full prose-editor z-1 max-w-[44rem] prose prose-headings:font-semibold prose-headings:text-gray-700 prose-bold:text-gray-700 dark:prose-invert flex flex-col relative"
@@ -261,9 +282,9 @@ const ClientEditor: Component<EditorProps> = (props) => {
                 <div ref={setEditorContentElement} class="min-h-full" />
               </div>
             </div>
-          </div>
+          </BlockMenuArea>
         </div>
-      </BlockMenuArea>
+      </div>
     </BlockSelectionMenu>
   );
 };

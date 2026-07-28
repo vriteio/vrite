@@ -183,7 +183,8 @@ const FormatMenu: Component<{
           variant="text"
           icon="i-lucide:ellipsis"
           size="xs"
-          onClick={() => {
+          onClick={(event) => {
+            const reference = event.currentTarget;
             const { selection, doc } = props.editor.state;
             let from = 0;
             let to = 0;
@@ -195,7 +196,7 @@ const FormatMenu: Component<{
               return false;
             });
             props.editor.chain().setBlockSelection({ from, to }).focus().run();
-            openMenu();
+            openMenu(reference);
           }}
         />
       </Tooltip>

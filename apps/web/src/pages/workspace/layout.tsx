@@ -1,6 +1,6 @@
 import { Card, useShortcuts } from "@andesine/components";
 import { RouteSectionProps, useNavigate, useParams, useSearchParams } from "@solidjs/router";
-import { Component, createEffect, onCleanup, Show } from "solid-js";
+import { Component, createEffect, onCleanup, Show, Suspense } from "solid-js";
 import { useLayout } from "#web/context/layout";
 import { WorkspaceProvider } from "#web/context/workspace";
 import { Breadcrumbs } from "./breadcrumbs";
@@ -9,7 +9,7 @@ import { ProfileMenu } from "./profile-menu";
 import { PrimaryPanel, SidePanel, usePrimaryPanel } from "./side-panel";
 import { VerticalResizeHandle } from "./vertical-resize-handle";
 
-const DEFAULT_SIDE_PANEL_WIDTH = 240;
+const DEFAULT_SIDE_PANEL_WIDTH = 248;
 const MAX_SIDE_PANEL_WIDTH = 640;
 
 const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
@@ -25,8 +25,8 @@ const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
       if (panel() !== "settings") {
         navigate(`${workspacePath()}/settings/personal`);
       }
-    } else if (panel() === "settings") {
-      navigate(`${workspacePath()}/${nextPanel === "help" ? "?p=help" : ""}`);
+    } else if (panel() === "settings" && nextPanel === "explorer") {
+      navigate(workspacePath());
     } else {
       setSearchParams({ p: nextPanel === "help" ? "help" : undefined });
     }
@@ -97,7 +97,9 @@ const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
           >
             <div class="flex h-full w-full flex-col p-2">
               <Menu menu={menu} class="w-full px-1" />
-              <SidePanel />
+              <Suspense>
+                <SidePanel />
+              </Suspense>
               <ProfileMenu />
             </div>
           </div>
@@ -111,7 +113,7 @@ const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
               shade
             >
               <Breadcrumbs />
-              {props.children}
+              <Suspense fallback={<div class="flex-1" />}>{props.children}</Suspense>
             </Card>
           </div>
           <div class="w-3" />

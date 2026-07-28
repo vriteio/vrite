@@ -1,4 +1,5 @@
 import { entryType } from "#backend/db";
+import { updateDocumentTitle } from "#backend/collaboration";
 import { emitEntryEvent } from "#backend/events";
 import { authorized } from "#backend/lib/middleware";
 import { id } from "#backend/lib/mongo";
@@ -76,15 +77,21 @@ const entriesRouter = base.prefix("/entries").router({
     )
     .output(z.void())
     .handler(async ({ context, input }) => {
+      const name = input.name === undefined ? undefined : input.name.trim() || "Untitled";
+
       await Entries.update({
         id: input.id,
         workspaceID: context.auth.workspaceID,
-        name: input.name
+        name
       });
+
+      if (name !== undefined) {
+        await updateDocumentTitle(input.id, name);
+      }
 
       emitEntryEvent(context.auth.workspaceID, {
         action: "entry:update",
-        data: { id: input.id, name: input.name },
+        data: { id: input.id, name },
         memberID: context.auth.session?.memberID
       });
     }),

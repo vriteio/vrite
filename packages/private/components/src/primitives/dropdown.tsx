@@ -23,6 +23,7 @@ interface DropdownAreaProps {
   enabled?(event: PointerEvent | MouseEvent): boolean;
 }
 interface DropdownProps extends JSX.HTMLAttributes<HTMLDivElement> {
+  anchorPoint?: Point | null;
   cardProps?: Partial<ComponentProps<typeof Card>>;
   disabled?: boolean;
   placement?: Placement | Placement[];
@@ -77,11 +78,12 @@ const DropdownArea: ParentComponent<DropdownAreaProps> = (props) => {
 let activeContextMenuClose: (() => void) | null = null;
 
 const Dropdown: Component<DropdownProps> = (props) => {
-  const [anchorPoint, setAnchorPoint] = createSignal<Point | null>(null);
+  const [contextAnchorPoint, setContextAnchorPoint] = createSignal<Point | null>(null);
   const [ghostAnchorRef, setGhostAnchorRef] = createRef<HTMLElement | null>(null);
   const [activatorRef, setActivatorRef] = createRef<HTMLElement | null>(null);
   const [opened, setOpened] = createSignal(props.opened || false);
   const { onContextMenu } = useContext(DropdownAreaContext);
+  const anchorPoint = () => contextAnchorPoint() || props.anchorPoint;
   const getAnchorElement = (): HTMLElement | null => {
     // If context menu point is set, use ghost anchor; otherwise use activator
     if (anchorPoint()) {
@@ -100,14 +102,14 @@ const Dropdown: Component<DropdownProps> = (props) => {
   };
   const closeContextMenu = () => {
     setOpened(false);
-    setAnchorPoint(null);
+    setContextAnchorPoint(null);
   };
 
   const handleOpenChange = (details: { open: boolean }): void => {
     setOpened(details.open);
 
     if (!details.open) {
-      setAnchorPoint(null);
+      setContextAnchorPoint(null);
 
       if (activeContextMenuClose === closeContextMenu) {
         activeContextMenuClose = null;
@@ -122,7 +124,7 @@ const Dropdown: Component<DropdownProps> = (props) => {
         activeContextMenuClose();
       }
 
-      setAnchorPoint({ x: event.clientX, y: event.clientY });
+      setContextAnchorPoint({ x: event.clientX, y: event.clientY });
       setOpened(true);
       activeContextMenuClose = closeContextMenu;
       event.preventDefault();

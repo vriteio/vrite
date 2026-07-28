@@ -66,6 +66,7 @@ const createSlashMenuPlugin = (options: {
     render: () => {
       const [suggestionProps, setSuggestionProps] =
         createSignal<SuggestionProps<SlashMenuItem> | null>(null);
+      const [menuVisible, setMenuVisible] = createSignal(false);
       const getReferenceClientRect = (props: SuggestionProps<SlashMenuItem>): DOMRect => {
         const clientRect = props.clientRect?.();
 
@@ -86,6 +87,7 @@ const createSlashMenuPlugin = (options: {
       return {
         onStart: (props) => {
           setSuggestionProps(props);
+          setMenuVisible(true);
 
           const target = document.querySelector("#editor-container")!;
           const element = document.createElement("div");
@@ -95,7 +97,9 @@ const createSlashMenuPlugin = (options: {
                 const state = (): SlashMenuState => ({
                   ...suggestionProps()!,
                   clientRect: () => getReferenceClientRect(suggestionProps()!),
+                  visible: menuVisible(),
                   close() {
+                    setMenuVisible(false);
                     popup?.hide();
                   },
                   setOnKeyDown(handler) {
@@ -125,7 +129,10 @@ const createSlashMenuPlugin = (options: {
             interactive: true,
             trigger: "manual",
             placement: "bottom-start",
-            hideOnClick: "toggle"
+            hideOnClick: "toggle",
+            onHide: () => {
+              setMenuVisible(false);
+            }
           });
           popup.popper.classList.add("slash-menu");
         },
@@ -144,6 +151,7 @@ const createSlashMenuPlugin = (options: {
 
         onKeyDown(props) {
           if (props.event.key === "Escape") {
+            setMenuVisible(false);
             popup?.hide();
 
             return true;
@@ -153,6 +161,7 @@ const createSlashMenuPlugin = (options: {
         },
 
         onExit() {
+          setMenuVisible(false);
           popup?.destroy();
           component?.unmount();
         }

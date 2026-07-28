@@ -1,5 +1,5 @@
 import { SuggestionKeyDownProps, SuggestionProps } from "@tiptap/suggestion";
-import { Component, createEffect, createSignal, For, on, onMount, Show } from "solid-js";
+import { Component, createEffect, createSignal, For, on, onCleanup, onMount, Show } from "solid-js";
 import { Editor, Range } from "@tiptap/core";
 import clsx from "clsx";
 import {
@@ -10,7 +10,8 @@ import {
   Ref,
   ScrollShadow,
   Shortcut,
-  Tooltip
+  Tooltip,
+  useTooltipContext
 } from "@andesine/components";
 import { Dynamic } from "solid-js/web";
 
@@ -31,6 +32,7 @@ interface SlashMenuState {
   readonly clientRect: SuggestionProps<SlashMenuItem>["clientRect"];
   readonly decorationNode: SuggestionProps<SlashMenuItem>["decorationNode"];
   readonly text: string;
+  readonly visible: boolean;
   command(item: SlashMenuItem): void;
   close(): void;
   onKeyDown?(props: SuggestionKeyDownProps): boolean;
@@ -44,6 +46,7 @@ const SECTION_HEADING_HEIGHT = 24;
 const ITEM_HEIGHT = 28;
 const MENU_PADDING_TOP = 4;
 const SlashMenu: Component<SlashMenuProps> = (props) => {
+  const { setActiveTooltip } = useTooltipContext();
   const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
   const [selectedIndex, setSelectedIndex] = createSignal(0);
   const [blockHoverSelect, setBlockHoverSelect] = createSignal(false);
@@ -129,6 +132,14 @@ const SlashMenu: Component<SlashMenuProps> = (props) => {
       }
     });
   });
+  createEffect(() => {
+    if (!props.state.visible) {
+      setActiveTooltip("");
+    }
+  });
+  onCleanup(() => {
+    setActiveTooltip("");
+  });
   createEffect(
     on(
       () => props.state.items,
@@ -143,6 +154,7 @@ const SlashMenu: Component<SlashMenuProps> = (props) => {
       class={clsx(
         "md:w-64 m-0 overflow-hidden transition duration-200 transform origin-top-left p-2 pt-1 relative bg-white"
       )}
+      data-menu
       shade
     >
       <ScrollShadow
@@ -190,7 +202,21 @@ const SlashMenu: Component<SlashMenuProps> = (props) => {
                     ref={menuItem.ref[1]}
                     hover="none"
                     size="small"
-                    onClick={() => selectItem(index())}
+                    onPointerDown={(event) => {
+                      if (event.button !== 0) return;
+
+                      event.preventDefault();
+                      event.stopPropagation();
+                      selectItem(index());
+                    }}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+
+                      if (event.detail === 0) {
+                        selectItem(index());
+                      }
+                    }}
                     onPointerMove={() => {
                       setBlockHoverSelect(false);
                     }}

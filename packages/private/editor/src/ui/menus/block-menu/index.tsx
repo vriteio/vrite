@@ -20,7 +20,7 @@ interface BlockMenuProps {
 const BlockMenuContext = createContext<{
   handleCopy(): boolean;
   handleDelete(): boolean;
-  openMenu(): void;
+  openMenu(reference?: HTMLElement): void;
 }>({
   handleCopy: () => false,
   handleDelete: () => false,
@@ -29,6 +29,7 @@ const BlockMenuContext = createContext<{
 const BlockMenuArea: ParentComponent<BlockMenuAreaProps> = (props) => {
   const registerShortcuts = useShortcuts();
   const [menuOpened, setMenuOpened] = createSignal(false);
+  const [menuAnchorPoint, setMenuAnchorPoint] = createSignal<{ x: number; y: number } | null>(null);
   const handleCopy = () => {
     if (!props.editor) return false;
 
@@ -52,8 +53,26 @@ const BlockMenuArea: ParentComponent<BlockMenuAreaProps> = (props) => {
 
     return true;
   };
-  const openMenu = () => {
+  const openMenu = (reference?: HTMLElement) => {
+    if (reference) {
+      const referenceRect = reference.getBoundingClientRect();
+
+      setMenuAnchorPoint({
+        x: referenceRect.right,
+        y: referenceRect.bottom
+      });
+    } else {
+      setMenuAnchorPoint(null);
+    }
+
     setMenuOpened(true);
+  };
+  const handleMenuOpenedChange = (opened: boolean) => {
+    setMenuOpened(opened);
+
+    if (!opened) {
+      setMenuAnchorPoint(null);
+    }
   };
 
   createEffect(() => {
@@ -88,18 +107,37 @@ const BlockMenuArea: ParentComponent<BlockMenuAreaProps> = (props) => {
         }}
       >
         {props.children}
-        <BlockMenu editor={props.editor} menuOpened={menuOpened()} setMenuOpened={setMenuOpened} />
+        <BlockMenu
+          anchorPoint={menuAnchorPoint()}
+          editor={props.editor}
+          menuOpened={menuOpened()}
+          setMenuOpened={handleMenuOpenedChange}
+        />
       </DropdownArea>
     </BlockMenuContext.Provider>
   );
 };
 const BlockMenu: ParentComponent<
-  BlockMenuProps & { menuOpened: boolean; setMenuOpened(opened: boolean): void }
+  BlockMenuProps & {
+    anchorPoint: { x: number; y: number } | null;
+    menuOpened: boolean;
+    setMenuOpened(opened: boolean): void;
+  }
 > = (props) => {
   const { handleCopy, handleDelete } = useContext(BlockMenuContext);
-  const [coords, setCoords] = createSignal({ top: 0, right: 0 });
+  let currentNodePos = -1;
+  const [coords, setCoords] = createSignal({ top: -10000, left: -10000 });
+  const [hoverAreaHeight, setHoverAreaHeight] = createSignal(0);
   const [visible, setVisible] = createSignal(false);
-  const [focused, setFocused] = createSignal(false);
+  let lastPointerPosition: { x: number; y: number } | null = null;
+  const RIGHT_THRESHOLD_PERCENT = 0.3;
+  const handleOpenedChange = (opened: boolean) => {
+    props.setMenuOpened(opened);
+
+    if (!opened) {
+      setVisible(false);
+    }
+  };
 
   createEffect(() => {
     const editor = props.editor;
@@ -109,134 +147,163 @@ const BlockMenu: ParentComponent<
       return;
     }
 
-    const updatePosition = () => {
-      const { state, view } = editor;
-      const { selection } = state;
-
+    const updatePosition = (event: PointerEvent) => {
       try {
-        const $from = selection.$from;
+        const { state, view } = editor;
+        const pointerPosition = view.posAtCoords({
+          left: event.clientX,
+          top: event.clientY
+        });
 
-        if ($from.depth < 1) {
+        if (!pointerPosition) {
           setVisible(false);
-
           return;
         }
 
-        let targetPos = $from.before(1);
+        const resolvedPosition = state.doc.resolve(pointerPosition.pos);
 
-        if (isBlockSelection(selection)) {
-          const { from } = selection;
-          let firstBlockPos: number | null = null;
-
-          state.doc.nodesBetween(from, selection.to, (node, pos) => {
-            if (firstBlockPos === null && node.type.isInGroup("block")) {
-              firstBlockPos = pos;
-
-              return false;
-            }
-
-            return firstBlockPos === null;
-          });
-
-          if (firstBlockPos !== null) {
-            targetPos = firstBlockPos;
-          }
+        if (resolvedPosition.depth < 1) {
+          setVisible(false);
+          return;
         }
 
+        const targetPos = resolvedPosition.before(1);
+        const node = state.doc.nodeAt(targetPos);
         const dom = view.nodeDOM(targetPos);
 
-        if (dom instanceof HTMLElement) {
-          const blockRect = dom.getBoundingClientRect();
-
-          setCoords({
-            top: blockRect.top,
-            right: window.innerWidth - blockRect.right
-          });
-          setVisible(true);
-        } else {
+        if (!(dom instanceof HTMLElement) || node?.type.name === "title") {
           setVisible(false);
+          return;
         }
+
+        const blockRect = dom.getBoundingClientRect();
+        const scrollContainer = editor.view.dom.closest(".overflow-auto");
+
+        if (!(scrollContainer instanceof HTMLElement)) {
+          setVisible(false);
+          return;
+        }
+
+        const scrollContainerRect = scrollContainer.getBoundingClientRect();
+        const distanceFromRight = blockRect.right - event.clientX;
+        const isNearRightEdge =
+          distanceFromRight >= 0 && distanceFromRight <= blockRect.width * RIGHT_THRESHOLD_PERCENT;
+
+        if (!isNearRightEdge) {
+          setVisible(false);
+          return;
+        }
+
+        currentNodePos = targetPos;
+        setCoords({
+          top: blockRect.top - scrollContainerRect.top + scrollContainer.scrollTop,
+          left: blockRect.right - scrollContainerRect.left + scrollContainer.scrollLeft + 8
+        });
+        setHoverAreaHeight(blockRect.height);
+        setVisible(true);
       } catch {
         setVisible(false);
       }
     };
+    const handlePointerMoveCapture = (event: PointerEvent) => {
+      if (lastPointerPosition?.x === event.clientX && lastPointerPosition.y === event.clientY) {
+        event.stopImmediatePropagation();
+        return;
+      }
 
-    const scrollContainer = editor.view.dom
-      .closest("#editor-container")
-      ?.closest(".overflow-auto") as HTMLElement | null;
+      lastPointerPosition = { x: event.clientX, y: event.clientY };
+    };
+    const hideTrigger = (event: PointerEvent) => {
+      if (
+        event.relatedTarget instanceof HTMLElement &&
+        event.relatedTarget.closest("[data-block-menu-trigger]")
+      ) {
+        return;
+      }
 
-    editor.on("selectionUpdate", updatePosition);
-    editor.on("update", updatePosition);
-    editor.on("focus", () => {
-      setFocused(true);
-      updatePosition();
-    });
-    editor.on("blur", () => {
-      setFocused(false);
-      updatePosition();
-    });
-    scrollContainer?.addEventListener("scroll", updatePosition, { passive: true });
-    updatePosition();
+      if (!props.menuOpened) {
+        setVisible(false);
+      }
+    };
+    const editorElement = editor.view.dom;
 
+    editorElement.addEventListener("pointermove", handlePointerMoveCapture, true);
+    editorElement.addEventListener("pointermove", updatePosition);
+    editorElement.addEventListener("pointerleave", hideTrigger);
     onCleanup(() => {
-      editor.off("selectionUpdate", updatePosition);
-      editor.off("update", updatePosition);
-      scrollContainer?.removeEventListener("scroll", updatePosition);
+      editorElement.removeEventListener("pointermove", handlePointerMoveCapture, true);
+      editorElement.removeEventListener("pointermove", updatePosition);
+      editorElement.removeEventListener("pointerleave", hideTrigger);
     });
   });
 
   return (
     <DropdownMenu
+      anchorPoint={props.anchorPoint}
       trigger={() => {
         return (
-          <IconButton
-            icon="i-lucide:ellipsis"
-            variant="outlined"
-            color="contrast"
-            size="small"
-            text="soft"
-            onClick={(event) => {
-              event.stopPropagation();
-              event.preventDefault();
-
-              if (!props.editor) {
-                return;
+          <div
+            class="relative"
+            data-block-menu-trigger
+            data-menu
+            onPointerLeave={() => {
+              if (!props.menuOpened) {
+                setVisible(false);
               }
+            }}
+          >
+            <div
+              class="absolute -left-2 top-0 w-2 pointer-events-auto"
+              style={{ height: `${hoverAreaHeight()}px` }}
+            />
+            <div
+              class="absolute left-0 top-7 w-full pointer-events-auto"
+              style={{ height: `${Math.max(0, hoverAreaHeight() - 28)}px` }}
+            />
+            <IconButton
+              icon="i-lucide:ellipsis"
+              variant="outlined"
+              color="contrast"
+              size="small"
+              text="soft"
+              onClick={(event) => {
+                event.stopPropagation();
+                event.preventDefault();
 
-              const { state } = props.editor;
-              const { selection } = state;
+                if (!props.editor) {
+                  return;
+                }
 
-              if (!isBlockSelection(selection)) {
-                const $from = selection.$from;
-                const pos = $from.before(1);
-                const node = state.doc.nodeAt(pos);
+                const { state } = props.editor;
+                const node = state.doc.nodeAt(currentNodePos);
 
-                if (node) {
+                if (node && currentNodePos >= 0) {
                   props.editor
                     .chain()
                     .focus()
                     .setBlockSelection({
-                      from: pos,
-                      to: pos + node.nodeSize
+                      from: currentNodePos,
+                      to: currentNodePos + node.nodeSize
                     })
                     .run();
                 }
-              } else {
-                props.editor.commands.focus();
-              }
 
-              props.setMenuOpened(true);
-            }}
-          />
+                setVisible(true);
+                props.setMenuOpened(true);
+              }}
+            />
+          </div>
         );
       }}
-      class="fixed z-10"
+      class="absolute z-10"
       style={{
-        right: `${coords().right}px`,
-        top: `${coords().top}px`
+        left: `${coords().left}px`,
+        position: "absolute",
+        top: `${coords().top}px`,
+        visibility: visible() ? "visible" : "hidden"
       }}
       opened={props.menuOpened}
-      setOpened={props.setMenuOpened}
+      setOpened={handleOpenedChange}
       cardProps={{
         class: "w-48"
       }}

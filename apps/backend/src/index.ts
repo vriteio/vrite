@@ -1,10 +1,6 @@
-import { Hocuspocus } from "@hocuspocus/server";
-import { Database } from "@hocuspocus/extension-database";
 import { router, routerPlugin } from "#backend/router";
 import "./events";
-import { contentsDB } from "#backend/db";
-import { toUUID } from "./lib/mongo";
-import { Binary } from "mongodb";
+import { collab } from "#backend/collaboration";
 import { config } from "./lib/config";
 import { Billing } from "./services";
 import Fastify, { FastifyRequest } from "fastify";
@@ -25,33 +21,6 @@ const allowedHeaders = [
 ];
 const host = process.env.HOST ?? "0.0.0.0";
 const port = Number(process.env.PORT ?? 3333);
-const hocuspocus = new Hocuspocus({
-  extensions: [
-    new Database({
-      async fetch({ documentName }) {
-        if (documentName === "explorer") return null;
-        const entryID = documentName;
-        const content = await contentsDB.findOne({
-          entryID: toUUID(entryID)
-        });
-
-        if (content && content.content) {
-          return new Uint8Array(content.content.buffer);
-        }
-
-        return null;
-      },
-      async store({ documentName, state }) {
-        await contentsDB?.updateOne(
-          { entryID: toUUID(documentName) },
-          { $set: { content: new Binary(state) } },
-          { upsert: true }
-        );
-      }
-    })
-  ]
-});
-
 const app = Fastify();
 const createWebRequest = (fastifyRequest: FastifyRequest): Request => {
   const url = new URL(
@@ -87,7 +56,7 @@ await app.register(websocketPlugin, {
 });
 app.get("/collab", { websocket: true }, (socket, request) => {
   const webRequest = createWebRequest(request);
-  const clientConnection = hocuspocus.handleConnection(socket, webRequest);
+  const clientConnection = collab.handleConnection(socket, webRequest);
 
   socket.on("message", (message) => {
     clientConnection.handleMessage(new Uint8Array(message as ArrayBuffer));

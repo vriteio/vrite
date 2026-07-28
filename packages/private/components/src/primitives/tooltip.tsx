@@ -9,7 +9,8 @@ import {
   Accessor,
   Setter,
   createEffect,
-  on
+  on,
+  onCleanup
 } from "solid-js";
 import { Tooltip as BaseTooltip } from "@ark-ui/solid/tooltip";
 import { Portal } from "solid-js/web";
@@ -47,6 +48,10 @@ const Tooltip: Component<TooltipProps> = (props) => {
   const placement = () => props.side || "bottom";
   const tooltipID = nanoid();
 
+  onCleanup(() => {
+    setActiveTooltip((activeTooltip) => (activeTooltip === tooltipID ? "" : activeTooltip));
+  });
+
   return (
     <BaseTooltip.Root
       openDelay={props.openDelay ?? OPEN_DELAY}
@@ -69,6 +74,7 @@ const Tooltip: Component<TooltipProps> = (props) => {
       }}
       disabled={!md() || !enabled()}
       lazyMount
+      unmountOnExit
     >
       <BaseTooltip.Trigger
         asChild={(triggerProps) => {

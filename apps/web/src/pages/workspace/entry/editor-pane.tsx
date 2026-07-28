@@ -224,6 +224,14 @@ const EditorPane: Component = () => {
                   collaborationUser={collaborationUser()}
                   beforeProviderAttach={handleBeforeProviderAttach}
                   onProvider={handleProvider}
+                  onTitleChange={(title) => {
+                    const entries = content.entriesCollection();
+                    const entry = entries.findOne({ id: entryID });
+
+                    if (entry && entry.name !== title) {
+                      entries.updateOne({ id: entryID }, { $set: { name: title } });
+                    }
+                  }}
                 />
               </Suspense>
             </div>
