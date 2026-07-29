@@ -1,41 +1,65 @@
-import { toUUID } from "#backend/lib/id";
+import { entries, users, workspaces } from "#backend/db";
+import { toEntryID, toUUID, toWorkspaceID } from "#backend/lib/id";
 import { db } from "#backend/lib/postgres";
-import { memberships, users, workspaces } from "#backend/db";
-import { Auth } from "#backend/services/auth";
-import { and, eq, ne } from "drizzle-orm";
-import { ORPCError } from "@orpc/server";
+import { eq, sql } from "drizzle-orm";
 
-const deleteWorkspace = async (input: { workspaceID: string; userID: string }) => {
+const deleteWorkspace = async (input: {
+  workspaceID: string;
+  userID: string;
+}): Promise<{ entryIDs: string[]; workspaceID: string | null }> => {
   const workspaceID = toUUID(input.workspaceID);
   const userID = toUUID(input.userID);
 
-  await db.transaction(async (tx) => {
+  return db.transaction(async (tx) => {
     const [workspace] = await tx
       .select({ id: workspaces.id })
       .from(workspaces)
       .where(eq(workspaces.id, workspaceID))
       .for("update");
 
-    if (!workspace) throw new ORPCError("NOT_FOUND", { message: "Workspace not found" });
+    if (!workspace) {
+      const [user] = await tx
+        .select({ currentWorkspaceID: users.currentWorkspaceID })
+        .from(users)
+        .where(eq(users.id, userID));
 
-    const [fallback] = await tx
-      .select({ workspaceID: memberships.workspaceID })
-      .from(memberships)
-      .where(and(eq(memberships.userID, userID), ne(memberships.workspaceID, workspaceID)))
-      .limit(1);
-
-    if (!fallback) {
-      throw new ORPCError("BAD_REQUEST", { message: "Cannot delete your only workspace" });
+      return {
+        entryIDs: [],
+        workspaceID: user?.currentWorkspaceID ? toWorkspaceID(user.currentWorkspaceID) : null
+      };
     }
+
+    const workspaceEntries = await tx
+      .select({ id: entries.id })
+      .from(entries)
+      .where(eq(entries.workspaceID, workspaceID));
 
     await tx
       .update(users)
-      .set({ currentWorkspaceID: fallback.workspaceID, updatedAt: new Date() })
-      .where(and(eq(users.id, userID), eq(users.currentWorkspaceID, workspaceID)));
-    await tx.delete(workspaces).where(eq(workspaces.id, workspaceID));
-  });
+      .set({
+        currentWorkspaceID: sql`(
+          select fallback_membership.workspace_id
+          from memberships fallback_membership
+          where fallback_membership.user_id = ${users.id}
+            and fallback_membership.workspace_id <> ${workspaceID}
+          order by fallback_membership.created_at
+          limit 1
+        )`,
+        updatedAt: new Date()
+      })
+      .where(eq(users.currentWorkspaceID, workspaceID));
+    const [user] = await tx
+      .select({ currentWorkspaceID: users.currentWorkspaceID })
+      .from(users)
+      .where(eq(users.id, userID));
 
-  await Auth.invalidateSessionData({ workspaceID: input.workspaceID });
+    await tx.delete(workspaces).where(eq(workspaces.id, workspaceID));
+
+    return {
+      entryIDs: workspaceEntries.map(({ id }) => toEntryID(id)),
+      workspaceID: user?.currentWorkspaceID ? toWorkspaceID(user.currentWorkspaceID) : null
+    };
+  });
 };
 
 export { deleteWorkspace };

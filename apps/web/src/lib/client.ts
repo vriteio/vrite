@@ -11,7 +11,7 @@ import {
 import { passkeyClient } from "@better-auth/passkey/client";
 import { config } from "#web/lib/config";
 import { getRequestEvent } from "solid-js/web";
-import { clearWorkspaceData } from "#web/context/workspace/persistence";
+import { clearPersistenceData } from "#web/context/workspace/persistence";
 import { validateWorkspaceID } from "#web/lib/validate";
 
 const getRouteWorkspaceID = () => {
@@ -34,7 +34,7 @@ const link = new RPCLink({
       if (error instanceof ORPCError) {
         if (error.code === "UNAUTHORIZED") {
           if (typeof window !== "undefined") {
-            clearWorkspaceData();
+            clearPersistenceData();
             window.location.assign("/auth/sign-in");
             return;
           }

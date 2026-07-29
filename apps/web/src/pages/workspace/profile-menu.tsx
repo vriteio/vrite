@@ -3,7 +3,7 @@ import { DropdownArea, DropdownMenu, MenuItem } from "@andesine/components";
 import { Component, createMemo, createSignal, JSX } from "solid-js";
 import { useNavigate } from "@solidjs/router";
 import { useWorkspace } from "#web/context/workspace";
-import { clearWorkspaceData } from "#web/context/workspace/persistence";
+import { clearPersistenceData } from "#web/context/workspace/persistence";
 import clsx from "clsx";
 import { createMutation } from "@tanstack/solid-query";
 
@@ -143,10 +143,17 @@ const ProfileMenu: Component<ProfileMenuProps> = (props) => {
           if (logoutPending()) return;
 
           const sessionList = sessions();
-          await clearWorkspaceData();
+          const current = currentWorkspace();
+          const persistedWorkspaceIDs =
+            sessionList.length > 1
+              ? workspaceList
+                  .filter((workspace) => workspace.userID !== current?.userID)
+                  .map(({ id }) => id)
+              : [];
+
+          await clearPersistenceData({ persist: persistedWorkspaceIDs });
 
           if (sessionList.length > 1) {
-            const current = currentWorkspace();
             const currentSession = sessionList.find((s) => s.user.id === current?.userID);
 
             if (currentSession) {

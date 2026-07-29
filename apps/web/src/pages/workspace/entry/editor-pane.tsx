@@ -6,6 +6,7 @@ import { useNotify } from "#web/context/notifications";
 import { config } from "#web/lib/config";
 import { useWorkspace } from "#web/context/workspace";
 import { IndexeddbPersistence } from "y-indexeddb";
+import { getWorkspaceEntryDatabaseName } from "#web/context/workspace/persistence";
 
 type EntryLoadState = {
   entryID: string | null;
@@ -34,10 +35,6 @@ const createEntryLoadState = (entryID: string | null): EntryLoadState => {
     hasLocalSnapshot: false,
     isRemoteSyncing: false
   };
-};
-
-const getEntryPersistenceKey = (workspaceID: string, entryID: string) => {
-  return `andesine:entry:${workspaceID}:${entryID}`;
 };
 
 const EntryContentSkeleton: Component = () => {
@@ -107,7 +104,7 @@ const EditorPane: Component = () => {
     const entryID = provider.configuration.name;
     const currentWorkspaceID = workspaceID();
     const persistence = new IndexeddbPersistence(
-      getEntryPersistenceKey(currentWorkspaceID, entryID),
+      getWorkspaceEntryDatabaseName(currentWorkspaceID, entryID),
       provider.document
     );
 

@@ -1,5 +1,5 @@
-import { contents, entries } from "#backend/db";
-import { emitEntryEvent } from "#backend/events";
+import { contents, entries, workspaces } from "#backend/db";
+import { emitEntryEvent, subscribeToWorkspaceStateEvents } from "#backend/events";
 import { hasPermission } from "#backend/lib/middleware";
 import { toEntryID, toUUID, toWorkspaceID } from "#backend/lib/id";
 import { Auth, type SessionData } from "#backend/services/auth";
@@ -56,12 +56,17 @@ const authenticateCollaboration = async (input: {
   }
 
   const [entry] = await db
-    .select({ id: entries.id, workspaceID: entries.workspaceID })
+    .select({
+      id: entries.id,
+      workspaceID: entries.workspaceID,
+      workspaceDeletingAt: workspaces.deletingAt
+    })
     .from(entries)
+    .innerJoin(workspaces, eq(workspaces.id, entries.workspaceID))
     .where(eq(entries.id, entryID))
     .limit(1);
 
-  if (!entry) {
+  if (!entry || entry.workspaceDeletingAt) {
     throw permissionError("Forbidden");
   }
 
@@ -200,6 +205,14 @@ const collab = new Hocuspocus<CollaborationContext>({
       }
     })
   ]
+});
+
+subscribeToWorkspaceStateEvents("*", (event) => {
+  if (event.action !== "workspace:delete") return;
+
+  for (const entryID of event.data.entryIDs) {
+    collab.closeConnections(entryID);
+  }
 });
 
 const updateDocumentTitle = async (documentName: string, title: string): Promise<void> => {

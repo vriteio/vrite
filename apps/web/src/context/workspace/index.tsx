@@ -1,10 +1,11 @@
-import { createContext, createMemo, ParentComponent, useContext } from "solid-js";
+import { createContext, createEffect, createMemo, ParentComponent, useContext } from "solid-js";
 import { createAsync, query, revalidate, useParams } from "@solidjs/router";
 import { client, authClient, type Permission } from "#web/lib/client";
 import { validateWorkspaceID } from "#web/lib/validate";
 import { useWorkspaceContent } from "./content";
 import { createMutation } from "@tanstack/solid-query";
 import { toUserID } from "#web/lib/id";
+import { clearPersistenceData } from "./persistence";
 
 interface WorkspaceInfo {
   id: string;
@@ -91,6 +92,28 @@ const WorkspaceProvider: ParentComponent = (props) => {
     const id = currentWorkspace()?.userID;
 
     return sessionList.find((session) => session.user.id === id);
+  });
+  createEffect(() => {
+    const workspaceList = workspaces();
+    const currentWorkspaceID = workspaceID();
+
+    if (workspaceList === undefined) return;
+
+    clearPersistenceData({ persist: workspaceList.map(({ id }) => id) });
+
+    if (
+      typeof window === "undefined" ||
+      !currentWorkspaceID ||
+      workspaceList.some(({ id }) => id === currentWorkspaceID)
+    ) {
+      return;
+    }
+
+    content.disposeWorkspaceContent(currentWorkspaceID).finally(() => {
+      const fallbackWorkspace = workspaceList[0];
+
+      window.location.replace(fallbackWorkspace ? `/${fallbackWorkspace.id}/` : "/new-workspace");
+    });
   });
   const switchWorkspace = async (workspaceID: string) => {
     if (workspaceID === params.workspaceID) return;

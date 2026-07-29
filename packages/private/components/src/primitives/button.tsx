@@ -49,9 +49,9 @@ const getColorClasses = (color: ButtonColor, variant: ButtonVariant) => {
     base: ":base: bg-gray-200 dark:bg-gray-800 border-gray-200 dark:border-gray-800",
     contrast:
       ":base: bg-white dark:bg-gray-950 border-gray-200 dark:border-gray-700 shadow-gray-200 dark:shadow-gray-950",
-    danger: ":base: bg-red-500 dark:bg-red-500 border-red-500 dark:border-red-500 text-white",
+    danger: ":base: bg-red-500 dark:bg-red-500 border-red-600 dark:border-red-600 text-white",
     success:
-      ":base: bg-green-500 dark:bg-green-500 border-green-500 dark:border-green-500 text-white",
+      ":base: bg-green-500 dark:bg-green-500 border-green-600 dark:border-green-600 text-white",
     primary:
       ":base: bg-gradient-to-tr bg-[length:125%_auto] text-white border-primary dark:border-primary"
   };
@@ -112,10 +112,10 @@ const getHoverClasses = (
     return ":base: hover:text-white hover:bg-green-600 dark:hover:bg-green-600 dark:hover:text-white";
   }
   if (color === "danger") {
-    return ":base: hover:bg-red-600 dark:hover:bg-red-600 hover:border-red-600 dark:hover:border-red-600";
+    return ":base: hover:bg-red-600 dark:hover:bg-red-600 hover:border-red-700 dark:hover:border-red-700";
   }
   if (color === "success") {
-    return ":base: hover:bg-green-600 dark:hover:bg-green-600 hover:border-green-600 dark:hover:border-green-600";
+    return ":base: hover:bg-green-600 dark:hover:bg-green-600 hover:border-green-700 dark:hover:border-green-700";
   }
   if (color === "primary") {
     return ":base: hover:bg-right hover:border-primary dark:hover:border-primary";

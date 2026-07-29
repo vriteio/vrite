@@ -63,7 +63,7 @@ const configSchema = z.object({
   STRIPE_PRO_API_CALL_PRICE_ID: z
     .string()
     .optional()
-    .describe("Stripe Price ID for Pro extra API calls metered charge"),
+    .describe("Stripe Price ID for tiered Pro API call metering"),
   STRIPE_PRO_API_CALL_METER_EVENT_NAME: z
     .string()
     .optional()

@@ -25,6 +25,9 @@ const createCheckout = async (input: {
     .limit(1);
 
   if (!workspace) throw new ORPCError("NOT_FOUND", { message: "Workspace not found" });
+  if (workspace.deletingAt) {
+    throw new ORPCError("CONFLICT", { message: "Workspace deletion is in progress" });
+  }
 
   // Count current seats (memberships)
   const [{ value: seatCount }] = await db

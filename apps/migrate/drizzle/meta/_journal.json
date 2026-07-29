@@ -8,6 +8,13 @@
       "when": 1785278765655,
       "tag": "0000_initialize",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1785341126482,
+      "tag": "0001_workspace-deletion-state",
+      "breakpoints": true
     }
   ]
 }

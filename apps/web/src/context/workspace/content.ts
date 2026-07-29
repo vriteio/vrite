@@ -2,6 +2,7 @@ import { Collection as LocalDBCollection } from "@signaldb/core";
 import { createWorkspaceContentOperations } from "./operations";
 import {
   WORKSPACE_DATA_PREFIX,
+  clearWorkspaceData,
   createIndexedDBAdapter,
   deleteIndexedDBDatabase
 } from "./persistence";
@@ -89,6 +90,13 @@ const useWorkspaceContent = (workspaceID: Accessor<string>) => {
   });
   const disposeWorkspaceContent = async (targetWorkspaceID: string) => {
     const currentCollections = contentCollections();
+    const entryIDs =
+      currentCollections.workspaceID === targetWorkspaceID
+        ? currentCollections.entries
+            .find()
+            .fetch()
+            .map(({ id }) => id)
+        : [];
 
     if (currentCollections.workspaceID === targetWorkspaceID) {
       const nextCollections = createWorkspaceCollections();
@@ -98,7 +106,7 @@ const useWorkspaceContent = (workspaceID: Accessor<string>) => {
       await currentCollections.collections.dispose();
     }
 
-    await clearWorkspaceContent(targetWorkspaceID);
+    await clearWorkspaceData(targetWorkspaceID, entryIDs);
   };
 
   const readOnly = () => {

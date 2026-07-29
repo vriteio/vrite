@@ -30,6 +30,7 @@ const workspaces = pgTable(
     subscriptionPlan: text("subscription_plan").notNull().default("free"),
     subscriptionData: jsonb("subscription_data").$type<SubscriptionData>(),
     subscriptionExpiresAt: timestamp("subscription_expires_at", { withTimezone: true }),
+    deletingAt: timestamp("deleting_at", { withTimezone: true }),
     ...timestamps
   },
   (table) => [

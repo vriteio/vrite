@@ -18,6 +18,9 @@ const createPortal = async (input: {
     .limit(1);
 
   if (!workspace) throw new ORPCError("NOT_FOUND", { message: "Workspace not found" });
+  if (workspace.deletingAt) {
+    throw new ORPCError("CONFLICT", { message: "Workspace deletion is in progress" });
+  }
 
   if (!workspace.customerID) {
     throw new ORPCError("BAD_REQUEST", { message: "Workspace has no billing account" });

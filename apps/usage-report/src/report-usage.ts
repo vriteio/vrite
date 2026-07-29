@@ -12,7 +12,6 @@ interface UsageLedgerRow {
 
 interface WorkspaceRow {
   customer_id: string | null;
-  subscription_plan: string;
 }
 
 const claimUsage = async (): Promise<UsageLedgerRow | null> => {
@@ -86,7 +85,7 @@ const reportUsage = async (): Promise<number> => {
     try {
       const workspaceResult = await pool.query<WorkspaceRow>(
         `
-          select customer_id, subscription_plan
+          select customer_id
           from workspaces
           where id = $1
           limit 1
@@ -95,20 +94,22 @@ const reportUsage = async (): Promise<number> => {
       );
       const workspace = workspaceResult.rows[0];
 
-      if (workspace?.customer_id && workspace.subscription_plan === "pro") {
-        if (!stripe || !config.STRIPE_PRO_API_CALL_METER_EVENT_NAME) {
-          throw new Error("Stripe metering is not configured");
-        }
-
-        await stripe.v2.billing.meterEvents.create({
-          event_name: config.STRIPE_PRO_API_CALL_METER_EVENT_NAME,
-          payload: {
-            stripe_customer_id: workspace.customer_id,
-            value: ledger.quantity
-          },
-          identifier: ledger.stripe_event_identifier
-        });
+      if (!workspace?.customer_id) {
+        throw new Error(`Stripe customer not found for metered workspace ${ledger.workspace_id}`);
       }
+
+      if (!stripe || !config.STRIPE_PRO_API_CALL_METER_EVENT_NAME) {
+        throw new Error("Stripe metering is not configured");
+      }
+
+      await stripe.v2.billing.meterEvents.create({
+        event_name: config.STRIPE_PRO_API_CALL_METER_EVENT_NAME,
+        payload: {
+          stripe_customer_id: workspace.customer_id,
+          value: ledger.quantity
+        },
+        identifier: ledger.stripe_event_identifier
+      });
 
       const delivered = await pool.query(
         `

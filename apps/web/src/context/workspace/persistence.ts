@@ -6,8 +6,12 @@ interface IndexedDBAdapterOptions {
   storeName?: string;
   stores?: string[];
 }
+interface ClearPersistenceDataOptions {
+  persist?: string[];
+}
 
 const WORKSPACE_DATA_PREFIX = "andesine:";
+const WORKSPACE_ENTRY_DATA_PREFIX = `${WORKSPACE_DATA_PREFIX}entry:`;
 const LEGACY_STORE_NAME = "items";
 const isIndexedDBAvailable = () => {
   return typeof window !== "undefined" && typeof indexedDB !== "undefined";
@@ -19,15 +23,60 @@ const deleteIndexedDBDatabase = async (name: string) => {
 
   await deleteDB(name);
 };
-const clearWorkspaceData = async () => {
-  if (!isIndexedDBAvailable() || typeof window.indexedDB.databases !== "function") return;
+const listIndexedDBDatabaseNames = async (): Promise<string[]> => {
+  if (!isIndexedDBAvailable() || typeof window.indexedDB.databases !== "function") return [];
 
   const databases = await window.indexedDB.databases();
-  const databaseNames = databases.flatMap((database) => {
-    return database.name && database.name.startsWith(WORKSPACE_DATA_PREFIX) ? [database.name] : [];
-  });
 
-  await Promise.allSettled(databaseNames.map((name) => deleteIndexedDBDatabase(name)));
+  return databases.flatMap(({ name }) => (name ? [name] : []));
+};
+const deleteIndexedDBDatabases = async (names: Iterable<string>): Promise<void> => {
+  await Promise.allSettled(Array.from(new Set(names)).map((name) => deleteIndexedDBDatabase(name)));
+};
+const getDatabaseWorkspaceID = (name: string): string | null => {
+  if (name.startsWith(WORKSPACE_ENTRY_DATA_PREFIX)) {
+    return name.slice(WORKSPACE_ENTRY_DATA_PREFIX.length).split(":")[0] || null;
+  }
+
+  if (name.startsWith(`${WORKSPACE_DATA_PREFIX}ws_`)) {
+    return name.slice(WORKSPACE_DATA_PREFIX.length);
+  }
+
+  return null;
+};
+const clearPersistenceData = async (options: ClearPersistenceDataOptions = {}): Promise<void> => {
+  const persistedWorkspaceIDs = new Set(options.persist);
+  const databaseNames = await listIndexedDBDatabaseNames();
+
+  await deleteIndexedDBDatabases(
+    databaseNames.filter((name) => {
+      if (!name.startsWith(WORKSPACE_DATA_PREFIX)) return false;
+
+      const workspaceID = getDatabaseWorkspaceID(name);
+
+      return workspaceID === null || !persistedWorkspaceIDs.has(workspaceID);
+    })
+  );
+};
+const getWorkspaceEntryDatabaseName = (workspaceID: string, entryID?: string) => {
+  return `${WORKSPACE_ENTRY_DATA_PREFIX}${workspaceID}:${entryID || ""}`;
+};
+const clearWorkspaceData = async (workspaceID: string, entryIDs: string[] = []): Promise<void> => {
+  if (!isIndexedDBAvailable()) return;
+
+  const databaseNames = new Set([
+    `${WORKSPACE_DATA_PREFIX}${workspaceID}`,
+    ...entryIDs.map((entryID) => getWorkspaceEntryDatabaseName(workspaceID, entryID))
+  ]);
+  const discoveredDatabaseNames = await listIndexedDBDatabaseNames();
+
+  for (const name of discoveredDatabaseNames) {
+    if (getDatabaseWorkspaceID(name) === workspaceID) {
+      databaseNames.add(name);
+    }
+  }
+
+  await deleteIndexedDBDatabases(databaseNames);
 };
 const createIndexedDBAdapter = <T extends { id: I } & Record<string, any>, I extends IDBValidKey>(
   name: string,
@@ -151,7 +200,9 @@ const createIndexedDBAdapter = <T extends { id: I } & Record<string, any>, I ext
 
 export {
   WORKSPACE_DATA_PREFIX,
+  clearPersistenceData,
   clearWorkspaceData,
   createIndexedDBAdapter,
-  deleteIndexedDBDatabase
+  deleteIndexedDBDatabase,
+  getWorkspaceEntryDatabaseName
 };

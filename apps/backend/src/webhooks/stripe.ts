@@ -3,6 +3,10 @@ import { config } from "#backend/lib/config";
 import { toUUID } from "#backend/lib/id";
 import { stripe } from "#backend/lib/stripe";
 import { db } from "#backend/lib/postgres";
+import {
+  endStripeSubscription,
+  isTerminalSubscription
+} from "#backend/services/billing/end-subscription";
 import { and, eq, ne, sql } from "drizzle-orm";
 import { FastifyReply, FastifyRequest } from "fastify";
 import type Stripe from "stripe";
@@ -27,7 +31,10 @@ const subscriptionValues = (subscription: Stripe.Subscription) => {
   };
 };
 
-const handleStripeWebhook = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
+const handleStripeWebhook = async (
+  request: FastifyRequest<{ Body: Buffer }>,
+  reply: FastifyReply
+): Promise<void> => {
   if (!stripe || !config.STRIPE_WEBHOOK_SECRET) {
     return reply.status(500).send({ error: "Stripe not configured" });
   }
@@ -39,11 +46,7 @@ const handleStripeWebhook = async (request: FastifyRequest, reply: FastifyReply)
   let event: Stripe.Event;
 
   try {
-    event = stripe.webhooks.constructEvent(
-      request.body as string,
-      signature,
-      config.STRIPE_WEBHOOK_SECRET
-    );
+    event = stripe.webhooks.constructEvent(request.body, signature, config.STRIPE_WEBHOOK_SECRET);
   } catch {
     return reply.status(400).send({ error: "Invalid signature" });
   }
@@ -68,6 +71,7 @@ const handleStripeWebhook = async (request: FastifyRequest, reply: FastifyReply)
   try {
     let workspaceID: string | undefined;
     let update: Partial<typeof workspaces.$inferInsert> | undefined;
+    let activeSubscriptionID: string | undefined;
 
     if (event.type === "checkout.session.completed") {
       const session = event.data.object;
@@ -79,6 +83,9 @@ const handleStripeWebhook = async (request: FastifyRequest, reply: FastifyReply)
           typeof session.subscription === "string" ? session.subscription : session.subscription.id
         );
 
+        activeSubscriptionID = isTerminalSubscription(subscription.status)
+          ? undefined
+          : subscription.id;
         update = {
           ...subscriptionValues(subscription),
           subscriptionPlan: "pro",
@@ -89,6 +96,9 @@ const handleStripeWebhook = async (request: FastifyRequest, reply: FastifyReply)
       const subscription = event.data.object;
 
       workspaceID = subscription.metadata?.workspaceID;
+      activeSubscriptionID = isTerminalSubscription(subscription.status)
+        ? undefined
+        : subscription.id;
       update = subscriptionValues(subscription);
     } else if (event.type === "customer.subscription.deleted") {
       const subscription = event.data.object;
@@ -111,11 +121,30 @@ const handleStripeWebhook = async (request: FastifyRequest, reply: FastifyReply)
         const subscription = await stripe.subscriptions.retrieve(subscriptionID);
 
         workspaceID = subscription.metadata?.workspaceID;
+        activeSubscriptionID = isTerminalSubscription(subscription.status)
+          ? undefined
+          : subscription.id;
         update = { subscriptionStatus: "past_due", updatedAt: new Date() };
       }
     }
 
     const workspaceUUID = workspaceID ? toUUID(workspaceID) : null;
+
+    if (workspaceUUID && activeSubscriptionID) {
+      const [workspace] = await db
+        .select({ id: workspaces.id, deletingAt: workspaces.deletingAt })
+        .from(workspaces)
+        .where(eq(workspaces.id, workspaceUUID))
+        .limit(1);
+
+      if (!workspace || workspace.deletingAt) {
+        await endStripeSubscription({
+          subscriptionID: activeSubscriptionID,
+          idempotencyKey: `deleted-workspace:${workspaceID}:${activeSubscriptionID}`
+        });
+      }
+    }
+
     await db.transaction(async (tx) => {
       const [record] = await tx
         .select({ status: stripeWebhookEvents.status })
@@ -125,18 +154,27 @@ const handleStripeWebhook = async (request: FastifyRequest, reply: FastifyReply)
 
       if (!record || record.status === "processed") return;
 
+      const [workspace] = workspaceUUID
+        ? await tx
+            .select({ id: workspaces.id, deletingAt: workspaces.deletingAt })
+            .from(workspaces)
+            .where(eq(workspaces.id, workspaceUUID))
+            .for("update")
+        : [];
+      const persistedWorkspaceID = workspace?.id ?? null;
+
       await tx
         .update(stripeWebhookEvents)
         .set({
           status: "processing",
           attempts: sql`${stripeWebhookEvents.attempts} + 1`,
-          workspaceID: workspaceUUID,
+          workspaceID: persistedWorkspaceID,
           lastError: null
         })
         .where(eq(stripeWebhookEvents.id, event.id));
 
-      if (workspaceUUID && update) {
-        await tx.update(workspaces).set(update).where(eq(workspaces.id, workspaceUUID));
+      if (persistedWorkspaceID && !workspace?.deletingAt && update) {
+        await tx.update(workspaces).set(update).where(eq(workspaces.id, persistedWorkspaceID));
       }
 
       await tx

@@ -4,8 +4,10 @@ import { auth } from "#backend/lib/auth";
 import { authorized } from "#backend/lib/middleware";
 import { id, toUserID, toUUID } from "#backend/lib/id";
 import { base } from "#backend/lib/orpc";
+import { Billing } from "#backend/services/billing";
 import { Workspaces } from "#backend/services/workspaces";
 import * as z from "zod";
+import { Auth } from "#backend/services/auth";
 
 const workspaceSummaryType = workspaceType.pick({
   id: true,
@@ -109,9 +111,18 @@ const workspacesRouter = base.router({
       }
     })
     .use(authorized)
-    .output(z.void())
+    .output(
+      z.object({
+        workspaceID: id().nullable().describe("The user's fallback workspace after deletion")
+      })
+    )
     .handler(async ({ context }) => {
-      await Workspaces.delete({
+      await Auth.invalidateSessionData({ workspaceID: context.auth.workspaceID });
+      await Billing.endSubscription({
+        workspaceID: context.auth.workspaceID
+      });
+
+      const { entryIDs, ...result } = await Workspaces.delete({
         workspaceID: context.auth.workspaceID,
         userID: context.auth.session!.userID
       });
@@ -120,9 +131,12 @@ const workspacesRouter = base.router({
         action: "workspace:delete",
         memberID: context.auth.session?.memberID,
         data: {
-          id: context.auth.workspaceID
+          id: context.auth.workspaceID,
+          entryIDs
         }
       });
+
+      return result;
     }),
   switch: base
     .meta({

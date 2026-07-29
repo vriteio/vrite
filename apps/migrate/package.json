@@ -5,9 +5,9 @@
   "main": "./dist/index.js",
   "scripts": {
     "build": "rolldown -c rolldown.config.mjs",
-    "db:generate": "drizzle-kit generate --config drizzle.config.ts",
-    "db:migrate": "drizzle-kit migrate --config drizzle.config.ts",
-    "db:studio": "drizzle-kit studio --config drizzle.config.ts",
+    "db:generate": "node --env-file-if-exists=../../.env ./node_modules/drizzle-kit/bin.cjs generate --config drizzle.config.ts",
+    "db:migrate": "node --env-file-if-exists=../../.env ./node_modules/drizzle-kit/bin.cjs migrate --config drizzle.config.ts",
+    "db:studio": "node --env-file-if-exists=../../.env ./node_modules/drizzle-kit/bin.cjs studio --config drizzle.config.ts",
     "typecheck": "tsc --noEmit",
     "start": "node ./dist/index.js"
   },

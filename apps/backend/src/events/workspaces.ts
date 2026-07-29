@@ -30,7 +30,10 @@ const workspaceStateEventType = z.union([
   z.object({
     action: z.literal("workspace:delete"),
     memberID: id().optional(),
-    data: z.object({ id: workspaceSummaryEventType.shape.id })
+    data: z.object({
+      id: workspaceSummaryEventType.shape.id,
+      entryIDs: z.array(id())
+    })
   })
 ]);
 
