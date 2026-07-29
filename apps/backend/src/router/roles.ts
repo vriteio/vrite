@@ -2,7 +2,7 @@ import { permissionType } from "#backend/db";
 import { roleType } from "#backend/db";
 import { emitRoleEvent } from "#backend/events";
 import { authorized } from "#backend/lib/middleware";
-import { id } from "#backend/lib/mongo";
+import { id } from "#backend/lib/id";
 import { base } from "#backend/lib/orpc";
 import { Roles } from "#backend/services/roles";
 import * as z from "zod";

@@ -1,6 +1,8 @@
-import { invitesDB, toInviteID, toRoleID, toMembershipID, type Invite } from "#backend/db";
-import { toUUID } from "#backend/lib/mongo";
+import { toInviteID, toMembershipID, toRoleID, toUUID } from "#backend/lib/id";
+import { db } from "#backend/lib/postgres";
+import { type Invite, invitations } from "#backend/db";
 import { createInviteLink } from "#backend/lib/invites";
+import { and, eq, gt, lt } from "drizzle-orm";
 
 interface InviteDetails extends Invite {
   inviteLink: string;
@@ -9,11 +11,30 @@ interface InviteDetails extends Invite {
 }
 
 const listInvites = async (input: { workspaceID: string }): Promise<InviteDetails[]> => {
-  const workspaceUUID = toUUID(input.workspaceID);
-  const invites = await invitesDB.find({ workspaceID: workspaceUUID, status: "pending" }).toArray();
+  const workspaceID = toUUID(input.workspaceID);
+  await db
+    .update(invitations)
+    .set({ status: "expired" })
+    .where(
+      and(
+        eq(invitations.workspaceID, workspaceID),
+        eq(invitations.status, "pending"),
+        lt(invitations.expiresAt, new Date())
+      )
+    );
+  const rows = await db
+    .select()
+    .from(invitations)
+    .where(
+      and(
+        eq(invitations.workspaceID, workspaceID),
+        eq(invitations.status, "pending"),
+        gt(invitations.expiresAt, new Date())
+      )
+    );
 
-  return invites.map((invite) => {
-    const id = toInviteID(invite._id);
+  return rows.map((invite) => {
+    const id = toInviteID(invite.id);
 
     return {
       id,

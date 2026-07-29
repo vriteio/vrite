@@ -1,9 +1,10 @@
-import { workspacesDB } from "#backend/db";
-import { toUUID } from "#backend/lib/mongo";
+import { memberships, workspaces } from "#backend/db";
+import { toUUID } from "#backend/lib/id";
+import { db } from "#backend/lib/postgres";
 import { stripe } from "#backend/lib/stripe";
 import { config } from "#backend/lib/config";
-import { membershipDB } from "#backend/db";
 import { ORPCError } from "@orpc/server";
+import { count, eq } from "drizzle-orm";
 
 const createCheckout = async (input: {
   workspaceID: string;
@@ -17,24 +18,37 @@ const createCheckout = async (input: {
   }
 
   const workspaceUUID = toUUID(input.workspaceID);
-  const workspace = await workspacesDB.findOne({ _id: workspaceUUID });
+  const [workspace] = await db
+    .select()
+    .from(workspaces)
+    .where(eq(workspaces.id, workspaceUUID))
+    .limit(1);
 
   if (!workspace) throw new ORPCError("NOT_FOUND", { message: "Workspace not found" });
 
   // Count current seats (memberships)
-  const seatCount = await membershipDB.countDocuments({ workspaceID: workspaceUUID });
+  const [{ value: seatCount }] = await db
+    .select({ value: count() })
+    .from(memberships)
+    .where(eq(memberships.workspaceID, workspaceUUID));
 
   // Create or reuse Stripe customer
   let customerID = workspace.customerID;
 
   if (!customerID) {
-    const customer = await stripe.customers.create({
-      name: workspace.name,
-      metadata: { workspaceID: input.workspaceID }
-    });
+    const customer = await stripe.customers.create(
+      {
+        name: workspace.name,
+        metadata: { workspaceID: input.workspaceID }
+      },
+      { idempotencyKey: `workspace-customer:${workspaceUUID}` }
+    );
 
     customerID = customer.id;
-    await workspacesDB.updateOne({ _id: workspaceUUID }, { $set: { customerID } });
+    await db
+      .update(workspaces)
+      .set({ customerID, updatedAt: new Date() })
+      .where(eq(workspaces.id, workspaceUUID));
   }
 
   const session = await stripe.checkout.sessions.create({

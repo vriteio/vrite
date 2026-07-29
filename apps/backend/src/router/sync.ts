@@ -15,7 +15,7 @@ const syncRouter = base.router({
   getExplorerTree: base
     .meta({
       required: {
-        session: ["content"]
+        session: true
       }
     })
     .use(authorized)

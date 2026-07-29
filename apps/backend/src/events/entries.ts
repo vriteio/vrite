@@ -1,6 +1,6 @@
 import { entryType } from "#backend/db";
 import { emitEvent, EmitEvent, subscribeToEvent, SubscribeToEvent } from "#backend/lib/events";
-import { id } from "#backend/lib/mongo";
+import { id } from "#backend/lib/id";
 import * as z from "zod";
 
 declare module "#backend/lib/events" {
@@ -43,8 +43,8 @@ type EntryEvent = z.infer<typeof entryEventType>;
 
 const emitEntryEvent: EmitEvent<{
   [workspaceID: string]: EntryEvent;
-}> = async (workspaceID, event) => {
-  await emitEvent(`${workspaceID}:entries`, event);
+}> = (workspaceID, event) => {
+  emitEvent(`${workspaceID}:entries`, event);
 };
 const subscribeToEntryEvents: SubscribeToEvent<{
   [workspaceID: string]: EntryEvent;

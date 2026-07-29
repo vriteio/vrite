@@ -1,27 +1,30 @@
-import { keysDB, Key, toKeyID, toMembershipID } from "#backend/db";
-import { toUUID } from "#backend/lib/mongo";
+import { toKeyID, toMembershipID, toUUID } from "#backend/lib/id";
+import { db } from "#backend/lib/postgres";
+import { apiKeys, type Key } from "#backend/db";
+import { and, eq } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 
+const mapKey = (key: typeof apiKeys.$inferSelect): Key => ({
+  id: toKeyID(key.id),
+  memberID: toMembershipID(key.memberID),
+  name: key.name,
+  permissions: key.permissions,
+  prefix: key.prefix,
+  createdAt: key.createdAt.toISOString(),
+  updatedAt: key.updatedAt.toISOString(),
+  expiresAt: key.expiresAt?.toISOString() || null
+});
 const getKey = async (input: { workspaceID: string; keyID: string }): Promise<Key> => {
-  const key = await keysDB.findOne({
-    workspaceID: toUUID(input.workspaceID),
-    _id: toUUID(input.keyID)
-  });
+  const [key] = await db
+    .select()
+    .from(apiKeys)
+    .where(
+      and(eq(apiKeys.workspaceID, toUUID(input.workspaceID)), eq(apiKeys.id, toUUID(input.keyID)))
+    );
 
-  if (!key) {
-    throw new ORPCError("NOT_FOUND", { message: "Key not found" });
-  }
+  if (!key) throw new ORPCError("NOT_FOUND", { message: "Key not found" });
 
-  return {
-    id: toKeyID(key._id),
-    memberID: toMembershipID(key.memberID),
-    name: key.name,
-    permissions: key.permissions,
-    prefix: key.prefix,
-    createdAt: `${key.createdAt.toISOString()}`,
-    updatedAt: `${key.updatedAt.toISOString()}`,
-    expiresAt: key.expiresAt ? `${key.expiresAt.toISOString()}` : null
-  };
+  return mapKey(key);
 };
 
-export { getKey };
+export { getKey, mapKey };

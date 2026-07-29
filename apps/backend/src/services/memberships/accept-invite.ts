@@ -1,130 +1,89 @@
-import {
-  invitesDB,
-  membershipDB,
-  toMembershipID,
-  toRoleID,
-  toUserID,
-  toWorkspaceID,
-  usersDB,
-  workspacesDB
-} from "#backend/db";
-import { generateUUID, toUUID } from "#backend/lib/mongo";
-import { Auth } from "#backend/services/auth";
-import { ORPCError } from "@orpc/server";
+import { toMembershipID, toRoleID, toUUID, toUserID, toWorkspaceID } from "#backend/lib/id";
+import { db } from "#backend/lib/postgres";
+import { invitations, memberships, users, workspaces } from "#backend/db";
 import { verifyInviteLink } from "#backend/lib/invites";
+import { Auth } from "#backend/services/auth";
+import { and, eq } from "drizzle-orm";
+import { ORPCError } from "@orpc/server";
 
 const acceptInvite = async (input: {
   expires: number;
   id: string;
   signature: string;
   userID: string;
-}): Promise<{
-  workspaceID: string;
-  workspaceName: string;
-  membership: { id: string; userID: string; roleID: string };
-}> => {
-  if (
-    !verifyInviteLink({
-      id: input.id,
-      expires: input.expires,
-      signature: input.signature
-    })
-  ) {
+}) => {
+  if (!verifyInviteLink(input)) {
     throw new ORPCError("BAD_REQUEST", { message: "Invalid or expired invite" });
-  }
-
-  const invite = await invitesDB.findOne({
-    _id: toUUID(input.id),
-    status: "pending"
-  });
-
-  if (!invite) {
-    throw new ORPCError("BAD_REQUEST", { message: "Invalid or expired invite" });
-  }
-
-  // Check expiration
-  if (invite.expiresAt < new Date()) {
-    await invitesDB.updateOne({ _id: invite._id }, { $set: { status: "expired" } });
-
-    throw new ORPCError("BAD_REQUEST", { message: "Invite has expired" });
   }
 
   const userID = toUUID(input.userID);
-  const [workspace, user] = await Promise.all([
-    workspacesDB.findOne({ _id: invite.workspaceID }),
-    usersDB.findOne({ _id: userID })
-  ]);
+  const result = await db.transaction(async (tx) => {
+    const [invite] = await tx
+      .select()
+      .from(invitations)
+      .where(and(eq(invitations.id, toUUID(input.id)), eq(invitations.status, "pending")))
+      .for("update");
 
-  if (!workspace) {
-    throw new ORPCError("NOT_FOUND", { message: "Workspace not found" });
-  }
-
-  if (!user) {
-    throw new ORPCError("UNAUTHORIZED", { message: "User not found" });
-  }
-
-  if ((user.email || "").trim().toLowerCase() !== invite.email.trim().toLowerCase()) {
-    throw new ORPCError("FORBIDDEN", {
-      message: `This invite was sent to ${invite.email}. Sign in with that account to accept it.`
-    });
-  }
-
-  // Check if user already has a membership in this workspace
-  const existingMembership = await membershipDB.findOne({
-    userID,
-    workspaceID: invite.workspaceID
-  });
-
-  if (existingMembership) {
-    // Mark invite as accepted but don't create duplicate membership
-    await Promise.all([
-      invitesDB.updateOne({ _id: invite._id }, { $set: { status: "accepted" } }),
-      usersDB.updateOne({ _id: userID }, { $set: { currentWorkspaceID: invite.workspaceID } })
-    ]);
-
-    await Auth.invalidateSessionData({
-      userID: input.userID,
-      workspaceID: toWorkspaceID(workspace._id)
-    });
-
-    return {
-      workspaceID: toWorkspaceID(workspace._id),
-      workspaceName: workspace.name,
-      membership: {
-        id: toMembershipID(existingMembership._id),
-        userID: toUserID(existingMembership.userID),
-        roleID: toRoleID(existingMembership.roleID)
+    if (!invite || invite.expiresAt <= new Date()) {
+      if (invite) {
+        await tx
+          .update(invitations)
+          .set({ status: "expired" })
+          .where(eq(invitations.id, invite.id));
       }
-    };
-  }
+      throw new ORPCError("BAD_REQUEST", { message: "Invalid or expired invite" });
+    }
 
-  // Create membership
-  const membershipID = generateUUID();
-  await membershipDB.insertOne({
-    _id: membershipID,
-    userID,
-    workspaceID: invite.workspaceID,
-    roleID: invite.roleID
+    const [workspace] = await tx
+      .select({ id: workspaces.id, name: workspaces.name })
+      .from(workspaces)
+      .where(eq(workspaces.id, invite.workspaceID));
+    const [user] = await tx.select().from(users).where(eq(users.id, userID));
+
+    if (!workspace) throw new ORPCError("NOT_FOUND", { message: "Workspace not found" });
+    if (!user) throw new ORPCError("UNAUTHORIZED", { message: "User not found" });
+    if (user.email.trim().toLowerCase() !== invite.email.trim().toLowerCase()) {
+      throw new ORPCError("FORBIDDEN", {
+        message: `This invite was sent to ${invite.email}. Sign in with that account to accept it.`
+      });
+    }
+
+    await tx
+      .insert(memberships)
+      .values({
+        userID,
+        workspaceID: invite.workspaceID,
+        roleID: invite.roleID
+      })
+      .onConflictDoNothing({
+        target: [memberships.workspaceID, memberships.userID]
+      });
+    const [membership] = await tx
+      .select()
+      .from(memberships)
+      .where(and(eq(memberships.userID, userID), eq(memberships.workspaceID, invite.workspaceID)));
+
+    await tx.update(invitations).set({ status: "accepted" }).where(eq(invitations.id, invite.id));
+    await tx
+      .update(users)
+      .set({ currentWorkspaceID: invite.workspaceID, updatedAt: new Date() })
+      .where(eq(users.id, userID));
+
+    return { workspace, membership };
   });
-
-  // Mark invite as accepted
-  await invitesDB.updateOne({ _id: invite._id }, { $set: { status: "accepted" } });
-
-  // Update user's current workspace
-  await usersDB.updateOne({ _id: userID }, { $set: { currentWorkspaceID: invite.workspaceID } });
 
   await Auth.invalidateSessionData({
     userID: input.userID,
-    workspaceID: toWorkspaceID(workspace._id)
+    workspaceID: toWorkspaceID(result.workspace.id)
   });
 
   return {
-    workspaceID: toWorkspaceID(workspace._id),
-    workspaceName: workspace.name,
+    workspaceID: toWorkspaceID(result.workspace.id),
+    workspaceName: result.workspace.name,
     membership: {
-      id: toMembershipID(membershipID),
-      userID: toUserID(userID),
-      roleID: toRoleID(invite.roleID)
+      id: toMembershipID(result.membership.id),
+      userID: toUserID(result.membership.userID),
+      roleID: toRoleID(result.membership.roleID)
     }
   };
 };

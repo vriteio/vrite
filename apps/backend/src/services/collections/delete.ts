@@ -1,42 +1,50 @@
-import { collectionsDB, contentsDB, entriesDB } from "#backend/db";
-import { toUUID } from "#backend/lib/mongo";
-import { ROOT_COLLECTION_NAME, getRootCollection } from "./root";
+import { toUUID } from "#backend/lib/id";
+import { db } from "#backend/lib/postgres";
+import { collections, workspaces } from "#backend/db";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 
 const deleteCollections = async (input: { ids: string[]; workspaceID: string }): Promise<void> => {
+  if (input.ids.length === 0) return;
+
   const ids = input.ids.map(toUUID);
   const workspaceID = toUUID(input.workspaceID);
-  const rootCollection = await getRootCollection({ workspaceID });
-  const collections = await collectionsDB
-    .find({
-      workspaceID,
-      $or: [{ _id: { $in: ids } }, { ancestors: { $in: ids } }]
-    })
-    .toArray();
-  const rootCollectionUUID = toUUID(rootCollection.id);
-  const rootCollectionSelected = collections.some((collection) => {
-    return collection.name === ROOT_COLLECTION_NAME && collection.ancestors.length === 0;
+  await db.transaction(async (tx) => {
+    await tx
+      .select({ id: workspaces.id })
+      .from(workspaces)
+      .where(eq(workspaces.id, workspaceID))
+      .for("update");
+    const [root] = await tx
+      .select({ id: collections.id })
+      .from(collections)
+      .where(and(eq(collections.workspaceID, workspaceID), isNull(collections.parentID)));
+
+    if (root && ids.includes(root.id)) {
+      throw new ORPCError("BAD_REQUEST", { message: "Cannot delete the root collection" });
+    }
+
+    const idList = sql.join(
+      ids.map((id) => sql`${id}::uuid`),
+      sql`, `
+    );
+
+    await tx.execute(sql`
+      with recursive subtree as (
+        select id
+        from ${collections}
+        where workspace_id = ${workspaceID}::uuid and id in (${idList})
+        union all
+        select child.id
+        from ${collections} child
+        inner join subtree parent on child.parent_id = parent.id
+        where child.workspace_id = ${workspaceID}::uuid
+      )
+      delete from ${collections}
+      where workspace_id = ${workspaceID}::uuid
+        and id in (select id from subtree)
+    `);
   });
-  const deletedIDs = collections.map((collection) => collection._id);
-
-  if (deletedIDs.length === 0) return;
-
-  if (rootCollectionSelected || ids.some((id) => id.equals(rootCollectionUUID))) {
-    throw new ORPCError("BAD_REQUEST", { message: "Cannot delete the root collection" });
-  }
-
-  const entries = await entriesDB
-    .find({ collectionID: { $in: deletedIDs }, workspaceID }, { projection: { _id: 1 } })
-    .toArray();
-  const entryIDs = entries.map((entry) => entry._id);
-
-  await entriesDB.deleteMany({ _id: { $in: entryIDs }, workspaceID });
-  await contentsDB.deleteMany({ entryID: { $in: entryIDs }, workspaceID });
-  await collectionsDB.deleteMany({ _id: { $in: deletedIDs }, workspaceID });
-  await collectionsDB.updateMany(
-    { workspaceID, descendants: { $in: deletedIDs } },
-    { $pull: { descendants: { $in: deletedIDs } as any } }
-  );
 };
 
 export { deleteCollections };

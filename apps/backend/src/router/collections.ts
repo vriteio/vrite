@@ -1,7 +1,7 @@
 import { collectionType } from "#backend/db";
 import { emitCollectionEvent } from "#backend/events";
 import { authorized } from "#backend/lib/middleware";
-import { id } from "#backend/lib/mongo";
+import { id } from "#backend/lib/id";
 import { base } from "#backend/lib/orpc";
 import { Collections } from "#backend/services/collections";
 import * as z from "zod";

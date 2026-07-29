@@ -1,33 +1,15 @@
-import { keysDB, FullKey } from "#backend/db";
+import { db } from "#backend/lib/postgres";
+import { apiKeys } from "#backend/db";
 import { hashKey } from "#backend/lib/utils";
-import type { UUID } from "#backend/lib/mongo";
+import { eq } from "drizzle-orm";
 
-const verifyKey = async (rawKey: string): Promise<FullKey<UUID> | null> => {
+const verifyKey = async (rawKey: string): Promise<typeof apiKeys.$inferSelect | null> => {
   const prefix = rawKey.slice(0, 12);
-  const candidates = await keysDB.find({ prefix }).toArray();
+  const candidates = await db.select().from(apiKeys).where(eq(apiKeys.prefix, prefix));
 
   for (const candidate of candidates) {
-    if (candidate.expiresAt && candidate.expiresAt <= new Date()) {
-      continue;
-    }
-
-    const computedHash = hashKey(rawKey, candidate.salt);
-
-    if (computedHash === candidate.hash) {
-      return {
-        id: candidate._id,
-        name: candidate.name,
-        permissions: candidate.permissions,
-        prefix: candidate.prefix,
-        memberID: candidate.memberID,
-        createdAt: candidate.createdAt,
-        updatedAt: candidate.updatedAt,
-        expiresAt: candidate.expiresAt,
-        workspaceID: candidate.workspaceID,
-        hash: candidate.hash,
-        salt: candidate.salt
-      };
-    }
+    if (candidate.expiresAt && candidate.expiresAt <= new Date()) continue;
+    if (hashKey(rawKey, candidate.salt) === candidate.hash) return candidate;
   }
 
   return null;

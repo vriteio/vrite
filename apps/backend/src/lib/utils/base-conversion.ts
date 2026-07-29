@@ -3,7 +3,10 @@ import basex from "base-x";
 const b16 = basex("0123456789abcdef");
 const b62 = basex("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
 const hexToBytes = (hex: string) => {
-  return b16.decode(hex);
+  const bytes = b16.decode(hex);
+  const expectedLength = Math.ceil(hex.length / 2);
+
+  return bytes.length > expectedLength ? bytes.slice(bytes.length - expectedLength) : bytes;
 };
 const bytesToHex = (bytes: Uint8Array) => {
   return b16.encode(bytes);

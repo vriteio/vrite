@@ -1,6 +1,8 @@
-import { workspacesDB, membershipDB } from "#backend/db";
-import { toUUID } from "#backend/lib/mongo";
+import { memberships, workspaces } from "#backend/db";
+import { toUUID } from "#backend/lib/id";
+import { db } from "#backend/lib/postgres";
 import { ORPCError } from "@orpc/server";
+import { count, eq } from "drizzle-orm";
 
 interface SubscriptionInfo {
   plan: string;
@@ -12,11 +14,18 @@ interface SubscriptionInfo {
 
 const getSubscription = async (input: { workspaceID: string }): Promise<SubscriptionInfo> => {
   const workspaceID = toUUID(input.workspaceID);
-  const workspace = await workspacesDB.findOne({ _id: workspaceID });
+  const [workspace] = await db
+    .select()
+    .from(workspaces)
+    .where(eq(workspaces.id, workspaceID))
+    .limit(1);
 
   if (!workspace) throw new ORPCError("NOT_FOUND", { message: "Workspace not found" });
 
-  const seats = await membershipDB.countDocuments({ workspaceID });
+  const [{ value: seats }] = await db
+    .select({ value: count() })
+    .from(memberships)
+    .where(eq(memberships.workspaceID, workspaceID));
 
   return {
     plan: workspace.subscriptionPlan || "free",

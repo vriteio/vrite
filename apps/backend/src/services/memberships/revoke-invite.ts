@@ -1,15 +1,22 @@
-import { invitesDB } from "#backend/db";
-import { toUUID } from "#backend/lib/mongo";
+import { toUUID } from "#backend/lib/id";
+import { db } from "#backend/lib/postgres";
+import { invitations } from "#backend/db";
+import { and, eq } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 
 const revokeInvite = async (input: { id: string; workspaceID: string }): Promise<void> => {
-  const result = await invitesDB.deleteOne({
-    _id: toUUID(input.id),
-    workspaceID: toUUID(input.workspaceID),
-    status: "pending"
-  });
+  const deleted = await db
+    .delete(invitations)
+    .where(
+      and(
+        eq(invitations.id, toUUID(input.id)),
+        eq(invitations.workspaceID, toUUID(input.workspaceID)),
+        eq(invitations.status, "pending")
+      )
+    )
+    .returning({ id: invitations.id });
 
-  if (result.deletedCount === 0) {
+  if (deleted.length === 0) {
     throw new ORPCError("BAD_REQUEST", { message: "Invite not found or already accepted" });
   }
 };

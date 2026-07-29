@@ -1,7 +1,29 @@
-import { db, fromUUID, id, UnderscoreID } from "#backend/lib/mongo";
-import type { UUID } from "#backend/lib/mongo";
+import { id } from "#backend/lib/id";
+import { sql } from "drizzle-orm";
+import {
+  foreignKey,
+  index,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+  varchar
+} from "drizzle-orm/pg-core";
 import * as z from "zod";
+import { memberships } from "./memberships";
+import { workspaces } from "./workspaces";
 
+const keyPermissionEnum = pgEnum("key_permission", [
+  "entries",
+  "read:entries",
+  "collections",
+  "read:collections",
+  "memberships",
+  "read:memberships",
+  "roles",
+  "read:roles"
+]);
 const keyPermissionType = z.enum([
   "entries",
   "read:entries",
@@ -16,38 +38,47 @@ const keyType = z.object({
   id: id().describe("The ID of the API key"),
   name: z.string().describe("The name for the API key"),
   permissions: z.array(keyPermissionType).describe("The permissions of the API key"),
-  prefix: z.string().describe("The first 8 characters of the raw key (for display)"),
-  memberID: id().describe("The ID of the workspace member who created the API key"),
-  createdAt: z.iso.datetime().describe("The creation date of the API key"),
-  updatedAt: z.iso.datetime().describe("The date of the last update of the API key"),
-  expiresAt: z.iso.datetime().nullable().describe("The expiration date of the API key")
+  prefix: z.string().describe("The first characters of the raw key"),
+  memberID: id().describe("The member who created the API key"),
+  createdAt: z.iso.datetime().describe("The creation date"),
+  updatedAt: z.iso.datetime().describe("The last update date"),
+  expiresAt: z.iso.datetime().nullable().describe("The expiration date")
 });
 
+const apiKeys = pgTable(
+  "api_keys",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workspaceID: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    memberID: uuid("member_id").notNull(),
+    name: text("name").notNull(),
+    permissions: keyPermissionEnum("permissions")
+      .array()
+      .notNull()
+      .default(sql`'{}'`),
+    prefix: varchar("prefix", { length: 12 }).notNull(),
+    hash: text("hash").notNull(),
+    salt: text("salt").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    expiresAt: timestamp("expires_at", { withTimezone: true })
+  },
+  (table) => [
+    foreignKey({
+      name: "api_keys_workspace_member_fk",
+      columns: [table.workspaceID, table.memberID],
+      foreignColumns: [memberships.workspaceID, memberships.id]
+    }).onDelete("cascade"),
+    index("api_keys_prefix_idx").on(table.prefix),
+    index("api_keys_workspace_id_idx").on(table.workspaceID),
+    index("api_keys_expires_at_idx").on(table.expiresAt)
+  ]
+);
+
 type KeyPermission = z.infer<typeof keyPermissionType>;
+type Key = z.infer<typeof keyType>;
 
-interface Key<ID extends string | UUID = string> extends Omit<
-  z.infer<typeof keyType>,
-  "id" | "memberID" | "createdAt" | "updatedAt" | "expiresAt"
-> {
-  id: ID;
-  memberID: ID;
-  createdAt: ID extends UUID ? Date : string;
-  updatedAt: ID extends UUID ? Date : string;
-  expiresAt: ID extends UUID ? Date | null : string | null;
-}
-interface FullKey<ID extends string | UUID = string> extends Key<ID> {
-  workspaceID: ID;
-  hash: string;
-  salt: string;
-}
-
-const toKeyID = (id: UUID) => fromUUID(id, "sk");
-const keysDB = db.collection<UnderscoreID<FullKey<UUID>>>("keys");
-
-await keysDB.createIndex({ workspaceID: 1 }, { name: "workspaceID_1" });
-await keysDB.createIndex({ prefix: 1 }, { name: "prefix_1" });
-await keysDB.createIndex({ memberID: 1 }, { name: "memberID_1" });
-await keysDB.createIndex({ expiresAt: 1 }, { name: "expiresAt_1", expireAfterSeconds: 0 });
-
-export { keyPermissionType, keyType, keysDB, toKeyID };
-export type { KeyPermission, Key, FullKey };
+export { apiKeys, keyPermissionEnum, keyPermissionType, keyType };
+export type { Key, KeyPermission };

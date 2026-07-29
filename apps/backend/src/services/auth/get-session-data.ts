@@ -1,23 +1,21 @@
+import { memberships, roles, users, workspaces } from "#backend/db";
+import type { KeyPermission, Permission } from "#backend/db";
 import { auth } from "#backend/lib/auth";
 import {
-  membershipDB,
+  toKeyID,
   toMembershipID,
   toRoleID,
-  toKeyID,
-  rolesDB,
   toUserID,
-  usersDB,
-  toWorkspaceID,
-  workspacesDB
-} from "#backend/db";
-import type { KeyPermission, Permission } from "#backend/db";
-import { toUUID } from "#backend/lib/mongo";
+  toUUID,
+  toWorkspaceID
+} from "#backend/lib/id";
+import { db } from "#backend/lib/postgres";
 import { redis } from "#backend/lib/redis";
 import { Keys } from "#backend/services/keys";
+import { and, eq } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 
-const SESSION_TTL = 300; // 5 minutes
-
+const SESSION_TTL = 300;
 interface SessionData {
   id: string;
   type: "key" | "session";
@@ -31,31 +29,14 @@ interface SessionData {
     permissions: Permission[];
     admin?: boolean;
   };
-  key?: {
-    keyID: string;
-    permissions: KeyPermission[];
-  };
+  key?: { keyID: string; permissions: KeyPermission[] };
 }
-
 interface GetSessionDataOptions {
   requireWorkspace?: boolean;
 }
 
-const getSessionData = async (
-  headers: Headers,
-  options: GetSessionDataOptions = {}
-): Promise<SessionData> => {
-  const authHeader = headers.get("authorization");
-
-  if (authHeader?.startsWith("Bearer ")) {
-    return getKeySessionData(headers);
-  }
-
-  return getUserSessionData(headers, options);
-};
 const tryResolveUUID = (id: string | undefined | null) => {
   if (!id) return null;
-
   try {
     return toUUID(id);
   } catch {
@@ -65,21 +46,27 @@ const tryResolveUUID = (id: string | undefined | null) => {
 const getUserSessionCacheKey = (userID: string, workspaceID: string) => {
   return `session:user:${userID}:${workspaceID}`;
 };
-const getUserSessionData = async (
+const getSessionData = async (
   headers: Headers,
   options: GetSessionDataOptions = {}
 ): Promise<SessionData> => {
-  const { session } =
-    (await auth.api.getSession({
-      headers
-    })) || {};
+  if (headers.get("authorization")?.startsWith("Bearer ")) {
+    return getKeySessionData(headers);
+  }
+
+  return getUserSessionData(headers, options);
+};
+const getUserSessionData = async (
+  headers: Headers,
+  options: GetSessionDataOptions
+): Promise<SessionData> => {
+  const sessionResult = await auth.api.getSession({ headers });
+  const session = sessionResult?.session;
 
   if (!session) throw new ORPCError("UNAUTHORIZED");
 
   const userID = toUUID(session.userId);
-  const user =
-    (await usersDB.findOne({ _id: userID })) ||
-    (await usersDB.findOne({ _id: session.userId as any }));
+  const [user] = await db.select().from(users).where(eq(users.id, userID));
 
   if (!user) throw new ORPCError("UNAUTHORIZED");
 
@@ -96,96 +83,81 @@ const getUserSessionData = async (
       admin: false
     }
   });
-  const requestedWorkspaceID = tryResolveUUID(headers.get("x-workspace-id"));
-  const fallbackWorkspaceID =
-    typeof user.currentWorkspaceID === "string"
-      ? tryResolveUUID(user.currentWorkspaceID)
-      : user.currentWorkspaceID || null;
-  const resolvedWorkspaceID = requestedWorkspaceID || fallbackWorkspaceID;
 
-  if (options.requireWorkspace === false) {
-    return basicSessionData();
-  }
+  if (options.requireWorkspace === false) return basicSessionData();
 
-  if (!resolvedWorkspaceID) {
-    throw new ORPCError("UNAUTHORIZED");
-  }
+  const workspaceID =
+    tryResolveUUID(headers.get("x-workspace-id")) || user.currentWorkspaceID || null;
 
-  // Try cache first
-  const cacheKey = getUserSessionCacheKey(session.userId, resolvedWorkspaceID.toString());
+  if (!workspaceID) throw new ORPCError("UNAUTHORIZED");
+
+  const cacheKey = getUserSessionCacheKey(session.userId, workspaceID);
   const cached = await redis.get(cacheKey);
 
-  if (cached) {
-    return JSON.parse(cached) as SessionData;
-  }
+  if (cached) return JSON.parse(cached) as SessionData;
 
-  const workspace = await workspacesDB.findOne({ _id: resolvedWorkspaceID });
+  const [row] = await db
+    .select({
+      workspaceID: workspaces.id,
+      subscriptionPlan: workspaces.subscriptionPlan,
+      customerID: workspaces.customerID,
+      memberID: memberships.id,
+      roleID: roles.id,
+      permissions: roles.permissions,
+      baseRole: roles.baseRole
+    })
+    .from(memberships)
+    .innerJoin(workspaces, eq(workspaces.id, memberships.workspaceID))
+    .innerJoin(roles, eq(roles.id, memberships.roleID))
+    .where(and(eq(memberships.userID, userID), eq(memberships.workspaceID, workspaceID)));
 
-  if (!workspace) throw new ORPCError("UNAUTHORIZED");
+  if (!row) throw new ORPCError("UNAUTHORIZED");
 
-  const membership = await membershipDB.findOne({
-    userID,
-    workspaceID: resolvedWorkspaceID
-  });
-
-  if (!membership) throw new ORPCError("UNAUTHORIZED");
-
-  const role = await rolesDB.findOne({ _id: membership.roleID });
-
-  if (!role) throw new ORPCError("UNAUTHORIZED");
-
-  const sessionData: SessionData = {
+  const data: SessionData = {
     id: cacheKey,
     type: "session",
-    subscriptionPlan: workspace.subscriptionPlan || "free",
-    customerID: workspace.customerID,
-    workspaceID: toWorkspaceID(workspace._id),
+    subscriptionPlan: row.subscriptionPlan,
+    customerID: row.customerID || undefined,
+    workspaceID: toWorkspaceID(row.workspaceID),
     session: {
       userID: toUserID(userID),
-      memberID: toMembershipID(membership._id),
-      roleID: toRoleID(membership.roleID),
-      permissions: role.permissions,
-      admin: role.baseRole === "admin"
+      memberID: toMembershipID(row.memberID),
+      roleID: toRoleID(row.roleID),
+      permissions: row.permissions,
+      admin: row.baseRole === "admin"
     }
   };
 
-  await redis.set(cacheKey, JSON.stringify(sessionData), { EX: SESSION_TTL });
+  await redis.set(cacheKey, JSON.stringify(data), { EX: SESSION_TTL });
 
-  return sessionData;
+  return data;
 };
 const getKeySessionData = async (headers: Headers): Promise<SessionData> => {
-  const bearerKey = headers.get("authorization")!.slice(7).trim();
-  const key = await Keys.verify(bearerKey);
+  const key = await Keys.verify(headers.get("authorization")!.slice(7).trim());
 
   if (!key) throw new ORPCError("UNAUTHORIZED");
 
-  const keyUUID = key.id;
-  const cacheKey = `session:key:${keyUUID.toString()}`;
+  const cacheKey = `session:key:${key.id}`;
   const cached = await redis.get(cacheKey);
 
-  if (cached) {
-    return JSON.parse(cached) as SessionData;
-  }
+  if (cached) return JSON.parse(cached) as SessionData;
 
-  const workspace = await workspacesDB.findOne({ _id: key.workspaceID });
+  const [workspace] = await db.select().from(workspaces).where(eq(workspaces.id, key.workspaceID));
 
   if (!workspace) throw new ORPCError("UNAUTHORIZED");
 
-  const sessionData: SessionData = {
+  const data: SessionData = {
     id: cacheKey,
     type: "key",
-    subscriptionPlan: workspace.subscriptionPlan || "free",
-    customerID: workspace.customerID,
-    workspaceID: toWorkspaceID(workspace._id),
-    key: {
-      keyID: toKeyID(keyUUID),
-      permissions: key.permissions
-    }
+    subscriptionPlan: workspace.subscriptionPlan,
+    customerID: workspace.customerID || undefined,
+    workspaceID: toWorkspaceID(workspace.id),
+    key: { keyID: toKeyID(key.id), permissions: key.permissions }
   };
 
-  await redis.set(cacheKey, JSON.stringify(sessionData), { EX: SESSION_TTL });
+  await redis.set(cacheKey, JSON.stringify(data), { EX: SESSION_TTL });
 
-  return sessionData;
+  return data;
 };
 
 export { getSessionData, getUserSessionCacheKey };

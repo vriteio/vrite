@@ -2,7 +2,7 @@ import { entryType } from "#backend/db";
 import { updateDocumentTitle } from "#backend/collaboration";
 import { emitEntryEvent } from "#backend/events";
 import { authorized } from "#backend/lib/middleware";
-import { id } from "#backend/lib/mongo";
+import { id } from "#backend/lib/id";
 import { base } from "#backend/lib/orpc";
 import { Entries } from "#backend/services/entries";
 import * as z from "zod";
@@ -109,9 +109,9 @@ const entriesRouter = base.prefix("/entries").router({
       })
     )
     .use(authorized)
-    .output(z.void())
+    .output(z.object({ order: z.string() }))
     .handler(async ({ context, input }) => {
-      await Entries.move({
+      const order = await Entries.move({
         id: input.id,
         workspaceID: context.auth.workspaceID,
         order: input.order,
@@ -121,11 +121,13 @@ const entriesRouter = base.prefix("/entries").router({
         action: "entry:move",
         data: {
           id: input.id,
-          order: input.order,
+          order,
           collectionID: input.collectionID
         },
         memberID: context.auth.session?.memberID
       });
+
+      return { order };
     }),
   list: base
     .route({ method: "GET", path: "/list" })
@@ -139,7 +141,11 @@ const entriesRouter = base.prefix("/entries").router({
     .input(
       z.object({
         collectionID: z.string().optional().describe("ID of the collection to get entries from"),
-        lastOrder: z.string().optional().describe("Last order to get entries from"),
+        lastOrder: z
+          .string()
+          .optional()
+          .describe("Last order to get entries from; requires collectionID"),
+        lastID: id().optional().describe("Last entry ID to get entries from"),
         perPage: z.number().optional().describe("Number of entries to get per page"),
         page: z.number().optional().describe("Page number")
       })
@@ -150,6 +156,7 @@ const entriesRouter = base.prefix("/entries").router({
         workspaceID: context.auth.workspaceID,
         collectionID: input.collectionID,
         lastOrder: input.lastOrder,
+        lastID: input.lastID,
         perPage: input.perPage,
         page: input.page
       });

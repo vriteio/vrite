@@ -1,35 +1,82 @@
-import { db, id, UnderscoreID } from "#backend/lib/mongo";
-import type { UUID } from "#backend/lib/mongo";
+import { id } from "#backend/lib/id";
+import { sql } from "drizzle-orm";
+import {
+  bigint,
+  check,
+  date,
+  index,
+  integer,
+  pgEnum,
+  pgTable,
+  primaryKey,
+  text,
+  timestamp,
+  unique,
+  uniqueIndex,
+  uuid
+} from "drizzle-orm/pg-core";
 import * as z from "zod";
+import { timestamps } from "./shared";
+import { workspaces } from "./workspaces";
 
+const deliveryStatusEnum = pgEnum("delivery_status", [
+  "pending",
+  "processing",
+  "delivered",
+  "failed"
+]);
 const usageRecordType = z.object({
   id: id().describe("ID of the usage record"),
   workspaceID: id().describe("ID of the workspace"),
-  year: z.number().int().describe("Year of the usage record"),
-  month: z.number().int().min(1).max(12).describe("Month of the usage record (1-12)"),
-  day: z.number().int().min(1).max(31).describe("Day of the usage record (1-31)"),
-  requestCount: z.number().int().min(0).describe("Number of API requests for this day")
+  year: z.number().int(),
+  month: z.number().int().min(1).max(12),
+  day: z.number().int().min(1).max(31),
+  requestCount: z.number().int().min(0)
 });
 
-interface UsageRecord<ID extends string | UUID = string> extends Omit<
-  z.infer<typeof usageRecordType>,
-  "id" | "workspaceID"
-> {
-  id: ID;
-  workspaceID: ID;
-}
-interface FullUsageRecord<ID extends string | UUID = string> extends UsageRecord<ID> {}
-
-const usageDB = db.collection<UnderscoreID<FullUsageRecord<UUID>>>("usage");
-
-await usageDB.createIndex(
-  { workspaceID: 1, year: 1, month: 1 },
-  { name: "workspaceID_1_year_1_month_1" }
-);
-await usageDB.createIndex(
-  { workspaceID: 1, year: 1, month: 1, day: 1 },
-  { unique: true, name: "workspaceID_1_year_1_month_1_day_1" }
+const dailyUsage = pgTable(
+  "daily_usage",
+  {
+    workspaceID: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    usageDate: date("usage_date", { mode: "string" }).notNull(),
+    requestCount: bigint("request_count", { mode: "number" }).notNull().default(0)
+  },
+  (table) => [
+    primaryKey({ columns: [table.workspaceID, table.usageDate] }),
+    check("daily_usage_request_count_nonnegative", sql`${table.requestCount} >= 0`)
+  ]
 );
 
-export { usageRecordType, usageDB };
+const usageLedger = pgTable(
+  "usage_ledger",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workspaceID: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    usageDate: date("usage_date", { mode: "string" }).notNull(),
+    quantity: bigint("quantity", { mode: "number" }).notNull(),
+    stripeEventIdentifier: uuid("stripe_event_identifier").notNull().defaultRandom(),
+    status: deliveryStatusEnum("status").notNull().default("pending"),
+    attempts: integer("attempts").notNull().default(0),
+    availableAt: timestamp("available_at", { withTimezone: true }).notNull().defaultNow(),
+    reportedAt: timestamp("reported_at", { withTimezone: true }),
+    lastError: text("last_error"),
+    ...timestamps
+  },
+  (table) => [
+    unique("usage_ledger_stripe_identifier_unique").on(table.stripeEventIdentifier),
+    uniqueIndex("usage_ledger_pending_workspace_date_unique")
+      .on(table.workspaceID, table.usageDate)
+      .where(sql`${table.status} = 'pending'`),
+    check("usage_ledger_quantity_positive", sql`${table.quantity} > 0`),
+    index("usage_ledger_delivery_idx").on(table.status, table.availableAt)
+  ]
+);
+
+type UsageRecord = z.infer<typeof usageRecordType>;
+
+export { dailyUsage, deliveryStatusEnum, usageLedger, usageRecordType };
 export type { UsageRecord };

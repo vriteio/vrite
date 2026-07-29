@@ -1,4 +1,4 @@
-import { toUUID } from "#backend/lib/mongo";
+import { toUUID } from "#backend/lib/id";
 import { redis } from "#backend/lib/redis";
 import { getUserSessionCacheKey, SessionData } from "./get-session-data";
 

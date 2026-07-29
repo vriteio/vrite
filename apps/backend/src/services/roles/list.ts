@@ -1,11 +1,16 @@
-import { rolesDB, toRoleID, type Role } from "#backend/db";
-import { toUUID } from "#backend/lib/mongo";
+import { toRoleID, toUUID } from "#backend/lib/id";
+import { db } from "#backend/lib/postgres";
+import { roles, type Role } from "#backend/db";
+import { eq } from "drizzle-orm";
 
 const listRoles = async (input: { workspaceID: string }): Promise<Role[]> => {
-  const roles = await rolesDB.find({ workspaceID: toUUID(input.workspaceID) }).toArray();
+  const rows = await db
+    .select()
+    .from(roles)
+    .where(eq(roles.workspaceID, toUUID(input.workspaceID)));
 
-  return roles.map((role) => ({
-    id: toRoleID(role._id),
+  return rows.map((role) => ({
+    id: toRoleID(role.id),
     name: role.name,
     permissions: role.permissions,
     ...(role.baseRole && { baseRole: role.baseRole })

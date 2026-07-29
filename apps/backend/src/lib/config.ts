@@ -5,7 +5,10 @@ const configSchema = z.object({
   // Hosts
   PUBLIC_API_HOST: z.string().describe("Public host of the API"),
   PUBLIC_APP_HOST: z.string().describe("Public host of the app"),
-  PUBLIC_COOKIE_DOMAIN: z.string().optional().describe("Domain to set for cookies in cross-subdomain setups"),
+  PUBLIC_COOKIE_DOMAIN: z
+    .string()
+    .optional()
+    .describe("Domain to set for cookies in cross-subdomain setups"),
   PUBLIC_SECURE: z
     .stringbool()
     .optional()
@@ -13,7 +16,7 @@ const configSchema = z.object({
   // Secrets
   SECRET: z.string().describe("Secret for signing tokens and encrypting data"),
   // Database
-  MONGO_URL: z.string().describe("MongoDB connection URL"),
+  DATABASE_URL: z.string().describe("PostgreSQL connection URL"),
   REDIS_URL: z.string().describe("Redis connection URL"),
   // Email
   SENDER_EMAIL: z.string().describe("Email address to send emails from"),
@@ -64,12 +67,7 @@ const configSchema = z.object({
   STRIPE_PRO_API_CALL_METER_EVENT_NAME: z
     .string()
     .optional()
-    .describe("Stripe Meter event name for tracking API usage"),
-  STRIPE_PRO_API_CALL_METER_MAX_REPORTING_INTERVAL: z.coerce
-    .number()
-    .int()
-    .min(1)
-    .describe("Maximum reporting interval in seconds for Stripe API calls meter events")
+    .describe("Stripe Meter event name for tracking API usage")
 });
 const baseConfig = configSchema.parse({ ...process.env });
 const HTTP_PROTOCOL = baseConfig.PUBLIC_SECURE ? "https" : "http";

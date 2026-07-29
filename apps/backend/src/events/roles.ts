@@ -1,6 +1,6 @@
 import { roleType } from "#backend/db";
 import { emitEvent, EmitEvent, subscribeToEvent, SubscribeToEvent } from "#backend/lib/events";
-import { id } from "#backend/lib/mongo";
+import { id } from "#backend/lib/id";
 import * as z from "zod";
 
 declare module "#backend/lib/events" {
@@ -34,8 +34,8 @@ type RoleEvent = z.infer<typeof roleEventType>;
 
 const emitRoleEvent: EmitEvent<{
   [workspaceID: string]: RoleEvent;
-}> = async (workspaceID, event) => {
-  await emitEvent(`${workspaceID}:roles`, event);
+}> = (workspaceID, event) => {
+  emitEvent(`${workspaceID}:roles`, event);
 };
 const subscribeToRoleEvents: SubscribeToEvent<{
   [workspaceID: string]: RoleEvent;

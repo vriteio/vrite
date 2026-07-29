@@ -1,23 +1,23 @@
-import { db, UnderscoreID } from "#backend/lib/mongo";
-import { Binary } from "mongodb";
-import type { UUID } from "#backend/lib/mongo";
+import { foreignKey, index, pgTable, timestamp, uuid } from "drizzle-orm/pg-core";
+import { entries } from "./entries";
+import { bytea } from "./shared";
 
-interface Content<ID extends string | UUID = string> {
-  id: ID;
-  entryID: ID;
-  content?: Binary;
-}
-interface FullContent<ID extends string | UUID = string> extends Content<ID> {
-  workspaceID: ID;
-}
-
-const contentsDB = db.collection<UnderscoreID<FullContent<UUID>>>("contents");
-
-await contentsDB.createIndex(
-  { entryID: 1, workspaceId: 1 },
-  { unique: true, name: "entryID_1_workspaceID_1" }
+const contents = pgTable(
+  "contents",
+  {
+    entryID: uuid("entry_id").primaryKey(),
+    workspaceID: uuid("workspace_id").notNull(),
+    state: bytea("state"),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    foreignKey({
+      name: "contents_workspace_entry_fk",
+      columns: [table.workspaceID, table.entryID],
+      foreignColumns: [entries.workspaceID, entries.id]
+    }).onDelete("cascade"),
+    index("contents_workspace_id_idx").on(table.workspaceID)
+  ]
 );
-await contentsDB.createIndex({ workspaceID: 1 }, { name: "workspaceID_1" });
 
-export { contentsDB };
-export type { Content, FullContent };
+export { contents };

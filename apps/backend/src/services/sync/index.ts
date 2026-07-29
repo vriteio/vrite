@@ -1,31 +1,9 @@
 import { getExplorerTree } from "./get-explorer-tree";
-import {
-  canReadCollections,
-  canReadEntries,
-  canReadInvites,
-  canReadKeys,
-  canReadMemberships,
-  canReadRoles,
-  canReadViewer,
-  canReadWorkspace,
-  getViewerAccess,
-  getWorkspaceMetadata,
-  isWorkspaceEventVisible
-} from "./get-workspace-metadata";
+import { isWorkspaceEventVisible } from "./is-workspace-event-visible";
 
 const Sync = {
   getExplorerTree,
-  getWorkspaceMetadata,
-  getViewerAccess,
-  isWorkspaceEventVisible,
-  canReadEntries,
-  canReadCollections,
-  canReadMemberships,
-  canReadInvites,
-  canReadRoles,
-  canReadKeys,
-  canReadWorkspace,
-  canReadViewer
+  isWorkspaceEventVisible
 };
 
 export { Sync };

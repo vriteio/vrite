@@ -1,7 +1,7 @@
 import { emitMembershipEvent } from "#backend/events";
 import { inviteType, membershipType, userProfileType } from "#backend/db";
 import { authorized } from "#backend/lib/middleware";
-import { id } from "#backend/lib/mongo";
+import { id } from "#backend/lib/id";
 import { base } from "#backend/lib/orpc";
 import { Memberships } from "#backend/services/memberships";
 import { ORPCError } from "@orpc/server";
@@ -59,7 +59,7 @@ const membershipsRouter = base.prefix("/memberships").router({
     })
     .meta({
       required: {
-        session: ["content"],
+        session: ["workspace"],
         key: ["memberships"]
       }
     })
@@ -94,7 +94,7 @@ const membershipsRouter = base.prefix("/memberships").router({
     })
     .meta({
       required: {
-        session: ["content"],
+        session: ["workspace"],
         key: ["memberships"]
       }
     })
@@ -126,7 +126,7 @@ const membershipsRouter = base.prefix("/memberships").router({
     })
     .meta({
       required: {
-        session: ["content"],
+        session: ["workspace"],
         key: ["memberships"]
       }
     })
@@ -161,7 +161,7 @@ const membershipsRouter = base.prefix("/memberships").router({
     })
     .meta({
       required: {
-        session: ["content"],
+        session: ["workspace"],
         key: ["memberships"]
       }
     })
@@ -179,7 +179,7 @@ const membershipsRouter = base.prefix("/memberships").router({
     })
     .meta({
       required: {
-        session: ["content"],
+        session: ["workspace"],
         key: ["memberships"]
       }
     })
@@ -205,7 +205,7 @@ const membershipsRouter = base.prefix("/memberships").router({
     })
     .meta({
       required: {
-        session: ["content"],
+        session: ["workspace"],
         key: ["memberships"]
       }
     })
@@ -222,7 +222,7 @@ const membershipsRouter = base.prefix("/memberships").router({
         workspaceID: context.auth.workspaceID
       });
 
-      await emitMembershipEvent(context.auth.workspaceID, {
+      emitMembershipEvent(context.auth.workspaceID, {
         action: "invite:revoke",
         memberID: context.auth.session?.memberID,
         data: {
@@ -264,7 +264,7 @@ const membershipsRouter = base.prefix("/memberships").router({
         userID: context.auth.session.userID
       });
 
-      await emitMembershipEvent(result.workspaceID, {
+      emitMembershipEvent(result.workspaceID, {
         action: "membership:add",
         data: result.membership
       });

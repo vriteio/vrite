@@ -1,12 +1,19 @@
-import { contentsDB, entriesDB } from "#backend/db";
-import { toUUID } from "#backend/lib/mongo";
+import { toUUID } from "#backend/lib/id";
+import { db } from "#backend/lib/postgres";
+import { entries } from "#backend/db";
+import { and, eq, inArray } from "drizzle-orm";
 
 const deleteEntries = async (input: { ids: string[]; workspaceID: string }): Promise<void> => {
-  const ids = input.ids.map(toUUID);
-  const workspaceID = toUUID(input.workspaceID);
+  if (input.ids.length === 0) return;
 
-  await entriesDB.deleteMany({ _id: { $in: ids }, workspaceID });
-  await contentsDB.deleteMany({ entryID: { $in: ids }, workspaceID });
+  await db
+    .delete(entries)
+    .where(
+      and(
+        inArray(entries.id, input.ids.map(toUUID)),
+        eq(entries.workspaceID, toUUID(input.workspaceID))
+      )
+    );
 };
 
 export { deleteEntries };

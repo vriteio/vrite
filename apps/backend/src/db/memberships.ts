@@ -1,6 +1,10 @@
-import { db, fromUUID, id, UnderscoreID } from "#backend/lib/mongo";
-import type { UUID } from "#backend/lib/mongo";
+import { id } from "#backend/lib/id";
+import { foreignKey, index, pgTable, unique, uuid } from "drizzle-orm/pg-core";
 import * as z from "zod";
+import { timestamps } from "./shared";
+import { roles } from "./roles";
+import { users } from "./users";
+import { workspaces } from "./workspaces";
 
 const membershipType = z.object({
   id: id().describe("ID of the membership"),
@@ -8,28 +12,33 @@ const membershipType = z.object({
   roleID: id().describe("ID of the role")
 });
 
-interface Membership<ID extends string | UUID = string> extends Omit<
-  z.infer<typeof membershipType>,
-  "id" | "userID" | "workspaceID" | "roleID"
-> {
-  id: ID;
-  userID: ID;
-  roleID: ID;
-}
-interface FullMembership<ID extends string | UUID = string> extends Membership<ID> {
-  workspaceID: ID;
-}
-
-const toMembershipID = (id: UUID) => fromUUID(id, "ms");
-const membershipDB = db.collection<UnderscoreID<FullMembership<UUID>>>("memberships");
-
-await membershipDB.createIndex(
-  { userID: 1, workspaceID: 1 },
-  { unique: true, name: "userID_1_workspaceID_1" }
+const memberships = pgTable(
+  "memberships",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workspaceID: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    userID: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    roleID: uuid("role_id").notNull(),
+    ...timestamps
+  },
+  (table) => [
+    unique("memberships_workspace_id_id_unique").on(table.workspaceID, table.id),
+    unique("memberships_workspace_user_unique").on(table.workspaceID, table.userID),
+    foreignKey({
+      name: "memberships_workspace_role_fk",
+      columns: [table.workspaceID, table.roleID],
+      foreignColumns: [roles.workspaceID, roles.id]
+    }).onDelete("restrict"),
+    index("memberships_user_id_idx").on(table.userID),
+    index("memberships_role_id_idx").on(table.roleID)
+  ]
 );
-await membershipDB.createIndex({ userID: 1 }, { name: "userID_1" });
-await membershipDB.createIndex({ workspaceID: 1 }, { name: "workspaceID_1" });
-await membershipDB.createIndex({ roleID: 1 }, { name: "roleID_1" });
 
-export { membershipType, membershipDB, toMembershipID };
-export type { Membership, FullMembership };
+type Membership = z.infer<typeof membershipType>;
+
+export { memberships, membershipType };
+export type { Membership };

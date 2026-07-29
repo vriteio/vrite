@@ -1,6 +1,8 @@
-import { rolesDB, membershipDB, toUserID, type Permission } from "#backend/db";
-import { toUUID } from "#backend/lib/mongo";
+import { toUUID, toUserID } from "#backend/lib/id";
+import { db } from "#backend/lib/postgres";
+import { memberships, type Permission, roles } from "#backend/db";
 import { Auth } from "#backend/services/auth";
+import { and, eq } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 
 const updateRole = async (input: {
@@ -9,40 +11,39 @@ const updateRole = async (input: {
   name?: string;
   permissions?: Permission[];
 }): Promise<void> => {
-  const role = await rolesDB.findOne({
-    _id: toUUID(input.id),
-    workspaceID: toUUID(input.workspaceID)
+  const roleID = toUUID(input.id);
+  const workspaceID = toUUID(input.workspaceID);
+  const role = await db.query.roles.findFirst({
+    where: and(eq(roles.id, roleID), eq(roles.workspaceID, workspaceID))
   });
 
   if (!role) throw new ORPCError("NOT_FOUND", { message: "Role not found" });
-  if (role.baseRole) {
+  if (role.baseRole)
     throw new ORPCError("BAD_REQUEST", { message: "Base roles cannot be modified" });
-  }
+  if (input.name === undefined && input.permissions === undefined) return;
 
-  const update: Record<string, any> = {};
-
-  if (input.name !== undefined) update.name = input.name;
-  if (input.permissions !== undefined) update.permissions = input.permissions;
-
-  if (Object.keys(update).length === 0) return;
-
-  await rolesDB.updateOne(
-    { _id: toUUID(input.id), workspaceID: toUUID(input.workspaceID) },
-    { $set: update }
-  );
+  await db
+    .update(roles)
+    .set({
+      ...(input.name !== undefined && { name: input.name }),
+      ...(input.permissions !== undefined && { permissions: input.permissions }),
+      updatedAt: new Date()
+    })
+    .where(and(eq(roles.id, roleID), eq(roles.workspaceID, workspaceID)));
 
   if (input.permissions !== undefined) {
-    const memberships = await membershipDB
-      .find({ roleID: toUUID(input.id), workspaceID: toUUID(input.workspaceID) })
-      .toArray();
+    const affected = await db
+      .select({ userID: memberships.userID })
+      .from(memberships)
+      .where(and(eq(memberships.roleID, roleID), eq(memberships.workspaceID, workspaceID)));
 
     await Promise.all(
-      memberships.map((membership) => {
-        return Auth.invalidateSessionData({
-          userID: toUserID(membership.userID),
+      affected.map(({ userID }) =>
+        Auth.invalidateSessionData({
+          userID: toUserID(userID),
           workspaceID: input.workspaceID
-        });
-      })
+        })
+      )
     );
   }
 };

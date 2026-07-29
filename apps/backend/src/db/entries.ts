@@ -1,6 +1,19 @@
-import { db, fromUUID, id, UnderscoreID } from "#backend/lib/mongo";
-import type { UUID } from "#backend/lib/mongo";
+import { id } from "#backend/lib/id";
+import { sql } from "drizzle-orm";
+import {
+  foreignKey,
+  index,
+  pgTable,
+  text,
+  unique,
+  uniqueIndex,
+  uuid,
+  varchar
+} from "drizzle-orm/pg-core";
 import * as z from "zod";
+import { timestamps } from "./shared";
+import { collections } from "./collections";
+import { workspaces } from "./workspaces";
 
 const entryType = z.object({
   id: id().describe("ID of the entry"),
@@ -9,21 +22,40 @@ const entryType = z.object({
   collectionID: id().optional().describe("ID of the collection this entry belongs to")
 });
 
-interface Entry<ID extends string | UUID = string> extends Omit<
-  z.infer<typeof entryType>,
-  "id" | "collectionID"
-> {
-  id: ID;
-  collectionID?: ID;
-}
-interface FullEntry<ID extends string | UUID = string> extends Entry<ID> {
-  workspaceID: ID;
-}
+const entries = pgTable(
+  "entries",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workspaceID: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    collectionID: uuid("collection_id"),
+    name: text("name").notNull(),
+    rank: varchar("rank", { length: 255 }).notNull(),
+    ...timestamps
+  },
+  (table) => [
+    unique("entries_workspace_id_id_unique").on(table.workspaceID, table.id),
+    foreignKey({
+      name: "entries_workspace_collection_fk",
+      columns: [table.workspaceID, table.collectionID],
+      foreignColumns: [collections.workspaceID, collections.id]
+    }).onDelete("cascade"),
+    uniqueIndex("entries_collection_rank_unique")
+      .on(table.workspaceID, table.collectionID, table.rank)
+      .where(sql`${table.collectionID} is not null`),
+    uniqueIndex("entries_root_rank_unique")
+      .on(table.workspaceID, table.rank)
+      .where(sql`${table.collectionID} is null`),
+    index("entries_workspace_collection_rank_idx").on(
+      table.workspaceID,
+      table.collectionID,
+      table.rank
+    )
+  ]
+);
 
-const toEntryID = (id: UUID) => fromUUID(id, "ent");
-const entriesDB = db.collection<UnderscoreID<FullEntry<UUID>>>("entries");
+type Entry = z.infer<typeof entryType>;
 
-await entriesDB.createIndex({ workspaceID: 1 }, { name: "workspaceID_1" });
-
-export { entryType, entriesDB, toEntryID };
-export type { Entry, FullEntry };
+export { entries, entryType };
+export type { Entry };

@@ -1,37 +1,31 @@
-import {
-  collectionsDB,
-  Collection,
-  toCollectionID,
-  entriesDB,
-  Entry,
-  toEntryID
-} from "#backend/db";
-import { toUUID } from "#backend/lib/mongo";
+import { toCollectionID, toEntryID, toUUID } from "#backend/lib/id";
+import { db } from "#backend/lib/postgres";
+import { entries, type Collection, type Entry } from "#backend/db";
+import { loadCollectionTree } from "#backend/services/collections/queries";
+import { desc, eq } from "drizzle-orm";
 
 const getExplorerTree = async (input: {
   workspaceID: string;
 }): Promise<{ collections: Collection[]; entries: Entry[] }> => {
   const workspaceID = toUUID(input.workspaceID);
-  const [rawCollections, rawEntries] = await Promise.all([
-    collectionsDB.find({ workspaceID }).toArray(),
-    entriesDB.find({ workspaceID }).sort({ order: -1 }).toArray()
+  const [tree, entryRows] = await Promise.all([
+    loadCollectionTree(workspaceID),
+    db
+      .select()
+      .from(entries)
+      .where(eq(entries.workspaceID, workspaceID))
+      .orderBy(desc(entries.rank))
   ]);
 
-  const collections: Collection[] = rawCollections.map((collection) => ({
-    id: toCollectionID(collection._id),
-    name: collection.name,
-    ancestors: collection.ancestors.map((id) => toCollectionID(id)),
-    descendants: collection.descendants.map((id) => toCollectionID(id))
-  }));
-
-  const entries: Entry[] = rawEntries.map((entry) => ({
-    id: toEntryID(entry._id),
-    name: entry.name,
-    order: entry.order,
-    collectionID: entry.collectionID ? toCollectionID(entry.collectionID) : undefined
-  }));
-
-  return { collections, entries };
+  return {
+    collections: tree.collections,
+    entries: entryRows.map((entry) => ({
+      id: toEntryID(entry.id),
+      name: entry.name,
+      order: entry.rank,
+      collectionID: entry.collectionID ? toCollectionID(entry.collectionID) : undefined
+    }))
+  };
 };
 
 export { getExplorerTree };

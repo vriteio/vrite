@@ -1,7 +1,7 @@
 import { keyPermissionType, keyType } from "#backend/db";
 import { emitKeyEvent } from "#backend/events";
 import { authorized } from "#backend/lib/middleware";
-import { id } from "#backend/lib/mongo";
+import { id } from "#backend/lib/id";
 import { base } from "#backend/lib/orpc";
 import { Keys } from "#backend/services/keys";
 import { ORPCError } from "@orpc/server";
@@ -42,7 +42,7 @@ const keysRouter = base.prefix("/keys").router({
 
       const { rawKey: _rawKey, ...safeKey } = key;
 
-      await emitKeyEvent(context.auth.workspaceID, {
+      emitKeyEvent(context.auth.workspaceID, {
         action: "key:create",
         memberID: context.auth.session.memberID,
         data: safeKey
@@ -101,7 +101,7 @@ const keysRouter = base.prefix("/keys").router({
         workspaceID: context.auth.workspaceID
       });
 
-      await emitKeyEvent(context.auth.workspaceID, {
+      emitKeyEvent(context.auth.workspaceID, {
         action: "key:delete",
         memberID: context.auth.session?.memberID,
         data: {
@@ -135,7 +135,7 @@ const keysRouter = base.prefix("/keys").router({
         permissions: input.permissions
       });
 
-      await emitKeyEvent(context.auth.workspaceID, {
+      emitKeyEvent(context.auth.workspaceID, {
         action: "key:update",
         memberID: context.auth.session?.memberID,
         data: {
@@ -175,7 +175,7 @@ const keysRouter = base.prefix("/keys").router({
 
       const { rawKey: _rawKey, ...safeKey } = key;
 
-      await emitKeyEvent(context.auth.workspaceID, {
+      emitKeyEvent(context.auth.workspaceID, {
         action: "key:rotate",
         memberID: context.auth.session.memberID,
         data: {

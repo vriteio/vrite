@@ -6,7 +6,12 @@ const generateUUID = () => crypto.randomUUID();
 const toUUID = (id: string): string => {
   if (UUID_REGEX.test(id)) return id;
 
-  const bytes = base62ToBytes(id.split("_").pop() || "");
+  let bytes = base62ToBytes(id.split("_").pop() || "");
+
+  while (bytes.length > 16 && bytes[0] === 0) {
+    bytes = bytes.slice(1);
+  }
+
   if (bytes.length > 16) throw new Error("Invalid ID");
 
   const hex = bytesToHex(bytes).padStart(32, "0");

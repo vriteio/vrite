@@ -1,8 +1,52 @@
 services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: andesine
+      POSTGRES_PASSWORD: andesine
+      POSTGRES_USER: andesine
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U andesine -d andesine"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "6379:6379"
+
+  migrate:
+    build:
+      context: .
+      dockerfile: apps/migrate/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://andesine:andesine@postgres:5432/andesine
+
   backend:
     build:
       context: .
       dockerfile: apps/backend/Dockerfile
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://andesine:andesine@postgres:5432/andesine
+      REDIS_URL: redis://redis:6379
     env_file:
       - .env
     ports:
@@ -23,3 +67,6 @@ services:
       - .env
     ports:
       - "3000:3000"
+
+volumes:
+  postgres-data:

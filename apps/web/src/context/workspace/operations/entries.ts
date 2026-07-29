@@ -122,11 +122,19 @@ const createEntryOperations = (input: WorkspaceContentOperationsInput) => {
     if ("order" in props || "collectionID" in props) {
       apiCalls.push(
         afterCreate(() =>
-          client.entries.move({
-            id: entryID,
-            order: updated.order,
-            collectionID: updated.collectionID ?? null
-          })
+          client.entries
+            .move({
+              id: entryID,
+              order: updated.order,
+              collectionID: updated.collectionID ?? null
+            })
+            .then(({ order }) => {
+              const current = entries.findOne({ id: entryID });
+
+              if (current?.order === updated.order && order !== updated.order) {
+                entries.updateOne({ id: entryID }, { $set: { order } });
+              }
+            })
         )
       );
     }

@@ -1,31 +1,31 @@
-import { Collection, collectionsDB } from "#backend/db";
-import { toUUID } from "#backend/lib/mongo";
+import { toUUID } from "#backend/lib/id";
+import { db } from "#backend/lib/postgres";
+import { collections, type Collection } from "#backend/db";
+import { and, eq, sql } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 import { ROOT_COLLECTION_NAME } from "./root";
 
 const updateCollection = async (
-  input: {
-    id: string;
-    workspaceID: string;
-  } & Partial<Pick<Collection, "name">>
+  input: { id: string; workspaceID: string } & Partial<Pick<Collection, "name">>
 ) => {
-  const { id, workspaceID, ...setProperties } = input;
-  const collection = await collectionsDB.findOne({
-    _id: toUUID(input.id),
-    workspaceID: toUUID(input.workspaceID)
-  });
-
-  if (!collection) throw new ORPCError("NOT_FOUND");
-  if (collection.name === ROOT_COLLECTION_NAME || input.name === ROOT_COLLECTION_NAME) {
+  if (input.name === undefined) return;
+  if (input.name === ROOT_COLLECTION_NAME) {
     throw new ORPCError("BAD_REQUEST", { message: "Reserved collection name" });
   }
 
-  const { matchedCount } = await collectionsDB.updateOne(
-    { _id: toUUID(input.id), workspaceID: toUUID(input.workspaceID) },
-    { $set: setProperties }
-  );
+  const updated = await db
+    .update(collections)
+    .set({ name: input.name, updatedAt: new Date() })
+    .where(
+      and(
+        eq(collections.id, toUUID(input.id)),
+        eq(collections.workspaceID, toUUID(input.workspaceID)),
+        sql`${collections.parentID} is not null`
+      )
+    )
+    .returning({ id: collections.id });
 
-  if (matchedCount !== 1) throw new ORPCError("NOT_FOUND");
+  if (updated.length !== 1) throw new ORPCError("NOT_FOUND");
 };
 
 export { updateCollection };

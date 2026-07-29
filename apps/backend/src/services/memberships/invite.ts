@@ -1,113 +1,110 @@
-import {
-  invitesDB,
-  toInviteID,
-  membershipDB,
-  rolesDB,
-  usersDB,
-  workspacesDB,
-  type FullInvite
-} from "#backend/db";
-import { generateUUID, toUUID, type UnderscoreID } from "#backend/lib/mongo";
-import type { UUID } from "#backend/lib/mongo";
-import { ORPCError } from "@orpc/server";
+import { toInviteID, toUUID } from "#backend/lib/id";
+import { db } from "#backend/lib/postgres";
+import { invitations, memberships, roles, users, workspaces } from "#backend/db";
 import { deliverInvite } from "#backend/lib/invites";
+import { and, eq, lt } from "drizzle-orm";
+import { ORPCError } from "@orpc/server";
 
 const inviteMember = async (input: {
   workspaceID: string;
   email: string;
   roleID: string;
   inviterID?: string;
-}): Promise<{
-  inviteID: string;
-  inviteLink: string;
-  emailDelivery: "sent" | "manual" | "failed";
-  invite: {
-    id: string;
-    email: string;
-    roleID: string;
-    invitedBy?: string;
-    status: "pending" | "accepted" | "expired";
-    createdAt: string;
-    expiresAt: string;
-  };
-}> => {
+}) => {
   const workspaceID = toUUID(input.workspaceID);
-  const roleUUID = toUUID(input.roleID);
+  const roleID = toUUID(input.roleID);
   const normalizedEmail = input.email.trim().toLowerCase();
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const result = await db.transaction(async (tx) => {
+    await tx
+      .update(invitations)
+      .set({ status: "expired" })
+      .where(
+        and(
+          eq(invitations.workspaceID, workspaceID),
+          eq(invitations.status, "pending"),
+          lt(invitations.expiresAt, new Date())
+        )
+      );
+    const [role] = await tx
+      .select({ id: roles.id })
+      .from(roles)
+      .where(and(eq(roles.id, roleID), eq(roles.workspaceID, workspaceID)));
+    const [workspace] = await tx
+      .select({ id: workspaces.id, name: workspaces.name })
+      .from(workspaces)
+      .where(eq(workspaces.id, workspaceID));
 
-  const [role, workspace, invitedUser] = await Promise.all([
-    rolesDB.findOne({ _id: roleUUID, workspaceID }),
-    workspacesDB.findOne({ _id: workspaceID }),
-    usersDB.findOne({ email: normalizedEmail })
-  ]);
+    if (!role) throw new ORPCError("BAD_REQUEST", { message: "Role not found" });
+    if (!workspace) throw new ORPCError("NOT_FOUND", { message: "Workspace not found" });
 
-  if (!role) {
-    throw new ORPCError("BAD_REQUEST", { message: "Role not found" });
-  }
+    const [existingUser] = await tx
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.email, normalizedEmail));
 
-  if (!workspace) {
-    throw new ORPCError("NOT_FOUND", { message: "Workspace not found" });
-  }
+    if (existingUser) {
+      const [existingMember] = await tx
+        .select({ id: memberships.id })
+        .from(memberships)
+        .where(
+          and(eq(memberships.workspaceID, workspaceID), eq(memberships.userID, existingUser.id))
+        );
 
-  if (invitedUser) {
-    const existingMember = await membershipDB.findOne({
-      workspaceID,
-      userID: invitedUser._id
-    });
+      if (existingMember) {
+        throw new ORPCError("BAD_REQUEST", {
+          message: "This user is already a member of the workspace"
+        });
+      }
+    }
 
-    if (existingMember) {
+    const [existingInvite] = await tx
+      .select({ id: invitations.id })
+      .from(invitations)
+      .where(
+        and(
+          eq(invitations.workspaceID, workspaceID),
+          eq(invitations.email, normalizedEmail),
+          eq(invitations.status, "pending")
+        )
+      );
+
+    if (existingInvite) {
       throw new ORPCError("BAD_REQUEST", {
-        message: "This user is already a member of the workspace"
+        message: "An invite has already been sent to this email"
       });
     }
-  }
 
-  // Check for existing pending invite
-  const existingInvite = await invitesDB.findOne({
-    email: normalizedEmail,
-    workspaceID,
-    status: "pending"
+    const [invite] = await tx
+      .insert(invitations)
+      .values({
+        workspaceID,
+        email: normalizedEmail,
+        roleID,
+        invitedBy: input.inviterID ? toUUID(input.inviterID) : null,
+        expiresAt
+      })
+      .returning();
+
+    return { invite, workspaceName: workspace.name };
   });
-
-  if (existingInvite) {
-    throw new ORPCError("BAD_REQUEST", {
-      message: "An invite has already been sent to this email"
-    });
-  }
-
-  const now = new Date();
-  const expiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
-
-  const invite: UnderscoreID<FullInvite<UUID>> = {
-    _id: generateUUID(),
-    workspaceID,
-    email: normalizedEmail,
-    roleID: roleUUID,
-    ...(input.inviterID && { invitedBy: toUUID(input.inviterID) }),
-    status: "pending",
-    createdAt: now,
-    expiresAt
-  };
-
-  await invitesDB.insertOne(invite);
-
   const { emailDelivery, inviteLink } = await deliverInvite({
-    invite,
-    workspaceName: workspace.name
+    invite: result.invite,
+    workspaceName: result.workspaceName
   });
 
   return {
-    inviteID: toInviteID(invite._id),
+    inviteID: toInviteID(result.invite.id),
     inviteLink,
     emailDelivery,
     invite: {
-      id: toInviteID(invite._id),
-      email: invite.email,
+      id: toInviteID(result.invite.id),
+      email: result.invite.email,
       roleID: input.roleID,
       invitedBy: input.inviterID,
-      status: invite.status,
-      createdAt: invite.createdAt.toISOString(),
-      expiresAt: invite.expiresAt.toISOString()
+      status: result.invite.status,
+      createdAt: result.invite.createdAt.toISOString(),
+      expiresAt: result.invite.expiresAt.toISOString()
     }
   };
 };

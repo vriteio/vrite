@@ -6,13 +6,14 @@
   "types": "./src/index.ts",
   "scripts": {
     "build": "rolldown -c rolldown.config.mjs",
+    "typecheck": "tsc --noEmit",
     "start": "node ./dist/index.js",
     "dev": "tsx watch ./src/index.ts"
   },
   "dependencies": {
     "@andesine/templates": "workspace:*",
-    "@better-auth/mongo-adapter": "^1.6.11",
-    "@better-auth/passkey": "^1.6.11",
+    "@better-auth/drizzle-adapter": "^1.6.25",
+    "@better-auth/passkey": "^1.6.25",
     "@fastify/cors": "^11.2.0",
     "@fastify/websocket": "^11.2.0",
     "@hocuspocus/extension-database": "^4.1.0",
@@ -21,12 +22,13 @@
     "@orpc/openapi": "^1.14.3",
     "@orpc/server": "^1.14.3",
     "base-x": "^5.0.1",
-    "better-auth": "^1.6.11",
+    "better-auth": "^1.6.25",
     "date-fns": "^4.3.0",
+    "drizzle-orm": "^0.45.2",
     "fastify": "^5.8.5",
     "lexorank": "^1.0.5",
-    "mongodb": "^7.2.0",
     "nodemailer": "^8.0.9",
+    "pg": "^8.22.0",
     "redis": "^5.12.1",
     "resend": "^6.12.4",
     "stripe": "^22.1.1",
@@ -37,8 +39,10 @@
   "devDependencies": {
     "@types/node": "^25.9.1",
     "@types/nodemailer": "^8.0.0",
+    "@types/pg": "^8.20.0",
     "@types/ws": "^8.18.1",
     "rolldown": "^1.0.3",
-    "tsx": "^4.22.3"
+    "tsx": "^4.22.3",
+    "typescript": "6.0.3"
   }
 }

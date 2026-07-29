@@ -1,6 +1,6 @@
 import { permissionType } from "#backend/db";
 import { authorized } from "#backend/lib/middleware";
-import { id } from "#backend/lib/mongo";
+import { id } from "#backend/lib/id";
 import { base } from "#backend/lib/orpc";
 import { Auth } from "#backend/services/auth";
 import * as z from "zod";

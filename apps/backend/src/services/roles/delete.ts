@@ -1,46 +1,64 @@
-import { rolesDB, membershipDB, toUserID } from "#backend/db";
-import { toUUID } from "#backend/lib/mongo";
+import { toUUID, toUserID } from "#backend/lib/id";
+import { db } from "#backend/lib/postgres";
+import { invitations, memberships, roles, workspaces } from "#backend/db";
 import { Auth } from "#backend/services/auth";
+import { and, eq } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 
 const deleteRole = async (input: { id: string; workspaceID: string }): Promise<void> => {
+  const roleID = toUUID(input.id);
   const workspaceID = toUUID(input.workspaceID);
-  const roleUUID = toUUID(input.id);
+  const affectedUserIDs = await db.transaction(async (tx) => {
+    await tx
+      .select({ id: workspaces.id })
+      .from(workspaces)
+      .where(eq(workspaces.id, workspaceID))
+      .for("update");
+    const [role] = await tx
+      .select()
+      .from(roles)
+      .where(and(eq(roles.id, roleID), eq(roles.workspaceID, workspaceID)))
+      .for("update");
 
-  const role = await rolesDB.findOne({ _id: roleUUID, workspaceID });
+    if (!role) throw new ORPCError("NOT_FOUND", { message: "Role not found" });
+    if (role.baseRole) {
+      throw new ORPCError("BAD_REQUEST", { message: "Base roles cannot be deleted" });
+    }
 
-  if (!role) throw new ORPCError("NOT_FOUND", { message: "Role not found" });
-  if (role.baseRole) {
-    throw new ORPCError("BAD_REQUEST", { message: "Base roles cannot be deleted" });
-  }
+    const [viewerRole] = await tx
+      .select({ id: roles.id })
+      .from(roles)
+      .where(and(eq(roles.workspaceID, workspaceID), eq(roles.baseRole, "viewer")));
 
-  // Collect affected members before reassignment
-  const affectedMemberships = await membershipDB
-    .find({ roleID: roleUUID, workspaceID })
-    .toArray();
+    if (!viewerRole) {
+      throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Viewer role not found" });
+    }
 
-  // Find the Viewer role to reassign affected memberships
-  const viewerRole = await rolesDB.findOne({
-    workspaceID,
-    name: "Viewer",
-    baseRole: "viewer"
+    const affected = await tx
+      .select({ userID: memberships.userID })
+      .from(memberships)
+      .where(and(eq(memberships.roleID, roleID), eq(memberships.workspaceID, workspaceID)));
+
+    await tx
+      .update(memberships)
+      .set({ roleID: viewerRole.id, updatedAt: new Date() })
+      .where(and(eq(memberships.roleID, roleID), eq(memberships.workspaceID, workspaceID)));
+    await tx
+      .update(invitations)
+      .set({ roleID: viewerRole.id })
+      .where(and(eq(invitations.roleID, roleID), eq(invitations.workspaceID, workspaceID)));
+    await tx.delete(roles).where(and(eq(roles.id, roleID), eq(roles.workspaceID, workspaceID)));
+
+    return affected.map(({ userID }) => userID);
   });
 
-  if (viewerRole) {
-    await membershipDB.updateMany(
-      { roleID: roleUUID, workspaceID },
-      { $set: { roleID: viewerRole._id } }
-    );
-  }
-
-  await rolesDB.deleteOne({ _id: roleUUID, workspaceID });
   await Promise.all(
-    affectedMemberships.map((membership) => {
-      return Auth.invalidateSessionData({
-        userID: toUserID(membership.userID),
+    affectedUserIDs.map((userID) =>
+      Auth.invalidateSessionData({
+        userID: toUserID(userID),
         workspaceID: input.workspaceID
-      });
-    })
+      })
+    )
   );
 };
 

@@ -2,12 +2,13 @@ import { router, routerPlugin } from "#backend/router";
 import "./events";
 import { collab } from "#backend/collaboration";
 import { config } from "./lib/config";
-import { Billing } from "./services";
 import Fastify, { FastifyRequest } from "fastify";
 import corsPlugin from "@fastify/cors";
 import websocketPlugin from "@fastify/websocket";
 import { webhooksPlugin } from "./webhooks";
 import { auth } from "./lib/auth";
+import { pool } from "./lib/postgres";
+import { redis, subscriberRedis } from "./lib/redis";
 
 const allowedOrigins = [...new Set([config.PUBLIC_APP_URL, config.PUBLIC_API_URL])];
 const allowedMethods = ["GET", "HEAD", "PUT", "POST", "DELETE", "PATCH", "OPTIONS"];
@@ -106,7 +107,7 @@ await app.listen({
 console.log(`Server is running on ${host}:${port}`);
 
 const shutdown = async (): Promise<void> => {
-  await Billing.Metering.flushUsage();
+  await Promise.all([redis.close(), subscriberRedis.close(), pool.end()]);
   process.exit(0);
 };
 

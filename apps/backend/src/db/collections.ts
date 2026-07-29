@@ -1,33 +1,57 @@
-import { db, fromUUID, id, UnderscoreID } from "#backend/lib/mongo";
-import type { UUID } from "#backend/lib/mongo";
+import { id } from "#backend/lib/id";
+import { sql } from "drizzle-orm";
+import {
+  check,
+  foreignKey,
+  index,
+  pgTable,
+  text,
+  unique,
+  uniqueIndex,
+  uuid,
+  varchar
+} from "drizzle-orm/pg-core";
 import * as z from "zod";
+import { timestamps } from "./shared";
+import { workspaces } from "./workspaces";
 
 const collectionType = z.object({
   id: id().describe("ID of the collection"),
   name: z.string().describe("Name of the collection"),
-  ancestors: z.array(
-    id().describe("IDs of the ancestor collections - from furthest to closest")
-  ),
-  descendants: z.array(id().describe("IDs of the directly-descendant collections"))
+  ancestors: z.array(id().describe("IDs of ancestor collections")),
+  descendants: z.array(id().describe("IDs of directly-descendant collections"))
 });
 
-interface Collection<ID extends string | UUID = string> extends Omit<
-  z.infer<typeof collectionType>,
-  "id" | "descendants" | "ancestors"
-> {
-  id: ID;
-  descendants: ID[];
-  ancestors: ID[];
-}
+const collections = pgTable(
+  "collections",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workspaceID: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    parentID: uuid("parent_id"),
+    name: text("name").notNull(),
+    rank: varchar("rank", { length: 255 }).notNull(),
+    ...timestamps
+  },
+  (table) => [
+    unique("collections_workspace_id_id_unique").on(table.workspaceID, table.id),
+    unique("collections_sibling_rank_unique").on(table.workspaceID, table.parentID, table.rank),
+    uniqueIndex("collections_single_root_unique")
+      .on(table.workspaceID)
+      .where(sql`${table.parentID} is null`),
+    foreignKey({
+      name: "collections_workspace_parent_fk",
+      columns: [table.workspaceID, table.parentID],
+      foreignColumns: [table.workspaceID, table.id]
+    }).onDelete("cascade"),
+    check("collections_not_own_parent", sql`${table.id} <> ${table.parentID}`),
+    check("collections_root_name", sql`${table.parentID} is not null or ${table.name} = '~'`),
+    index("collections_workspace_parent_rank_idx").on(table.workspaceID, table.parentID, table.rank)
+  ]
+);
 
-interface FullCollection<ID extends string | UUID = string> extends Collection<ID> {
-  workspaceID: ID;
-}
+type Collection = z.infer<typeof collectionType>;
 
-const toCollectionID = (id: UUID) => fromUUID(id, "coll");
-const collectionsDB = db.collection<UnderscoreID<FullCollection<UUID>>>("collections");
-
-await collectionsDB.createIndex({ workspaceID: 1 }, { name: "workspaceID_1" });
-
-export { collectionType, collectionsDB, toCollectionID };
-export type { Collection, FullCollection };
+export { collections, collectionType };
+export type { Collection };

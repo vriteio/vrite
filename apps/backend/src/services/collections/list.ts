@@ -1,6 +1,7 @@
-import { collectionsDB, Collection, toCollectionID } from "#backend/db";
-import { toUUID } from "#backend/lib/mongo";
-import { getRootCollection, ROOT_COLLECTION_NAME } from "./root";
+import { toCollectionID, toUUID } from "#backend/lib/id";
+import { collections, type Collection } from "#backend/db";
+import { loadCollectionTree } from "./queries";
+import { ROOT_COLLECTION_NAME } from "./root";
 
 const listCollections = async (input: {
   workspaceID: string;
@@ -11,38 +12,19 @@ const listCollections = async (input: {
   const perPage = input.perPage || 50;
   const page = input.page || 1;
   const workspaceID = toUUID(input.workspaceID);
-  const parentCollection = input.ancestorID
-    ? await collectionsDB.findOne({
-        _id: toUUID(input.ancestorID),
-        workspaceID
-      })
-    : await getRootCollection({ workspaceID });
-  const descendantIDs = (parentCollection?.descendants ?? []).map(toUUID);
-  const pageIDs = descendantIDs.slice((page - 1) * perPage, page * perPage);
+  const tree = await loadCollectionTree(workspaceID);
+  const root = tree.rows.find((row) => row.parentID === null && row.name === ROOT_COLLECTION_NAME);
+  const parentID = input.ancestorID ? toUUID(input.ancestorID) : root?.id;
 
-  if (pageIDs.length === 0) return [];
+  if (!parentID) return [];
 
-  const collections = await collectionsDB
-    .find({
-      workspaceID,
-      name: { $ne: ROOT_COLLECTION_NAME },
-      _id: { $in: pageIDs }
-    })
-    .toArray();
-  const collectionMap = new Map(collections.map((collection) => [`${collection._id}`, collection]));
+  const ids = tree.rows
+    .filter((row) => row.parentID === parentID && row.name !== ROOT_COLLECTION_NAME)
+    .slice((page - 1) * perPage, page * perPage)
+    .map((row) => toCollectionID(row.id));
+  const selected = new Set(ids);
 
-  return pageIDs.flatMap((id) => {
-    const collection = collectionMap.get(`${id}`);
-
-    if (!collection) return [];
-
-    return {
-      id: toCollectionID(collection._id),
-      name: collection.name,
-      ancestors: collection.ancestors.map((id) => toCollectionID(id)),
-      descendants: collection.descendants.map((id) => toCollectionID(id))
-    };
-  });
+  return tree.collections.filter((collection) => selected.has(collection.id));
 };
 
 export { listCollections };

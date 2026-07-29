@@ -1,27 +1,22 @@
-import { rolesDB, toRoleID, type Role, type Permission } from "#backend/db";
-import { generateUUID, toUUID, type UnderscoreID } from "#backend/lib/mongo";
-import { type FullRole } from "#backend/db";
-import type { UUID } from "#backend/lib/mongo";
+import { toRoleID, toUUID } from "#backend/lib/id";
+import { db } from "#backend/lib/postgres";
+import { type Permission, roles, type Role } from "#backend/db";
 
 const createRole = async (input: {
   workspaceID: string;
   name: string;
   permissions: Permission[];
 }): Promise<Role> => {
-  const role: UnderscoreID<FullRole<UUID>> = {
-    _id: generateUUID(),
-    workspaceID: toUUID(input.workspaceID),
-    name: input.name,
-    permissions: input.permissions
-  };
+  const [role] = await db
+    .insert(roles)
+    .values({
+      workspaceID: toUUID(input.workspaceID),
+      name: input.name,
+      permissions: input.permissions
+    })
+    .returning();
 
-  await rolesDB.insertOne(role);
-
-  return {
-    id: toRoleID(role._id),
-    name: role.name,
-    permissions: role.permissions
-  };
+  return { id: toRoleID(role.id), name: role.name, permissions: role.permissions };
 };
 
 export { createRole };

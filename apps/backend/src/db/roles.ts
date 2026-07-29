@@ -1,7 +1,19 @@
-import { db, fromUUID, id, UnderscoreID } from "#backend/lib/mongo";
-import type { UUID } from "#backend/lib/mongo";
+import { id } from "#backend/lib/id";
+import { sql } from "drizzle-orm";
+import { index, pgEnum, pgTable, unique, uuid, varchar } from "drizzle-orm/pg-core";
 import * as z from "zod";
+import { timestamps } from "./shared";
+import { workspaces } from "./workspaces";
 
+const permissionEnum = pgEnum("permission", [
+  "content",
+  "api_keys",
+  "read:api_keys",
+  "billing",
+  "read:billing",
+  "workspace"
+]);
+const baseRoleEnum = pgEnum("base_role", ["admin", "viewer"]);
 const permissionType = z.enum([
   "content",
   "api_keys",
@@ -18,20 +30,31 @@ const roleType = z.object({
   baseRole: baseRoleType.optional().describe("If this role is an unremovable base role")
 });
 
+const roles = pgTable(
+  "roles",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workspaceID: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    name: varchar("name", { length: 50 }).notNull(),
+    permissions: permissionEnum("permissions")
+      .array()
+      .notNull()
+      .default(sql`'{}'`),
+    baseRole: baseRoleEnum("base_role"),
+    ...timestamps
+  },
+  (table) => [
+    unique("roles_workspace_id_id_unique").on(table.workspaceID, table.id),
+    unique("roles_workspace_base_role_unique").on(table.workspaceID, table.baseRole),
+    index("roles_workspace_id_idx").on(table.workspaceID)
+  ]
+);
+
 type Permission = z.infer<typeof permissionType>;
 type BaseRole = z.infer<typeof baseRoleType>;
+type Role = z.infer<typeof roleType>;
 
-interface Role<ID extends string | UUID = string> extends Omit<z.infer<typeof roleType>, "id"> {
-  id: ID;
-}
-interface FullRole<ID extends string | UUID = string> extends Role<ID> {
-  workspaceID: ID;
-}
-
-const toRoleID = (id: UUID) => fromUUID(id, "rl");
-const rolesDB = db.collection<UnderscoreID<FullRole<UUID>>>("roles");
-
-await rolesDB.createIndex({ workspaceID: 1 }, { name: "workspaceID_1" });
-
-export { permissionType, baseRoleType, roleType, rolesDB, toRoleID };
-export type { Permission, BaseRole, Role, FullRole };
+export { baseRoleEnum, baseRoleType, permissionEnum, permissionType, roles, roleType };
+export type { BaseRole, Permission, Role };

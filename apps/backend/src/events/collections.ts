@@ -1,6 +1,6 @@
 import { collectionType } from "#backend/db";
 import { emitEvent, EmitEvent, subscribeToEvent, SubscribeToEvent } from "#backend/lib/events";
-import { id } from "#backend/lib/mongo";
+import { id } from "#backend/lib/id";
 import * as z from "zod";
 
 declare module "#backend/lib/events" {
@@ -43,8 +43,8 @@ type CollectionEvent = z.infer<typeof collectionEventType>;
 
 const emitCollectionEvent: EmitEvent<{
   [workspaceID: string]: CollectionEvent;
-}> = async (workspaceID, event) => {
-  await emitEvent(`${workspaceID}:collections`, event);
+}> = (workspaceID, event) => {
+  emitEvent(`${workspaceID}:collections`, event);
 };
 const subscribeToCollectionEvents: SubscribeToEvent<{
   [workspaceID: string]: CollectionEvent;

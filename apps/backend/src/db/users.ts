@@ -1,6 +1,17 @@
-import { db, fromUUID, id, UnderscoreID } from "#backend/lib/mongo";
-import type { UUID } from "#backend/lib/mongo";
+import { id } from "#backend/lib/id";
+import { sql } from "drizzle-orm";
+import {
+  AnyPgColumn,
+  boolean,
+  pgTable,
+  text,
+  uniqueIndex,
+  uuid,
+  varchar
+} from "drizzle-orm/pg-core";
 import * as z from "zod";
+import { timestamps } from "./shared";
+import { workspaces } from "./workspaces";
 
 const userType = z.object({
   id: id().describe("ID of the user"),
@@ -19,31 +30,24 @@ const userProfileType = userType.pick({
   image: true
 });
 
-interface User<ID extends string | UUID = string> extends Omit<
-  z.infer<typeof userType>,
-  "id" | "currentWorkspaceID" | "createdAt" | "updatedAt"
-> {
-  id: ID;
-  currentWorkspaceID?: ID;
-  createdAt: ID extends UUID ? Date : string;
-  updatedAt: ID extends UUID ? Date : string;
-}
-interface UserProfile<ID extends string | UUID = string> extends Omit<
-  z.infer<typeof userProfileType>,
-  "id"
-> {
-  id: ID;
-}
-interface FullUser<ID extends string | UUID = string> extends User<ID> {}
-
-const toUserID = (id: UUID) => fromUUID(id, "usr");
-const usersDB = db.collection<UnderscoreID<FullUser<UUID>>>("users");
-
-await usersDB.createIndex(
-  { emailVerificationCodeExpiresAt: 1 },
-  { expireAfterSeconds: 0, sparse: true, name: "emailVerificationCodeExpiresAt_1" }
+const users = pgTable(
+  "users",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: varchar("name", { length: 320 }).notNull(),
+    email: varchar("email", { length: 320 }).notNull(),
+    emailVerified: boolean("email_verified").notNull().default(false),
+    image: text("image"),
+    currentWorkspaceID: uuid("current_workspace_id").references((): AnyPgColumn => workspaces.id, {
+      onDelete: "set null"
+    }),
+    ...timestamps
+  },
+  (table) => [uniqueIndex("users_email_unique").on(sql`lower(${table.email})`)]
 );
-await usersDB.createIndex({ email: 1 }, { unique: true, name: "email_1" });
 
-export { userType, userProfileType, usersDB, toUserID };
-export type { User, UserProfile, FullUser };
+type User = z.infer<typeof userType>;
+type UserProfile = z.infer<typeof userProfileType>;
+
+export { users, userProfileType, userType };
+export type { User, UserProfile };

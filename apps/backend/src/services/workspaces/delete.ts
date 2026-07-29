@@ -1,46 +1,41 @@
-import { membershipDB, rolesDB, workspacesDB, usersDB } from "#backend/db";
-import { toUUID } from "#backend/lib/mongo";
-import { ORPCError } from "@orpc/server";
+import { toUUID } from "#backend/lib/id";
+import { db } from "#backend/lib/postgres";
+import { memberships, users, workspaces } from "#backend/db";
 import { Auth } from "#backend/services/auth";
+import { and, eq, ne } from "drizzle-orm";
+import { ORPCError } from "@orpc/server";
 
 const deleteWorkspace = async (input: { workspaceID: string; userID: string }) => {
-  const workspaceUUID = toUUID(input.workspaceID);
+  const workspaceID = toUUID(input.workspaceID);
+  const userID = toUUID(input.userID);
 
-  // Ensure the user has at least one other workspace
-  const memberCount = await membershipDB.countDocuments({
-    userID: toUUID(input.userID)
+  await db.transaction(async (tx) => {
+    const [workspace] = await tx
+      .select({ id: workspaces.id })
+      .from(workspaces)
+      .where(eq(workspaces.id, workspaceID))
+      .for("update");
+
+    if (!workspace) throw new ORPCError("NOT_FOUND", { message: "Workspace not found" });
+
+    const [fallback] = await tx
+      .select({ workspaceID: memberships.workspaceID })
+      .from(memberships)
+      .where(and(eq(memberships.userID, userID), ne(memberships.workspaceID, workspaceID)))
+      .limit(1);
+
+    if (!fallback) {
+      throw new ORPCError("BAD_REQUEST", { message: "Cannot delete your only workspace" });
+    }
+
+    await tx
+      .update(users)
+      .set({ currentWorkspaceID: fallback.workspaceID, updatedAt: new Date() })
+      .where(and(eq(users.id, userID), eq(users.currentWorkspaceID, workspaceID)));
+    await tx.delete(workspaces).where(eq(workspaces.id, workspaceID));
   });
 
-  if (memberCount <= 1) {
-    throw new ORPCError("BAD_REQUEST", {
-      message: "Cannot delete your only workspace"
-    });
-  }
-
-  // Invalidate all cached sessions for this workspace before deletion
   await Auth.invalidateSessionData({ workspaceID: input.workspaceID });
-
-  // Remove workspace and all associated data
-  await Promise.all([
-    workspacesDB.deleteOne({ _id: workspaceUUID }),
-    membershipDB.deleteMany({ workspaceID: workspaceUUID }),
-    rolesDB.deleteMany({ workspaceID: workspaceUUID })
-  ]);
-
-  // If the user's currentWorkspaceID pointed to the deleted workspace, clear it
-  const user = await usersDB.findOne({ _id: toUUID(input.userID) });
-
-  if (user && user.currentWorkspaceID && user.currentWorkspaceID.equals(workspaceUUID)) {
-    // Set to another workspace the user is a member of
-    const anotherMembership = await membershipDB.findOne({
-      userID: toUUID(input.userID)
-    });
-
-    await usersDB.updateOne(
-      { _id: toUUID(input.userID) },
-      { $set: { currentWorkspaceID: anotherMembership?.workspaceID } }
-    );
-  }
 };
 
 export { deleteWorkspace };

@@ -1,19 +1,16 @@
-import { keysDB, Key, toKeyID, toMembershipID } from "#backend/db";
-import { toUUID } from "#backend/lib/mongo";
+import { toUUID } from "#backend/lib/id";
+import { db } from "#backend/lib/postgres";
+import { apiKeys, type Key } from "#backend/db";
+import { eq } from "drizzle-orm";
+import { mapKey } from "./get";
 
 const listKeys = async (input: { workspaceID: string }): Promise<Key[]> => {
-  const keys = await keysDB.find({ workspaceID: toUUID(input.workspaceID) }).toArray();
+  const keys = await db
+    .select()
+    .from(apiKeys)
+    .where(eq(apiKeys.workspaceID, toUUID(input.workspaceID)));
 
-  return keys.map((key) => ({
-    id: toKeyID(key._id),
-    memberID: toMembershipID(key.memberID),
-    name: key.name,
-    permissions: key.permissions,
-    prefix: key.prefix,
-    createdAt: `${key.createdAt.toISOString()}`,
-    updatedAt: `${key.updatedAt.toISOString()}`,
-    expiresAt: key.expiresAt ? `${key.expiresAt.toISOString()}` : null
-  }));
+  return keys.map(mapKey);
 };
 
 export { listKeys };

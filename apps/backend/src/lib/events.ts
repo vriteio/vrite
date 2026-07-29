@@ -7,7 +7,7 @@ type EmitEvent<Events extends Record<string, Record<string, any>>> = <
 >(
   key: E,
   payload: Events[E]
-) => Promise<void>;
+) => void;
 type SubscribeToEvent<Events extends Record<string, Record<string, any>>> = <
   E extends Extract<keyof Events, string>
 >(
@@ -19,7 +19,15 @@ type SubscribeToEvent<Events extends Record<string, Record<string, any>>> = <
 const eventListeners: { [E in keyof Events]: Array<(payload: Events[E]) => void> } = {};
 const unsubscribeCallbacks: Record<string, () => void> = {};
 const emitEvent: EmitEvent<Events> = async (event, payload) => {
-  await redis.publish(event, JSON.stringify(payload));
+  try {
+    const serializedPayload = JSON.stringify(payload);
+
+    await redis.publish(event, serializedPayload).catch((error) => {
+      console.error("Failed to publish event", { event, error });
+    });
+  } catch (error) {
+    console.error("Failed to serialize event", { event, error });
+  }
 };
 const subscribeToEvent: SubscribeToEvent<Events> = (event, callback, { unsubscribeKey } = {}) => {
   if (eventListeners[event]) {

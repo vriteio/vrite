@@ -1,6 +1,6 @@
 import { workspaceType } from "#backend/db";
 import { emitEvent, EmitEvent, subscribeToEvent, SubscribeToEvent } from "#backend/lib/events";
-import { id } from "#backend/lib/mongo";
+import { id } from "#backend/lib/id";
 import * as z from "zod";
 
 declare module "#backend/lib/events" {
@@ -38,8 +38,8 @@ type WorkspaceStateEvent = z.infer<typeof workspaceStateEventType>;
 
 const emitWorkspaceStateEvent: EmitEvent<{
   [workspaceID: string]: WorkspaceStateEvent;
-}> = async (workspaceID, event) => {
-  await emitEvent(`${workspaceID}:workspace`, event);
+}> = (workspaceID, event) => {
+  emitEvent(`${workspaceID}:workspace`, event);
 };
 const subscribeToWorkspaceStateEvents: SubscribeToEvent<{
   [workspaceID: string]: WorkspaceStateEvent;

@@ -1,6 +1,6 @@
 import { keyType } from "#backend/db";
 import { emitEvent, EmitEvent, subscribeToEvent, SubscribeToEvent } from "#backend/lib/events";
-import { id } from "#backend/lib/mongo";
+import { id } from "#backend/lib/id";
 import * as z from "zod";
 
 declare module "#backend/lib/events" {
@@ -42,8 +42,8 @@ type KeyEvent = z.infer<typeof keyEventType>;
 
 const emitKeyEvent: EmitEvent<{
   [workspaceID: string]: KeyEvent;
-}> = async (workspaceID, event) => {
-  await emitEvent(`${workspaceID}:keys`, event);
+}> = (workspaceID, event) => {
+  emitEvent(`${workspaceID}:keys`, event);
 };
 const subscribeToKeyEvents: SubscribeToEvent<{
   [workspaceID: string]: KeyEvent;

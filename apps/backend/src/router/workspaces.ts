@@ -1,8 +1,8 @@
-import { permissionType, toUserID, workspaceType } from "#backend/db";
+import { permissionType, workspaceType } from "#backend/db";
 import { emitWorkspaceStateEvent } from "#backend/events";
 import { auth } from "#backend/lib/auth";
 import { authorized } from "#backend/lib/middleware";
-import { id, toUUID } from "#backend/lib/mongo";
+import { id, toUserID, toUUID } from "#backend/lib/id";
 import { base } from "#backend/lib/orpc";
 import { Workspaces } from "#backend/services/workspaces";
 import * as z from "zod";
@@ -59,6 +59,12 @@ const workspacesRouter = base.router({
         userID: context.auth.session!.userID
       });
 
+      await auth.api.updateUser({
+        headers: new Headers({ cookie: context.reqHeaders?.get("cookie") || "" }),
+        body: {
+          currentWorkspaceID: newWorkspace.id
+        }
+      });
       emitWorkspaceStateEvent(newWorkspace.id, {
         action: "workspace:create",
         data: newWorkspace

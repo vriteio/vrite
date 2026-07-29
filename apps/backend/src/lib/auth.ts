@@ -1,16 +1,16 @@
 import { betterAuth } from "better-auth";
-import { mongodbAdapter } from "@better-auth/mongo-adapter";
+import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { emailOTP, multiSession } from "better-auth/plugins";
 import { passkey } from "@better-auth/passkey";
-import { db, generateUUID, mongoClient, toUUID } from "./mongo";
+import { schema } from "#backend/db";
+import { toUUID, toWorkspaceID } from "#backend/lib/id";
+import { db } from "#backend/lib/postgres";
 import { config } from "./config";
 import { sendEmail } from "./email";
 import { Workspaces } from "#backend/services";
 import { redis } from "./redis";
 import { Auth } from "#backend/services/auth";
 import { add } from "date-fns";
-import { toUserID, toWorkspaceID } from "#backend/db";
-import type { UUID } from "#backend/lib/mongo";
 
 const auth = betterAuth({
   appName: "Andesine",
@@ -18,7 +18,12 @@ const auth = betterAuth({
   secret: config.SECRET,
   basePath: "/auth",
   logger: { level: config.NODE_ENV === "production" ? "error" : "debug" },
-  database: mongodbAdapter(db, { client: mongoClient, transaction: false }),
+  database: drizzleAdapter(db, {
+    provider: "pg",
+    schema,
+    usePlural: true,
+    transaction: true
+  }),
   trustedOrigins: [
     ...(config.PUBLIC_COOKIE_DOMAIN
       ? [`${config.PUBLIC_SECURE ? "https://" : "http://"}${config.PUBLIC_COOKIE_DOMAIN}`]
@@ -52,6 +57,12 @@ const auth = betterAuth({
       await redis.del(`auth:${key}`);
     }
   },
+  session: {
+    storeSessionInDatabase: true
+  },
+  verification: {
+    storeInDatabase: true
+  },
   socialProviders: {
     ...(config.GOOGLE_CLIENT_ID &&
       config.GOOGLE_CLIENT_SECRET && {
@@ -69,7 +80,6 @@ const auth = betterAuth({
       })
   },
   user: {
-    modelName: "users",
     additionalFields: {
       currentWorkspaceID: {
         type: "string",
@@ -83,7 +93,7 @@ const auth = betterAuth({
           output: (value) => {
             if (!value) return null;
 
-            return toWorkspaceID(value as unknown as UUID);
+            return toWorkspaceID(value as string);
           }
         }
       }
@@ -93,21 +103,36 @@ const auth = betterAuth({
     user: {
       create: {
         before: async (user) => {
-          const userID = toUserID(generateUUID());
-          const name = user.name || user.email.split("@")[0];
-          const workspace = await Workspaces.create({
-            name: `${name} (Personal Workspace)`,
-            userID
-          });
+          // Ensure the name is at most 320 chars
+          const name = (user.name || user.email.split("@")[0]).slice(0, 320);
 
           return {
             data: {
               ...user,
-              name,
-              id: `${toUUID(userID)}`,
-              currentWorkspaceID: workspace.id
+              name
             }
           };
+        },
+        after: async (user, context) => {
+          try {
+            const defaultWorkspaceName = `${user.name} (Personal Workspace)`;
+            const workspaceName =
+              defaultWorkspaceName.length > 50 ? "Personal Workspace" : defaultWorkspaceName;
+            const workspace = await Workspaces.create({
+              name: workspaceName,
+              userID: user.id
+            });
+
+            // Update the user's currentWorkspaceID to the newly created workspace before returning the user object
+            await context?.context.internalAdapter.updateUser(user.id, {
+              currentWorkspaceID: toUUID(workspace.id)
+            });
+          } catch (error) {
+            console.error("Failed to provision workspace", {
+              userID: user.id,
+              error
+            });
+          }
         }
       }
     }

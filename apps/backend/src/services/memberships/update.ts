@@ -1,7 +1,9 @@
-import { membershipDB, rolesDB, toUserID } from "#backend/db";
-import { toUUID } from "#backend/lib/mongo";
-import { ORPCError } from "@orpc/server";
+import { toUUID, toUserID } from "#backend/lib/id";
+import { db } from "#backend/lib/postgres";
+import { memberships, roles, workspaces } from "#backend/db";
 import { Auth } from "#backend/services/auth";
+import { and, eq, sql } from "drizzle-orm";
+import { ORPCError } from "@orpc/server";
 
 const updateMember = async (input: {
   id: string;
@@ -9,46 +11,67 @@ const updateMember = async (input: {
   roleID: string;
 }): Promise<void> => {
   const workspaceID = toUUID(input.workspaceID);
-  const memberUUID = toUUID(input.id);
+  const memberID = toUUID(input.id);
+  const newRoleID = toUUID(input.roleID);
+  const userID = await db.transaction(async (tx) => {
+    await tx
+      .select({ id: workspaces.id })
+      .from(workspaces)
+      .where(eq(workspaces.id, workspaceID))
+      .for("update");
+    const [membership] = await tx
+      .select()
+      .from(memberships)
+      .where(and(eq(memberships.id, memberID), eq(memberships.workspaceID, workspaceID)))
+      .for("update");
 
-  const membership = await membershipDB.findOne({ _id: memberUUID, workspaceID });
-
-  if (!membership) throw new ORPCError("NOT_FOUND", { message: "Membership not found" });
-
-  const existingMembershipRole = await rolesDB.findOne({
-    _id: toUUID(membership.roleID),
-    workspaceID
-  });
-  const newMembershipRole = await rolesDB.findOne({
-    _id: toUUID(input.roleID),
-    workspaceID
-  });
-
-  if (!newMembershipRole) throw new ORPCError("BAD_REQUEST", { message: "Role not found" });
-
-  // Make sure at least one admin remains
-  if (newMembershipRole.baseRole !== "admin" && existingMembershipRole?.baseRole === "admin") {
-    const adminRoleID = existingMembershipRole._id;
-    const adminCount = await membershipDB.countDocuments({ roleID: adminRoleID, workspaceID });
-
-    if (adminCount <= 1) {
-      throw new ORPCError("BAD_REQUEST", {
-        message: "At least one admin is required in the workspace"
-      });
+    if (!membership) {
+      throw new ORPCError("NOT_FOUND", { message: "Membership not found" });
     }
-  }
 
-  await membershipDB.updateOne(
-    { _id: memberUUID, workspaceID },
-    {
-      $set: {
-        roleID: newMembershipRole._id
+    const [existingRole] = await tx
+      .select()
+      .from(roles)
+      .where(and(eq(roles.id, membership.roleID), eq(roles.workspaceID, workspaceID)));
+    const [newRole] = await tx
+      .select()
+      .from(roles)
+      .where(and(eq(roles.id, newRoleID), eq(roles.workspaceID, workspaceID)));
+
+    if (!newRole) throw new ORPCError("BAD_REQUEST", { message: "Role not found" });
+
+    if (existingRole?.baseRole === "admin" && newRole.baseRole !== "admin") {
+      const [adminRole] = await tx
+        .select({ id: roles.id })
+        .from(roles)
+        .where(and(eq(roles.workspaceID, workspaceID), eq(roles.baseRole, "admin")));
+
+      if (!adminRole) {
+        throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Admin role not found" });
+      }
+
+      const [result] = await tx
+        .select({ count: sql<number>`count(*)::int` })
+        .from(memberships)
+        .where(and(eq(memberships.workspaceID, workspaceID), eq(memberships.roleID, adminRole.id)));
+
+      if (result.count <= 1) {
+        throw new ORPCError("BAD_REQUEST", {
+          message: "At least one admin is required in the workspace"
+        });
       }
     }
-  );
+
+    await tx
+      .update(memberships)
+      .set({ roleID: newRole.id, updatedAt: new Date() })
+      .where(and(eq(memberships.id, memberID), eq(memberships.workspaceID, workspaceID)));
+
+    return membership.userID;
+  });
 
   await Auth.invalidateSessionData({
-    userID: toUserID(membership.userID),
+    userID: toUserID(userID),
     workspaceID: input.workspaceID
   });
 };
