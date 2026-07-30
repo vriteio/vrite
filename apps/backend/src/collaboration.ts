@@ -9,8 +9,7 @@ import { Hocuspocus } from "@hocuspocus/server";
 import { eq } from "drizzle-orm";
 import { config } from "#backend/lib/config";
 import { db } from "#backend/lib/postgres";
-import { XmlElement, XmlText } from "yjs";
-import type { Doc } from "yjs";
+import { applyUpdate, Doc, encodeStateAsUpdate, XmlElement, XmlText } from "yjs";
 
 interface CollaborationContext {
   auth?: SessionData;
@@ -152,10 +151,9 @@ const collab = new Hocuspocus<CollaborationContext>({
 
         return null;
       },
-      async store({ document, documentName, state }) {
+      async store({ documentName, state }) {
         const entryID = toUUID(documentName);
-        const title = getDocumentTitle(document);
-        const previousEntry = await db.transaction(async (tx) => {
+        const stored = await db.transaction(async (tx) => {
           const [entry] = await tx
             .select({
               id: entries.id,
@@ -168,17 +166,32 @@ const collab = new Hocuspocus<CollaborationContext>({
 
           if (!entry) return null;
 
+          const [content] = await tx
+            .select({ state: contents.state })
+            .from(contents)
+            .where(eq(contents.entryID, entryID));
+          const persistedDocument = new Doc();
+
+          if (content?.state) {
+            applyUpdate(persistedDocument, new Uint8Array(content.state));
+          }
+
+          applyUpdate(persistedDocument, state);
+
+          const mergedState = encodeStateAsUpdate(persistedDocument);
+          const title = getDocumentTitle(persistedDocument);
+
           await tx
             .insert(contents)
             .values({
               entryID,
               workspaceID: entry.workspaceID,
-              state: Buffer.from(state),
+              state: Buffer.from(mergedState),
               updatedAt: new Date()
             })
             .onConflictDoUpdate({
               target: contents.entryID,
-              set: { state: Buffer.from(state), updatedAt: new Date() }
+              set: { state: Buffer.from(mergedState), updatedAt: new Date() }
             });
 
           if (entry.name !== title) {
@@ -187,18 +200,18 @@ const collab = new Hocuspocus<CollaborationContext>({
               .set({ name: title, updatedAt: new Date() })
               .where(eq(entries.id, entryID));
 
-            return entry;
+            return { entry, title };
           }
 
           return null;
         });
 
-        if (previousEntry) {
-          emitEntryEvent(toWorkspaceID(previousEntry.workspaceID), {
+        if (stored) {
+          emitEntryEvent(toWorkspaceID(stored.entry.workspaceID), {
             action: "entry:update",
             data: {
-              id: toEntryID(previousEntry.id),
-              name: title
+              id: toEntryID(stored.entry.id),
+              name: stored.title
             }
           });
         }

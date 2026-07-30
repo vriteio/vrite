@@ -1,10 +1,18 @@
-import { createContext, createEffect, createMemo, ParentComponent, useContext } from "solid-js";
+import {
+  createContext,
+  createEffect,
+  createMemo,
+  onCleanup,
+  ParentComponent,
+  useContext
+} from "solid-js";
 import { createAsync, query, revalidate, useParams } from "@solidjs/router";
-import { client, authClient, type Permission } from "#web/lib/client";
+import { client, authClient, type Permission, type WorkspaceEvent } from "#web/lib/client";
 import { validateWorkspaceID } from "#web/lib/validate";
 import { useWorkspaceContent } from "./content";
 import { createMutation } from "@tanstack/solid-query";
 import { toUserID } from "#web/lib/id";
+import { hasPermission as hasGrantedPermission } from "#web/lib/permissions";
 import { clearPersistenceData } from "./persistence";
 
 interface WorkspaceInfo {
@@ -32,6 +40,8 @@ interface WorkspaceContextValue {
   refreshWorkspaces(): Promise<void>;
   workspaceID(): string;
   sessions(): SessionInfo[];
+  hasPermission(required: Permission): boolean;
+  subscribeToUpdates(listener: (event: WorkspaceEvent) => void): () => void;
   switchWorkspace(id: string): Promise<void>;
   content: ReturnType<typeof useWorkspaceContent>;
 }
@@ -61,24 +71,41 @@ const WorkspaceProvider: ParentComponent = (props) => {
   const params = useParams<{ workspaceID: string }>();
   const workspaceID = () => (validateWorkspaceID(params.workspaceID) ? params.workspaceID : "");
   const content = useWorkspaceContent(workspaceID);
+  const updateListeners = new Set<(event: WorkspaceEvent) => void>();
   const sessions = createAsync(() => listSessionsQuery());
   const workspaces = createAsync(() => listWorkspacesQuery());
   const refreshWorkspaces = () => revalidate("workspaces");
-  const switchEnvironment = createMutation(() => ({
-    mutationFn: async (input: { workspaceID?: string; sessionToken?: string }) => {
-      if (input.sessionToken) {
-        await authClient.multiSession.setActive({ sessionToken: input.sessionToken });
-      }
-
-      if (input.workspaceID) {
-        await client.workspaces.switch({
-          workspaceID: input.workspaceID
+  const switchWorkspaceMutation = createMutation(() => ({
+    mutationFn: async (input: {
+      workspaceID: string;
+      targetSessionToken?: string;
+      previousSessionToken?: string;
+    }) => {
+      if (input.targetSessionToken) {
+        const { error } = await authClient.multiSession.setActive({
+          sessionToken: input.targetSessionToken
         });
 
-        return input.workspaceID;
+        if (error) throw error;
       }
 
-      return "";
+      await client.workspaces.switch({ workspaceID: input.workspaceID });
+
+      return input.workspaceID;
+    },
+    onSuccess: (workspaceID) => {
+      window.location.href = `/${workspaceID}/`;
+    },
+    onError: async (_error, input) => {
+      if (!input.targetSessionToken || !input.previousSessionToken) return;
+
+      const { error } = await authClient.multiSession.setActive({
+        sessionToken: input.previousSessionToken
+      });
+
+      if (error) {
+        console.error("Failed to restore the previous session", error);
+      }
     }
   }));
   const currentWorkspace = createMemo(() => {
@@ -93,6 +120,18 @@ const WorkspaceProvider: ParentComponent = (props) => {
 
     return sessionList.find((session) => session.user.id === id);
   });
+  const hasPermission = (required: Permission) => {
+    const workspace = currentWorkspace();
+
+    return Boolean(
+      workspace?.admin || hasGrantedPermission(workspace?.permissions || [], required)
+    );
+  };
+  const subscribeToUpdates = (listener: (event: WorkspaceEvent) => void) => {
+    updateListeners.add(listener);
+
+    return () => updateListeners.delete(listener);
+  };
   createEffect(() => {
     const workspaceList = workspaces();
     const currentWorkspaceID = workspaceID();
@@ -115,33 +154,107 @@ const WorkspaceProvider: ParentComponent = (props) => {
       window.location.replace(fallbackWorkspace ? `/${fallbackWorkspace.id}/` : "/new-workspace");
     });
   });
+  createEffect(() => {
+    const currentWorkspaceID = workspaceID();
+
+    if (typeof window === "undefined" || !currentWorkspaceID) return;
+
+    const abortController = new AbortController();
+    const waitForRetry = (delay: number) => {
+      return new Promise<void>((resolve) => {
+        const finish = () => {
+          window.clearTimeout(timeout);
+          abortController.signal.removeEventListener("abort", finish);
+          resolve();
+        };
+        const timeout = window.setTimeout(finish, delay);
+
+        abortController.signal.addEventListener("abort", finish, { once: true });
+      });
+    };
+
+    onCleanup(() => abortController.abort());
+
+    void (async () => {
+      let retryDelay = 1_000;
+
+      while (!abortController.signal.aborted && workspaceID() === currentWorkspaceID) {
+        try {
+          const updates = await client.sync.workspaceUpdates(undefined, {
+            signal: abortController.signal
+          });
+
+          await content.syncWorkspaceContent(currentWorkspaceID);
+          retryDelay = 1_000;
+
+          for await (const event of updates) {
+            if (abortController.signal.aborted || workspaceID() !== currentWorkspaceID) {
+              break;
+            }
+
+            if (event.action.startsWith("entry:") || event.action.startsWith("collection:")) {
+              content.applyWorkspaceEvent(currentWorkspaceID, event);
+            }
+
+            if (
+              event.action.startsWith("membership:") ||
+              event.action.startsWith("role:") ||
+              event.action.startsWith("workspace:")
+            ) {
+              void refreshWorkspaces();
+            }
+
+            for (const listener of updateListeners) {
+              try {
+                listener(event);
+              } catch (error) {
+                console.error("Workspace update listener failed", error);
+              }
+            }
+          }
+        } catch (error) {
+          if (!abortController.signal.aborted) {
+            console.error("Workspace update stream disconnected", error);
+          }
+        }
+
+        if (!abortController.signal.aborted) {
+          await waitForRetry(retryDelay);
+          retryDelay = Math.min(retryDelay * 2, 30_000);
+        }
+      }
+    })();
+  });
   const switchWorkspace = async (workspaceID: string) => {
     if (workspaceID === params.workspaceID) return;
 
     const targetWorkspace = (workspaces() ?? []).find((workspace) => workspace.id === workspaceID);
     const current = currentWorkspace();
 
-    let sessionToken = "";
+    if (!targetWorkspace) {
+      throw new Error("Workspace not found");
+    }
 
-    // If workspace belongs to a different account, switch session first
-    if (targetWorkspace && current && targetWorkspace.userID !== current.userID) {
+    let targetSessionToken: string | undefined;
+    const previousSessionToken = currentSession()?.sessionToken;
+
+    if (targetWorkspace.userID !== current?.userID) {
       const targetSession = (sessions() ?? []).find((session) => {
         return session.user.id === targetWorkspace.userID;
       });
 
-      sessionToken = targetSession?.sessionToken || "";
+      if (!targetSession || !previousSessionToken) {
+        throw new Error("Workspace account session not found");
+      }
+
+      targetSessionToken = targetSession.sessionToken;
     }
 
-    const nextWorkspaceID = await switchEnvironment.mutateAsync({
-      ...(sessionToken && { sessionToken }),
-      workspaceID
+    await switchWorkspaceMutation.mutateAsync({
+      workspaceID,
+      targetSessionToken,
+      previousSessionToken
     });
-
-    if (nextWorkspaceID) {
-      window.location.href = `/${nextWorkspaceID}/`;
-    } else {
-      window.location.reload();
-    }
   };
 
   return (
@@ -153,6 +266,8 @@ const WorkspaceProvider: ParentComponent = (props) => {
         workspaces: () => workspaces() ?? [],
         refreshWorkspaces,
         sessions: () => sessions() ?? [],
+        hasPermission,
+        subscribeToUpdates,
         switchWorkspace,
         content
       }}

@@ -9,6 +9,7 @@ import { Setting } from "../setting";
 import { SettingsSection } from "../settings-section";
 import { NewKeyDialog } from "../new-key-dialog";
 import { Dynamic } from "solid-js/web";
+import { useWorkspace } from "#web/context/workspace";
 
 type AccessLevel = "none" | "read" | "write";
 type Resource = "entries" | "collections" | "memberships" | "roles";
@@ -92,6 +93,7 @@ const apiKeyQuery = query((input: { keyID: string }) => {
 
 const KeySettingsPage: Component = () => {
   const notify = useNotify();
+  const { hasPermission } = useWorkspace();
   const navigate = useNavigate();
   const params = useParams<{ workspaceID?: string; keyID?: string }>();
   const keyID = () => params.keyID || null;
@@ -178,6 +180,7 @@ const KeySettingsPage: Component = () => {
               size="small"
               value={keyName()}
               setValue={setKeyName}
+              disabled={!hasPermission("api_keys")}
               class="w-full max-w-md"
             />
           </Setting>
@@ -187,7 +190,11 @@ const KeySettingsPage: Component = () => {
             {(resource) => (
               <Setting label={resource.label} description={resource.description} fade={false} hover>
                 <ToggleGroup
-                  disabled={createKeyMutation.isPending || updateKeyMutation.isPending}
+                  disabled={
+                    !hasPermission("api_keys") ||
+                    createKeyMutation.isPending ||
+                    updateKeyMutation.isPending
+                  }
                   value={resourceAccess()[resource.id]}
                   setValue={(value) => {
                     setResourceAccess((prev) => ({ ...prev, [resource.id]: value as AccessLevel }));
@@ -239,7 +246,7 @@ const KeySettingsPage: Component = () => {
                 }
               }}
               class="flex items-center gap-1 w-full justify-center"
-              disabled={Boolean(fillError())}
+              disabled={!hasPermission("api_keys") || Boolean(fillError())}
               loading={createKeyMutation.isPending || updateKeyMutation.isPending}
             >
               {Boolean(keyID()) ? "Save changes" : "Create key"}

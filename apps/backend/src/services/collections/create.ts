@@ -8,7 +8,7 @@ import { ROOT_COLLECTION_NAME } from "./root";
 import { loadCollectionTree } from "./queries";
 
 const createCollection = async (
-  input: Partial<Collection> & { workspaceID: string }
+  input: Partial<Pick<Collection, "id" | "name">> & { parentID?: string; workspaceID: string }
 ): Promise<Collection> => {
   if (input.name === ROOT_COLLECTION_NAME) {
     throw new ORPCError("BAD_REQUEST", { message: "Reserved collection name" });
@@ -29,8 +29,7 @@ const createCollection = async (
 
     if (!root) throw new ORPCError("NOT_FOUND", { message: "Root collection not found" });
 
-    const lastAncestor = input.ancestors?.[input.ancestors.length - 1];
-    const parentID = lastAncestor ? toUUID(lastAncestor) : root.id;
+    const parentID = input.parentID ? toUUID(input.parentID) : root.id;
     const [parent] = await tx
       .select({ id: collections.id })
       .from(collections)

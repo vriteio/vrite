@@ -6,6 +6,7 @@ import type { KeyPermission } from "#web/lib/client";
 import { format, formatDistanceToNow } from "date-fns";
 
 interface APIKeyItemProps {
+  canManage: boolean;
   id: string;
   name: string;
   prefix: string;
@@ -74,8 +75,8 @@ const APIKeyItem: Component<APIKeyItemProps> = (props) => {
         id={props.id}
         label={props.name}
         topLevel
-        checkbox={!props.loading && !props.expiresAt}
-        selectable={!props.loading && !props.expiresAt}
+        checkbox={props.canManage && !props.loading && !props.expiresAt}
+        selectable={props.canManage && !props.loading && !props.expiresAt}
         class={clsx("px-1 py-0.5", props.loading && "animate-pulse")}
         icon={
           <Show
@@ -89,7 +90,7 @@ const APIKeyItem: Component<APIKeyItemProps> = (props) => {
             </Tooltip>
           </Show>
         }
-        onClick={props.onEdit}
+        onClick={props.canManage ? props.onEdit : undefined}
         renderLabel={(label) => {
           return (
             <div class="flex-1 flex items-center gap-1.5">
@@ -108,30 +109,32 @@ const APIKeyItem: Component<APIKeyItemProps> = (props) => {
           );
         }}
         actions={
-          <div onClick={(event: MouseEvent) => event.stopPropagation()}>
-            <DropdownMenu
-              cardProps={{ class: "w-48" }}
-              opened={menuOpened()}
-              portal={false}
-              setOpened={setMenuOpened}
-              trigger={() => (
-                <div
-                  class={clsx(
-                    !menuOpened() && !props.loading && "opacity-20 group-hover:opacity-100"
-                  )}
-                >
-                  <IconButton
-                    icon="i-lucide:ellipsis-vertical"
-                    size="small"
-                    variant="text"
-                    text="soft"
-                    loading={props.loading}
-                  />
-                </div>
-              )}
-              items={dropdownOptions()}
-            />
-          </div>
+          <Show when={props.canManage}>
+            <div onClick={(event: MouseEvent) => event.stopPropagation()}>
+              <DropdownMenu
+                cardProps={{ class: "w-48" }}
+                opened={menuOpened()}
+                portal={false}
+                setOpened={setMenuOpened}
+                trigger={() => (
+                  <div
+                    class={clsx(
+                      !menuOpened() && !props.loading && "opacity-20 group-hover:opacity-100"
+                    )}
+                  >
+                    <IconButton
+                      icon="i-lucide:ellipsis-vertical"
+                      size="small"
+                      variant="text"
+                      text="soft"
+                      loading={props.loading}
+                    />
+                  </div>
+                )}
+                items={dropdownOptions()}
+              />
+            </div>
+          </Show>
         }
       />
     </DropdownArea>

@@ -74,7 +74,7 @@ const isWorkspaceEventVisible = (
 
   if (event.action.startsWith("key:")) {
     return canAccess(auth, {
-      session: ["workspace"]
+      session: ["read:api_keys"]
     });
   }
 

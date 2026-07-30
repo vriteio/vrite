@@ -5,6 +5,7 @@ import clsx from "clsx";
 import { Component, createSignal, createMemo, createEffect, Show } from "solid-js";
 
 const MemberItem: Component<{
+  canManage: boolean;
   loading?: boolean;
   member: Membership & { profile: UserProfile; admin?: boolean };
   onRemove(ids: string[]): void;
@@ -69,8 +70,8 @@ const MemberItem: Component<{
         id={props.member.id}
         label={memberName()}
         topLevel
-        checkbox={!props.loading}
-        selectable={!props.loading}
+        checkbox={props.canManage && !props.loading}
+        selectable={props.canManage && !props.loading}
         class={clsx("px-1 py-0.5", props.loading && "animate-pulse")}
         icon={<div class="i-lucide:id-card h-5 w-5 text-gray-400 dark:text-gray-500" />}
         renderLabel={(label) => {
@@ -94,30 +95,32 @@ const MemberItem: Component<{
           );
         }}
         actions={
-          <div onClick={(event: MouseEvent) => event.stopPropagation()}>
-            <DropdownMenu
-              cardProps={{ class: "w-48" }}
-              opened={menuOpened()}
-              portal={false}
-              setOpened={setMenuOpened}
-              trigger={() => (
-                <div
-                  class={clsx(
-                    !menuOpened() && !props.loading && "opacity-20 group-hover:opacity-100"
-                  )}
-                >
-                  <IconButton
-                    icon="i-lucide:ellipsis-vertical"
-                    size="small"
-                    variant="text"
-                    text="soft"
-                    loading={props.loading}
-                  />
-                </div>
-              )}
-              items={dropdownOptions()}
-            />
-          </div>
+          <Show when={props.canManage}>
+            <div onClick={(event: MouseEvent) => event.stopPropagation()}>
+              <DropdownMenu
+                cardProps={{ class: "w-48" }}
+                opened={menuOpened()}
+                portal={false}
+                setOpened={setMenuOpened}
+                trigger={() => (
+                  <div
+                    class={clsx(
+                      !menuOpened() && !props.loading && "opacity-20 group-hover:opacity-100"
+                    )}
+                  >
+                    <IconButton
+                      icon="i-lucide:ellipsis-vertical"
+                      size="small"
+                      variant="text"
+                      text="soft"
+                      loading={props.loading}
+                    />
+                  </div>
+                )}
+                items={dropdownOptions()}
+              />
+            </div>
+          </Show>
         }
       />
     </DropdownArea>

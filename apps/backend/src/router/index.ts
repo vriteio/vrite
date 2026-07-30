@@ -7,11 +7,12 @@ import { rolesRouter } from "./roles";
 import { membershipsRouter } from "./memberships";
 import { workspacesRouter } from "./workspaces";
 import { authRouter } from "./auth";
-import { FastifyPluginAsync } from "fastify";
+import { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import { OpenAPIHandler } from "@orpc/openapi/fastify";
 import { RequestHeadersPlugin, ResponseHeadersPlugin } from "@orpc/server/plugins";
 import { onError, ORPCError } from "@orpc/server";
 import { RPCHandler } from "@orpc/server/fastify";
+import { RATE_LIMITS, consumeRateLimit } from "#backend/lib/rate-limit";
 
 const router = {
   auth: authRouter,
@@ -26,6 +27,26 @@ const router = {
 };
 const routerPlugin: FastifyPluginAsync = async (app) => {
   const method = ["GET", "HEAD", "PUT", "POST", "DELETE", "PATCH"];
+  const limitInviteAcceptance = async (req: FastifyRequest, reply: FastifyReply) => {
+    const pathname = req.url.split("?")[0];
+
+    if (pathname !== "/memberships/accept" && pathname !== "/rpc/memberships/acceptInvite") {
+      return;
+    }
+
+    const limit = await consumeRateLimit({
+      scope: "invite-acceptance",
+      key: req.ip,
+      limit: RATE_LIMITS.inviteAcceptance
+    });
+
+    if (!limit.allowed) {
+      return reply
+        .status(429)
+        .header("Retry-After", limit.retryAfter)
+        .send({ error: "Too many invite attempts. Please try again later." });
+    }
+  };
   const logORPCError = (error: unknown, options?: unknown) => {
     if (error instanceof ORPCError) {
       const cause = (error as any).cause;
@@ -64,6 +85,7 @@ const routerPlugin: FastifyPluginAsync = async (app) => {
   app.route({
     url: "/rpc/*",
     method,
+    preHandler: limitInviteAcceptance,
     handler: async (req, reply) => {
       const { matched } = await rpcHandler.handle(req, reply, {
         prefix: "/rpc",
@@ -78,6 +100,7 @@ const routerPlugin: FastifyPluginAsync = async (app) => {
   app.route({
     url: "/*",
     method,
+    preHandler: limitInviteAcceptance,
     handler: async (req, reply) => {
       const { matched } = await openAPIHandler.handle(req, reply, {
         prefix: "/",

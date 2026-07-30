@@ -7,7 +7,6 @@ import { Tree, TREE_ROOT_ID, type TreeMap } from "#web/components/tree";
 import { useNotify } from "#web/context/notifications";
 import { useWorkspace } from "#web/context/workspace";
 import { client, Role } from "#web/lib/client";
-import { hasPermission } from "#web/lib/permissions";
 import { Setting } from "../../setting";
 import { SettingsSection } from "../../settings-section";
 import { RoleItem } from "./role-item";
@@ -90,16 +89,12 @@ const RoleList: Component<RoleListProps> = (props) => {
 };
 
 const RolesSection: Component = () => {
-  const { currentWorkspace } = useWorkspace();
+  const { hasPermission } = useWorkspace();
   const navigate = useNavigate();
   const params = useParams<{ workspaceID?: string }>();
   const roles = createAsync(() => rolesQuery());
   const [refreshing, startRefresh] = useTransition();
-  const canManage = () => {
-    const workspace = currentWorkspace();
-
-    return Boolean(workspace?.admin || hasPermission(workspace?.permissions || [], "workspace"));
-  };
+  const canManage = () => hasPermission("workspace");
   const refresh = (onRevalidated = () => {}) => {
     startRefresh(async () => {
       await revalidate([rolesQuery.key, membershipsQuery.key]);

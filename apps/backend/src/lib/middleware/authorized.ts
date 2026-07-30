@@ -6,22 +6,19 @@ import { config } from "../config";
 import { Billing } from "#backend/services";
 
 const hasPermission = (granted: string, required: string): boolean => {
-  const isGrantedReadOnly = granted.startsWith("read:");
-  const isRequiredReadOnly = required.startsWith("read:");
-  const baseGrantedPermission = isGrantedReadOnly ? granted.slice(5) : granted;
-  const baseRequiredPermission = isRequiredReadOnly ? required.slice(5) : required;
+  const parsePermission = (permission: string) => {
+    const [accessOrResource, readResource] = permission.split(":");
 
-  if (isGrantedReadOnly && !required.startsWith("read:")) {
-    // A read-only permission cannot satisfy a non-read permission
-    return false;
-  }
+    return readResource
+      ? { resource: readResource, access: accessOrResource }
+      : { resource: accessOrResource, access: "write" };
+  };
+  const grantedPermission = parsePermission(granted);
+  const requiredPermission = parsePermission(required);
 
-  if (baseRequiredPermission.startsWith(baseGrantedPermission)) {
-    // Exact match or parent permission covers required permission
-    return true;
-  }
+  if (grantedPermission.resource !== requiredPermission.resource) return false;
 
-  return false;
+  return grantedPermission.access === "write" || requiredPermission.access === "read";
 };
 const authorized = base.middleware(async ({ procedure, context, next }) => {
   const meta = procedure["~orpc"].meta;

@@ -3,14 +3,14 @@ import { encrypt } from "#backend/lib/utils";
 
 interface OTPTokenData {
   email: string;
-  type: "sign-in" | "email-verification" | "change-email";
+  type: "sign-in" | "email-verification";
   otp: string;
   expiresAt: string;
 }
 
 const createOTPToken = (input: {
   email: string;
-  type: "sign-in" | "email-verification" | "change-email";
+  type: "sign-in" | "email-verification";
   otp: string;
   expiresAt: Date;
 }) => {

@@ -24,6 +24,18 @@ const createEntryOperations = (input: WorkspaceContentOperationsInput) => {
   const getEntry = (id: string) => {
     return untrack(() => entriesCollection().findOne({ id }));
   };
+  const applyEntryCreate = (entry: Entry) => {
+    const entries = entriesCollection();
+    const current = entries.findOne({ id: entry.id });
+
+    entries.replaceOne({ id: entry.id }, { ...entry, ...(current || {}) }, { upsert: true });
+  };
+  const applyEntryUpdate = (entryID: string, props: Partial<Entry>) => {
+    entriesCollection().updateOne({ id: entryID }, { $set: props });
+  };
+  const applyEntryDelete = (entryIDs: string[]) => {
+    entriesCollection().removeMany({ id: { $in: entryIDs } });
+  };
   const getEntryDropOrders = (input: {
     collectionID: string | null;
     targetEntryID?: string;
@@ -61,7 +73,6 @@ const createEntryOperations = (input: WorkspaceContentOperationsInput) => {
     return orders;
   };
   const createEntry = (collectionID?: string): Entry | undefined => {
-    const entries = entriesCollection();
     const entry: Entry = {
       id: toEntryID(generateUUID()),
       order: `${LexoRank.min()}`,
@@ -69,31 +80,16 @@ const createEntryOperations = (input: WorkspaceContentOperationsInput) => {
       collectionID
     };
 
-    entries.insert(entry);
+    applyEntryCreate(entry);
 
-    const createRequest = client.entries
-      .create(entry)
-      .then((createdEntry) => {
-        const currentEntry = entries.findOne({ id: entry.id });
-
-        entries.replaceOne(
-          { id: entry.id },
-          {
-            ...createdEntry,
-            ...(currentEntry && {
-              name: currentEntry.name,
-              collectionID: currentEntry.collectionID,
-              order: currentEntry.order
-            })
-          },
-          { upsert: true }
-        );
-      });
+    const createRequest = client.entries.create(entry).then((createdEntry) => {
+      applyEntryCreate(createdEntry);
+    });
 
     pendingCreates.set(entry.id, createRequest);
     createRequest
       .catch(() => {
-        entries.removeOne({ id: entry.id });
+        applyEntryDelete([entry.id]);
       })
       .finally(() => {
         pendingCreates.delete(entry.id);
@@ -109,7 +105,7 @@ const createEntryOperations = (input: WorkspaceContentOperationsInput) => {
 
     const updated = { ...original, ...props };
     const apiCalls: Array<Promise<unknown>> = [];
-    const afterCreate = <T,>(request: () => Promise<T>) => {
+    const afterCreate = <T>(request: () => Promise<T>) => {
       const pendingCreate = pendingCreates.get(entryID);
 
       return pendingCreate ? pendingCreate.then(request) : request();
@@ -132,7 +128,7 @@ const createEntryOperations = (input: WorkspaceContentOperationsInput) => {
               const current = entries.findOne({ id: entryID });
 
               if (current?.order === updated.order && order !== updated.order) {
-                entries.updateOne({ id: entryID }, { $set: { order } });
+                applyEntryUpdate(entryID, { order });
               }
             })
         )
@@ -141,7 +137,7 @@ const createEntryOperations = (input: WorkspaceContentOperationsInput) => {
 
     if (apiCalls.length === 0) return;
 
-    entries.updateOne({ id: entryID }, { $set: props });
+    applyEntryUpdate(entryID, props);
 
     Promise.all(apiCalls).catch(() => {
       if (!entries.findOne({ id: entryID })) return;
@@ -159,7 +155,7 @@ const createEntryOperations = (input: WorkspaceContentOperationsInput) => {
       return entry ? [entry] : [];
     });
 
-    entries.removeMany({ id: { $in: entryIDs } });
+    applyEntryDelete(entryIDs);
 
     client.entries.delete({ ids: entryIDs }).catch(() => {
       entries.batch(() => {
@@ -174,6 +170,9 @@ const createEntryOperations = (input: WorkspaceContentOperationsInput) => {
     sortEntries,
     getEntriesInCollection,
     getEntry,
+    applyEntryCreate,
+    applyEntryUpdate,
+    applyEntryDelete,
     getEntryDropOrders,
     createEntry,
     updateEntry,

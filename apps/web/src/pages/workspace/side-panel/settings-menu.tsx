@@ -9,6 +9,7 @@ interface SettingsMenuItem {
   label: string;
   href: string;
   active?: boolean;
+  visible?: boolean;
   subItems?: SettingsMenuItem[];
 }
 
@@ -61,7 +62,7 @@ const SettingsMenuItemRow: Component<SettingsMenuItemRowProps> = (props) => {
 const SettingsMenu: Component = () => {
   const location = useLocation();
   const params = useParams<{ workspaceID?: string; keyID?: string; roleID?: string }>();
-  const { sessions, currentWorkspace } = useWorkspace();
+  const { sessions, currentWorkspace, hasPermission } = useWorkspace();
   const settingsPath = () => `/${params.workspaceID || ""}/settings`;
   const isRoute = (route: string) => location.pathname === `${settingsPath()}${route}`;
   const userName = createMemo(() => {
@@ -103,12 +104,14 @@ const SettingsMenu: Component = () => {
                   label: "People",
                   href: `${settingsPath()}/people`,
                   active: isRoute("/people"),
+                  visible: hasPermission("workspace"),
                   subItems: [
                     {
                       icon: "i-lucide:user-plus",
                       label: "Invite member",
                       href: `${settingsPath()}/invite`,
-                      active: isRoute("/invite")
+                      active: isRoute("/invite"),
+                      visible: hasPermission("workspace")
                     },
                     {
                       icon: "i-lucide:shield-plus",
@@ -116,7 +119,8 @@ const SettingsMenu: Component = () => {
                       href: editingRole
                         ? `${settingsPath()}/role/${encodeURIComponent(params.roleID!)}`
                         : `${settingsPath()}/role`,
-                      active: roleActive
+                      active: roleActive,
+                      visible: hasPermission("workspace")
                     }
                   ]
                 },
@@ -124,13 +128,15 @@ const SettingsMenu: Component = () => {
                   icon: "i-lucide:credit-card",
                   label: "Billing",
                   href: `${settingsPath()}/billing`,
-                  active: isRoute("/billing")
+                  active: isRoute("/billing"),
+                  visible: hasPermission("read:billing")
                 },
                 {
                   icon: "i-lucide:code-xml",
                   label: "API",
                   href: `${settingsPath()}/api`,
                   active: isRoute("/api"),
+                  visible: hasPermission("read:api_keys"),
                   subItems: [
                     {
                       icon: "i-lucide:key-round",
@@ -138,7 +144,8 @@ const SettingsMenu: Component = () => {
                       href: editingKey
                         ? `${settingsPath()}/key/${encodeURIComponent(params.keyID!)}`
                         : `${settingsPath()}/key`,
-                      active: keyActive
+                      active: keyActive,
+                      visible: Boolean(params.keyID) || hasPermission("read:api_keys")
                     }
                   ]
                 }
@@ -162,9 +169,13 @@ const SettingsMenu: Component = () => {
                 </span>
               </Show>
               <div class="flex flex-col gap-0.5">
-                <For each={subMenu.items}>
+                <For each={subMenu.items.filter((item) => item.visible ?? true)}>
                   {(item) => {
-                    const activeChild = () => item.subItems?.find((subItem) => subItem.active);
+                    const activeChild = () => {
+                      return item.subItems?.find((subItem) => {
+                        return (subItem.visible ?? true) && subItem.active;
+                      });
+                    };
 
                     return (
                       <>

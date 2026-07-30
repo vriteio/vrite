@@ -112,28 +112,48 @@ const createCollectionOperations = (input: WorkspaceContentOperationsInput) => {
       .filter((entry) => entry.collectionID && collectionIDSet.has(entry.collectionID))
       .map((entry) => entry.id);
   };
-  const replaceParentDescendant = (parentID: string | null, fromID: string, toID?: string) => {
-    const parent = parentID
-      ? collectionsCollection().findOne({ id: parentID })
-      : getRootCollection();
+  const applyCollectionCreate = (collection: Collection) => {
+    const collections = collectionsCollection();
+    const current = collections.findOne({ id: collection.id });
+    const parentID = collection.ancestors.at(-1) ?? null;
+    const parent = parentID ? collections.findOne({ id: parentID }) : getRootCollection();
 
-    if (!parent) return;
+    collections.batch(() => {
+      collections.replaceOne(
+        { id: collection.id },
+        { ...collection, ...(current || {}) },
+        { upsert: true }
+      );
 
-    collectionsCollection().updateOne(
-      { id: parent.id },
-      {
-        $set: {
-          descendants: parent.descendants.flatMap((id) => {
-            if (id !== fromID) return [id];
+      if (parent && !parent.descendants.includes(collection.id)) {
+        collections.updateOne(
+          { id: parent.id },
+          { $set: { descendants: [...parent.descendants, collection.id] } }
+        );
+      }
+    });
+  };
+  const applyCollectionUpdate = (collectionID: string, props: Partial<Collection>) => {
+    collectionsCollection().updateOne({ id: collectionID }, { $set: props });
+  };
+  const applyCollectionDelete = (collectionIDs: string[]) => {
+    const collections = collectionsCollection();
+    const deletedIDs = new Set(collectionIDs);
 
-            return toID ? [toID] : [];
-          })
+    collections.batch(() => {
+      entriesCollection().removeMany({ collectionID: { $in: collectionIDs } });
+      collections.removeMany({ id: { $in: collectionIDs } });
+
+      for (const collection of collections.find().fetch()) {
+        if (collection.descendants.some((id) => deletedIDs.has(id))) {
+          applyCollectionUpdate(collection.id, {
+            descendants: collection.descendants.filter((id) => !deletedIDs.has(id))
+          });
         }
       }
-    );
+    });
   };
   const createCollection = (collectionID?: string): Collection | undefined => {
-    const collections = collectionsCollection();
     const parent = collectionID ? getCollection(collectionID) : getRootCollection();
     const collection: Collection = {
       id: fromUUID(generateUUID(), "coll"),
@@ -142,43 +162,22 @@ const createCollectionOperations = (input: WorkspaceContentOperationsInput) => {
       ancestors: collectionID ? [...(parent?.ancestors || []), collectionID] : []
     };
 
-    collections.insert(collection);
-
-    if (parent) {
-      collections.updateOne(
-        { id: parent.id },
-        {
-          $set: {
-            descendants: [...parent.descendants, collection.id]
-          }
-        }
-      );
-    }
+    applyCollectionCreate(collection);
 
     const createRequest = client.collections
-      .create(collection)
+      .create({
+        id: collection.id,
+        name: collection.name,
+        parentID: collectionID
+      })
       .then((createdCollection) => {
-        const currentCollection = collections.findOne({ id: collection.id });
-
-        collections.replaceOne(
-          { id: collection.id },
-          {
-            ...createdCollection,
-            ...(currentCollection && {
-              name: currentCollection.name,
-              ancestors: currentCollection.ancestors,
-              descendants: currentCollection.descendants
-            })
-          },
-          { upsert: true }
-        );
+        applyCollectionCreate(createdCollection);
       });
 
     pendingCreates.set(collection.id, createRequest);
     createRequest
       .catch(() => {
-        collections.removeOne({ id: collection.id });
-        replaceParentDescendant(collectionID ?? null, collection.id);
+        applyCollectionDelete([collection.id]);
       })
       .finally(() => {
         pendingCreates.delete(collection.id);
@@ -194,7 +193,7 @@ const createCollectionOperations = (input: WorkspaceContentOperationsInput) => {
 
     const updated = { ...original, ...props };
     const apiCalls: Array<Promise<unknown>> = [];
-    const afterCreate = <T,>(request: () => Promise<T>) => {
+    const afterCreate = <T>(request: () => Promise<T>) => {
       const pendingCreate = pendingCreates.get(collectionID);
 
       return pendingCreate ? pendingCreate.then(request) : request();
@@ -219,7 +218,7 @@ const createCollectionOperations = (input: WorkspaceContentOperationsInput) => {
 
     if (apiCalls.length === 0) return;
 
-    collections.updateOne({ id: collectionID }, { $set: props });
+    applyCollectionUpdate(collectionID, props);
 
     Promise.all(apiCalls).catch(() => {
       if (!collections.findOne({ id: collectionID })) return;
@@ -227,7 +226,11 @@ const createCollectionOperations = (input: WorkspaceContentOperationsInput) => {
       collections.replaceOne({ id: collectionID }, original, { upsert: true });
     });
   };
-  const moveCollection = (collectionID: string, newParentID: string | null, index?: number) => {
+  const applyCollectionMove = (
+    collectionID: string,
+    newParentID: string | null,
+    index?: number
+  ) => {
     const collections = collectionsCollection();
     const original = getCollection(collectionID);
     const newParent = newParentID ? getCollection(newParentID) : getRootCollection();
@@ -305,6 +308,14 @@ const createCollectionOperations = (input: WorkspaceContentOperationsInput) => {
       }
     });
 
+    return originals;
+  };
+  const moveCollection = (collectionID: string, newParentID: string | null, index?: number) => {
+    const collections = collectionsCollection();
+    const originals = applyCollectionMove(collectionID, newParentID, index);
+
+    if (!originals) return;
+
     client.collections
       .move({
         id: collectionID,
@@ -345,41 +356,14 @@ const createCollectionOperations = (input: WorkspaceContentOperationsInput) => {
     const rootCollection = getRootCollection();
     const originalRootCollection = rootCollection ? { ...rootCollection } : undefined;
 
-    collections.batch(() => {
-      entries.removeMany({ id: { $in: deletedEntryIDs } });
-      collections.removeMany({ id: { $in: deletedCollectionIDs } });
-
-      for (const parent of affectedParents) {
-        collections.updateOne(
-          { id: parent.id },
-          {
-            $set: {
-              descendants: parent.descendants.filter((id) => !deletedCollectionIDSet.has(id))
-            }
-          }
-        );
-      }
-
-      if (rootCollection) {
-        collections.updateOne(
-          { id: rootCollection.id },
-          {
-            $set: {
-              descendants: rootCollection.descendants.filter((id) => !deletedCollectionIDSet.has(id))
-            }
-          }
-        );
-      }
-    });
+    applyCollectionDelete(deletedCollectionIDs);
 
     client.collections.delete({ ids: deletedCollectionIDs }).catch(() => {
       collections.batch(() => {
         if (originalRootCollection) {
-          collections.replaceOne(
-            { id: originalRootCollection.id },
-            originalRootCollection,
-            { upsert: true }
-          );
+          collections.replaceOne({ id: originalRootCollection.id }, originalRootCollection, {
+            upsert: true
+          });
         }
 
         for (const parent of affectedParents) {
@@ -409,8 +393,12 @@ const createCollectionOperations = (input: WorkspaceContentOperationsInput) => {
     getCollection,
     getCollectionDescendantIDs,
     getEntryIDsInCollections,
+    applyCollectionCreate,
+    applyCollectionUpdate,
+    applyCollectionDelete,
     createCollection,
     updateCollection,
+    applyCollectionMove,
     moveCollection,
     deleteCollections
   };

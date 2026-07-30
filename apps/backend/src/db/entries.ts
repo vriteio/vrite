@@ -14,11 +14,27 @@ import * as z from "zod";
 import { timestamps } from "./shared";
 import { collections } from "./collections";
 import { workspaces } from "./workspaces";
+import { LexoRank } from "lexorank";
 
+const lexoRank = () => {
+  return z
+    .string()
+    .max(255)
+    .refine(
+      (value) => {
+        try {
+          return `${LexoRank.parse(value)}` === value;
+        } catch {
+          return false;
+        }
+      },
+      { error: "Invalid LexoRank" }
+    );
+};
 const entryType = z.object({
   id: id().describe("ID of the entry"),
   name: z.string().describe("Name of the entry"),
-  order: z.string().describe("LexoRank order of the entry"),
+  order: lexoRank().describe("LexoRank order of the entry"),
   collectionID: id().optional().describe("ID of the collection this entry belongs to")
 });
 
@@ -57,5 +73,5 @@ const entries = pgTable(
 
 type Entry = z.infer<typeof entryType>;
 
-export { entries, entryType };
+export { entries, entryType, lexoRank };
 export type { Entry };

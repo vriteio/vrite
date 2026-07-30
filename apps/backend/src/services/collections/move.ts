@@ -1,4 +1,4 @@
-import { toUUID } from "#backend/lib/id";
+import { toCollectionID, toUUID } from "#backend/lib/id";
 import { db } from "#backend/lib/postgres";
 import { collections, workspaces } from "#backend/db";
 import { and, asc, eq, isNull, sql } from "drizzle-orm";
@@ -20,12 +20,12 @@ const moveCollection = async (input: {
   workspaceID: string;
   newParentID?: string | null;
   index?: number;
-}): Promise<void> => {
+}): Promise<{ index: number; newParentID: string | null }> => {
   const workspaceID = toUUID(input.workspaceID);
   const collectionID = toUUID(input.id);
   const requestedParentID = input.newParentID ? toUUID(input.newParentID) : null;
 
-  await db.transaction(async (tx) => {
+  return db.transaction(async (tx) => {
     await tx
       .select({ id: workspaces.id })
       .from(workspaces)
@@ -96,6 +96,11 @@ const moveCollection = async (input: {
       .update(collections)
       .set({ parentID, rank, updatedAt: new Date() })
       .where(and(eq(collections.id, collectionID), eq(collections.workspaceID, workspaceID)));
+
+    return {
+      index,
+      newParentID: requestedParentID ? toCollectionID(requestedParentID) : null
+    };
   });
 };
 

@@ -16,7 +16,14 @@ const collectionsRouter = base.prefix("/collections").router({
       }
     })
     .use(authorized)
-    .input(collectionType.partial())
+    .input(
+      collectionType
+        .pick({ id: true, name: true })
+        .extend({
+          parentID: id().describe("ID of the parent collection,")
+        })
+        .partial()
+    )
     .output(collectionType)
     .handler(async ({ context, input }) => {
       const newCollection = await Collections.create({
@@ -48,14 +55,14 @@ const collectionsRouter = base.prefix("/collections").router({
     )
     .output(z.void())
     .handler(async ({ context, input }) => {
-      await Collections.delete({
+      const deletedIDs = await Collections.delete({
         workspaceID: context.auth.workspaceID,
         ids: input.ids
       });
 
       emitCollectionEvent(context.auth.workspaceID, {
         action: "collection:delete",
-        data: { ids: input.ids },
+        data: { ids: deletedIDs },
         memberID: context.auth.session?.memberID
       });
     }),
@@ -113,7 +120,7 @@ const collectionsRouter = base.prefix("/collections").router({
     .output(z.void())
 
     .handler(async ({ context, input }) => {
-      await Collections.move({
+      const result = await Collections.move({
         id: input.id,
         workspaceID: context.auth.workspaceID,
         newParentID: input.newParentID,
@@ -124,8 +131,8 @@ const collectionsRouter = base.prefix("/collections").router({
         action: "collection:move",
         data: {
           id: input.id,
-          newParentID: input.newParentID,
-          index: input.index
+          newParentID: result.newParentID,
+          index: result.index
         },
         memberID: context.auth.session?.memberID
       });
@@ -140,9 +147,15 @@ const collectionsRouter = base.prefix("/collections").router({
     })
     .input(
       z.object({
-        ancestorID: z.string().optional().describe("ID of the parent collection"),
-        perPage: z.number().optional().describe("Number of collections to get per page"),
-        page: z.number().optional().describe("Page number")
+        ancestorID: id().optional().describe("ID of the parent collection"),
+        perPage: z
+          .number()
+          .int()
+          .min(1)
+          .max(100)
+          .optional()
+          .describe("Number of collections per page"),
+        page: z.number().int().min(1).max(1e6).optional().describe("Page number")
       })
     )
     .use(authorized)

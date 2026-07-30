@@ -1,4 +1,4 @@
-import { entryType } from "#backend/db";
+import { entryType, lexoRank } from "#backend/db";
 import { updateDocumentTitle } from "#backend/collaboration";
 import { emitEntryEvent } from "#backend/events";
 import { authorized } from "#backend/lib/middleware";
@@ -104,7 +104,7 @@ const entriesRouter = base.prefix("/entries").router({
     .input(
       z.object({
         id: id().describe("ID of the entry to be moved"),
-        order: z.string().describe("New LexoRank order of the entry"),
+        order: lexoRank().describe("New LexoRank order of the entry"),
         collectionID: id().optional().nullable().describe("ID of the new parent collection")
       })
     )
@@ -140,14 +140,13 @@ const entriesRouter = base.prefix("/entries").router({
     .use(authorized)
     .input(
       z.object({
-        collectionID: z.string().optional().describe("ID of the collection to get entries from"),
-        lastOrder: z
-          .string()
+        collectionID: id().optional().describe("ID of the collection to get entries from"),
+        lastOrder: lexoRank()
           .optional()
-          .describe("Last order to get entries from; requires collectionID"),
+          .describe("Last LexoRank to get entries from; requires collectionID"),
         lastID: id().optional().describe("Last entry ID to get entries from"),
-        perPage: z.number().optional().describe("Number of entries to get per page"),
-        page: z.number().optional().describe("Page number")
+        perPage: z.number().int().min(1).max(100).optional().describe("Number of entries per page"),
+        page: z.number().int().min(1).max(1e6).optional().describe("Page number")
       })
     )
     .output(z.array(entryType))

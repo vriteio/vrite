@@ -17,10 +17,12 @@ import { Setting } from "../../setting";
 import { SettingsSection } from "../../settings-section";
 import { APIKeyItem } from "./api-key-item";
 import { NewKeyDialog } from "../../new-key-dialog";
+import { useWorkspace } from "#web/context/workspace";
 
 type ExpirationOption = "now" | "1h" | "24h" | "7d";
 
 interface APIKeyListProps {
+  canManage: boolean;
   keys: Key[];
   keysRefreshing?: boolean;
   refreshKeys(onRevalidate?: () => void): void;
@@ -114,6 +116,7 @@ const APIKeyList: Component<APIKeyListProps> = (props) => {
                 permissions={key().permissions as KeyPermission[]}
                 createdAt={key().createdAt}
                 expiresAt={key().expiresAt}
+                canManage={props.canManage}
                 loading={mutationPending() || props.keysRefreshing}
                 onEdit={() => navigate(`${settingsPath()}/key/${encodeURIComponent(key().id)}`)}
                 onRotate={(expiresIn) => rotateKeyMutation.mutate({ id: key().id, expiresIn })}
@@ -128,6 +131,7 @@ const APIKeyList: Component<APIKeyListProps> = (props) => {
 };
 
 const CredentialsSection: Component = () => {
+  const { hasPermission } = useWorkspace();
   const navigate = useNavigate();
   const params = useParams<{ workspaceID?: string }>();
   const keys = createAsync(() => apiKeysQuery(), { initialValue: [] });
@@ -146,17 +150,19 @@ const CredentialsSection: Component = () => {
           label="API keys"
           description="Use API keys to authenticate requests from external apps or scripts"
         >
-          <IconButton
-            label={() => <span class="px-1">Create key</span>}
-            class="flex-row-reverse pr-1"
-            onClick={() => navigate(`/${params.workspaceID || ""}/settings/key`)}
-            iconProps={{ class: "h-4 w-4" }}
-            icon="i-lucide:plus"
-            size="small"
-            color="contrast"
-            variant="outlined"
-            text="soft"
-          />
+          <Show when={hasPermission("api_keys")}>
+            <IconButton
+              label={() => <span class="px-1">Create key</span>}
+              class="flex-row-reverse pr-1"
+              onClick={() => navigate(`/${params.workspaceID || ""}/settings/key`)}
+              iconProps={{ class: "h-4 w-4" }}
+              icon="i-lucide:plus"
+              size="small"
+              color="contrast"
+              variant="outlined"
+              text="soft"
+            />
+          </Show>
         </Setting>
         <div class="relative flex w-full flex-col">
           <Suspense
@@ -171,7 +177,12 @@ const CredentialsSection: Component = () => {
               </div>
             }
           >
-            <APIKeyList keys={keys()} keysRefreshing={keysRefreshing()} refreshKeys={refreshKeys} />
+            <APIKeyList
+              keys={keys()}
+              canManage={hasPermission("api_keys")}
+              keysRefreshing={keysRefreshing()}
+              refreshKeys={refreshKeys}
+            />
           </Suspense>
         </div>
       </div>

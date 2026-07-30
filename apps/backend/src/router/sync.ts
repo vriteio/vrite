@@ -1,6 +1,4 @@
-import { subscribeToWorkspaceEvents, workspaceEventType } from "#backend/events";
 import { collectionType, entryType } from "#backend/db";
-import { viaIterator } from "#backend/lib/events";
 import { authorized } from "#backend/lib/middleware";
 import { base } from "#backend/lib/orpc";
 import { Sync } from "#backend/services/sync";
@@ -26,22 +24,11 @@ const syncRouter = base.router({
       });
     }),
   workspaceUpdates: base.use(authorized).handler(async function* ({ context, signal }) {
-    const eventIterator = viaIterator(subscribeToWorkspaceEvents, context.auth.workspaceID, {
+    yield* Sync.listenToWorkspaceEvents({
+      auth: context.auth,
+      workspaceID: context.auth.workspaceID,
       signal
     });
-    for await (const eventPayload of eventIterator) {
-      const parsedEvent = workspaceEventType.safeParse(eventPayload);
-
-      if (!parsedEvent.success) {
-        continue;
-      }
-
-      if (!Sync.isWorkspaceEventVisible(context.auth, parsedEvent.data)) {
-        continue;
-      }
-
-      yield parsedEvent.data;
-    }
   })
 });
 

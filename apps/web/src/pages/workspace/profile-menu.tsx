@@ -16,10 +16,30 @@ const ProfileMenu: Component<ProfileMenuProps> = (props) => {
   const { currentWorkspace, workspaces, sessions, switchWorkspace } = useWorkspace();
   const navigate = useNavigate();
   const revokeSessionMutation = createMutation(() => ({
-    mutationFn: async (input: { sessionToken: string }) => {
-      await authClient.multiSession.revoke(input);
+    mutationFn: async (input: {
+      sessionToken: string;
+      nextSessionToken: string;
+      nextPath: string;
+    }) => {
+      const { error: revokeError } = await authClient.multiSession.revoke({
+        sessionToken: input.sessionToken
+      });
 
-      return true;
+      if (revokeError) throw revokeError;
+
+      const { error: activateError } = await authClient.multiSession.setActive({
+        sessionToken: input.nextSessionToken
+      });
+
+      if (activateError) throw activateError;
+
+      return input.nextPath;
+    },
+    onSuccess: (nextPath) => {
+      window.location.href = nextPath;
+    },
+    onError: () => {
+      window.location.reload();
     }
   }));
   const signOutMutation = createMutation(() => ({
@@ -155,24 +175,22 @@ const ProfileMenu: Component<ProfileMenuProps> = (props) => {
 
           if (sessionList.length > 1) {
             const currentSession = sessionList.find((s) => s.user.id === current?.userID);
-
-            if (currentSession) {
-              await revokeSessionMutation.mutateAsync({
-                sessionToken: currentSession.sessionToken
-              });
-            }
-
-            // Find a workspace belonging to another session
             const otherSession = sessionList.find((s) => s.user.id !== current?.userID);
             const otherWorkspace = workspaceList.find(
               (ws) => otherSession && ws.userID === otherSession.user.id
             );
 
-            if (otherWorkspace) {
-              window.location.href = `/${otherWorkspace.id}/`;
-            } else {
+            if (!currentSession || !otherSession) {
               window.location.reload();
+
+              return;
             }
+
+            await revokeSessionMutation.mutateAsync({
+              sessionToken: currentSession.sessionToken,
+              nextSessionToken: otherSession.sessionToken,
+              nextPath: otherWorkspace ? `/${otherWorkspace.id}/` : "/new-workspace"
+            });
           } else {
             await signOutMutation.mutateAsync();
             window.location.href = "/auth/sign-in";

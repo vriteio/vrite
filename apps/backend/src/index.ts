@@ -9,6 +9,7 @@ import { webhooksPlugin } from "./webhooks";
 import { auth } from "./lib/auth";
 import { pool } from "./lib/postgres";
 import { redis, subscriberRedis } from "./lib/redis";
+import { RATE_LIMITS, consumeRateLimit } from "./lib/rate-limit";
 
 const allowedOrigins = [...new Set([config.PUBLIC_APP_URL, config.PUBLIC_API_URL])];
 const allowedMethods = ["GET", "HEAD", "PUT", "POST", "DELETE", "PATCH", "OPTIONS"];
@@ -37,10 +38,13 @@ const createWebRequest = (fastifyRequest: FastifyRequest): Request => {
     webBody = JSON.stringify(body);
   }
 
+  const headers = new Headers(fastifyRequest.headers as HeadersInit);
+
+  headers.set("x-client-ip", fastifyRequest.ip);
+
   return new Request(url, {
     method: fastifyRequest.method,
-    // @ts-expect-error
-    headers: new Headers(fastifyRequest.headers),
+    headers,
     ...(webBody && { body: webBody })
   });
 };
@@ -55,23 +59,43 @@ await app.register(corsPlugin, {
 await app.register(websocketPlugin, {
   options: { maxPayload: 1048576 }
 });
-app.get("/collab", { websocket: true }, (socket, request) => {
-  const webRequest = createWebRequest(request);
-  const clientConnection = collab.handleConnection(socket, webRequest);
+app.get(
+  "/collab",
+  {
+    websocket: true,
+    preValidation: async (request, reply) => {
+      const limit = await consumeRateLimit({
+        scope: "collaboration",
+        key: request.ip,
+        limit: RATE_LIMITS.collaboration
+      });
 
-  socket.on("message", (message) => {
-    clientConnection.handleMessage(new Uint8Array(message as ArrayBuffer));
-  });
-  socket.on("close", (code) => {
-    clientConnection.handleClose({
-      code: code || 1000,
-      reason: "Normal Closure"
+      if (!limit.allowed) {
+        return reply
+          .status(429)
+          .header("Retry-After", limit.retryAfter)
+          .send({ error: "Too many connection attempts. Please try again later." });
+      }
+    }
+  },
+  (socket, request) => {
+    const webRequest = createWebRequest(request);
+    const clientConnection = collab.handleConnection(socket, webRequest);
+
+    socket.on("message", (message) => {
+      clientConnection.handleMessage(new Uint8Array(message as ArrayBuffer));
     });
-  });
-  socket.on("error", (error) => {
-    console.error(error);
-  });
-});
+    socket.on("close", (code) => {
+      clientConnection.handleClose({
+        code: code || 1000,
+        reason: "Normal Closure"
+      });
+    });
+    socket.on("error", (error) => {
+      console.error(error);
+    });
+  }
+);
 app.route({
   method: ["GET", "POST"],
   url: "/auth/*",

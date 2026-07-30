@@ -21,13 +21,14 @@ const rootRedirectQuery = query(async () => {
   const { data } = await authClient.getSession();
   const url = new URL(event ? event.request.url : window.location.href);
   const isAuthRoute = url.pathname.startsWith("/auth");
+  const isNewWorkspaceRoute = url.pathname === "/new-workspace";
   const workspaceID = url.pathname.split("/")[1] || "";
   const isAddAccount = url.searchParams.get("addAccount") === "true";
   const redirectTo = normalizeRedirectTo(url.searchParams.get("redirectTo"));
 
   if (!data?.session) {
     if (!isAuthRoute) {
-      throw redirect(appendRedirectTo("/auth/sign-in", redirectTo));
+      throw redirect(appendRedirectTo("/auth/sign-in", `${url.pathname}${url.search}`));
     }
 
     return { success: true };
@@ -40,6 +41,10 @@ const rootRedirectQuery = query(async () => {
 
     if (redirectTo) {
       throw redirect(redirectTo);
+    }
+
+    if (isNewWorkspaceRoute) {
+      return { success: true };
     }
 
     if (workspaceID && validateWorkspaceID(workspaceID)) {

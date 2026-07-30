@@ -8,7 +8,6 @@ import { useWorkspace } from "#web/context/workspace";
 import { client } from "#web/lib/client";
 import { config } from "#web/lib/config";
 import { formatUSD } from "#web/lib/format";
-import { hasPermission } from "#web/lib/permissions";
 import clsx from "clsx";
 
 interface SubscriptionInfo {
@@ -94,7 +93,7 @@ const SubscriptionInfo: Component<SubscriptionInfoProps> = (props) => {
 };
 const SubscriptionAction: Component = () => {
   const notify = useNotify();
-  const { currentWorkspace } = useWorkspace();
+  const { hasPermission } = useWorkspace();
   const subscription = createAsync(() => subscriptionQuery());
   const checkoutMutation = createMutation(() => ({
     onSuccess: (url) => {
@@ -122,11 +121,7 @@ const SubscriptionAction: Component = () => {
       return url;
     }
   }));
-  const canManageBilling = () => {
-    return (
-      currentWorkspace()?.admin || hasPermission(currentWorkspace()?.permissions || [], "billing")
-    );
-  };
+  const canManageBilling = () => hasPermission("billing");
 
   return (
     <Show when={subscription()}>

@@ -6,7 +6,7 @@ import {
   createIndexedDBAdapter,
   deleteIndexedDBDatabase
 } from "./persistence";
-import { Collection, Entry, client } from "#web/lib/client";
+import { Collection, Entry, client, type WorkspaceEvent } from "#web/lib/client";
 import solidReactivityAdapter from "@signaldb/solid";
 import { useConnectivitySignal } from "@solid-primitives/connectivity";
 import { Accessor, createEffect, createSignal, on } from "solid-js";
@@ -55,9 +55,6 @@ const createWorkspaceCollections = (workspaceID?: string) => {
 };
 const clearWorkspaceContent = async (workspaceID: string) => {
   await deleteIndexedDBDatabase(getWorkspaceContentDatabaseName(workspaceID));
-};
-const hasLocalContent = (collections: ReturnType<typeof createWorkspaceCollections>) => {
-  return Boolean(collections.entries.findOne({}) || collections.collections.findOne({}));
 };
 const applyCollectionSnapshot = <T extends { id: IDBValidKey } & Record<string, any>>(
   collection: LocalDBCollection<T>,
@@ -133,6 +130,76 @@ const useWorkspaceContent = (workspaceID: Accessor<string>) => {
     applyCollectionSnapshot(targetCollections.collections, tree.collections);
     setLoading(false);
   };
+  const syncWorkspaceContent = async (targetWorkspaceID: string) => {
+    if (!targetWorkspaceID) return;
+
+    try {
+      const explorerTree = await client.sync.getExplorerTree();
+      const targetCollections = contentCollections();
+
+      await applyExplorerTree(
+        { workspaceID: targetWorkspaceID, ...explorerTree },
+        targetCollections
+      );
+    } catch {
+      if (contentCollections().workspaceID === targetWorkspaceID) {
+        setLoading(false);
+      }
+    }
+  };
+  const applyWorkspaceEvent = (targetWorkspaceID: string, event: WorkspaceEvent) => {
+    const targetCollections = contentCollections();
+
+    if (targetCollections.workspaceID !== targetWorkspaceID) return;
+
+    switch (event.action) {
+      case "entry:create":
+        contentOperations.applyEntryCreate(event.data);
+        break;
+      case "entry:update": {
+        const { id, ...updates } = event.data;
+
+        contentOperations.applyEntryUpdate(id, updates);
+        break;
+      }
+      case "entry:move": {
+        const updates: Partial<Entry> = {};
+
+        if (event.data.order !== undefined) {
+          updates.order = event.data.order;
+        }
+
+        if (event.data.collectionID !== undefined) {
+          updates.collectionID = event.data.collectionID ?? undefined;
+        }
+
+        contentOperations.applyEntryUpdate(event.data.id, updates);
+        break;
+      }
+      case "entry:delete":
+        contentOperations.applyEntryDelete(event.data.ids);
+        break;
+      case "collection:create":
+        contentOperations.applyCollectionCreate(event.data);
+        break;
+      case "collection:update": {
+        const { id, ...updates } = event.data;
+
+        contentOperations.applyCollectionUpdate(id, updates);
+        break;
+      }
+      case "collection:move":
+        contentOperations.applyCollectionMove(
+          event.data.id,
+          event.data.newParentID ?? null,
+          event.data.index
+        );
+        break;
+      case "collection:delete":
+        contentOperations.applyCollectionDelete(event.data.ids);
+        break;
+    }
+  };
   const switchWorkspace = async (currentWorkspaceID: string, previousWorkspaceID?: string) => {
     setLoading(Boolean(currentWorkspaceID));
 
@@ -157,22 +224,7 @@ const useWorkspaceContent = (workspaceID: Accessor<string>) => {
       return;
     }
 
-    if (hasLocalContent(nextCollections)) {
-      setLoading(false);
-    }
-
-    try {
-      const explorerTree = await client.sync.getExplorerTree();
-
-      await applyExplorerTree(
-        { workspaceID: currentWorkspaceID, ...explorerTree },
-        nextCollections
-      );
-    } catch (error) {
-      if (contentCollections().workspaceID === currentWorkspaceID) {
-        setLoading(false);
-      }
-    }
+    setLoading(false);
   };
 
   createEffect(
@@ -185,6 +237,8 @@ const useWorkspaceContent = (workspaceID: Accessor<string>) => {
     entriesCollection,
     collectionsCollection,
     disposeWorkspaceContent,
+    applyWorkspaceEvent,
+    syncWorkspaceContent,
     loading,
     readOnly,
     offline,

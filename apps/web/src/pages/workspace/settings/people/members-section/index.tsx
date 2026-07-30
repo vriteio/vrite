@@ -5,6 +5,7 @@ import { Component, createMemo, Show, Suspense, useTransition } from "solid-js";
 
 import { Tree, TREE_ROOT_ID, type TreeMap } from "#web/components/tree";
 import { useNotify } from "#web/context/notifications";
+import { useWorkspace } from "#web/context/workspace";
 import { client, Membership, Role, UserProfile, Invite } from "#web/lib/client";
 import { Setting } from "../../setting";
 import { SettingsSection } from "../../settings-section";
@@ -21,6 +22,7 @@ interface InviteDetails extends Invite {
 }
 
 interface WorkspaceMemberListProps {
+  canManage: boolean;
   members: WorkspaceMember[];
   membersRefreshing?: boolean;
   refreshMembers(onRevalidated?: () => void): void;
@@ -126,6 +128,7 @@ const WorkspaceMemberList: Component<WorkspaceMemberListProps> = (props) => {
             <MemberItem
               member={member()}
               roles={props.roles}
+              canManage={props.canManage}
               loading={member().optimistic}
               onUpdateRole={(roleID, ids) => updateRoleMutation.mutate({ ids, roleID })}
               onRemove={(ids) => removeMutation.mutate({ ids })}
@@ -292,10 +295,12 @@ const InvitationsSubsection: Component<InvitationSubsectionProps> = (props) => {
 };
 
 const MembersSection: Component = () => {
+  const { hasPermission } = useWorkspace();
   const navigate = useNavigate();
   const params = useParams<{ workspaceID?: string }>();
   const members = createAsync(() => membershipsQuery());
-  const invites = createAsync(() => invitesQuery());
+  const canManage = () => hasPermission("workspace");
+  const invites = createAsync(async () => (canManage() ? invitesQuery() : []));
   const roles = createAsync(() => rolesQuery());
   const [membersRefreshing, startMembersRefresh] = useTransition();
   const refreshMembers = (onRevalidated = () => {}) => {
@@ -313,31 +318,36 @@ const MembersSection: Component = () => {
           description="Manage people who have access to this workspace"
           fade={false}
         >
-          <IconButton
-            label={() => <span class="px-1">Invite member</span>}
-            class="flex-row-reverse pr-1"
-            onClick={() => navigate(`/${params.workspaceID || ""}/settings/invite`)}
-            iconProps={{ class: "h-4 w-4" }}
-            icon="i-lucide:plus"
-            size="small"
-            color="contrast"
-            variant="outlined"
-            text="soft"
-          />
+          <Show when={canManage()}>
+            <IconButton
+              label={() => <span class="px-1">Invite member</span>}
+              class="flex-row-reverse pr-1"
+              onClick={() => navigate(`/${params.workspaceID || ""}/settings/invite`)}
+              iconProps={{ class: "h-4 w-4" }}
+              icon="i-lucide:plus"
+              size="small"
+              color="contrast"
+              variant="outlined"
+              text="soft"
+            />
+          </Show>
         </Setting>
         <div class="relative flex w-full flex-col">
           <Suspense fallback={<ListSkeleton />}>
             <WorkspaceMemberList
               members={members() || []}
               roles={roles() || []}
+              canManage={canManage()}
               membersRefreshing={membersRefreshing()}
               refreshMembers={refreshMembers}
             />
           </Suspense>
         </div>
-        <Suspense>
-          <InvitationsSubsection invites={invites() || []} roles={roles() || []} />
-        </Suspense>
+        <Show when={canManage()}>
+          <Suspense>
+            <InvitationsSubsection invites={invites() || []} roles={roles() || []} />
+          </Suspense>
+        </Show>
       </div>
     </SettingsSection>
   );

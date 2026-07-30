@@ -10,7 +10,7 @@ import clsx from "clsx";
 
 const WorkspaceProfileSection: Component = () => {
   const notify = useNotify();
-  const { currentWorkspace, refreshWorkspaces } = useWorkspace();
+  const { currentWorkspace, hasPermission, refreshWorkspaces } = useWorkspace();
   const [name, setName] = createSignal(currentWorkspace()?.name || "");
   const updateWorkspaceNameMutation = createMutation(() => ({
     onSuccess: () => {
@@ -49,7 +49,7 @@ const WorkspaceProfileSection: Component = () => {
               <Input
                 placeholder="My Workspace"
                 class={clsx("w-full", updateWorkspaceNameMutation.isPending && "animate-pulse")}
-                disabled={updateWorkspaceNameMutation.isPending}
+                disabled={!hasPermission("workspace") || updateWorkspaceNameMutation.isPending}
                 size="small"
                 color="contrast"
                 variant="outlined"

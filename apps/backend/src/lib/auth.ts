@@ -8,32 +8,58 @@ import { db } from "#backend/lib/postgres";
 import { config } from "./config";
 import { sendEmail } from "./email";
 import { Workspaces } from "#backend/services";
-import { redis } from "./redis";
+import { incrementWithExpiry, redis } from "./redis";
 import { Auth } from "#backend/services/auth";
 import { add } from "date-fns";
+import { APIError } from "better-auth/api";
+import { RATE_LIMITS } from "./rate-limit";
 
 const auth = betterAuth({
   appName: "Andesine",
   baseURL: config.PUBLIC_API_URL,
   secret: config.SECRET,
   basePath: "/auth",
+  disabledPaths: [
+    // Email + password (authentication is entirely passwordless, so these are unsupported)
+    "/sign-up/email",
+    "/sign-in/email",
+    "/request-password-reset",
+    "/reset-password/:token",
+    "/reset-password",
+    "/email-otp/request-password-reset",
+    "/forget-password/email-otp",
+    "/email-otp/reset-password",
+    // Password management (to be implemented in the future)
+    "/verify-password",
+    "/change-password",
+    // Account email changes (to be implemented in the future)
+    "/change-email",
+    "/email-otp/request-email-change",
+    "/email-otp/change-email"
+  ],
   logger: { level: config.NODE_ENV === "production" ? "error" : "debug" },
+  rateLimit: {
+    enabled: true,
+    storage: "secondary-storage",
+    ...RATE_LIMITS.authentication,
+    customRules: {
+      "/sign-in/*": RATE_LIMITS.signIn,
+      "/email-otp/*": RATE_LIMITS.otp
+    }
+  },
   database: drizzleAdapter(db, {
     provider: "pg",
     schema,
     usePlural: true,
     transaction: true
   }),
-  trustedOrigins: [
-    ...(config.PUBLIC_COOKIE_DOMAIN
-      ? [`${config.PUBLIC_SECURE ? "https://" : "http://"}${config.PUBLIC_COOKIE_DOMAIN}`]
-      : []),
-    config.PUBLIC_APP_URL,
-    config.PUBLIC_API_URL
-  ],
+  trustedOrigins: [config.PUBLIC_APP_URL, config.PUBLIC_API_URL],
   advanced: {
     database: {
       generateId: "uuid"
+    },
+    ipAddress: {
+      ipAddressHeaders: ["x-client-ip"]
     },
     ...(config.PUBLIC_COOKIE_DOMAIN && {
       crossSubDomainCookies: {
@@ -55,6 +81,11 @@ const auth = betterAuth({
     },
     delete: async (key) => {
       await redis.del(`auth:${key}`);
+    },
+    increment: async (key, ttl) => {
+      const result = await incrementWithExpiry(`auth:${key}`, ttl);
+
+      return result.count;
     }
   },
   session: {
@@ -64,20 +95,14 @@ const auth = betterAuth({
     storeInDatabase: true
   },
   socialProviders: {
-    ...(config.GOOGLE_CLIENT_ID &&
-      config.GOOGLE_CLIENT_SECRET && {
-        google: {
-          clientId: config.GOOGLE_CLIENT_ID,
-          clientSecret: config.GOOGLE_CLIENT_SECRET
-        }
-      }),
-    ...(config.GITHUB_CLIENT_ID &&
-      config.GITHUB_CLIENT_SECRET && {
-        github: {
-          clientId: config.GITHUB_CLIENT_ID,
-          clientSecret: config.GITHUB_CLIENT_SECRET
-        }
-      })
+    google: {
+      clientId: config.GOOGLE_CLIENT_ID,
+      clientSecret: config.GOOGLE_CLIENT_SECRET
+    },
+    github: {
+      clientId: config.GITHUB_CLIENT_ID,
+      clientSecret: config.GITHUB_CLIENT_SECRET
+    }
   },
   user: {
     additionalFields: {
@@ -141,44 +166,47 @@ const auth = betterAuth({
   plugins: [
     emailOTP({
       async sendVerificationOTP({ email, otp, type }, ctx) {
-        if (type !== "forget-password" && type !== "change-email") {
-          const headers = ctx?.headers || ctx?.request?.headers;
-          const sessionVerification = headers?.get("x-session-verification") === "true";
-          const sessionVerificationCallback = headers?.get("x-session-verification-callback");
-          const otpToken = Auth.createOTPToken({
-            email,
-            otp,
-            type,
-            expiresAt: add(new Date(), { seconds: 300 })
-          });
-
-          if (sessionVerification) {
-            const query = new URLSearchParams({
-              mode: "sign-in",
-              token: otpToken,
-              addAccount: "true",
-              redirectTo: sessionVerificationCallback || "/"
-            });
-
-            sendEmail(email, "session-verification", {
-              code: otp,
-              link: `${config.PUBLIC_APP_URL}/auth/email?${query}`
-            });
-
-            return;
-          }
-
-          sendEmail(email, "verification-otp", {
-            code: otp,
-            type,
-            link: `${config.PUBLIC_APP_URL}/auth/email?mode=${type === "email-verification" ? "sign-in" : "sign-up"}&token=${otpToken}`
-          });
+        if (type === "forget-password" || type === "change-email") {
+          throw APIError.fromStatus("BAD_REQUEST", { message: "Unsupported OTP type" });
         }
+
+        const headers = ctx?.headers || ctx?.request?.headers;
+        const sessionVerification = headers?.get("x-session-verification") === "true";
+        const sessionVerificationCallback = headers?.get("x-session-verification-callback");
+        const otpToken = Auth.createOTPToken({
+          email,
+          otp,
+          type,
+          expiresAt: add(new Date(), { seconds: 300 })
+        });
+
+        if (sessionVerification) {
+          const query = new URLSearchParams({
+            mode: "sign-in",
+            token: otpToken,
+            addAccount: "true",
+            redirectTo: sessionVerificationCallback || "/"
+          });
+
+          sendEmail(email, "session-verification", {
+            code: otp,
+            link: `${config.PUBLIC_APP_URL}/auth/email?${query}`
+          });
+
+          return;
+        }
+
+        sendEmail(email, "verification-otp", {
+          code: otp,
+          type,
+          link: `${config.PUBLIC_APP_URL}/auth/email?mode=${type === "email-verification" ? "sign-in" : "sign-up"}&token=${otpToken}`
+        });
       },
       storeOTP: "hashed",
       otpLength: 6,
       expiresIn: 600,
-      disableSignUp: false
+      disableSignUp: false,
+      rateLimit: RATE_LIMITS.otp
     }),
     passkey({
       rpName: "Andesine",

@@ -1,15 +1,18 @@
-import { toUUID } from "#backend/lib/id";
+import { toCollectionID, toUUID } from "#backend/lib/id";
 import { db } from "#backend/lib/postgres";
 import { collections, workspaces } from "#backend/db";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 
-const deleteCollections = async (input: { ids: string[]; workspaceID: string }): Promise<void> => {
-  if (input.ids.length === 0) return;
+const deleteCollections = async (input: {
+  ids: string[];
+  workspaceID: string;
+}): Promise<string[]> => {
+  if (input.ids.length === 0) return [];
 
   const ids = input.ids.map(toUUID);
   const workspaceID = toUUID(input.workspaceID);
-  await db.transaction(async (tx) => {
+  return db.transaction(async (tx) => {
     await tx
       .select({ id: workspaces.id })
       .from(workspaces)
@@ -29,7 +32,7 @@ const deleteCollections = async (input: { ids: string[]; workspaceID: string }):
       sql`, `
     );
 
-    await tx.execute(sql`
+    const deleted = await tx.execute<{ id: string }>(sql`
       with recursive subtree as (
         select id
         from ${collections}
@@ -43,7 +46,10 @@ const deleteCollections = async (input: { ids: string[]; workspaceID: string }):
       delete from ${collections}
       where workspace_id = ${workspaceID}::uuid
         and id in (select id from subtree)
+      returning id
     `);
+
+    return deleted.rows.map((row) => toCollectionID(row.id));
   });
 };
 
