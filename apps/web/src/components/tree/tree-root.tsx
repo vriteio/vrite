@@ -11,6 +11,12 @@ const TreeRoot: ParentComponent = (props) => {
       const target = event.target;
       const isTreeInteraction =
         target instanceof Element && Boolean(target.closest("[data-tree-item], [role='menu']"));
+      const isModifiedInteraction =
+        event.metaKey || event.ctrlKey || event.shiftKey || event.altKey;
+
+      if (rootRef()?.contains(target as Node) && !isTreeInteraction && isModifiedInteraction) {
+        return;
+      }
 
       if (!rootRef()?.contains(target as Node) || !isTreeInteraction) {
         setSelection([]);

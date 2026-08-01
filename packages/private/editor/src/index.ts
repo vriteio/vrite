@@ -17,6 +17,7 @@ const Editor: Component<EditorProps> = (props) => {
     get when() {
       return mounted();
     },
+    keyed: true,
     get children() {
       return createComponent(ClientEditor, props);
     }

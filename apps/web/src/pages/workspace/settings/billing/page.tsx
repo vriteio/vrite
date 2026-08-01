@@ -20,7 +20,9 @@ const BillingSettingsPage: Component = () => {
     if (result === "success") {
       notify({ type: "success", text: "Checkout completed. Refreshing your subscription..." });
     } else if (result === "cancel") {
-      notify({ type: "success", text: "Checkout canceled" });
+      notify({ type: "info", text: "Checkout canceled. No billing changes were made." });
+    } else if (result === "portal") {
+      notify({ type: "info", text: "Billing portal closed. Refreshing your billing details..." });
     }
 
     revalidate(["billing-subscription", "billing-usage"]);

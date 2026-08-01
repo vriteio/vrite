@@ -1,5 +1,5 @@
 import * as nodemailer from "nodemailer";
-import { Resend } from "resend";
+import { CreateEmailResponse, Resend } from "resend";
 import { config } from "#backend/lib/config";
 import { ORPCError } from "@orpc/server";
 
@@ -29,16 +29,16 @@ const createEmailSender = (): {
     return {
       client: resend,
       sendEmail: async (to, email) => {
+        let result: CreateEmailResponse;
+
         try {
-          await resend.emails.send({
+          result = await resend.emails.send({
             from: `${config.SENDER_NAME} <${config.SENDER_EMAIL}>`,
             to,
             subject: email.subject,
             html: email.html,
             text: email.text
           });
-
-          return { status: "sent" };
         } catch (e) {
           console.error(e);
 
@@ -46,6 +46,20 @@ const createEmailSender = (): {
             message: "Failed to send email"
           });
         }
+
+        if (result.error) {
+          console.error("Resend email delivery failed", {
+            name: result.error.name,
+            statusCode: result.error.statusCode,
+            message: result.error.message
+          });
+
+          throw new ORPCError("INTERNAL_SERVER_ERROR", {
+            message: "Failed to send email"
+          });
+        }
+
+        return { status: "sent" };
       }
     };
   }
@@ -86,6 +100,10 @@ const createEmailSender = (): {
         }
       }
     };
+  }
+
+  if (config.NODE_ENV === "production") {
+    throw new Error("An email provider must be configured in production");
   }
 
   return {

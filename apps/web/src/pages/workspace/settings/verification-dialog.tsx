@@ -1,18 +1,37 @@
 import { useNotify } from "#web/context/notifications";
 import { useWorkspace } from "#web/context/workspace";
 import { authClient } from "#web/lib/client";
-import { Button, Card, IconButton, OTPInput, Overlay, Tooltip } from "@andesine/components";
+import {
+  Button,
+  Card,
+  createRef,
+  IconButton,
+  OTPInput,
+  Overlay,
+  Skeleton,
+  Tooltip
+} from "@andesine/components";
 import { createAsync, query } from "@solidjs/router";
 import { createMutation } from "@tanstack/solid-query";
 import clsx from "clsx";
-import { Component, createEffect, createSignal, Match, on, Show, Switch } from "solid-js";
+import {
+  Component,
+  createEffect,
+  createSignal,
+  Match,
+  on,
+  onCleanup,
+  Show,
+  Switch
+} from "solid-js";
 import { useSettings } from "./settings-context";
 
 interface VerificationDialogOTPViewProps {
   resendingOTP: boolean;
+  throttlingOTP: boolean;
   onVerified(): void;
   onBack(): void;
-  onResendOTP(): Promise<void>;
+  onResendOTP(): Promise<boolean>;
 }
 const passkeysQuery = query(async () => {
   const { data, error } = await authClient.passkey.listUserPasskeys();
@@ -100,24 +119,30 @@ const VerificationDialogOTPView: Component<VerificationDialogOTPViewProps> = (pr
       </div>
       <div class="flex flex-col items-start justify-center w-full text-sm text-gray-400 dark:text-gray-500">
         <span>Didn't receive the code?</span>
-        <IconButton
-          icon="i-lucide:rotate-cw"
-          iconProps={{ class: "h-3.5 w-3.5" }}
-          variant="text"
-          text="primary"
-          color="primary"
-          size="small"
-          hover="underline"
-          class="flex-row-reverse gap-1 inline-flex font-medium px-0 -my-1"
-          label={() => <span>Resend</span>}
-          loading={props.resendingOTP}
-          disabled={verifyOTPMutation.isPending}
-          onClick={async () => {
-            await props.onResendOTP();
-            setOTP("");
-            setLastSubmittedOTP("");
-          }}
-        />
+        <div class="relative inline-flex -my-1">
+          <IconButton
+            icon="i-lucide:rotate-cw"
+            iconProps={{ class: "h-3.5 w-3.5" }}
+            variant="text"
+            text="primary"
+            color="primary"
+            size="small"
+            hover="underline"
+            class="flex-row-reverse gap-1 inline-flex font-medium px-0"
+            label={() => <span>Resend</span>}
+            loading={props.resendingOTP}
+            disabled={props.resendingOTP || verifyOTPMutation.isPending || props.throttlingOTP}
+            onClick={async () => {
+              if (await props.onResendOTP()) {
+                setOTP("");
+                setLastSubmittedOTP("");
+              }
+            }}
+          />
+          <Show when={props.throttlingOTP}>
+            <Skeleton class="absolute inset-0 rounded-lg" />
+          </Show>
+        </div>
       </div>
     </>
   );
@@ -128,6 +153,19 @@ const VerificationDialog: Component = () => {
   const { closeVerificationDialog, onVerified, verificationDialogOpened } = useSettings();
   const passkeys = createAsync(() => passkeysQuery(), { initialValue: [] });
   const [view, setView] = createSignal<"methods" | "otp">("methods");
+  const [throttlingOTP, setThrottlingOTP] = createSignal(false);
+  const [otpThrottleTimeout, setOTPThrottleTimeout] = createRef(0);
+  const throttleOTP = () => {
+    if (otpThrottleTimeout()) clearTimeout(otpThrottleTimeout());
+
+    setThrottlingOTP(true);
+    setOTPThrottleTimeout(
+      window.setTimeout(() => {
+        setThrottlingOTP(false);
+        setOTPThrottleTimeout(0);
+      }, 5_000)
+    );
+  };
   const email = () => currentSession()?.user.email || "";
   const hasPasskey = () => (passkeys() ?? []).length > 0;
   const passkeyMutation = createMutation(() => ({
@@ -167,6 +205,7 @@ const VerificationDialog: Component = () => {
     },
     onSuccess: () => {
       setView("otp");
+      throttleOTP();
     },
     onError: (error) => {
       console.error(error);
@@ -179,6 +218,10 @@ const VerificationDialog: Component = () => {
       if (!opened) setView("methods");
     })
   );
+
+  onCleanup(() => {
+    if (otpThrottleTimeout()) clearTimeout(otpThrottleTimeout());
+  });
 
   return (
     <Overlay opened={verificationDialogOpened()} onOverlayClick={closeVerificationDialog} portal>
@@ -241,12 +284,21 @@ const VerificationDialog: Component = () => {
             <Match when={view() === "otp"}>
               <VerificationDialogOTPView
                 resendingOTP={sendOTPMutation.isPending}
+                throttlingOTP={throttlingOTP()}
                 onVerified={() => {
                   onVerified();
                 }}
                 onBack={() => setView("methods")}
                 onResendOTP={async () => {
-                  await sendOTPMutation.mutateAsync();
+                  if (throttlingOTP()) return false;
+
+                  try {
+                    await sendOTPMutation.mutateAsync();
+
+                    return true;
+                  } catch {
+                    return false;
+                  }
                 }}
               />
             </Match>

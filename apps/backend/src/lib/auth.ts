@@ -14,6 +14,8 @@ import { add } from "date-fns";
 import { APIError } from "better-auth/api";
 import { RATE_LIMITS } from "./rate-limit";
 
+const OTP_EXPIRY_SECONDS = 300;
+
 const auth = betterAuth({
   appName: "Andesine",
   baseURL: config.PUBLIC_API_URL,
@@ -177,7 +179,7 @@ const auth = betterAuth({
           email,
           otp,
           type,
-          expiresAt: add(new Date(), { seconds: 300 })
+          expiresAt: add(new Date(), { seconds: OTP_EXPIRY_SECONDS })
         });
 
         if (sessionVerification) {
@@ -188,7 +190,8 @@ const auth = betterAuth({
             redirectTo: sessionVerificationCallback || "/"
           });
 
-          sendEmail(email, "session-verification", {
+          // Avoid await to prevent timing attacks
+          void sendEmail(email, "session-verification", {
             code: otp,
             link: `${config.PUBLIC_APP_URL}/auth/email?${query}`
           });
@@ -196,7 +199,8 @@ const auth = betterAuth({
           return;
         }
 
-        sendEmail(email, "verification-otp", {
+        // Avoid await to prevent timing attacks
+        await sendEmail(email, "verification-otp", {
           code: otp,
           type,
           link: `${config.PUBLIC_APP_URL}/auth/email?mode=${type === "email-verification" ? "sign-in" : "sign-up"}&token=${otpToken}`
@@ -204,7 +208,7 @@ const auth = betterAuth({
       },
       storeOTP: "hashed",
       otpLength: 6,
-      expiresIn: 600,
+      expiresIn: OTP_EXPIRY_SECONDS,
       disableSignUp: false,
       rateLimit: RATE_LIMITS.otp
     }),

@@ -1,7 +1,13 @@
 import { Card, ScrollShadow, createRef } from "@andesine/components";
 import { Title } from "@solidjs/meta";
-import { revalidate, RouteSectionProps, useLocation, useParams } from "@solidjs/router";
-import { Component, onCleanup, Show } from "solid-js";
+import {
+  revalidate,
+  RouteSectionProps,
+  useLocation,
+  useNavigate,
+  useParams
+} from "@solidjs/router";
+import { Component, createEffect, onCleanup, Show } from "solid-js";
 import { useWorkspace } from "#web/context/workspace";
 import { useRouteData } from "#web/lib/routes";
 import { SettingsProvider } from "./settings-context";
@@ -10,8 +16,9 @@ import { VerificationDialog } from "./verification-dialog";
 const SettingsLayout: Component<RouteSectionProps> = (props) => {
   const routeData = useRouteData();
   const location = useLocation();
+  const navigate = useNavigate();
   const params = useParams<{ workspaceID?: string; keyID?: string }>();
-  const { currentWorkspace, hasPermission, subscribeToUpdates } = useWorkspace();
+  const { content, currentWorkspace, hasPermission, subscribeToUpdates } = useWorkspace();
   const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
   const title = () => routeData()?.title || "Settings";
   const activeRoute = () => {
@@ -37,6 +44,7 @@ const SettingsLayout: Component<RouteSectionProps> = (props) => {
 
     return false;
   };
+
   const unsubscribeFromUpdates = subscribeToUpdates((event) => {
     const route = activeRoute();
     const queryKeys = new Set<string>();
@@ -88,38 +96,46 @@ const SettingsLayout: Component<RouteSectionProps> = (props) => {
     }
   });
 
+  createEffect(() => {
+    if (content.offline()) {
+      navigate(`/${params.workspaceID || ""}`, { replace: true });
+    }
+  });
+
   onCleanup(unsubscribeFromUpdates);
 
   return (
     <SettingsProvider>
       <Title>{`${title()} settings | Andesine`}</Title>
-      <div class="flex w-full flex-1 overflow-hidden px-4">
-        <div class="relative flex h-full w-full overflow-hidden">
-          <ScrollShadow scrollableContainerRef={scrollableContainerRef} />
-          <div class="relative z-0 w-full overflow-auto p-5" ref={setScrollableContainerRef}>
-            <div class="flex w-full flex-col items-center">
-              <div class="relative my-2 flex w-full max-w-[44rem] flex-col">
-                <h1 class="my-3 text-5xl font-semibold">{title()}</h1>
-                <Show
-                  when={canAccessRoute()}
-                  fallback={
-                    <Card
-                      class="flex h-16 items-center justify-center gap-1 rounded-lg bg-white px-2 text-sm text-gray-400"
-                      shade
-                    >
-                      <div class="i-lucide:lock h-5.5 w-5.5 text-gray-300" />
-                      You don’t have access to this setting.
-                    </Card>
-                  }
-                >
-                  {props.children}
-                </Show>
+      <Show when={!content.offline()}>
+        <div class="flex w-full flex-1 overflow-hidden px-4">
+          <div class="relative flex h-full w-full overflow-hidden">
+            <ScrollShadow scrollableContainerRef={scrollableContainerRef} />
+            <div class="relative z-0 w-full overflow-auto p-5" ref={setScrollableContainerRef}>
+              <div class="flex w-full flex-col items-center">
+                <div class="relative my-2 flex w-full max-w-[44rem] flex-col">
+                  <h1 class="my-3 text-5xl font-semibold">{title()}</h1>
+                  <Show
+                    when={canAccessRoute()}
+                    fallback={
+                      <Card
+                        class="flex h-16 items-center justify-center gap-1 rounded-lg bg-white px-2 text-sm text-gray-400"
+                        shade
+                      >
+                        <div class="i-lucide:lock h-5.5 w-5.5 text-gray-300" />
+                        You don’t have access to this setting.
+                      </Card>
+                    }
+                  >
+                    {props.children}
+                  </Show>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-      <VerificationDialog />
+        <VerificationDialog />
+      </Show>
     </SettingsProvider>
   );
 };

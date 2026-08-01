@@ -31,11 +31,11 @@ const BlockMenuArea: ParentComponent<BlockMenuAreaProps> = (props) => {
   const [menuOpened, setMenuOpened] = createSignal(false);
   const [menuAnchorPoint, setMenuAnchorPoint] = createSignal<{ x: number; y: number } | null>(null);
   const handleCopy = () => {
-    if (!props.editor) return false;
+    const editor = props.editor;
 
-    const { dom, text } = props.editor.view.serializeForClipboard(
-      props.editor.state.selection.content()
-    );
+    if (!editor || editor.isDestroyed) return false;
+
+    const { dom, text } = editor.view.serializeForClipboard(editor.state.selection.content());
 
     navigator.clipboard.write([
       new ClipboardItem({
@@ -47,9 +47,11 @@ const BlockMenuArea: ParentComponent<BlockMenuAreaProps> = (props) => {
     return true;
   };
   const handleDelete = () => {
-    if (!props.editor) return false;
+    const editor = props.editor;
 
-    props.editor.chain().focus().deleteSelection().run();
+    if (!editor || editor.isDestroyed) return false;
+
+    editor.chain().focus().deleteSelection().run();
 
     return true;
   };
@@ -76,10 +78,26 @@ const BlockMenuArea: ParentComponent<BlockMenuAreaProps> = (props) => {
   };
 
   createEffect(() => {
-    registerShortcuts({
-      "$mod+backspace": handleDelete,
-      "$mod+c": handleCopy
+    const editor = props.editor;
+
+    if (!editor || editor.isDestroyed) return;
+
+    const canHandleShortcut = (event: KeyboardEvent) => {
+      const target = event.target;
+
+      return (
+        !editor.isDestroyed &&
+        target instanceof Node &&
+        editor.view.dom.contains(target) &&
+        isBlockSelection(editor.state.selection)
+      );
+    };
+    const unregister = registerShortcuts({
+      "$mod+backspace": (event) => canHandleShortcut(event) && handleDelete(),
+      "$mod+c": (event) => canHandleShortcut(event) && handleCopy()
     });
+
+    onCleanup(unregister);
   });
 
   return (

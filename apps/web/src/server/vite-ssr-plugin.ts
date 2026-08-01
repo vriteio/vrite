@@ -85,12 +85,17 @@ const viteSSRPlugin: FastifyPluginAsync = async (app) => {
       } catch (error) {
         const normalizedError = error instanceof Error ? error : new Error(String(error));
         vite?.ssrFixStacktrace(normalizedError);
-        request.log.error(normalizedError);
+        request.log.error({ err: normalizedError }, "SSR render failed");
 
         return reply
           .status(500)
           .type("text/plain")
-          .send(normalizedError.stack ?? normalizedError.message);
+          .header("X-Request-ID", request.id)
+          .send(
+            isProduction
+              ? `Unable to render this page. Reference: ${request.id}`
+              : (normalizedError.stack ?? normalizedError.message)
+          );
       }
     }
   });

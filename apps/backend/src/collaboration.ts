@@ -273,4 +273,21 @@ const updateDocumentTitle = async (documentName: string, title: string): Promise
   }
 };
 
-export { collab, updateDocumentTitle };
+const shutdownCollaboration = async (timeoutMs: number): Promise<boolean> => {
+  collab.closeConnections();
+  collab.flushPendingStores();
+
+  const deadline = Date.now() + timeoutMs;
+
+  while (collab.getDocumentsCount() > 0 && Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+
+  if (collab.getDocumentsCount() > 0) return false;
+
+  await collab.hooks("onDestroy", { instance: collab });
+
+  return true;
+};
+
+export { collab, shutdownCollaboration, updateDocumentTitle };

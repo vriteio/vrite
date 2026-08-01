@@ -1,4 +1,5 @@
-import { Extension, isTextSelection, Range } from "@tiptap/core";
+import { Extension } from "@tiptap/core";
+import type { Range } from "@tiptap/core";
 import { ResolvedPos } from "@tiptap/pm/model";
 import { TextSelection, PluginKey, Plugin } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
@@ -22,6 +23,9 @@ const isBlockSelection = (value: unknown): value is BlockSelection => {
 };
 const BlockSelectionExtension = Extension.create({
   name: "blockSelection",
+  // NodeRange also handles Mod-a and always consumes it. Run this extension's
+  // keymap first so progressive block selection gets a chance to handle it.
+  priority: 1000,
   addProseMirrorPlugins() {
     const editor = this.editor;
 
@@ -61,7 +65,7 @@ const BlockSelectionExtension = Extension.create({
             if (!isBlockSelection(selection)) return null;
 
             doc.nodesBetween(from, to, (node, pos) => {
-              if (node.type.isInGroup("block")) {
+              if (node.type.name === "title" || node.type.isInGroup("block")) {
                 decorations.push(
                   Decoration.node(pos, pos + node.nodeSize, { class: "block-selection" })
                 );
@@ -99,28 +103,43 @@ const BlockSelectionExtension = Extension.create({
         const resolvedPos = selection.$from;
         const depth = resolvedPos.depth > 0 ? 1 : 0;
         const currentNode = resolvedPos.node(depth);
+        const titleNode = doc.firstChild;
 
-        // In title node: always select all text within the title
+        if (!titleNode) return false;
+
+        const titleRange = {
+          from: 1,
+          to: titleNode.nodeSize - 1
+        };
+        const contentRange = {
+          from: titleNode.nodeSize + 1,
+          to: doc.content.size - 1
+        };
+        const documentRange = {
+          from: titleRange.from,
+          to: contentRange.to
+        };
+        const coversRange = (range: Range) => {
+          return selection.from <= range.from && selection.to >= range.to;
+        };
+
+        // Title: title block -> entire document.
         if (currentNode?.type.name === "title") {
-          const from = resolvedPos.start(depth);
-          const to = from + currentNode.nodeSize - 2;
+          const range =
+            isBlockSelection(selection) && coversRange(titleRange) ? documentRange : titleRange;
 
-          return editor.commands.setTextSelection({ from, to });
+          if (isBlockSelection(selection) && coversRange(range)) return true;
+
+          return editor.chain().setBlockSelection(range).run();
         }
 
-        // If block selection already covers current block(s), expand to entire doc (excluding title)
+        // Content: current block -> all content without the title -> entire document.
         if (isBlockSelection(selection)) {
-          const titleNode = doc.firstChild;
+          const range = coversRange(contentRange) ? documentRange : contentRange;
 
-          if (!titleNode) return false;
+          if (coversRange(range)) return true;
 
-          const contentFrom = titleNode.nodeSize + 1;
-          const contentTo = doc.content.size - 1;
-          const alreadyFull = selection.from <= contentFrom && selection.to >= contentTo;
-
-          if (alreadyFull) return true;
-
-          return editor.chain().setBlockSelection({ from: contentFrom, to: contentTo }).run();
+          return editor.chain().setBlockSelection(range).run();
         }
 
         // First press: block-select current node

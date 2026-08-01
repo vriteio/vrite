@@ -3,7 +3,12 @@ import { viteSSRPlugin } from "./vite-ssr-plugin";
 
 const host = process.env.HOST ?? "0.0.0.0";
 const port = Number(process.env.PORT ?? 3000);
-const app = Fastify();
+const app = Fastify({
+  bodyLimit: 1_048_576,
+  keepAliveTimeout: 10_000,
+  maxRequestsPerSocket: 100,
+  requestTimeout: 30_000
+});
 
 app.register(viteSSRPlugin);
 

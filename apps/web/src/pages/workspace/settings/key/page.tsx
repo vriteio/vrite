@@ -98,9 +98,21 @@ const KeySettingsPage: Component = () => {
   const params = useParams<{ workspaceID?: string; keyID?: string }>();
   const keyID = () => params.keyID || null;
   const navigateToAPI = () => navigate(`/${params.workspaceID || ""}/settings/api`);
-  const key = createAsync(async () => (keyID() ? apiKeyQuery({ keyID: keyID()! }) : null), {
-    deferStream: true
-  });
+  const keyResult = createAsync(
+    async () => {
+      if (!keyID()) return { key: null };
+
+      try {
+        return { key: await apiKeyQuery({ keyID: keyID()! }) };
+      } catch (error) {
+        console.error(error);
+
+        return { key: null, error: true };
+      }
+    },
+    { deferStream: true }
+  );
+  const key = () => keyResult()?.key ?? null;
   const [keyName, setKeyName] = createSignal(key()?.name ?? "");
   const [resourceAccess, setResourceAccess] = createSignal<ResourceAccess>(
     permissionsToAccess(key()?.permissions ?? [])
@@ -153,7 +165,15 @@ const KeySettingsPage: Component = () => {
   }));
 
   createEffect(() => {
+    const result = keyResult();
     const currentKey = key();
+
+    if (keyID() && result?.error) {
+      notify({ type: "error", text: "API key is unavailable" });
+      navigate(`/${params.workspaceID || ""}/settings/api`, { replace: true });
+
+      return;
+    }
 
     if (currentKey) {
       setKeyName(currentKey.name);
@@ -167,6 +187,7 @@ const KeySettingsPage: Component = () => {
         key={revealedKey()}
         onClose={() => {
           setRevealedKey("");
+          createKeyMutation.reset();
           navigateToAPI();
         }}
       />

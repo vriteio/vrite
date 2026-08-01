@@ -1,6 +1,6 @@
 import { router, routerPlugin } from "#backend/router";
 import "./events";
-import { collab } from "#backend/collaboration";
+import { collab, shutdownCollaboration } from "#backend/collaboration";
 import { config } from "./lib/config";
 import Fastify, { FastifyRequest } from "fastify";
 import corsPlugin from "@fastify/cors";
@@ -23,7 +23,14 @@ const allowedHeaders = [
 ];
 const host = process.env.HOST ?? "0.0.0.0";
 const port = Number(process.env.PORT ?? 3333);
-const app = Fastify();
+const app = Fastify({
+  bodyLimit: 1_048_576,
+  keepAliveTimeout: 10_000,
+  maxRequestsPerSocket: 100,
+  requestTimeout: 30_000
+});
+const SHUTDOWN_TIMEOUT_MS = 10_000;
+let isShuttingDown = false;
 const createWebRequest = (fastifyRequest: FastifyRequest): Request => {
   const url = new URL(
     fastifyRequest.url,
@@ -58,6 +65,22 @@ await app.register(corsPlugin, {
 });
 await app.register(websocketPlugin, {
   options: { maxPayload: 1048576 }
+});
+app.get("/health", async (_request, reply) => {
+  const [postgresResult, redisResult] = await Promise.allSettled([
+    pool.query("SELECT 1"),
+    redis.ping()
+  ]);
+  const checks = {
+    postgres: postgresResult.status === "fulfilled" ? "ok" : "unavailable",
+    redis: redisResult.status === "fulfilled" ? "ok" : "unavailable"
+  } as const;
+  const ready = !isShuttingDown && checks.postgres === "ok" && checks.redis === "ok";
+
+  return reply.status(ready ? 200 : 503).send({
+    status: ready ? "ok" : "unavailable",
+    checks
+  });
 });
 app.get(
   "/collab",
@@ -130,9 +153,47 @@ await app.listen({
 
 console.log(`Server is running on ${host}:${port}`);
 
-const shutdown = async (): Promise<void> => {
-  await Promise.all([redis.close(), subscriberRedis.close(), pool.end()]);
-  process.exit(0);
+let shutdownPromise: Promise<void> | undefined;
+const shutdown = (): Promise<void> => {
+  if (shutdownPromise) return shutdownPromise;
+
+  shutdownPromise = (async () => {
+    isShuttingDown = true;
+    let exitCode = 0;
+    const appClose = app.close().catch((error) => {
+      exitCode = 1;
+      console.error("Failed to close the HTTP server", error);
+    });
+    try {
+      const collaborationClosed = await shutdownCollaboration(SHUTDOWN_TIMEOUT_MS);
+
+      if (!collaborationClosed) {
+        exitCode = 1;
+        console.error("Timed out waiting for collaboration documents to persist");
+      }
+    } catch (error) {
+      exitCode = 1;
+      console.error("Failed to shut down collaboration", error);
+    }
+
+    await appClose;
+    const dependencies = await Promise.allSettled([
+      redis.close(),
+      subscriberRedis.close(),
+      pool.end()
+    ]);
+
+    for (const dependency of dependencies) {
+      if (dependency.status === "rejected") {
+        exitCode = 1;
+        console.error("Failed to close a server dependency", dependency.reason);
+      }
+    }
+
+    process.exit(exitCode);
+  })();
+
+  return shutdownPromise;
 };
 
 process.on("SIGTERM", shutdown);

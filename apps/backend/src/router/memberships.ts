@@ -3,6 +3,7 @@ import { inviteType, membershipType, userProfileType } from "#backend/db";
 import { authorized } from "#backend/lib/middleware";
 import { id } from "#backend/lib/id";
 import { base } from "#backend/lib/orpc";
+import { Billing } from "#backend/services/billing";
 import { Memberships } from "#backend/services/memberships";
 import { ORPCError } from "@orpc/server";
 import * as z from "zod";
@@ -110,6 +111,7 @@ const membershipsRouter = base.prefix("/memberships").router({
         id: input.id,
         workspaceID: context.auth.workspaceID
       });
+      await Billing.updateSeats({ workspaceID: context.auth.workspaceID });
 
       emitMembershipEvent(context.auth.workspaceID, {
         action: "membership:remove",
@@ -263,6 +265,7 @@ const membershipsRouter = base.prefix("/memberships").router({
         signature: input.signature,
         userID: context.auth.session.userID
       });
+      await Billing.updateSeats({ workspaceID: result.workspaceID });
 
       emitMembershipEvent(result.workspaceID, {
         action: "membership:add",

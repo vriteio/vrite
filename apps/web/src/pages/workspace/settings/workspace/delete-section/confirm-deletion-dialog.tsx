@@ -99,6 +99,12 @@ const ConfirmDeletionDialog: Component<ConfirmDeletionDialogProps> = (props) => 
               size="small"
               color="contrast"
               variant="outlined"
+              onKeyDown={(event) => {
+                if (event.key !== "Enter" || !canConfirm()) return;
+
+                event.preventDefault();
+                deleteWorkspaceMutation.mutate();
+              }}
             />
           </label>
           <div class="flex justify-end gap-2">

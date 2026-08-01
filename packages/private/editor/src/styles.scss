@@ -48,7 +48,7 @@ header[data-type="title"] {
 }
 
 // Block selection
-.block-selection:not(header) {
+.block-selection {
   @apply relative z-1 select-none;
   &::selection {
     @apply bg-transparent;
@@ -61,6 +61,11 @@ header[data-type="title"] {
   }
   &:not(:has(+ .block-selection))::after {
     @apply rounded-b-lg;
+  }
+  // The title has a larger bottom margin than content blocks. Extend only its
+  // decoration to meet the following selected block without shifting content.
+  &:is(header):has(+ .block-selection)::after {
+    @apply h-[calc(100%+0.75rem)];
   }
 }
 

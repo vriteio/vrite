@@ -1,4 +1,4 @@
-import { Component, JSX, Show, splitProps } from "solid-js";
+import { Component, createUniqueId, JSX, Show, splitProps } from "solid-js";
 import { Dynamic } from "solid-js/web";
 import clsx from "clsx";
 import { createRef, Ref } from "../ref";
@@ -51,6 +51,8 @@ const inputSizes = {
 const Input: Component<InputProps> = (props) => {
   const [cancelled, setCancelled] = createRef(false);
   const [confirmed, setConfirmed] = createRef(false);
+  const generatedID = createUniqueId();
+  const inputID = () => props.id || generatedID;
   const [, passedProps] = splitProps(props, [
     "onEnter",
     "onConfirm",
@@ -64,7 +66,9 @@ const Input: Component<InputProps> = (props) => {
     "labelClass",
     "labelWrapperClass",
     "slotWrapperClass",
+    "label",
     "color",
+    "id",
     "ref",
     "variant",
     "size"
@@ -77,6 +81,7 @@ const Input: Component<InputProps> = (props) => {
     >
       <Show when={props.label}>
         <label
+          for={inputID()}
           class={clsx(
             ":base: leading-[1] text-gray-400 dark:text-gray-500 group-focus-within:text-gray-500 group-focus-within:dark:text-gray-400",
             inputSizes[props.size || "medium"].label,
@@ -91,6 +96,7 @@ const Input: Component<InputProps> = (props) => {
         class={clsx(":base: flex items-center relative", props.slotWrapperClass)}
       >
         <input
+          id={inputID()}
           ref={props.ref}
           class={clsx(
             `:base: flex items-center justify-start flex-1 rounded-lg ring-offset-1 placeholder:opacity-50`,

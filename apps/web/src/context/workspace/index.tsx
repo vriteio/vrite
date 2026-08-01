@@ -184,33 +184,37 @@ const WorkspaceProvider: ParentComponent = (props) => {
             signal: abortController.signal
           });
 
-          await content.syncWorkspaceContent(currentWorkspaceID);
-          retryDelay = 1_000;
+          try {
+            await content.syncWorkspaceContent(currentWorkspaceID);
+            retryDelay = 1_000;
 
-          for await (const event of updates) {
-            if (abortController.signal.aborted || workspaceID() !== currentWorkspaceID) {
-              break;
-            }
+            for await (const event of updates) {
+              if (abortController.signal.aborted || workspaceID() !== currentWorkspaceID) {
+                break;
+              }
 
-            if (event.action.startsWith("entry:") || event.action.startsWith("collection:")) {
-              content.applyWorkspaceEvent(currentWorkspaceID, event);
-            }
+              if (event.action.startsWith("entry:") || event.action.startsWith("collection:")) {
+                content.applyWorkspaceEvent(currentWorkspaceID, event);
+              }
 
-            if (
-              event.action.startsWith("membership:") ||
-              event.action.startsWith("role:") ||
-              event.action.startsWith("workspace:")
-            ) {
-              void refreshWorkspaces();
-            }
+              if (
+                event.action.startsWith("membership:") ||
+                event.action.startsWith("role:") ||
+                event.action.startsWith("workspace:")
+              ) {
+                void refreshWorkspaces();
+              }
 
-            for (const listener of updateListeners) {
-              try {
-                listener(event);
-              } catch (error) {
-                console.error("Workspace update listener failed", error);
+              for (const listener of updateListeners) {
+                try {
+                  listener(event);
+                } catch (error) {
+                  console.error("Workspace update listener failed", error);
+                }
               }
             }
+          } finally {
+            await updates.return?.();
           }
         } catch (error) {
           if (!abortController.signal.aborted) {

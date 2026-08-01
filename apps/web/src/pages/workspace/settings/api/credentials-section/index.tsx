@@ -16,10 +16,10 @@ import {
 import { Setting } from "../../setting";
 import { SettingsSection } from "../../settings-section";
 import { APIKeyItem } from "./api-key-item";
+import { DeleteKeyDialog } from "./delete-key-dialog";
+import { RotateKeyDialog, type ExpirationOption } from "./rotate-key-dialog";
 import { NewKeyDialog } from "../../new-key-dialog";
 import { useWorkspace } from "#web/context/workspace";
-
-type ExpirationOption = "now" | "1h" | "24h" | "7d";
 
 interface APIKeyListProps {
   canManage: boolean;
@@ -36,8 +36,11 @@ const APIKeyList: Component<APIKeyListProps> = (props) => {
   const params = useParams<{ workspaceID?: string }>();
   const settingsPath = () => `/${params.workspaceID || ""}/settings`;
   const [revealedKey, setRevealedKey] = createSignal<string>("");
+  const [rotationTarget, setRotationTarget] = createSignal<Key | null>(null);
+  const [deletionTargets, setDeletionTargets] = createSignal<Key[]>([]);
   const rotateKeyMutation = createMutation(() => ({
     onSuccess: (data) => {
+      setRotationTarget(null);
       props.refreshKeys(() => {
         batch(() => {
           setRevealedKey(data.rawKey);
@@ -55,7 +58,10 @@ const APIKeyList: Component<APIKeyListProps> = (props) => {
   }));
   const deleteKeyMutation = createMutation(() => ({
     onSuccess: (_, { ids }) => {
-      props.refreshKeys(() => deleteKeyMutation.reset());
+      setDeletionTargets([]);
+      props.refreshKeys(() => {
+        deleteKeyMutation.reset();
+      });
       notify({
         type: "success",
         text: ids.length > 1 ? `${ids.length} API keys deleted` : "API key deleted"
@@ -90,6 +96,30 @@ const APIKeyList: Component<APIKeyListProps> = (props) => {
   return (
     <>
       <NewKeyDialog key={revealedKey()} onClose={() => setRevealedKey("")} />
+      <RotateKeyDialog
+        key={rotationTarget()}
+        loading={rotateKeyMutation.isPending}
+        onClose={() => {
+          setRotationTarget(null);
+          rotateKeyMutation.reset();
+        }}
+        onConfirm={(expiresIn) => {
+          const key = rotationTarget();
+
+          if (key) {
+            rotateKeyMutation.mutate({ id: key.id, expiresIn });
+          }
+        }}
+      />
+      <DeleteKeyDialog
+        keys={deletionTargets()}
+        loading={deleteKeyMutation.isPending}
+        onClose={() => {
+          setDeletionTargets([]);
+          deleteKeyMutation.reset();
+        }}
+        onConfirm={(ids) => deleteKeyMutation.mutate({ ids })}
+      />
       <Show
         when={visibleKeys().length}
         fallback={
@@ -119,8 +149,16 @@ const APIKeyList: Component<APIKeyListProps> = (props) => {
                 canManage={props.canManage}
                 loading={mutationPending() || props.keysRefreshing}
                 onEdit={() => navigate(`${settingsPath()}/key/${encodeURIComponent(key().id)}`)}
-                onRotate={(expiresIn) => rotateKeyMutation.mutate({ id: key().id, expiresIn })}
-                onDelete={(ids) => deleteKeyMutation.mutate({ ids })}
+                onRotate={() => setRotationTarget(key())}
+                onDelete={(ids) => {
+                  setDeletionTargets(
+                    ids.flatMap((id) => {
+                      const target = props.keys.find((candidate) => candidate.id === id);
+
+                      return target ? [target] : [];
+                    })
+                  );
+                }}
               />
             );
           }}

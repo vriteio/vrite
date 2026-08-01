@@ -93,6 +93,7 @@ const TreeItem: Component<TreeItemProps> = (props) => {
 
   createEffect(() => {
     if (isRenaming(props.id)) {
+      setCancelledRef(false);
       setCurrentName(props.label);
     }
   });
@@ -183,6 +184,9 @@ const TreeItem: Component<TreeItemProps> = (props) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
                     e.stopPropagation();
+                    setCancelledRef(true);
+                    props.onRename?.(currentName());
+                    setSelection([]);
                     setRenaming("");
                   }
 

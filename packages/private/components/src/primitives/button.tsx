@@ -103,31 +103,31 @@ const getHoverClasses = (
     return "";
   }
   if (color === "primary" && variant === "text") {
-    return ":base: hover:bg-right hover:text-current hover:bg-clip-border hover:text-white dark:hover:text-current dark:hover:bg-clip-border dark:hover:text-white";
+    return ":base: hover:bg-right focus-visible:bg-right hover:text-current focus-visible:text-current hover:bg-clip-border focus-visible:bg-clip-border hover:text-white focus-visible:text-white dark:hover:text-current dark:focus-visible:text-current dark:hover:bg-clip-border dark:focus-visible:bg-clip-border dark:hover:text-white dark:focus-visible:text-white";
   }
   if (color === "danger" && variant === "text") {
-    return ":base: hover:bg-red-600 hover:bg-opacity-10 dark:hover:bg-red-600 dark:hover:bg-opacity-10";
+    return ":base: hover:bg-red-600 focus-visible:bg-red-600 hover:bg-opacity-10 focus-visible:bg-opacity-10 dark:hover:bg-red-600 dark:focus-visible:bg-red-600 dark:hover:bg-opacity-10 dark:focus-visible:bg-opacity-10";
   }
   if (color === "success" && variant === "text") {
-    return ":base: hover:text-white hover:bg-green-600 dark:hover:bg-green-600 dark:hover:text-white";
+    return ":base: hover:text-white focus-visible:text-white hover:bg-green-600 focus-visible:bg-green-600 dark:hover:bg-green-600 dark:focus-visible:bg-green-600 dark:hover:text-white dark:focus-visible:text-white";
   }
   if (color === "danger") {
-    return ":base: hover:bg-red-600 dark:hover:bg-red-600 hover:border-red-700 dark:hover:border-red-700";
+    return ":base: hover:bg-red-600 focus-visible:bg-red-600 dark:hover:bg-red-600 dark:focus-visible:bg-red-600 hover:border-red-700 focus-visible:border-red-700 dark:hover:border-red-700 dark:focus-visible:border-red-700";
   }
   if (color === "success") {
-    return ":base: hover:bg-green-600 dark:hover:bg-green-600 hover:border-green-700 dark:hover:border-green-700";
+    return ":base: hover:bg-green-600 focus-visible:bg-green-600 dark:hover:bg-green-600 dark:focus-visible:bg-green-600 hover:border-green-700 focus-visible:border-green-700 dark:hover:border-green-700 dark:focus-visible:border-green-700";
   }
   if (color === "primary") {
-    return ":base: hover:bg-right hover:border-primary dark:hover:border-primary";
+    return ":base: hover:bg-right focus-visible:bg-right hover:border-primary focus-visible:border-primary dark:hover:border-primary dark:focus-visible:border-primary";
   }
   if (color === "contrast") {
-    return ":base: hover:bg-gray-100 dark:hover:bg-gray-800 hover:border-gray-200 dark:hover:border-gray-700";
+    return ":base: hover:bg-gray-100 focus-visible:bg-gray-100 dark:hover:bg-gray-800 dark:focus-visible:bg-gray-800 hover:border-gray-200 focus-visible:border-gray-200 dark:hover:border-gray-700 dark:focus-visible:border-gray-700";
   }
   if (variant === "text") {
-    return ":base: hover:bg-gray-200 dark:hover:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-700";
+    return ":base: hover:bg-gray-200 focus-visible:bg-gray-200 dark:hover:bg-gray-800 dark:focus-visible:bg-gray-800 hover:border-gray-300 focus-visible:border-gray-300 dark:hover:border-gray-700 dark:focus-visible:border-gray-700";
   }
 
-  return ":base: hover:shadow-inner dark:hover:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-700";
+  return ":base: hover:shadow-inner focus-visible:shadow-inner dark:hover:bg-gray-800 dark:focus-visible:bg-gray-800 hover:border-gray-300 focus-visible:border-gray-300 dark:hover:border-gray-700 dark:focus-visible:border-gray-700";
 };
 const getUnderlineClasses = (
   color: ButtonColor,
@@ -138,7 +138,7 @@ const getUnderlineClasses = (
   if (hover !== "underline") return "";
 
   const baseUnderline =
-    ":base: after:absolute after:opacity-0 after:transition after:delay-50 after:duration-200 after:ease-out after:origin-left after:scale-x-0 after:w-full after:h-1px after:bottom-px after:left-0 after-rounded-lg after:content-[''] hover:after:scale-100 hover:after:opacity-100";
+    ":base: after:absolute after:opacity-0 after:transition after:delay-50 after:duration-200 after:ease-out after:origin-left after:scale-x-0 after:w-full after:h-1px after:bottom-px after:left-0 after-rounded-lg after:content-[''] hover:after:scale-100 focus-visible:after:scale-100 hover:after:opacity-100 focus-visible:after:opacity-100";
 
   if (color === "primary" && variant === "text") {
     return clsx(baseUnderline, ":base: after:bg-gradient-to-tr");
@@ -178,7 +178,9 @@ const Button: Component<ButtonProps> = (providedProps) => {
     "size",
     "link",
     "badge",
-    "children"
+    "children",
+    "onClick",
+    "tabIndex"
   ]);
   const component = createMemo(() => {
     if (props.link) return "a";
@@ -186,13 +188,17 @@ const Button: Component<ButtonProps> = (providedProps) => {
     return "button";
   });
   const tabIndex = createMemo(() => {
+    if (component() === "a" && (props.disabled || props.loading)) return -1;
     if (typeof props.tabIndex !== "undefined") return props.tabIndex;
     return undefined;
   });
+  const disabled = createMemo(() => Boolean(props.disabled || props.loading));
+  const disabledLink = createMemo(() => component() === "a" && disabled());
 
   return (
     <Dynamic
       component={component()}
+      {...passedProps}
       class={clsx(
         baseClasses,
         sizeClasses[props.size],
@@ -200,12 +206,21 @@ const Button: Component<ButtonProps> = (providedProps) => {
         getColorClasses(props.color, props.variant),
         getTextClasses(props.text),
         getHoverClasses(props.color, props.variant, props.hover),
+        disabledLink() && "opacity-70 pointer-events-none",
         props.class
       )}
-      disabled={props.disabled || props.loading}
+      disabled={component() === "button" ? disabled() : undefined}
+      aria-disabled={disabledLink() || undefined}
       tabIndex={tabIndex()}
-      href={props.link}
-      {...passedProps}
+      href={disabledLink() ? undefined : props.link}
+      onClick={
+        disabledLink()
+          ? (event: MouseEvent) => {
+              event.preventDefault();
+              event.stopImmediatePropagation();
+            }
+          : props.onClick
+      }
     >
       <div
         class={clsx(

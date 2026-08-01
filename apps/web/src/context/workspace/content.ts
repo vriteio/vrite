@@ -79,6 +79,7 @@ const useWorkspaceContent = (workspaceID: Accessor<string>) => {
   const isOnline = useConnectivitySignal();
   const [contentCollections, setContentCollections] = createSignal(createWorkspaceCollections());
   const [loading, setLoading] = createSignal(Boolean(workspaceID()));
+  const [snapshotError, setSnapshotError] = createSignal(false);
   const entriesCollection = () => contentCollections().entries;
   const collectionsCollection = () => contentCollections().collections;
   const contentOperations = createWorkspaceContentOperations({
@@ -128,6 +129,7 @@ const useWorkspaceContent = (workspaceID: Accessor<string>) => {
 
     applyCollectionSnapshot(targetCollections.entries, tree.entries);
     applyCollectionSnapshot(targetCollections.collections, tree.collections);
+    setSnapshotError(false);
     setLoading(false);
   };
   const syncWorkspaceContent = async (targetWorkspaceID: string) => {
@@ -141,10 +143,13 @@ const useWorkspaceContent = (workspaceID: Accessor<string>) => {
         { workspaceID: targetWorkspaceID, ...explorerTree },
         targetCollections
       );
-    } catch {
+    } catch (error) {
       if (contentCollections().workspaceID === targetWorkspaceID) {
+        setSnapshotError(true);
         setLoading(false);
       }
+
+      throw error;
     }
   };
   const applyWorkspaceEvent = (targetWorkspaceID: string, event: WorkspaceEvent) => {
@@ -202,6 +207,7 @@ const useWorkspaceContent = (workspaceID: Accessor<string>) => {
   };
   const switchWorkspace = async (currentWorkspaceID: string, previousWorkspaceID?: string) => {
     setLoading(Boolean(currentWorkspaceID));
+    setSnapshotError(false);
 
     const previousCollections = contentCollections();
     const nextCollections = createWorkspaceCollections(currentWorkspaceID);
@@ -224,7 +230,9 @@ const useWorkspaceContent = (workspaceID: Accessor<string>) => {
       return;
     }
 
-    setLoading(false);
+    if (nextCollections.entries.findOne({}) || nextCollections.collections.findOne({})) {
+      setLoading(false);
+    }
   };
 
   createEffect(
@@ -240,6 +248,7 @@ const useWorkspaceContent = (workspaceID: Accessor<string>) => {
     applyWorkspaceEvent,
     syncWorkspaceContent,
     loading,
+    snapshotError,
     readOnly,
     offline,
     ...contentOperations

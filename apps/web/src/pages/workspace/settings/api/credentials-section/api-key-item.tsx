@@ -15,16 +15,9 @@ interface APIKeyItemProps {
   expiresAt: string | null;
   loading?: boolean;
   onEdit(): void;
-  onRotate(expiresIn: "now" | "1h" | "24h" | "7d"): void;
+  onRotate(): void;
   onDelete(ids: string[]): void;
 }
-
-const expirationOptions = [
-  { value: "now", label: "Expire now" },
-  { value: "1h", label: "In 1 hour" },
-  { value: "24h", label: "In 24 hours" },
-  { value: "7d", label: "In 7 days" }
-] as const;
 
 const APIKeyItem: Component<APIKeyItemProps> = (props) => {
   const [{ selection }, { setSelection }] = useTree();
@@ -39,12 +32,9 @@ const APIKeyItem: Component<APIKeyItemProps> = (props) => {
             [
               { label: "Edit", icon: "i-lucide:pencil", onClick: props.onEdit },
               {
-                label: "Rotate",
+                label: "Rotate key",
                 icon: "i-lucide:rotate-ccw-key",
-                items: expirationOptions.map((option) => ({
-                  label: option.label,
-                  onClick: () => props.onRotate(option.value)
-                }))
+                onClick: props.onRotate
               }
             ]
           ]

@@ -6,6 +6,7 @@ import {
   createEffect,
   createMemo,
   createSignal,
+  on,
   onCleanup,
   onMount,
   Show
@@ -177,6 +178,7 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
         {
           label: "Copy ID",
           icon: "i-lucide:copy",
+          shortcut: "$mod+alt+c",
           onClick: () => {
             navigator.clipboard.writeText(props.collection.id);
             notify({
@@ -193,7 +195,7 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
 
             setRenaming(props.collection.id);
           },
-          shortcut: "shift+r"
+          shortcut: "f2"
         }
       ]);
       opts.push([
@@ -242,7 +244,8 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
 
           content.deleteContent(isMulti ? selectedIDs : [props.collection.id]);
           setSelection([]);
-        }
+        },
+        shortcut: "$mod+backspace"
       }
     ]);
 
@@ -364,13 +367,15 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
     );
   };
 
-  createEffect(() => {
-    if (menuOpened()) {
+  createEffect(
+    on(menuOpened, (opened) => {
+      if (!opened) return;
+
       setSelection((selection) => {
         return selection.includes(props.collection.id) ? selection : [props.collection.id];
       });
-    }
-  });
+    })
+  );
 
   onMount(() => {
     const element = elementRef();

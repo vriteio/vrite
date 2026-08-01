@@ -100,7 +100,7 @@ const SubscriptionAction: Component = () => {
       window.location.href = url;
     },
     onError: () => {
-      notify({ text: "Failed to initiate checkout", type: "error" });
+      notify({ text: "Couldn't start checkout. Please try again.", type: "error" });
     },
     mutationFn: async () => {
       const { url } = await client.billing.checkout();
@@ -113,7 +113,7 @@ const SubscriptionAction: Component = () => {
       window.location.href = url;
     },
     onError: () => {
-      notify({ text: "Failed to open billing portal", type: "error" });
+      notify({ text: "Couldn't open the billing portal. Please try again.", type: "error" });
     },
     mutationFn: async () => {
       const { url } = await client.billing.portal();

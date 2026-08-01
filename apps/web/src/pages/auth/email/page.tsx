@@ -1,6 +1,14 @@
-import { Component, createEffect, createSignal, Match, Switch } from "solid-js";
+import { Component, createEffect, createSignal, Match, onCleanup, Show, Switch } from "solid-js";
 import { Title } from "@solidjs/meta";
-import { IconButton, Button, OTPInput, Input, Tooltip } from "@andesine/components";
+import {
+  IconButton,
+  Button,
+  OTPInput,
+  Input,
+  Skeleton,
+  Tooltip,
+  createRef
+} from "@andesine/components";
 import { createAsync, query, useSearchParams } from "@solidjs/router";
 import { useNotify } from "#web/context/notifications";
 import { authClient, client } from "#web/lib/client";
@@ -19,6 +27,19 @@ const EmailPage: Component = () => {
   const [view, setView] = createSignal<"form" | "otp">("form");
   const [email, setEmail] = createSignal("");
   const [otp, setOTP] = createSignal("");
+  const [throttlingOTP, setThrottlingOTP] = createSignal(false);
+  const [otpThrottleTimeout, setOTPThrottleTimeout] = createRef(0);
+  const throttleOTP = () => {
+    if (otpThrottleTimeout()) clearTimeout(otpThrottleTimeout());
+
+    setThrottlingOTP(true);
+    setOTPThrottleTimeout(
+      window.setTimeout(() => {
+        setThrottlingOTP(false);
+        setOTPThrottleTimeout(0);
+      }, 5_000)
+    );
+  };
   const otpToken = () => `${searchParams.token || ""}`;
   const mode = () => (searchParams.mode === "sign-in" ? "sign-in" : "sign-up");
   const redirectTo = () =>
@@ -67,12 +88,13 @@ const EmailPage: Component = () => {
     }
   }));
   const handleSendOTP = async () => {
-    if (!validateEmail(email()) || verifyOTPMutation.isPending) return;
+    if (!validateEmail(email()) || sendOTPMutation.isPending || verifyOTPMutation.isPending) return;
 
     try {
       await sendOTPMutation.mutateAsync({ email: email(), mode: mode() });
 
       setView("otp");
+      throttleOTP();
     } catch (error) {
       notify({ type: "error", text: "Couldn't continue with email" });
     }
@@ -88,8 +110,13 @@ const EmailPage: Component = () => {
     }
   };
   const handleResendOTP = async () => {
+    if (sendOTPMutation.isPending || verifyOTPMutation.isPending || throttlingOTP()) {
+      return;
+    }
+
     try {
       await sendOTPMutation.mutateAsync({ email: email(), mode: mode() });
+      throttleOTP();
       notify({ type: "success", text: "Code resent" });
     } catch (error) {
       notify({ type: "error", text: "Couldn't resend code" });
@@ -100,6 +127,10 @@ const EmailPage: Component = () => {
     if (otp().length === 6) {
       handleVerifyOTP();
     }
+  });
+
+  onCleanup(() => {
+    if (otpThrottleTimeout()) clearTimeout(otpThrottleTimeout());
   });
 
   if (verifyOTPTokenResult()) {
@@ -227,20 +258,29 @@ const EmailPage: Component = () => {
           </div>
           <div class="flex flex-col items-start justify-center w-full transform text-sm text-gray-400 dark:text-gray-500">
             <span>Didn't receive the code?</span>
-            <IconButton
-              icon="i-lucide:rotate-cw"
-              iconProps={{
-                class: "w-3.5 h-3.5"
-              }}
-              variant="text"
-              text="primary"
-              color="primary"
-              size="small"
-              label={() => <span>Resend</span>}
-              onClick={handleResendOTP}
-              hover="underline"
-              class="flex-row-reverse gap-1 inline-flex font-medium px-0 -mt-1"
-            ></IconButton>
+            <div class="relative inline-flex -mt-1">
+              <IconButton
+                icon="i-lucide:rotate-cw"
+                iconProps={{
+                  class: "w-3.5 h-3.5"
+                }}
+                variant="text"
+                text="primary"
+                color="primary"
+                size="small"
+                label={() => <span>Resend</span>}
+                loading={sendOTPMutation.isPending}
+                disabled={
+                  sendOTPMutation.isPending || verifyOTPMutation.isPending || throttlingOTP()
+                }
+                onClick={handleResendOTP}
+                hover="underline"
+                class="flex-row-reverse gap-1 inline-flex font-medium px-0"
+              />
+              <Show when={throttlingOTP()}>
+                <Skeleton class="absolute inset-0 rounded-lg" />
+              </Show>
+            </div>
           </div>
         </Match>
       </Switch>

@@ -11,6 +11,10 @@ const NewKeyDialog: Component<NewKeyDialogProps> = (props) => {
   const notify = useNotify();
   const [visibleKey, setVisibleKey] = createSignal(props.key);
   const [copied, setCopied] = createSignal(false);
+  const handleClose = () => {
+    props.onClose();
+    setTimeout(() => setVisibleKey(""), 300);
+  };
   const copyKey = async () => {
     const rawKey = visibleKey();
 
@@ -26,11 +30,13 @@ const NewKeyDialog: Component<NewKeyDialogProps> = (props) => {
   };
 
   createEffect(() => {
-    setVisibleKey(props.key);
+    if (props.key) {
+      setVisibleKey(props.key);
+    }
   });
 
   return (
-    <Overlay opened={Boolean(props.key)} onOverlayClick={props.onClose}>
+    <Overlay opened={Boolean(props.key)} onOverlayClick={handleClose}>
       <Card color="contrast" class="p-1.5">
         <Card class="flex w-lg flex-col gap-3 p-4 rounded-xl" shade>
           <div class="flex flex-col gap-0.5">
@@ -52,7 +58,7 @@ const NewKeyDialog: Component<NewKeyDialogProps> = (props) => {
               text="soft"
               size="small"
               icon="i-lucide:x"
-              onClick={props.onClose}
+              onClick={handleClose}
             />
             <Button
               color="primary"

@@ -73,9 +73,12 @@ const createEntryOperations = (input: WorkspaceContentOperationsInput) => {
     return orders;
   };
   const createEntry = (collectionID?: string): Entry | undefined => {
+    const firstSibling = getEntriesInCollection(collectionID ?? null)[0];
     const entry: Entry = {
       id: toEntryID(generateUUID()),
-      order: `${LexoRank.min()}`,
+      order: firstSibling
+        ? `${LexoRank.parse(firstSibling.order).genNext()}`
+        : `${LexoRank.middle()}`,
       name: "Untitled",
       collectionID
     };
@@ -83,7 +86,11 @@ const createEntryOperations = (input: WorkspaceContentOperationsInput) => {
     applyEntryCreate(entry);
 
     const createRequest = client.entries.create(entry).then((createdEntry) => {
-      applyEntryCreate(createdEntry);
+      const current = entriesCollection().findOne({ id: entry.id });
+
+      if (current?.order === entry.order && current.collectionID === entry.collectionID) {
+        applyEntryUpdate(entry.id, { order: createdEntry.order });
+      }
     });
 
     pendingCreates.set(entry.id, createRequest);

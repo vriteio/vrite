@@ -1,19 +1,17 @@
-import { Skeleton, Spinner } from "@andesine/components";
-import { Component, createEffect, createSignal, Show, Suspense } from "solid-js";
+import { createRef, Skeleton } from "@andesine/components";
+import { Component, createEffect, createMemo, Show, Suspense } from "solid-js";
 import { Editor, type EditorProvider } from "@andesine/editor";
-import { useParams } from "@solidjs/router";
+import { useNavigate, useParams } from "@solidjs/router";
 import { useNotify } from "#web/context/notifications";
 import { config } from "#web/lib/config";
 import { useWorkspace } from "#web/context/workspace";
 import { IndexeddbPersistence } from "y-indexeddb";
 import { getWorkspaceEntryDatabaseName } from "#web/context/workspace/persistence";
-
-type EntryLoadState = {
-  entryID: string | null;
-  isCheckingLocal: boolean;
-  hasLocalSnapshot: boolean;
-  isRemoteSyncing: boolean;
-};
+import {
+  CollaborationStatusIndicator,
+  type CollaborationStatus
+} from "./collaboration-status-indicator";
+import { type EntryLoadState, useEntryLoadState } from "./entry-load-state";
 
 const collaborationColors = ["#0ea5e9", "#f97316", "#22c55e", "#eab308", "#ec4899", "#8b5cf6"];
 
@@ -28,44 +26,54 @@ const getCollaborationColor = (seed: string) => {
   return collaborationColors[Math.abs(hash) % collaborationColors.length];
 };
 
-const createEntryLoadState = (entryID: string | null): EntryLoadState => {
-  return {
-    entryID,
-    isCheckingLocal: Boolean(entryID),
-    hasLocalSnapshot: false,
-    isRemoteSyncing: false
-  };
+const getCollaborationStatus = (state: EntryLoadState): CollaborationStatus => {
+  if (state.problem) return state.problem;
+  if (state.unsyncedChanges > 0) {
+    return state.connection === "disconnected" ? "offline-changes" : "saved-locally";
+  }
+  if (state.connection === "connected" && state.synced) return "synced";
+
+  return "connecting";
 };
 
 const EntryContentSkeleton: Component = () => {
   return (
     <div class="absolute inset-0 z-10 bg-gray-50 dark:bg-gray-950">
-      <div class="mx-auto flex h-full w-full max-w-[44rem] flex-col gap-4 px-5 py-8 animate-pulse">
-        <div class="h-9 w-3/5 rounded-xl bg-gray-200 dark:bg-gray-800" />
-        <div class="h-4 w-full rounded-full bg-gray-100 dark:bg-gray-900" />
-        <div class="h-4 w-11/12 rounded-full bg-gray-100 dark:bg-gray-900" />
-        <div class="h-4 w-4/5 rounded-full bg-gray-100 dark:bg-gray-900" />
-        <div class="h-4 w-full rounded-full bg-gray-100 dark:bg-gray-900" />
-        <div class="h-4 w-10/12 rounded-full bg-gray-100 dark:bg-gray-900" />
-        <div class="h-32 w-full rounded-2xl bg-gray-100 dark:bg-gray-900" />
-        <div class="h-4 w-3/4 rounded-full bg-gray-100 dark:bg-gray-900" />
-        <div class="h-4 w-full rounded-full bg-gray-100 dark:bg-gray-900" />
-        <div class="h-4 w-5/6 rounded-full bg-gray-100 dark:bg-gray-900" />
+      <div class="relative mx-auto flex w-full max-w-[44rem] flex-col gap-2 px-5 py-8">
+        <Skeleton
+          class={["h-12 w-4/5", "h-32 w-full", "h-24 w-full", "h-8 w-3/5", "h-40 w-full"]}
+        />
+        <div
+          class="pointer-events-none absolute inset-0 text-gray-50 dark:text-gray-950"
+          style={{ background: "linear-gradient(to bottom, transparent 15%, currentColor 100%)" }}
+        />
       </div>
     </div>
   );
 };
 
 const EditorPane: Component = () => {
-  const { currentWorkspace, currentSession, content } = useWorkspace();
+  const { currentWorkspace, currentSession, content, hasPermission } = useWorkspace();
   const isContentLoading = () => content.loading();
   const params = useParams();
+  const navigate = useNavigate();
   const notify = useNotify();
-  const [entryLoadState, setEntryLoadState] = createSignal<EntryLoadState>(
-    createEntryLoadState(null)
-  );
   const selectedEntryID = () => params.slug;
+  const availableEntryID = createMemo(() => {
+    const entryID = selectedEntryID();
+
+    if (!entryID) return null;
+
+    return content.entriesCollection().findOne({ id: entryID })?.id ?? null;
+  });
+  const editableEntryID = createMemo(() => {
+    return hasPermission("content") ? availableEntryID() : null;
+  });
   const workspaceID = () => params.workspaceID || currentWorkspace()?.id || "unknown";
+  const [openedEntryID, setOpenedEntryID] = createRef<string | null>(null);
+  const { entryLoadState, setLocalSnapshot, retryCollaboration, handleProvider } =
+    useEntryLoadState(selectedEntryID);
+  const collaborationStatus = () => getCollaborationStatus(entryLoadState());
   const isShowingContentSkeleton = () => {
     const entryID = selectedEntryID();
     const currentState = entryLoadState();
@@ -73,33 +81,11 @@ const EditorPane: Component = () => {
     return Boolean(
       entryID &&
       currentState.entryID === entryID &&
-      (currentState.isCheckingLocal ||
-        (!currentState.hasLocalSnapshot && currentState.isRemoteSyncing))
+      !currentState.isCheckingLocal &&
+      !currentState.hasLocalSnapshot &&
+      collaborationStatus() === "connecting"
     );
   };
-  const isRemoteSyncing = () => {
-    const entryID = selectedEntryID();
-    const currentState = entryLoadState();
-
-    return Boolean(
-      entryID &&
-      currentState.entryID === entryID &&
-      currentState.hasLocalSnapshot &&
-      currentState.isRemoteSyncing
-    );
-  };
-
-  createEffect(() => {
-    const entryID = selectedEntryID();
-
-    if (!entryID) {
-      setEntryLoadState(createEntryLoadState(null));
-      return;
-    }
-
-    setEntryLoadState(createEntryLoadState(entryID));
-  });
-
   const handleBeforeProviderAttach = async (provider: EditorProvider) => {
     const entryID = provider.configuration.name;
     const currentWorkspaceID = workspaceID();
@@ -116,48 +102,13 @@ const EditorPane: Component = () => {
 
     const hasLocalSnapshot = provider.document.store.clients.size > 0;
 
-    setEntryLoadState((currentState) => {
-      if (currentState.entryID !== entryID) {
-        return currentState;
-      }
-
-      return {
-        entryID,
-        isCheckingLocal: false,
-        hasLocalSnapshot,
-        isRemoteSyncing: !hasLocalSnapshot
-      };
-    });
+    setLocalSnapshot(entryID, hasLocalSnapshot);
 
     return () => {
       persistence.destroy();
     };
   };
 
-  const handleProvider = (provider: EditorProvider) => {
-    const docID = provider.configuration.name;
-
-    const handleSynced = (event: { state: boolean }) => {
-      setEntryLoadState((currentState) => {
-        if (currentState.entryID !== docID) {
-          return currentState;
-        }
-
-        return {
-          ...currentState,
-          isRemoteSyncing: !event.state
-        };
-      });
-    };
-
-    handleSynced({ state: provider.synced });
-
-    provider.on("synced", handleSynced);
-
-    return () => {
-      provider.off("synced", handleSynced);
-    };
-  };
   const collaborationUser = () => {
     const session = currentSession();
     const user = session?.user;
@@ -170,8 +121,20 @@ const EditorPane: Component = () => {
     };
   };
 
+  createEffect(() => {
+    const selectedID = selectedEntryID();
+    const availableID = availableEntryID();
+
+    if (availableID) {
+      setOpenedEntryID(availableID);
+    } else if (selectedID && openedEntryID() === selectedID && !isContentLoading()) {
+      setOpenedEntryID(null);
+      navigate(`/${workspaceID()}`, { replace: true });
+    }
+  });
+
   return (
-    <div class="flex flex-1 px-4 overflow-hidden w-full">
+    <div class="flex flex-1 px-1 overflow-hidden w-full">
       <Show
         when={selectedEntryID()}
         fallback={
@@ -184,7 +147,7 @@ const EditorPane: Component = () => {
         }
       >
         <Show
-          when={selectedEntryID()}
+          when={availableEntryID()}
           keyed
           fallback={
             <Show
@@ -207,30 +170,38 @@ const EditorPane: Component = () => {
               <Show when={isShowingContentSkeleton()}>
                 <EntryContentSkeleton />
               </Show>
-              <Show when={isRemoteSyncing()}>
-                <div class="absolute bottom-4 right-4 z-20 inline-flex items-center gap-2 rounded-full border border-sky-200 bg-white/95 px-3 py-1.5 text-xs text-sky-700 shadow-sm dark:border-sky-900 dark:bg-gray-950/95 dark:text-sky-300">
-                  <Spinner class="h-3.5 w-3.5" color="primary" />
-                  <span>Syncing</span>
-                </div>
-              </Show>
-              <Suspense fallback={<Skeleton />}>
-                <Editor
-                  doc={entryID}
-                  url={`${config.PUBLIC_WS_API_URL}/collab`}
-                  notify={(type, text) => notify({ type, text })}
-                  collaborationUser={collaborationUser()}
-                  beforeProviderAttach={handleBeforeProviderAttach}
-                  onProvider={handleProvider}
-                  onTitleChange={(title) => {
-                    const entries = content.entriesCollection();
-                    const entry = entries.findOne({ id: entryID });
-
-                    if (entry && entry.name !== title) {
-                      entries.updateOne({ id: entryID }, { $set: { name: title } });
-                    }
-                  }}
+              <Show when={!entryLoadState().isCheckingLocal}>
+                <CollaborationStatusIndicator
+                  status={collaborationStatus()}
+                  hasLocalSnapshot={entryLoadState().hasLocalSnapshot}
+                  onRetry={retryCollaboration}
+                  onBack={() => navigate(`/${workspaceID()}`)}
                 />
-              </Suspense>
+              </Show>
+              <div
+                class="h-full w-full"
+                classList={{ invisible: entryLoadState().isCheckingLocal }}
+              >
+                <Suspense fallback={<Skeleton />}>
+                  <Editor
+                    doc={entryID}
+                    url={`${config.PUBLIC_WS_API_URL}/collab`}
+                    editable={editableEntryID() === entryID}
+                    notify={(type, text) => notify({ type, text })}
+                    collaborationUser={collaborationUser()}
+                    beforeProviderAttach={handleBeforeProviderAttach}
+                    onProvider={handleProvider}
+                    onTitleChange={(title) => {
+                      const entries = content.entriesCollection();
+                      const entry = entries.findOne({ id: entryID }, { reactive: false });
+
+                      if (entry && entry.name !== title) {
+                        entries.updateOne({ id: entryID }, { $set: { name: title } });
+                      }
+                    }}
+                  />
+                </Suspense>
+              </div>
             </div>
           )}
         </Show>

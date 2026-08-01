@@ -34,7 +34,7 @@ const Explorer = () => {
   const notify = useNotify();
   const navigate = useNavigate();
   const [
-    { focusedID, selection, flattenedLayout, flattenedOrder, gap },
+    { focusedID, selection, flattenedLayout, flattenedOrder, gap, isExpanded },
     {
       setExactSelection,
       setExpanded,
@@ -55,6 +55,11 @@ const Explorer = () => {
   const [pointerDown, setPointerDown] = createSignal(false);
   const [selectionRangeAnchorID, setSelectionRangeAnchorID] = createSignal<string | null>(null);
   const [selectionRangeHeadID, setSelectionRangeHeadID] = createSignal<string | null>(null);
+  const [typeaheadQuery, setTypeaheadQuery] = createRef("");
+  const [typeaheadTimeout, setTypeaheadTimeout] = createRef(0);
+  const [marqueeInitialSelection, setMarqueeInitialSelection] = createRef<string[]>([]);
+  const [marqueeMode, setMarqueeMode] = createRef<"replace" | "add" | "remove">("replace");
+  const [marqueeScrollFrame, setMarqueeScrollFrame] = createRef(0);
   const [boxSelection, setBoxSelection] = createSignal({
     active: false,
     x: 0,
@@ -118,6 +123,12 @@ const Explorer = () => {
     if (scroll) {
       queueMicrotask(() => scrollFocusedItemIntoView(id));
     }
+  };
+  const focusSingleItem = (id: string, scroll = false) => {
+    setExactSelection([]);
+    setSelectionRangeAnchorID(null);
+    setSelectionRangeHeadID(null);
+    focusVisibleItem(id, scroll);
   };
   const getCommandTargetID = () => {
     const selected = selection();
@@ -244,6 +255,8 @@ const Explorer = () => {
 
     if (!id) return false;
 
+    setExactSelection([]);
+
     if (content.getCollection(id)) {
       toggleExpanded(id);
 
@@ -275,9 +288,134 @@ const Explorer = () => {
 
     if (!nextID) return false;
 
+    focusSingleItem(nextID, true);
+
+    return true;
+  };
+  const navigateFocusedHierarchy = (direction: "left" | "right") => {
+    const id = getFocusedVisibleID();
+
+    if (!id) return false;
+
+    const collection = content.getCollection(id);
+
+    if (direction === "right") {
+      if (!collection) return false;
+
+      if (!isExpanded(id)) {
+        setExactSelection([]);
+        toggleExpanded(id);
+
+        return true;
+      }
+
+      const level = content.getContentTreeLevel(id);
+      const firstChild = level.collections()[0]?.id ?? level.entries()[0]?.id;
+
+      if (firstChild) {
+        focusSingleItem(firstChild, true);
+      }
+
+      return true;
+    }
+
+    if (collection && isExpanded(id)) {
+      setExactSelection([]);
+      toggleExpanded(id);
+
+      return true;
+    }
+
+    const parentID = collection?.ancestors.at(-1) ?? content.getEntry(id)?.collectionID;
+
+    if (parentID) {
+      focusSingleItem(parentID, true);
+
+      return true;
+    }
+
+    return false;
+  };
+  const toggleFocusedSelection = () => {
+    const id = getFocusedVisibleID();
+
+    if (!id) return false;
+
+    setExactSelection(
+      selection().includes(id)
+        ? selection().filter((selectedID) => selectedID !== id)
+        : [...selection(), id]
+    );
     setSelectionRangeAnchorID(null);
     setSelectionRangeHeadID(null);
-    focusVisibleItem(nextID, true);
+
+    return true;
+  };
+  const selectAllVisible = () => {
+    const visibleIDs = getVisibleIDs();
+
+    if (visibleIDs.length === 0) return false;
+
+    setExactSelection(visibleIDs);
+    setSelectionRangeAnchorID(null);
+    setSelectionRangeHeadID(null);
+
+    return true;
+  };
+  const copyCommandTargetID = () => {
+    const id = getCommandTargetID();
+
+    if (!id) return false;
+
+    void navigator.clipboard.writeText(id);
+    notify({ text: "ID copied to clipboard", type: "success" });
+
+    return true;
+  };
+  const focusTypeaheadMatch = (event: KeyboardEvent) => {
+    if (
+      event.metaKey ||
+      event.ctrlKey ||
+      event.altKey ||
+      event.key.length !== 1 ||
+      !event.key.trim()
+    ) {
+      return false;
+    }
+
+    window.clearTimeout(typeaheadTimeout());
+
+    const visibleIDs = getVisibleIDs();
+
+    if (visibleIDs.length === 0) return false;
+
+    const character = event.key.toLocaleLowerCase();
+    let query = `${typeaheadQuery()}${character}`;
+    const currentIndex = focusedID() ? visibleIDs.indexOf(focusedID()!) : -1;
+    const candidates = [
+      ...visibleIDs.slice(currentIndex + 1),
+      ...visibleIDs.slice(0, currentIndex + 1)
+    ];
+    const getLabel = (id: string) => {
+      return (
+        content.getCollection(id)?.name ??
+        content.getEntry(id)?.name ??
+        ""
+      ).toLocaleLowerCase();
+    };
+    let match = candidates.find((id) => getLabel(id).startsWith(query));
+
+    if (!match && query.length > 1) {
+      query = character;
+      match = candidates.find((id) => getLabel(id).startsWith(query));
+    }
+
+    setTypeaheadQuery(query);
+    setTypeaheadTimeout(window.setTimeout(() => setTypeaheadQuery(""), 700));
+
+    if (!match) return false;
+
+    focusSingleItem(match, true);
 
     return true;
   };
@@ -355,6 +493,22 @@ const Explorer = () => {
       return;
     }
 
+    if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+      if (navigateFocusedHierarchy(event.key === "ArrowLeft" ? "left" : "right")) {
+        event.preventDefault();
+      }
+
+      return;
+    }
+
+    if (event.key === " ") {
+      if (toggleFocusedSelection()) {
+        event.preventDefault();
+      }
+
+      return;
+    }
+
     if (event.key === "Enter") {
       if (activateFocusedItem()) {
         event.preventDefault();
@@ -363,10 +517,25 @@ const Explorer = () => {
       return;
     }
 
-    if (event.shiftKey && event.key.toLowerCase() === "r") {
+    if (event.key === "F2") {
       if (renameCommandTarget()) {
         event.preventDefault();
       }
+
+      return;
+    }
+
+    if (event.key === "Escape" && selection().length > 0) {
+      setExactSelection([]);
+      setSelectionRangeAnchorID(null);
+      setSelectionRangeHeadID(null);
+      event.preventDefault();
+
+      return;
+    }
+
+    if (focusTypeaheadMatch(event)) {
+      event.preventDefault();
     }
   };
   const canHandleExplorerShortcut = () => {
@@ -401,6 +570,83 @@ const Explorer = () => {
     setPointerInsideExplorer(false);
     resetExplorerFocus();
   };
+  const stopMarqueeAutoScroll = () => {
+    window.cancelAnimationFrame(marqueeScrollFrame());
+    setMarqueeScrollFrame(0);
+  };
+  const applyMarqueeSelection = (currentBox = boxSelection()) => {
+    const container = treeContainerRef();
+
+    if (!container || !currentBox.active) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const scrollTop = container.scrollTop;
+    const selectionLeft = Math.min(currentBox.x, currentBox.currentX);
+    const selectionRight = Math.max(currentBox.x, currentBox.currentX);
+    const selectionTop = Math.min(currentBox.y, currentBox.currentY);
+    const selectionBottom = Math.max(currentBox.y, currentBox.currentY);
+    const selectedIDs = flattenedLayout().flatMap((item) => {
+      const itemTop = containerRect.top + item.top - scrollTop;
+      const itemBottom = itemTop + item.height;
+      const intersects =
+        containerRect.left < selectionRight &&
+        itemTop < selectionBottom &&
+        containerRect.right > selectionLeft &&
+        itemBottom > selectionTop;
+
+      return intersects ? [item.id] : [];
+    });
+    const initialSelection = marqueeInitialSelection();
+    const mode = marqueeMode();
+
+    if (mode === "add") {
+      setExactSelection(Array.from(new Set([...initialSelection, ...selectedIDs])));
+    } else if (mode === "remove") {
+      const selectedIDSet = new Set(selectedIDs);
+
+      setExactSelection(initialSelection.filter((id) => !selectedIDSet.has(id)));
+    } else {
+      setExactSelection(selectedIDs);
+    }
+  };
+  const autoScrollMarquee = () => {
+    stopMarqueeAutoScroll();
+
+    const scroll = () => {
+      const container = treeContainerRef();
+      const currentBox = boxSelection();
+
+      if (!container || !pointerDown() || !currentBox.active) {
+        stopMarqueeAutoScroll();
+
+        return;
+      }
+
+      const rect = container.getBoundingClientRect();
+      const threshold = 36;
+      const pointerY = currentBox.currentY;
+      const speed =
+        pointerY < rect.top + threshold
+          ? Math.max(-12, (pointerY - rect.top - threshold) / 3)
+          : pointerY > rect.bottom - threshold
+            ? Math.min(12, (pointerY - rect.bottom + threshold) / 3)
+            : 0;
+
+      if (speed !== 0) {
+        const previousScrollTop = container.scrollTop;
+
+        container.scrollTop += speed;
+
+        if (container.scrollTop !== previousScrollTop) {
+          applyMarqueeSelection(currentBox);
+        }
+      }
+
+      setMarqueeScrollFrame(window.requestAnimationFrame(scroll));
+    };
+
+    setMarqueeScrollFrame(window.requestAnimationFrame(scroll));
+  };
   const onPointerDown = (event: PointerEvent) => {
     if (!(event.target instanceof HTMLElement)) return;
     if (
@@ -411,6 +657,16 @@ const Explorer = () => {
     }
     if (event.button === 0) {
       document.documentElement.style.userSelect = "none";
+      setMarqueeInitialSelection(selection());
+      setMarqueeMode(
+        event.altKey
+          ? "remove"
+          : event.metaKey || event.ctrlKey || event.shiftKey
+            ? "add"
+            : "replace"
+      );
+      setSelectionRangeAnchorID(null);
+      setSelectionRangeHeadID(null);
       setPointerDown(true);
       setBoxSelection({
         active: false,
@@ -426,6 +682,7 @@ const Explorer = () => {
   const onPointerMove = (event: PointerEvent) => {
     if (!pointerDown()) return;
 
+    const wasActive = boxSelection().active;
     const newBoxSelectionWidth = Math.abs(event.clientX - boxSelection().x);
     const newBoxSelectionHeight = Math.abs(event.clientY - boxSelection().y);
     const activationThreshold = 10;
@@ -445,57 +702,25 @@ const Explorer = () => {
 
     if (!newBoxSelection.active) return;
 
-    const selectedIDs: string[] = [];
-    const containerEl = treeContainerRef();
+    applyMarqueeSelection(newBoxSelection);
 
-    if (containerEl) {
-      const containerRect = containerEl.getBoundingClientRect();
-      const scrollTop = containerEl.scrollTop;
-      const selLeft = Math.min(newBoxSelection.x, newBoxSelection.currentX ?? newBoxSelection.x);
-      const selRight = Math.max(newBoxSelection.x, newBoxSelection.currentX ?? newBoxSelection.x);
-      const selTop = Math.min(newBoxSelection.y, newBoxSelection.currentY ?? newBoxSelection.y);
-      const selBottom = Math.max(newBoxSelection.y, newBoxSelection.currentY ?? newBoxSelection.y);
-
-      flattenedLayout().forEach((item) => {
-        const itemTop = containerRect.top + item.top - scrollTop;
-        const itemBottom = itemTop + item.height;
-
-        if (
-          containerRect.left < selRight &&
-          itemTop < selBottom &&
-          containerRect.right > selLeft &&
-          itemBottom > selTop
-        ) {
-          selectedIDs.push(item.id);
-        }
-      });
+    if (!wasActive) {
+      autoScrollMarquee();
     }
-
-    setSelection((currentSelection) => {
-      if (`${selectedIDs}` === `${currentSelection}`) {
-        return currentSelection;
-      }
-
-      return selectedIDs;
-    });
   };
-  const onPointerEnd = (event: PointerEvent | MouseEvent) => {
-    if (!pointerDown()) return;
-
+  const onPointerEnd = () => {
     setPointerDown(false);
-
-    if (boxSelection().active) {
-      document.documentElement.style.userSelect = "";
-      setBoxSelection({
-        active: false,
-        x: 0,
-        y: 0,
-        width: 0,
-        height: 0,
-        currentX: 0,
-        currentY: 0
-      });
-    }
+    stopMarqueeAutoScroll();
+    document.documentElement.style.userSelect = "";
+    setBoxSelection({
+      active: false,
+      x: 0,
+      y: 0,
+      width: 0,
+      height: 0,
+      currentX: 0,
+      currentY: 0
+    });
   };
   const dropdownOptions = [
     {
@@ -710,11 +935,13 @@ const Explorer = () => {
   });
 
   createEffect(() => {
-    document.body.addEventListener("pointermove", onPointerMove);
-    document.body.addEventListener("pointerup", onPointerEnd);
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerEnd);
+    window.addEventListener("pointercancel", onPointerEnd);
     document.body.addEventListener("pointerleave", onPointerEnd);
     document.body.addEventListener("contextmenu", onPointerEnd);
     document.body.addEventListener("keydown", onExplorerKeyDown);
+    window.addEventListener("blur", onPointerEnd);
     const unregisterShortcuts = registerShortcuts({
       "$mod+E": () => {
         if (!canHandleExplorerShortcut()) return false;
@@ -756,6 +983,16 @@ const Explorer = () => {
 
         return true;
       },
+      "$mod+a": () => {
+        if (!canHandleExplorerShortcut()) return false;
+
+        return selectAllVisible();
+      },
+      "$mod+Alt+KeyC": () => {
+        if (!canHandleExplorerShortcut()) return false;
+
+        return copyCommandTargetID();
+      },
       "$mod+backspace": () => {
         if (!canHandleExplorerShortcut()) return false;
 
@@ -769,11 +1006,16 @@ const Explorer = () => {
     });
 
     onCleanup(() => {
-      document.body.removeEventListener("pointermove", onPointerMove);
-      document.body.removeEventListener("pointerup", onPointerEnd);
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerEnd);
+      window.removeEventListener("pointercancel", onPointerEnd);
       document.body.removeEventListener("pointerleave", onPointerEnd);
       document.body.removeEventListener("contextmenu", onPointerEnd);
       document.body.removeEventListener("keydown", onExplorerKeyDown);
+      window.removeEventListener("blur", onPointerEnd);
+      window.clearTimeout(typeaheadTimeout());
+      stopMarqueeAutoScroll();
+      document.documentElement.style.userSelect = "";
       unregisterShortcuts();
     });
   });
@@ -807,16 +1049,17 @@ const Explorer = () => {
         <div
           data-explorer-panel
           tabIndex={0}
-          class="flex flex-col flex-1 justify-center items-start px-1 outline-none"
+          class="flex flex-col flex-1 justify-center items-start outline-none"
           onFocusIn={onExplorerFocusIn}
           onFocusOut={onExplorerFocusOut}
           onPointerDown={onPointerDown}
           onPointerEnter={onExplorerPointerEnter}
           onPointerLeave={onExplorerPointerLeave}
         >
-          <div class="my-0.5 flex items-center gap-2">
+          <div class="my-0.5 flex items-center gap-2 px-1">
             <h2 class="text-2xl font-semibold">Explorer</h2>
             <Show when={content.offline()}>
+              {/* TODO: Redesign */}
               <span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
                 Offline: read-only
               </span>
@@ -824,7 +1067,7 @@ const Explorer = () => {
           </div>
           <div
             ref={setTreeContainerRef}
-            class="flex flex-col flex-1 relative w-full overflow-y-auto"
+            class="flex flex-col flex-1 relative w-full overflow-y-auto px-1"
             style={{ gap: `${gap}px` }}
           >
             <TreeSelection />
@@ -916,7 +1159,7 @@ const Explorer = () => {
           </div>
           <Show when={boxSelection().active}>
             <div
-              class="fixed bg-gradient-to-tr opacity-10 rounded-lg"
+              class="pointer-events-none fixed bg-gradient-to-tr opacity-10 rounded-lg"
               style={{
                 top: `${Math.min(boxSelection().y, boxSelection().currentY ?? boxSelection().y)}px`,
                 left: `${Math.min(boxSelection().x, boxSelection().currentX ?? boxSelection().x)}px`,

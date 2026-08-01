@@ -27,7 +27,6 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
 
     wrapperRef.style.visibility = "hidden";
     wrapperRef.style.opacity = "0";
-    wrapperRef.style.transition = "opacity 0.15s ease, visibility 0.15s ease";
     wrapperRef.style.position = "absolute";
     wrapperRef.remove();
     const editorEl = props.editor.view.dom;

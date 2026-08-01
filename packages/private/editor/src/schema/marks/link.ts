@@ -1,5 +1,6 @@
 import { markInputRule, markPasteRule } from "@tiptap/core";
-import { Link as BaseLink, isAllowedUri } from "@tiptap/extension-link";
+import { Link as BaseLink } from "@tiptap/extension-link";
+import { validateURL } from "#editor/lib";
 
 const Link = BaseLink.extend({
   exitable: true,
@@ -18,15 +19,20 @@ const Link = BaseLink.extend({
         class: null
       },
       openOnClick: false,
-      validate(url) {
-        return url.startsWith("http://") || url.startsWith("https://") || url.startsWith("mailto:");
-      },
-      isAllowedUri: (url, ctx) => Boolean(isAllowedUri(url, ctx.protocols)),
-      shouldAutoLink: (url) => Boolean(url)
+      validate: (url) => Boolean(validateURL(url)),
+      isAllowedUri: (url) => Boolean(validateURL(url)),
+      shouldAutoLink: (url) => Boolean(validateURL(url))
     };
   },
   parseHTML() {
-    return [{ tag: 'a[href]:not([href ^= "javascript:" i])' }];
+    return [
+      {
+        tag: "a[href]",
+        getAttrs: (element) => {
+          return validateURL((element as HTMLElement).getAttribute("href") || "") ? null : false;
+        }
+      }
+    ];
   },
   addInputRules() {
     return [
@@ -35,11 +41,9 @@ const Link = BaseLink.extend({
         type: this.type.schema.marks.link,
         getAttributes({ input = "" }: RegExpMatchArray) {
           const [wrappedUrl] = input.match(/\(.+?\)/) || [];
-          const url = wrappedUrl ? wrappedUrl.slice(1, -1) : 0;
+          const href = validateURL(wrappedUrl ? wrappedUrl.slice(1, -1) : "");
 
-          return {
-            href: url || ""
-          };
+          return href ? { href } : null;
         }
       })
     ];
@@ -53,11 +57,9 @@ const Link = BaseLink.extend({
         // eslint-disable-next-line sonarjs/no-identical-functions
         getAttributes({ input = "" }: RegExpMatchArray) {
           const [wrappedUrl] = input.match(/\(.+?\)/) || [];
-          const url = wrappedUrl ? wrappedUrl.slice(1, -1) : 0;
+          const href = validateURL(wrappedUrl ? wrappedUrl.slice(1, -1) : "");
 
-          return {
-            href: url || ""
-          };
+          return href ? { href } : null;
         }
       })
     ];

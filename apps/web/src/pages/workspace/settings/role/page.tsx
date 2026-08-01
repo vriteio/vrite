@@ -81,7 +81,20 @@ const RoleSettingsPage: Component = () => {
   const params = useParams<{ workspaceID?: string; roleID?: string }>();
   const roleID = () => params.roleID || null;
   const navigateToPeople = () => navigate(`/${params.workspaceID || ""}/settings/people`);
-  const roles = createAsync(async () => (roleID() ? rolesQuery() : []), { deferStream: true });
+  const roles = createAsync(
+    async () => {
+      if (!roleID()) return [];
+
+      try {
+        return await rolesQuery();
+      } catch (error) {
+        console.error(error);
+
+        return null;
+      }
+    },
+    { deferStream: true }
+  );
   const currentRole = createMemo(() => {
     return roleID() ? roles()?.find((role) => role.id === roleID()) : null;
   });
@@ -135,7 +148,22 @@ const RoleSettingsPage: Component = () => {
   const mutationPending = () => createRoleMutation.isPending || updateRoleMutation.isPending;
 
   createEffect(() => {
+    const availableRoles = roles();
     const role = currentRole();
+
+    if (roleID() && availableRoles !== undefined && (!role || role.baseRole)) {
+      const text =
+        availableRoles === null
+          ? "Role is unavailable"
+          : role?.baseRole
+            ? "System roles cannot be edited"
+            : "Role not found";
+
+      notify({ type: "error", text });
+      navigate(`/${params.workspaceID || ""}/settings/people`, { replace: true });
+
+      return;
+    }
 
     if (role) {
       setRoleName(role.name);

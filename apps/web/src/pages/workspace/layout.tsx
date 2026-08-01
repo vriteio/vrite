@@ -8,6 +8,9 @@ import { Menu, MenuItem } from "./menu";
 import { ProfileMenu } from "./profile-menu";
 import { PrimaryPanel, SidePanel, usePrimaryPanel } from "./side-panel";
 import { VerticalResizeHandle } from "./vertical-resize-handle";
+import { SnapshotErrorDialog } from "./snapshot-error-dialog";
+import { useConnectivitySignal } from "@solid-primitives/connectivity";
+import { useNotify } from "#web/context/notifications";
 
 const DEFAULT_SIDE_PANEL_WIDTH = 248;
 const MAX_SIDE_PANEL_WIDTH = 640;
@@ -17,11 +20,19 @@ const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
   const { layout, setLayout } = useLayout();
   const registerShortcuts = useShortcuts();
   const navigate = useNavigate();
+  const notify = useNotify();
+  const isOnline = useConnectivitySignal();
   const [, setSearchParams] = useSearchParams();
   const panel = usePrimaryPanel();
   const workspacePath = () => `/${params.workspaceID || ""}`;
   const openPanel = (nextPanel: PrimaryPanel) => {
     if (nextPanel === "settings") {
+      if (!isOnline()) {
+        notify({ type: "error", text: "Settings are unavailable while offline" });
+
+        return;
+      }
+
       if (panel() !== "settings") {
         navigate(`${workspacePath()}/settings/personal`);
       }
@@ -119,6 +130,7 @@ const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
           <div class="w-3" />
         </div>
       </div>
+      <SnapshotErrorDialog />
     </WorkspaceProvider>
   );
 };

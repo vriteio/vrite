@@ -18,15 +18,22 @@ const subscriptionValues = (subscription: Stripe.Subscription) => {
   const apiUsageItem = subscription.items.data.find((item) => {
     return item.price.id === config.STRIPE_PRO_API_CALL_PRICE_ID;
   });
+  const isTerminal = isTerminalSubscription(subscription.status);
+  const isPro = Boolean(seatItem && apiUsageItem) && !isTerminal;
+  const currentPeriodEnd = seatItem?.current_period_end ?? apiUsageItem?.current_period_end;
 
   return {
+    subscriptionPlan: isPro ? "pro" : "free",
     subscriptionStatus: subscription.status,
-    subscriptionData: {
-      subscriptionID: subscription.id,
-      seatItemID: seatItem?.id,
-      apiUsageItemID: apiUsageItem?.id
-    },
-    subscriptionExpiresAt: new Date((subscription.items.data[0]?.current_period_end ?? 0) * 1000),
+    subscriptionData: isTerminal
+      ? null
+      : {
+          subscriptionID: subscription.id,
+          seatItemID: seatItem?.id,
+          apiUsageItemID: apiUsageItem?.id
+        },
+    subscriptionExpiresAt:
+      !isTerminal && currentPeriodEnd ? new Date(currentPeriodEnd * 1000) : null,
     updatedAt: new Date()
   };
 };
@@ -86,11 +93,7 @@ const handleStripeWebhook = async (
         activeSubscriptionID = isTerminalSubscription(subscription.status)
           ? undefined
           : subscription.id;
-        update = {
-          ...subscriptionValues(subscription),
-          subscriptionPlan: "pro",
-          subscriptionStatus: "active"
-        };
+        update = subscriptionValues(subscription);
       }
     } else if (event.type === "customer.subscription.updated") {
       const subscription = event.data.object;
@@ -104,13 +107,7 @@ const handleStripeWebhook = async (
       const subscription = event.data.object;
 
       workspaceID = subscription.metadata?.workspaceID;
-      update = {
-        subscriptionPlan: "free",
-        subscriptionStatus: "inactive",
-        subscriptionData: null,
-        subscriptionExpiresAt: null,
-        updatedAt: new Date()
-      };
+      update = subscriptionValues(subscription);
     } else if (event.type === "invoice.payment_failed") {
       const invoice = event.data.object;
       const subscriptionRef = invoice.parent?.subscription_details?.subscription;
@@ -124,7 +121,7 @@ const handleStripeWebhook = async (
         activeSubscriptionID = isTerminalSubscription(subscription.status)
           ? undefined
           : subscription.id;
-        update = { subscriptionStatus: "past_due", updatedAt: new Date() };
+        update = subscriptionValues(subscription);
       }
     }
 

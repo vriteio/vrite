@@ -11,11 +11,13 @@
     "allowJs": true,
     "noEmit": true,
     "strict": true,
+    "skipLibCheck": true,
     "types": ["vite/client", "node"],
     "isolatedModules": true,
     "paths": {
       "#web/*": ["./src/*"],
-      "#backend/*": ["../backend/src/*"]
+      "#backend/*": ["../backend/src/*"],
+      "#editor/*": ["../../packages/private/editor/src/*"]
     }
   },
   "include": ["./src/**/*.ts", "./src/**/*.tsx"]

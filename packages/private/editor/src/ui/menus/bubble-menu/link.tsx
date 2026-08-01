@@ -1,7 +1,8 @@
 import clsx from "clsx";
-import { Component, createSignal, onMount } from "solid-js";
-import { Card, IconButton, Input, createRef } from "@andesine/components";
+import { Component, createSignal, onMount, Show } from "solid-js";
+import { Card, IconButton, Input, Tooltip, createRef } from "@andesine/components";
 import { Editor } from "@tiptap/core";
+import { validateURL } from "#editor/lib";
 
 const LinkMenu: Component<{
   class?: string;
@@ -9,14 +10,19 @@ const LinkMenu: Component<{
   setMode(mode: string): void;
 }> = (props) => {
   const [url, setUrl] = createSignal("");
+  const [invalid, setInvalid] = createSignal(false);
   const [inputRef, setInputRef] = createRef<HTMLInputElement | null>(null);
   const saveLink = (): void => {
-    const href = url().trim();
+    const href = validateURL(url());
 
-    if (href) {
-      props.editor.chain().unsetCode().setLink({ href }).focus().run();
+    if (!href) {
+      setInvalid(true);
+      inputRef()?.focus();
+
+      return;
     }
 
+    props.editor.chain().unsetCode().setLink({ href }).focus().run();
     props.setMode("format");
   };
   const removeLink = (): void => {
@@ -53,14 +59,23 @@ const LinkMenu: Component<{
       <Input
         ref={setInputRef}
         value={url()}
-        setValue={setUrl}
+        setValue={(value) => {
+          setUrl(value);
+          setInvalid(false);
+        }}
         placeholder="Enter URL..."
         onEnter={saveLink}
-        class="py-0 my-0 flex-1 min-w-40"
+        class={clsx("py-0 my-0 flex-1 min-w-40", invalid() && "outline-red-400")}
+        aria-invalid={invalid()}
         variant="outlined"
         color="contrast"
         size="xs"
       />
+      <Show when={invalid()}>
+        <Tooltip content="Invalid URL. Only HTTP, HTTPS, and mailto links are allowed.">
+          <div class="i-lucide:triangle-alert h-4 w-4 text-red-500" />
+        </Tooltip>
+      </Show>
       <IconButton
         icon="i-lucide:check"
         variant="text"

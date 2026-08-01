@@ -9,6 +9,7 @@ import {
   createEffect,
   createMemo,
   createSignal,
+  on,
   onCleanup,
   onMount,
   Show
@@ -90,6 +91,7 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
         {
           label: "Copy ID",
           icon: "i-lucide:copy",
+          shortcut: "$mod+alt+c",
           onClick: () => {
             navigator.clipboard.writeText(props.entry.id);
             notify({
@@ -106,7 +108,7 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
 
             setRenaming(props.entry.id);
           },
-          shortcut: "shift+r"
+          shortcut: "f2"
         }
       ]);
     }
@@ -131,13 +133,15 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
     return dropdownOptions;
   });
 
-  createEffect(() => {
-    if (menuOpened()) {
+  createEffect(
+    on(menuOpened, (opened) => {
+      if (!opened) return;
+
       setSelection((selection) => {
         return selection.includes(props.entry.id) ? selection : [props.entry.id];
       });
-    }
-  });
+    })
+  );
   onMount(() => {
     const element = elementRef();
 

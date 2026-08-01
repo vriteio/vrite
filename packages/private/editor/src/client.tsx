@@ -23,7 +23,15 @@ import {
 import { BubbleMenu } from "./ui/menus/bubble-menu";
 import { BlockSelection as BlockSelectionMenu } from "./ui/block-selection";
 import { HocuspocusProvider, HocuspocusProviderWebsocket } from "@hocuspocus/provider";
-import { Component, createEffect, createMemo, createSignal, onCleanup, Show } from "solid-js";
+import {
+  Component,
+  createEffect,
+  createMemo,
+  createSignal,
+  onCleanup,
+  Show,
+  untrack
+} from "solid-js";
 import { Editor, isTextSelection } from "@tiptap/core";
 import { SlashMenu } from "./ui/menus/slash-menu";
 import { BlockMenuArea } from "./ui/menus/block-menu";
@@ -51,6 +59,7 @@ type EditorProviderSetup = (provider: EditorProvider) => EditorCleanup | Promise
 interface EditorProps {
   url: string;
   doc: string;
+  editable?: boolean;
   notify(type: "success" | "error", text: string): void;
   collaborationUser?: {
     name: string;
@@ -139,6 +148,7 @@ const ClientEditor: Component<EditorProps> = (props) => {
 
     return new Editor({
       element: contentElement,
+      editable: untrack(() => props.editable ?? true),
       extensions: [
         // Basic
         Document,
@@ -206,12 +216,22 @@ const ClientEditor: Component<EditorProps> = (props) => {
 
     if (!currentEditor) return;
 
+    currentEditor.setEditable(props.editable ?? true);
+  });
+
+  createEffect(() => {
+    const currentEditor = editor();
+
+    if (!currentEditor) return;
+
     const cleanup = props.onEditor?.(currentEditor);
 
     onCleanup(() => {
       cleanup?.();
     });
   });
+
+  const editableEditor = () => (props.editable === false ? null : editor());
 
   onCleanup(() => {
     editor()?.destroy();
@@ -247,17 +267,17 @@ const ClientEditor: Component<EditorProps> = (props) => {
   });
 
   return (
-    <BlockSelectionMenu editor={editor()} scrollableContainerRef={scrollableContainerRef}>
+    <BlockSelectionMenu editor={editableEditor()} scrollableContainerRef={scrollableContainerRef}>
       <div class="overflow-hidden relative flex h-full w-full">
         <ScrollShadow scrollableContainerRef={scrollableContainerRef} />
-        <div class="p-5 overflow-auto w-full z-0 relative" ref={setScrollableContainerRef}>
-          <BlockMenuArea editor={editor()}>
+        <div class="p-10 pt-5 overflow-auto w-full z-0 relative" ref={setScrollableContainerRef}>
+          <BlockMenuArea editor={editableEditor()}>
             <div class="w-full flex flex-col items-center">
               <div
                 class="w-full prose-editor z-1 max-w-[44rem] prose prose-headings:font-semibold prose-headings:text-gray-700 prose-bold:text-gray-700 dark:prose-invert flex flex-col relative"
                 id="editor-container"
               >
-                <Show when={editor()} keyed>
+                <Show when={editableEditor()} keyed>
                   {/* Order of menus is important, as every `registerPlugin()` call re-triggers `onDestroy` */}
                   <SlashMenu editor={editor()!} />
                   <BubbleMenuWrapper

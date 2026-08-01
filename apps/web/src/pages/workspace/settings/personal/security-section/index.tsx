@@ -225,6 +225,7 @@ const SecuritySection: Component = () => {
         <Setting
           label="Passkeys"
           description="Passwordless sign-in using biometrics or a hardware security key"
+          fade={false}
         >
           <div class="flex flex-col gap-3 w-full items-end">
             <IconButton

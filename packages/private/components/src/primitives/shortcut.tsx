@@ -33,6 +33,11 @@ const Shortcut: Component<ShortcutProps> = (props) => {
               <Match when={piece === "backspace"}>
                 <span class="inline-block i-lucide:delete" />
               </Match>
+              <Match when={/f\d\d?/i.test(piece)}>
+                <span class="min-w-3 leading-[1] text-[90%] font-light text-center">
+                  {piece.toUpperCase()}
+                </span>
+              </Match>
               <Match when={true}>
                 <span class="w-3 leading-[1] font-light text-center">{piece.toUpperCase()}</span>
               </Match>

@@ -45,7 +45,7 @@ const InviteSettingsPage: Component = () => {
     onSuccess: async (data) => {
       setDelivery(data.emailDelivery);
       setInviteLink(data.inviteLink);
-      await revalidate("people-invites");
+      await revalidate("invites");
 
       notify({
         type: data.emailDelivery === "failed" ? "error" : "success",

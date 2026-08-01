@@ -275,6 +275,25 @@ const TreeProvider: ParentComponent<TreeProviderProps> = (props) => {
     )
   );
 
+  createEffect(() => {
+    const visibleIDs = new Set(flattenedOrder());
+
+    setRawSelection((current) => {
+      const visibleSelection = current.filter((id) => visibleIDs.has(id));
+
+      return visibleSelection.length === current.length ? current : visibleSelection;
+    });
+    setFocusedID((current) => {
+      if (current && !visibleIDs.has(current)) {
+        setFocusedSource(null);
+
+        return null;
+      }
+
+      return current;
+    });
+  });
+
   return (
     <TreeContext.Provider
       value={[

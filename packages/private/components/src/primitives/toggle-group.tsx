@@ -46,7 +46,9 @@ const ToggleGroup: Component<ToggleGroupProps> = (props) => {
               value={option.value}
               class={clsx(
                 ":base: relative flex items-center justify-center gap-1 rounded-md font-medium text-gray-700",
-                active() && ":base: bg-white outline-gray-200 outline outline-1 shadow-md",
+                active()
+                  ? ":base: bg-white outline-gray-200 outline outline-1 shadow-md"
+                  : ":base: focus:outline-none hover:bg-gray-50 focus:bg-gray-50",
                 option.label ? ":base: px-1.5 py-0.5" : ":base: p-1",
                 props.itemClass
               )}

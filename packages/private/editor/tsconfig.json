@@ -9,8 +9,8 @@
     "resolveJsonModule": true,
     "jsx": "preserve",
     "jsxImportSource": "solid-js",
-    "baseUrl": ".",
     "isolatedModules": true,
+    "skipLibCheck": true,
     "paths": { "#editor/*": ["./src/*"] }
   }
 }
