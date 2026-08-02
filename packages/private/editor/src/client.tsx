@@ -54,12 +54,19 @@ import { DragHandleMenu } from "./ui/drag-handle";
 
 type EditorProvider = HocuspocusProvider;
 type EditorCleanup = (() => void) | void;
-type EditorProviderSetup = (provider: EditorProvider) => EditorCleanup | Promise<EditorCleanup>;
+interface EditorProviderSetupResult {
+  cleanup?(): void;
+  renderImmediately: boolean;
+}
+type EditorProviderSetup = (
+  provider: EditorProvider
+) => EditorProviderSetupResult | Promise<EditorProviderSetupResult>;
 
 interface EditorProps {
   url: string;
   doc: string;
   editable?: boolean;
+  providerAttempt?: number;
   notify(type: "success" | "error", text: string): void;
   collaborationUser?: {
     name: string;
@@ -67,6 +74,7 @@ interface EditorProps {
   };
   beforeProviderAttach?: EditorProviderSetup;
   onProvider?(provider: EditorProvider): EditorCleanup;
+  onProviderSetupError?(error: unknown, provider: EditorProvider): void;
   onEditor?(editor: Editor): EditorCleanup;
   onTitleChange?(title: string): void;
 }
@@ -79,6 +87,8 @@ const ClientEditor: Component<EditorProps> = (props) => {
   createEffect(() => {
     const socketUrl = props.url;
     const documentID = props.doc;
+    void props.providerAttempt;
+
     const websocketProvider = new HocuspocusProviderWebsocket({
       url: socketUrl
     });
@@ -90,38 +100,69 @@ const ClientEditor: Component<EditorProps> = (props) => {
     let isDisposed = false;
     let beforeAttachCleanup: EditorCleanup = undefined;
     let providerCleanup: EditorCleanup = undefined;
+    let providerRevealed = false;
+    let remoteAuthenticated = false;
+    let remoteSynced = false;
 
-    setProvider(nextProvider);
+    const revealProvider = () => {
+      if (isDisposed || providerRevealed) return;
+
+      providerRevealed = true;
+      setProvider(nextProvider);
+    };
+    const revealRemoteProvider = () => {
+      if (remoteAuthenticated && remoteSynced) revealProvider();
+    };
+    const handleAuthenticated = () => {
+      remoteAuthenticated = true;
+      revealRemoteProvider();
+    };
+    const handleSynced = (event: { state: boolean }) => {
+      remoteSynced = event.state;
+      revealRemoteProvider();
+    };
+
+    nextProvider.on("authenticated", handleAuthenticated);
+    nextProvider.on("synced", handleSynced);
 
     (async () => {
       try {
-        beforeAttachCleanup = await props.beforeProviderAttach?.(nextProvider);
-      } catch {
-        props.notify("error", "Failed to prepare editor data.");
-      }
+        const beforeProviderAttach = props.beforeProviderAttach;
+        const setupResult = beforeProviderAttach
+          ? await untrack(() => beforeProviderAttach(nextProvider))
+          : { renderImmediately: true };
 
-      if (isDisposed) {
+        beforeAttachCleanup = setupResult.cleanup;
+
+        if (isDisposed) {
+          beforeAttachCleanup?.();
+
+          return;
+        }
+
+        providerCleanup = untrack(() => props.onProvider?.(nextProvider));
+
+        if (setupResult.renderImmediately) revealProvider();
+
+        nextProvider.attach();
+      } catch (error) {
+        untrack(() => props.onProviderSetupError?.(error, nextProvider));
+        if (!props.onProviderSetupError) {
+          props.notify("error", "Failed to prepare editor data.");
+        }
         beforeAttachCleanup?.();
-        setProvider((currentProvider) =>
-          currentProvider === nextProvider ? null : currentProvider
-        );
-        nextProvider.destroy();
-        websocketProvider.destroy();
-        return;
-      }
-
-      nextProvider.attach();
-      providerCleanup = props.onProvider?.(nextProvider);
-
-      if (isDisposed) {
         providerCleanup?.();
-        beforeAttachCleanup?.();
-        setProvider((currentProvider) =>
-          currentProvider === nextProvider ? null : currentProvider
-        );
         nextProvider.destroy();
         websocketProvider.destroy();
+
         return;
+      }
+
+      if (isDisposed) {
+        beforeAttachCleanup?.();
+        providerCleanup?.();
+        nextProvider.destroy();
+        websocketProvider.destroy();
       }
     })();
 
@@ -130,6 +171,8 @@ const ClientEditor: Component<EditorProps> = (props) => {
       setProvider((currentProvider) => (currentProvider === nextProvider ? null : currentProvider));
       providerCleanup?.();
       beforeAttachCleanup?.();
+      nextProvider.off("authenticated", handleAuthenticated);
+      nextProvider.off("synced", handleSynced);
       nextProvider.destroy();
       websocketProvider.destroy();
     });
@@ -310,4 +353,4 @@ const ClientEditor: Component<EditorProps> = (props) => {
 };
 
 export { ClientEditor };
-export type { EditorProps, EditorProvider, EditorProviderSetup };
+export type { EditorProps, EditorProvider, EditorProviderSetup, EditorProviderSetupResult };

@@ -30,6 +30,21 @@ const permissionError = (reason: "Unauthorized" | "Forbidden") => {
   });
 };
 
+const logCollaborationInitializationError = (source: "database" | "redis", error: unknown) => {
+  console.error(`Collaboration ${source} initialization failed`, { error });
+};
+
+class CollaborationRedisExtension extends RedisExtension {
+  async afterLoadDocument(...args: Parameters<RedisExtension["afterLoadDocument"]>): Promise<void> {
+    try {
+      await super.afterLoadDocument(...args);
+    } catch (error) {
+      logCollaborationInitializationError("redis", error);
+      throw error;
+    }
+  }
+}
+
 const authenticateCollaboration = async (input: {
   documentName: string;
   requestHeaders: Headers;
@@ -124,7 +139,7 @@ const getDocumentTitle = (document: Doc): string => {
 
 const collaborationRedisURL = new URL(config.REDIS_URL);
 const collaborationRedisDatabase = Number(collaborationRedisURL.pathname.slice(1) || "0");
-const collaborationRedis = new RedisExtension({
+const collaborationRedis = new CollaborationRedisExtension({
   host: collaborationRedisURL.hostname,
   port: Number(collaborationRedisURL.port || "6379"),
   prefix: "andesine:collaboration",
@@ -145,18 +160,23 @@ const collab = new Hocuspocus<CollaborationContext>({
     collaborationRedis,
     new Database({
       async fetch({ documentName }) {
-        const [content] = await db
-          .select({ state: contents.state })
-          .from(contents)
-          .innerJoin(entries, eq(entries.id, contents.entryID))
-          .where(and(eq(contents.entryID, toUUID(documentName)), isNull(entries.deletedAt)))
-          .limit(1);
+        try {
+          const [content] = await db
+            .select({ state: contents.state })
+            .from(contents)
+            .innerJoin(entries, eq(entries.id, contents.entryID))
+            .where(and(eq(contents.entryID, toUUID(documentName)), isNull(entries.deletedAt)))
+            .limit(1);
 
-        if (content?.state) {
-          return new Uint8Array(content.state);
+          if (content?.state) {
+            return new Uint8Array(content.state);
+          }
+
+          return null;
+        } catch (error) {
+          logCollaborationInitializationError("database", error);
+          throw error;
         }
-
-        return null;
       },
       async store({ documentName, state }) {
         const entryID = toUUID(documentName);

@@ -25,4 +25,9 @@ const Editor: Component<EditorProps> = (props) => {
 };
 
 export { Editor };
-export type { EditorProps, EditorProvider, EditorProviderSetup } from "./client";
+export type {
+  EditorProps,
+  EditorProvider,
+  EditorProviderSetup,
+  EditorProviderSetupResult
+} from "./client";

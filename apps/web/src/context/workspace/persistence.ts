@@ -163,9 +163,15 @@ const createIndexedDBAdapter = <T extends { id: I } & Record<string, any>, I ext
         return { items: [] as T[] };
       }
 
-      const items = await getAllItems();
+      try {
+        const items = await getAllItems();
 
-      return { items };
+        return { items };
+      } catch {
+        void deleteIndexedDBDatabase(databaseName).catch(() => {});
+
+        return { items: [] as T[] };
+      }
     },
     async save(items, { added, modified, removed }) {
       const database = await openDatabase(databaseName, requestedStores);

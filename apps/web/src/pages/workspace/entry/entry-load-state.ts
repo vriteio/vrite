@@ -2,132 +2,158 @@ import type { EditorProvider } from "@andesine/editor";
 import { Accessor, createEffect, createSignal } from "solid-js";
 
 type CollaborationConnection = "connecting" | "connected" | "disconnected";
-type CollaborationProblem = "unauthorized" | "failed" | null;
+type CollaborationProblem = "unauthorized" | "failed" | "local-timeout" | null;
 
 type EntryLoadState = {
   entryID: string | null;
   isCheckingLocal: boolean;
   hasLocalSnapshot: boolean;
+  localTimeoutCount: number;
   connection: CollaborationConnection;
+  authenticated: boolean;
   problem: CollaborationProblem;
   synced: boolean;
+  initialSyncComplete: boolean;
+  editorReady: boolean;
   unsyncedChanges: number;
 };
 
-const createEntryLoadState = (entryID: string | null): EntryLoadState => {
+const createEntryLoadState = (entryID: string | null, localTimeoutCount = 0): EntryLoadState => {
   return {
     entryID,
     isCheckingLocal: Boolean(entryID),
     hasLocalSnapshot: false,
+    localTimeoutCount,
     connection: "connecting",
+    authenticated: false,
     problem: null,
     synced: false,
+    initialSyncComplete: false,
+    editorReady: false,
     unsyncedChanges: 0
   };
 };
 
+const isPermissionFailure = (reason: string) => {
+  return reason === "Unauthorized" || reason === "Forbidden";
+};
+
 const useEntryLoadState = (selectedEntryID: Accessor<string | undefined>) => {
-  const [activeProvider, setActiveProvider] = createSignal<EditorProvider | null>(null);
   const [entryLoadState, setEntryLoadState] = createSignal<EntryLoadState>(
     createEntryLoadState(null)
   );
+  const [providerAttempt, setProviderAttempt] = createSignal(0);
+  const [discardLocalSnapshot, setDiscardLocalSnapshot] = createSignal(false);
 
   createEffect(() => {
+    setDiscardLocalSnapshot(false);
     setEntryLoadState(createEntryLoadState(selectedEntryID() || null));
   });
 
-  const setLocalSnapshot = (entryID: string, hasLocalSnapshot: boolean) => {
+  const updateEntryState = (entryID: string, update: (state: EntryLoadState) => EntryLoadState) => {
     setEntryLoadState((currentState) => {
       if (currentState.entryID !== entryID) return currentState;
 
-      return {
-        ...currentState,
-        isCheckingLocal: false,
-        hasLocalSnapshot
-      };
+      return update(currentState);
     });
   };
 
-  const retryCollaboration = () => {
-    const provider = activeProvider();
-
-    if (!provider) return;
-
-    const entryID = provider.configuration.name;
-
-    setEntryLoadState((currentState) => ({
+  const setLocalSnapshot = (entryID: string, hasLocalSnapshot: boolean) => {
+    updateEntryState(entryID, (currentState) => ({
       ...currentState,
-      connection: "connecting",
-      problem: null,
-      synced: false
+      isCheckingLocal: false,
+      hasLocalSnapshot
     }));
-    void provider.configuration.websocketProvider.connect().catch(() => {
-      setEntryLoadState((currentState) => {
-        if (currentState.entryID !== entryID) return currentState;
+  };
 
-        return {
-          ...currentState,
-          connection: "disconnected",
-          problem: "failed"
-        };
-      });
-    });
+  const setLocalSnapshotTimeout = (entryID: string) => {
+    updateEntryState(entryID, (currentState) => ({
+      ...currentState,
+      isCheckingLocal: false,
+      localTimeoutCount: currentState.localTimeoutCount + 1,
+      connection: "disconnected",
+      problem: "local-timeout"
+    }));
+  };
+
+  const setLocalSnapshotFailure = (entryID: string) => {
+    updateEntryState(entryID, (currentState) => ({
+      ...currentState,
+      isCheckingLocal: false,
+      connection: "disconnected",
+      problem: "failed"
+    }));
+  };
+
+  const retryCollaboration = () => {
+    const currentState = entryLoadState();
+
+    if (!currentState.entryID) return;
+
+    setDiscardLocalSnapshot(
+      currentState.problem === "local-timeout" && currentState.localTimeoutCount >= 2
+    );
+    setEntryLoadState(createEntryLoadState(currentState.entryID, currentState.localTimeoutCount));
+    setProviderAttempt((attempt) => attempt + 1);
+  };
+
+  const markEditorReady = (entryID: string) => {
+    updateEntryState(entryID, (currentState) => ({
+      ...currentState,
+      editorReady: true
+    }));
+
+    return () => {
+      updateEntryState(entryID, (currentState) => ({
+        ...currentState,
+        editorReady: false
+      }));
+    };
   };
 
   const handleProvider = (provider: EditorProvider) => {
     const entryID = provider.configuration.name;
     const websocketProvider = provider.configuration.websocketProvider;
-
+    const handleAuthenticated = () => {
+      updateEntryState(entryID, (currentState) => ({
+        ...currentState,
+        authenticated: true,
+        problem: null
+      }));
+    };
     const handleSynced = (event: { state: boolean }) => {
-      setEntryLoadState((currentState) => {
-        if (currentState.entryID !== entryID) return currentState;
-
-        return {
-          ...currentState,
-          synced: event.state
-        };
-      });
+      updateEntryState(entryID, (currentState) => ({
+        ...currentState,
+        synced: event.state,
+        initialSyncComplete: currentState.initialSyncComplete || event.state
+      }));
     };
     const handleStatus = (event: { status: CollaborationConnection }) => {
-      setEntryLoadState((currentState) => {
-        if (currentState.entryID !== entryID) return currentState;
-
-        return {
-          ...currentState,
-          connection: event.status,
-          problem: event.status === "connected" ? null : currentState.problem
-        };
-      });
+      updateEntryState(entryID, (currentState) => ({
+        ...currentState,
+        connection: event.status
+      }));
     };
     const handleUnsyncedChanges = (event: { number: number }) => {
-      setEntryLoadState((currentState) => {
-        if (currentState.entryID !== entryID) return currentState;
-
-        return {
-          ...currentState,
-          unsyncedChanges: event.number
-        };
-      });
+      updateEntryState(entryID, (currentState) => ({
+        ...currentState,
+        unsyncedChanges: event.number
+      }));
     };
-    const handleAuthenticationFailed = () => {
-      setEntryLoadState((currentState) => {
-        if (currentState.entryID !== entryID) return currentState;
-
-        return {
-          ...currentState,
-          problem: "unauthorized"
-        };
-      });
+    const handleAuthenticationFailed = (event: { reason: string }) => {
+      updateEntryState(entryID, (currentState) => ({
+        ...currentState,
+        connection: "disconnected",
+        problem: isPermissionFailure(event.reason) ? "unauthorized" : "failed"
+      }));
     };
     const handleClose = (event: { event: { code: number } }) => {
-      setEntryLoadState((currentState) => {
-        if (currentState.entryID !== entryID) return currentState;
-
+      updateEntryState(entryID, (currentState) => {
         let problem = currentState.problem;
 
         if (event.event.code === 4401 || event.event.code === 4403) {
           problem = "unauthorized";
-        } else if (event.event.code >= 4000 && event.event.code < 5000) {
+        } else if (!currentState.initialSyncComplete) {
           problem = "failed";
         }
 
@@ -139,11 +165,14 @@ const useEntryLoadState = (selectedEntryID: Accessor<string | undefined>) => {
       });
     };
 
-    setActiveProvider(provider);
     handleSynced({ state: provider.synced });
-    handleStatus({ status: websocketProvider.status });
     handleUnsyncedChanges({ number: provider.unsyncedChanges });
 
+    if (websocketProvider.status !== "disconnected") {
+      handleStatus({ status: websocketProvider.status });
+    }
+
+    provider.on("authenticated", handleAuthenticated);
     provider.on("synced", handleSynced);
     provider.on("status", handleStatus);
     provider.on("unsyncedChanges", handleUnsyncedChanges);
@@ -151,9 +180,7 @@ const useEntryLoadState = (selectedEntryID: Accessor<string | undefined>) => {
     provider.on("close", handleClose);
 
     return () => {
-      setActiveProvider((currentProvider) =>
-        currentProvider === provider ? null : currentProvider
-      );
+      provider.off("authenticated", handleAuthenticated);
       provider.off("synced", handleSynced);
       provider.off("status", handleStatus);
       provider.off("unsyncedChanges", handleUnsyncedChanges);
@@ -164,8 +191,13 @@ const useEntryLoadState = (selectedEntryID: Accessor<string | undefined>) => {
 
   return {
     entryLoadState,
+    providerAttempt,
+    discardLocalSnapshot,
     setLocalSnapshot,
+    setLocalSnapshotTimeout,
+    setLocalSnapshotFailure,
     retryCollaboration,
+    markEditorReady,
     handleProvider
   };
 };
