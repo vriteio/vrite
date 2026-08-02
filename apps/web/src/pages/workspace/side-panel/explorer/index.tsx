@@ -21,6 +21,7 @@ import {
 import { extractClosestEdge } from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge";
 import { useWorkspace } from "#web/context/workspace";
 import { useNotify } from "#web/context/notifications";
+import { useClipboard } from "#web/context/clipboard";
 import {
   canChangeParent,
   canOrderCollections,
@@ -32,6 +33,7 @@ import {
 const Explorer = () => {
   const registerShortcuts = useShortcuts();
   const notify = useNotify();
+  const { copyText } = useClipboard();
   const navigate = useNavigate();
   const [
     { focusedID, selection, flattenedLayout, flattenedOrder, gap, isExpanded },
@@ -367,8 +369,10 @@ const Explorer = () => {
 
     if (!id) return false;
 
-    void navigator.clipboard.writeText(id);
-    notify({ text: "ID copied to clipboard", type: "success" });
+    void copyText(id, {
+      success: "ID copied to clipboard",
+      fallback: { title: "Copy ID manually" }
+    });
 
     return true;
   };

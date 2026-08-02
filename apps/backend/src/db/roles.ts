@@ -1,6 +1,6 @@
 import { id } from "#backend/lib/id";
 import { sql } from "drizzle-orm";
-import { index, pgEnum, pgTable, unique, uuid, varchar } from "drizzle-orm/pg-core";
+import { index, pgEnum, pgTable, unique, uniqueIndex, uuid, varchar } from "drizzle-orm/pg-core";
 import * as z from "zod";
 import { timestamps } from "./shared";
 import { workspaces } from "./workspaces";
@@ -48,6 +48,7 @@ const roles = pgTable(
   (table) => [
     unique("roles_workspace_id_id_unique").on(table.workspaceID, table.id),
     unique("roles_workspace_base_role_unique").on(table.workspaceID, table.baseRole),
+    uniqueIndex("roles_workspace_name_unique").on(table.workspaceID, sql`lower(${table.name})`),
     index("roles_workspace_id_idx").on(table.workspaceID)
   ]
 );

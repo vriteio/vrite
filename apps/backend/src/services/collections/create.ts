@@ -25,7 +25,13 @@ const createCollection = async (
     const [root] = await tx
       .select({ id: collections.id })
       .from(collections)
-      .where(and(eq(collections.workspaceID, workspaceID), isNull(collections.parentID)));
+      .where(
+        and(
+          eq(collections.workspaceID, workspaceID),
+          isNull(collections.parentID),
+          isNull(collections.deletedAt)
+        )
+      );
 
     if (!root) throw new ORPCError("NOT_FOUND", { message: "Root collection not found" });
 
@@ -33,14 +39,26 @@ const createCollection = async (
     const [parent] = await tx
       .select({ id: collections.id })
       .from(collections)
-      .where(and(eq(collections.id, parentID), eq(collections.workspaceID, workspaceID)));
+      .where(
+        and(
+          eq(collections.id, parentID),
+          eq(collections.workspaceID, workspaceID),
+          isNull(collections.deletedAt)
+        )
+      );
 
     if (!parent) throw new ORPCError("BAD_REQUEST", { message: "Parent collection not found" });
 
     const [lastSibling] = await tx
       .select({ rank: collections.rank })
       .from(collections)
-      .where(and(eq(collections.workspaceID, workspaceID), eq(collections.parentID, parentID)))
+      .where(
+        and(
+          eq(collections.workspaceID, workspaceID),
+          eq(collections.parentID, parentID),
+          isNull(collections.deletedAt)
+        )
+      )
       .orderBy(desc(collections.rank))
       .limit(1);
     const rank = lastSibling

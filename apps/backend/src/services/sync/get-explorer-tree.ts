@@ -2,7 +2,7 @@ import { toCollectionID, toEntryID, toUUID } from "#backend/lib/id";
 import { db } from "#backend/lib/postgres";
 import { entries, type Collection, type Entry } from "#backend/db";
 import { loadCollectionTree } from "#backend/services/collections/queries";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, isNull } from "drizzle-orm";
 
 const getExplorerTree = async (input: {
   workspaceID: string;
@@ -13,7 +13,7 @@ const getExplorerTree = async (input: {
     db
       .select()
       .from(entries)
-      .where(eq(entries.workspaceID, workspaceID))
+      .where(and(eq(entries.workspaceID, workspaceID), isNull(entries.deletedAt)))
       .orderBy(desc(entries.rank))
   ]);
 

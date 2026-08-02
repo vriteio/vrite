@@ -34,7 +34,13 @@ const moveCollection = async (input: {
     const [collection] = await tx
       .select()
       .from(collections)
-      .where(and(eq(collections.id, collectionID), eq(collections.workspaceID, workspaceID)))
+      .where(
+        and(
+          eq(collections.id, collectionID),
+          eq(collections.workspaceID, workspaceID),
+          isNull(collections.deletedAt)
+        )
+      )
       .for("update");
 
     if (!collection) throw new ORPCError("NOT_FOUND");
@@ -45,7 +51,13 @@ const moveCollection = async (input: {
     const [root] = await tx
       .select({ id: collections.id })
       .from(collections)
-      .where(and(eq(collections.workspaceID, workspaceID), isNull(collections.parentID)));
+      .where(
+        and(
+          eq(collections.workspaceID, workspaceID),
+          isNull(collections.parentID),
+          isNull(collections.deletedAt)
+        )
+      );
     const parentID = requestedParentID || root?.id;
 
     if (!parentID || parentID === collectionID) {
@@ -55,19 +67,28 @@ const moveCollection = async (input: {
     const [parent] = await tx
       .select({ id: collections.id })
       .from(collections)
-      .where(and(eq(collections.id, parentID), eq(collections.workspaceID, workspaceID)));
+      .where(
+        and(
+          eq(collections.id, parentID),
+          eq(collections.workspaceID, workspaceID),
+          isNull(collections.deletedAt)
+        )
+      );
 
     if (!parent) throw new ORPCError("NOT_FOUND", { message: "Parent collection not found" });
 
     const cycle = await tx.execute<{ id: string }>(sql`
       with recursive subtree as (
         select id from ${collections}
-        where workspace_id = ${workspaceID}::uuid and id = ${collectionID}::uuid
+        where workspace_id = ${workspaceID}::uuid
+          and id = ${collectionID}::uuid
+          and deleted_at is null
         union all
         select child.id
         from ${collections} child
         inner join subtree parent on child.parent_id = parent.id
         where child.workspace_id = ${workspaceID}::uuid
+          and child.deleted_at is null
       )
       select id from subtree where id = ${parentID}::uuid limit 1
     `);
@@ -81,7 +102,13 @@ const moveCollection = async (input: {
     const siblings = await tx
       .select({ id: collections.id, rank: collections.rank })
       .from(collections)
-      .where(and(eq(collections.workspaceID, workspaceID), eq(collections.parentID, parentID)))
+      .where(
+        and(
+          eq(collections.workspaceID, workspaceID),
+          eq(collections.parentID, parentID),
+          isNull(collections.deletedAt)
+        )
+      )
       .orderBy(asc(collections.rank));
     const destination = siblings.filter((sibling) => sibling.id !== collectionID);
     const existingIndex = siblings.findIndex((sibling) => sibling.id === collectionID);
@@ -95,7 +122,13 @@ const moveCollection = async (input: {
     await tx
       .update(collections)
       .set({ parentID, rank, updatedAt: new Date() })
-      .where(and(eq(collections.id, collectionID), eq(collections.workspaceID, workspaceID)));
+      .where(
+        and(
+          eq(collections.id, collectionID),
+          eq(collections.workspaceID, workspaceID),
+          isNull(collections.deletedAt)
+        )
+      );
 
     return {
       index,

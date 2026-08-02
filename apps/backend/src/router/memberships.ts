@@ -42,7 +42,7 @@ const membershipsRouter = base.prefix("/memberships").router({
     })
     .meta({
       required: {
-        session: ["content"],
+        session: ["workspace"],
         key: ["read:memberships"]
       }
     })
@@ -111,7 +111,6 @@ const membershipsRouter = base.prefix("/memberships").router({
         id: input.id,
         workspaceID: context.auth.workspaceID
       });
-      await Billing.updateSeats({ workspaceID: context.auth.workspaceID });
 
       emitMembershipEvent(context.auth.workspaceID, {
         action: "membership:remove",
@@ -120,6 +119,8 @@ const membershipsRouter = base.prefix("/memberships").router({
           id: input.id
         }
       });
+
+      await Billing.updateSeats({ workspaceID: context.auth.workspaceID });
     }),
   invite: base
     .route({

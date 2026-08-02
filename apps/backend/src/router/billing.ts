@@ -12,7 +12,8 @@ const subscriptionInfoType = z.object({
   status: z.string().describe("Current billing subscription status"),
   seats: z.number().int().min(0).describe("Number of billable seats in the workspace"),
   expiresAt: z.iso.datetime().nullable().describe("End of the current billing period"),
-  customerID: z.string().nullable().describe("Stripe customer ID for the workspace")
+  customerID: z.string().nullable().describe("Stripe customer ID for the workspace"),
+  cancelAtPeriodEnd: z.boolean().describe("Whether the subscription ends after this period")
 });
 const billingUsageType = z.object({
   dailyUsage: z.array(
@@ -24,6 +25,7 @@ const billingUsageType = z.object({
   totalUsage: z.number().int().min(0).describe("Total API requests in the current billing period"),
   startDate: z.date().describe("Start of the billing usage window"),
   endDate: z.date().describe("End of the billing usage window"),
+  resetDate: z.date().describe("Next monthly allowance reset at 00:00 UTC"),
   limit: z.number().int().min(0).describe("Included API request limit for the current plan")
 });
 
@@ -70,8 +72,8 @@ const billingRouter = base.router({
     .handler(async ({ context }) => {
       return Billing.createCheckout({
         workspaceID: context.auth.workspaceID,
-        successURL: `${config.PUBLIC_APP_URL}/${context.auth.workspaceID}/?settings=billing&billing=success`,
-        cancelURL: `${config.PUBLIC_APP_URL}/${context.auth.workspaceID}/?settings=billing&billing=cancel`
+        successURL: `${config.PUBLIC_APP_URL}/${context.auth.workspaceID}/settings/billing?billing=success`,
+        cancelURL: `${config.PUBLIC_APP_URL}/${context.auth.workspaceID}/settings/billing?billing=cancel`
       });
     }),
   portal: base
@@ -85,7 +87,7 @@ const billingRouter = base.router({
     .handler(async ({ context }) => {
       return Billing.createPortal({
         workspaceID: context.auth.workspaceID,
-        returnURL: `${config.PUBLIC_APP_URL}/${context.auth.workspaceID}/?settings=billing&billing=portal`
+        returnURL: `${config.PUBLIC_APP_URL}/${context.auth.workspaceID}/settings/billing?billing=portal`
       });
     })
 });

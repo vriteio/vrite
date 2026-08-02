@@ -1,13 +1,16 @@
-import { revalidate, useNavigate } from "@solidjs/router";
+import { createAsync, query, revalidate, useNavigate } from "@solidjs/router";
 import { Title } from "@solidjs/meta";
-import { Component, createSignal } from "solid-js";
+import { Component, createSignal, Show } from "solid-js";
 import { AnimatedGradientCard } from "#web/components/animated-gradient-card";
 import { Button, IconButton, Input } from "@andesine/components";
 import { client } from "#web/lib/client";
 import { createMutation } from "@tanstack/solid-query";
 
+const workspacesQuery = query(() => client.workspaces.list(), "workspaces");
+
 const NewWorkspacePage: Component = () => {
   const navigate = useNavigate();
+  const workspaces = createAsync(() => workspacesQuery());
   const [name, setName] = createSignal("");
   const [error, setError] = createSignal("");
   const createWorkspaceMutation = createMutation(() => ({
@@ -84,19 +87,18 @@ const NewWorkspacePage: Component = () => {
                 Create workspace
               </Button>
             </div>
-            <div class="flex flex-col items-start justify-center w-full transform text-sm text-gray-400 dark:text-gray-500">
-              <IconButton
-                icon="i-lucide:arrow-left"
-                label="Back"
-                variant="text"
-                size="small"
-                text="soft"
-                onClick={() => {
-                  // Navigate back — go to / which will redirect to the last workspace
-                  navigate("/");
-                }}
-              />
-            </div>
+            <Show when={(workspaces() || []).length > 0}>
+              <div class="flex flex-col items-start justify-center w-full transform text-sm text-gray-400 dark:text-gray-500">
+                <IconButton
+                  icon="i-lucide:arrow-left"
+                  label="Back"
+                  variant="text"
+                  size="small"
+                  text="soft"
+                  onClick={() => navigate("/")}
+                />
+              </div>
+            </Show>
           </div>
         </div>
       </div>

@@ -10,6 +10,7 @@ interface SubscriptionInfo {
   seats: number;
   expiresAt: string | null;
   customerID: string | null;
+  cancelAtPeriodEnd: boolean;
 }
 
 const getSubscription = async (input: { workspaceID: string }): Promise<SubscriptionInfo> => {
@@ -34,7 +35,8 @@ const getSubscription = async (input: { workspaceID: string }): Promise<Subscrip
     expiresAt: workspace.subscriptionExpiresAt
       ? new Date(workspace.subscriptionExpiresAt).toISOString()
       : null,
-    customerID: workspace.customerID || null
+    customerID: workspace.customerID || null,
+    cancelAtPeriodEnd: workspace.subscriptionData?.cancelAtPeriodEnd || false
   };
 };
 

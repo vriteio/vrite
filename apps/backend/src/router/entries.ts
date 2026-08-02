@@ -49,14 +49,14 @@ const entriesRouter = base.prefix("/entries").router({
     )
     .output(z.void())
     .handler(async ({ context, input }) => {
-      await Entries.delete({
+      const deletedIDs = await Entries.delete({
         workspaceID: context.auth.workspaceID,
         ids: input.ids
       });
 
       emitEntryEvent(context.auth.workspaceID, {
         action: "entry:delete",
-        data: { ids: input.ids },
+        data: { ids: deletedIDs },
         memberID: context.auth.session?.memberID
       });
     }),

@@ -1,7 +1,7 @@
 import { toUUID } from "#backend/lib/id";
 import { db } from "#backend/lib/postgres";
 import { collections, type Collection } from "#backend/db";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 import { ROOT_COLLECTION_NAME } from "./root";
 
@@ -20,6 +20,7 @@ const updateCollection = async (
       and(
         eq(collections.id, toUUID(input.id)),
         eq(collections.workspaceID, toUUID(input.workspaceID)),
+        isNull(collections.deletedAt),
         sql`${collections.parentID} is not null`
       )
     )

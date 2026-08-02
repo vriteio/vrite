@@ -32,7 +32,13 @@ const moveEntry = async (input: {
     const [entry] = await tx
       .select({ collectionID: entries.collectionID })
       .from(entries)
-      .where(and(eq(entries.id, entryID), eq(entries.workspaceID, workspaceID)))
+      .where(
+        and(
+          eq(entries.id, entryID),
+          eq(entries.workspaceID, workspaceID),
+          isNull(entries.deletedAt)
+        )
+      )
       .for("update");
 
     if (!entry) throw new ORPCError("NOT_FOUND");
@@ -44,7 +50,11 @@ const moveEntry = async (input: {
         .select({ id: collections.id })
         .from(collections)
         .where(
-          and(eq(collections.id, destinationCollectionID), eq(collections.workspaceID, workspaceID))
+          and(
+            eq(collections.id, destinationCollectionID),
+            eq(collections.workspaceID, workspaceID),
+            isNull(collections.deletedAt)
+          )
         )
         .for("update");
 
@@ -55,12 +65,14 @@ const moveEntry = async (input: {
       ? and(
           eq(entries.workspaceID, workspaceID),
           eq(entries.collectionID, destinationCollectionID),
-          ne(entries.id, entryID)
+          ne(entries.id, entryID),
+          isNull(entries.deletedAt)
         )
       : and(
           eq(entries.workspaceID, workspaceID),
           isNull(entries.collectionID),
-          ne(entries.id, entryID)
+          ne(entries.id, entryID),
+          isNull(entries.deletedAt)
         );
     const [collision] = await tx
       .select({ rank: entries.rank })
@@ -100,7 +112,13 @@ const moveEntry = async (input: {
         ...(collectionID !== undefined && { collectionID }),
         updatedAt: new Date()
       })
-      .where(and(eq(entries.id, entryID), eq(entries.workspaceID, workspaceID)));
+      .where(
+        and(
+          eq(entries.id, entryID),
+          eq(entries.workspaceID, workspaceID),
+          isNull(entries.deletedAt)
+        )
+      );
 
     return rank;
   });

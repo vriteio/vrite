@@ -1,6 +1,6 @@
 import { DropdownMenu, IconButton, MenuItem, createRef } from "@andesine/components";
 import { TreeItem, useTree } from "#web/components/tree";
-import { useNotify } from "#web/context/notifications";
+import { useClipboard } from "#web/context/clipboard";
 import { useWorkspace } from "#web/context/workspace";
 import { Entry } from "#web/lib/client";
 import clsx from "clsx";
@@ -36,7 +36,7 @@ interface ExplorerEntryProps {
 
 const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
   const params = useParams();
-  const notify = useNotify();
+  const { copyText } = useClipboard();
   const navigate = useNavigate();
   const { workspaceID, content } = useWorkspace();
   const [{ isSelected, selection, flattenedOrder }, { setRenaming, setSelection }] = useTree();
@@ -93,10 +93,9 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
           icon: "i-lucide:copy",
           shortcut: "$mod+alt+c",
           onClick: () => {
-            navigator.clipboard.writeText(props.entry.id);
-            notify({
-              text: "ID copied to clipboard",
-              type: "success"
+            void copyText(props.entry.id, {
+              success: "ID copied to clipboard",
+              fallback: { title: "Copy ID manually" }
             });
           }
         },

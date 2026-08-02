@@ -1,14 +1,16 @@
 import { Card, IconButton, Skeleton } from "@andesine/components";
 import { createAsync, query, revalidate, useNavigate, useParams } from "@solidjs/router";
 import { createMutation } from "@tanstack/solid-query";
-import { Component, createMemo, Show, Suspense, useTransition } from "solid-js";
+import { Component, createMemo, createSignal, Show, Suspense, useTransition } from "solid-js";
 
 import { Tree, TREE_ROOT_ID, type TreeMap } from "#web/components/tree";
+import { useClipboard } from "#web/context/clipboard";
 import { useNotify } from "#web/context/notifications";
 import { useWorkspace } from "#web/context/workspace";
 import { client, Membership, Role, UserProfile, Invite } from "#web/lib/client";
 import { Setting } from "../../setting";
 import { SettingsSection } from "../../settings-section";
+import { ActionConfirmationDialog, AffectedItem } from "../action-confirmation-dialog";
 import { InviteItem } from "./invite-item";
 import { MemberItem } from "./member-item";
 
@@ -23,6 +25,7 @@ interface InviteDetails extends Invite {
 
 interface WorkspaceMemberListProps {
   canManage: boolean;
+  currentUserID?: string;
   members: WorkspaceMember[];
   membersRefreshing?: boolean;
   refreshMembers(onRevalidated?: () => void): void;
@@ -60,6 +63,11 @@ const ListSkeleton: Component = () => {
 
 const WorkspaceMemberList: Component<WorkspaceMemberListProps> = (props) => {
   const notify = useNotify();
+  const [pendingAction, setPendingAction] = createSignal<
+    | { ids: string[]; type: "remove" }
+    | { ids: string[]; roleID: string; type: "update-role" }
+    | null
+  >(null);
   const updateRoleMutation = createMutation(() => ({
     mutationFn: ({ ids, roleID }: { ids: string[]; roleID: string }) => {
       return Promise.all(ids.map((id) => client.memberships.update({ id, roleID })));
@@ -104,47 +112,119 @@ const WorkspaceMemberList: Component<WorkspaceMemberListProps> = (props) => {
   const membersTree = createMemo<TreeMap>(() => ({
     [TREE_ROOT_ID]: { items: optimisticMembers().map((member) => member.id), levels: [] }
   }));
+  const affectedMembers = createMemo(() => {
+    const ids = pendingAction()?.ids || [];
+
+    return props.members.filter((member) => ids.includes(member.id));
+  });
+  const affectedItems = createMemo<AffectedItem[]>(() => {
+    return affectedMembers().map((member) => ({
+      detail:
+        member.profile.email !== (member.profile.name || member.profile.email)
+          ? member.profile.email
+          : undefined,
+      id: member.id,
+      label: member.profile.name || member.profile.email
+    }));
+  });
+  const affectsCurrentUser = () => {
+    return affectedMembers().some((member) => member.userID === props.currentUserID);
+  };
+  const pendingRole = () => {
+    const action = pendingAction();
+
+    return action?.type === "update-role"
+      ? props.roles.find((role) => role.id === action.roleID)
+      : undefined;
+  };
+  const confirmPendingAction = () => {
+    const action = pendingAction();
+
+    if (!action) return;
+
+    setPendingAction(null);
+    if (action.type === "remove") {
+      removeMutation.mutate({ ids: action.ids });
+    } else {
+      updateRoleMutation.mutate({ ids: action.ids, roleID: action.roleID });
+    }
+  };
 
   return (
-    <Show
-      when={optimisticMembers().length}
-      fallback={
-        <Card
-          class="flex h-16 items-center justify-center gap-1 rounded-lg bg-white px-2 text-sm text-gray-400"
-          shade
-        >
-          <div class="i-lucide:users h-5.5 w-5.5 text-gray-300" />
-          No workspace members
-        </Card>
-      }
-    >
-      <Tree
-        tree={membersTree}
-        itemHeight={32}
-        renderItem={(itemID) => {
-          const member = () => optimisticMembers().find((current) => current.id === itemID)!;
+    <>
+      <Show
+        when={optimisticMembers().length}
+        fallback={
+          <Card
+            class="flex h-16 items-center justify-center gap-1 rounded-lg bg-white px-2 text-sm text-gray-400"
+            shade
+          >
+            <div class="i-lucide:users h-5.5 w-5.5 text-gray-300" />
+            No workspace members
+          </Card>
+        }
+      >
+        <Tree
+          tree={membersTree}
+          itemHeight={32}
+          renderItem={(itemID) => {
+            const member = () => optimisticMembers().find((current) => current.id === itemID)!;
 
-          return (
-            <MemberItem
-              member={member()}
-              roles={props.roles}
-              canManage={props.canManage}
-              loading={member().optimistic}
-              onUpdateRole={(roleID, ids) => updateRoleMutation.mutate({ ids, roleID })}
-              onRemove={(ids) => removeMutation.mutate({ ids })}
-            />
-          );
-        }}
+            return (
+              <MemberItem
+                member={member()}
+                members={props.members}
+                roles={props.roles}
+                canManage={props.canManage}
+                currentUser={member().userID === props.currentUserID}
+                loading={member().optimistic}
+                onUpdateRole={(roleID, ids) =>
+                  setPendingAction({ ids, roleID, type: "update-role" })
+                }
+                onRemove={(ids) => setPendingAction({ ids, type: "remove" })}
+              />
+            );
+          }}
+        />
+      </Show>
+      <ActionConfirmationDialog
+        opened={Boolean(pendingAction())}
+        title={
+          pendingAction()?.type === "remove"
+            ? `Remove ${affectedItems().length === 1 ? "member" : `${affectedItems().length} members`}?`
+            : `Assign ${pendingRole()?.name || "role"}?`
+        }
+        description={
+          pendingAction()?.type === "remove"
+            ? "These people will immediately lose access to the workspace."
+            : `These people will receive the ${pendingRole()?.name || "selected"} role and its permissions.`
+        }
+        affected={affectedItems()}
+        warning={
+          affectsCurrentUser()
+            ? pendingAction()?.type === "remove"
+              ? "This includes you. You will immediately lose access to this workspace."
+              : "This includes you. Your workspace access may change immediately."
+            : undefined
+        }
+        confirmLabel={pendingAction()?.type === "remove" ? "Remove" : "Assign role"}
+        danger={pendingAction()?.type === "remove"}
+        onClose={() => setPendingAction(null)}
+        onConfirm={confirmPendingAction}
       />
-    </Show>
+    </>
   );
 };
 
 const InviteList: Component<InviteListProps> = (props) => {
   const notify = useNotify();
+  const { copyText } = useClipboard();
+  const [pendingRevokeIDs, setPendingRevokeIDs] = createSignal<string[]>([]);
   const copyInviteLink = (link: string) => {
-    navigator.clipboard.writeText(link);
-    notify({ type: "success", text: "Invite link copied to clipboard" });
+    void copyText(link, {
+      success: "Invite link copied to clipboard",
+      fallback: { title: "Copy invite link manually" }
+    });
   };
   const resendMutation = createMutation(() => ({
     mutationFn: ({ ids }: { ids: string[] }) => {
@@ -228,39 +308,66 @@ const InviteList: Component<InviteListProps> = (props) => {
   const invitesTree = createMemo<TreeMap>(() => ({
     [TREE_ROOT_ID]: { items: optimisticInvites().map((invite) => invite.id), levels: [] }
   }));
+  const affectedInvites = createMemo<AffectedItem[]>(() => {
+    return props.invites
+      .filter((invite) => pendingRevokeIDs().includes(invite.id))
+      .map((invite) => ({
+        detail: "Pending invitation",
+        icon: "i-lucide:mail",
+        id: invite.id,
+        label: invite.email
+      }));
+  });
 
   return (
-    <Show
-      when={optimisticInvites().length}
-      fallback={
-        <Card
-          class="flex h-16 items-center justify-center gap-1 rounded-lg bg-white px-2 text-sm text-gray-400"
-          shade
-        >
-          <div class="i-lucide:mail h-5.5 w-5.5 text-gray-300" />
-          No pending invitations
-        </Card>
-      }
-    >
-      <Tree
-        tree={invitesTree}
-        itemHeight={32}
-        renderItem={(itemID) => {
-          const invite = () => optimisticInvites().find((current) => current.id === itemID)!;
+    <>
+      <Show
+        when={optimisticInvites().length}
+        fallback={
+          <Card
+            class="flex h-16 items-center justify-center gap-1 rounded-lg bg-white px-2 text-sm text-gray-400"
+            shade
+          >
+            <div class="i-lucide:mail h-5.5 w-5.5 text-gray-300" />
+            No pending invitations
+          </Card>
+        }
+      >
+        <Tree
+          tree={invitesTree}
+          itemHeight={32}
+          renderItem={(itemID) => {
+            const invite = () => optimisticInvites().find((current) => current.id === itemID)!;
 
-          return (
-            <InviteItem
-              invite={invite()}
-              roles={props.roles}
-              loading={invite().optimistic}
-              onCopyLink={(link) => copyInviteLink(link)}
-              onRevoke={(ids) => revokeMutation.mutate({ ids })}
-              onResend={(ids) => resendMutation.mutate({ ids })}
-            />
-          );
+            return (
+              <InviteItem
+                invite={invite()}
+                roles={props.roles}
+                loading={invite().optimistic}
+                onCopyLink={(link) => copyInviteLink(link)}
+                onRevoke={setPendingRevokeIDs}
+                onResend={(ids) => resendMutation.mutate({ ids })}
+              />
+            );
+          }}
+        />
+      </Show>
+      <ActionConfirmationDialog
+        opened={pendingRevokeIDs().length > 0}
+        title={`Revoke ${affectedInvites().length === 1 ? "invitation" : `${affectedInvites().length} invitations`}?`}
+        description="These invite links will stop working immediately."
+        affected={affectedInvites()}
+        confirmLabel="Revoke"
+        danger
+        onClose={() => setPendingRevokeIDs([])}
+        onConfirm={() => {
+          const ids = pendingRevokeIDs();
+
+          setPendingRevokeIDs([]);
+          revokeMutation.mutate({ ids });
         }}
       />
-    </Show>
+    </>
   );
 };
 
@@ -295,7 +402,7 @@ const InvitationsSubsection: Component<InvitationSubsectionProps> = (props) => {
 };
 
 const MembersSection: Component = () => {
-  const { hasPermission } = useWorkspace();
+  const { currentWorkspace, hasPermission } = useWorkspace();
   const navigate = useNavigate();
   const params = useParams<{ workspaceID?: string }>();
   const members = createAsync(() => membershipsQuery());
@@ -338,6 +445,7 @@ const MembersSection: Component = () => {
               members={members() || []}
               roles={roles() || []}
               canManage={canManage()}
+              currentUserID={currentWorkspace()?.userID}
               membersRefreshing={membersRefreshing()}
               refreshMembers={refreshMembers}
             />

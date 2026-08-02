@@ -16,6 +16,7 @@ const getRootCollection = async (input: { workspaceID: string }): Promise<Collec
       and(
         eq(collections.workspaceID, workspaceID),
         isNull(collections.parentID),
+        isNull(collections.deletedAt),
         eq(collections.name, ROOT_COLLECTION_NAME)
       )
     );

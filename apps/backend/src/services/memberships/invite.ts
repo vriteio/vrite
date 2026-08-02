@@ -52,7 +52,8 @@ const inviteMember = async (input: {
         );
 
       if (existingMember) {
-        throw new ORPCError("BAD_REQUEST", {
+        throw new ORPCError("MEMBERSHIP_ALREADY_EXISTS", {
+          status: 409,
           message: "This user is already a member of the workspace"
         });
       }
@@ -70,7 +71,8 @@ const inviteMember = async (input: {
       );
 
     if (existingInvite) {
-      throw new ORPCError("BAD_REQUEST", {
+      throw new ORPCError("INVITE_ALREADY_PENDING", {
+        status: 409,
         message: "An invite has already been sent to this email"
       });
     }

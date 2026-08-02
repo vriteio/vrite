@@ -13,6 +13,9 @@ type Render = (
   ctx: { request: FastifyRequest; reply: FastifyReply },
   config: RenderConfig
 ) => Promise<void>;
+type RenderToStreamOptions = NonNullable<Parameters<typeof renderToStream>[1]> & {
+  onError(error: unknown): void;
+};
 
 const SSR_OUTLET = "<!--ssr-outlet-->";
 
@@ -23,7 +26,7 @@ const isRedirectResponse = (response: Response | { status: number; headers: Head
 const createWebRequest = (fastifyRequest: FastifyRequest): Request => {
   const url = new URL(
     fastifyRequest.url,
-    `${import.meta.env.PUBLIC_SECURE ? "https" : "http"}://${fastifyRequest.headers.host}`
+    `${import.meta.env.PUBLIC_SECURE === "true" ? "https" : "http"}://${fastifyRequest.headers.host}`
   );
   const hasBody = !["GET", "HEAD"].includes(fastifyRequest.method);
   const body = fastifyRequest.body;
@@ -62,6 +65,7 @@ const render: Render = async (ctx, config) => {
 
   let resolveShellReady: (() => void) | undefined;
   let rejectShellReady: ((reason?: unknown) => void) | undefined;
+  let shellReadySettled = false;
 
   const shellReady = new Promise<void>((resolve, reject) => {
     resolveShellReady = resolve;
@@ -69,16 +73,29 @@ const render: Render = async (ctx, config) => {
   });
 
   const stream = new PassThrough();
+  const renderOptions: RenderToStreamOptions = {
+    onCompleteShell() {
+      shellReadySettled = true;
+      resolveShellReady?.();
+    },
+    onCompleteAll() {
+      shellReadySettled = true;
+      resolveShellReady?.();
+    },
+    onError(error) {
+      if (shellReadySettled) return;
+
+      shellReadySettled = true;
+      stream.destroy();
+      rejectShellReady?.(error);
+    }
+  };
 
   const appStream = provideRequestEvent(webCtx, () => {
-    return renderToStream(() => ssr([templateStart, templateEnd], <App url={ctx.request.url} />), {
-      onCompleteShell() {
-        resolveShellReady?.();
-      },
-      onCompleteAll() {
-        resolveShellReady?.();
-      }
-    });
+    return renderToStream(
+      () => ssr([templateStart, templateEnd], <App url={ctx.request.url} />),
+      renderOptions
+    );
   });
 
   appStream.pipe(stream);

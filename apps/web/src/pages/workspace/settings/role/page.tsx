@@ -1,7 +1,7 @@
 import { Button, Fragment, IconButton, Input, ToggleGroup, Tooltip } from "@andesine/components";
 import { createAsync, query, revalidate, useNavigate, useParams } from "@solidjs/router";
 import { createMutation } from "@tanstack/solid-query";
-import { Component, createEffect, createMemo, createSignal, For } from "solid-js";
+import { Component, createEffect, createMemo, createSignal, For, Show } from "solid-js";
 import { Dynamic } from "solid-js/web";
 
 import { useNotify } from "#web/context/notifications";
@@ -17,13 +17,13 @@ const resources: Array<{
   description: string;
   id: Resource;
   label: string;
-  defaultRead?: boolean;
+  defaultView?: boolean;
 }> = [
   {
     id: "content",
     label: "Content",
     description: "Create, edit, and delete entries and collections",
-    defaultRead: true
+    defaultView: true
   },
   {
     id: "api_keys",
@@ -39,7 +39,7 @@ const resources: Array<{
     id: "workspace",
     label: "Workspace",
     description: "Manage workspace settings, roles, and members",
-    defaultRead: true
+    defaultView: true
   }
 ];
 const emptyAccess = (): ResourceAccess => ({
@@ -83,8 +83,6 @@ const RoleSettingsPage: Component = () => {
   const navigateToPeople = () => navigate(`/${params.workspaceID || ""}/settings/people`);
   const roles = createAsync(
     async () => {
-      if (!roleID()) return [];
-
       try {
         return await rolesQuery();
       } catch (error) {
@@ -99,17 +97,29 @@ const RoleSettingsPage: Component = () => {
     return roleID() ? roles()?.find((role) => role.id === roleID()) : null;
   });
   const [roleName, setRoleName] = createSignal("");
+  const [roleNameServerError, setRoleNameServerError] = createSignal("");
   const [resourceAccess, setResourceAccess] = createSignal<ResourceAccess>(emptyAccess());
   const formUnavailable = createMemo(() => {
     const role = currentRole();
 
     return Boolean(roleID() && roles() && (!role || role.baseRole));
   });
+  const roleNameError = createMemo(() => {
+    if (!roleName().trim()) return "Role name is required";
+    if (roleName().trim().length > 50) return "Role name must be 50 characters or fewer";
+    const normalizedName = roleName().trim().toLowerCase();
+    const duplicate = roles()?.some((role) => {
+      return role.id !== roleID() && role.name.trim().toLowerCase() === normalizedName;
+    });
+
+    if (duplicate) return "A role with this name already exists";
+
+    return roleNameServerError();
+  });
   const fillError = createMemo(() => {
     if (roleID() && roles() && !currentRole()) return "Role could not be found";
     if (currentRole()?.baseRole) return "System roles cannot be edited";
-    if (!roleName().trim()) return "Role name is required";
-    if (roleName().trim().length > 50) return "Role name must be 50 characters or fewer";
+    if (roleNameError()) return roleNameError();
 
     return "";
   });
@@ -121,10 +131,20 @@ const RoleSettingsPage: Component = () => {
       navigateToPeople();
     },
     onError: (error) => {
+      const duplicateName =
+        error &&
+        typeof error === "object" &&
+        "code" in error &&
+        error.code === "ROLE_NAME_DUPLICATE";
+
+      if (duplicateName) {
+        setRoleNameServerError("A role with this name already exists");
+      }
+
       console.error(error);
       notify({
         type: "error",
-        text: error instanceof Error && error.message ? error.message : "Failed to create role"
+        text: duplicateName ? "A role with this name already exists" : "Failed to create role"
       });
     }
   }));
@@ -139,9 +159,16 @@ const RoleSettingsPage: Component = () => {
     },
     onError: (error) => {
       console.error(error);
+      const duplicateName =
+        error &&
+        typeof error === "object" &&
+        "code" in error &&
+        error.code === "ROLE_NAME_DUPLICATE";
+
+      if (duplicateName) setRoleNameServerError("A role with this name already exists");
       notify({
         type: "error",
-        text: error instanceof Error && error.message ? error.message : "Failed to update role"
+        text: duplicateName ? "A role with this name already exists" : "Failed to update role"
       });
     }
   }));
@@ -187,8 +214,28 @@ const RoleSettingsPage: Component = () => {
               color="contrast"
               size="small"
               value={roleName()}
-              setValue={setRoleName}
-              class="w-full max-w-md"
+              setValue={(name) => {
+                setRoleName(name);
+                setRoleNameServerError("");
+              }}
+              class="min-w-0"
+              slotWrapperClass="w-full max-w-md"
+              slot={() => (
+                <Show when={roleNameError()}>
+                  {(error) => (
+                    <div class="absolute right-2">
+                      <Tooltip content={error()} side="top">
+                        <div
+                          class="i-lucide:triangle-alert h-4.5 w-4.5 text-red-500"
+                          title={error()}
+                          aria-label={error()}
+                          tabindex="0"
+                        />
+                      </Tooltip>
+                    </div>
+                  )}
+                </Show>
+              )}
               disabled={formUnavailable() || mutationPending()}
             />
           </Setting>
@@ -207,9 +254,9 @@ const RoleSettingsPage: Component = () => {
                     }));
                   }}
                   options={
-                    resource.defaultRead === true
+                    resource.defaultView === true
                       ? [
-                          { value: "default", label: "Read" },
+                          { value: "default", label: "View" },
                           { value: "write", label: "Manage" }
                         ]
                       : [

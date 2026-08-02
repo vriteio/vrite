@@ -21,6 +21,7 @@ const subscriptionValues = (subscription: Stripe.Subscription) => {
   const isTerminal = isTerminalSubscription(subscription.status);
   const isPro = Boolean(seatItem && apiUsageItem) && !isTerminal;
   const currentPeriodEnd = seatItem?.current_period_end ?? apiUsageItem?.current_period_end;
+  const terminalEnd = subscription.ended_at ?? subscription.canceled_at;
 
   return {
     subscriptionPlan: isPro ? "pro" : "free",
@@ -30,10 +31,15 @@ const subscriptionValues = (subscription: Stripe.Subscription) => {
       : {
           subscriptionID: subscription.id,
           seatItemID: seatItem?.id,
-          apiUsageItemID: apiUsageItem?.id
+          apiUsageItemID: apiUsageItem?.id,
+          cancelAtPeriodEnd: subscription.cancel_at_period_end
         },
     subscriptionExpiresAt:
-      !isTerminal && currentPeriodEnd ? new Date(currentPeriodEnd * 1000) : null,
+      isTerminal && terminalEnd
+        ? new Date(terminalEnd * 1000)
+        : currentPeriodEnd
+          ? new Date(currentPeriodEnd * 1000)
+          : null,
     updatedAt: new Date()
   };
 };

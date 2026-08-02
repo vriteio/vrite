@@ -59,11 +59,23 @@ const InviteSettingsPage: Component = () => {
     },
     onError: (error) => {
       console.error(error);
+      const code =
+        error && typeof error === "object" && "code" in error && typeof error.code === "string"
+          ? error.code
+          : "";
       notify({
         type: "error",
         text:
-          error instanceof Error && error.message ? error.message : "Failed to create invitation"
+          code === "INVITE_ALREADY_PENDING"
+            ? "An invitation is already pending. You can resend or copy it from People."
+            : code === "MEMBERSHIP_ALREADY_EXISTS"
+              ? "This person is already a workspace member."
+              : "Failed to create invitation"
       });
+
+      if (code === "INVITE_ALREADY_PENDING" || code === "MEMBERSHIP_ALREADY_EXISTS") {
+        navigateToPeople();
+      }
     }
   }));
 

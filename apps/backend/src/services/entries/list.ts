@@ -1,7 +1,7 @@
 import { toCollectionID, toEntryID, toUUID } from "#backend/lib/id";
 import { db } from "#backend/lib/postgres";
 import { entries, type Entry } from "#backend/db";
-import { and, desc, eq, lt, or } from "drizzle-orm";
+import { and, desc, eq, isNull, lt, or } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 
 const listEntries = async (input: {
@@ -16,7 +16,7 @@ const listEntries = async (input: {
   const page = input.page || 1;
   const workspaceID = toUUID(input.workspaceID);
   const collectionID = input.collectionID !== undefined ? toUUID(input.collectionID) : undefined;
-  const filters = [eq(entries.workspaceID, workspaceID)];
+  const filters = [eq(entries.workspaceID, workspaceID), isNull(entries.deletedAt)];
 
   if (input.lastOrder && collectionID === undefined) {
     throw new ORPCError("BAD_REQUEST", {
@@ -25,7 +25,11 @@ const listEntries = async (input: {
   }
   if (input.lastID) {
     const cursorID = toUUID(input.lastID);
-    const cursorFilters = [eq(entries.id, cursorID), eq(entries.workspaceID, workspaceID)];
+    const cursorFilters = [
+      eq(entries.id, cursorID),
+      eq(entries.workspaceID, workspaceID),
+      isNull(entries.deletedAt)
+    ];
 
     if (collectionID) cursorFilters.push(eq(entries.collectionID, collectionID));
 

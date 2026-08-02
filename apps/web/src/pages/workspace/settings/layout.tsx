@@ -101,6 +101,17 @@ const SettingsLayout: Component<RouteSectionProps> = (props) => {
       navigate(`/${params.workspaceID || ""}`, { replace: true });
     }
   });
+  createEffect(() => {
+    const route = activeRoute();
+
+    if (
+      currentWorkspace() &&
+      (route === "people" || route === "invite" || route === "role") &&
+      !hasPermission("workspace")
+    ) {
+      navigate(`/${params.workspaceID || ""}/settings/personal`, { replace: true });
+    }
+  });
 
   onCleanup(unsubscribeFromUpdates);
 

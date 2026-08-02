@@ -12,6 +12,7 @@ import {
 
 interface BlockMenuAreaProps {
   editor: Editor | null;
+  notify(type: "success" | "error", text: string): void;
 }
 interface BlockMenuProps {
   editor: Editor | null;
@@ -37,12 +38,22 @@ const BlockMenuArea: ParentComponent<BlockMenuAreaProps> = (props) => {
 
     const { dom, text } = editor.view.serializeForClipboard(editor.state.selection.content());
 
-    navigator.clipboard.write([
-      new ClipboardItem({
-        "text/plain": new Blob([text], { type: "text/plain" }),
-        "text/html": new Blob([dom.innerHTML], { type: "text/html" })
-      })
-    ]);
+    void (async () => {
+      try {
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            "text/plain": new Blob([text], { type: "text/plain" }),
+            "text/html": new Blob([dom.innerHTML], { type: "text/html" })
+          })
+        ]);
+      } catch {
+        try {
+          await navigator.clipboard.writeText(text);
+        } catch {
+          props.notify("error", "Failed to copy blocks to the clipboard.");
+        }
+      }
+    })();
 
     return true;
   };

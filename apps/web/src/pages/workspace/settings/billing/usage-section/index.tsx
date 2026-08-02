@@ -9,13 +9,18 @@ import { formatNumber } from "#web/lib/format";
 
 const subscriptionQuery = query(() => client.billing.subscription(), "billing-subscription");
 const usageQuery = query(() => client.billing.usage(), "billing-usage");
+const formatUTCDate = (date: Date): string => {
+  return new Intl.DateTimeFormat("en-US", {
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+    year: "numeric"
+  }).format(date);
+};
 
 const UsageSection: Component = () => {
   const usage = createAsync(() => usageQuery());
   const subscription = createAsync(() => subscriptionQuery());
-  const now = new Date();
-  const currentDay = now.getDate();
-  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   const isPro = () => subscription.latest?.plan === "pro";
   const limitExceeded = () => !isPro() && (usage()?.totalUsage || 0) >= (usage()?.limit || 0);
 
@@ -40,7 +45,9 @@ const UsageSection: Component = () => {
             <>
               <Setting
                 label="Monthly API calls"
-                description="Requests made during the current billing period"
+                description={`Requests made this UTC month. Allowance resets ${formatUTCDate(
+                  usageData().resetDate
+                )} at 00:00 UTC`}
                 fade={false}
               >
                 <div class="flex items-end gap-0.5">
@@ -73,11 +80,11 @@ const UsageSection: Component = () => {
               <div class="flex flex-col gap-4">
                 <UsageChart
                   daily={usageData().dailyUsage}
-                  currentDay={currentDay}
+                  currentDay={usageData().endDate.getUTCDate()}
                   limit={usageData().limit}
-                  daysInMonth={daysInMonth}
-                  year={usageData().startDate.getFullYear()}
-                  month={usageData().startDate.getMonth() + 1}
+                  daysInMonth={new Date(usageData().resetDate.getTime() - 1).getUTCDate()}
+                  year={usageData().startDate.getUTCFullYear()}
+                  month={usageData().startDate.getUTCMonth() + 1}
                 />
               </div>
             </>

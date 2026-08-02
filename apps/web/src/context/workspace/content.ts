@@ -75,7 +75,7 @@ const applyCollectionSnapshot = <T extends { id: IDBValidKey } & Record<string, 
     }
   });
 };
-const useWorkspaceContent = (workspaceID: Accessor<string>) => {
+const useWorkspaceContent = (workspaceID: Accessor<string>, canWrite: Accessor<boolean>) => {
   const isOnline = useConnectivitySignal();
   const [contentCollections, setContentCollections] = createSignal(createWorkspaceCollections());
   const [loading, setLoading] = createSignal(Boolean(workspaceID()));
@@ -108,7 +108,7 @@ const useWorkspaceContent = (workspaceID: Accessor<string>) => {
   };
 
   const readOnly = () => {
-    return !isOnline() || !contentCollections().workspaceID;
+    return !isOnline() || !contentCollections().workspaceID || !canWrite();
   };
   const offline = () => {
     return !isOnline();

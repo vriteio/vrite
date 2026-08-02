@@ -6,11 +6,55 @@ import { Button, Spinner } from "@andesine/components";
 import { appendRedirectTo } from "#web/lib/redirects";
 import { createMutation } from "@tanstack/solid-query";
 
+type InviteErrorCode =
+  | "INVITE_ACCOUNT_MISMATCH"
+  | "INVITE_ALREADY_ACCEPTED"
+  | "INVITE_EXPIRED"
+  | "INVITE_INVALID"
+  | "UNAUTHORIZED"
+  | "UNKNOWN";
+
+const getInviteErrorDetails = (error: unknown): { code: InviteErrorCode; workspaceID?: string } => {
+  if (!error || typeof error !== "object") return { code: "UNKNOWN" };
+
+  const details = error as { code?: unknown; data?: unknown };
+  const supportedCodes: InviteErrorCode[] = [
+    "INVITE_ACCOUNT_MISMATCH",
+    "INVITE_ALREADY_ACCEPTED",
+    "INVITE_EXPIRED",
+    "INVITE_INVALID",
+    "UNAUTHORIZED"
+  ];
+  const code =
+    typeof details.code === "string" && supportedCodes.includes(details.code as InviteErrorCode)
+      ? (details.code as InviteErrorCode)
+      : "UNKNOWN";
+  const data =
+    details.data && typeof details.data === "object"
+      ? (details.data as { workspaceID?: unknown })
+      : undefined;
+
+  return {
+    code,
+    ...(typeof data?.workspaceID === "string" && { workspaceID: data.workspaceID })
+  };
+};
+const inviteErrorMessages: Record<InviteErrorCode, string> = {
+  INVITE_ACCOUNT_MISMATCH: "This invitation was sent to another account.",
+  INVITE_ALREADY_ACCEPTED: "This invitation has already been accepted.",
+  INVITE_EXPIRED: "This invitation has expired. Ask a workspace admin for a new link.",
+  INVITE_INVALID: "This invitation link is invalid.",
+  UNAUTHORIZED: "Sign in to the invited account to accept this invitation.",
+  UNKNOWN: "Failed to accept the invitation. Please try again."
+};
+
 const InvitePage: Component = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [status, setStatus] = createSignal<"loading" | "success" | "error">("loading");
   const [errorMessage, setErrorMessage] = createSignal("Something went wrong");
+  const [errorCode, setErrorCode] = createSignal<InviteErrorCode>("UNKNOWN");
+  const [acceptedWorkspaceID, setAcceptedWorkspaceID] = createSignal<string>();
   const [workspaceName, setWorkspaceName] = createSignal<string | null>(null);
   const acceptInviteMutation = createMutation(() => ({
     mutationFn: (input: { id: string; expires: number; signature: string }) => {
@@ -22,11 +66,7 @@ const InvitePage: Component = () => {
   const switchAccountLink = createMemo(() =>
     appendRedirectTo("/auth/sign-in?addAccount=true", redirectTarget())
   );
-  const canSwitchAccount = createMemo(
-    () =>
-      errorMessage().includes("Sign in with that account") ||
-      errorMessage().includes("authenticated")
-  );
+  const canSwitchAccount = () => errorCode() === "INVITE_ACCOUNT_MISMATCH";
 
   onMount(async () => {
     const params = new URLSearchParams(location.search);
@@ -35,7 +75,8 @@ const InvitePage: Component = () => {
     const signature = params.get("signature");
 
     if (!id || !Number.isSafeInteger(expires) || !signature) {
-      setErrorMessage("Invalid invite link");
+      setErrorCode("INVITE_INVALID");
+      setErrorMessage(inviteErrorMessages.INVITE_INVALID);
       setStatus("error");
 
       return;
@@ -57,9 +98,11 @@ const InvitePage: Component = () => {
       setStatus("success");
       setTimeout(() => navigate(`/${result.workspaceID}/`), 1600);
     } catch (error) {
-      setErrorMessage(
-        error instanceof Error && error.message ? error.message : "Failed to accept invite"
-      );
+      const details = getInviteErrorDetails(error);
+
+      setErrorCode(details.code);
+      setAcceptedWorkspaceID(details.workspaceID);
+      setErrorMessage(inviteErrorMessages[details.code]);
       setStatus("error");
     }
   });
@@ -92,9 +135,37 @@ const InvitePage: Component = () => {
                   Sign in with another account
                 </Button>
               </Show>
-              <Button size="small" variant="outlined" text="soft" link={signInLink()}>
-                Go to sign in
-              </Button>
+              <Show when={errorCode() === "UNAUTHORIZED"}>
+                <Button size="small" color="primary" link={signInLink()}>
+                  Go to sign in
+                </Button>
+              </Show>
+              <Show when={errorCode() === "INVITE_ALREADY_ACCEPTED" && acceptedWorkspaceID()}>
+                <Button size="small" color="primary" link={`/${acceptedWorkspaceID()}/`}>
+                  Open workspace
+                </Button>
+              </Show>
+              <Show when={errorCode() === "UNKNOWN"}>
+                <Button size="small" color="primary" onClick={() => window.location.reload()}>
+                  Try again
+                </Button>
+              </Show>
+              <Show
+                when={
+                  errorCode() === "INVITE_EXPIRED" ||
+                  errorCode() === "INVITE_INVALID" ||
+                  (errorCode() === "INVITE_ALREADY_ACCEPTED" && !acceptedWorkspaceID())
+                }
+              >
+                <Button
+                  size="small"
+                  variant="outlined"
+                  text="soft"
+                  onClick={() => window.history.back()}
+                >
+                  Go back
+                </Button>
+              </Show>
             </div>
           </Match>
         </Switch>

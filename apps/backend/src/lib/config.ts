@@ -13,6 +13,7 @@ const cookieDomain = z.preprocess(
     )
     .optional()
 );
+const secret = z.string().trim().min(32, "SECRET must contain at least 32 characters");
 const configSchema = z.object({
   NODE_ENV: z.string().optional().describe("Node environment"),
   // Hosts
@@ -26,7 +27,7 @@ const configSchema = z.object({
     .optional()
     .describe("Whether to use secure connections for public URLs"),
   // Secrets
-  SECRET: z.string().describe("Secret for signing tokens and encrypting data"),
+  SECRET: secret.describe("Secret for signing tokens and encrypting data"),
   // Database
   DATABASE_URL: z.string().describe("PostgreSQL connection URL"),
   REDIS_URL: z.string().describe("Redis connection URL"),

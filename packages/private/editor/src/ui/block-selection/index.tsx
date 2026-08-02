@@ -296,6 +296,9 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
     window.addEventListener("contextmenu", onPointerEnd);
 
     onCleanup(() => {
+      setPointerDown(false);
+      stopAutoScroll();
+      document.documentElement.classList.remove("select-none", "cursor-crosshair");
       window.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("pointerup", onPointerEnd);
       window.removeEventListener("pointerleave", onPointerEnd);

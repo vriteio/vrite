@@ -1,7 +1,7 @@
 import { toCollectionID } from "#backend/lib/id";
 import { db } from "#backend/lib/postgres";
 import { collections, type Collection } from "#backend/db";
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq, isNull } from "drizzle-orm";
 
 type CollectionRow = typeof collections.$inferSelect;
 
@@ -38,7 +38,7 @@ const loadCollectionTree = async (workspaceID: string) => {
   const rows = await db
     .select()
     .from(collections)
-    .where(eq(collections.workspaceID, workspaceID))
+    .where(and(eq(collections.workspaceID, workspaceID), isNull(collections.deletedAt)))
     .orderBy(asc(collections.rank), asc(collections.id));
 
   return { rows, collections: mapCollectionTree(rows) };

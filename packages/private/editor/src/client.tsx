@@ -271,7 +271,7 @@ const ClientEditor: Component<EditorProps> = (props) => {
       <div class="overflow-hidden relative flex h-full w-full">
         <ScrollShadow scrollableContainerRef={scrollableContainerRef} />
         <div class="p-10 pt-5 overflow-auto w-full z-0 relative" ref={setScrollableContainerRef}>
-          <BlockMenuArea editor={editableEditor()}>
+          <BlockMenuArea editor={editableEditor()} notify={props.notify}>
             <div class="w-full flex flex-col items-center">
               <div
                 class="w-full prose-editor z-1 max-w-[44rem] prose prose-headings:font-semibold prose-headings:text-gray-700 prose-bold:text-gray-700 dark:prose-invert flex flex-col relative"

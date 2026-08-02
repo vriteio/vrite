@@ -29,6 +29,7 @@ interface TooltipProps {
   open?: boolean;
   openDelay?: number;
   closeDelay?: number;
+  offset?: { mainAxis?: number; crossAxis?: number };
 }
 
 const OPEN_DELAY = 500;
@@ -69,7 +70,7 @@ const Tooltip: Component<TooltipProps> = (props) => {
       }}
       positioning={{
         strategy: props.fixed ? "fixed" : "absolute",
-        offset: { mainAxis: 6 },
+        offset: { mainAxis: props.offset?.mainAxis ?? 6, crossAxis: props.offset?.crossAxis ?? 0 },
         placement: placement()
       }}
       disabled={!md() || !enabled()}

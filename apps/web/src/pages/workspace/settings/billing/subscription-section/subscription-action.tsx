@@ -1,5 +1,5 @@
 import { Button } from "@andesine/components";
-import { createAsync, query } from "@solidjs/router";
+import { createAsync, query, revalidate } from "@solidjs/router";
 import { createMutation } from "@tanstack/solid-query";
 import { Component, createMemo, Show } from "solid-js";
 
@@ -16,6 +16,7 @@ interface SubscriptionInfo {
   seats: number;
   expiresAt: string | null;
   customerID: string | null;
+  cancelAtPeriodEnd: boolean;
 }
 interface SubscriptionInfoProps {
   subscription: SubscriptionInfo;
@@ -25,14 +26,17 @@ interface SubscriptionInfoProps {
 
 const subscriptionQuery = query(() => client.billing.subscription(), "billing-subscription");
 const SubscriptionInfo: Component<SubscriptionInfoProps> = (props) => {
-  const daysUntilExpiry = createMemo(() => {
+  const periodDate = createMemo(() => {
     const expiresAt = props.subscription.expiresAt;
 
     if (!expiresAt) return null;
 
-    const diff = new Date(expiresAt).getTime() - Date.now();
-
-    return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+    return new Intl.DateTimeFormat("en-US", {
+      day: "numeric",
+      month: "short",
+      timeZone: "UTC",
+      year: "numeric"
+    }).format(new Date(expiresAt));
   });
   const billingStatus = createMemo(() => {
     const status = props.subscription?.status;
@@ -47,29 +51,47 @@ const SubscriptionInfo: Component<SubscriptionInfoProps> = (props) => {
     if (status === "canceled" || status === "inactive") {
       return {
         icon: "i-lucide:arrow-big-down-dash",
-        text: "This workspace is on the Free plan. You can upgrade again at any time."
+        text: periodDate()
+          ? `The subscription ended on ${periodDate()} (UTC). This workspace is now on the Free plan.`
+          : "This workspace is on the Free plan. You can upgrade again at any time."
       } as const;
     }
 
-    if (status === "incomplete" || status === "incomplete_expired") {
+    if (status === "incomplete") {
       return {
         icon: "i-lucide:clock-arrow-right",
-        text: "Checkout was not completed. Start a new checkout to activate Pro"
+        text: "Subscription setup is still processing. Billing will update after Stripe confirms it."
       } as const;
+    }
+
+    if (status === "incomplete_expired") {
+      return {
+        icon: "i-lucide:clock-arrow-right",
+        text: "The previous Checkout expired. Start a new Checkout to activate Pro."
+      } as const;
+    }
+
+    if (props.isPro && props.subscription.cancelAtPeriodEnd && periodDate()) {
+      return {
+        icon: "i-lucide:calendar-x",
+        text: `Your Pro subscription is scheduled to cancel on ${periodDate()} (UTC).`
+      } as const;
+    }
+
+    if (props.isPro && periodDate()) {
+      return {
+        icon: "i-lucide:clock",
+        text:
+          status === "trialing"
+            ? `Your trial ends on ${periodDate()} (UTC).`
+            : `Your subscription renews on ${periodDate()} (UTC).`
+      };
     }
 
     if (!props.canManageBilling) {
       return {
         icon: "i-lucide:lock",
         text: "Your role can review billing details, but billing changes require additional access"
-      };
-    }
-
-    if (props.isPro && props.subscription.expiresAt) {
-      return {
-        icon: "i-lucide:clock",
-        text: `Current period ends in ${daysUntilExpiry()} day
-                ${daysUntilExpiry() === 1 ? "" : "s"}.`
       };
     }
 
@@ -95,19 +117,6 @@ const SubscriptionAction: Component = () => {
   const notify = useNotify();
   const { hasPermission } = useWorkspace();
   const subscription = createAsync(() => subscriptionQuery());
-  const checkoutMutation = createMutation(() => ({
-    onSuccess: (url) => {
-      window.location.href = url;
-    },
-    onError: () => {
-      notify({ text: "Couldn't start checkout. Please try again.", type: "error" });
-    },
-    mutationFn: async () => {
-      const { url } = await client.billing.checkout();
-
-      return url;
-    }
-  }));
   const portalMutation = createMutation(() => ({
     onSuccess: (url) => {
       window.location.href = url;
@@ -121,12 +130,44 @@ const SubscriptionAction: Component = () => {
       return url;
     }
   }));
+  const checkoutMutation = createMutation(() => ({
+    onSuccess: (url) => {
+      window.location.href = url;
+    },
+    onError: (error) => {
+      const code =
+        error && typeof error === "object" && "code" in error && typeof error.code === "string"
+          ? error.code
+          : "";
+
+      if (code === "SUBSCRIPTION_MANAGE_IN_PORTAL") {
+        portalMutation.mutate();
+        return;
+      }
+      if (code === "SUBSCRIPTION_SETUP_PENDING") {
+        void revalidate(subscriptionQuery.key);
+        notify({
+          text: "Subscription setup is still processing. Refresh billing status in a moment.",
+          type: "info"
+        });
+        return;
+      }
+
+      notify({ text: "Couldn't start checkout. Please try again.", type: "error" });
+    },
+    mutationFn: async () => {
+      const { url } = await client.billing.checkout();
+
+      return url;
+    }
+  }));
   const canManageBilling = () => hasPermission("billing");
 
   return (
     <Show when={subscription()}>
       {(subscriptionData) => {
         const isPro = () => subscriptionData().plan === "pro";
+        const setupPending = () => subscriptionData().status === "incomplete";
 
         return (
           <div class="flex flex-col gap-2 w-full max-w-64">
@@ -134,7 +175,10 @@ const SubscriptionAction: Component = () => {
               color="primary"
               class="flex flex-col items-start rounded-xl px-3 py-2 h-full w-full relative overflow-hidden"
               disabled={
-                checkoutMutation.isPending || portalMutation.isPending || !canManageBilling()
+                checkoutMutation.isPending ||
+                portalMutation.isPending ||
+                setupPending() ||
+                !canManageBilling()
               }
               onClick={() => {
                 if (canManageBilling()) {
@@ -155,18 +199,22 @@ const SubscriptionAction: Component = () => {
               <span class="opacity-50 text-xs font-semibold w-full text-start">
                 {checkoutMutation.isPending || portalMutation.isPending
                   ? "Redirecting"
-                  : canManageBilling()
-                    ? isPro()
-                      ? "Manage"
-                      : "Upgrade"
-                    : "View only"}
+                  : setupPending()
+                    ? "Processing"
+                    : canManageBilling()
+                      ? isPro()
+                        ? "Manage"
+                        : "Upgrade"
+                      : "View only"}
               </span>
               <div class="w-full flex">
                 <span class="flex-1 font-semibold text-start">
                   {canManageBilling()
-                    ? isPro()
-                      ? "Manage subscription"
-                      : "Pro Plan"
+                    ? setupPending()
+                      ? "Subscription setup"
+                      : isPro()
+                        ? "Manage subscription"
+                        : "Pro Plan"
                     : "Current plan"}
                 </span>
                 <span class="text-base">

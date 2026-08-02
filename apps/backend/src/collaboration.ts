@@ -1,12 +1,18 @@
 import { contents, entries, workspaces } from "#backend/db";
-import { emitEntryEvent, subscribeToWorkspaceStateEvents } from "#backend/events";
+import {
+  emitEntryEvent,
+  subscribeToEntryEvents,
+  subscribeToMembershipEvents,
+  subscribeToRoleEvents,
+  subscribeToWorkspaceStateEvents
+} from "#backend/events";
 import { hasPermission } from "#backend/lib/middleware";
 import { toEntryID, toUUID, toWorkspaceID } from "#backend/lib/id";
-import { Auth, type SessionData } from "#backend/services/auth";
+import { Auth, isSessionAuthorizationEvent, type SessionData } from "#backend/services/auth";
 import { Database } from "@hocuspocus/extension-database";
 import { Redis as RedisExtension } from "@hocuspocus/extension-redis";
-import { Hocuspocus } from "@hocuspocus/server";
-import { eq } from "drizzle-orm";
+import { Hocuspocus, type WebSocketLike } from "@hocuspocus/server";
+import { and, eq, isNull } from "drizzle-orm";
 import { config } from "#backend/lib/config";
 import { db } from "#backend/lib/postgres";
 import { applyUpdate, Doc, encodeStateAsUpdate, XmlElement, XmlText } from "yjs";
@@ -62,7 +68,7 @@ const authenticateCollaboration = async (input: {
     })
     .from(entries)
     .innerJoin(workspaces, eq(workspaces.id, entries.workspaceID))
-    .where(eq(entries.id, entryID))
+    .where(and(eq(entries.id, entryID), isNull(entries.deletedAt)))
     .limit(1);
 
   if (!entry || entry.workspaceDeletingAt) {
@@ -142,7 +148,8 @@ const collab = new Hocuspocus<CollaborationContext>({
         const [content] = await db
           .select({ state: contents.state })
           .from(contents)
-          .where(eq(contents.entryID, toUUID(documentName)))
+          .innerJoin(entries, eq(entries.id, contents.entryID))
+          .where(and(eq(contents.entryID, toUUID(documentName)), isNull(entries.deletedAt)))
           .limit(1);
 
         if (content?.state) {
@@ -161,7 +168,7 @@ const collab = new Hocuspocus<CollaborationContext>({
               name: entries.name
             })
             .from(entries)
-            .where(eq(entries.id, entryID))
+            .where(and(eq(entries.id, entryID), isNull(entries.deletedAt)))
             .for("update");
 
           if (!entry) return null;
@@ -198,7 +205,7 @@ const collab = new Hocuspocus<CollaborationContext>({
             await tx
               .update(entries)
               .set({ name: title, updatedAt: new Date() })
-              .where(eq(entries.id, entryID));
+              .where(and(eq(entries.id, entryID), isNull(entries.deletedAt)));
 
             return { entry, title };
           }
@@ -218,6 +225,35 @@ const collab = new Hocuspocus<CollaborationContext>({
       }
     })
   ]
+});
+
+const resetAffectedConnections = (event: Parameters<typeof isSessionAuthorizationEvent>[1]) => {
+  const affectedSockets = new Set<WebSocketLike>();
+
+  for (const document of collab.documents.values()) {
+    for (const connection of document.getConnections()) {
+      const auth = connection.context.auth;
+
+      if (auth && isSessionAuthorizationEvent(auth, event)) {
+        affectedSockets.add(connection.webSocket);
+      }
+    }
+  }
+
+  for (const socket of affectedSockets) {
+    socket.close(4205, "Reset Connection");
+  }
+};
+
+subscribeToMembershipEvents("*", resetAffectedConnections);
+subscribeToRoleEvents("*", resetAffectedConnections);
+
+subscribeToEntryEvents("*", (event) => {
+  if (event.action !== "entry:delete") return;
+
+  for (const entryID of event.data.ids) {
+    collab.closeConnections(entryID);
+  }
 });
 
 subscribeToWorkspaceStateEvents("*", (event) => {

@@ -15,7 +15,7 @@ const rolesRouter = base.prefix("/roles").router({
     })
     .meta({
       required: {
-        session: ["content"],
+        session: ["workspace"],
         key: ["read:roles"]
       }
     })
@@ -40,7 +40,7 @@ const rolesRouter = base.prefix("/roles").router({
     .use(authorized)
     .input(
       z.object({
-        name: z.string().min(1).max(50).describe("Name of the role"),
+        name: z.string().trim().min(1).max(50).describe("Name of the role"),
         permissions: z.array(permissionType).describe("Permissions to grant to the role")
       })
     )
@@ -75,7 +75,7 @@ const rolesRouter = base.prefix("/roles").router({
     .input(
       z.object({
         id: id().describe("ID of the role to update"),
-        name: z.string().min(1).max(50).optional().describe("New name for the role"),
+        name: z.string().trim().min(1).max(50).optional().describe("New name for the role"),
         permissions: z.array(permissionType).optional().describe("New permissions for the role")
       })
     )

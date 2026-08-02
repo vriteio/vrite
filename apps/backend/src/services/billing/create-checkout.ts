@@ -5,6 +5,11 @@ import { stripe } from "#backend/lib/stripe";
 import { config } from "#backend/lib/config";
 import { ORPCError } from "@orpc/server";
 import { count, eq } from "drizzle-orm";
+import { addMonths, startOfMonth } from "date-fns";
+
+const getNextUTCMonthStart = (date: Date): Date => {
+  return startOfMonth(addMonths(date, 1));
+};
 
 const createCheckout = async (input: {
   workspaceID: string;
@@ -18,67 +23,114 @@ const createCheckout = async (input: {
   }
 
   const workspaceUUID = toUUID(input.workspaceID);
-  const [workspace] = await db
-    .select()
-    .from(workspaces)
-    .where(eq(workspaces.id, workspaceUUID))
-    .limit(1);
+  const stripeClient = stripe;
 
-  if (!workspace) throw new ORPCError("NOT_FOUND", { message: "Workspace not found" });
-  if (workspace.deletingAt) {
-    throw new ORPCError("CONFLICT", { message: "Workspace deletion is in progress" });
-  }
+  return db.transaction(async (tx) => {
+    const [workspace] = await tx
+      .select()
+      .from(workspaces)
+      .where(eq(workspaces.id, workspaceUUID))
+      .for("update");
 
-  // Count current seats (memberships)
-  const [{ value: seatCount }] = await db
-    .select({ value: count() })
-    .from(memberships)
-    .where(eq(memberships.workspaceID, workspaceUUID));
-
-  // Create or reuse Stripe customer
-  let customerID = workspace.customerID;
-
-  if (!customerID) {
-    const customer = await stripe.customers.create(
-      {
-        name: workspace.name,
-        metadata: { workspaceID: input.workspaceID }
-      },
-      { idempotencyKey: `workspace-customer:${workspaceUUID}` }
-    );
-
-    customerID = customer.id;
-    await db
-      .update(workspaces)
-      .set({ customerID, updatedAt: new Date() })
-      .where(eq(workspaces.id, workspaceUUID));
-  }
-
-  const session = await stripe.checkout.sessions.create({
-    customer: customerID,
-    mode: "subscription",
-    line_items: [
-      {
-        price: config.STRIPE_PRO_SEAT_PRICE_ID,
-        quantity: Math.max(seatCount, 1)
-      },
-      {
-        price: config.STRIPE_PRO_API_CALL_PRICE_ID
-      }
-    ],
-    success_url: input.successURL,
-    cancel_url: input.cancelURL,
-    metadata: { workspaceID: input.workspaceID },
-    subscription_data: {
-      metadata: { workspaceID: input.workspaceID }
+    if (!workspace) throw new ORPCError("NOT_FOUND", { message: "Workspace not found" });
+    if (workspace.deletingAt) {
+      throw new ORPCError("CONFLICT", { message: "Workspace deletion is in progress" });
     }
+
+    const [{ value: seatCount }] = await tx
+      .select({ value: count() })
+      .from(memberships)
+      .where(eq(memberships.workspaceID, workspaceUUID));
+    let customerID = workspace.customerID;
+
+    if (!customerID) {
+      const customer = await stripeClient.customers.create(
+        {
+          name: workspace.name,
+          metadata: { workspaceID: input.workspaceID }
+        },
+        { idempotencyKey: `workspace-customer:${workspaceUUID}` }
+      );
+
+      customerID = customer.id;
+      await tx
+        .update(workspaces)
+        .set({ customerID, updatedAt: new Date() })
+        .where(eq(workspaces.id, workspaceUUID));
+    }
+
+    let hasPendingSubscription = false;
+    let hasManageableSubscription = false;
+
+    for await (const subscription of stripeClient.subscriptions.list({
+      customer: customerID,
+      status: "all"
+    })) {
+      if (subscription.status === "incomplete") {
+        hasPendingSubscription = true;
+      } else if (
+        subscription.status !== "canceled" &&
+        subscription.status !== "incomplete_expired"
+      ) {
+        hasManageableSubscription = true;
+      }
+    }
+
+    if (hasManageableSubscription) {
+      throw new ORPCError("SUBSCRIPTION_MANAGE_IN_PORTAL", {
+        status: 409,
+        message: "An existing subscription must be managed in Billing Portal"
+      });
+    }
+    if (hasPendingSubscription) {
+      throw new ORPCError("SUBSCRIPTION_SETUP_PENDING", {
+        status: 409,
+        message: "Subscription setup is still processing"
+      });
+    }
+
+    const openSessions = await stripeClient.checkout.sessions.list({
+      customer: customerID,
+      status: "open",
+      limit: 10
+    });
+    const existingSession = openSessions.data.find((session) => {
+      return session.mode === "subscription" && session.metadata?.workspaceID === input.workspaceID;
+    });
+
+    if (existingSession?.url) return { url: existingSession.url };
+
+    const billingCycleAnchor = Math.floor(getNextUTCMonthStart(new Date()).getTime() / 1000);
+    const session = await stripeClient.checkout.sessions.create({
+      customer: customerID,
+      mode: "subscription",
+      line_items: [
+        {
+          price: config.STRIPE_PRO_SEAT_PRICE_ID,
+          quantity: Math.max(seatCount, 1)
+        },
+        {
+          price: config.STRIPE_PRO_API_CALL_PRICE_ID
+        }
+      ],
+      success_url: input.successURL,
+      cancel_url: input.cancelURL,
+      metadata: { workspaceID: input.workspaceID },
+      subscription_data: {
+        billing_cycle_anchor: billingCycleAnchor,
+        metadata: { workspaceID: input.workspaceID },
+        proration_behavior: "create_prorations"
+      }
+    });
+
+    if (!session.url) {
+      throw new ORPCError("INTERNAL_SERVER_ERROR", {
+        message: "Failed to create checkout session"
+      });
+    }
+
+    return { url: session.url };
   });
-
-  if (!session.url) {
-    throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to create checkout session" });
-  }
-
-  return { url: session.url };
 };
 
-export { createCheckout };
+export { createCheckout, getNextUTCMonthStart };

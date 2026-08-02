@@ -53,7 +53,7 @@ const isWorkspaceEventVisible = (
 
   if (event.action.startsWith("membership:")) {
     return canAccess(auth, {
-      session: ["content"],
+      session: ["workspace"],
       key: ["read:memberships"]
     });
   }
@@ -67,7 +67,7 @@ const isWorkspaceEventVisible = (
 
   if (event.action.startsWith("role:")) {
     return canAccess(auth, {
-      session: ["content"],
+      session: ["workspace"],
       key: ["read:roles"]
     });
   }

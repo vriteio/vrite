@@ -91,13 +91,26 @@ body {
   @apply w-3 bg-gray-50;
 }
 ::-webkit-scrollbar-track {
-  @apply my-4;
+  @apply my-2.5;
 }
 ::-webkit-scrollbar-thumb {
-  @apply bg-gray-100 shadow-inner border border-solid border-gray-50 rounded-lg;
+  @apply bg-gray-100 shadow-inner border-2 border-solid border-gray-50 rounded-lg;
 }
-.scrollbar-sm::-webkit-scrollbar-track {
-  @apply my-1;
+.scrollbar-sm {
+  &::-webkit-scrollbar {
+    @apply w-2.5;
+  }
+  &::-webkit-scrollbar-track {
+    @apply my-2;
+  }
+}
+.scrollbar-contrast {
+  &::-webkit-scrollbar {
+    @apply bg-gray-100;
+  }
+  &::-webkit-scrollbar-thumb {
+    @apply bg-gray-200 shadow-inner border-2 border-solid border-gray-100 rounded-lg;
+  }
 }
 
 // ARK UI Styles; TODO: PUT SOMEWHERE ELSE

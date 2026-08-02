@@ -150,10 +150,12 @@ const reportOutstandingUsage = async (input: {
 
 const endSubscription = async (input: { workspaceID: string }): Promise<void> => {
   const workspaceID = toUUID(input.workspaceID);
+  const deletingAt = new Date();
   const billing = await db.transaction(async (tx) => {
     const [workspace] = await tx
       .select({
         customerID: workspaces.customerID,
+        deletingAt: workspaces.deletingAt,
         subscriptionData: workspaces.subscriptionData
       })
       .from(workspaces)
@@ -161,10 +163,13 @@ const endSubscription = async (input: { workspaceID: string }): Promise<void> =>
       .for("update");
 
     if (!workspace) throw new ORPCError("NOT_FOUND", { message: "Workspace not found" });
+    if (workspace.deletingAt) {
+      throw new ORPCError("CONFLICT", { message: "Workspace deletion is already in progress" });
+    }
 
     await tx
       .update(workspaces)
-      .set({ deletingAt: new Date(), updatedAt: new Date() })
+      .set({ deletingAt, updatedAt: new Date() })
       .where(and(eq(workspaces.id, workspaceID), sql`${workspaces.deletingAt} is null`));
 
     return {
@@ -173,15 +178,23 @@ const endSubscription = async (input: { workspaceID: string }): Promise<void> =>
     };
   });
 
-  await reportOutstandingUsage({
-    customerID: billing.customerID,
-    workspaceID: input.workspaceID
-  });
-  await endWorkspaceSubscriptions({
-    customerID: billing.customerID,
-    subscriptionID: billing.subscriptionID,
-    workspaceID: input.workspaceID
-  });
+  try {
+    await reportOutstandingUsage({
+      customerID: billing.customerID,
+      workspaceID: input.workspaceID
+    });
+    await endWorkspaceSubscriptions({
+      customerID: billing.customerID,
+      subscriptionID: billing.subscriptionID,
+      workspaceID: input.workspaceID
+    });
+  } catch (error) {
+    await db
+      .update(workspaces)
+      .set({ deletingAt: null, updatedAt: new Date() })
+      .where(and(eq(workspaces.id, workspaceID), eq(workspaces.deletingAt, deletingAt)));
+    throw error;
+  }
 };
 
 export { endStripeSubscription, endSubscription, isTerminalSubscription };

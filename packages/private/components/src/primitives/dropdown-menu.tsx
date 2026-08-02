@@ -15,11 +15,13 @@ import {
 import { Dynamic, Portal } from "solid-js/web";
 import { Shortcut } from "./shortcut";
 import { Menu } from "@ark-ui/solid/menu";
+import { Tooltip } from "./tooltip";
 
 interface MenuItem {
   label: string;
   icon?: string | (() => JSX.Element);
   color?: "base" | "danger";
+  disabled?: boolean | string;
   shortcut?: string;
   selected?: boolean;
   items?: Array<MenuItem | (() => JSX.Element)> | Array<Array<MenuItem | (() => JSX.Element)>>;
@@ -209,62 +211,71 @@ const MenuItems = <O extends MenuItem>(props: {
         }
 
         return (
-          <Menu.Item
-            value={option.value}
-            onClick={(event) => {
-              event.stopPropagation();
-            }}
-            onSelect={() => {
-              option.onClick?.();
-              props.onClose();
-            }}
-            closeOnSelect
-            class={clsx(
-              "w-full flex items-center gap-1 justify-start px-1 py-0.5 rounded-md cursor-pointer outline-none",
-              option.selected
-                ? "relative group/menu-item"
-                : option.color === "danger"
-                  ? "data-[highlighted]:bg-red-600 data-[highlighted]:bg-opacity-10 dark:data-[highlighted]:bg-red-600 dark:data-[highlighted]:bg-opacity-10"
-                  : "data-[highlighted]:bg-gray-100 dark:data-[highlighted]:bg-gray-800"
-            )}
+          <Dynamic
+            component={typeof option.disabled === "string" ? Tooltip : Fragment}
+            content={typeof option.disabled === "string" ? option.disabled : undefined}
+            side="right"
+            offset={{ mainAxis: 2 }}
           >
-            <Show when={option.selected}>
-              <div class="absolute inset-0 -z-1 rounded-md bg-gradient-to-tr opacity-10 group-data-[highlighted]/menu-item:opacity-100 pointer-events-none" />
-            </Show>
-            <Show when={option.icon}>
-              <div
-                class={clsx(
-                  "h-4.5 w-4.5",
-                  typeof option.icon === "string" && option.icon,
-                  option.selected
-                    ? "bg-gradient-to-tr group-data-[highlighted]/menu-item:text-white group-data-[highlighted]/menu-item:from-white group-data-[highlighted]/menu-item:to-white"
-                    : option.color === "danger"
-                      ? "text-red-500"
-                      : "text-gray-500 dark:text-gray-400"
-                )}
-              >
-                {typeof option.icon === "function" && option.icon()}
-              </div>
-            </Show>
-            <div class="px-1 flex flex-1 gap-4">
-              <span
-                title={option.label}
-                class={clsx(
-                  "flex-1 text-start text-sm line-clamp-1",
-                  option.selected
-                    ? "bg-gradient-to-tr bg-clip-text text-transparent group-data-[highlighted]/menu-item:text-white group-data-[highlighted]/menu-item:from-white group-data-[highlighted]/menu-item:to-white"
-                    : option.color === "danger"
-                      ? "text-red-500"
-                      : "text-gray-700 dark:text-gray-200"
-                )}
-              >
-                {option.label}
-              </span>
-              <Show when={option.shortcut}>
-                <Shortcut class="opacity-50 font-mono text-[90%]" shortcut={option.shortcut!} />
+            <Menu.Item
+              value={option.value}
+              disabled={Boolean(option.disabled)}
+              onClick={(event) => {
+                event.stopPropagation();
+              }}
+              onSelect={() => {
+                option.onClick?.();
+                props.onClose();
+              }}
+              closeOnSelect
+              class={clsx(
+                "w-full flex items-center gap-1 justify-start px-1 py-0.5 rounded-md cursor-pointer outline-none",
+                option.disabled && "cursor-not-allowed opacity-70",
+                option.selected
+                  ? "relative group/menu-item"
+                  : option.color === "danger"
+                    ? "data-[highlighted]:bg-red-600 data-[highlighted]:bg-opacity-10 dark:data-[highlighted]:bg-red-600 dark:data-[highlighted]:bg-opacity-10"
+                    : "data-[highlighted]:bg-gray-100 dark:data-[highlighted]:bg-gray-800"
+              )}
+            >
+              <Show when={option.selected}>
+                <div class="absolute inset-0 -z-1 rounded-md bg-gradient-to-tr opacity-10 group-data-[highlighted]/menu-item:opacity-100 pointer-events-none" />
               </Show>
-            </div>
-          </Menu.Item>
+              <Show when={option.icon}>
+                <div
+                  class={clsx(
+                    "h-4.5 w-4.5",
+                    typeof option.icon === "string" && option.icon,
+                    option.selected
+                      ? "bg-gradient-to-tr group-data-[highlighted]/menu-item:text-white group-data-[highlighted]/menu-item:from-white group-data-[highlighted]/menu-item:to-white"
+                      : option.color === "danger"
+                        ? "text-red-500"
+                        : "text-gray-500 dark:text-gray-400"
+                  )}
+                >
+                  {typeof option.icon === "function" && option.icon()}
+                </div>
+              </Show>
+              <div class="px-1 flex flex-1 gap-4">
+                <span
+                  title={option.label}
+                  class={clsx(
+                    "flex-1 text-start text-sm line-clamp-1",
+                    option.selected
+                      ? "bg-gradient-to-tr bg-clip-text text-transparent group-data-[highlighted]/menu-item:text-white group-data-[highlighted]/menu-item:from-white group-data-[highlighted]/menu-item:to-white"
+                      : option.color === "danger"
+                        ? "text-red-500"
+                        : "text-gray-700 dark:text-gray-200"
+                  )}
+                >
+                  {option.label}
+                </span>
+                <Show when={option.shortcut}>
+                  <Shortcut class="opacity-50 font-mono text-[90%]" shortcut={option.shortcut!} />
+                </Show>
+              </div>
+            </Menu.Item>
+          </Dynamic>
         );
       }}
     </For>

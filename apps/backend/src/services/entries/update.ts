@@ -1,7 +1,7 @@
 import { toUUID } from "#backend/lib/id";
 import { db } from "#backend/lib/postgres";
 import { entries, type Entry } from "#backend/db";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 
 const updateEntry = async (
@@ -13,7 +13,11 @@ const updateEntry = async (
     .update(entries)
     .set({ name: input.name, updatedAt: new Date() })
     .where(
-      and(eq(entries.id, toUUID(input.id)), eq(entries.workspaceID, toUUID(input.workspaceID)))
+      and(
+        eq(entries.id, toUUID(input.id)),
+        eq(entries.workspaceID, toUUID(input.workspaceID)),
+        isNull(entries.deletedAt)
+      )
     )
     .returning({ id: entries.id });
 

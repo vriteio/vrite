@@ -1,14 +1,6 @@
-import { Component, createEffect, createSignal, Match, onCleanup, Show, Switch } from "solid-js";
+import { Component, createEffect, createSignal, Match, onCleanup, Switch } from "solid-js";
 import { Title } from "@solidjs/meta";
-import {
-  IconButton,
-  Button,
-  OTPInput,
-  Input,
-  Skeleton,
-  Tooltip,
-  createRef
-} from "@andesine/components";
+import { IconButton, Button, OTPInput, Input, Tooltip, createRef } from "@andesine/components";
 import { createAsync, query, useSearchParams } from "@solidjs/router";
 import { useNotify } from "#web/context/notifications";
 import { authClient, client } from "#web/lib/client";
@@ -21,23 +13,31 @@ const verifyOTPTokenQuery = query(async (input: { token?: string }) => {
 
   return client.auth.verifyOTPToken({ token: input.token });
 }, "verify-otp-token");
+const OTP_RATE_LIMIT = { maxRequests: 3, windowSeconds: 60 };
+const OTP_RESEND_DELAY = Math.ceil(OTP_RATE_LIMIT.windowSeconds / OTP_RATE_LIMIT.maxRequests);
 const EmailPage: Component = () => {
   const notify = useNotify();
   const [searchParams] = useSearchParams();
   const [view, setView] = createSignal<"form" | "otp">("form");
   const [email, setEmail] = createSignal("");
   const [otp, setOTP] = createSignal("");
-  const [throttlingOTP, setThrottlingOTP] = createSignal(false);
-  const [otpThrottleTimeout, setOTPThrottleTimeout] = createRef(0);
+  const [otpResendSeconds, setOTPResendSeconds] = createSignal(0);
+  const [otpThrottleInterval, setOTPThrottleInterval] = createRef(0);
+  const throttlingOTP = () => otpResendSeconds() > 0;
   const throttleOTP = () => {
-    if (otpThrottleTimeout()) clearTimeout(otpThrottleTimeout());
+    if (otpThrottleInterval()) clearInterval(otpThrottleInterval());
 
-    setThrottlingOTP(true);
-    setOTPThrottleTimeout(
-      window.setTimeout(() => {
-        setThrottlingOTP(false);
-        setOTPThrottleTimeout(0);
-      }, 5_000)
+    setOTPResendSeconds(OTP_RESEND_DELAY);
+    setOTPThrottleInterval(
+      window.setInterval(() => {
+        setOTPResendSeconds((seconds) => {
+          if (seconds > 1) return seconds - 1;
+
+          clearInterval(otpThrottleInterval());
+          setOTPThrottleInterval(0);
+          return 0;
+        });
+      }, 1_000)
     );
   };
   const otpToken = () => `${searchParams.token || ""}`;
@@ -130,7 +130,7 @@ const EmailPage: Component = () => {
   });
 
   onCleanup(() => {
-    if (otpThrottleTimeout()) clearTimeout(otpThrottleTimeout());
+    if (otpThrottleInterval()) clearInterval(otpThrottleInterval());
   });
 
   if (verifyOTPTokenResult()) {
@@ -258,7 +258,7 @@ const EmailPage: Component = () => {
           </div>
           <div class="flex flex-col items-start justify-center w-full transform text-sm text-gray-400 dark:text-gray-500">
             <span>Didn't receive the code?</span>
-            <div class="relative inline-flex -mt-1">
+            <div class="inline-flex -mt-1">
               <IconButton
                 icon="i-lucide:rotate-cw"
                 iconProps={{
@@ -268,7 +268,9 @@ const EmailPage: Component = () => {
                 text="primary"
                 color="primary"
                 size="small"
-                label={() => <span>Resend</span>}
+                label={() => (
+                  <span>{throttlingOTP() ? `Resend in ${otpResendSeconds()}s` : "Resend"}</span>
+                )}
                 loading={sendOTPMutation.isPending}
                 disabled={
                   sendOTPMutation.isPending || verifyOTPMutation.isPending || throttlingOTP()
@@ -277,9 +279,6 @@ const EmailPage: Component = () => {
                 hover="underline"
                 class="flex-row-reverse gap-1 inline-flex font-medium px-0"
               />
-              <Show when={throttlingOTP()}>
-                <Skeleton class="absolute inset-0 rounded-lg" />
-              </Show>
             </div>
           </div>
         </Match>

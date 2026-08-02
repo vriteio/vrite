@@ -6,6 +6,7 @@ import {
   index,
   pgTable,
   text,
+  timestamp,
   unique,
   uniqueIndex,
   uuid,
@@ -32,14 +33,17 @@ const collections = pgTable(
     parentID: uuid("parent_id"),
     name: text("name").notNull(),
     rank: varchar("rank", { length: 255 }).notNull(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
     ...timestamps
   },
   (table) => [
     unique("collections_workspace_id_id_unique").on(table.workspaceID, table.id),
-    unique("collections_sibling_rank_unique").on(table.workspaceID, table.parentID, table.rank),
+    uniqueIndex("collections_sibling_rank_unique")
+      .on(table.workspaceID, table.parentID, table.rank)
+      .where(sql`${table.deletedAt} is null`),
     uniqueIndex("collections_single_root_unique")
       .on(table.workspaceID)
-      .where(sql`${table.parentID} is null`),
+      .where(sql`${table.parentID} is null and ${table.deletedAt} is null`),
     foreignKey({
       name: "collections_workspace_parent_fk",
       columns: [table.workspaceID, table.parentID],

@@ -120,7 +120,7 @@ const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
           />
           <div class="flex h-full min-w-60 flex-1">
             <Card
-              class="relative flex h-full flex-1 flex-col items-center justify-center overflow-hidden p-0"
+              class="z-1 relative flex h-full flex-1 flex-col items-center justify-center overflow-hidden p-0"
               shade
             >
               <Breadcrumbs />

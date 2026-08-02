@@ -161,7 +161,7 @@ const PasskeyList: Component<PasskeyListProps> = (props) => {
           return (
             <PasskeyItem
               id={passkey().id}
-              name={renamePasskeyMutation.variables?.name || passkey().name || "Unnamed passkey"}
+              name={passkey().name || "Unnamed passkey"}
               createdAt={passkey().createdAt}
               loading={passkey().optimistic}
               onDelete={(ids) => {

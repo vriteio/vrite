@@ -2,12 +2,11 @@ import { dailyUsage, workspaces } from "#backend/db";
 import { toUUID } from "#backend/lib/id";
 import { db } from "#backend/lib/postgres";
 import { eq, sql } from "drizzle-orm";
-import { format } from "date-fns";
 import { ORPCError } from "@orpc/server";
 
 const recordUsage = async (workspaceID: string): Promise<void> => {
   const workspaceUUID = toUUID(workspaceID);
-  const usageDate = format(new Date(), "yyyy-MM-dd");
+  const usageDate = new Date().toISOString().slice(0, 10);
 
   await db.transaction(async (tx) => {
     const [workspace] = await tx

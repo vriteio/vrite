@@ -5,6 +5,7 @@ import {
   index,
   pgTable,
   text,
+  timestamp,
   unique,
   uniqueIndex,
   uuid,
@@ -48,6 +49,7 @@ const entries = pgTable(
     collectionID: uuid("collection_id"),
     name: text("name").notNull(),
     rank: varchar("rank", { length: 255 }).notNull(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
     ...timestamps
   },
   (table) => [
@@ -59,10 +61,10 @@ const entries = pgTable(
     }).onDelete("cascade"),
     uniqueIndex("entries_collection_rank_unique")
       .on(table.workspaceID, table.collectionID, table.rank)
-      .where(sql`${table.collectionID} is not null`),
+      .where(sql`${table.collectionID} is not null and ${table.deletedAt} is null`),
     uniqueIndex("entries_root_rank_unique")
       .on(table.workspaceID, table.rank)
-      .where(sql`${table.collectionID} is null`),
+      .where(sql`${table.collectionID} is null and ${table.deletedAt} is null`),
     index("entries_workspace_collection_rank_idx").on(
       table.workspaceID,
       table.collectionID,

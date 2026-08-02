@@ -70,7 +70,6 @@ const WorkspaceContext = createContext<WorkspaceContextValue>();
 const WorkspaceProvider: ParentComponent = (props) => {
   const params = useParams<{ workspaceID: string }>();
   const workspaceID = () => (validateWorkspaceID(params.workspaceID) ? params.workspaceID : "");
-  const content = useWorkspaceContent(workspaceID);
   const updateListeners = new Set<(event: WorkspaceEvent) => void>();
   const sessions = createAsync(() => listSessionsQuery());
   const workspaces = createAsync(() => listWorkspacesQuery());
@@ -127,6 +126,7 @@ const WorkspaceProvider: ParentComponent = (props) => {
       workspace?.admin || hasGrantedPermission(workspace?.permissions || [], required)
     );
   };
+  const content = useWorkspaceContent(workspaceID, () => hasPermission("content"));
   const subscribeToUpdates = (listener: (event: WorkspaceEvent) => void) => {
     updateListeners.add(listener);
 

@@ -4,6 +4,11 @@ import { memberships, type Permission, roles } from "#backend/db";
 import { Auth } from "#backend/services/auth";
 import { and, eq } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
+import {
+  duplicateRoleNameError,
+  isRoleNameUniqueViolation,
+  validateRoleName
+} from "./validate-name";
 
 const updateRole = async (input: {
   id: string;
@@ -21,15 +26,29 @@ const updateRole = async (input: {
   if (role.baseRole)
     throw new ORPCError("BAD_REQUEST", { message: "Base roles cannot be modified" });
   if (input.name === undefined && input.permissions === undefined) return;
+  const name =
+    input.name === undefined
+      ? undefined
+      : await validateRoleName({
+          excludeRoleID: input.id,
+          name: input.name,
+          workspaceID: input.workspaceID
+        });
 
-  await db
-    .update(roles)
-    .set({
-      ...(input.name !== undefined && { name: input.name }),
-      ...(input.permissions !== undefined && { permissions: input.permissions }),
-      updatedAt: new Date()
-    })
-    .where(and(eq(roles.id, roleID), eq(roles.workspaceID, workspaceID)));
+  try {
+    await db
+      .update(roles)
+      .set({
+        ...(name !== undefined && { name }),
+        ...(input.permissions !== undefined && { permissions: input.permissions }),
+        updatedAt: new Date()
+      })
+      .where(and(eq(roles.id, roleID), eq(roles.workspaceID, workspaceID)));
+  } catch (error) {
+    if (isRoleNameUniqueViolation(error)) throw duplicateRoleNameError();
+
+    throw error;
+  }
 
   if (input.permissions !== undefined) {
     const affected = await db

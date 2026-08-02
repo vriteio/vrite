@@ -15,7 +15,7 @@ import RoleSettingsPage from "../pages/workspace/settings/role/page";
 import BillingSettingsPage from "../pages/workspace/settings/billing/page";
 import APISettingsPage from "../pages/workspace/settings/api/page";
 import KeySettingsPage from "../pages/workspace/settings/key/page";
-import { Params, RouteDefinition, useCurrentMatches, useParams } from "@solidjs/router";
+import { Params, redirect, RouteDefinition, useCurrentMatches, useParams } from "@solidjs/router";
 import { Accessor, createMemo } from "solid-js";
 
 interface RouteData {
@@ -98,6 +98,12 @@ const routes: RouteDefinition[] = [
         path: "/settings",
         component: SettingsLayout,
         children: [
+          {
+            path: "/",
+            preload: ({ params }) => {
+              throw redirect(`/${params.workspaceID}/settings/personal`);
+            }
+          },
           {
             path: "/personal",
             component: PersonalSettingsPage

@@ -1,7 +1,7 @@
 import { Button, Card, IconButton, Overlay } from "@andesine/components";
 import { Component, createEffect, createSignal } from "solid-js";
 
-import { useNotify } from "#web/context/notifications";
+import { useClipboard } from "#web/context/clipboard";
 
 interface NewInviteDialogProps {
   delivery: "sent" | "manual" | "failed";
@@ -10,7 +10,7 @@ interface NewInviteDialogProps {
 }
 
 const NewInviteDialog: Component<NewInviteDialogProps> = (props) => {
-  const notify = useNotify();
+  const { copyText } = useClipboard();
   const [copied, setCopied] = createSignal(false);
   const description = () => {
     if (props.delivery === "manual") {
@@ -26,14 +26,15 @@ const NewInviteDialog: Component<NewInviteDialogProps> = (props) => {
   const copyLink = async () => {
     if (!props.link || copied()) return;
 
-    try {
-      await navigator.clipboard.writeText(props.link);
-      setCopied(true);
-      notify({ type: "success", text: "Invite link copied to clipboard" });
-      setTimeout(() => setCopied(false), 1500);
-    } catch {
-      notify({ type: "error", text: "Failed to copy invite link" });
-    }
+    const success = await copyText(props.link, {
+      success: "Invite link copied to clipboard",
+      error: "Failed to copy invite link. Copy it manually instead.",
+      fallback: { title: "Copy invite link manually" }
+    });
+
+    if (!success) return;
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
   };
 
   createEffect(() => {

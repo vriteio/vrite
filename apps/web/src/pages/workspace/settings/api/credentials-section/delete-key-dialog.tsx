@@ -1,5 +1,5 @@
-import { Button, Card, IconButton, Input, Overlay } from "@andesine/components";
-import { Component, createEffect, createSignal } from "solid-js";
+import { Button, Card, createRef, IconButton, Input, Overlay } from "@andesine/components";
+import { Component, createEffect, createSignal, createUniqueId } from "solid-js";
 
 interface DeleteKeyDialogProps {
   keys: Array<{ id: string; name: string }>;
@@ -9,8 +9,10 @@ interface DeleteKeyDialogProps {
 }
 
 const DeleteKeyDialog: Component<DeleteKeyDialogProps> = (props) => {
+  const [confirmationInput, setConfirmationInput] = createRef<HTMLInputElement | null>(null);
   const [confirmation, setConfirmation] = createSignal("");
   const [visibleKeys, setVisibleKeys] = createSignal(props.keys);
+  const instructionID = createUniqueId();
   const handleClose = () => {
     if (props.loading) return;
 
@@ -28,6 +30,7 @@ const DeleteKeyDialog: Component<DeleteKeyDialogProps> = (props) => {
     if (props.keys.length > 0) {
       setVisibleKeys(props.keys);
       setConfirmation("");
+      queueMicrotask(() => confirmationInput()?.focus());
     }
   });
 
@@ -49,10 +52,12 @@ const DeleteKeyDialog: Component<DeleteKeyDialogProps> = (props) => {
             </p>
           </div>
           <label class="flex flex-col gap-1 text-xs">
-            <span>
+            <span id={instructionID}>
               Type <span class="font-mono font-medium">{confirmationText()}</span> to confirm
             </span>
             <Input
+              ref={setConfirmationInput}
+              aria-describedby={instructionID}
               value={confirmation()}
               setValue={setConfirmation}
               disabled={props.loading}

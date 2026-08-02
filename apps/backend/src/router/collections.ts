@@ -1,5 +1,5 @@
 import { collectionType } from "#backend/db";
-import { emitCollectionEvent } from "#backend/events";
+import { emitCollectionEvent, emitEntryEvent } from "#backend/events";
 import { authorized } from "#backend/lib/middleware";
 import { id } from "#backend/lib/id";
 import { base } from "#backend/lib/orpc";
@@ -55,16 +55,24 @@ const collectionsRouter = base.prefix("/collections").router({
     )
     .output(z.void())
     .handler(async ({ context, input }) => {
-      const deletedIDs = await Collections.delete({
+      const deleted = await Collections.delete({
         workspaceID: context.auth.workspaceID,
         ids: input.ids
       });
 
       emitCollectionEvent(context.auth.workspaceID, {
         action: "collection:delete",
-        data: { ids: deletedIDs },
+        data: { ids: deleted.collectionIDs },
         memberID: context.auth.session?.memberID
       });
+
+      if (deleted.entryIDs.length > 0) {
+        emitEntryEvent(context.auth.workspaceID, {
+          action: "entry:delete",
+          data: { ids: deleted.entryIDs },
+          memberID: context.auth.session?.memberID
+        });
+      }
     }),
   update: base
     .route({ method: "PUT", path: "/:id" })

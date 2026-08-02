@@ -12,8 +12,14 @@ const acceptInvite = async (input: {
   signature: string;
   userID: string;
 }) => {
+  if (input.expires * 1000 <= Date.now()) {
+    throw new ORPCError("INVITE_EXPIRED", {
+      status: 400,
+      message: "This invitation has expired"
+    });
+  }
   if (!verifyInviteLink(input)) {
-    throw new ORPCError("BAD_REQUEST", { message: "Invalid or expired invite" });
+    throw new ORPCError("INVITE_INVALID", { status: 400, message: "Invalid invitation link" });
   }
 
   const userID = toUUID(input.userID);
@@ -21,17 +27,11 @@ const acceptInvite = async (input: {
     const [invite] = await tx
       .select()
       .from(invitations)
-      .where(and(eq(invitations.id, toUUID(input.id)), eq(invitations.status, "pending")))
+      .where(eq(invitations.id, toUUID(input.id)))
       .for("update");
 
-    if (!invite || invite.expiresAt <= new Date()) {
-      if (invite) {
-        await tx
-          .update(invitations)
-          .set({ status: "expired" })
-          .where(eq(invitations.id, invite.id));
-      }
-      throw new ORPCError("BAD_REQUEST", { message: "Invalid or expired invite" });
+    if (!invite) {
+      throw new ORPCError("INVITE_INVALID", { status: 400, message: "Invalid invitation link" });
     }
 
     const [workspace] = await tx
@@ -43,8 +43,28 @@ const acceptInvite = async (input: {
     if (!workspace) throw new ORPCError("NOT_FOUND", { message: "Workspace not found" });
     if (!user) throw new ORPCError("UNAUTHORIZED", { message: "User not found" });
     if (user.email.trim().toLowerCase() !== invite.email.trim().toLowerCase()) {
-      throw new ORPCError("FORBIDDEN", {
+      throw new ORPCError("INVITE_ACCOUNT_MISMATCH", {
+        status: 403,
         message: `This invite was sent to ${invite.email}. Sign in with that account to accept it.`
+      });
+    }
+    if (invite.status === "accepted") {
+      throw new ORPCError("INVITE_ALREADY_ACCEPTED", {
+        data: { workspaceID: toWorkspaceID(invite.workspaceID) },
+        status: 409,
+        message: "This invitation has already been accepted"
+      });
+    }
+    if (invite.status === "expired" || invite.expiresAt <= new Date()) {
+      if (invite.status !== "expired") {
+        await tx
+          .update(invitations)
+          .set({ status: "expired" })
+          .where(eq(invitations.id, invite.id));
+      }
+      throw new ORPCError("INVITE_EXPIRED", {
+        status: 400,
+        message: "This invitation has expired"
       });
     }
 

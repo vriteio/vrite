@@ -15,6 +15,20 @@
       "when": 1785341126482,
       "tag": "0001_workspace-deletion-state",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1785693138919,
+      "tag": "0002_content-soft-delete",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1785703878884,
+      "tag": "0003_role-name-uniqueness",
+      "breakpoints": true
     }
   ]
 }

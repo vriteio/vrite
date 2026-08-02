@@ -14,7 +14,13 @@ const createEntry = async (input: Partial<Entry> & { workspaceID: string }): Pro
       const [parent] = await tx
         .select({ id: collections.id })
         .from(collections)
-        .where(and(eq(collections.id, collectionID), eq(collections.workspaceID, workspaceID)))
+        .where(
+          and(
+            eq(collections.id, collectionID),
+            eq(collections.workspaceID, workspaceID),
+            isNull(collections.deletedAt)
+          )
+        )
         .for("update");
 
       if (!parent) throw new ORPCError("BAD_REQUEST", { message: "Collection not found" });
@@ -27,8 +33,16 @@ const createEntry = async (input: Partial<Entry> & { workspaceID: string }): Pro
     }
 
     const siblingFilter = collectionID
-      ? and(eq(entries.workspaceID, workspaceID), eq(entries.collectionID, collectionID))
-      : and(eq(entries.workspaceID, workspaceID), isNull(entries.collectionID));
+      ? and(
+          eq(entries.workspaceID, workspaceID),
+          eq(entries.collectionID, collectionID),
+          isNull(entries.deletedAt)
+        )
+      : and(
+          eq(entries.workspaceID, workspaceID),
+          isNull(entries.collectionID),
+          isNull(entries.deletedAt)
+        );
     const [last] = await tx
       .select({ rank: entries.rank })
       .from(entries)
@@ -50,7 +64,13 @@ const createEntry = async (input: Partial<Entry> & { workspaceID: string }): Pro
     const [created] = await tx
       .select()
       .from(entries)
-      .where(and(eq(entries.id, entryID), eq(entries.workspaceID, workspaceID)));
+      .where(
+        and(
+          eq(entries.id, entryID),
+          eq(entries.workspaceID, workspaceID),
+          isNull(entries.deletedAt)
+        )
+      );
 
     if (!created) {
       throw new ORPCError("BAD_REQUEST", { message: "Entry ID belongs to another workspace" });

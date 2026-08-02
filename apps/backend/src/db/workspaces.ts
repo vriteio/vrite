@@ -8,6 +8,7 @@ interface SubscriptionData {
   subscriptionID: string;
   seatItemID?: string;
   apiUsageItemID?: string;
+  cancelAtPeriodEnd?: boolean;
 }
 
 const workspaceType = z.object({

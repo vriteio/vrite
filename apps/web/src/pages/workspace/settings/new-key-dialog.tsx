@@ -1,4 +1,4 @@
-import { useNotify } from "#web/context/notifications";
+import { useClipboard } from "#web/context/clipboard";
 import { Overlay, Card, Button, IconButton } from "@andesine/components";
 import { Component, createEffect, createSignal } from "solid-js";
 
@@ -8,7 +8,7 @@ interface NewKeyDialogProps {
 }
 
 const NewKeyDialog: Component<NewKeyDialogProps> = (props) => {
-  const notify = useNotify();
+  const { copyText } = useClipboard();
   const [visibleKey, setVisibleKey] = createSignal(props.key);
   const [copied, setCopied] = createSignal(false);
   const handleClose = () => {
@@ -20,11 +20,12 @@ const NewKeyDialog: Component<NewKeyDialogProps> = (props) => {
 
     if (!rawKey || copied()) return;
 
-    navigator.clipboard.writeText(rawKey);
-    notify({
-      text: "Key copied to clipboard",
-      type: "success"
+    const success = await copyText(rawKey, {
+      success: "Key copied to clipboard",
+      fallback: { title: "Copy API key manually" }
     });
+
+    if (!success) return;
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };

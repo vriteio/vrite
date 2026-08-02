@@ -6,8 +6,10 @@ import { Component, createSignal, createMemo, createEffect, Show } from "solid-j
 
 const MemberItem: Component<{
   canManage: boolean;
+  currentUser?: boolean;
   loading?: boolean;
   member: Membership & { profile: UserProfile; admin?: boolean };
+  members: Array<Membership & { profile: UserProfile; admin?: boolean }>;
   onRemove(ids: string[]): void;
   onUpdateRole(roleID: string, ids: string[]): void;
   roles: Role[];
@@ -25,6 +27,11 @@ const MemberItem: Component<{
   const roleName = () => {
     return props.roles.find((role) => role.id === props.member.roleID)?.name || "";
   };
+  const affectsEveryAdmin = (ids: string[]) => {
+    const adminIDs = props.members.filter((member) => member.admin).map((member) => member.id);
+
+    return adminIDs.length > 0 && adminIDs.every((id) => ids.includes(id));
+  };
   const dropdownOptions = createMemo(() => {
     const selectedIDs = selection();
     const isMulti = selectedIDs.length > 1;
@@ -37,6 +44,10 @@ const MemberItem: Component<{
           icon: "i-lucide:shield",
           items: props.roles.map((role) => ({
             label: role.name,
+            disabled:
+              role.baseRole !== "admin" && affectsEveryAdmin(targetIDs)
+                ? "At least one workspace admin is required"
+                : undefined,
             selected: !isMulti && props.member.roleID === role.id,
             onClick: () => props.onUpdateRole(role.id, targetIDs)
           }))
@@ -47,6 +58,9 @@ const MemberItem: Component<{
           label: isMulti ? `Remove ${selectedIDs.length} members` : "Remove",
           icon: "i-lucide:trash",
           color: "danger" as const,
+          disabled: affectsEveryAdmin(targetIDs)
+            ? "At least one workspace admin is required"
+            : undefined,
           onClick: () => {
             props.onRemove(targetIDs);
             setSelection([]);
@@ -85,6 +99,12 @@ const MemberItem: Component<{
                 <div class="h-4 w-px rounded-full bg-gray-200 dark:bg-gray-700 shrink-0" />
                 <span class="max-w-48 truncate text-xs text-gray-400 dark:text-gray-500 shrink-0">
                   {memberEmail()}
+                  <Show when={props.currentUser}>
+                    {" "}
+                    <span class="inline-block px-1 py-px rounded-md from-secondary via-primary to-secondary bg-gradient-to-tr text-white">
+                      You
+                    </span>
+                  </Show>
                 </span>
               </Show>
               <div class="flex-1" />

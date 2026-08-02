@@ -12,7 +12,7 @@ import {
   Show
 } from "solid-js";
 import { Collection } from "#web/lib/client";
-import { useNotify } from "#web/context/notifications";
+import { useClipboard } from "#web/context/clipboard";
 import { ExplorerEntry } from "./explorer-entry";
 import {
   draggable,
@@ -45,7 +45,7 @@ interface ExplorerCollectionProps {
 const COLLECTION_AUTO_EXPAND_DELAY = 700;
 
 const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
-  const notify = useNotify();
+  const { copyText } = useClipboard();
   const [
     { isSelected, isExpanded, selection, flattenedOrder },
     { setRenaming, toggleExpanded, setExpanded, setSelection }
@@ -180,10 +180,9 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
           icon: "i-lucide:copy",
           shortcut: "$mod+alt+c",
           onClick: () => {
-            navigator.clipboard.writeText(props.collection.id);
-            notify({
-              text: "ID copied to clipboard",
-              type: "success"
+            void copyText(props.collection.id, {
+              success: "ID copied to clipboard",
+              fallback: { title: "Copy ID manually" }
             });
           }
         },
