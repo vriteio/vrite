@@ -15,6 +15,7 @@ interface TreeItemProps {
   highlighted?: boolean;
   dataAttributes?: Record<string, string>;
   class?: string;
+  labelMaxLength?: number;
   ref?: (el: HTMLElement) => void;
   onClick?: (event: MouseEvent) => void;
   onRename?: (name: string) => void;
@@ -97,6 +98,11 @@ const TreeItem: Component<TreeItemProps> = (props) => {
       setCurrentName(props.label);
     }
   });
+  const submitRename = () => {
+    props.onRename?.(currentName());
+    setSelection([]);
+    setRenaming("");
+  };
 
   return (
     <div
@@ -155,39 +161,32 @@ const TreeItem: Component<TreeItemProps> = (props) => {
           <Show
             when={!isRenaming(props.id)}
             fallback={
-              <div
+              <input
                 ref={(el) => {
-                  el.textContent = props.label;
                   setCurrentName(props.label);
                   setTimeout(() => {
                     el.focus();
-                    const range = document.createRange();
-                    range.selectNodeContents(el);
-                    const sel = window.getSelection();
-                    sel?.removeAllRanges();
-                    sel?.addRange(range);
+                    el.select();
                   }, 0);
                 }}
-                contentEditable={true}
-                class="flex-1 outline-none bg-transparent whitespace-nowrap overflow-hidden min-w-4 cursor-text select-text"
+                type="text"
+                value={currentName()}
+                maxLength={props.labelMaxLength}
+                class="min-w-4 flex-1 cursor-text select-text overflow-hidden whitespace-nowrap bg-transparent outline-none"
                 onInput={(e) => {
-                  setCurrentName(e.currentTarget.textContent || "");
+                  setCurrentName(e.currentTarget.value);
                 }}
                 onBlur={() => {
                   if (cancelledRef()) return;
 
-                  props.onRename?.(currentName());
-                  setSelection([]);
-                  setRenaming("");
+                  submitRename();
                 }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
                     e.stopPropagation();
                     setCancelledRef(true);
-                    props.onRename?.(currentName());
-                    setSelection([]);
-                    setRenaming("");
+                    submitRename();
                   }
 
                   if (e.key === "Escape") {

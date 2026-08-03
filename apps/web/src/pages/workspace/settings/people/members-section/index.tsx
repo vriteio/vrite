@@ -7,6 +7,7 @@ import { Tree, TREE_ROOT_ID, type TreeMap } from "#web/components/tree";
 import { useClipboard } from "#web/context/clipboard";
 import { useNotify } from "#web/context/notifications";
 import { useWorkspace } from "#web/context/workspace";
+import { settleBulkAction } from "#web/lib/bulk-action";
 import { client, Membership, Role, UserProfile, Invite } from "#web/lib/client";
 import { Setting } from "../../setting";
 import { SettingsSection } from "../../settings-section";
@@ -70,26 +71,64 @@ const WorkspaceMemberList: Component<WorkspaceMemberListProps> = (props) => {
   >(null);
   const updateRoleMutation = createMutation(() => ({
     mutationFn: ({ ids, roleID }: { ids: string[]; roleID: string }) => {
-      return Promise.all(ids.map((id) => client.memberships.update({ id, roleID })));
+      return settleBulkAction(ids, (id) => client.memberships.update({ id, roleID }));
     },
-    onSuccess: () => {
-      props.refreshMembers(() => updateRoleMutation.reset());
-    },
-    onError: (error) => {
-      console.error(error);
-      notify({ type: "error", text: error.message || "Failed to update member role" });
+    onSuccess: (result) => {
+      result.failed.forEach(({ error }) => console.error(error));
+      props.refreshMembers(() => {
+        updateRoleMutation.reset();
+
+        if (result.successful.length > 0) {
+          notify({
+            type: "success",
+            text:
+              result.successful.length > 1
+                ? `${result.successful.length} member roles updated`
+                : "Member role updated"
+          });
+        }
+
+        if (result.failed.length > 0) {
+          notify({
+            type: "error",
+            text:
+              result.failed.length > 1
+                ? `${result.failed.length} member roles failed to update`
+                : "Failed to update member role"
+          });
+        }
+      });
     }
   }));
   const removeMutation = createMutation(() => ({
     mutationFn: ({ ids }: { ids: string[] }) => {
-      return Promise.all(ids.map((id) => client.memberships.remove({ id })));
+      return settleBulkAction(ids, (id) => client.memberships.remove({ id }));
     },
-    onSuccess: () => {
-      props.refreshMembers(() => removeMutation.reset());
-    },
-    onError: (error) => {
-      console.error(error);
-      notify({ type: "error", text: error.message || "Failed to remove member" });
+    onSuccess: (result) => {
+      result.failed.forEach(({ error }) => console.error(error));
+      props.refreshMembers(() => {
+        removeMutation.reset();
+
+        if (result.successful.length > 0) {
+          notify({
+            type: "success",
+            text:
+              result.successful.length > 1
+                ? `${result.successful.length} members removed`
+                : "Member removed"
+          });
+        }
+
+        if (result.failed.length > 0) {
+          notify({
+            type: "error",
+            text:
+              result.failed.length > 1
+                ? `${result.failed.length} members failed to remove`
+                : "Failed to remove member"
+          });
+        }
+      });
     }
   }));
   const optimisticMembers = createMemo<Array<WorkspaceMember & { optimistic?: boolean }>>(() => {
@@ -228,64 +267,81 @@ const InviteList: Component<InviteListProps> = (props) => {
   };
   const resendMutation = createMutation(() => ({
     mutationFn: ({ ids }: { ids: string[] }) => {
-      return Promise.all(ids.map((id) => client.memberships.resendInvite({ id })));
+      return settleBulkAction(ids, (id) => client.memberships.resendInvite({ id }));
     },
-    onSuccess: (results) => {
-      props.refreshInvites(() => resendMutation.reset());
-      const emailsSent = results.filter((result) => result.emailDelivery === "sent").length;
-      const emailsManual = results.filter((result) => result.emailDelivery === "manual").length;
-      const emailsFailed = results.filter((result) => result.emailDelivery === "failed").length;
+    onSuccess: (result) => {
+      result.failed.forEach(({ error }) => console.error(error));
+      props.refreshInvites(() => {
+        resendMutation.reset();
+        const deliveries = result.successful.map(({ value }) => value);
+        const emailsSent = deliveries.filter(
+          (delivery) => delivery.emailDelivery === "sent"
+        ).length;
+        const emailsManual = deliveries.filter(
+          (delivery) => delivery.emailDelivery === "manual"
+        ).length;
+        const emailsFailed =
+          deliveries.filter((delivery) => delivery.emailDelivery === "failed").length +
+          result.failed.length;
 
-      if (emailsSent > 0) {
-        notify({
-          type: "success",
-          text: emailsSent > 1 ? `${emailsSent} invitations resent` : "Invitation resent"
-        });
-      }
+        if (emailsSent > 0) {
+          notify({
+            type: "success",
+            text: emailsSent > 1 ? `${emailsSent} invitations resent` : "Invitation resent"
+          });
+        }
 
-      if (emailsManual > 0) {
-        notify({
-          type: "info",
-          text:
-            emailsManual > 1
-              ? `${emailsManual} invitations require manual sending`
-              : "Invitation requires manual sending"
-        });
-      }
+        if (emailsManual > 0) {
+          notify({
+            type: "info",
+            text:
+              emailsManual > 1
+                ? `${emailsManual} invitations require manual sending`
+                : "Invitation requires manual sending"
+          });
+        }
 
-      if (emailsFailed > 0) {
-        notify({
-          type: "error",
-          text:
-            emailsFailed > 1
-              ? `${emailsFailed} invitations failed to resend`
-              : "Invitation failed to resend"
-        });
-      }
-    },
-    onError: (error, { ids }) => {
-      console.error(error);
-      notify({
-        type: "error",
-        text: `Failed to resend invitation${ids.length > 1 ? "s" : ""}`
+        if (emailsFailed > 0) {
+          notify({
+            type: "error",
+            text:
+              emailsFailed > 1
+                ? `${emailsFailed} invitations failed to resend`
+                : "Invitation failed to resend"
+          });
+        }
       });
     }
   }));
   const revokeMutation = createMutation(() => ({
     mutationFn: function ({ ids }: { ids: string[] }) {
-      return Promise.all(ids.map((id) => client.memberships.revokeInvite({ id })));
+      return settleBulkAction(ids, (id) => client.memberships.revokeInvite({ id }));
     },
-    onSuccess: (_, { ids }) => {
-      props.refreshInvites(() => revokeMutation.reset());
-      notify({
-        type: "success",
-        text: ids.length > 1 ? `${ids.length} invitations revoked` : "Invitation revoked"
+    onSuccess: (result) => {
+      result.failed.forEach(({ error }) => console.error(error));
+      props.refreshInvites(() => {
+        revokeMutation.reset();
+
+        if (result.successful.length > 0) {
+          notify({
+            type: "success",
+            text:
+              result.successful.length > 1
+                ? `${result.successful.length} invitations revoked`
+                : "Invitation revoked"
+          });
+        }
+
+        if (result.failed.length > 0) {
+          notify({
+            type: "error",
+            text:
+              result.failed.length > 1
+                ? `${result.failed.length} invitations failed to revoke`
+                : "Failed to revoke invitation"
+          });
+        }
       });
-    },
-    onError: (error) => {
-      console.error(error);
-      props.refreshInvites();
-      notify({ type: "error", text: "Failed to revoke invitation" });
     }
   }));
   const optimisticInvites = createMemo<Array<InviteDetails & { optimistic?: boolean }>>(() => {

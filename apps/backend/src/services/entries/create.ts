@@ -4,6 +4,7 @@ import { collections, contents, entries, type Entry, workspaces } from "#backend
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { LexoRank } from "lexorank";
 import { ORPCError } from "@orpc/server";
+import { normalizeEntryName } from "#backend/lib/content-name";
 
 const createEntry = async (input: Partial<Entry> & { workspaceID: string }): Promise<Entry> => {
   const workspaceID = toUUID(input.workspaceID);
@@ -57,7 +58,7 @@ const createEntry = async (input: Partial<Entry> & { workspaceID: string }): Pro
         id: entryID,
         workspaceID,
         collectionID,
-        name: input.name || "",
+        name: normalizeEntryName(input.name ?? "Untitled"),
         rank
       })
       .onConflictDoNothing({ target: entries.id });

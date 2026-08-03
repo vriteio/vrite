@@ -6,6 +6,7 @@ import { Component, createMemo, createSignal, Show, Suspense, useTransition } fr
 import { Tree, TREE_ROOT_ID, type TreeMap } from "#web/components/tree";
 import { useNotify } from "#web/context/notifications";
 import { useWorkspace } from "#web/context/workspace";
+import { settleBulkAction } from "#web/lib/bulk-action";
 import { client, Invite, Membership, Role, UserProfile } from "#web/lib/client";
 import { Setting } from "../../setting";
 import { SettingsSection } from "../../settings-section";
@@ -44,14 +45,33 @@ const RoleList: Component<RoleListProps> = (props) => {
   const [pendingDeleteIDs, setPendingDeleteIDs] = createSignal<string[]>([]);
   const deleteMutation = createMutation(() => ({
     mutationFn: ({ ids }: { ids: string[] }) => {
-      return Promise.all(ids.map((id) => client.roles.delete({ id })));
+      return settleBulkAction(ids, (id) => client.roles.delete({ id }));
     },
-    onSuccess: () => {
-      props.refresh(() => deleteMutation.reset());
-    },
-    onError: (error) => {
-      console.error(error);
-      notify({ type: "error", text: "Failed to delete role" });
+    onSuccess: (result) => {
+      result.failed.forEach(({ error }) => console.error(error));
+      props.refresh(() => {
+        deleteMutation.reset();
+
+        if (result.successful.length > 0) {
+          notify({
+            type: "success",
+            text:
+              result.successful.length > 1
+                ? `${result.successful.length} roles deleted`
+                : "Role deleted"
+          });
+        }
+
+        if (result.failed.length > 0) {
+          notify({
+            type: "error",
+            text:
+              result.failed.length > 1
+                ? `${result.failed.length} roles failed to delete`
+                : "Failed to delete role"
+          });
+        }
+      });
     }
   }));
   const optimisticRoles = createMemo(() => {
@@ -166,7 +186,7 @@ const RolesSection: Component = () => {
   const canManage = () => hasPermission("workspace");
   const refresh = (onRevalidated = () => {}) => {
     startRefresh(async () => {
-      await revalidate([rolesQuery.key, membershipsQuery.key]);
+      await revalidate([rolesQuery.key, membershipsQuery.key, invitesQuery.key]);
       onRevalidated();
     });
   };

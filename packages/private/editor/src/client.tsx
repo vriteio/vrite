@@ -36,7 +36,7 @@ import { Editor, isTextSelection } from "@tiptap/core";
 import { SlashMenu } from "./ui/menus/slash-menu";
 import { BlockMenuArea } from "./ui/menus/block-menu";
 import { ScrollShadow, createRef } from "@andesine/components";
-import { Title } from "./schema/title";
+import { MAX_ENTRY_TITLE_LENGTH, normalizeEntryTitle, Title } from "./schema/title";
 import {
   TrailingNode,
   Collaboration,
@@ -47,7 +47,8 @@ import {
   BlockSelection,
   isBlockSelection,
   Gapcursor,
-  Dropcursor
+  Dropcursor,
+  NodeCharacterLimit
 } from "./extensions";
 import { BubbleMenuWrapper } from "./ui/bubble-menu-wrapper";
 import { DragHandleMenu } from "./ui/drag-handle";
@@ -199,6 +200,7 @@ const ClientEditor: Component<EditorProps> = (props) => {
         Text,
         HardBreak,
         Title,
+        NodeCharacterLimit.configure({ limits: { title: MAX_ENTRY_TITLE_LENGTH } }),
         // Marks
         Link,
         Bold,
@@ -238,7 +240,7 @@ const ClientEditor: Component<EditorProps> = (props) => {
         const titleNode = editor.state.doc.firstChild;
 
         if (titleNode?.type.name === "title") {
-          props.onTitleChange?.(titleNode.textContent.trim() || "Untitled");
+          props.onTitleChange?.(normalizeEntryTitle(titleNode.textContent));
         }
       }
     });

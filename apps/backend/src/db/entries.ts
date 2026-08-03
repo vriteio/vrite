@@ -1,4 +1,5 @@
 import { id } from "#backend/lib/id";
+import { entryName } from "#backend/lib/content-name";
 import { sql } from "drizzle-orm";
 import {
   foreignKey,
@@ -34,7 +35,7 @@ const lexoRank = () => {
 };
 const entryType = z.object({
   id: id().describe("ID of the entry"),
-  name: z.string().describe("Name of the entry"),
+  name: entryName().describe("Name of the entry"),
   order: lexoRank().describe("LexoRank order of the entry"),
   collectionID: id().optional().describe("ID of the collection this entry belongs to")
 });

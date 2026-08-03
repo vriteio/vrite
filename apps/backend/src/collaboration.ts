@@ -16,6 +16,7 @@ import { and, eq, isNull } from "drizzle-orm";
 import { config } from "#backend/lib/config";
 import { db } from "#backend/lib/postgres";
 import { applyUpdate, Doc, encodeStateAsUpdate, XmlElement, XmlText } from "yjs";
+import { MAX_CONTENT_NAME_LENGTH } from "#backend/lib/content-name";
 
 interface CollaborationContext {
   auth?: SessionData;
@@ -119,7 +120,7 @@ const authenticateCollaboration = async (input: {
   };
 };
 
-const getDocumentTitle = (document: Doc): string => {
+const getDocumentTitle = (document: Doc): string | null => {
   const titleElement = document
     .getXmlFragment("default")
     .toArray()
@@ -133,6 +134,8 @@ const getDocumentTitle = (document: Doc): string => {
       .map((node) => node.toString())
       .join("")
       .trim() || "";
+
+  if (title.length > MAX_CONTENT_NAME_LENGTH) return null;
 
   return title || "Untitled";
 };
@@ -221,7 +224,7 @@ const collab = new Hocuspocus<CollaborationContext>({
               set: { state: Buffer.from(mergedState), updatedAt: new Date() }
             });
 
-          if (entry.name !== title) {
+          if (title !== null && entry.name !== title) {
             await tx
               .update(entries)
               .set({ name: title, updatedAt: new Date() })

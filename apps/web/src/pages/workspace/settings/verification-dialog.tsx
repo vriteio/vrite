@@ -13,6 +13,7 @@ import {
 } from "@andesine/components";
 import { createAsync, query } from "@solidjs/router";
 import { createMutation } from "@tanstack/solid-query";
+import { getPasskeyErrorMessage } from "#web/lib/passkey-error";
 import clsx from "clsx";
 import {
   Component,
@@ -168,8 +169,10 @@ const VerificationDialog: Component = () => {
   };
   const email = () => currentSession()?.user.email || "";
   const hasPasskey = () => (passkeys() ?? []).length > 0;
+  let passkeyStartedAt = 0;
   const passkeyMutation = createMutation(() => ({
     mutationFn: async () => {
+      passkeyStartedAt = Date.now();
       const { error } = await authClient.signIn.passkey();
 
       if (error) throw error;
@@ -181,7 +184,10 @@ const VerificationDialog: Component = () => {
     },
     onError: (error) => {
       console.error(error);
-      notify({ type: "error", text: "Couldn't verify with your passkey" });
+      notify({
+        type: "error",
+        text: getPasskeyErrorMessage(error, "verify", Date.now() - passkeyStartedAt)
+      });
     }
   }));
   const sendOTPMutation = createMutation(() => ({

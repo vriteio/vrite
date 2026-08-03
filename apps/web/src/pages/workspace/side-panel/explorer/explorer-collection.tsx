@@ -35,6 +35,7 @@ import {
   getDraggedCollectionIDs,
   getDraggedEntryIDs
 } from "./explorer-dnd";
+import { MAX_CONTENT_NAME_LENGTH, normalizeCollectionName } from "#web/lib/content-name";
 
 interface ExplorerCollectionProps {
   collection: Collection;
@@ -526,8 +527,13 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
             onRename={(name) => {
               if (content.readOnly()) return;
 
-              content.updateCollection(props.collection.id, { name });
+              const normalizedName = normalizeCollectionName(name);
+
+              if (!normalizedName) return;
+
+              content.updateCollection(props.collection.id, { name: normalizedName });
             }}
+            labelMaxLength={MAX_CONTENT_NAME_LENGTH}
             icon={
               <div class="relative flex justify-center items-center">
                 <div

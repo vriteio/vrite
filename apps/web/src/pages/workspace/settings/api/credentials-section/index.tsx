@@ -38,6 +38,21 @@ const APIKeyList: Component<APIKeyListProps> = (props) => {
   const [revealedKey, setRevealedKey] = createSignal<string>("");
   const [rotationTarget, setRotationTarget] = createSignal<Key | null>(null);
   const [deletionTargets, setDeletionTargets] = createSignal<Key[]>([]);
+  const notifyKeyDeletion = (successful: number, failed: number) => {
+    if (successful > 0) {
+      notify({
+        type: "success",
+        text: successful > 1 ? `${successful} API keys deleted` : "API key deleted"
+      });
+    }
+
+    if (failed > 0) {
+      notify({
+        type: "error",
+        text: failed > 1 ? `${failed} API keys failed to delete` : "Failed to delete API key"
+      });
+    }
+  };
   const rotateKeyMutation = createMutation(() => ({
     onSuccess: (data) => {
       setRotationTarget(null);
@@ -61,16 +76,18 @@ const APIKeyList: Component<APIKeyListProps> = (props) => {
       setDeletionTargets([]);
       props.refreshKeys(() => {
         deleteKeyMutation.reset();
-      });
-      notify({
-        type: "success",
-        text: ids.length > 1 ? `${ids.length} API keys deleted` : "API key deleted"
+        notifyKeyDeletion(ids.length, 0);
       });
     },
-    onError: (error) => {
+    onError: (error, { ids }) => {
       console.error(error);
-      props.refreshKeys();
-      notify({ type: "error", text: "Failed to delete API key" });
+      props.refreshKeys(() => {
+        const failed = ids.filter((id) => props.keys.some((key) => key.id === id)).length;
+
+        setDeletionTargets([]);
+        deleteKeyMutation.reset();
+        notifyKeyDeletion(ids.length - failed, failed);
+      });
     },
     mutationFn: (input: { ids: string[] }) => client.keys.delete(input)
   }));

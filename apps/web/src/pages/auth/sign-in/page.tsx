@@ -11,6 +11,7 @@ import {
   toCallbackURL
 } from "#web/lib/redirects";
 import { createMutation } from "@tanstack/solid-query";
+import { getPasskeyErrorMessage } from "#web/lib/passkey-error";
 
 const SignInPage: Component = () => {
   const [searchParams] = useSearchParams();
@@ -53,12 +54,17 @@ const SignInPage: Component = () => {
     );
 
   const signInWithPasskey = async () => {
+    const startedAt = Date.now();
+
     try {
       await signInWithPasskeyMutation.mutateAsync();
 
       await redirectAfterAuth(redirectTo());
     } catch (error) {
-      notify({ type: "error", text: "Passkey sign-in failed" });
+      notify({
+        type: "error",
+        text: getPasskeyErrorMessage(error, "sign-in", Date.now() - startedAt)
+      });
     }
   };
   const signInWithProvider = async (provider: "google" | "github") => {

@@ -4,18 +4,22 @@ import { collections, type Collection } from "#backend/db";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 import { ROOT_COLLECTION_NAME } from "./root";
+import { normalizeCollectionName } from "#backend/lib/content-name";
 
 const updateCollection = async (
   input: { id: string; workspaceID: string } & Partial<Pick<Collection, "name">>
 ) => {
   if (input.name === undefined) return;
-  if (input.name === ROOT_COLLECTION_NAME) {
+
+  const name = normalizeCollectionName(input.name);
+
+  if (name === ROOT_COLLECTION_NAME) {
     throw new ORPCError("BAD_REQUEST", { message: "Reserved collection name" });
   }
 
   const updated = await db
     .update(collections)
-    .set({ name: input.name, updatedAt: new Date() })
+    .set({ name, updatedAt: new Date() })
     .where(
       and(
         eq(collections.id, toUUID(input.id)),

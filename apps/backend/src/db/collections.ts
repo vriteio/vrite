@@ -1,4 +1,5 @@
 import { id } from "#backend/lib/id";
+import { collectionName } from "#backend/lib/content-name";
 import { sql } from "drizzle-orm";
 import {
   check,
@@ -18,7 +19,7 @@ import { workspaces } from "./workspaces";
 
 const collectionType = z.object({
   id: id().describe("ID of the collection"),
-  name: z.string().describe("Name of the collection"),
+  name: collectionName().describe("Name of the collection"),
   ancestors: z.array(id().describe("IDs of ancestor collections")),
   descendants: z.array(id().describe("IDs of directly-descendant collections"))
 });

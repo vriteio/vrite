@@ -56,7 +56,8 @@ const Breadcrumbs: Component = () => {
                   size="small"
                   variant="text"
                   color="base"
-                  class="text-sm p-0.5 m-0.5"
+                  class="text-sm p-0.5 m-0.5 max-w-64 truncate"
+                  title={item.label}
                 >
                   {item.label}
                 </Button>

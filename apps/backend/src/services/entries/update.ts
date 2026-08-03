@@ -3,15 +3,18 @@ import { db } from "#backend/lib/postgres";
 import { entries, type Entry } from "#backend/db";
 import { and, eq, isNull } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
+import { normalizeEntryName } from "#backend/lib/content-name";
 
 const updateEntry = async (
   input: { id: string; workspaceID: string } & Partial<Pick<Entry, "name">>
 ) => {
   if (input.name === undefined) return;
 
+  const name = normalizeEntryName(input.name);
+
   const [updated] = await db
     .update(entries)
-    .set({ name: input.name, updatedAt: new Date() })
+    .set({ name, updatedAt: new Date() })
     .where(
       and(
         eq(entries.id, toUUID(input.id)),

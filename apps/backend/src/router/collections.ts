@@ -2,6 +2,7 @@ import { collectionType } from "#backend/db";
 import { emitCollectionEvent, emitEntryEvent } from "#backend/events";
 import { authorized } from "#backend/lib/middleware";
 import { id } from "#backend/lib/id";
+import { collectionName } from "#backend/lib/content-name";
 import { base } from "#backend/lib/orpc";
 import { Collections } from "#backend/services/collections";
 import * as z from "zod";
@@ -86,7 +87,7 @@ const collectionsRouter = base.prefix("/collections").router({
     .input(
       z.object({
         id: id().describe("ID of the collection to be updated"),
-        name: z.string().optional().describe("New name of the collection")
+        name: collectionName().optional().describe("New name of the collection")
       })
     )
     .output(z.void())

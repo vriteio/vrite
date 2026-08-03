@@ -3,6 +3,7 @@ import { updateDocumentTitle } from "#backend/collaboration";
 import { emitEntryEvent } from "#backend/events";
 import { authorized } from "#backend/lib/middleware";
 import { id } from "#backend/lib/id";
+import { entryName } from "#backend/lib/content-name";
 import { base } from "#backend/lib/orpc";
 import { Entries } from "#backend/services/entries";
 import * as z from "zod";
@@ -72,12 +73,12 @@ const entriesRouter = base.prefix("/entries").router({
     .input(
       z.object({
         id: id().describe("ID of the entry to be updated"),
-        name: z.string().optional().describe("New name of the entry")
+        name: entryName().optional().describe("New name of the entry")
       })
     )
     .output(z.void())
     .handler(async ({ context, input }) => {
-      const name = input.name === undefined ? undefined : input.name.trim() || "Untitled";
+      const name = input.name;
 
       await Entries.update({
         id: input.id,

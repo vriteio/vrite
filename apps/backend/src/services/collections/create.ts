@@ -6,11 +6,14 @@ import { LexoRank } from "lexorank";
 import { ORPCError } from "@orpc/server";
 import { ROOT_COLLECTION_NAME } from "./root";
 import { loadCollectionTree } from "./queries";
+import { normalizeCollectionName } from "#backend/lib/content-name";
 
 const createCollection = async (
   input: Partial<Pick<Collection, "id" | "name">> & { parentID?: string; workspaceID: string }
 ): Promise<Collection> => {
-  if (input.name === ROOT_COLLECTION_NAME) {
+  const name = normalizeCollectionName(input.name ?? "Untitled");
+
+  if (name === ROOT_COLLECTION_NAME) {
     throw new ORPCError("BAD_REQUEST", { message: "Reserved collection name" });
   }
 
@@ -71,7 +74,7 @@ const createCollection = async (
         id: collectionID,
         workspaceID,
         parentID,
-        name: input.name || "",
+        name,
         rank
       })
       .onConflictDoNothing({ target: collections.id });

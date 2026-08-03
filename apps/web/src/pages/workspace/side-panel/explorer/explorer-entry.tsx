@@ -27,6 +27,7 @@ import {
   extractClosestEdge
 } from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge";
 import { canOrderEntries, createDragData } from "./explorer-dnd";
+import { MAX_CONTENT_NAME_LENGTH, normalizeEntryName } from "#web/lib/content-name";
 
 interface ExplorerEntryProps {
   entry: Entry;
@@ -255,8 +256,9 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
           onRename={(name) => {
             if (content.readOnly()) return;
 
-            content.updateEntry(props.entry.id, { name });
+            content.updateEntry(props.entry.id, { name: normalizeEntryName(name) });
           }}
+          labelMaxLength={MAX_CONTENT_NAME_LENGTH}
           actions={
             <>
               <DropdownMenu
