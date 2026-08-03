@@ -70,7 +70,7 @@ const VerticalResizeHandle: Component<VerticalResizeHandleProps> = (providedProp
 
   return (
     <div
-      class="relative z-1"
+      class="relative z-10"
       onPointerDown={(event) => {
         if (event.button !== 0) return;
         setActive(true);
