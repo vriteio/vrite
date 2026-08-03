@@ -1,7 +1,6 @@
-import { toUUID } from "#backend/lib/id";
-import { db } from "#backend/lib/postgres";
+import { toUUID } from "#backend/lib/primitives";
+import { db } from "#backend/lib/adapters";
 import { apiKeys, type KeyPermission } from "#backend/db";
-import { Auth } from "#backend/services/auth";
 import { and, eq } from "drizzle-orm";
 
 const updateKey = async (input: {
@@ -22,8 +21,6 @@ const updateKey = async (input: {
     .where(
       and(eq(apiKeys.id, toUUID(input.id)), eq(apiKeys.workspaceID, toUUID(input.workspaceID)))
     );
-
-  if (input.permissions !== undefined) await Auth.invalidateSessionData({ keyID: input.id });
 };
 
 export { updateKey };

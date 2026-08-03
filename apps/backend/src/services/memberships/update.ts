@@ -1,7 +1,6 @@
-import { toUUID, toUserID } from "#backend/lib/id";
-import { db } from "#backend/lib/postgres";
+import { toUUID, toUserID } from "#backend/lib/primitives";
+import { db } from "#backend/lib/adapters";
 import { memberships, roles, workspaces } from "#backend/db";
-import { Auth } from "#backend/services/auth";
 import { and, eq, sql } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 
@@ -9,7 +8,7 @@ const updateMember = async (input: {
   id: string;
   workspaceID: string;
   roleID: string;
-}): Promise<void> => {
+}): Promise<{ userID: string }> => {
   const workspaceID = toUUID(input.workspaceID);
   const memberID = toUUID(input.id);
   const newRoleID = toUUID(input.roleID);
@@ -70,10 +69,7 @@ const updateMember = async (input: {
     return membership.userID;
   });
 
-  await Auth.invalidateSessionData({
-    userID: toUserID(userID),
-    workspaceID: input.workspaceID
-  });
+  return { userID: toUserID(userID) };
 };
 
 export { updateMember };

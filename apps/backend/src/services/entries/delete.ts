@@ -1,10 +1,13 @@
-import { toEntryID, toUUID } from "#backend/lib/id";
-import { db } from "#backend/lib/postgres";
+import { toEntryID, toUUID } from "#backend/lib/primitives";
+import { db } from "#backend/lib/adapters";
 import { entries } from "#backend/db";
 import { and, eq, inArray, isNull } from "drizzle-orm";
 
-const deleteEntries = async (input: { ids: string[]; workspaceID: string }): Promise<string[]> => {
-  if (input.ids.length === 0) return [];
+const deleteEntries = async (input: {
+  ids: string[];
+  workspaceID: string;
+}): Promise<{ entryIDs: string[] }> => {
+  if (input.ids.length === 0) return { entryIDs: [] };
 
   const deleted = await db
     .update(entries)
@@ -18,7 +21,7 @@ const deleteEntries = async (input: { ids: string[]; workspaceID: string }): Pro
     )
     .returning({ id: entries.id });
 
-  return deleted.map(({ id }) => toEntryID(id));
+  return { entryIDs: deleted.map(({ id }) => toEntryID(id)) };
 };
 
 export { deleteEntries };

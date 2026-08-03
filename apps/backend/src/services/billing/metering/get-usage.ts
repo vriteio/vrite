@@ -1,7 +1,7 @@
 import { dailyUsage } from "#backend/db";
 import { config } from "#backend/lib/config";
-import { toUUID } from "#backend/lib/id";
-import { db } from "#backend/lib/postgres";
+import { toUUID } from "#backend/lib/primitives";
+import { db } from "#backend/lib/adapters";
 import { and, asc, eq, gte, lte } from "drizzle-orm";
 
 interface DailyUsageRecord {
@@ -77,4 +77,4 @@ const getUsage = async (input: {
   };
 };
 
-export { getUsage, getUTCMonthPeriod };
+export { getUsage };

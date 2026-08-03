@@ -1,8 +1,8 @@
 import { permissionType } from "#backend/db";
-import { authorized } from "#backend/lib/middleware";
-import { id } from "#backend/lib/id";
-import { base } from "#backend/lib/orpc";
-import { Auth } from "#backend/services/auth";
+import { authorized } from "#backend/lib/transport";
+import { id } from "#backend/lib/primitives";
+import { base } from "#backend/lib/transport";
+import { verifyOTPToken } from "#backend/lib/security";
 import * as z from "zod";
 
 const authRouter = base.router({
@@ -52,7 +52,7 @@ const authRouter = base.router({
       })
     )
     .handler(({ input }) => {
-      return Auth.verifyOTPToken({ token: input.token });
+      return verifyOTPToken({ token: input.token });
     })
 });
 

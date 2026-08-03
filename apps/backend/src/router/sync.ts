@@ -1,6 +1,5 @@
 import { collectionType, entryType } from "#backend/db";
-import { authorized } from "#backend/lib/middleware";
-import { base } from "#backend/lib/orpc";
+import { authorized, base } from "#backend/lib/transport";
 import { Sync } from "#backend/services/sync";
 import * as z from "zod";
 
@@ -24,11 +23,13 @@ const syncRouter = base.router({
       });
     }),
   workspaceUpdates: base.use(authorized).handler(async function* ({ context, signal }) {
-    yield* Sync.listenToWorkspaceEvents({
+    const { events } = Sync.listenToWorkspaceEvents({
       auth: context.auth,
       workspaceID: context.auth.workspaceID,
       signal
     });
+
+    yield* events;
   })
 });
 

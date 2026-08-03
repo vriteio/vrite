@@ -1,5 +1,5 @@
-import { toCollectionID, toEntryID, toUUID } from "#backend/lib/id";
-import { db } from "#backend/lib/postgres";
+import { toCollectionID, toEntryID, toUUID } from "#backend/lib/primitives";
+import { db } from "#backend/lib/adapters";
 import { entries, type Entry } from "#backend/db";
 import { and, desc, eq, isNull, lt, or } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
@@ -11,7 +11,7 @@ const listEntries = async (input: {
   lastID?: string;
   perPage?: number;
   page?: number;
-}): Promise<Entry[]> => {
+}): Promise<{ entries: Entry[] }> => {
   const perPage = input.perPage || 50;
   const page = input.page || 1;
   const workspaceID = toUUID(input.workspaceID);
@@ -62,12 +62,14 @@ const listEntries = async (input: {
     .limit(perPage)
     .offset(input.lastOrder || input.lastID ? 0 : (page - 1) * perPage);
 
-  return rows.map((entry) => ({
-    id: toEntryID(entry.id),
-    name: entry.name,
-    order: entry.rank,
-    collectionID: entry.collectionID ? toCollectionID(entry.collectionID) : undefined
-  }));
+  return {
+    entries: rows.map((entry) => ({
+      id: toEntryID(entry.id),
+      name: entry.name,
+      order: entry.rank,
+      collectionID: entry.collectionID ? toCollectionID(entry.collectionID) : undefined
+    }))
+  };
 };
 
 export { listEntries };

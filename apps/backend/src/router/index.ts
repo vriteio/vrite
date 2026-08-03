@@ -12,7 +12,7 @@ import { OpenAPIHandler } from "@orpc/openapi/fastify";
 import { RequestHeadersPlugin, ResponseHeadersPlugin } from "@orpc/server/plugins";
 import { onError, ORPCError } from "@orpc/server";
 import { RPCHandler } from "@orpc/server/fastify";
-import { RATE_LIMITS, consumeRateLimit } from "#backend/lib/rate-limit";
+import { RATE_LIMITS, consumeRateLimit } from "#backend/lib/security";
 
 const router = {
   auth: authRouter,

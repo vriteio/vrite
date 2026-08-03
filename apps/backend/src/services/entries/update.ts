@@ -1,9 +1,9 @@
-import { toUUID } from "#backend/lib/id";
-import { db } from "#backend/lib/postgres";
+import { toUUID } from "#backend/lib/primitives";
+import { db } from "#backend/lib/adapters";
 import { entries, type Entry } from "#backend/db";
 import { and, eq, isNull } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
-import { normalizeEntryName } from "#backend/lib/content-name";
+import { normalizeEntryName } from "#backend/lib/validation";
 
 const updateEntry = async (
   input: { id: string; workspaceID: string } & Partial<Pick<Entry, "name">>

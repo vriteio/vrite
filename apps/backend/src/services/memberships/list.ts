@@ -1,5 +1,5 @@
-import { toMembershipID, toRoleID, toUUID, toUserID } from "#backend/lib/id";
-import { db } from "#backend/lib/postgres";
+import { toMembershipID, toRoleID, toUUID, toUserID } from "#backend/lib/primitives";
+import { db } from "#backend/lib/adapters";
 import { type Membership, memberships, roles, type UserProfile, users } from "#backend/db";
 import { eq } from "drizzle-orm";
 
@@ -9,7 +9,9 @@ interface MemberDetails extends Membership {
   profile: UserProfile;
 }
 
-const listMembers = async (input: { workspaceID: string }): Promise<MemberDetails[]> => {
+const listMembers = async (input: {
+  workspaceID: string;
+}): Promise<{ members: MemberDetails[] }> => {
   const rows = await db
     .select({
       id: memberships.id,
@@ -26,19 +28,21 @@ const listMembers = async (input: { workspaceID: string }): Promise<MemberDetail
     .innerJoin(roles, eq(roles.id, memberships.roleID))
     .where(eq(memberships.workspaceID, toUUID(input.workspaceID)));
 
-  return rows.map((row) => ({
-    id: toMembershipID(row.id),
-    userID: toUserID(row.userID),
-    roleID: toRoleID(row.roleID),
-    roleName: row.roleName,
-    admin: row.baseRole === "admin",
-    profile: {
-      id: toUserID(row.userID),
-      name: row.userName,
-      email: row.userEmail,
-      ...(row.userImage && { image: row.userImage })
-    }
-  }));
+  return {
+    members: rows.map((row) => ({
+      id: toMembershipID(row.id),
+      userID: toUserID(row.userID),
+      roleID: toRoleID(row.roleID),
+      roleName: row.roleName,
+      admin: row.baseRole === "admin",
+      profile: {
+        id: toUserID(row.userID),
+        name: row.userName,
+        email: row.userEmail,
+        ...(row.userImage && { image: row.userImage })
+      }
+    }))
+  };
 };
 
 export { listMembers };

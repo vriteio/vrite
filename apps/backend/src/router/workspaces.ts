@@ -1,9 +1,8 @@
 import { permissionType, workspaceType } from "#backend/db";
 import { emitWorkspaceStateEvent } from "#backend/events";
-import { auth } from "#backend/lib/auth";
-import { authorized } from "#backend/lib/middleware";
-import { id, toUserID, toUUID } from "#backend/lib/id";
-import { base } from "#backend/lib/orpc";
+import { auth } from "#backend/lib/adapters";
+import { authorized, base } from "#backend/lib/transport";
+import { id, toUserID, toUUID } from "#backend/lib/primitives";
 import { Billing } from "#backend/services/billing";
 import { Workspaces } from "#backend/services/workspaces";
 import * as z from "zod";
@@ -34,12 +33,14 @@ const workspacesRouter = base.router({
         headers: new Headers({ cookie: context.reqHeaders?.get("cookie") || "" })
       });
 
-      return Workspaces.list({
+      const { workspaces } = await Workspaces.list({
         activeUserID: context.auth.session!.userID,
         userIDs: sessions.map((session) => {
           return toUserID(toUUID(session.user.id));
         })
       });
+
+      return workspaces;
     }),
   create: base
     .meta({
@@ -118,9 +119,21 @@ const workspacesRouter = base.router({
     )
     .handler(async ({ context }) => {
       await Auth.invalidateSessionData({ workspaceID: context.auth.workspaceID });
-      await Billing.endSubscription({
+      const { deletingAt } = await Workspaces.beginDeletion({
         workspaceID: context.auth.workspaceID
       });
+
+      try {
+        await Billing.settle({
+          workspaceID: context.auth.workspaceID
+        });
+      } catch (error) {
+        await Workspaces.cancelDeletion({
+          deletingAt,
+          workspaceID: context.auth.workspaceID
+        });
+        throw error;
+      }
 
       const { entryIDs, ...result } = await Workspaces.delete({
         workspaceID: context.auth.workspaceID,

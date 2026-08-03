@@ -1,6 +1,6 @@
 import { memberships, roles, type Permission, type Workspace, workspaces } from "#backend/db";
-import { toUserID, toUUID, toWorkspaceID } from "#backend/lib/id";
-import { db } from "#backend/lib/postgres";
+import { toUserID, toUUID, toWorkspaceID } from "#backend/lib/primitives";
+import { db } from "#backend/lib/adapters";
 import { eq, inArray } from "drizzle-orm";
 
 interface WorkspaceListItem extends Pick<Workspace, "id" | "name"> {
@@ -9,10 +9,13 @@ interface WorkspaceListItem extends Pick<Workspace, "id" | "name"> {
   admin: boolean;
 }
 
-const listWorkspaces = async (input: { activeUserID: string; userIDs: string[] }) => {
+const listWorkspaces = async (input: {
+  activeUserID: string;
+  userIDs: string[];
+}): Promise<{ workspaces: WorkspaceListItem[] }> => {
   const userIDs = input.userIDs.map(toUUID);
 
-  if (userIDs.length === 0) return [];
+  if (userIDs.length === 0) return { workspaces: [] };
 
   const rows = await db
     .select({
@@ -27,19 +30,21 @@ const listWorkspaces = async (input: { activeUserID: string; userIDs: string[] }
     .innerJoin(roles, eq(roles.id, memberships.roleID))
     .where(inArray(memberships.userID, userIDs));
 
-  return rows
-    .map(
-      (row): WorkspaceListItem => ({
-        id: toWorkspaceID(row.id),
-        name: row.name,
-        userID: toUserID(row.userID),
-        permissions: row.permissions,
-        admin: row.baseRole === "admin"
-      })
-    )
-    .sort(
-      (a, b) => Number(b.userID === input.activeUserID) - Number(a.userID === input.activeUserID)
-    );
+  return {
+    workspaces: rows
+      .map(
+        (row): WorkspaceListItem => ({
+          id: toWorkspaceID(row.id),
+          name: row.name,
+          userID: toUserID(row.userID),
+          permissions: row.permissions,
+          admin: row.baseRole === "admin"
+        })
+      )
+      .sort(
+        (a, b) => Number(b.userID === input.activeUserID) - Number(a.userID === input.activeUserID)
+      )
+  };
 };
 
 export { listWorkspaces };

@@ -1,11 +1,11 @@
 import { dailyUsage, workspaces } from "#backend/db";
-import { toUUID } from "#backend/lib/id";
-import { db } from "#backend/lib/postgres";
+import { toUUID } from "#backend/lib/primitives";
+import { db } from "#backend/lib/adapters";
 import { eq, sql } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 
-const recordUsage = async (workspaceID: string): Promise<void> => {
-  const workspaceUUID = toUUID(workspaceID);
+const recordUsage = async (input: { workspaceID: string }): Promise<void> => {
+  const workspaceUUID = toUUID(input.workspaceID);
   const usageDate = new Date().toISOString().slice(0, 10);
 
   await db.transaction(async (tx) => {

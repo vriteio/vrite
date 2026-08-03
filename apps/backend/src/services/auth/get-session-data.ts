@@ -1,6 +1,5 @@
 import { memberships, roles, users, workspaces } from "#backend/db";
-import type { KeyPermission, Permission } from "#backend/db";
-import { auth } from "#backend/lib/auth";
+import { verifyAPIKey } from "#backend/lib/data";
 import {
   toKeyID,
   toMembershipID,
@@ -8,30 +7,15 @@ import {
   toUserID,
   toUUID,
   toWorkspaceID
-} from "#backend/lib/id";
-import { db } from "#backend/lib/postgres";
-import { redis } from "#backend/lib/redis";
-import { Keys } from "#backend/services/keys";
+} from "#backend/lib/primitives";
+import { auth, db, redis } from "#backend/lib/adapters";
+import { getUserSessionCacheKey, parseSessionData, type SessionData } from "#backend/lib/policy";
 import { and, eq } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 
 const SESSION_TTL = 300;
-interface SessionData {
-  id: string;
-  type: "key" | "session";
-  workspaceID: string;
-  subscriptionPlan: string;
-  customerID?: string;
-  session?: {
-    memberID: string;
-    userID: string;
-    roleID: string;
-    permissions: Permission[];
-    admin?: boolean;
-  };
-  key?: { keyID: string; permissions: KeyPermission[] };
-}
-interface GetSessionDataOptions {
+interface GetSessionDataInput {
+  headers: Headers;
   requireWorkspace?: boolean;
 }
 
@@ -43,22 +27,18 @@ const tryResolveUUID = (id: string | undefined | null) => {
     return null;
   }
 };
-const getUserSessionCacheKey = (userID: string, workspaceID: string) => {
-  return `session:user:${userID}:${workspaceID}`;
-};
-const getSessionData = async (
-  headers: Headers,
-  options: GetSessionDataOptions = {}
-): Promise<SessionData> => {
+const getSessionData = async (input: GetSessionDataInput): Promise<SessionData> => {
+  const { headers } = input;
+
   if (headers.get("authorization")?.startsWith("Bearer ")) {
     return getKeySessionData(headers);
   }
 
-  return getUserSessionData(headers, options);
+  return getUserSessionData(headers, input);
 };
 const getUserSessionData = async (
   headers: Headers,
-  options: GetSessionDataOptions
+  options: Pick<GetSessionDataInput, "requireWorkspace">
 ): Promise<SessionData> => {
   const sessionResult = await auth.api.getSession({ headers });
   const session = sessionResult?.session;
@@ -94,7 +74,13 @@ const getUserSessionData = async (
   const cacheKey = getUserSessionCacheKey(session.userId, workspaceID);
   const cached = await redis.get(cacheKey);
 
-  if (cached) return JSON.parse(cached) as SessionData;
+  if (cached) {
+    const cachedData = parseSessionData(cached);
+
+    if (cachedData) return cachedData;
+
+    await redis.del(cacheKey);
+  }
 
   const [row] = await db
     .select({
@@ -133,14 +119,20 @@ const getUserSessionData = async (
   return data;
 };
 const getKeySessionData = async (headers: Headers): Promise<SessionData> => {
-  const key = await Keys.verify(headers.get("authorization")!.slice(7).trim());
+  const key = await verifyAPIKey(headers.get("authorization")!.slice(7).trim());
 
   if (!key) throw new ORPCError("UNAUTHORIZED");
 
   const cacheKey = `session:key:${key.id}`;
   const cached = await redis.get(cacheKey);
 
-  if (cached) return JSON.parse(cached) as SessionData;
+  if (cached) {
+    const cachedData = parseSessionData(cached);
+
+    if (cachedData) return cachedData;
+
+    await redis.del(cacheKey);
+  }
 
   const [workspace] = await db.select().from(workspaces).where(eq(workspaces.id, key.workspaceID));
 
@@ -160,5 +152,4 @@ const getKeySessionData = async (headers: Headers): Promise<SessionData> => {
   return data;
 };
 
-export { getSessionData, getUserSessionCacheKey };
-export type { SessionData };
+export { getSessionData };

@@ -1,6 +1,6 @@
 import { entries, users, workspaces } from "#backend/db";
-import { toEntryID, toUUID, toWorkspaceID } from "#backend/lib/id";
-import { db } from "#backend/lib/postgres";
+import { toEntryID, toUUID, toWorkspaceID } from "#backend/lib/primitives";
+import { db } from "#backend/lib/adapters";
 import { eq, sql } from "drizzle-orm";
 
 const deleteWorkspace = async (input: {

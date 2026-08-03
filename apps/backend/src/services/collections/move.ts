@@ -1,19 +1,8 @@
-import { toCollectionID, toUUID } from "#backend/lib/id";
-import { db } from "#backend/lib/postgres";
+import { rankBetweenNeighbors, toCollectionID, toUUID } from "#backend/lib/primitives";
+import { db } from "#backend/lib/adapters";
 import { collections, workspaces } from "#backend/db";
 import { and, asc, eq, isNull, sql } from "drizzle-orm";
-import { LexoRank } from "lexorank";
 import { ORPCError } from "@orpc/server";
-
-const rankAt = (ranks: string[], index: number): string => {
-  const previous = ranks[index - 1] ? LexoRank.parse(ranks[index - 1]) : null;
-  const next = ranks[index] ? LexoRank.parse(ranks[index]) : null;
-
-  if (previous && next) return `${previous.between(next)}`;
-  if (previous) return `${previous.genNext()}`;
-  if (next) return `${next.genPrev()}`;
-  return `${LexoRank.middle()}`;
-};
 
 const moveCollection = async (input: {
   id: string;
@@ -114,10 +103,7 @@ const moveCollection = async (input: {
     const existingIndex = siblings.findIndex((sibling) => sibling.id === collectionID);
     const requestedIndex = input.index ?? (existingIndex >= 0 ? existingIndex : destination.length);
     const index = Math.min(Math.max(requestedIndex, 0), destination.length);
-    const rank = rankAt(
-      destination.map((sibling) => sibling.rank),
-      index
-    );
+    const rank = rankBetweenNeighbors(destination[index - 1]?.rank, destination[index]?.rank);
 
     await tx
       .update(collections)

@@ -1,15 +1,14 @@
 import { router, routerPlugin } from "#backend/router";
 import "./events";
 import { collab, shutdownCollaboration } from "#backend/collaboration";
-import { config } from "./lib/config";
+import { config } from "#backend/lib/config";
 import Fastify, { FastifyRequest } from "fastify";
 import corsPlugin from "@fastify/cors";
 import websocketPlugin from "@fastify/websocket";
 import { webhooksPlugin } from "./webhooks";
-import { auth } from "./lib/auth";
-import { pool } from "./lib/postgres";
-import { redis, subscriberRedis } from "./lib/redis";
-import { RATE_LIMITS, consumeRateLimit } from "./lib/rate-limit";
+import { auth, pool } from "#backend/lib/adapters";
+import { redis, subscriberRedis } from "#backend/lib/adapters";
+import { RATE_LIMITS, consumeRateLimit } from "#backend/lib/security";
 
 const allowedOrigins = [...new Set([config.PUBLIC_APP_URL, config.PUBLIC_API_URL])];
 const allowedMethods = ["GET", "HEAD", "PUT", "POST", "DELETE", "PATCH", "OPTIONS"];

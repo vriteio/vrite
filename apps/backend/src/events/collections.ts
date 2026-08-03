@@ -1,9 +1,9 @@
 import { collectionType } from "#backend/db";
-import { emitEvent, EmitEvent, subscribeToEvent, SubscribeToEvent } from "#backend/lib/events";
-import { id } from "#backend/lib/id";
+import { emitEvent, EmitEvent, subscribeToEvent, SubscribeToEvent } from "#backend/lib/messaging";
+import { id } from "#backend/lib/primitives";
 import * as z from "zod";
 
-declare module "#backend/lib/events" {
+declare module "#backend/lib/messaging/events" {
   interface Events {
     [collectionEvent: `${string}:collections`]: CollectionEvent;
   }
@@ -49,7 +49,10 @@ const emitCollectionEvent: EmitEvent<{
 const subscribeToCollectionEvents: SubscribeToEvent<{
   [workspaceID: string]: CollectionEvent;
 }> = (workspaceID, callback, options) => {
-  return subscribeToEvent(`${workspaceID}:collections`, callback, options);
+  return subscribeToEvent(`${workspaceID}:collections`, callback, {
+    ...options,
+    schema: collectionEventType
+  });
 };
 
 export { collectionEventType, emitCollectionEvent, subscribeToCollectionEvents };

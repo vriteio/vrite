@@ -1,4 +1,4 @@
-import { id } from "#backend/lib/id";
+import { id } from "#backend/lib/primitives";
 import { foreignKey, index, pgTable, unique, uuid } from "drizzle-orm/pg-core";
 import * as z from "zod";
 import { timestamps } from "./shared";

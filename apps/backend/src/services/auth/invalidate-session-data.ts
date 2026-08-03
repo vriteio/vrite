@@ -1,6 +1,6 @@
-import { toUUID } from "#backend/lib/id";
-import { redis } from "#backend/lib/redis";
-import { getUserSessionCacheKey, SessionData } from "./get-session-data";
+import { toUUID } from "#backend/lib/primitives";
+import { redis } from "#backend/lib/adapters";
+import { getUserSessionCacheKey, parseSessionData } from "#backend/lib/policy";
 
 /**
  * Invalidate cached session data for a specific user in a workspace.
@@ -45,9 +45,9 @@ const invalidateWorkspaceSessionData = async (workspaceID: string): Promise<void
           const cached = await redis.get(key);
 
           if (cached) {
-            const data = JSON.parse(cached) as SessionData;
+            const data = parseSessionData(cached);
 
-            if (data.workspaceID === workspaceID) {
+            if (!data || data.workspaceID === workspaceID) {
               await redis.del(key);
             }
           }

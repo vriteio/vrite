@@ -1,10 +1,12 @@
 import { subscribeToWorkspaceEvents, workspaceEventType } from "#backend/events";
-import { viaIterator } from "#backend/lib/events";
-import type { SessionData } from "#backend/lib/middleware";
-import { isSessionAuthorizationEvent } from "#backend/services/auth";
-import { isWorkspaceEventVisible } from "./is-workspace-event-visible";
+import { viaIterator } from "#backend/lib/messaging";
+import {
+  type SessionData,
+  isSessionAuthorizationEvent,
+  isWorkspaceEventVisible
+} from "#backend/lib/policy";
 
-const listenToWorkspaceEvents = async function* (input: {
+const createWorkspaceEventStream = async function* (input: {
   auth: SessionData;
   signal?: AbortSignal;
   workspaceID: string;
@@ -29,6 +31,13 @@ const listenToWorkspaceEvents = async function* (input: {
 
     yield parsedEvent.data;
   }
+};
+const listenToWorkspaceEvents = (input: {
+  auth: SessionData;
+  signal?: AbortSignal;
+  workspaceID: string;
+}) => {
+  return { events: createWorkspaceEventStream(input) };
 };
 
 export { listenToWorkspaceEvents };

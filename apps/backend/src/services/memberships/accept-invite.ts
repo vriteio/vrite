@@ -1,8 +1,7 @@
-import { toMembershipID, toRoleID, toUUID, toUserID, toWorkspaceID } from "#backend/lib/id";
-import { db } from "#backend/lib/postgres";
+import { toMembershipID, toRoleID, toUUID, toUserID, toWorkspaceID } from "#backend/lib/primitives";
+import { db } from "#backend/lib/adapters";
 import { invitations, memberships, users, workspaces } from "#backend/db";
-import { verifyInviteLink } from "#backend/lib/invites";
-import { Auth } from "#backend/services/auth";
+import { verifyInviteLink } from "#backend/lib/messaging";
 import { and, eq } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 
@@ -90,11 +89,6 @@ const acceptInvite = async (input: {
       .where(eq(users.id, userID));
 
     return { workspace, membership };
-  });
-
-  await Auth.invalidateSessionData({
-    userID: input.userID,
-    workspaceID: toWorkspaceID(result.workspace.id)
   });
 
   return {

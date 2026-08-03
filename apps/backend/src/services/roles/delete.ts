@@ -1,11 +1,13 @@
-import { toUUID, toUserID } from "#backend/lib/id";
-import { db } from "#backend/lib/postgres";
+import { toUUID, toUserID } from "#backend/lib/primitives";
+import { db } from "#backend/lib/adapters";
 import { invitations, memberships, roles, workspaces } from "#backend/db";
-import { Auth } from "#backend/services/auth";
 import { and, eq } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 
-const deleteRole = async (input: { id: string; workspaceID: string }): Promise<void> => {
+const deleteRole = async (input: {
+  id: string;
+  workspaceID: string;
+}): Promise<{ affectedUserIDs: string[] }> => {
   const roleID = toUUID(input.id);
   const workspaceID = toUUID(input.workspaceID);
   const affectedUserIDs = await db.transaction(async (tx) => {
@@ -52,14 +54,7 @@ const deleteRole = async (input: { id: string; workspaceID: string }): Promise<v
     return affected.map(({ userID }) => userID);
   });
 
-  await Promise.all(
-    affectedUserIDs.map((userID) =>
-      Auth.invalidateSessionData({
-        userID: toUserID(userID),
-        workspaceID: input.workspaceID
-      })
-    )
-  );
+  return { affectedUserIDs: affectedUserIDs.map(toUserID) };
 };
 
 export { deleteRole };

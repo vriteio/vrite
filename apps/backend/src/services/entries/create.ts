@@ -1,10 +1,9 @@
-import { toCollectionID, toEntryID, toUUID } from "#backend/lib/id";
-import { db } from "#backend/lib/postgres";
+import { rankBetweenNeighbors, toCollectionID, toEntryID, toUUID } from "#backend/lib/primitives";
+import { db } from "#backend/lib/adapters";
 import { collections, contents, entries, type Entry, workspaces } from "#backend/db";
 import { and, desc, eq, isNull } from "drizzle-orm";
-import { LexoRank } from "lexorank";
 import { ORPCError } from "@orpc/server";
-import { normalizeEntryName } from "#backend/lib/content-name";
+import { normalizeEntryName } from "#backend/lib/validation";
 
 const createEntry = async (input: Partial<Entry> & { workspaceID: string }): Promise<Entry> => {
   const workspaceID = toUUID(input.workspaceID);
@@ -50,7 +49,7 @@ const createEntry = async (input: Partial<Entry> & { workspaceID: string }): Pro
       .where(siblingFilter)
       .orderBy(desc(entries.rank))
       .limit(1);
-    const rank = last ? `${LexoRank.parse(last.rank).genNext()}` : `${LexoRank.middle()}`;
+    const rank = rankBetweenNeighbors(last?.rank);
 
     await tx
       .insert(entries)

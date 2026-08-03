@@ -1,9 +1,9 @@
 import { inviteType, membershipType } from "#backend/db";
-import { emitEvent, EmitEvent, subscribeToEvent, SubscribeToEvent } from "#backend/lib/events";
-import { id } from "#backend/lib/id";
+import { emitEvent, EmitEvent, subscribeToEvent, SubscribeToEvent } from "#backend/lib/messaging";
+import { id } from "#backend/lib/primitives";
 import * as z from "zod";
 
-declare module "#backend/lib/events" {
+declare module "#backend/lib/messaging/events" {
   interface Events {
     [membershipEvent: `${string}:memberships`]: MembershipEvent;
   }
@@ -50,7 +50,10 @@ const emitMembershipEvent: EmitEvent<{
 const subscribeToMembershipEvents: SubscribeToEvent<{
   [workspaceID: string]: MembershipEvent;
 }> = (workspaceID, callback, options) => {
-  return subscribeToEvent(`${workspaceID}:memberships`, callback, options);
+  return subscribeToEvent(`${workspaceID}:memberships`, callback, {
+    ...options,
+    schema: membershipEventType
+  });
 };
 
 export { membershipEventType, emitMembershipEvent, subscribeToMembershipEvents };

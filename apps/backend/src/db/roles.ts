@@ -1,4 +1,4 @@
-import { id } from "#backend/lib/id";
+import { id } from "#backend/lib/primitives";
 import { sql } from "drizzle-orm";
 import { index, pgEnum, pgTable, unique, uniqueIndex, uuid, varchar } from "drizzle-orm/pg-core";
 import * as z from "zod";

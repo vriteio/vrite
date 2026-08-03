@@ -4,7 +4,6 @@ import { getKey } from "./get";
 import { listKeys } from "./list";
 import { rotateKey } from "./rotate";
 import { updateKey } from "./update";
-import { verifyKey } from "./verify";
 
 const Keys = {
   create: createKey,
@@ -12,8 +11,7 @@ const Keys = {
   list: listKeys,
   delete: deleteKeys,
   update: updateKey,
-  rotate: rotateKey,
-  verify: verifyKey
+  rotate: rotateKey
 };
 
 export { Keys };

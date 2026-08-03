@@ -1,9 +1,8 @@
 import { collectionType } from "#backend/db";
 import { emitCollectionEvent, emitEntryEvent } from "#backend/events";
-import { authorized } from "#backend/lib/middleware";
-import { id } from "#backend/lib/id";
-import { collectionName } from "#backend/lib/content-name";
-import { base } from "#backend/lib/orpc";
+import { authorized, base } from "#backend/lib/transport";
+import { id } from "#backend/lib/primitives";
+import { collectionName } from "#backend/lib/validation";
 import { Collections } from "#backend/services/collections";
 import * as z from "zod";
 
@@ -170,12 +169,14 @@ const collectionsRouter = base.prefix("/collections").router({
     .use(authorized)
     .output(z.array(collectionType))
     .handler(async ({ context, input }) => {
-      return Collections.list({
+      const { collections } = await Collections.list({
         workspaceID: context.auth.workspaceID,
         ancestorID: input.ancestorID,
         perPage: input.perPage,
         page: input.page
       });
+
+      return collections;
     })
 });
 

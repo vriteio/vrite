@@ -1,14 +1,14 @@
-import { toUUID } from "#backend/lib/id";
-import { db } from "#backend/lib/postgres";
+import { toUUID } from "#backend/lib/primitives";
+import { db } from "#backend/lib/adapters";
 import { invitations, workspaces } from "#backend/db";
-import { deliverInvite, type InviteDelivery } from "#backend/lib/invites";
+import { deliverInvite, type InviteDelivery } from "#backend/lib/messaging";
 import { and, eq } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 
 const resendInvite = async (input: {
   id: string;
   workspaceID: string;
-}): Promise<InviteDelivery> => {
+}): Promise<{ emailDelivery: InviteDelivery }> => {
   const id = toUUID(input.id);
   const workspaceID = toUUID(input.workspaceID);
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
@@ -35,7 +35,7 @@ const resendInvite = async (input: {
 
   const { emailDelivery } = await deliverInvite({ invite, workspaceName: workspace.name });
 
-  return emailDelivery;
+  return { emailDelivery };
 };
 
 export { resendInvite };

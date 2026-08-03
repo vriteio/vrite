@@ -1,10 +1,9 @@
-import { toUUID } from "#backend/lib/id";
-import { db } from "#backend/lib/postgres";
+import { toUUID } from "#backend/lib/primitives";
+import { db } from "#backend/lib/adapters";
 import { collections, type Collection } from "#backend/db";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
-import { ROOT_COLLECTION_NAME } from "./root";
-import { normalizeCollectionName } from "#backend/lib/content-name";
+import { normalizeCollectionName, ROOT_COLLECTION_NAME } from "#backend/lib/validation";
 
 const updateCollection = async (
   input: { id: string; workspaceID: string } & Partial<Pick<Collection, "name">>

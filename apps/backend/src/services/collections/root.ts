@@ -1,11 +1,10 @@
-import { toCollectionID, toUUID } from "#backend/lib/id";
-import { db } from "#backend/lib/postgres";
+import { toCollectionID, toUUID } from "#backend/lib/primitives";
+import { db } from "#backend/lib/adapters";
 import { collections, type Collection } from "#backend/db";
 import { and, eq, isNull } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
-import { loadCollectionTree } from "./queries";
-
-const ROOT_COLLECTION_NAME = "~";
+import { loadCollectionTree } from "#backend/lib/data";
+import { ROOT_COLLECTION_NAME } from "#backend/lib/validation";
 
 const getRootCollection = async (input: { workspaceID: string }): Promise<Collection> => {
   const workspaceID = toUUID(input.workspaceID);
@@ -33,4 +32,4 @@ const getRootCollection = async (input: { workspaceID: string }): Promise<Collec
   return projected;
 };
 
-export { ROOT_COLLECTION_NAME, getRootCollection };
+export { getRootCollection };

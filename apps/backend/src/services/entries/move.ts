@@ -1,8 +1,7 @@
-import { toUUID } from "#backend/lib/id";
-import { db } from "#backend/lib/postgres";
+import { rankBetweenNeighbors, toUUID } from "#backend/lib/primitives";
+import { db } from "#backend/lib/adapters";
 import { collections, entries, workspaces } from "#backend/db";
 import { and, desc, eq, gt, isNull, lt, ne } from "drizzle-orm";
-import { LexoRank } from "lexorank";
 import { ORPCError } from "@orpc/server";
 
 const moveEntry = async (input: {
@@ -10,7 +9,7 @@ const moveEntry = async (input: {
   workspaceID: string;
   order: string;
   collectionID?: string | null;
-}): Promise<string> => {
+}): Promise<{ order: string }> => {
   const workspaceID = toUUID(input.workspaceID);
   const entryID = toUUID(input.id);
   const collectionID =
@@ -90,7 +89,7 @@ const moveEntry = async (input: {
         .limit(1);
 
       if (lower) {
-        rank = `${LexoRank.parse(lower.rank).between(LexoRank.parse(input.order))}`;
+        rank = rankBetweenNeighbors(lower.rank, input.order);
       } else {
         const [upper] = await tx
           .select({ rank: entries.rank })
@@ -99,9 +98,7 @@ const moveEntry = async (input: {
           .orderBy(entries.rank)
           .limit(1);
 
-        rank = upper
-          ? `${LexoRank.parse(input.order).between(LexoRank.parse(upper.rank))}`
-          : `${LexoRank.parse(input.order).genNext()}`;
+        rank = rankBetweenNeighbors(input.order, upper?.rank);
       }
     }
 
@@ -120,7 +117,7 @@ const moveEntry = async (input: {
         )
       );
 
-    return rank;
+    return { order: rank };
   });
 };
 

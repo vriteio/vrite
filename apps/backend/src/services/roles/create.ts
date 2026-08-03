@@ -1,11 +1,11 @@
-import { toRoleID, toUUID } from "#backend/lib/id";
-import { db } from "#backend/lib/postgres";
+import { toRoleID, toUUID } from "#backend/lib/primitives";
+import { db } from "#backend/lib/adapters";
 import { type Permission, roles, type Role } from "#backend/db";
 import {
   duplicateRoleNameError,
   isRoleNameUniqueViolation,
   validateRoleName
-} from "./validate-name";
+} from "#backend/lib/data";
 
 const createRole = async (input: {
   workspaceID: string;

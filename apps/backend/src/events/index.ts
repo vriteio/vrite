@@ -1,4 +1,4 @@
-import { SubscribeToEvent, subscribeToEvent } from "#backend/lib/events";
+import { SubscribeToEvent, subscribeToEvent } from "#backend/lib/messaging";
 import { entryEventType } from "./entries";
 import { keyEventType } from "./keys";
 import { membershipEventType } from "./memberships";
@@ -7,7 +7,7 @@ import { roleEventType } from "./roles";
 import { workspaceStateEventType } from "./workspaces";
 import * as z from "zod";
 
-declare module "#backend/lib/events" {
+declare module "#backend/lib/messaging/events" {
   interface Events {
     [workspaceEvent: string]: WorkspaceEvent;
   }
@@ -34,7 +34,10 @@ type WorkspaceSettingsEvent = z.infer<typeof workspaceSettingsEventType>;
 const subscribeToWorkspaceEvents: SubscribeToEvent<{
   [workspaceID: string]: WorkspaceEvent;
 }> = (workspaceID, callback, options) => {
-  return subscribeToEvent(`${workspaceID}:*`, callback, options);
+  return subscribeToEvent(`${workspaceID}:*`, callback, {
+    ...options,
+    schema: workspaceEventType
+  });
 };
 
 export { workspaceEventType, workspaceSettingsEventType, subscribeToWorkspaceEvents };

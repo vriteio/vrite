@@ -1,12 +1,10 @@
-import { toCollectionID, toUUID } from "#backend/lib/id";
-import { db } from "#backend/lib/postgres";
+import { rankBetweenNeighbors, toCollectionID, toUUID } from "#backend/lib/primitives";
+import { db } from "#backend/lib/adapters";
 import { collections, type Collection, workspaces } from "#backend/db";
 import { and, desc, eq, isNull } from "drizzle-orm";
-import { LexoRank } from "lexorank";
 import { ORPCError } from "@orpc/server";
-import { ROOT_COLLECTION_NAME } from "./root";
-import { loadCollectionTree } from "./queries";
-import { normalizeCollectionName } from "#backend/lib/content-name";
+import { loadCollectionTree } from "#backend/lib/data";
+import { normalizeCollectionName, ROOT_COLLECTION_NAME } from "#backend/lib/validation";
 
 const createCollection = async (
   input: Partial<Pick<Collection, "id" | "name">> & { parentID?: string; workspaceID: string }
@@ -64,9 +62,7 @@ const createCollection = async (
       )
       .orderBy(desc(collections.rank))
       .limit(1);
-    const rank = lastSibling
-      ? `${LexoRank.parse(lastSibling.rank).genNext()}`
-      : `${LexoRank.middle()}`;
+    const rank = rankBetweenNeighbors(lastSibling?.rank);
 
     await tx
       .insert(collections)

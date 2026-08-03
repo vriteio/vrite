@@ -1,9 +1,9 @@
 import { entryType } from "#backend/db";
-import { emitEvent, EmitEvent, subscribeToEvent, SubscribeToEvent } from "#backend/lib/events";
-import { id } from "#backend/lib/id";
+import { emitEvent, EmitEvent, subscribeToEvent, SubscribeToEvent } from "#backend/lib/messaging";
+import { id } from "#backend/lib/primitives";
 import * as z from "zod";
 
-declare module "#backend/lib/events" {
+declare module "#backend/lib/messaging/events" {
   interface Events {
     [entryEvent: `${string}:entries`]: EntryEvent;
   }
@@ -49,7 +49,10 @@ const emitEntryEvent: EmitEvent<{
 const subscribeToEntryEvents: SubscribeToEvent<{
   [workspaceID: string]: EntryEvent;
 }> = (workspaceID, callback, options) => {
-  return subscribeToEvent(`${workspaceID}:entries`, callback, options);
+  return subscribeToEvent(`${workspaceID}:entries`, callback, {
+    ...options,
+    schema: entryEventType
+  });
 };
 
 export { entryEventType, emitEntryEvent, subscribeToEntryEvents };

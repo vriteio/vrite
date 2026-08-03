@@ -1,4 +1,4 @@
-import { id } from "#backend/lib/id";
+import { id } from "#backend/lib/primitives";
 import { sql } from "drizzle-orm";
 import {
   bigint,

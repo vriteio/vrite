@@ -1,9 +1,9 @@
 import { roleType } from "#backend/db";
-import { emitEvent, EmitEvent, subscribeToEvent, SubscribeToEvent } from "#backend/lib/events";
-import { id } from "#backend/lib/id";
+import { emitEvent, EmitEvent, subscribeToEvent, SubscribeToEvent } from "#backend/lib/messaging";
+import { id } from "#backend/lib/primitives";
 import * as z from "zod";
 
-declare module "#backend/lib/events" {
+declare module "#backend/lib/messaging/events" {
   interface Events {
     [roleEvent: `${string}:roles`]: RoleEvent;
   }
@@ -40,7 +40,10 @@ const emitRoleEvent: EmitEvent<{
 const subscribeToRoleEvents: SubscribeToEvent<{
   [workspaceID: string]: RoleEvent;
 }> = (workspaceID, callback, options) => {
-  return subscribeToEvent(`${workspaceID}:roles`, callback, options);
+  return subscribeToEvent(`${workspaceID}:roles`, callback, {
+    ...options,
+    schema: roleEventType
+  });
 };
 
 export { roleEventType, emitRoleEvent, subscribeToRoleEvents };

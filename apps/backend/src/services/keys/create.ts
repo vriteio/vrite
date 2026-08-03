@@ -1,7 +1,7 @@
-import { toKeyID, toMembershipID, toUUID } from "#backend/lib/id";
-import { db } from "#backend/lib/postgres";
+import { toKeyID, toMembershipID, toUUID } from "#backend/lib/primitives";
+import { db } from "#backend/lib/adapters";
 import { apiKeys, type Key } from "#backend/db";
-import { generateKeyValue, generateSalt, hashKey } from "#backend/lib/utils";
+import { generateKeyValue, generateSalt, hashKey } from "#backend/lib/security";
 
 const createKey = async (
   input: Pick<Key, "name" | "permissions"> & { workspaceID: string; memberID: string }

@@ -1,7 +1,7 @@
-import { toInviteID, toUUID } from "#backend/lib/id";
-import { db } from "#backend/lib/postgres";
+import { toInviteID, toUUID } from "#backend/lib/primitives";
+import { db } from "#backend/lib/adapters";
 import { invitations, memberships, roles, users, workspaces } from "#backend/db";
-import { deliverInvite } from "#backend/lib/invites";
+import { deliverInvite } from "#backend/lib/messaging";
 import { and, eq, lt } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 

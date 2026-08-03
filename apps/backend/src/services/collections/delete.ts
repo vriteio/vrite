@@ -1,5 +1,5 @@
-import { toCollectionID, toEntryID, toUUID } from "#backend/lib/id";
-import { db } from "#backend/lib/postgres";
+import { toCollectionID, toEntryID, toUUID } from "#backend/lib/primitives";
+import { db } from "#backend/lib/adapters";
 import { collections, entries, workspaces } from "#backend/db";
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";

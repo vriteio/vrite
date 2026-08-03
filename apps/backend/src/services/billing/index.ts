@@ -3,6 +3,7 @@ import { createPortal } from "./create-portal";
 import { endSubscription } from "./end-subscription";
 import { getSubscription } from "./get-subscription";
 import { Metering } from "./metering";
+import { settle } from "./settle";
 import { updateSeats } from "./update-seats";
 
 const Billing = {
@@ -10,6 +11,7 @@ const Billing = {
   createPortal,
   endSubscription,
   getSubscription,
+  settle,
   updateSeats,
   Metering
 };

@@ -1,9 +1,9 @@
 import { keyPermissionType, keyType } from "#backend/db";
 import { emitKeyEvent } from "#backend/events";
-import { authorized } from "#backend/lib/middleware";
-import { id } from "#backend/lib/id";
-import { base } from "#backend/lib/orpc";
+import { authorized, base } from "#backend/lib/transport";
+import { id } from "#backend/lib/primitives";
 import { Keys } from "#backend/services/keys";
+import { Auth } from "#backend/services/auth";
 import { ORPCError } from "@orpc/server";
 import * as z from "zod";
 
@@ -78,9 +78,11 @@ const keysRouter = base.prefix("/keys").router({
     .use(authorized)
     .output(z.array(keyType))
     .handler(async ({ context }) => {
-      return Keys.list({
+      const { keys } = await Keys.list({
         workspaceID: context.auth.workspaceID
       });
+
+      return keys;
     }),
   delete: base
     .meta({
@@ -100,6 +102,7 @@ const keysRouter = base.prefix("/keys").router({
         ids: input.ids,
         workspaceID: context.auth.workspaceID
       });
+      await Promise.all(input.ids.map((keyID) => Auth.invalidateSessionData({ keyID })));
 
       emitKeyEvent(context.auth.workspaceID, {
         action: "key:delete",
@@ -134,6 +137,10 @@ const keysRouter = base.prefix("/keys").router({
         name: input.name,
         permissions: input.permissions
       });
+
+      if (input.permissions !== undefined) {
+        await Auth.invalidateSessionData({ keyID: input.id });
+      }
 
       emitKeyEvent(context.auth.workspaceID, {
         action: "key:update",
@@ -172,6 +179,8 @@ const keysRouter = base.prefix("/keys").router({
         memberID: context.auth.session.memberID,
         expiresIn: input.expiresIn
       });
+
+      await Auth.invalidateSessionData({ keyID: input.id });
 
       const { rawKey: _rawKey, ...safeKey } = key;
 

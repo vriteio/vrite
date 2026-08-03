@@ -1,7 +1,7 @@
-import { toInviteID, toMembershipID, toRoleID, toUUID } from "#backend/lib/id";
-import { db } from "#backend/lib/postgres";
+import { toInviteID, toMembershipID, toRoleID, toUUID } from "#backend/lib/primitives";
+import { db } from "#backend/lib/adapters";
 import { type Invite, invitations } from "#backend/db";
-import { createInviteLink } from "#backend/lib/invites";
+import { createInviteLink } from "#backend/lib/messaging";
 import { and, eq, gt, lt } from "drizzle-orm";
 
 interface InviteDetails extends Invite {
@@ -10,7 +10,9 @@ interface InviteDetails extends Invite {
   invitedBy?: string;
 }
 
-const listInvites = async (input: { workspaceID: string }): Promise<InviteDetails[]> => {
+const listInvites = async (input: {
+  workspaceID: string;
+}): Promise<{ invites: InviteDetails[] }> => {
   const workspaceID = toUUID(input.workspaceID);
   await db
     .update(invitations)
@@ -33,21 +35,23 @@ const listInvites = async (input: { workspaceID: string }): Promise<InviteDetail
       )
     );
 
-  return rows.map((invite) => {
-    const id = toInviteID(invite.id);
+  return {
+    invites: rows.map((invite) => {
+      const id = toInviteID(invite.id);
 
-    return {
-      id,
-      email: invite.email,
-      inviteLink: createInviteLink({ id, expiresAt: invite.expiresAt }),
-      workspaceID: input.workspaceID,
-      roleID: toRoleID(invite.roleID),
-      invitedBy: invite.invitedBy ? toMembershipID(invite.invitedBy) : undefined,
-      status: invite.status,
-      createdAt: invite.createdAt.toISOString(),
-      expiresAt: invite.expiresAt.toISOString()
-    };
-  });
+      return {
+        id,
+        email: invite.email,
+        inviteLink: createInviteLink({ id, expiresAt: invite.expiresAt }),
+        workspaceID: input.workspaceID,
+        roleID: toRoleID(invite.roleID),
+        invitedBy: invite.invitedBy ? toMembershipID(invite.invitedBy) : undefined,
+        status: invite.status,
+        createdAt: invite.createdAt.toISOString(),
+        expiresAt: invite.expiresAt.toISOString()
+      };
+    })
+  };
 };
 
 export { listInvites };

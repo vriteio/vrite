@@ -1,9 +1,9 @@
 import { keyType } from "#backend/db";
-import { emitEvent, EmitEvent, subscribeToEvent, SubscribeToEvent } from "#backend/lib/events";
-import { id } from "#backend/lib/id";
+import { emitEvent, EmitEvent, subscribeToEvent, SubscribeToEvent } from "#backend/lib/messaging";
+import { id } from "#backend/lib/primitives";
 import * as z from "zod";
 
-declare module "#backend/lib/events" {
+declare module "#backend/lib/messaging/events" {
   interface Events {
     [keyEvent: `${string}:keys`]: KeyEvent;
   }
@@ -48,7 +48,10 @@ const emitKeyEvent: EmitEvent<{
 const subscribeToKeyEvents: SubscribeToEvent<{
   [workspaceID: string]: KeyEvent;
 }> = (workspaceID, callback, options) => {
-  return subscribeToEvent(`${workspaceID}:keys`, callback, options);
+  return subscribeToEvent(`${workspaceID}:keys`, callback, {
+    ...options,
+    schema: keyEventType
+  });
 };
 
 export { keyEventType, emitKeyEvent, subscribeToKeyEvents };

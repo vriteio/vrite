@@ -1,7 +1,6 @@
 import { workspaces } from "#backend/db";
-import { toUUID } from "#backend/lib/id";
-import { db } from "#backend/lib/postgres";
-import { stripe } from "#backend/lib/stripe";
+import { toUUID } from "#backend/lib/primitives";
+import { db, stripe } from "#backend/lib/adapters";
 import { ORPCError } from "@orpc/server";
 import { eq } from "drizzle-orm";
 

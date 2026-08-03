@@ -1,10 +1,9 @@
 import { entryType, lexoRank } from "#backend/db";
 import { updateDocumentTitle } from "#backend/collaboration";
 import { emitEntryEvent } from "#backend/events";
-import { authorized } from "#backend/lib/middleware";
-import { id } from "#backend/lib/id";
-import { entryName } from "#backend/lib/content-name";
-import { base } from "#backend/lib/orpc";
+import { authorized, base } from "#backend/lib/transport";
+import { id } from "#backend/lib/primitives";
+import { entryName } from "#backend/lib/validation";
 import { Entries } from "#backend/services/entries";
 import * as z from "zod";
 
@@ -50,14 +49,14 @@ const entriesRouter = base.prefix("/entries").router({
     )
     .output(z.void())
     .handler(async ({ context, input }) => {
-      const deletedIDs = await Entries.delete({
+      const { entryIDs } = await Entries.delete({
         workspaceID: context.auth.workspaceID,
         ids: input.ids
       });
 
       emitEntryEvent(context.auth.workspaceID, {
         action: "entry:delete",
-        data: { ids: deletedIDs },
+        data: { ids: entryIDs },
         memberID: context.auth.session?.memberID
       });
     }),
@@ -112,7 +111,7 @@ const entriesRouter = base.prefix("/entries").router({
     .use(authorized)
     .output(z.object({ order: z.string() }))
     .handler(async ({ context, input }) => {
-      const order = await Entries.move({
+      const { order } = await Entries.move({
         id: input.id,
         workspaceID: context.auth.workspaceID,
         order: input.order,
@@ -152,7 +151,7 @@ const entriesRouter = base.prefix("/entries").router({
     )
     .output(z.array(entryType))
     .handler(async ({ context, input }) => {
-      return Entries.list({
+      const { entries } = await Entries.list({
         workspaceID: context.auth.workspaceID,
         collectionID: input.collectionID,
         lastOrder: input.lastOrder,
@@ -160,6 +159,8 @@ const entriesRouter = base.prefix("/entries").router({
         perPage: input.perPage,
         page: input.page
       });
+
+      return entries;
     })
 });
 

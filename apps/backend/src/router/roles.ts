@@ -1,10 +1,10 @@
 import { permissionType } from "#backend/db";
 import { roleType } from "#backend/db";
 import { emitRoleEvent } from "#backend/events";
-import { authorized } from "#backend/lib/middleware";
-import { id } from "#backend/lib/id";
-import { base } from "#backend/lib/orpc";
+import { authorized, base } from "#backend/lib/transport";
+import { id } from "#backend/lib/primitives";
 import { Roles } from "#backend/services/roles";
+import { Auth } from "#backend/services/auth";
 import * as z from "zod";
 
 const rolesRouter = base.prefix("/roles").router({
@@ -21,10 +21,12 @@ const rolesRouter = base.prefix("/roles").router({
     })
     .use(authorized)
     .output(z.array(roleType))
-    .handler(({ context }) => {
-      return Roles.list({
+    .handler(async ({ context }) => {
+      const { roles } = await Roles.list({
         workspaceID: context.auth.workspaceID
       });
+
+      return roles;
     }),
   create: base
     .route({
@@ -81,12 +83,18 @@ const rolesRouter = base.prefix("/roles").router({
     )
     .output(z.void())
     .handler(async ({ context, input }) => {
-      await Roles.update({
+      const { affectedUserIDs } = await Roles.update({
         id: input.id,
         workspaceID: context.auth.workspaceID,
         name: input.name,
         permissions: input.permissions
       });
+
+      await Promise.all(
+        affectedUserIDs.map((userID) =>
+          Auth.invalidateSessionData({ userID, workspaceID: context.auth.workspaceID })
+        )
+      );
 
       emitRoleEvent(context.auth.workspaceID, {
         action: "role:update",
@@ -117,10 +125,16 @@ const rolesRouter = base.prefix("/roles").router({
     )
     .output(z.void())
     .handler(async ({ context, input }) => {
-      await Roles.delete({
+      const { affectedUserIDs } = await Roles.delete({
         id: input.id,
         workspaceID: context.auth.workspaceID
       });
+
+      await Promise.all(
+        affectedUserIDs.map((userID) =>
+          Auth.invalidateSessionData({ userID, workspaceID: context.auth.workspaceID })
+        )
+      );
 
       emitRoleEvent(context.auth.workspaceID, {
         action: "role:delete",

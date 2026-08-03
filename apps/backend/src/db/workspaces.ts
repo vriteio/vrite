@@ -1,4 +1,4 @@
-import { id } from "#backend/lib/id";
+import { id } from "#backend/lib/primitives";
 import { sql } from "drizzle-orm";
 import { jsonb, pgTable, text, timestamp, uniqueIndex, uuid, varchar } from "drizzle-orm/pg-core";
 import * as z from "zod";

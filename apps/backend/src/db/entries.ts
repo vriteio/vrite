@@ -1,5 +1,5 @@
-import { id } from "#backend/lib/id";
-import { entryName } from "#backend/lib/content-name";
+import { id } from "#backend/lib/primitives";
+import { entryName } from "#backend/lib/validation";
 import { sql } from "drizzle-orm";
 import {
   foreignKey,

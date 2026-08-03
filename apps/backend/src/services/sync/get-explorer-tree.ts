@@ -1,7 +1,7 @@
-import { toCollectionID, toEntryID, toUUID } from "#backend/lib/id";
-import { db } from "#backend/lib/postgres";
+import { toCollectionID, toEntryID, toUUID } from "#backend/lib/primitives";
+import { db } from "#backend/lib/adapters";
 import { entries, type Collection, type Entry } from "#backend/db";
-import { loadCollectionTree } from "#backend/services/collections/queries";
+import { loadCollectionTree } from "#backend/lib/data";
 import { and, desc, eq, isNull } from "drizzle-orm";
 
 const getExplorerTree = async (input: {

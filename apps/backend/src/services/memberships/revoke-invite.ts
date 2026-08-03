@@ -1,5 +1,5 @@
-import { toUUID } from "#backend/lib/id";
-import { db } from "#backend/lib/postgres";
+import { toUUID } from "#backend/lib/primitives";
+import { db } from "#backend/lib/adapters";
 import { invitations } from "#backend/db";
 import { and, eq } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";

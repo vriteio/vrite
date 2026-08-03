@@ -1,21 +1,20 @@
-import { toUUID, toUserID } from "#backend/lib/id";
-import { db } from "#backend/lib/postgres";
+import { toUUID, toUserID } from "#backend/lib/primitives";
+import { db } from "#backend/lib/adapters";
 import { memberships, type Permission, roles } from "#backend/db";
-import { Auth } from "#backend/services/auth";
 import { and, eq } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 import {
   duplicateRoleNameError,
   isRoleNameUniqueViolation,
   validateRoleName
-} from "./validate-name";
+} from "#backend/lib/data";
 
 const updateRole = async (input: {
   id: string;
   workspaceID: string;
   name?: string;
   permissions?: Permission[];
-}): Promise<void> => {
+}): Promise<{ affectedUserIDs: string[] }> => {
   const roleID = toUUID(input.id);
   const workspaceID = toUUID(input.workspaceID);
   const role = await db.query.roles.findFirst({
@@ -25,7 +24,9 @@ const updateRole = async (input: {
   if (!role) throw new ORPCError("NOT_FOUND", { message: "Role not found" });
   if (role.baseRole)
     throw new ORPCError("BAD_REQUEST", { message: "Base roles cannot be modified" });
-  if (input.name === undefined && input.permissions === undefined) return;
+  if (input.name === undefined && input.permissions === undefined) {
+    return { affectedUserIDs: [] };
+  }
   const name =
     input.name === undefined
       ? undefined
@@ -56,15 +57,10 @@ const updateRole = async (input: {
       .from(memberships)
       .where(and(eq(memberships.roleID, roleID), eq(memberships.workspaceID, workspaceID)));
 
-    await Promise.all(
-      affected.map(({ userID }) =>
-        Auth.invalidateSessionData({
-          userID: toUserID(userID),
-          workspaceID: input.workspaceID
-        })
-      )
-    );
+    return { affectedUserIDs: affected.map(({ userID }) => toUserID(userID)) };
   }
+
+  return { affectedUserIDs: [] };
 };
 
 export { updateRole };

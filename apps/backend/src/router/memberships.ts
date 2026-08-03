@@ -1,10 +1,10 @@
 import { emitMembershipEvent } from "#backend/events";
 import { inviteType, membershipType, userProfileType } from "#backend/db";
-import { authorized } from "#backend/lib/middleware";
-import { id } from "#backend/lib/id";
-import { base } from "#backend/lib/orpc";
+import { authorized, base } from "#backend/lib/transport";
+import { id } from "#backend/lib/primitives";
 import { Billing } from "#backend/services/billing";
 import { Memberships } from "#backend/services/memberships";
+import { Auth } from "#backend/services/auth";
 import { ORPCError } from "@orpc/server";
 import * as z from "zod";
 
@@ -48,10 +48,12 @@ const membershipsRouter = base.prefix("/memberships").router({
     })
     .use(authorized)
     .output(z.array(memberDetailsType))
-    .handler(({ context }) => {
-      return Memberships.list({
+    .handler(async ({ context }) => {
+      const { members } = await Memberships.list({
         workspaceID: context.auth.workspaceID
       });
+
+      return members;
     }),
   update: base
     .route({
@@ -73,10 +75,15 @@ const membershipsRouter = base.prefix("/memberships").router({
     )
     .output(z.void())
     .handler(async ({ context, input }) => {
-      await Memberships.update({
+      const { userID } = await Memberships.update({
         id: input.id,
         workspaceID: context.auth.workspaceID,
         roleID: input.roleID
+      });
+
+      await Auth.invalidateSessionData({
+        userID,
+        workspaceID: context.auth.workspaceID
       });
 
       emitMembershipEvent(context.auth.workspaceID, {
@@ -107,8 +114,13 @@ const membershipsRouter = base.prefix("/memberships").router({
     )
     .output(z.void())
     .handler(async ({ context, input }) => {
-      await Memberships.remove({
+      const { userID } = await Memberships.remove({
         id: input.id,
+        workspaceID: context.auth.workspaceID
+      });
+
+      await Auth.invalidateSessionData({
+        userID,
         workspaceID: context.auth.workspaceID
       });
 
@@ -170,10 +182,12 @@ const membershipsRouter = base.prefix("/memberships").router({
     })
     .use(authorized)
     .output(z.array(inviteDetailsType))
-    .handler(({ context }) => {
-      return Memberships.listInvites({
+    .handler(async ({ context }) => {
+      const { invites } = await Memberships.listInvites({
         workspaceID: context.auth.workspaceID
       });
+
+      return invites;
     }),
   resendInvite: base
     .route({
@@ -194,7 +208,7 @@ const membershipsRouter = base.prefix("/memberships").router({
     )
     .output(inviteDeliveryResultType)
     .handler(async ({ context, input }) => {
-      const emailDelivery = await Memberships.resendInvite({
+      const { emailDelivery } = await Memberships.resendInvite({
         id: input.id,
         workspaceID: context.auth.workspaceID
       });
@@ -265,6 +279,11 @@ const membershipsRouter = base.prefix("/memberships").router({
         expires: input.expires,
         signature: input.signature,
         userID: context.auth.session.userID
+      });
+
+      await Auth.invalidateSessionData({
+        userID: context.auth.session.userID,
+        workspaceID: result.workspaceID
       });
       await Billing.updateSeats({ workspaceID: result.workspaceID });
 

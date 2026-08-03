@@ -1,9 +1,8 @@
 import { collections, memberships, roles, type Permission, users, workspaces } from "#backend/db";
-import { toUUID, toWorkspaceID } from "#backend/lib/id";
-import { db } from "#backend/lib/postgres";
-import { ROOT_COLLECTION_NAME } from "#backend/services/collections";
+import { rankBetweenNeighbors, toUUID, toWorkspaceID } from "#backend/lib/primitives";
+import { db } from "#backend/lib/adapters";
+import { ROOT_COLLECTION_NAME } from "#backend/lib/validation";
 import { eq } from "drizzle-orm";
-import { LexoRank } from "lexorank";
 import { ORPCError } from "@orpc/server";
 
 const DEFAULT_ROLES: Array<{
@@ -46,7 +45,7 @@ const createWorkspace = async (input: { name: string; userID: string }) => {
       workspaceID: workspace.id,
       parentID: null,
       name: ROOT_COLLECTION_NAME,
-      rank: `${LexoRank.middle()}`
+      rank: rankBetweenNeighbors()
     });
     await tx.insert(memberships).values({
       userID,

@@ -1,19 +1,10 @@
-import { toKeyID, toMembershipID, toUUID } from "#backend/lib/id";
-import { db } from "#backend/lib/postgres";
+import { toUUID } from "#backend/lib/primitives";
+import { db } from "#backend/lib/adapters";
 import { apiKeys, type Key } from "#backend/db";
 import { and, eq } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
+import { mapAPIKey } from "#backend/lib/data";
 
-const mapKey = (key: typeof apiKeys.$inferSelect): Key => ({
-  id: toKeyID(key.id),
-  memberID: toMembershipID(key.memberID),
-  name: key.name,
-  permissions: key.permissions,
-  prefix: key.prefix,
-  createdAt: key.createdAt.toISOString(),
-  updatedAt: key.updatedAt.toISOString(),
-  expiresAt: key.expiresAt?.toISOString() || null
-});
 const getKey = async (input: { workspaceID: string; keyID: string }): Promise<Key> => {
   const [key] = await db
     .select()
@@ -24,7 +15,7 @@ const getKey = async (input: { workspaceID: string; keyID: string }): Promise<Ke
 
   if (!key) throw new ORPCError("NOT_FOUND", { message: "Key not found" });
 
-  return mapKey(key);
+  return mapAPIKey(key);
 };
 
-export { getKey, mapKey };
+export { getKey };

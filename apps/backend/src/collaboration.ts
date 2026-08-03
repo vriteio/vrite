@@ -6,17 +6,18 @@ import {
   subscribeToRoleEvents,
   subscribeToWorkspaceStateEvents
 } from "#backend/events";
-import { hasPermission } from "#backend/lib/middleware";
-import { toEntryID, toUUID, toWorkspaceID } from "#backend/lib/id";
-import { Auth, isSessionAuthorizationEvent, type SessionData } from "#backend/services/auth";
+import { hasPermission } from "#backend/lib/policy";
+import { toEntryID, toUUID, toWorkspaceID } from "#backend/lib/primitives";
+import { isSessionAuthorizationEvent, type SessionData } from "#backend/lib/policy";
+import { Auth } from "#backend/services/auth";
 import { Database } from "@hocuspocus/extension-database";
 import { Redis as RedisExtension } from "@hocuspocus/extension-redis";
 import { Hocuspocus, type WebSocketLike } from "@hocuspocus/server";
 import { and, eq, isNull } from "drizzle-orm";
 import { config } from "#backend/lib/config";
-import { db } from "#backend/lib/postgres";
+import { db } from "#backend/lib/adapters";
 import { applyUpdate, Doc, encodeStateAsUpdate, XmlElement, XmlText } from "yjs";
-import { MAX_CONTENT_NAME_LENGTH } from "#backend/lib/content-name";
+import { MAX_CONTENT_NAME_LENGTH } from "#backend/lib/validation";
 
 interface CollaborationContext {
   auth?: SessionData;
@@ -57,7 +58,8 @@ const authenticateCollaboration = async (input: {
   let unaffiliatedSession: SessionData;
 
   try {
-    unaffiliatedSession = await Auth.getSessionData(requestHeaders, {
+    unaffiliatedSession = await Auth.getSessionData({
+      headers: requestHeaders,
       requireWorkspace: false
     });
   } catch {
@@ -98,7 +100,7 @@ const authenticateCollaboration = async (input: {
   let auth: SessionData;
 
   try {
-    auth = await Auth.getSessionData(requestHeaders);
+    auth = await Auth.getSessionData({ headers: requestHeaders });
   } catch {
     throw permissionError("Forbidden");
   }

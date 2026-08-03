@@ -54,7 +54,6 @@ const Link = BaseLink.extend({
       markPasteRule({
         find: /\[(.+?)]\(.+?\)/g,
         type: this.type.schema.marks.link,
-        // eslint-disable-next-line sonarjs/no-identical-functions
         getAttributes({ input = "" }: RegExpMatchArray) {
           const [wrappedUrl] = input.match(/\(.+?\)/) || [];
           const href = validateURL(wrappedUrl ? wrappedUrl.slice(1, -1) : "");
