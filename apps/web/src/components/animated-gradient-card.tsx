@@ -1,5 +1,5 @@
 import { createRef } from "@andesine/components";
-import { onCleanup, onMount, ParentComponent, JSX } from "solid-js";
+import { onCleanup, onMount, type ParentComponent, type JSX } from "solid-js";
 import clsx from "clsx";
 
 type Circle = {
@@ -12,7 +12,7 @@ type Circle = {
   opacity: number;
 };
 
-interface AnimatedGradientCardProps extends JSX.HTMLAttributes<HTMLDivElement> {}
+type AnimatedGradientCardProps = JSX.HTMLAttributes<HTMLDivElement>;
 
 const AnimatedGradientCard: ParentComponent<AnimatedGradientCardProps> = (props) => {
   const [canvasRef, setCanvasRef] = createRef<HTMLCanvasElement | null>(null);

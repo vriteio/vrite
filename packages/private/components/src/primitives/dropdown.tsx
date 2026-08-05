@@ -3,18 +3,18 @@ import { Fragment } from "./fragment";
 import { createRef } from "../ref";
 import clsx from "clsx";
 import {
-  Component,
-  ComponentProps,
+  type Component,
+  type ComponentProps,
   createContext,
   createEffect,
   createSignal,
-  JSX,
+  type JSX,
   onCleanup,
-  ParentComponent,
+  type ParentComponent,
   Show,
   useContext
 } from "solid-js";
-import { Placement } from "@floating-ui/dom";
+import { type Placement } from "@floating-ui/dom";
 import { Dynamic, Portal } from "solid-js/web";
 import { Menu } from "@ark-ui/solid/menu";
 

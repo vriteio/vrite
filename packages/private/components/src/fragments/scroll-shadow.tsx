@@ -1,7 +1,7 @@
 import clsx from "clsx";
-import { Component, createSignal, onCleanup, onMount } from "solid-js";
+import { type Component, createSignal, onCleanup, onMount } from "solid-js";
 import { debounce } from "@solid-primitives/scheduled";
-import { Ref } from "../ref";
+import { type Ref } from "../ref";
 
 type ProcessScrollHandler = () => void;
 

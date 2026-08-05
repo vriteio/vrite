@@ -1,6 +1,14 @@
 import { Spinner } from "./spinner";
 import clsx from "clsx";
-import { Component, ComponentProps, JSX, mergeProps, Show, splitProps, createMemo } from "solid-js";
+import {
+  type Component,
+  type ComponentProps,
+  type JSX,
+  mergeProps,
+  Show,
+  splitProps,
+  createMemo
+} from "solid-js";
 import { Dynamic } from "solid-js/web";
 
 type ButtonColor = "base" | "contrast" | "danger" | "success" | "primary";

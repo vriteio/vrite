@@ -1,0 +1,177 @@
+import { createRef } from "@andesine/components";
+import { useTree } from "#web/components/tree";
+import { useWorkspace } from "#web/context/workspace";
+import { type Entry } from "#web/lib/api";
+import { createSignal, onCleanup, onMount } from "solid-js";
+import { useNavigate, useParams } from "@solidjs/router";
+import {
+  draggable,
+  dropTargetForElements
+} from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
+import { setCustomNativeDragPreview } from "@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview";
+import { combine } from "@atlaskit/pragmatic-drag-and-drop/combine";
+import {
+  attachClosestEdge,
+  type Edge,
+  extractClosestEdge
+} from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge";
+import { canOrderEntries, createDragData, getDraggedEntryIDs } from "./explorer-dnd";
+import { useEntryMenu } from "./use-entry-menu";
+
+interface ExplorerEntryProps {
+  entry: Entry;
+  topLevel?: boolean;
+  onParentDragHighlightChange?(highlighted: boolean): void;
+}
+
+const useExplorerEntry = (props: ExplorerEntryProps) => {
+  const params = useParams();
+  const navigate = useNavigate();
+  const { workspaceID, content } = useWorkspace();
+  const [{ isSelected, selection, flattenedOrder }, { setSelection }] = useTree();
+  const { dropdownOptions, menuOpened, setMenuOpened } = useEntryMenu(props.entry.id);
+  const [elementRef, setElementRef] = createRef<HTMLElement | null>(null);
+  const [closestEdge, setClosestEdge] = createSignal<Edge | null>(null);
+  const getCollectionParentID = (collectionID: string) => {
+    const collection = content.collections.get({ collectionID });
+
+    return collection?.ancestors.at(-1) ?? null;
+  };
+  const getSiblingCollectionIDs = (parentID: string | null) => {
+    return content.tree
+      .getLevel({ parentID })
+      .collections()
+      .map((collection) => collection.id);
+  };
+  const changesEntryParent = (source: { data: Record<string | symbol, unknown> }) => {
+    const entryIDs = getDraggedEntryIDs(source.data);
+
+    return entryIDs.some((entryID) => {
+      return (
+        (content.entries.get({ entryID })?.collectionID ?? null) !==
+        (props.entry.collectionID ?? null)
+      );
+    });
+  };
+  const setDropLine = (
+    source: { data: Record<string | symbol, unknown> },
+    data: Record<string | symbol, unknown>
+  ) => {
+    const edge = canOrderEntries(source.data) ? extractClosestEdge(data) : null;
+
+    setClosestEdge(edge);
+    props.onParentDragHighlightChange?.(Boolean(edge) && changesEntryParent(source));
+  };
+  const clearDropLine = () => {
+    setClosestEdge(null);
+    props.onParentDragHighlightChange?.(false);
+  };
+  onMount(() => {
+    const element = elementRef();
+
+    if (!element) return;
+
+    const cleanup = combine(
+      draggable({
+        element,
+        getInitialData: () => {
+          const sel = selection();
+          const isDraggingSelected = sel.includes(props.entry.id);
+
+          if (isDraggingSelected && sel.length > 1) {
+            return createDragData({
+              draggedID: props.entry.id,
+              draggedType: "entry",
+              selection: sel,
+              splitContentIDs: (ids) => content.tree.splitIDs({ ids }),
+              flattenedOrder: flattenedOrder(),
+              isCollection: (id) => Boolean(content.collections.get({ collectionID: id })),
+              getCollectionParentID,
+              getSiblingCollectionIDs
+            });
+          }
+
+          if (!isDraggingSelected && sel.length > 0) {
+            setSelection([]);
+          }
+
+          return { type: "entry", id: props.entry.id };
+        },
+        onGenerateDragPreview({ nativeSetDragImage }) {
+          const sel = selection();
+          const count = sel.includes(props.entry.id) && sel.length > 1 ? sel.length : 1;
+
+          setCustomNativeDragPreview({
+            nativeSetDragImage,
+            render({ container }) {
+              const el = document.createElement("div");
+
+              el.style.cssText =
+                "padding:4px 10px;background:#333;color:#fff;border-radius:6px;font-size:13px;white-space:nowrap";
+              el.textContent = count > 1 ? `${count} items` : props.entry.name || "Untitled";
+              container.appendChild(el);
+
+              return () => {
+                container.removeChild(el);
+              };
+            }
+          });
+        }
+      }),
+      dropTargetForElements({
+        element,
+        canDrop: ({ source }) => !content.readOnly() && canOrderEntries(source.data),
+        getData: ({ input }) => {
+          return attachClosestEdge(
+            {
+              type: "entry",
+              id: props.entry.id,
+              collectionID: props.entry.collectionID
+            },
+            {
+              element,
+              input,
+              allowedEdges: ["top", "bottom"]
+            }
+          );
+        },
+        onDragEnter: ({ source, self }) => {
+          setDropLine(source, self.data);
+        },
+        onDrag: ({ source, self }) => {
+          setDropLine(source, self.data);
+        },
+        onDragLeave: () => {
+          clearDropLine();
+        },
+        onDrop: () => {
+          clearDropLine();
+        }
+      })
+    );
+
+    onCleanup(() => {
+      cleanup();
+    });
+  });
+
+  const handleClick = () => {
+    navigate(`/${workspaceID()}/${props.entry.id}`);
+  };
+
+  return {
+    closestEdge,
+    content,
+    dropdownOptions,
+    setElementRef,
+    handleClick,
+    isSelected,
+    menuOpened,
+    params,
+    selection,
+    setMenuOpened
+  };
+};
+
+export { useExplorerEntry };
+export type { ExplorerEntryProps };

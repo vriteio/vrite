@@ -1,5 +1,10 @@
 import { collectionType } from "#backend/db";
-import { emitEvent, EmitEvent, subscribeToEvent, SubscribeToEvent } from "#backend/lib/messaging";
+import {
+  emitEvent,
+  type EmitEvent,
+  subscribeToEvent,
+  type SubscribeToEvent
+} from "#backend/lib/messaging";
 import { id } from "#backend/lib/primitives";
 import * as z from "zod";
 

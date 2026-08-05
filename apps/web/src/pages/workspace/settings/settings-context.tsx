@@ -1,4 +1,10 @@
-import { Accessor, createContext, createSignal, ParentComponent, useContext } from "solid-js";
+import {
+  type Accessor,
+  createContext,
+  createSignal,
+  type ParentComponent,
+  useContext
+} from "solid-js";
 
 interface SettingsContextValue {
   verificationDialogOpened: Accessor<boolean>;
@@ -41,8 +47,6 @@ const SettingsProvider: ParentComponent = (props) => {
   );
 };
 
-const useSettings = () => {
-  return useContext(SettingsContext)!;
-};
+const useSettings = () => useContext(SettingsContext)!;
 
 export { SettingsProvider, useSettings };

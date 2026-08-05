@@ -1,4 +1,4 @@
-import { Component, createEffect, createSignal } from "solid-js";
+import { type Component, createEffect, createSignal } from "solid-js";
 
 import { useNotify } from "#web/context/notifications";
 import { useWorkspace } from "#web/context/workspace";

@@ -1,9 +1,9 @@
 import { Button, Card, IconButton, Input, Overlay } from "@andesine/components";
-import { Component, createSignal, Show } from "solid-js";
+import { type Component, createSignal } from "solid-js";
 import { createMutation } from "@tanstack/solid-query";
 import { useNotify } from "#web/context/notifications";
 import { useWorkspace } from "#web/context/workspace";
-import { client } from "#web/lib/client";
+import { client } from "#web/lib/api";
 
 interface ConfirmDeletionDialogProps {
   opened: boolean;

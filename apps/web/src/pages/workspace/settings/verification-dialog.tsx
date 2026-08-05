@@ -1,6 +1,6 @@
 import { useNotify } from "#web/context/notifications";
 import { useWorkspace } from "#web/context/workspace";
-import { authClient } from "#web/lib/client";
+import { authClient } from "#web/lib/api";
 import {
   Button,
   Card,
@@ -11,12 +11,12 @@ import {
   Skeleton,
   Tooltip
 } from "@andesine/components";
-import { createAsync, query } from "@solidjs/router";
+import { createAsync } from "@solidjs/router";
 import { createMutation } from "@tanstack/solid-query";
-import { getPasskeyErrorMessage } from "#web/lib/passkey-error";
+import { getPasskeyErrorMessage } from "#web/lib/validation";
 import clsx from "clsx";
 import {
-  Component,
+  type Component,
   createEffect,
   createSignal,
   Match,
@@ -26,6 +26,7 @@ import {
   Switch
 } from "solid-js";
 import { useSettings } from "./settings-context";
+import { passkeysQuery } from "#web/lib/data";
 
 interface VerificationDialogOTPViewProps {
   resendingOTP: boolean;
@@ -34,13 +35,6 @@ interface VerificationDialogOTPViewProps {
   onBack(): void;
   onResendOTP(): Promise<boolean>;
 }
-const passkeysQuery = query(async () => {
-  const { data, error } = await authClient.passkey.listUserPasskeys();
-
-  if (error || !data) return [];
-
-  return data;
-}, "passkeys");
 const VerificationDialogOTPView: Component<VerificationDialogOTPViewProps> = (props) => {
   const { currentSession } = useWorkspace();
   const notify = useNotify();

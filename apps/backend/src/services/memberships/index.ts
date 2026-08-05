@@ -1,9 +1,9 @@
-import { MemberDetails, listMembers } from "./list";
+import { type MemberDetails, listMembers } from "./list";
 import { updateMember } from "./update";
 import { removeMember } from "./remove";
 import { inviteMember } from "./invite";
 import { acceptInvite } from "./accept-invite";
-import { InviteDetails, listInvites } from "./list-invites";
+import { type InviteDetails, listInvites } from "./list-invites";
 import { revokeInvite } from "./revoke-invite";
 import { resendInvite } from "./resend-invite";
 

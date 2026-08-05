@@ -1,5 +1,5 @@
 import { Button } from "@andesine/components";
-import { Component, createSignal, Show } from "solid-js";
+import { type Component, createSignal, Show } from "solid-js";
 import { Setting } from "../../setting";
 import { SettingsSection } from "../../settings-section";
 import { useWorkspace } from "#web/context/workspace";

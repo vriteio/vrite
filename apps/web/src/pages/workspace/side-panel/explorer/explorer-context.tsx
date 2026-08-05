@@ -1,4 +1,4 @@
-import { ParentComponent } from "solid-js";
+import { type ParentComponent } from "solid-js";
 import { useParams } from "@solidjs/router";
 import { TreeProvider, useTree } from "#web/components/tree";
 import { getRequestEvent } from "solid-js/web";
@@ -98,8 +98,8 @@ const ExplorerProvider: ParentComponent = (props) => {
   };
   return (
     <TreeProvider
-      tree={content.getContentTree}
-      levelIDs={content.getCollectionIDs}
+      tree={content.tree.getMap}
+      levelIDs={content.collections.getIDs}
       initialExpanded={initialExpanded}
       expandedSourceKey={expandedSourceKey}
       persistExpandedReady={() => !content.loading()}

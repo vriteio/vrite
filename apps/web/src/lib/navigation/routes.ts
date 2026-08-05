@@ -1,22 +1,29 @@
-import AuthLayout from "../pages/auth/layout";
-import EmailPage from "../pages/auth/email/page";
-import SignInPage from "../pages/auth/sign-in/page";
-import SignUpPage from "../pages/auth/sign-up/page";
-import InvitePage from "../pages/invite/page";
-import NewWorkspacePage from "../pages/new-workspace/page";
-import WorkspaceLayout from "../pages/workspace/layout";
-import HomePage from "../pages/workspace/entry/page";
-import SettingsLayout from "../pages/workspace/settings/layout";
-import PersonalSettingsPage from "../pages/workspace/settings/personal/page";
-import WorkspaceSettingsPage from "../pages/workspace/settings/workspace/page";
-import PeopleSettingsPage from "../pages/workspace/settings/people/page";
-import InviteSettingsPage from "../pages/workspace/settings/invite/page";
-import RoleSettingsPage from "../pages/workspace/settings/role/page";
-import BillingSettingsPage from "../pages/workspace/settings/billing/page";
-import APISettingsPage from "../pages/workspace/settings/api/page";
-import KeySettingsPage from "../pages/workspace/settings/key/page";
-import { Params, redirect, RouteDefinition, useCurrentMatches, useParams } from "@solidjs/router";
-import { Accessor, createMemo } from "solid-js";
+import {
+  type Params,
+  redirect,
+  type RouteDefinition,
+  useCurrentMatches,
+  useParams
+} from "@solidjs/router";
+import { type Accessor, createMemo, lazy } from "solid-js";
+
+const AuthLayout = lazy(() => import("../../pages/auth/layout"));
+const EmailPage = lazy(() => import("../../pages/auth/email/page"));
+const SignInPage = lazy(() => import("../../pages/auth/sign-in/page"));
+const SignUpPage = lazy(() => import("../../pages/auth/sign-up/page"));
+const InvitePage = lazy(() => import("../../pages/invite/page"));
+const NewWorkspacePage = lazy(() => import("../../pages/new-workspace/page"));
+const WorkspaceLayout = lazy(() => import("../../pages/workspace/layout"));
+const HomePage = lazy(() => import("../../pages/workspace/entry/page"));
+const SettingsLayout = lazy(() => import("../../pages/workspace/settings/layout"));
+const PersonalSettingsPage = lazy(() => import("../../pages/workspace/settings/personal/page"));
+const WorkspaceSettingsPage = lazy(() => import("../../pages/workspace/settings/workspace/page"));
+const PeopleSettingsPage = lazy(() => import("../../pages/workspace/settings/people/page"));
+const InviteSettingsPage = lazy(() => import("../../pages/workspace/settings/invite/page"));
+const RoleSettingsPage = lazy(() => import("../../pages/workspace/settings/role/page"));
+const BillingSettingsPage = lazy(() => import("../../pages/workspace/settings/billing/page"));
+const APISettingsPage = lazy(() => import("../../pages/workspace/settings/api/page"));
+const KeySettingsPage = lazy(() => import("../../pages/workspace/settings/key/page"));
 
 interface RouteData {
   title: string;

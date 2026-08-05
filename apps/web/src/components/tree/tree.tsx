@@ -1,4 +1,4 @@
-import { Accessor, JSX, ParentComponent } from "solid-js";
+import { type Accessor, type JSX, type ParentComponent } from "solid-js";
 import { TREE_ROOT_ID, TreeProvider, type TreeMap } from "./tree-context";
 import { TreeSelection } from "./tree-selection";
 import { TreeLevel } from "./tree-level";
@@ -14,28 +14,26 @@ interface TreeProps {
   gap?: number;
 }
 
-const Tree: ParentComponent<TreeProps> = (props) => {
-  return (
-    <TreeProvider
-      tree={props.tree}
-      levelIDs={props.levelIDs}
-      itemHeight={props.itemHeight}
-      gap={props.gap}
-    >
-      <TreeRoot>
-        <TreeSelection />
-        <TreeLevel
-          levelID={TREE_ROOT_ID}
-          tree={props.tree}
-          renderLevel={props.renderLevel}
-          renderItem={props.renderItem}
-          emptyMessage={props.emptyMessage}
-        />
-        {props.children}
-      </TreeRoot>
-    </TreeProvider>
-  );
-};
+const Tree: ParentComponent<TreeProps> = (props) => (
+  <TreeProvider
+    tree={props.tree}
+    levelIDs={props.levelIDs}
+    itemHeight={props.itemHeight}
+    gap={props.gap}
+  >
+    <TreeRoot>
+      <TreeSelection />
+      <TreeLevel
+        levelID={TREE_ROOT_ID}
+        tree={props.tree}
+        renderLevel={props.renderLevel}
+        renderItem={props.renderItem}
+        emptyMessage={props.emptyMessage}
+      />
+      {props.children}
+    </TreeRoot>
+  </TreeProvider>
+);
 
 export { Tree };
 export type { TreeProps };

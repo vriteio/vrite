@@ -1,9 +1,9 @@
 import { createAsync, query, revalidate, useNavigate } from "@solidjs/router";
 import { Title } from "@solidjs/meta";
-import { Component, createSignal, Show } from "solid-js";
+import { type Component, createSignal, Show } from "solid-js";
 import { AnimatedGradientCard } from "#web/components/animated-gradient-card";
 import { Button, IconButton, Input } from "@andesine/components";
-import { client } from "#web/lib/client";
+import { client } from "#web/lib/api";
 import { createMutation } from "@tanstack/solid-query";
 
 const workspacesQuery = query(() => client.workspaces.list(), "workspaces");
@@ -36,7 +36,7 @@ const NewWorkspacePage: Component = () => {
 
       await revalidate("workspaces");
       navigate(`/${workspace.id}/`, { replace: true });
-    } catch (createError) {
+    } catch {
       setError("Failed to create workspace");
     }
   };

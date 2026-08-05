@@ -1,5 +1,4 @@
-import { Component, createMemo, JSX, Show } from "solid-js";
-import { Dynamic } from "solid-js/web";
+import { createMemo, type JSX, Show } from "solid-js";
 import { Button } from "./button";
 import { DropdownMenu } from "./dropdown-menu";
 

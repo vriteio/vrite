@@ -1,9 +1,9 @@
-import { Invite, Role } from "#backend/db";
+import { type Invite, type Role } from "#backend/db";
 import { useTree, TreeItem } from "#web/components/tree";
 import { DropdownArea, DropdownMenu, IconButton } from "@andesine/components";
 import clsx from "clsx";
 import { format } from "date-fns";
-import { Component, createSignal, createMemo, createEffect } from "solid-js";
+import { type Component, createSignal, createMemo, createEffect } from "solid-js";
 
 const InviteItem: Component<{
   invite: Invite & { inviteLink: string };

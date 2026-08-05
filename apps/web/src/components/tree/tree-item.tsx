@@ -1,6 +1,6 @@
 import { Checkbox, createRef } from "@andesine/components";
 import clsx from "clsx";
-import { Component, createEffect, createSignal, JSX, Show } from "solid-js";
+import { type Component, createEffect, createSignal, type JSX, Show } from "solid-js";
 import { useTree } from "./tree-context";
 
 interface TreeItemProps {

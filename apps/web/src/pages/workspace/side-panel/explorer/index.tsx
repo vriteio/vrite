@@ -1,1051 +1,73 @@
+import { TreeRoot, TreeSelection, useTree } from "#web/components/tree";
+import { useWorkspace } from "#web/context/workspace";
 import {
+  createDebounced,
+  createRef,
   DropdownArea,
   DropdownMenu,
   IconButton,
   Skeleton,
-  Shortcut,
-  useShortcuts,
-  createRef,
-  createDebounced
+  Shortcut
 } from "@andesine/components";
-import { TreeRoot, TreeSelection, useTree } from "#web/components/tree";
-import { ExplorerProvider } from "./explorer-context";
-import { createEffect, createSignal, For, onCleanup, onMount, Show } from "solid-js";
-import { useNavigate } from "@solidjs/router";
-import { ExplorerEntry } from "./explorer-entry";
+import { createSignal, For, Show } from "solid-js";
 import { ExplorerCollection } from "./explorer-collection";
-import {
-  monitorForElements,
-  dropTargetForElements
-} from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
-import { extractClosestEdge } from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge";
-import { useWorkspace } from "#web/context/workspace";
-import { useNotify } from "#web/context/notifications";
-import { useClipboard } from "#web/context/clipboard";
-import {
-  canChangeParent,
-  canOrderCollections,
-  canOrderEntries,
-  getDraggedCollectionIDs,
-  getDraggedEntryIDs
-} from "./explorer-dnd";
+import { ExplorerProvider } from "./explorer-context";
+import { ExplorerEntry } from "./explorer-entry";
+import { useExplorerActions } from "./use-explorer-actions";
+import { useExplorerDrop } from "./use-explorer-drop";
+import { useExplorerKeyboard } from "./use-explorer-keyboard";
+import { useExplorerMarquee } from "./use-explorer-marquee";
 
 const Explorer = () => {
-  const registerShortcuts = useShortcuts();
-  const notify = useNotify();
-  const { copyText } = useClipboard();
-  const navigate = useNavigate();
-  const [
-    { focusedID, selection, flattenedLayout, flattenedOrder, gap, isExpanded },
-    {
-      setExactSelection,
-      setExpanded,
-      setFocusedID,
-      setFocusedItem,
-      setSelection,
-      setRenaming,
-      toggleExpanded
-    }
-  ] = useTree();
-  const { workspaceID, content } = useWorkspace();
-  const [elementRef, setElementRef] = createRef<HTMLElement | null>(null);
-  const [treeContainerRef, setTreeContainerRef] = createRef<HTMLElement | null>(null);
-  const [isDraggedOver, setIsDraggedOver] = createSignal(false);
-  const [pointerInsideExplorer, setPointerInsideExplorer] = createSignal(false);
-  const [focusInsideExplorer, setFocusInsideExplorer] = createSignal(false);
-  const [dropdownMenuOpened, setDropdownMenuOpened] = createSignal(false);
-  const [pointerDown, setPointerDown] = createSignal(false);
-  const [selectionRangeAnchorID, setSelectionRangeAnchorID] = createSignal<string | null>(null);
-  const [selectionRangeHeadID, setSelectionRangeHeadID] = createSignal<string | null>(null);
-  const [typeaheadQuery, setTypeaheadQuery] = createRef("");
-  const [typeaheadTimeout, setTypeaheadTimeout] = createRef(0);
-  const [marqueeInitialSelection, setMarqueeInitialSelection] = createRef<string[]>([]);
-  const [marqueeMode, setMarqueeMode] = createRef<"replace" | "add" | "remove">("replace");
-  const [marqueeScrollFrame, setMarqueeScrollFrame] = createRef(0);
-  const [boxSelection, setBoxSelection] = createSignal({
-    active: false,
-    x: 0,
-    y: 0,
-    currentX: 0,
-    currentY: 0,
-    width: 0,
-    height: 0
-  });
-  const contentLoading = createDebounced(content.loading, 100);
-  const isEditingText = () => {
-    const activeElement = document.activeElement;
-
-    if (!(activeElement instanceof HTMLElement)) return false;
-
-    return Boolean(
-      activeElement.closest("input, textarea, select, [contenteditable='true'], [role='textbox']")
-    );
-  };
-  const notifyReadOnly = () => {
-    notify({
-      type: "error",
-      text: "Explorer is read-only while offline"
-    });
-  };
-  const getVisibleIDs = () => {
-    return flattenedOrder();
-  };
-  const getFocusedVisibleID = () => {
-    const visibleIDs = getVisibleIDs();
-    const focused = focusedID();
-
-    if (focused && visibleIDs.includes(focused)) return focused;
-
-    return null;
-  };
-  const isExplorerKeyboardActive = () => pointerInsideExplorer() || focusInsideExplorer();
-  const scrollFocusedItemIntoView = (id: string) => {
-    const container = treeContainerRef();
-
-    if (!container) return;
-
-    const item = Array.from(container.querySelectorAll<HTMLElement>("[data-tree-item]")).find(
-      (element) => element.dataset.treeItem === id
-    );
-
-    if (!item) return;
+  const [{ gap }, { setFocusedID }] = useTree();
+  const { content } = useWorkspace();
+  const actions = useExplorerActions();
+  const [dropRef, setDropRef] = createRef<HTMLElement | null>(null);
+  const [containerRef, setContainerRef] = createRef<HTMLElement | null>(null);
+  const [pointerInside, setPointerInside] = createSignal(false);
+  const [focusInside, setFocusInside] = createSignal(false);
+  const [menuOpened, setMenuOpened] = createSignal(false);
+  const loading = createDebounced(content.loading, 100);
+  const { isDraggedOver } = useExplorerDrop(dropRef);
+  const marquee = useExplorerMarquee(containerRef);
+  const scrollItemIntoView = (id: string) => {
+    const container = containerRef();
+    const item = container
+      ? Array.from(container.querySelectorAll<HTMLElement>("[data-tree-item]")).find(
+          (element) => element.dataset.treeItem === id
+        )
+      : null;
+    if (!container || !item) return;
 
     const containerRect = container.getBoundingClientRect();
     const itemRect = item.getBoundingClientRect();
-
-    if (itemRect.top < containerRect.top) {
-      container.scrollTop -= containerRect.top - itemRect.top;
-    } else if (itemRect.bottom > containerRect.bottom) {
+    if (itemRect.top < containerRect.top) container.scrollTop -= containerRect.top - itemRect.top;
+    else if (itemRect.bottom > containerRect.bottom)
       container.scrollTop += itemRect.bottom - containerRect.bottom;
-    }
   };
-  const focusVisibleItem = (id: string, scroll = false) => {
-    setFocusedItem(id, "keyboard");
-
-    if (scroll) {
-      queueMicrotask(() => scrollFocusedItemIntoView(id));
-    }
-  };
-  const focusSingleItem = (id: string, scroll = false) => {
-    setExactSelection([]);
-    setSelectionRangeAnchorID(null);
-    setSelectionRangeHeadID(null);
-    focusVisibleItem(id, scroll);
-  };
-  const getCommandTargetID = () => {
-    const selected = selection();
-
-    if (selected.length > 0) {
-      return selected.length === 1 ? selected[0] : null;
-    }
-
-    return getFocusedVisibleID();
-  };
-  const getCommandTargetCollectionID = () => {
-    const targetID = getCommandTargetID();
-
-    return targetID && content.getCollection(targetID) ? targetID : null;
-  };
-  const changesRootParent = (source: { data: Record<string | symbol, unknown> }) => {
-    const getEntryParentID = (entryID: string) => {
-      return content.getEntry(entryID)?.collectionID ?? null;
-    };
-    const getCollectionParentID = (collectionID: string) => {
-      const collection = content.getCollection(collectionID);
-
-      return collection?.ancestors.at(-1) ?? null;
-    };
-
-    return (
-      getDraggedEntryIDs(source.data).some((entryID) => getEntryParentID(entryID) !== null) ||
-      getDraggedCollectionIDs(source.data).some(
-        (collectionID) => getCollectionParentID(collectionID) !== null
-      )
-    );
-  };
-  const createEntry = (collectionID?: string) => {
-    if (content.readOnly()) {
-      notifyReadOnly();
-
-      return;
-    }
-
-    const entry = content.createEntry(collectionID);
-
-    setRenaming(entry?.id || "");
-  };
-  const createCollection = (collectionID?: string) => {
-    if (content.readOnly()) {
-      notifyReadOnly();
-
-      return;
-    }
-
-    const collection = content.createCollection(collectionID);
-
-    setRenaming(collection?.id || "");
-  };
-  const deleteSelection = () => {
-    const ids = selection();
-
-    if (ids.length === 0) return false;
-
-    if (content.readOnly()) {
-      notifyReadOnly();
-
-      return true;
-    }
-
-    content.deleteContent(ids);
-    setSelection([]);
-
-    return true;
-  };
-  const deleteFocused = () => {
-    const id = getFocusedVisibleID();
-
-    if (!id) return false;
-
-    if (content.readOnly()) {
-      notifyReadOnly();
-
-      return true;
-    }
-
-    content.deleteContent([id]);
+  const keyboard = useExplorerKeyboard({
+    active: () => pointerInside() || focusInside(),
+    scrollItemIntoView
+  });
+  const resetFocus = () => {
     setFocusedID(null);
-
-    return true;
+    keyboard.resetRange();
   };
-  const createEntryForCommandTarget = () => {
-    const collectionID = getCommandTargetCollectionID();
-
-    if (!collectionID) return false;
-
-    const entry = content.createEntry(collectionID ?? undefined);
-
-    setExpanded((prev) => (prev.includes(collectionID) ? prev : [...prev, collectionID]));
-
-    setRenaming(entry?.id || "");
-
-    return true;
-  };
-  const createCollectionForCommandTarget = () => {
-    const collectionID = getCommandTargetCollectionID();
-
-    if (!collectionID) return false;
-
-    const collection = content.createCollection(collectionID ?? undefined);
-
-    setExpanded((prev) => (prev.includes(collectionID) ? prev : [...prev, collectionID]));
-
-    setRenaming(collection?.id || "");
-
-    return true;
-  };
-  const renameCommandTarget = () => {
-    const targetID = getCommandTargetID();
-
-    if (!targetID || content.readOnly()) return false;
-
-    setRenaming(targetID);
-
-    return true;
-  };
-  const activateFocusedItem = () => {
-    const id = getFocusedVisibleID();
-
-    if (!id) return false;
-
-    setExactSelection([]);
-
-    if (content.getCollection(id)) {
-      toggleExpanded(id);
-
-      return true;
-    }
-
-    if (content.getEntry(id)) {
-      navigate(`/${workspaceID()}/${id}`);
-
-      return true;
-    }
-
-    return false;
-  };
-  const navigateFocusedItem = (direction: "up" | "down") => {
-    const visibleIDs = getVisibleIDs();
-
-    if (visibleIDs.length === 0) return false;
-
-    const currentID = getFocusedVisibleID();
-    const currentIndex = currentID ? visibleIDs.indexOf(currentID) : -1;
-    const nextIndex =
-      currentIndex === -1
-        ? direction === "down"
-          ? 0
-          : visibleIDs.length - 1
-        : (currentIndex + (direction === "down" ? 1 : -1) + visibleIDs.length) % visibleIDs.length;
-    const nextID = visibleIDs[nextIndex];
-
-    if (!nextID) return false;
-
-    focusSingleItem(nextID, true);
-
-    return true;
-  };
-  const navigateFocusedHierarchy = (direction: "left" | "right") => {
-    const id = getFocusedVisibleID();
-
-    if (!id) return false;
-
-    const collection = content.getCollection(id);
-
-    if (direction === "right") {
-      if (!collection) return false;
-
-      if (!isExpanded(id)) {
-        setExactSelection([]);
-        toggleExpanded(id);
-
-        return true;
-      }
-
-      const level = content.getContentTreeLevel(id);
-      const firstChild = level.collections()[0]?.id ?? level.entries()[0]?.id;
-
-      if (firstChild) {
-        focusSingleItem(firstChild, true);
-      }
-
-      return true;
-    }
-
-    if (collection && isExpanded(id)) {
-      setExactSelection([]);
-      toggleExpanded(id);
-
-      return true;
-    }
-
-    const parentID = collection?.ancestors.at(-1) ?? content.getEntry(id)?.collectionID;
-
-    if (parentID) {
-      focusSingleItem(parentID, true);
-
-      return true;
-    }
-
-    return false;
-  };
-  const toggleFocusedSelection = () => {
-    const id = getFocusedVisibleID();
-
-    if (!id) return false;
-
-    setExactSelection(
-      selection().includes(id)
-        ? selection().filter((selectedID) => selectedID !== id)
-        : [...selection(), id]
-    );
-    setSelectionRangeAnchorID(null);
-    setSelectionRangeHeadID(null);
-
-    return true;
-  };
-  const selectAllVisible = () => {
-    const visibleIDs = getVisibleIDs();
-
-    if (visibleIDs.length === 0) return false;
-
-    setExactSelection(visibleIDs);
-    setSelectionRangeAnchorID(null);
-    setSelectionRangeHeadID(null);
-
-    return true;
-  };
-  const copyCommandTargetID = () => {
-    const id = getCommandTargetID();
-
-    if (!id) return false;
-
-    void copyText(id, {
-      success: "ID copied to clipboard",
-      fallback: { title: "Copy ID manually" }
-    });
-
-    return true;
-  };
-  const focusTypeaheadMatch = (event: KeyboardEvent) => {
-    if (
-      event.metaKey ||
-      event.ctrlKey ||
-      event.altKey ||
-      event.key.length !== 1 ||
-      !event.key.trim()
-    ) {
-      return false;
-    }
-
-    window.clearTimeout(typeaheadTimeout());
-
-    const visibleIDs = getVisibleIDs();
-
-    if (visibleIDs.length === 0) return false;
-
-    const character = event.key.toLocaleLowerCase();
-    let query = `${typeaheadQuery()}${character}`;
-    const currentIndex = focusedID() ? visibleIDs.indexOf(focusedID()!) : -1;
-    const candidates = [
-      ...visibleIDs.slice(currentIndex + 1),
-      ...visibleIDs.slice(0, currentIndex + 1)
-    ];
-    const getLabel = (id: string) => {
-      return (
-        content.getCollection(id)?.name ??
-        content.getEntry(id)?.name ??
-        ""
-      ).toLocaleLowerCase();
-    };
-    let match = candidates.find((id) => getLabel(id).startsWith(query));
-
-    if (!match && query.length > 1) {
-      query = character;
-      match = candidates.find((id) => getLabel(id).startsWith(query));
-    }
-
-    setTypeaheadQuery(query);
-    setTypeaheadTimeout(window.setTimeout(() => setTypeaheadQuery(""), 700));
-
-    if (!match) return false;
-
-    focusSingleItem(match, true);
-
-    return true;
-  };
-  const selectVisibleRange = (visibleIDs: string[], fromIndex: number, toIndex: number) => {
-    const startIndex = Math.min(fromIndex, toIndex);
-    const endIndex = Math.max(fromIndex, toIndex);
-
-    return visibleIDs.slice(startIndex, endIndex + 1);
-  };
-  const extendSelectionWithFocusedItem = (direction: "up" | "down") => {
-    const visibleIDs = getVisibleIDs();
-
-    if (visibleIDs.length === 0) return false;
-
-    const currentID = getFocusedVisibleID();
-    const focusedIndex = currentID ? visibleIDs.indexOf(currentID) : -1;
-
-    if (!currentID || focusedIndex === -1) return navigateFocusedItem(direction);
-
-    const anchorID = selectionRangeAnchorID();
-    const headID = selectionRangeHeadID();
-    const anchorIndex = anchorID ? visibleIDs.indexOf(anchorID) : -1;
-    const headIndex = headID ? visibleIDs.indexOf(headID) : -1;
-    const canContinueRange =
-      anchorID && headID && anchorIndex !== -1 && headIndex !== -1 && headID === currentID;
-    const nextAnchorID = canContinueRange ? anchorID : currentID;
-    const nextAnchorIndex = canContinueRange ? anchorIndex : focusedIndex;
-    const currentHeadIndex = canContinueRange ? headIndex : focusedIndex;
-
-    if (!canContinueRange) {
-      setExactSelection([currentID]);
-      setSelectionRangeAnchorID(currentID);
-      setSelectionRangeHeadID(currentID);
-
-      return true;
-    }
-
-    const nextIndex = Math.min(
-      visibleIDs.length - 1,
-      Math.max(0, currentHeadIndex + (direction === "down" ? 1 : -1))
-    );
-
-    if (nextIndex === currentHeadIndex) return true;
-
-    focusVisibleItem(visibleIDs[nextIndex], true);
-
-    if (canContinueRange && nextIndex === nextAnchorIndex) {
-      setExactSelection([]);
-      setSelectionRangeAnchorID(null);
-      setSelectionRangeHeadID(null);
-
-      return true;
-    }
-
-    setSelectionRangeAnchorID(nextAnchorID);
-    setSelectionRangeHeadID(visibleIDs[nextIndex]);
-    setExactSelection(selectVisibleRange(visibleIDs, nextAnchorIndex, nextIndex));
-
-    return true;
-  };
-  const onExplorerKeyDown = (event: KeyboardEvent) => {
-    if (!isExplorerKeyboardActive()) return;
-    if (isEditingText()) return;
-
-    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-      event.preventDefault();
-      const direction = event.key === "ArrowDown" ? "down" : "up";
-
-      if (event.shiftKey) {
-        extendSelectionWithFocusedItem(direction);
-      } else {
-        navigateFocusedItem(direction);
-      }
-
-      return;
-    }
-
-    if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
-      if (navigateFocusedHierarchy(event.key === "ArrowLeft" ? "left" : "right")) {
-        event.preventDefault();
-      }
-
-      return;
-    }
-
-    if (event.key === " ") {
-      if (toggleFocusedSelection()) {
-        event.preventDefault();
-      }
-
-      return;
-    }
-
-    if (event.key === "Enter") {
-      if (activateFocusedItem()) {
-        event.preventDefault();
-      }
-
-      return;
-    }
-
-    if (event.key === "F2") {
-      if (renameCommandTarget()) {
-        event.preventDefault();
-      }
-
-      return;
-    }
-
-    if (event.key === "Escape" && selection().length > 0) {
-      setExactSelection([]);
-      setSelectionRangeAnchorID(null);
-      setSelectionRangeHeadID(null);
-      event.preventDefault();
-
-      return;
-    }
-
-    if (focusTypeaheadMatch(event)) {
-      event.preventDefault();
-    }
-  };
-  const canHandleExplorerShortcut = () => {
-    return isExplorerKeyboardActive() && !isEditingText();
-  };
-  const resetExplorerFocus = () => {
-    setFocusedID(null);
-    setSelectionRangeAnchorID(null);
-    setSelectionRangeHeadID(null);
-  };
-  const onExplorerPointerEnter = () => {
-    setPointerInsideExplorer(true);
-  };
-  const onExplorerPointerLeave = () => {
-    setPointerInsideExplorer(false);
-
-    if (!focusInsideExplorer()) {
-      resetExplorerFocus();
-    }
-  };
-  const onExplorerFocusIn = () => {
-    setFocusInsideExplorer(true);
-  };
-  const onExplorerFocusOut = (event: FocusEvent) => {
-    const nextTarget = event.relatedTarget;
-
-    if (nextTarget instanceof Node && event.currentTarget instanceof Node) {
-      if (event.currentTarget.contains(nextTarget)) return;
-    }
-
-    setFocusInsideExplorer(false);
-    setPointerInsideExplorer(false);
-    resetExplorerFocus();
-  };
-  const stopMarqueeAutoScroll = () => {
-    window.cancelAnimationFrame(marqueeScrollFrame());
-    setMarqueeScrollFrame(0);
-  };
-  const applyMarqueeSelection = (currentBox = boxSelection()) => {
-    const container = treeContainerRef();
-
-    if (!container || !currentBox.active) return;
-
-    const containerRect = container.getBoundingClientRect();
-    const scrollTop = container.scrollTop;
-    const selectionLeft = Math.min(currentBox.x, currentBox.currentX);
-    const selectionRight = Math.max(currentBox.x, currentBox.currentX);
-    const selectionTop = Math.min(currentBox.y, currentBox.currentY);
-    const selectionBottom = Math.max(currentBox.y, currentBox.currentY);
-    const selectedIDs = flattenedLayout().flatMap((item) => {
-      const itemTop = containerRect.top + item.top - scrollTop;
-      const itemBottom = itemTop + item.height;
-      const intersects =
-        containerRect.left < selectionRight &&
-        itemTop < selectionBottom &&
-        containerRect.right > selectionLeft &&
-        itemBottom > selectionTop;
-
-      return intersects ? [item.id] : [];
-    });
-    const initialSelection = marqueeInitialSelection();
-    const mode = marqueeMode();
-
-    if (mode === "add") {
-      setExactSelection(Array.from(new Set([...initialSelection, ...selectedIDs])));
-    } else if (mode === "remove") {
-      const selectedIDSet = new Set(selectedIDs);
-
-      setExactSelection(initialSelection.filter((id) => !selectedIDSet.has(id)));
-    } else {
-      setExactSelection(selectedIDs);
-    }
-  };
-  const autoScrollMarquee = () => {
-    stopMarqueeAutoScroll();
-
-    const scroll = () => {
-      const container = treeContainerRef();
-      const currentBox = boxSelection();
-
-      if (!container || !pointerDown() || !currentBox.active) {
-        stopMarqueeAutoScroll();
-
-        return;
-      }
-
-      const rect = container.getBoundingClientRect();
-      const threshold = 36;
-      const pointerY = currentBox.currentY;
-      const speed =
-        pointerY < rect.top + threshold
-          ? Math.max(-12, (pointerY - rect.top - threshold) / 3)
-          : pointerY > rect.bottom - threshold
-            ? Math.min(12, (pointerY - rect.bottom + threshold) / 3)
-            : 0;
-
-      if (speed !== 0) {
-        const previousScrollTop = container.scrollTop;
-
-        container.scrollTop += speed;
-
-        if (container.scrollTop !== previousScrollTop) {
-          applyMarqueeSelection(currentBox);
-        }
-      }
-
-      setMarqueeScrollFrame(window.requestAnimationFrame(scroll));
-    };
-
-    setMarqueeScrollFrame(window.requestAnimationFrame(scroll));
-  };
-  const onPointerDown = (event: PointerEvent) => {
-    if (!(event.target instanceof HTMLElement)) return;
-    if (
-      !event.target.closest("[data-explorer-panel]") ||
-      event.target.matches("[data-entry] *, [data-collection] *")
-    ) {
-      return;
-    }
-    if (event.button === 0) {
-      document.documentElement.style.userSelect = "none";
-      setMarqueeInitialSelection(selection());
-      setMarqueeMode(
-        event.altKey
-          ? "remove"
-          : event.metaKey || event.ctrlKey || event.shiftKey
-            ? "add"
-            : "replace"
-      );
-      setSelectionRangeAnchorID(null);
-      setSelectionRangeHeadID(null);
-      setPointerDown(true);
-      setBoxSelection({
-        active: false,
-        x: event.clientX,
-        y: event.clientY,
-        currentX: event.clientX,
-        currentY: event.clientY,
-        width: 0,
-        height: 0
-      });
-    }
-  };
-  const onPointerMove = (event: PointerEvent) => {
-    if (!pointerDown()) return;
-
-    const wasActive = boxSelection().active;
-    const newBoxSelectionWidth = Math.abs(event.clientX - boxSelection().x);
-    const newBoxSelectionHeight = Math.abs(event.clientY - boxSelection().y);
-    const activationThreshold = 10;
-    const newBoxSelection = {
-      ...boxSelection(),
-      active:
-        boxSelection().active ||
-        newBoxSelectionWidth > activationThreshold ||
-        newBoxSelectionHeight > activationThreshold,
-      currentX: event.clientX,
-      currentY: event.clientY,
-      width: newBoxSelectionWidth,
-      height: newBoxSelectionHeight
-    };
-
-    setBoxSelection(newBoxSelection);
-
-    if (!newBoxSelection.active) return;
-
-    applyMarqueeSelection(newBoxSelection);
-
-    if (!wasActive) {
-      autoScrollMarquee();
-    }
-  };
-  const onPointerEnd = () => {
-    setPointerDown(false);
-    stopMarqueeAutoScroll();
-    document.documentElement.style.userSelect = "";
-    setBoxSelection({
-      active: false,
-      x: 0,
-      y: 0,
-      width: 0,
-      height: 0,
-      currentX: 0,
-      currentY: 0
-    });
-  };
-  const dropdownOptions = [
+  const options = [
     {
       label: "New entry",
       icon: "i-lucide:file-plus-2",
       shortcut: "$mod+E",
-      onClick: async () => {
-        createEntry();
-      }
+      onClick: async () => actions.createEntry()
     },
     {
       label: "New collection",
       icon: "i-material-symbols:create-new-folder-outline-rounded",
-      onClick: async () => {
-        createCollection();
-      },
-      shortcut: "$mod+shift+E"
+      shortcut: "$mod+shift+E",
+      onClick: async () => actions.createCollection()
     }
   ];
-  const { collections, entries } = content.getContentTreeLevel(null);
-  const getOrderedIDs = (ids: string[]) => {
-    const idSet = new Set(ids);
-    const orderedIDs = flattenedOrder().filter((id) => idSet.has(id));
-
-    return [...orderedIDs, ...ids.filter((id) => !orderedIDs.includes(id))];
-  };
-  const moveEntries = (input: {
-    entryIDs: string[];
-    collectionID: string | null;
-    targetEntryID?: string;
-    edge?: "top" | "bottom" | null;
-  }) => {
-    const entryIDs = getOrderedIDs(input.entryIDs);
-    const orders = content.getEntryDropOrders({
-      collectionID: input.collectionID,
-      targetEntryID: input.targetEntryID,
-      edge: input.edge,
-      entryIDs
-    });
-
-    entryIDs.forEach((entryID, index) => {
-      content.updateEntry(entryID, {
-        collectionID: input.collectionID ?? undefined,
-        order: orders[index]
-      });
-    });
-  };
-  const getLastEntryID = (collectionID: string | null) => {
-    return content.getContentTreeLevel(collectionID).entries().at(-1)?.id;
-  };
-  const moveCollections = (input: {
-    collectionIDs: string[];
-    parentID: string | null;
-    targetCollectionID?: string;
-    edge?: "top" | "bottom" | null;
-  }) => {
-    const collectionIDs = getOrderedIDs(input.collectionIDs);
-    const startIndex = content.getCollectionDropIndex({
-      parentID: input.parentID,
-      targetCollectionID: input.targetCollectionID,
-      edge: input.edge,
-      collectionIDs
-    });
-
-    collectionIDs.forEach((collectionID, offset) => {
-      content.moveCollection(
-        collectionID,
-        input.parentID,
-        startIndex === undefined ? undefined : startIndex + offset
-      );
-    });
-  };
-
-  createEffect(() => {
-    const unregister = monitorForElements({
-      onDrop({ source, location }) {
-        if (content.readOnly()) return;
-
-        const target = location.current.dropTargets[0];
-        if (!target) return;
-
-        const sourceData = source.data;
-        const targetData = target.data;
-
-        const entryIDs = getDraggedEntryIDs(sourceData);
-        const collectionIDs = getDraggedCollectionIDs(sourceData);
-
-        if (!entryIDs.length && !collectionIDs.length) {
-          return;
-        }
-
-        let moved = false;
-
-        if (targetData.type === "entry") {
-          const targetEntryID = targetData.id as string;
-
-          // Prevent drop on self
-          if (entryIDs.length === 1 && entryIDs[0] === targetEntryID) return;
-
-          const edge = extractClosestEdge(targetData) as "top" | "bottom" | null;
-          const targetCollectionID = (targetData.collectionID as string | undefined) ?? null;
-
-          if (entryIDs.length > 0) {
-            if (!canOrderEntries(sourceData)) return;
-
-            moveEntries({
-              entryIDs,
-              collectionID: targetCollectionID,
-              targetEntryID,
-              edge
-            });
-            moved = true;
-          }
-
-          if (collectionIDs.length > 0) {
-            return;
-          }
-        } else if (
-          targetData.type === "collection" ||
-          targetData.type === "collection-subtree" ||
-          targetData.type === "collection-boundary" ||
-          targetData.type === "entry-boundary"
-        ) {
-          const targetCollectionID = targetData.id as string;
-          const targetCollection = content.getCollection(targetCollectionID);
-          const edge =
-            targetData.type === "collection"
-              ? (extractClosestEdge(targetData) as "top" | "bottom" | null)
-              : null;
-
-          if (
-            entryIDs.length > 0 &&
-            (targetData.type === "collection-subtree" || targetData.type === "entry-boundary")
-          ) {
-            const lastEntryID = canOrderEntries(sourceData)
-              ? getLastEntryID(targetCollectionID)
-              : undefined;
-
-            moveEntries({
-              entryIDs,
-              collectionID: targetCollectionID,
-              targetEntryID: lastEntryID,
-              edge: lastEntryID ? "bottom" : null
-            });
-            moved = true;
-          }
-
-          if (collectionIDs.length > 0) {
-            if (targetData.type === "collection") {
-              if (!edge || !targetCollection) return;
-              const parentID = targetCollection.ancestors.at(-1) ?? null;
-
-              if (!canOrderCollections(sourceData)) {
-                moveCollections({
-                  collectionIDs,
-                  parentID
-                });
-
-                if (entryIDs.length > 0) {
-                  moveEntries({
-                    entryIDs,
-                    collectionID: parentID
-                  });
-                }
-
-                moved = true;
-              } else {
-                moveCollections({
-                  collectionIDs,
-                  parentID,
-                  targetCollectionID,
-                  edge
-                });
-                moved = true;
-              }
-            } else if (
-              targetData.type === "collection-subtree" ||
-              targetData.type === "collection-boundary"
-            ) {
-              moveCollections({
-                collectionIDs,
-                parentID: targetCollectionID
-              });
-              moved = true;
-            }
-          }
-        } else if (targetData.type === "explorer") {
-          if (entryIDs.length > 0) {
-            moveEntries({
-              entryIDs,
-              collectionID: null
-            });
-            moved = true;
-          }
-
-          if (collectionIDs.length > 0) {
-            moveCollections({
-              collectionIDs,
-              parentID: null
-            });
-            moved = true;
-          }
-        }
-
-        if (moved) {
-          setSelection([]);
-        }
-      }
-    });
-
-    onCleanup(unregister);
-  });
-
-  createEffect(() => {
-    window.addEventListener("pointermove", onPointerMove);
-    window.addEventListener("pointerup", onPointerEnd);
-    window.addEventListener("pointercancel", onPointerEnd);
-    document.body.addEventListener("pointerleave", onPointerEnd);
-    document.body.addEventListener("contextmenu", onPointerEnd);
-    document.body.addEventListener("keydown", onExplorerKeyDown);
-    window.addEventListener("blur", onPointerEnd);
-    const unregisterShortcuts = registerShortcuts({
-      "$mod+E": () => {
-        if (!canHandleExplorerShortcut()) return false;
-
-        createEntry();
-
-        return true;
-      },
-      "$mod+shift+E": () => {
-        if (!canHandleExplorerShortcut()) return false;
-
-        createCollection();
-
-        return true;
-      },
-      "$mod+n": () => {
-        if (!canHandleExplorerShortcut()) return false;
-
-        if (content.readOnly()) {
-          notifyReadOnly();
-
-          return true;
-        }
-
-        createEntryForCommandTarget();
-
-        return true;
-      },
-      "$mod+shift+n": () => {
-        if (!canHandleExplorerShortcut()) return false;
-
-        if (content.readOnly()) {
-          notifyReadOnly();
-
-          return true;
-        }
-
-        createCollectionForCommandTarget();
-
-        return true;
-      },
-      "$mod+a": () => {
-        if (!canHandleExplorerShortcut()) return false;
-
-        return selectAllVisible();
-      },
-      "$mod+Alt+KeyC": () => {
-        if (!canHandleExplorerShortcut()) return false;
-
-        return copyCommandTargetID();
-      },
-      "$mod+backspace": () => {
-        if (!canHandleExplorerShortcut()) return false;
-
-        return deleteSelection() || deleteFocused();
-      },
-      "delete": () => {
-        if (!canHandleExplorerShortcut()) return false;
-
-        return deleteSelection() || deleteFocused();
-      }
-    });
-
-    onCleanup(() => {
-      window.removeEventListener("pointermove", onPointerMove);
-      window.removeEventListener("pointerup", onPointerEnd);
-      window.removeEventListener("pointercancel", onPointerEnd);
-      document.body.removeEventListener("pointerleave", onPointerEnd);
-      document.body.removeEventListener("contextmenu", onPointerEnd);
-      document.body.removeEventListener("keydown", onExplorerKeyDown);
-      window.removeEventListener("blur", onPointerEnd);
-      window.clearTimeout(typeaheadTimeout());
-      stopMarqueeAutoScroll();
-      document.documentElement.style.userSelect = "";
-      unregisterShortcuts();
-    });
-  });
-
-  onMount(() => {
-    const element = elementRef();
-    if (!element) return;
-
-    const cleanup = dropTargetForElements({
-      element,
-      getData: () => ({ type: "explorer", id: "" }),
-      canDrop: ({ source }) => !content.readOnly() && canChangeParent(source.data),
-      onDragEnter: ({ source }) => {
-        setIsDraggedOver(changesRootParent(source));
-      },
-      onDrag: ({ source }) => {
-        setIsDraggedOver(changesRootParent(source));
-      },
-      onDragLeave: () => setIsDraggedOver(false),
-      onDrop: () => setIsDraggedOver(false)
-    });
-
-    onCleanup(() => {
-      cleanup();
-    });
-  });
+  const { collections, entries } = content.tree.getLevel({ parentID: null });
 
   return (
     <DropdownArea>
@@ -1054,144 +76,122 @@ const Explorer = () => {
           data-explorer-panel
           tabIndex={0}
           class="flex flex-col flex-1 justify-center items-start outline-none"
-          onFocusIn={onExplorerFocusIn}
-          onFocusOut={onExplorerFocusOut}
-          onPointerDown={onPointerDown}
-          onPointerEnter={onExplorerPointerEnter}
-          onPointerLeave={onExplorerPointerLeave}
+          onPointerDown={marquee.onPointerDown}
+          onPointerEnter={() => setPointerInside(true)}
+          onPointerLeave={() => {
+            setPointerInside(false);
+            if (!focusInside()) resetFocus();
+          }}
+          onFocusIn={() => setFocusInside(true)}
+          onFocusOut={(event) => {
+            const next = event.relatedTarget;
+            if (next instanceof Node && event.currentTarget.contains(next)) return;
+            setFocusInside(false);
+            setPointerInside(false);
+            resetFocus();
+          }}
         >
           <div class="my-0.5 flex items-center gap-2 px-1">
             <h2 class="text-2xl font-semibold">Explorer</h2>
             <Show when={content.offline()}>
-              {/* TODO: Redesign */}
               <span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
                 Offline: read-only
               </span>
             </Show>
           </div>
           <div
-            ref={setTreeContainerRef}
+            ref={setContainerRef}
             class="flex flex-col flex-1 relative w-full overflow-y-auto px-1"
             style={{ gap: `${gap}px` }}
           >
             <TreeSelection />
-            <Show
-              when={!contentLoading()}
-              fallback={
-                <div class="flex flex-col gap-1.5 py-1">
-                  <div class="flex gap-1 items-center pl-1">
-                    <Skeleton class="h-6 w-6 rounded" />
-                    <Skeleton class="h-4 w-24" />
-                  </div>
-                  <div class="flex gap-1 items-center pl-1">
-                    <Skeleton class="h-6 w-6 rounded" />
-                    <Skeleton class="h-4 w-32" />
-                  </div>
-                  <div class="flex gap-1 items-center pl-1">
-                    <Skeleton class="h-6 w-6 rounded" />
-                    <Skeleton class="h-4 w-20" />
-                  </div>
-                  <div class="flex gap-1 items-center pl-1">
-                    <Skeleton class="h-6 w-6 rounded" />
-                    <Skeleton class="h-4 w-28" />
-                  </div>
-                </div>
-              }
-            >
-              <div class="contents">
-                <For each={collections()}>
-                  {(collection) => {
-                    return (
-                      <Show when={collection}>
-                        <DropdownArea>
-                          <ExplorerCollection collection={collection!} topLevel />
-                        </DropdownArea>
-                      </Show>
-                    );
-                  }}
-                </For>
-              </div>
-              <div class="contents">
-                <For each={entries()}>
-                  {(entry) => {
-                    return (
-                      <div>
-                        <Show when={entry}>
-                          <DropdownArea>
-                            <ExplorerEntry entry={entry} topLevel />
-                          </DropdownArea>
-                        </Show>
-                      </div>
-                    );
-                  }}
-                </For>
-              </div>
+            <Show when={!loading()} fallback={<ExplorerSkeleton />}>
+              <For each={collections()}>
+                {(collection) => (
+                  <DropdownArea>
+                    <ExplorerCollection collection={collection} topLevel />
+                  </DropdownArea>
+                )}
+              </For>
+              <For each={entries()}>
+                {(entry) => (
+                  <DropdownArea>
+                    <ExplorerEntry entry={entry} topLevel />
+                  </DropdownArea>
+                )}
+              </For>
               <Show when={!collections().length && !entries().length}>
                 <div>
-                  {dropdownOptions.map((option) => {
-                    return (
+                  <For each={options}>
+                    {(option) => (
                       <IconButton
                         icon={option.icon}
                         class="flex justify-start items-center w-full group/button"
-                        disabled={dropdownMenuOpened() || content.readOnly()}
+                        disabled={menuOpened() || content.readOnly()}
                         onClick={option.onClick}
                         label={() => (
                           <div class="px-1 flex flex-1 gap-4">
                             <span class="flex-1 text-start">{option.label}</span>
-                            <Show when={option.shortcut}>
-                              <Shortcut
-                                class="opacity-0 group-hover/button:opacity-50 font-mono text-[90%]"
-                                shortcut={option.shortcut!}
-                              />
-                            </Show>
+                            <Shortcut
+                              class="opacity-0 group-hover/button:opacity-50 font-mono text-[90%]"
+                              shortcut={option.shortcut}
+                            />
                           </div>
                         )}
                         variant="text"
                         text="softer"
                         size="small"
                       />
-                    );
-                  })}
+                    )}
+                  </For>
                 </div>
               </Show>
             </Show>
-            <div ref={setElementRef} class="flex-1">
+            <div ref={setDropRef} class="flex-1">
               <Show when={isDraggedOver()}>
                 <div class="top-0 left-0 -z-10 rounded-lg absolute h-full w-full opacity-10 bg-gradient-to-tr" />
               </Show>
             </div>
           </div>
-          <Show when={boxSelection().active}>
+          <Show when={marquee.boxSelection().active}>
             <div
               class="pointer-events-none fixed bg-gradient-to-tr opacity-10 rounded-lg"
               style={{
-                top: `${Math.min(boxSelection().y, boxSelection().currentY ?? boxSelection().y)}px`,
-                left: `${Math.min(boxSelection().x, boxSelection().currentX ?? boxSelection().x)}px`,
-                width: `${boxSelection().width}px`,
-                height: `${boxSelection().height}px`
+                top: `${Math.min(marquee.boxSelection().y, marquee.boxSelection().currentY)}px`,
+                left: `${Math.min(marquee.boxSelection().x, marquee.boxSelection().currentX)}px`,
+                width: `${marquee.boxSelection().width}px`,
+                height: `${marquee.boxSelection().height}px`
               }}
             />
           </Show>
           <DropdownMenu
-            cardProps={{
-              class: "w-52"
-            }}
-            items={dropdownOptions}
-            opened={dropdownMenuOpened()}
+            cardProps={{ class: "w-52" }}
+            items={options}
+            opened={menuOpened()}
             portal={false}
-            setOpened={setDropdownMenuOpened}
+            setOpened={setMenuOpened}
           />
         </div>
       </TreeRoot>
     </DropdownArea>
   );
 };
-const ExplorerPanel = () => {
-  return (
-    <ExplorerProvider>
-      <Explorer />
-    </ExplorerProvider>
-  );
-};
+
+const ExplorerSkeleton = () => (
+  <div class="flex flex-col gap-1.5 py-1">
+    {["w-24", "w-32", "w-20", "w-28"].map((width) => (
+      <div class="flex gap-1 items-center pl-1">
+        <Skeleton class="h-6 w-6 rounded" />
+        <Skeleton class={`h-4 ${width}`} />
+      </div>
+    ))}
+  </div>
+);
+
+const ExplorerPanel = () => (
+  <ExplorerProvider>
+    <Explorer />
+  </ExplorerProvider>
+);
 
 export { ExplorerPanel };

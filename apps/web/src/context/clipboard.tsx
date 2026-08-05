@@ -1,4 +1,4 @@
-import { createContext, createSignal, ParentComponent, useContext } from "solid-js";
+import { createContext, createSignal, type ParentComponent, useContext } from "solid-js";
 
 import { CopyFallbackDialog } from "#web/pages/workspace/settings/copy-fallback-dialog";
 import { useNotify } from "./notifications";

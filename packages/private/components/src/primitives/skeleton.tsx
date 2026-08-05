@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { Component, Index } from "solid-js";
+import { type Component, Index } from "solid-js";
 
 interface SkeletonProps {
   wrapperClass?: string;
@@ -10,16 +10,11 @@ const Skeleton: Component<SkeletonProps> = (props) => {
   if (Array.isArray(props.class)) {
     return (
       <Index each={props.class}>
-        {(cssClass) => {
-          return (
-            <div
-              class={clsx(
-                ":base: bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse",
-                cssClass()
-              )}
-            />
-          );
-        }}
+        {(cssClass) => (
+          <div
+            class={clsx(":base: bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse", cssClass())}
+          />
+        )}
       </Index>
     );
   }

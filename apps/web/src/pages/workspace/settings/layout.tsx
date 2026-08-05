@@ -2,14 +2,14 @@ import { Card, ScrollShadow, createRef } from "@andesine/components";
 import { Title } from "@solidjs/meta";
 import {
   revalidate,
-  RouteSectionProps,
+  type RouteSectionProps,
   useLocation,
   useNavigate,
   useParams
 } from "@solidjs/router";
-import { Component, createEffect, onCleanup, Show } from "solid-js";
+import { type Component, createEffect, onCleanup, Show } from "solid-js";
 import { useWorkspace } from "#web/context/workspace";
-import { useRouteData } from "#web/lib/routes";
+import { useRouteData } from "#web/lib/navigation";
 import { SettingsProvider } from "./settings-context";
 import { VerificationDialog } from "./verification-dialog";
 

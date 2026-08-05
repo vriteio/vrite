@@ -1,5 +1,5 @@
 import { Button, Card, IconButton, Overlay } from "@andesine/components";
-import { Component, createEffect, createSignal } from "solid-js";
+import { type Component, createEffect, createSignal } from "solid-js";
 
 import { useClipboard } from "#web/context/clipboard";
 

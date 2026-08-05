@@ -1,7 +1,10 @@
-import { RequestHeadersPluginContext, ResponseHeadersPluginContext } from "@orpc/server/plugins";
+import {
+  type RequestHeadersPluginContext,
+  type ResponseHeadersPluginContext
+} from "@orpc/server/plugins";
 import { os } from "@orpc/server";
 import type { SessionData } from "#backend/lib/policy";
-import { KeyPermission, Permission } from "#backend/db";
+import { type KeyPermission, type Permission } from "#backend/db";
 
 interface ORPCContext extends RequestHeadersPluginContext, ResponseHeadersPluginContext {}
 interface WSORPCContext {

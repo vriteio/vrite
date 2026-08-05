@@ -24,7 +24,8 @@
     "./fragments": "./src/fragments/index.ts",
     "./context": "./src/context/index.ts",
     "./ref": "./src/ref.ts",
-    "./utils": "./src/utils.ts"
+    "./utils": "./src/utils.ts",
+    "./debounced": "./src/debounced.ts"
   },
   "devDependencies": {
     "@types/d3-array": "^3.2.2",

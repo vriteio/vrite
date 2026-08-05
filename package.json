@@ -5,16 +5,26 @@
   "private": true,
   "scripts": {
     "start": "dotenv -- turbo start",
-    "build": "dotenv -- turbo build",
-    "dev": "dotenv -- turbo dev"
+    "build": "pnpm check && dotenv -- turbo build",
+    "check": "pnpm lint && pnpm format:check",
+    "dev": "dotenv -- turbo dev",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix && prettier --write ."
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/node": "^25.9.1",
     "dotenv-cli": "^11.0.0",
+    "eslint": "^10.8.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.9.0",
     "prettier": "^3.8.3",
     "prettier-plugin-astro": "^0.14.1",
     "turbo": "^2.9.15",
-    "typescript": "6.0.3"
+    "typescript": "6.0.3",
+    "typescript-eslint": "^8.65.0"
   },
   "engines": {
     "node": ">=24"

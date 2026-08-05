@@ -50,9 +50,7 @@ const getEmailContent = <E extends keyof EmailTemplates>(
 const getEmailSubject = <E extends keyof EmailTemplates>(
   template: E,
   props: EmailTemplateProps[E]
-): string => {
-  return emails[template].subject(props);
-};
+): string => emails[template].subject(props);
 
 export { getEmailContent, getEmailSubject };
 export type { EmailTemplates, EmailTemplateProps };

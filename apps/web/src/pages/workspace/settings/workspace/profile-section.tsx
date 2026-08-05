@@ -1,10 +1,10 @@
 import { Input, Skeleton, Spinner } from "@andesine/components";
-import { Component, createEffect, createSignal, Show } from "solid-js";
+import { type Component, createEffect, createSignal, Show } from "solid-js";
 import { SettingsSection } from "../settings-section";
 import { Setting } from "../setting";
 import { useNotify } from "#web/context/notifications";
 import { useWorkspace } from "#web/context/workspace";
-import { client } from "#web/lib/client";
+import { client } from "#web/lib/api";
 import { createMutation } from "@tanstack/solid-query";
 import clsx from "clsx";
 
@@ -14,7 +14,7 @@ const WorkspaceProfileSection: Component = () => {
   const [name, setName] = createSignal(currentWorkspace()?.name || "");
   const updateWorkspaceNameMutation = createMutation(() => ({
     onSuccess: () => {
-      refreshWorkspaces();
+      void refreshWorkspaces();
     },
     onError: (error) => {
       console.error(error);
@@ -55,15 +55,13 @@ const WorkspaceProfileSection: Component = () => {
                 variant="outlined"
                 value={name()}
                 setValue={setName}
-                slot={() => {
-                  return (
-                    <Show when={updateWorkspaceNameMutation.isPending}>
-                      <div class="absolute right-0 p-1.5">
-                        <Spinner class="h-4 w-4" color="primary" />
-                      </div>
-                    </Show>
-                  );
-                }}
+                slot={() => (
+                  <Show when={updateWorkspaceNameMutation.isPending}>
+                    <div class="absolute right-0 p-1.5">
+                      <Spinner class="h-4 w-4" color="primary" />
+                    </div>
+                  </Show>
+                )}
                 onConfirm={() => {
                   if (name() !== currentWorkspace()?.name) {
                     updateWorkspaceNameMutation.mutate({ name: name() });

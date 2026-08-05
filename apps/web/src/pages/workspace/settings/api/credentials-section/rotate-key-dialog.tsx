@@ -1,5 +1,5 @@
 import { Button, Card, IconButton, Overlay, ToggleGroup } from "@andesine/components";
-import { Component, createEffect, createSignal, JSX } from "solid-js";
+import { type Component, createEffect, createSignal, type JSX } from "solid-js";
 
 type ExpirationOption = "now" | "1h" | "24h" | "7d";
 

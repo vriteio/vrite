@@ -1,5 +1,5 @@
 import { Button, Card, createRef, IconButton, Input, Overlay } from "@andesine/components";
-import { Component, createEffect, createSignal, createUniqueId } from "solid-js";
+import { type Component, createEffect, createSignal, createUniqueId } from "solid-js";
 
 interface DeleteKeyDialogProps {
   keys: Array<{ id: string; name: string }>;

@@ -1,9 +1,9 @@
-import { Component } from "solid-js";
+import { type Component } from "solid-js";
 import { Title } from "@solidjs/meta";
 import { IconButton, Button } from "@andesine/components";
-import { authClient } from "#web/lib/client";
+import { authClient } from "#web/lib/api";
 import { useSearchParams } from "@solidjs/router";
-import { appendRedirectTo, normalizeRedirectTo, toCallbackURL } from "#web/lib/redirects";
+import { appendRedirectTo, normalizeRedirectTo, toCallbackURL } from "#web/lib/navigation";
 import { useNotify } from "#web/context/notifications";
 import { createMutation } from "@tanstack/solid-query";
 
@@ -36,7 +36,7 @@ const SignUpPage: Component = () => {
         provider,
         callbackURL: toCallbackURL(redirectTo())
       });
-    } catch (error) {
+    } catch {
       notify({
         type: "error",
         text: `${provider === "google" ? "Google" : "GitHub"} sign-up failed`
@@ -85,7 +85,7 @@ const SignUpPage: Component = () => {
           label={signingUpWithGoogle() ? "Continuing with Google..." : "Continue with Google"}
           disabled={signingUpWithGoogle() || signingUpWithGitHub()}
           onClick={() => {
-            signUpWithProvider("google");
+            void signUpWithProvider("google");
           }}
         />
         <IconButton
@@ -97,7 +97,7 @@ const SignUpPage: Component = () => {
           label={signingUpWithGitHub() ? "Continuing with GitHub..." : "Continue with GitHub"}
           disabled={signingUpWithGoogle() || signingUpWithGitHub()}
           onClick={() => {
-            signUpWithProvider("github");
+            void signUpWithProvider("github");
           }}
         />
 

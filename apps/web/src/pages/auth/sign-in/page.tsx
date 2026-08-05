@@ -1,17 +1,17 @@
 import { useSearchParams } from "@solidjs/router";
 import { Title } from "@solidjs/meta";
-import { Component, createMemo } from "solid-js";
+import { type Component, createMemo } from "solid-js";
 import { IconButton, Button } from "@andesine/components";
 import { useNotify } from "#web/context/notifications";
-import { authClient } from "#web/lib/client";
+import { authClient } from "#web/lib/api";
 import {
   appendRedirectTo,
   normalizeRedirectTo,
   redirectAfterAuth,
   toCallbackURL
-} from "#web/lib/redirects";
+} from "#web/lib/navigation";
 import { createMutation } from "@tanstack/solid-query";
-import { getPasskeyErrorMessage } from "#web/lib/passkey-error";
+import { getPasskeyErrorMessage } from "#web/lib/validation";
 
 const SignInPage: Component = () => {
   const [searchParams] = useSearchParams();
@@ -73,7 +73,7 @@ const SignInPage: Component = () => {
         provider,
         callbackURL: toCallbackURL(redirectTo())
       });
-    } catch (error) {
+    } catch {
       notify({
         type: "error",
         text: `${provider === "google" ? "Google" : "GitHub"} sign-in failed`
@@ -111,7 +111,7 @@ const SignInPage: Component = () => {
           label={signingInWithGoogle() ? "Continuing with Google..." : "Continue with Google"}
           disabled={signingInWithGoogle() || signingInWithGitHub()}
           onClick={() => {
-            signInWithProvider("google");
+            void signInWithProvider("google");
           }}
         />
         <IconButton
@@ -123,7 +123,7 @@ const SignInPage: Component = () => {
           label={signingInWithGitHub() ? "Continuing with GitHub..." : "Continue with GitHub"}
           disabled={signingInWithGoogle() || signingInWithGitHub()}
           onClick={() => {
-            signInWithProvider("github");
+            void signInWithProvider("github");
           }}
         />
         <div class="flex items-center justify-start gap-2 text-gray-400 dark:text-gray-500 text-xs">

@@ -1,8 +1,8 @@
-import { router, routerPlugin } from "#backend/router";
+import { type router, routerPlugin } from "#backend/router";
 import "./events";
 import { collab, shutdownCollaboration } from "#backend/collaboration";
 import { config } from "#backend/lib/config";
-import Fastify, { FastifyRequest } from "fastify";
+import Fastify, { type FastifyRequest } from "fastify";
 import corsPlugin from "@fastify/cors";
 import websocketPlugin from "@fastify/websocket";
 import { webhooksPlugin } from "./webhooks";
@@ -38,7 +38,7 @@ const createWebRequest = (fastifyRequest: FastifyRequest): Request => {
   const hasBody = !["GET", "HEAD"].includes(fastifyRequest.method);
   const body = fastifyRequest.body;
 
-  let webBody: any = null;
+  let webBody: string | null = null;
 
   if (hasBody && body) {
     webBody = JSON.stringify(body);

@@ -1,7 +1,7 @@
 import { Fragment } from "./fragment";
 import { Dialog } from "@ark-ui/solid/dialog";
 import clsx from "clsx";
-import { Component, JSX, splitProps } from "solid-js";
+import { type Component, type JSX, splitProps } from "solid-js";
 import { Dynamic, Portal } from "solid-js/web";
 
 interface OverlayProps extends JSX.HTMLAttributes<HTMLDivElement> {

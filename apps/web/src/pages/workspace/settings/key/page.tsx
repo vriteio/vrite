@@ -1,17 +1,17 @@
 import { Button, Fragment, IconButton, Input, ToggleGroup, Tooltip } from "@andesine/components";
-import { createAsync, query, revalidate, useNavigate, useParams } from "@solidjs/router";
-import { createMutation } from "@tanstack/solid-query";
-import { Component, createEffect, createMemo, createSignal, For } from "solid-js";
+import { createAsync, useNavigate, useParams } from "@solidjs/router";
+import { type Component, createEffect, createMemo, createSignal, For } from "solid-js";
 
 import { useNotify } from "#web/context/notifications";
-import { client, type KeyPermission } from "#web/lib/client";
+import { type KeyPermission } from "#web/lib/api";
 import { Setting } from "../setting";
 import { SettingsSection } from "../settings-section";
 import { NewKeyDialog } from "../new-key-dialog";
 import { Dynamic } from "solid-js/web";
 import { useWorkspace } from "#web/context/workspace";
+import { apiKeyQuery, useKeyMutations } from "#web/lib/data";
+import { type AccessLevel, createPermissionAccessMapper } from "#web/lib/permissions";
 
-type AccessLevel = "none" | "read" | "write";
 type Resource = "entries" | "collections" | "memberships" | "roles";
 type ResourceAccess = Record<Resource, AccessLevel>;
 
@@ -23,73 +23,22 @@ const resources: Array<{ id: Resource; label: string; description: string }> = [
 ];
 
 const accessLevels: Array<{ value: AccessLevel; label: string }> = [
-  { value: "none", label: "None" },
+  { value: "default", label: "None" },
   { value: "read", label: "Read" },
   { value: "write", label: "Write" }
 ];
 
-const readPermissionMap: Record<Resource, KeyPermission> = {
-  entries: "read:entries",
-  collections: "read:collections",
-  memberships: "read:memberships",
-  roles: "read:roles"
-};
-
-const writePermissionMap: Record<Resource, KeyPermission> = {
-  entries: "entries",
-  collections: "collections",
-  memberships: "memberships",
-  roles: "roles"
-};
-
-const permissionsToAccess = (permissions: KeyPermission[]): ResourceAccess => {
-  const access: ResourceAccess = {
-    entries: "none",
-    collections: "none",
-    memberships: "none",
-    roles: "none"
-  };
-
-  for (const permission of permissions) {
-    const resource = permission.startsWith("read:")
-      ? (permission.slice(5) as Resource)
-      : (permission as Resource);
-
-    if (!resource || !(resource in access)) {
-      continue;
-    }
-
-    if (permission.startsWith("read:")) {
-      if (access[resource] !== "write") {
-        access[resource] = "read";
-      }
-    } else {
-      access[resource] = "write";
-    }
-  }
-
-  return access;
-};
-
-const accessToPermissions = (access: ResourceAccess): KeyPermission[] => {
-  const permissions: KeyPermission[] = [];
-
-  for (const resource of Object.keys(access) as Resource[]) {
-    const level = access[resource];
-
-    if (level === "read") {
-      permissions.push(readPermissionMap[resource]);
-    } else if (level === "write") {
-      permissions.push(writePermissionMap[resource]);
-    }
-  }
-
-  return permissions;
-};
-
-const apiKeyQuery = query((input: { keyID: string }) => {
-  return client.keys.get({ id: input.keyID });
-}, "api-key");
+const { accessToPermissions, permissionsToAccess } = createPermissionAccessMapper<
+  Resource,
+  KeyPermission
+>({
+  resources: [
+    { id: "entries", read: "read:entries", write: "entries" },
+    { id: "collections", read: "read:collections", write: "collections" },
+    { id: "memberships", read: "read:memberships", write: "memberships" },
+    { id: "roles", read: "read:roles", write: "roles" }
+  ]
+});
 
 const KeySettingsPage: Component = () => {
   const notify = useNotify();
@@ -118,6 +67,11 @@ const KeySettingsPage: Component = () => {
     permissionsToAccess(key()?.permissions ?? [])
   );
   const [revealedKey, setRevealedKey] = createSignal("");
+  const { createKeyMutation, updateKeyMutation } = useKeyMutations({
+    keyID,
+    navigateToAPI,
+    onCreated: setRevealedKey
+  });
   const fillError = createMemo((): string => {
     if (!keyName().trim()) {
       return "Key name is required";
@@ -131,39 +85,6 @@ const KeySettingsPage: Component = () => {
 
     return "";
   });
-  const createKeyMutation = createMutation(() => ({
-    onSuccess: (data) => {
-      setRevealedKey(data.rawKey);
-      revalidate("api-keys");
-    },
-    onError: (error) => {
-      console.error(error);
-      notify({
-        type: "error",
-        text: "Failed to create key"
-      });
-    },
-    mutationFn: (input: { name: string; permissions: KeyPermission[] }) => {
-      return client.keys.create(input);
-    }
-  }));
-  const updateKeyMutation = createMutation(() => ({
-    onSuccess: () => {
-      revalidate(["api-keys", apiKeyQuery.keyFor({ keyID: keyID()! })]);
-      navigateToAPI();
-    },
-    onError: (error) => {
-      console.error(error);
-      notify({
-        type: "error",
-        text: "Failed to update key"
-      });
-    },
-    mutationFn: async (input: { id: string; name: string; permissions: KeyPermission[] }) => {
-      return client.keys.update(input);
-    }
-  }));
-
   createEffect(() => {
     const result = keyResult();
     const currentKey = key();
@@ -218,7 +139,10 @@ const KeySettingsPage: Component = () => {
                   }
                   value={resourceAccess()[resource.id]}
                   setValue={(value) => {
-                    setResourceAccess((prev) => ({ ...prev, [resource.id]: value as AccessLevel }));
+                    setResourceAccess((prev) => ({
+                      ...prev,
+                      [resource.id]: value as AccessLevel
+                    }));
                   }}
                   options={accessLevels.map((option) => ({
                     value: option.value,

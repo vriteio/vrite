@@ -2,7 +2,7 @@ packages:
   - "packages/**/*"
   - "apps/*"
 allowBuilds:
-  '@parcel/watcher': false
+  "@parcel/watcher": false
   esbuild: true
   sharp: true
   sqlite3: false

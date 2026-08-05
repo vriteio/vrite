@@ -1,5 +1,5 @@
 import type { EditorProvider } from "@andesine/editor";
-import { Accessor, createEffect, createSignal } from "solid-js";
+import { type Accessor, createEffect, createSignal } from "solid-js";
 
 type CollaborationConnection = "connecting" | "connected" | "disconnected";
 type CollaborationProblem = "unauthorized" | "failed" | "local-timeout" | null;
@@ -18,21 +18,19 @@ type EntryLoadState = {
   unsyncedChanges: number;
 };
 
-const createEntryLoadState = (entryID: string | null, localTimeoutCount = 0): EntryLoadState => {
-  return {
-    entryID,
-    isCheckingLocal: Boolean(entryID),
-    hasLocalSnapshot: false,
-    localTimeoutCount,
-    connection: "connecting",
-    authenticated: false,
-    problem: null,
-    synced: false,
-    initialSyncComplete: false,
-    editorReady: false,
-    unsyncedChanges: 0
-  };
-};
+const createEntryLoadState = (entryID: string | null, localTimeoutCount = 0): EntryLoadState => ({
+  entryID,
+  isCheckingLocal: Boolean(entryID),
+  hasLocalSnapshot: false,
+  localTimeoutCount,
+  connection: "connecting",
+  authenticated: false,
+  problem: null,
+  synced: false,
+  initialSyncComplete: false,
+  editorReady: false,
+  unsyncedChanges: 0
+});
 
 const isPermissionFailure = (reason: string) => {
   return reason === "Unauthorized" || reason === "Forbidden";

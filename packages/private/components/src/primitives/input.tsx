@@ -1,7 +1,7 @@
-import { Component, createUniqueId, JSX, Show, splitProps } from "solid-js";
+import { type Component, createUniqueId, type JSX, Show, splitProps } from "solid-js";
 import { Dynamic } from "solid-js/web";
 import clsx from "clsx";
-import { createRef, Ref } from "../ref";
+import { createRef, type Ref } from "../ref";
 import { Fragment } from "./fragment";
 
 const inputColors = {

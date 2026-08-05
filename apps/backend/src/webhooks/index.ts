@@ -1,4 +1,4 @@
-import { FastifyPluginAsync } from "fastify";
+import { type FastifyPluginAsync } from "fastify";
 import { handleStripeWebhook } from "./stripe";
 
 const webhooksPlugin: FastifyPluginAsync = async (app) => {

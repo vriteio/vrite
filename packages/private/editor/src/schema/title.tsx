@@ -10,7 +10,7 @@ const Title = Node.create({
   parseHTML() {
     return [{ tag: "header[data-type='title']" }];
   },
-  renderHTML({ node, HTMLAttributes }) {
+  renderHTML({ HTMLAttributes }) {
     return [
       `header`,
       mergeAttributes(HTMLAttributes, {

@@ -1,6 +1,7 @@
 import { redis, subscriberRedis } from "#backend/lib/adapters";
 import type * as z from "zod";
 
+/* eslint-disable @typescript-eslint/no-empty-object-type, @typescript-eslint/no-explicit-any -- Event payloads are supplied through declaration merging. */
 interface Events extends Record<string, Record<string, any>> {}
 
 type EmitEvent<Events extends Record<string, Record<string, any>>> = <
@@ -39,7 +40,8 @@ const subscribeToEvent: SubscribeToEvent<Events> = (
     eventListeners[event].push(callback);
   } else {
     eventListeners[event] = [callback];
-    subscriberRedis.pSubscribe(event, (payload) => {
+
+    void subscriberRedis.pSubscribe(event, (payload) => {
       let parsedPayload: Events[typeof event];
 
       try {
@@ -87,7 +89,7 @@ const subscribeToEvent: SubscribeToEvent<Events> = (
     });
 
     if (eventListeners[event].length === 0) {
-      subscriberRedis.pUnsubscribe(event);
+      void subscriberRedis.pUnsubscribe(event);
       delete eventListeners[event];
     }
   };

@@ -1,6 +1,6 @@
 import { Checkbox as BaseCheckbox } from "@ark-ui/solid/checkbox";
 import clsx from "clsx";
-import { Component } from "solid-js";
+import { type Component } from "solid-js";
 
 type CheckboxSize = "small" | "medium" | "large";
 
@@ -17,37 +17,32 @@ interface CheckboxProps {
   setChecked?(checked: boolean): void;
 }
 
-const Checkbox: Component<CheckboxProps> = (props) => {
-  return (
-    <BaseCheckbox.Root
-      checked={props.checked}
-      onCheckedChange={(details) => {
-        props.setChecked?.(!!details.checked);
-      }}
-      disabled={props.disabled}
+const Checkbox: Component<CheckboxProps> = (props) => (
+  <BaseCheckbox.Root
+    checked={props.checked}
+    onCheckedChange={(details) => {
+      props.setChecked?.(!!details.checked);
+    }}
+    disabled={props.disabled}
+  >
+    <BaseCheckbox.Control
+      class={clsx(
+        `:base: flex items-center justify-center outline outline-2 -outline-offset-2 cursor-pointer`,
+        `:base: outline-gray-400 dark:outline-gray-500`,
+        `:base: data-[state=checked]:outline-transparent data-[state=checked]:bg-gradient-to-tr`,
+        `:base: data-[disabled]:opacity-70 data-[disabled]:pointer-events-none`,
+        sizeClasses[props.size || "medium"].control
+      )}
     >
-      <BaseCheckbox.Control
-        class={clsx(
-          `:base: flex items-center justify-center outline outline-2 -outline-offset-2 cursor-pointer`,
-          `:base: outline-gray-400 dark:outline-gray-500`,
-          `:base: data-[state=checked]:outline-transparent data-[state=checked]:bg-gradient-to-tr`,
-          `:base: data-[disabled]:opacity-70 data-[disabled]:pointer-events-none`,
-          sizeClasses[props.size || "medium"].control
-        )}
-      >
-        <BaseCheckbox.Indicator>
-          <div
-            class={clsx(
-              `:base: i-lucide:check text-white`,
-              sizeClasses[props.size || "medium"].icon
-            )}
-          />
-        </BaseCheckbox.Indicator>
-      </BaseCheckbox.Control>
-      <BaseCheckbox.HiddenInput />
-    </BaseCheckbox.Root>
-  );
-};
+      <BaseCheckbox.Indicator>
+        <div
+          class={clsx(`:base: i-lucide:check text-white`, sizeClasses[props.size || "medium"].icon)}
+        />
+      </BaseCheckbox.Indicator>
+    </BaseCheckbox.Control>
+    <BaseCheckbox.HiddenInput />
+  </BaseCheckbox.Root>
+);
 
 export { Checkbox };
 export type { CheckboxProps };

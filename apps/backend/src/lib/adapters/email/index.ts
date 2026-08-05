@@ -1,6 +1,6 @@
 import {
-  EmailTemplateProps,
-  EmailTemplates,
+  type EmailTemplateProps,
+  type EmailTemplates,
   getEmailContent,
   getEmailSubject
 } from "../../../../../../packages/private/templates/src";

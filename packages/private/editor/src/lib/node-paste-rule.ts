@@ -1,12 +1,17 @@
-import { PasteRuleFinder, ExtendedRegExpMatchArray, PasteRule, callOrReturn } from "@tiptap/core";
-import { NodeType } from "@tiptap/pm/model";
+import {
+  type PasteRuleFinder,
+  type ExtendedRegExpMatchArray,
+  PasteRule,
+  callOrReturn
+} from "@tiptap/core";
+import { type NodeType } from "@tiptap/pm/model";
 
 const nodePasteRule = (config: {
   find: PasteRuleFinder;
   type: NodeType;
   getAttributes?:
-    | Record<string, any>
-    | ((match: ExtendedRegExpMatchArray) => Record<string, any>)
+    | Record<string, unknown>
+    | ((match: ExtendedRegExpMatchArray) => Record<string, unknown>)
     | false
     | null;
   getContent?: string | ((match: ExtendedRegExpMatchArray) => string) | false | null;

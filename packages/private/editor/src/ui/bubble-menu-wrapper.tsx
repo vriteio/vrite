@@ -1,6 +1,6 @@
 import type { BubbleMenuPluginProps } from "@tiptap/extension-bubble-menu";
 import { BubbleMenuPlugin } from "@tiptap/extension-bubble-menu";
-import { createSignal, onCleanup, onMount, ParentComponent } from "solid-js";
+import { createSignal, onCleanup, onMount, type ParentComponent } from "solid-js";
 
 interface BubbleMenuWrapperProps {
   pluginKey?: BubbleMenuPluginProps["pluginKey"];

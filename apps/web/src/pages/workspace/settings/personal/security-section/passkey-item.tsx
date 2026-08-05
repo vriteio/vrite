@@ -1,6 +1,6 @@
 import { TreeItem, useTree } from "#web/components/tree";
 import { DropdownArea, DropdownMenu, IconButton } from "@andesine/components";
-import { Component, createEffect, createMemo, createSignal } from "solid-js";
+import { type Component, createEffect, createMemo, createSignal } from "solid-js";
 import clsx from "clsx";
 import { format } from "date-fns";
 
@@ -63,20 +63,18 @@ const PasskeyItem: Component<{
           <div class="i-fluent:person-passkey-16-regular h-5.5 w-5.5 text-gray-400 dark:text-gray-500" />
         }
         onRename={props.onRename}
-        renderLabel={(label) => {
-          return (
-            <div class="flex-1 flex items-center gap-1.5">
-              <div class="flex items-center flex-1 gap-1.5" title={props.name}>
-                <div>{label}</div>
-                <div class="w-px h-4 bg-gray-200 dark:bg-gray-700 rounded-full shrink-0" />
-                <span class="text-xs text-gray-400 dark:text-gray-500 shrink-0">
-                  {format(props.createdAt, "MMM d, yyyy")}
-                </span>
-                <div class="flex-1" />
-              </div>
+        renderLabel={(label) => (
+          <div class="flex-1 flex items-center gap-1.5">
+            <div class="flex items-center flex-1 gap-1.5" title={props.name}>
+              <div>{label}</div>
+              <div class="w-px h-4 bg-gray-200 dark:bg-gray-700 rounded-full shrink-0" />
+              <span class="text-xs text-gray-400 dark:text-gray-500 shrink-0">
+                {format(props.createdAt, "MMM d, yyyy")}
+              </span>
+              <div class="flex-1" />
             </div>
-          );
-        }}
+          </div>
+        )}
         actions={
           <div onClick={(event: MouseEvent) => event.stopPropagation()}>
             <DropdownMenu

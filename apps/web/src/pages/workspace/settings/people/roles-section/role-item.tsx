@@ -1,8 +1,8 @@
-import { Role } from "#backend/db";
+import { type Role } from "#backend/db";
 import { useTree, TreeItem } from "#web/components/tree";
 import { DropdownArea, DropdownMenu, IconButton, Tooltip } from "@andesine/components";
 import clsx from "clsx";
-import { Component, createSignal, createMemo, createEffect, Match, Switch } from "solid-js";
+import { type Component, createSignal, createMemo, createEffect, Match, Switch } from "solid-js";
 
 const RoleItem: Component<{
   canManage: boolean;

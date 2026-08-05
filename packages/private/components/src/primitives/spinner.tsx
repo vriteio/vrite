@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { Component } from "solid-js";
+import { type Component } from "solid-js";
 
 const sizes = {
   small: `:base: w-4 h-4`,
@@ -13,17 +13,15 @@ interface SpinnerProps {
   color?: "base" | "primary";
 }
 
-const Spinner: Component<SpinnerProps> = (props) => {
-  return (
-    <div
-      class={clsx(
-        ":base: i-svg-spinners:ring-resize",
-        props.color === "primary" && `:base: bg-gradient-to-tr`,
-        sizes[props.size || "medium"],
-        props.class
-      )}
-    />
-  );
-};
+const Spinner: Component<SpinnerProps> = (props) => (
+  <div
+    class={clsx(
+      ":base: i-svg-spinners:ring-resize",
+      props.color === "primary" && `:base: bg-gradient-to-tr`,
+      sizes[props.size || "medium"],
+      props.class
+    )}
+  />
+);
 
 export { Spinner };

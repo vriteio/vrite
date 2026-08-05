@@ -1,5 +1,5 @@
-import { Component, createSignal, onMount, Show, Suspense } from "solid-js";
-import { RouteSectionProps } from "@solidjs/router";
+import { type Component, createSignal, onMount, Show, Suspense } from "solid-js";
+import { type RouteSectionProps } from "@solidjs/router";
 import { AnimatedGradientCard } from "#web/components/animated-gradient-card";
 import { Dynamic } from "solid-js/web";
 import { Skeleton } from "@andesine/components";

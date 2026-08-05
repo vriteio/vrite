@@ -1,18 +1,21 @@
 type ExplorerDragData = Record<string | symbol, unknown>;
 
 const getDraggedEntryIDs = (data: ExplorerDragData) => {
-  if (data.type === "entry") return [data.id as string];
-  if (data.type === "multi") return (data.entries as string[] | undefined) ?? [];
+  if (data.type === "entry") return typeof data.id === "string" ? [data.id] : [];
+  if (data.type === "multi") return toStringIDs(data.entries);
 
   return [];
 };
 
 const getDraggedCollectionIDs = (data: ExplorerDragData) => {
-  if (data.type === "collection") return [data.id as string];
-  if (data.type === "multi") return (data.collections as string[] | undefined) ?? [];
+  if (data.type === "collection") return typeof data.id === "string" ? [data.id] : [];
+  if (data.type === "multi") return toStringIDs(data.collections);
 
   return [];
 };
+
+const toStringIDs = (value: unknown): string[] =>
+  Array.isArray(value) ? value.filter((id): id is string => typeof id === "string") : [];
 
 const hasDraggedEntries = (data: ExplorerDragData) => {
   return getDraggedEntryIDs(data).length > 0;
@@ -57,7 +60,7 @@ const canTargetCollection = (
 ) => {
   const collectionIDs = getDraggedCollectionIDs(data);
 
-  if ((data.ids as string[] | undefined)?.includes(collectionID)) return false;
+  if (toStringIDs(data.ids).includes(collectionID)) return false;
   if (collectionIDs.includes(collectionID)) return false;
   if (collectionIDs.some((draggedID) => getCollectionAncestors(collectionID).includes(draggedID))) {
     return false;
@@ -65,7 +68,7 @@ const canTargetCollection = (
 
   if (!hasTopmostCollectionTargetRestriction(data)) return true;
 
-  return ((data.collectionTargetIDs as string[] | undefined) ?? []).includes(collectionID);
+  return toStringIDs(data.collectionTargetIDs).includes(collectionID);
 };
 
 const createDragData = (input: {

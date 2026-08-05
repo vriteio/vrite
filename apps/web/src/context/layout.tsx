@@ -1,6 +1,7 @@
-import { createContext, ParentComponent, createEffect, useContext, on } from "solid-js";
-import { createStore, SetStoreFunction } from "solid-js/store";
+import { createContext, type ParentComponent, createEffect, useContext, on } from "solid-js";
+import { createStore, type SetStoreFunction } from "solid-js/store";
 import { getRequestEvent } from "solid-js/web";
+import { parseLayoutCookie } from "#web/lib/validation";
 
 interface Layout {
   leftSidePanelWidth: number;
@@ -25,7 +26,7 @@ const readLayoutCookie = () => {
 
   if (event) {
     const layoutCookie = readCookieValue(event.request.headers.get("cookie") || "", "layout");
-    const parsedLayout = layoutCookie ? JSON.parse(decodeURIComponent(layoutCookie)) : null;
+    const parsedLayout = parseLayoutCookie(layoutCookie);
 
     return {
       ...defaultLayout,
@@ -38,7 +39,7 @@ const readLayoutCookie = () => {
   }
 
   const layoutCookie = readCookieValue(document.cookie, "layout");
-  const parsedLayout = layoutCookie ? JSON.parse(decodeURIComponent(layoutCookie)) : null;
+  const parsedLayout = parseLayoutCookie(layoutCookie);
 
   return {
     ...defaultLayout,
@@ -77,9 +78,7 @@ const LayoutProvider: ParentComponent = (props) => {
     </LayoutContext.Provider>
   );
 };
-const useLayout = () => {
-  return useContext(LayoutContext)!;
-};
+const useLayout = () => useContext(LayoutContext)!;
 
 export { LayoutProvider, useLayout };
 export type { Layout };

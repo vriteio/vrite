@@ -1,18 +1,19 @@
 import { Tree, TREE_ROOT_ID } from "#web/components/tree";
 import { Card, IconButton, Skeleton } from "@andesine/components";
-import { Component, createMemo, Show, Suspense, useTransition } from "solid-js";
+import { type Component, createMemo, Show, Suspense, useTransition } from "solid-js";
 import { Setting } from "../../setting";
 import { SettingsSection } from "../../settings-section";
-import { authClient } from "#web/lib/client";
-import { useNotify } from "#web/context/notifications";
-import { createMutation } from "@tanstack/solid-query";
-import { createAsync, query, revalidate } from "@solidjs/router";
+import { createAsync, revalidate } from "@solidjs/router";
 import { PasskeyItem } from "./passkey-item";
-import { Passkey } from "@better-auth/passkey/client";
+import { type Passkey } from "@better-auth/passkey/client";
 import { useSettings } from "../../settings-context";
 import { format } from "date-fns";
-import { settleBulkAction } from "#web/lib/bulk-action";
-import { getPasskeyErrorMessage } from "#web/lib/passkey-error";
+import {
+  passkeysQuery,
+  useAddPasskeyMutation,
+  useDeletePasskeysMutation,
+  useRenamePasskeyMutation
+} from "#web/lib/data";
 
 interface PasskeyListProps {
   passkeys: Passkey[];
@@ -20,128 +21,16 @@ interface PasskeyListProps {
   refreshPasskeys(onRevalidate?: () => void): void;
 }
 
-const passkeysQuery = query(async () => {
-  const { data, error } = await authClient.passkey.listUserPasskeys();
-
-  if (error || !data) return [];
-
-  return data;
-}, "passkeys");
-const isSessionNotFreshError = (error: unknown): boolean => {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    error.code === "SESSION_NOT_FRESH"
-  );
-};
 const PasskeyList: Component<PasskeyListProps> = (props) => {
-  const notify = useNotify();
   const { openVerificationDialog } = useSettings();
-  let addPasskeyStartedAt = 0;
-  const addPasskeyMutation = createMutation(() => ({
-    onSuccess: () => {
-      props.refreshPasskeys(() => addPasskeyMutation.reset());
-      notify({
-        text: "Passkey added successfully",
-        type: "success"
-      });
-    },
-    onError: (error) => {
-      console.error(error);
-      notify({
-        text: getPasskeyErrorMessage(error, "register", Date.now() - addPasskeyStartedAt),
-        type: "error"
-      });
-    },
-    mutationFn: async () => {
-      addPasskeyStartedAt = Date.now();
-      const { error, data } = await authClient.passkey.addPasskey({
-        name: `Andesine (${new Date().toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric"
-        })})`
-      });
-
-      if (error) throw error;
-
-      return data;
-    }
-  }));
-  const deletePasskeysMutation = createMutation(() => ({
-    onSuccess: (result) => {
-      const verificationFailures = result.failed.filter(({ error }) => {
-        return isSessionNotFreshError(error);
-      });
-      const failed = result.failed.filter(({ error }) => !isSessionNotFreshError(error));
-
-      failed.forEach(({ error }) => console.error(error));
-      props.refreshPasskeys(() => {
-        deletePasskeysMutation.reset();
-
-        if (result.successful.length > 0) {
-          notify({
-            text:
-              result.successful.length > 1
-                ? `${result.successful.length} passkeys deleted`
-                : "Passkey deleted",
-            type: "success"
-          });
-        }
-
-        if (failed.length > 0) {
-          notify({
-            text:
-              failed.length > 1
-                ? `${failed.length} passkeys failed to delete`
-                : "Failed to delete passkey",
-            type: "error"
-          });
-        }
-
-        if (verificationFailures.length > 0) {
-          openVerificationDialog(() => {
-            deletePasskeysMutation.mutate({
-              ids: verificationFailures.map(({ item }) => item)
-            });
-          });
-        }
-      });
-    },
-    mutationFn: async (input: { ids: string[] }) => {
-      return settleBulkAction(input.ids, async (id) => {
-        const { error } = await authClient.passkey.deletePasskey({ id });
-
-        if (error) throw error;
-      });
-    }
-  }));
-  const renamePasskeyMutation = createMutation(() => ({
-    onSuccess: () => {
-      props.refreshPasskeys(() => renamePasskeyMutation.reset());
-    },
-    onError: (error, { name }) => {
-      console.error(error);
-      notify({
-        text: `Failed to rename passkey to "${name}"`,
-        type: "error"
-      });
-    },
-    mutationFn: async (input: { id: string; name: string }) => {
-      const { error } = await authClient.passkey.updatePasskey({
-        id: input.id,
-        name: input.name
-      });
-
-      if (error) throw error;
-    }
-  }));
+  const deletePasskeysMutation = useDeletePasskeysMutation({
+    refresh: props.refreshPasskeys,
+    onVerificationRequired: openVerificationDialog
+  });
+  const renamePasskeyMutation = useRenamePasskeyMutation({
+    refresh: props.refreshPasskeys
+  });
   const optimisticPasskeys = createMemo<Array<Passkey & { optimistic?: boolean }>>(() => {
-    if (props.passkeysRefreshing && addPasskeyMutation.data) {
-      return [...props.passkeys, { ...addPasskeyMutation.data, optimistic: true }];
-    }
-
     if (
       (deletePasskeysMutation.isPending || props.passkeysRefreshing) &&
       deletePasskeysMutation.variables
@@ -166,14 +55,12 @@ const PasskeyList: Component<PasskeyListProps> = (props) => {
 
     return props.passkeys;
   });
-  const passkeysTree = () => {
-    return {
-      [TREE_ROOT_ID]: {
-        items: optimisticPasskeys().map(({ id }) => id),
-        levels: []
-      }
-    };
-  };
+  const passkeysTree = () => ({
+    [TREE_ROOT_ID]: {
+      items: optimisticPasskeys().map(({ id }) => id),
+      levels: []
+    }
+  });
 
   return (
     <Show
@@ -214,48 +101,22 @@ const PasskeyList: Component<PasskeyListProps> = (props) => {
   );
 };
 const SecuritySection: Component = () => {
-  const notify = useNotify();
   const { openVerificationDialog } = useSettings();
   const passkeys = createAsync(() => passkeysQuery());
   const [passkeysRefreshing, startPasskeysRefresh] = useTransition();
-  let addPasskeyStartedAt = 0;
   const refreshPasskeys = (onRevalidate: () => void) => {
-    startPasskeysRefresh(async () => {
-      await revalidate(passkeysQuery.key);
-      onRevalidate();
+    void startPasskeysRefresh(() => {
+      void (async () => {
+        await revalidate(passkeysQuery.key);
+        onRevalidate();
+      })();
     });
   };
-  const addPasskeyMutation = createMutation(() => ({
-    onSuccess: () => {
-      refreshPasskeys(() => addPasskeyMutation.reset());
-      notify({
-        text: "Passkey added successfully",
-        type: "success"
-      });
-    },
-    onError: (error) => {
-      console.error(error);
-
-      if ("code" in error && error.code === "SESSION_NOT_FRESH") {
-        return openVerificationDialog(() => addPasskeyMutation.mutate());
-      }
-
-      notify({
-        text: getPasskeyErrorMessage(error, "register", Date.now() - addPasskeyStartedAt),
-        type: "error"
-      });
-    },
-    mutationFn: async () => {
-      addPasskeyStartedAt = Date.now();
-      const { error, data } = await authClient.passkey.addPasskey({
-        name: format(new Date(), "MMM d, yyyy")
-      });
-
-      if (error) throw error;
-
-      return data;
-    }
-  }));
+  const addPasskeyMutation = useAddPasskeyMutation({
+    name: () => format(new Date(), "MMM d, yyyy"),
+    refresh: refreshPasskeys,
+    onVerificationRequired: openVerificationDialog
+  });
 
   return (
     <SettingsSection label="Security">

@@ -1,7 +1,7 @@
 import type { Router } from "@andesine/backend";
 import { createORPCClient, onError, ORPCError } from "@orpc/client";
 import { RPCLink } from "@orpc/client/fetch";
-import { RouterClient } from "@orpc/server";
+import { type RouterClient } from "@orpc/server";
 import { createAuthClient } from "better-auth/solid";
 import {
   emailOTPClient,
@@ -9,10 +9,10 @@ import {
   multiSessionClient
 } from "better-auth/client/plugins";
 import { passkeyClient } from "@better-auth/passkey/client";
-import { config } from "#web/lib/config";
+import { config } from "./config";
 import { getRequestEvent } from "solid-js/web";
 import { clearPersistenceData } from "#web/context/workspace/persistence";
-import { validateWorkspaceID } from "#web/lib/validate";
+import { validateWorkspaceID } from "#web/lib/validation";
 
 const getRouteWorkspaceID = () => {
   if (typeof window !== "undefined") {
@@ -34,9 +34,9 @@ const link = new RPCLink({
       if (error instanceof ORPCError) {
         if (error.code === "UNAUTHORIZED") {
           if (typeof window !== "undefined") {
-            clearPersistenceData();
-            window.location.assign("/auth/sign-in");
-            return;
+            void clearPersistenceData();
+
+            return window.location.assign("/auth/sign-in");
           }
 
           throw error;

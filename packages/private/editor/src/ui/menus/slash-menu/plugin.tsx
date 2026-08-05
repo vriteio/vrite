@@ -1,9 +1,9 @@
-import { SlashMenu, SlashMenuItem, SlashMenuState } from "./component";
-import Suggestion, { SuggestionKeyDownProps, SuggestionProps } from "@tiptap/suggestion";
-import tippy, { Instance } from "tippy.js";
-import { Accessor, runWithOwner, getOwner, createSignal } from "solid-js";
+import { SlashMenu, type SlashMenuItem, type SlashMenuState } from "./component";
+import Suggestion, { type SuggestionKeyDownProps, type SuggestionProps } from "@tiptap/suggestion";
+import tippy, { type Instance } from "tippy.js";
+import { type Accessor, runWithOwner, getOwner, createSignal } from "solid-js";
 import { PluginKey } from "@tiptap/pm/state";
-import { Editor } from "@tiptap/core";
+import { type Editor } from "@tiptap/core";
 import { render } from "solid-js/web";
 
 const stringToRegex = (str: string): RegExp => {

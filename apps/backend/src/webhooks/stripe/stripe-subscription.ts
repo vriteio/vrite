@@ -46,16 +46,14 @@ const subscriptionValues = (
 const resolveSubscription = (
   subscription: Stripe.Subscription,
   includeActiveSubscription: boolean
-): StripeSubscriptionResolution => {
-  return {
-    workspaceID: subscription.metadata?.workspaceID,
-    activeSubscriptionID:
-      includeActiveSubscription && !isTerminalSubscription(subscription.status)
-        ? subscription.id
-        : undefined,
-    update: subscriptionValues(subscription)
-  };
-};
+): StripeSubscriptionResolution => ({
+  workspaceID: subscription.metadata?.workspaceID,
+  activeSubscriptionID:
+    includeActiveSubscription && !isTerminalSubscription(subscription.status)
+      ? subscription.id
+      : undefined,
+  update: subscriptionValues(subscription)
+});
 const resolveStripeSubscriptionEvent = async (
   event: Stripe.Event,
   stripe: Stripe

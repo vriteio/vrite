@@ -1,14 +1,12 @@
 import { Skeleton, Tooltip } from "@andesine/components";
-import { createAsync, query } from "@solidjs/router";
-import { Component, Show, Suspense } from "solid-js";
-import { client } from "#web/lib/client";
+import { createAsync } from "@solidjs/router";
+import { type Component, Show, Suspense } from "solid-js";
+import { subscriptionQuery, usageQuery } from "#web/lib/data";
 import { Setting } from "../../setting";
 import { SettingsSection } from "../../settings-section";
 import { UsageChart } from "./usage-chart";
-import { formatNumber } from "#web/lib/format";
+import { formatNumber } from "#web/lib/primitives";
 
-const subscriptionQuery = query(() => client.billing.subscription(), "billing-subscription");
-const usageQuery = query(() => client.billing.usage(), "billing-usage");
 const formatUTCDate = (date: Date): string => {
   return new Intl.DateTimeFormat("en-US", {
     day: "numeric",

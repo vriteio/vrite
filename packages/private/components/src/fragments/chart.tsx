@@ -1,5 +1,14 @@
 import clsx from "clsx";
-import { Component, createSignal, createMemo, For, Show, JSX, onMount, onCleanup } from "solid-js";
+import {
+  type Component,
+  createSignal,
+  createMemo,
+  For,
+  Show,
+  type JSX,
+  onMount,
+  onCleanup
+} from "solid-js";
 import { scaleLinear } from "d3-scale";
 import { line, area, curveCatmullRom } from "d3-shape";
 import { max } from "d3-array";

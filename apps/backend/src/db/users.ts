@@ -1,7 +1,7 @@
 import { id } from "#backend/lib/primitives";
 import { sql } from "drizzle-orm";
 import {
-  AnyPgColumn,
+  type AnyPgColumn,
   boolean,
   pgTable,
   text,

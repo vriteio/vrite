@@ -1,6 +1,6 @@
 // TODO: redesign
 import { Spinner } from "@andesine/components";
-import { Component, createEffect, createSignal, onCleanup, Show } from "solid-js";
+import { type Component, createEffect, createSignal, onCleanup, Show } from "solid-js";
 
 type CollaborationStatus =
   | "connecting"

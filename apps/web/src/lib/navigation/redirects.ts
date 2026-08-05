@@ -1,6 +1,6 @@
-import { config } from "#web/lib/config";
-import { authClient } from "./client";
-import { validateWorkspaceID } from "./validate";
+import { config } from "#web/lib/api";
+import { authClient } from "#web/lib/api";
+import { validateWorkspaceID } from "#web/lib/validation";
 
 const normalizeRedirectTo = (value?: string | null): string | null => {
   const redirectTo = value?.trim();
@@ -37,7 +37,8 @@ const getPostAuthRedirectPath = async (redirectTo?: string | null) => {
   const currentWorkspaceID = data?.user.currentWorkspaceID;
 
   if (!data?.session) return "/auth/sign-in";
-  if (currentWorkspaceID && validateWorkspaceID(currentWorkspaceID)) return `/${currentWorkspaceID}/`;
+  if (currentWorkspaceID && validateWorkspaceID(currentWorkspaceID))
+    return `/${currentWorkspaceID}/`;
 
   return "/new-workspace";
 };

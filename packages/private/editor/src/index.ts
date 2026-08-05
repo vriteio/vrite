@@ -1,5 +1,5 @@
-import { Component, createComponent, createSignal, lazy, onMount, Show } from "solid-js";
-import type { EditorProps } from "./client";
+import { type Component, createComponent, createSignal, lazy, onMount, Show } from "solid-js";
+import type { EditorProps } from "./client-types";
 import "./styles.scss";
 
 const ClientEditor = lazy(async () => ({
@@ -30,4 +30,4 @@ export type {
   EditorProvider,
   EditorProviderSetup,
   EditorProviderSetupResult
-} from "./client";
+} from "./client-types";

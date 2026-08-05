@@ -1,14 +1,20 @@
 import {
-  Accessor,
+  type Accessor,
   createContext,
   createEffect,
   createMemo,
   createSignal,
   on,
-  ParentComponent,
-  Setter,
+  type ParentComponent,
+  type Setter,
   useContext
 } from "solid-js";
+import {
+  flattenTreeLayout,
+  flattenTreeOrder,
+  normalizeTreeSelection,
+  type TreeLayoutItem
+} from "./lib";
 
 interface TreeData {
   items: string[];
@@ -18,12 +24,6 @@ interface TreeData {
 type TreeMap = Record<string, TreeData>;
 type TreeFocusSource = "hover" | "keyboard";
 type TreeSelectionMode = "normal" | "exact";
-type TreeLayoutItem = {
-  id: string;
-  top: number;
-  height: number;
-};
-
 interface TreeContextValue {
   selection: Accessor<string[]>;
   expanded: Accessor<string[]>;
@@ -92,136 +92,30 @@ const TreeProvider: ParentComponent<TreeProviderProps> = (props) => {
   };
 
   const flattenedOrder = (): string[] => {
-    const order: string[] = [];
-    const tree = props.tree();
-
-    const traverse = (levelID: string) => {
-      const level = tree[levelID];
-
-      if (!level || (!level.items.length && !level.levels.length)) {
-        return;
-      }
-
-      for (const childLevelID of level.levels) {
-        order.push(childLevelID);
-
-        if (isExpanded(childLevelID)) {
-          traverse(childLevelID);
-        }
-      }
-
-      for (const itemID of level.items) {
-        order.push(itemID);
-      }
-    };
-
-    traverse(TREE_ROOT_ID);
-
-    return order;
+    return flattenTreeOrder({ tree: props.tree(), expanded: expanded(), rootID: TREE_ROOT_ID });
   };
   const flattenedLayout = (): TreeLayoutItem[] => {
-    const layout: TreeLayoutItem[] = [];
-    const tree = props.tree();
-    const itemHeight = props.itemHeight ?? 28;
-    const gap = props.gap ?? 2;
-    let top = 0;
-
-    const traverse = (levelID: string) => {
-      const level = tree[levelID];
-
-      if (!level || (!level.items.length && !level.levels.length)) {
-        return;
-      }
-
-      for (const childLevelID of level.levels) {
-        const childLevel = tree[childLevelID];
-        const childExpanded = isExpanded(childLevelID);
-        const isEmptyExpanded =
-          Boolean(childLevel) &&
-          childExpanded &&
-          !childLevel!.items.length &&
-          !childLevel!.levels.length;
-
-        const height = isEmptyExpanded ? itemHeight * 2 + gap : itemHeight;
-
-        layout.push({
-          id: childLevelID,
-          top,
-          height
-        });
-        top += height + gap;
-
-        if (childLevel && childExpanded && !isEmptyExpanded) {
-          traverse(childLevelID);
-        }
-      }
-
-      for (const itemID of level.items) {
-        layout.push({ id: itemID, top, height: itemHeight });
-        top += itemHeight + gap;
-      }
-    };
-
-    traverse(TREE_ROOT_ID);
-
-    return layout;
-  };
-
-  const getDescendants = (levelID: string): string[] => {
-    const tree = props.tree();
-    const level = tree[levelID];
-
-    if (!level) return [];
-
-    const descendants: string[] = [];
-
-    for (const childLevelID of level.levels) {
-      descendants.push(childLevelID);
-      descendants.push(...getDescendants(childLevelID));
-    }
-
-    for (const itemID of level.items) {
-      descendants.push(itemID);
-    }
-
-    return descendants;
+    return flattenTreeLayout({
+      tree: props.tree(),
+      expanded: expanded(),
+      rootID: TREE_ROOT_ID,
+      itemHeight: props.itemHeight ?? 28,
+      gap: props.gap ?? 2
+    });
   };
 
   const selection = createMemo<string[]>(() => {
-    const raw = rawSelection();
-
-    if (raw.length <= 1 || selectionMode() === "exact") return raw;
-
-    const levelMap = props.levelIDs?.() || {};
-    const selectedSet = new Set(raw);
-    const expandedSet = new Set(raw);
-
-    for (const id of raw) {
-      if (!levelMap[id]) continue;
-
-      const descendants = getDescendants(id);
-      const hasSelectedDescendant = descendants.some((d) => selectedSet.has(d));
-
-      if (hasSelectedDescendant) {
-        for (const d of descendants) {
-          expandedSet.add(d);
-        }
-      }
-    }
-
-    if (expandedSet.size === selectedSet.size) return raw;
-
-    const order = flattenedOrder();
-
-    return order.filter((id) => expandedSet.has(id));
+    return normalizeTreeSelection({
+      tree: props.tree(),
+      rawSelection: rawSelection(),
+      exact: selectionMode() === "exact",
+      levelIDs: props.levelIDs?.(),
+      visibleOrder: flattenedOrder()
+    });
   });
 
-  const isSelected = (id: string) => {
-    return selection().includes(id);
-  };
-  const isFocused = (id: string) => {
-    return focusedID() === id;
-  };
+  const isSelected = (id: string) => selection().includes(id);
+  const isFocused = (id: string) => focusedID() === id;
   const setSelection: Setter<string[]> = (value) => {
     setSelectionMode("normal");
 
@@ -328,9 +222,7 @@ const TreeProvider: ParentComponent<TreeProviderProps> = (props) => {
   );
 };
 
-const useTree = () => {
-  return useContext(TreeContext)!;
-};
+const useTree = () => useContext(TreeContext)!;
 
 export { TREE_ROOT_ID, TreeProvider, useTree };
 export type { TreeData, TreeMap, TreeContextType };

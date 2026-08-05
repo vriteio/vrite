@@ -1,4 +1,4 @@
-import { ParentComponent, onMount, onCleanup } from "solid-js";
+import { type ParentComponent, onMount, onCleanup } from "solid-js";
 import { useTree } from "./tree-context";
 import { createRef } from "@andesine/components";
 

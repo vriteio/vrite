@@ -1,7 +1,7 @@
-import { FormatMenu, BubbleMenuMode } from "./format";
+import { FormatMenu, type BubbleMenuMode } from "./format";
 import { LinkMenu } from "./link";
-import { Component, createEffect, createSignal, Match, on, Switch } from "solid-js";
-import { Editor } from "@tiptap/core";
+import { type Component, createEffect, createSignal, Match, on, Switch } from "solid-js";
+import { type Editor } from "@tiptap/core";
 
 interface BubbleMenuProps {
   editor: Editor;

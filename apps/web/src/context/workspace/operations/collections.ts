@@ -1,117 +1,19 @@
-import { Collection, client } from "#web/lib/client";
-import { fromUUID, generateUUID } from "#web/lib/id";
-import { ROOT_COLLECTION_NAME, WorkspaceContentOperationsInput } from "./types";
-import { untrack } from "solid-js";
+import { type Collection, client } from "#web/lib/api";
+import { fromUUID, generateUUID } from "#web/lib/primitives";
+import { type WorkspaceContentOperationsInput } from "./types";
+import { createCollectionQueries } from "./collection-queries";
 
 const createCollectionOperations = (input: WorkspaceContentOperationsInput) => {
   const { collectionsCollection, entriesCollection } = input;
   const pendingCreates = new Map<string, Promise<unknown>>();
-  const isRootCollection = (collection: Collection) => {
-    return collection.name === ROOT_COLLECTION_NAME && collection.ancestors.length === 0;
-  };
-  const getRootCollection = () => {
-    return untrack(() =>
-      collectionsCollection().findOne({ name: ROOT_COLLECTION_NAME, ancestors: { $size: 0 } })
-    );
-  };
-  const getVisibleCollections = () => {
-    return collectionsCollection()
-      .find()
-      .fetch()
-      .filter((collection) => !isRootCollection(collection));
-  };
-  const sortCollections = (collections: Collection[], orderedIDs?: string[]) => {
-    const fallbackCompare = (a: Collection, b: Collection) => {
-      return a.name.localeCompare(b.name) || a.id.localeCompare(b.id);
-    };
-
-    if (!orderedIDs?.length) {
-      return [...collections].sort(fallbackCompare);
-    }
-
-    const orderMap = new Map(orderedIDs.map((id, index) => [id, index]));
-
-    return [...collections].sort((a, b) => {
-      const aIndex = orderMap.get(a.id);
-      const bIndex = orderMap.get(b.id);
-
-      if (aIndex !== undefined && bIndex !== undefined) return aIndex - bIndex;
-      if (aIndex !== undefined) return -1;
-      if (bIndex !== undefined) return 1;
-
-      return fallbackCompare(a, b);
-    });
-  };
-  const getCollectionParentID = (collection: Collection) => {
-    return collection.ancestors.at(-1) ?? null;
-  };
-  const getCollectionsInParent = (parentID: string | null) => {
-    const childCollections = getVisibleCollections().filter((collection) => {
-      return getCollectionParentID(collection) === parentID;
-    });
-    const parent = parentID ? getCollection(parentID) : getRootCollection();
-
-    return sortCollections(childCollections, parent?.descendants);
-  };
-  const getCollectionDropIndex = (input: {
-    parentID: string | null;
-    targetCollectionID?: string;
-    edge?: "top" | "bottom" | null;
-    collectionIDs: string[];
-  }) => {
-    const movingCollectionIDs = new Set(input.collectionIDs);
-    const siblings = getCollectionsInParent(input.parentID).filter((collection) => {
-      return !movingCollectionIDs.has(collection.id);
-    });
-    const targetIndex = input.targetCollectionID
-      ? siblings.findIndex((collection) => collection.id === input.targetCollectionID)
-      : -1;
-
-    if (targetIndex === -1) {
-      return siblings.length;
-    }
-
-    return input.edge === "bottom" ? targetIndex + 1 : targetIndex;
-  };
-  const getCollectionIDs = () => {
-    return Object.fromEntries(getVisibleCollections().map((collection) => [collection.id, true]));
-  };
-  const getCollection = (id: string) => {
-    const collection = untrack(() => collectionsCollection().findOne({ id }));
-
-    return collection && !isRootCollection(collection) ? collection : undefined;
-  };
-  const getCollectionDescendantIDs = (collectionIDs: string[]) => {
-    const selectedIDs = new Set(collectionIDs);
-    const visibleCollections = getVisibleCollections();
-    let changed = true;
-
-    while (changed) {
-      changed = false;
-
-      for (const collection of visibleCollections) {
-        if (selectedIDs.has(collection.id)) continue;
-
-        if (collection.ancestors.some((ancestorID) => selectedIDs.has(ancestorID))) {
-          selectedIDs.add(collection.id);
-          changed = true;
-        }
-      }
-    }
-
-    return visibleCollections
-      .filter((collection) => selectedIDs.has(collection.id))
-      .map((collection) => collection.id);
-  };
-  const getEntryIDsInCollections = (collectionIDs: string[]) => {
-    const collectionIDSet = new Set(collectionIDs);
-
-    return entriesCollection()
-      .find()
-      .fetch()
-      .filter((entry) => entry.collectionID && collectionIDSet.has(entry.collectionID))
-      .map((entry) => entry.id);
-  };
+  const queries = createCollectionQueries(input);
+  const {
+    getCollection,
+    getCollectionDescendantIDs,
+    getEntryIDsInCollections,
+    getRootCollection,
+    getVisibleCollections
+  } = queries;
   const applyCollectionCreate = (collection: Collection) => {
     const collections = collectionsCollection();
     const current = collections.findOne({ id: collection.id });
@@ -382,17 +284,7 @@ const createCollectionOperations = (input: WorkspaceContentOperationsInput) => {
   };
 
   return {
-    isRootCollection,
-    getRootCollection,
-    getVisibleCollections,
-    sortCollections,
-    getCollectionParentID,
-    getCollectionsInParent,
-    getCollectionDropIndex,
-    getCollectionIDs,
-    getCollection,
-    getCollectionDescendantIDs,
-    getEntryIDsInCollections,
+    ...queries,
     applyCollectionCreate,
     applyCollectionUpdate,
     applyCollectionDelete,

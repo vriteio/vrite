@@ -1,13 +1,13 @@
 import clsx from "clsx";
 import {
-  Component,
+  type Component,
   createSignal,
-  JSX,
+  type JSX,
   createContext,
-  ParentComponent,
+  type ParentComponent,
   useContext,
-  Accessor,
-  Setter,
+  type Accessor,
+  type Setter,
   createEffect,
   on,
   onCleanup
@@ -78,21 +78,19 @@ const Tooltip: Component<TooltipProps> = (props) => {
       unmountOnExit
     >
       <BaseTooltip.Trigger
-        asChild={(triggerProps) => {
-          return (
-            <div
-              {...triggerProps({
-                class: clsx(
-                  `:base: relative flex flex-col items-center justify-center`,
-                  props.wrapperClass
-                ),
-                style: props.wrapperStyle
-              })}
-            >
-              {props.children}
-            </div>
-          );
-        }}
+        asChild={(triggerProps) => (
+          <div
+            {...triggerProps({
+              class: clsx(
+                `:base: relative flex flex-col items-center justify-center`,
+                props.wrapperClass
+              ),
+              style: props.wrapperStyle
+            })}
+          >
+            {props.children}
+          </div>
+        )}
       />
       <Portal>
         <BaseTooltip.Positioner class="flex justify-center items-center">

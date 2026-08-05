@@ -1,13 +1,22 @@
-import { SuggestionKeyDownProps, SuggestionProps } from "@tiptap/suggestion";
-import { Component, createEffect, createSignal, For, on, onCleanup, onMount, Show } from "solid-js";
-import { Editor, Range } from "@tiptap/core";
+import { type SuggestionKeyDownProps, type SuggestionProps } from "@tiptap/suggestion";
+import {
+  type Component,
+  createEffect,
+  createSignal,
+  For,
+  on,
+  onCleanup,
+  onMount,
+  Show
+} from "solid-js";
+import { type Editor, type Range } from "@tiptap/core";
 import clsx from "clsx";
 import {
   Button,
   Card,
   createRef,
   Fragment,
-  Ref,
+  type Ref,
   ScrollShadow,
   Shortcut,
   Tooltip,
@@ -22,13 +31,13 @@ interface SlashMenuItem {
   markdown?: string;
   shortcut?: string;
   ref: Ref<HTMLElement | null>;
-  command(params: { editor: Editor; range: Range }): any | Promise<any>;
+  command(params: { editor: Editor; range: Range }): boolean | Promise<boolean>;
 }
 interface SlashMenuState {
   readonly items: SlashMenuItem[];
   readonly range: { from: number; to: number };
   readonly query: string;
-  readonly editor: any;
+  readonly editor: Editor;
   readonly clientRect: SuggestionProps<SlashMenuItem>["clientRect"];
   readonly decorationNode: SuggestionProps<SlashMenuItem>["decorationNode"];
   readonly text: string;
@@ -126,7 +135,7 @@ const SlashMenu: Component<SlashMenuProps> = (props) => {
   };
 
   onMount(() => {
-    return Promise.resolve().then(() => {
+    void new Promise(() => {
       if (!props.state.onKeyDown) {
         props.state.setOnKeyDown(onKeyDown);
       }
@@ -179,81 +188,78 @@ const SlashMenu: Component<SlashMenuProps> = (props) => {
             </Button>
           }
         >
-          {(menuItem, index) => {
-            return (
-              <>
-                <Show when={menuItem.group !== props.state.items[index() - 1]?.group}>
-                  <div class="px-2 font-medium text-gray-400 text-xs h-6 flex items-center justify-start">
-                    {menuItem.group}
-                  </div>
-                </Show>
-                <Dynamic
-                  component={menuItem.shortcut ? Tooltip : Fragment}
-                  {...(menuItem.shortcut && {
-                    wrapperClass:
-                      props.state.items.length > 11 ? "w-[calc(100%-0.25rem)]" : "w-full",
-                    enabled: !blockHoverSelect(),
-                    content: <Shortcut shortcut={menuItem.shortcut || ""} />,
-                    fixed: true,
-                    side: "right"
-                  })}
-                >
-                  <Button
-                    ref={menuItem.ref[1]}
-                    hover="none"
-                    size="small"
-                    onPointerDown={(event) => {
-                      if (event.button !== 0) return;
+          {(menuItem, index) => (
+            <>
+              <Show when={menuItem.group !== props.state.items[index() - 1]?.group}>
+                <div class="px-2 font-medium text-gray-400 text-xs h-6 flex items-center justify-start">
+                  {menuItem.group}
+                </div>
+              </Show>
+              <Dynamic
+                component={menuItem.shortcut ? Tooltip : Fragment}
+                {...(menuItem.shortcut && {
+                  wrapperClass: props.state.items.length > 11 ? "w-[calc(100%-0.25rem)]" : "w-full",
+                  enabled: !blockHoverSelect(),
+                  content: <Shortcut shortcut={menuItem.shortcut || ""} />,
+                  fixed: true,
+                  side: "right"
+                })}
+              >
+                <Button
+                  ref={menuItem.ref[1]}
+                  hover="none"
+                  size="small"
+                  onPointerDown={(event) => {
+                    if (event.button !== 0) return;
 
-                      event.preventDefault();
-                      event.stopPropagation();
+                    event.preventDefault();
+                    event.stopPropagation();
+                    selectItem(index());
+                  }}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    if (event.detail === 0) {
                       selectItem(index());
-                    }}
-                    onClick={(event) => {
-                      event.preventDefault();
-                      event.stopPropagation();
-
-                      if (event.detail === 0) {
-                        selectItem(index());
-                      }
-                    }}
-                    onPointerMove={() => {
-                      setBlockHoverSelect(false);
-                    }}
-                    onPointerEnter={() => {
-                      if (!blockHoverSelect()) {
-                        setSelectedIndex(index());
-                      }
-                    }}
-                    variant="text"
-                    class={clsx(
-                      "justify-start flex items-center pl-1 pr-0.5 py-0.5",
-                      menuItem.shortcut || props.state.items.length <= 10
-                        ? "w-full"
-                        : "w-[calc(100%-0.25rem)]",
-                      selectedIndex() === index()
-                        ? "bg-gradient-to-r from-gray-500/10 to-transparent"
-                        : ""
-                    )}
-                  >
-                    <div class="flex justify-center items-center h-6 w-6">
-                      <div
-                        class={clsx(
-                          "h-5 w-5",
-                          selectedIndex() === index() ? "bg-gray-500" : "bg-gray-400",
-                          menuItem.icon
-                        )}
-                      />
-                    </div>
-                    <div class="flex flex-col pl-1 flex-1 text-left">
-                      <span>{menuItem.label}</span>
-                    </div>
-                    <span class="font-mono text-gray-400 text-xs pr-2">{menuItem.markdown}</span>
-                  </Button>
-                </Dynamic>
-              </>
-            );
-          }}
+                    }
+                  }}
+                  onPointerMove={() => {
+                    setBlockHoverSelect(false);
+                  }}
+                  onPointerEnter={() => {
+                    if (!blockHoverSelect()) {
+                      setSelectedIndex(index());
+                    }
+                  }}
+                  variant="text"
+                  class={clsx(
+                    "justify-start flex items-center pl-1 pr-0.5 py-0.5",
+                    menuItem.shortcut || props.state.items.length <= 10
+                      ? "w-full"
+                      : "w-[calc(100%-0.25rem)]",
+                    selectedIndex() === index()
+                      ? "bg-gradient-to-r from-gray-500/10 to-transparent"
+                      : ""
+                  )}
+                >
+                  <div class="flex justify-center items-center h-6 w-6">
+                    <div
+                      class={clsx(
+                        "h-5 w-5",
+                        selectedIndex() === index() ? "bg-gray-500" : "bg-gray-400",
+                        menuItem.icon
+                      )}
+                    />
+                  </div>
+                  <div class="flex flex-col pl-1 flex-1 text-left">
+                    <span>{menuItem.label}</span>
+                  </div>
+                  <span class="font-mono text-gray-400 text-xs pr-2">{menuItem.markdown}</span>
+                </Button>
+              </Dynamic>
+            </>
+          )}
         </For>
       </div>
     </Card>

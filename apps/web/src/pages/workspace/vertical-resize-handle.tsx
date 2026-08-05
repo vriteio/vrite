@@ -1,5 +1,12 @@
 import clsx from "clsx";
-import { Component, mergeProps, createSignal, onMount, onCleanup, createEffect } from "solid-js";
+import {
+  type Component,
+  mergeProps,
+  createSignal,
+  onMount,
+  onCleanup,
+  createEffect
+} from "solid-js";
 
 interface VerticalResizeHandleProps {
   maxWidth?: number;

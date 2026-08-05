@@ -1,7 +1,7 @@
-import { Ref } from "@andesine/components";
-import { Editor } from "@tiptap/core";
+import { type Ref } from "@andesine/components";
+import { type Editor } from "@tiptap/core";
 import { nanoid } from "nanoid";
-import { createSignal, createEffect, onCleanup, Show, ParentComponent } from "solid-js";
+import { createSignal, createEffect, onCleanup, Show, type ParentComponent } from "solid-js";
 import { Portal } from "solid-js/web";
 
 interface BlockSelectionProps {

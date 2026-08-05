@@ -1,6 +1,6 @@
 import { Button, Card, IconButton, Overlay, Spinner } from "@andesine/components";
-import { Component, createEffect, createSignal, on, onCleanup, Show } from "solid-js";
-import { client } from "#web/lib/client";
+import { type Component, createEffect, createSignal, on, onCleanup, Show } from "solid-js";
+import { client } from "#web/lib/api";
 
 interface BillingProcessingDialogProps {
   onClose(): void;
@@ -118,7 +118,9 @@ const BillingProcessingDialog: Component<BillingProcessingDialogProps> = (props)
                 variant="outlined"
                 size="small"
                 class="flex-1"
-                onClick={() => void poll()}
+                onClick={() => {
+                  void poll();
+                }}
               >
                 Refresh status
               </Button>

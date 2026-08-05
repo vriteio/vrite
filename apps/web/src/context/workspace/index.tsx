@@ -3,16 +3,17 @@ import {
   createEffect,
   createMemo,
   onCleanup,
-  ParentComponent,
+  type ParentComponent,
   useContext
 } from "solid-js";
 import { createAsync, query, revalidate, useParams } from "@solidjs/router";
-import { client, authClient, type Permission, type WorkspaceEvent } from "#web/lib/client";
-import { validateWorkspaceID } from "#web/lib/validate";
+import { client, authClient, type Permission, type WorkspaceEvent } from "#web/lib/api";
+import { validateWorkspaceID } from "#web/lib/validation";
 import { useWorkspaceContent } from "./content";
 import { createMutation } from "@tanstack/solid-query";
-import { toUserID } from "#web/lib/id";
-import { hasPermission as hasGrantedPermission } from "#web/lib/permissions";
+import { toUserID } from "#web/lib/primitives";
+import { hasPermission as hasGrantedPermission } from "#web/lib/policy";
+import { isWorkspaceEvent } from "#web/lib/validation";
 import { clearPersistenceData } from "./persistence";
 
 interface WorkspaceInfo {
@@ -63,9 +64,7 @@ const listSessionsQuery = query(async () => {
     })
   ) as SessionInfo[];
 }, "sessions");
-const listWorkspacesQuery = query(() => {
-  return client.workspaces.list();
-}, "workspaces");
+const listWorkspacesQuery = query(() => client.workspaces.list(), "workspaces");
 const WorkspaceContext = createContext<WorkspaceContextValue>();
 const WorkspaceProvider: ParentComponent = (props) => {
   const params = useParams<{ workspaceID: string }>();
@@ -138,7 +137,7 @@ const WorkspaceProvider: ParentComponent = (props) => {
 
     if (workspaceList === undefined) return;
 
-    clearPersistenceData({ persist: workspaceList.map(({ id }) => id) });
+    void clearPersistenceData({ persist: workspaceList.map(({ id }) => id) });
 
     if (
       typeof window === "undefined" ||
@@ -148,7 +147,7 @@ const WorkspaceProvider: ParentComponent = (props) => {
       return;
     }
 
-    content.disposeWorkspaceContent(currentWorkspaceID).finally(() => {
+    void content.disposeWorkspaceContent(currentWorkspaceID).finally(() => {
       const fallbackWorkspace = workspaceList[0];
 
       window.location.replace(fallbackWorkspace ? `/${fallbackWorkspace.id}/` : "/new-workspace");
@@ -192,6 +191,8 @@ const WorkspaceProvider: ParentComponent = (props) => {
               if (abortController.signal.aborted || workspaceID() !== currentWorkspaceID) {
                 break;
               }
+
+              if (!isWorkspaceEvent(event)) continue;
 
               if (event.action.startsWith("entry:") || event.action.startsWith("collection:")) {
                 content.applyWorkspaceEvent(currentWorkspaceID, event);
@@ -281,9 +282,7 @@ const WorkspaceProvider: ParentComponent = (props) => {
   );
 };
 
-const useWorkspace = () => {
-  return useContext(WorkspaceContext)!;
-};
+const useWorkspace = () => useContext(WorkspaceContext)!;
 
 export { WorkspaceProvider, useWorkspace };
 export type { WorkspaceInfo, SessionInfo };

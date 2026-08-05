@@ -1,5 +1,5 @@
 import { Extension } from "@tiptap/core";
-import { NodeType, Node as ProsemirrorNode } from "@tiptap/pm/model";
+import { type NodeType, type Node as ProsemirrorNode } from "@tiptap/pm/model";
 import { PluginKey, Plugin } from "@tiptap/pm/state";
 
 const nodeEqualsType = (node: ProsemirrorNode, types: NodeType | NodeType[]): boolean => {
@@ -43,9 +43,7 @@ const TrailingNode = Extension.create<TrailingNodeOptions>({
           return tr.insert(endPosition, type.createAndFill()!);
         },
         state: {
-          init: () => {
-            return false;
-          },
+          init: () => false,
           apply: (tr, value) => {
             if (!tr.docChanged || tr.getMeta("addToHistory") === false) {
               return value;

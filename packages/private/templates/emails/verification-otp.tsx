@@ -126,7 +126,7 @@ const VerificationOTP: React.FC<VerificationOTPProps> = ({
   );
 };
 
-// @ts-ignore
+// @ts-expect-error: React Email reads PreviewProps metadata that is absent from React.FC.
 VerificationOTP.PreviewProps = {
   code: "123456",
   link: `${PUBLIC_APP_URL}/auth/email?token=example-token`,

@@ -1,6 +1,6 @@
-import { authClient } from "#web/lib/client";
-import { DropdownArea, DropdownMenu, MenuItem } from "@andesine/components";
-import { Component, createMemo, createSignal, JSX } from "solid-js";
+import { authClient } from "#web/lib/api";
+import { DropdownArea, DropdownMenu, type MenuItem } from "@andesine/components";
+import { type Component, createMemo, createSignal, type JSX } from "solid-js";
 import { useNavigate } from "@solidjs/router";
 import { useWorkspace } from "#web/context/workspace";
 import { clearPersistenceData } from "#web/context/workspace/persistence";
@@ -98,7 +98,7 @@ const ProfileMenu: Component<ProfileMenuProps> = (props) => {
               icon: "i-lucide:hexagon",
               selected: ws.id === currentWorkspace()?.id,
               onClick() {
-                switchWorkspace(ws.id);
+                return switchWorkspace(ws.id);
               }
             }))
           ] as unknown as Array<MenuItem | (() => JSX.Element)>;
@@ -124,7 +124,7 @@ const ProfileMenu: Component<ProfileMenuProps> = (props) => {
         icon: "i-lucide:hexagon",
         selected: ws.id === currentWorkspace()?.id,
         onClick() {
-          switchWorkspace(ws.id);
+          return switchWorkspace(ws.id);
         }
       }));
 

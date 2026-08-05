@@ -1,15 +1,15 @@
 import { Button, Fragment, IconButton, Input, ToggleGroup, Tooltip } from "@andesine/components";
-import { createAsync, query, revalidate, useNavigate, useParams } from "@solidjs/router";
-import { createMutation } from "@tanstack/solid-query";
-import { Component, createEffect, createMemo, createSignal, For, Show } from "solid-js";
+import { createAsync, useNavigate, useParams } from "@solidjs/router";
+import { type Component, createEffect, createMemo, createSignal, For, Show } from "solid-js";
 import { Dynamic } from "solid-js/web";
 
 import { useNotify } from "#web/context/notifications";
-import { client, type Permission } from "#web/lib/client";
+import { type Permission } from "#web/lib/api";
 import { Setting } from "../setting";
 import { SettingsSection } from "../settings-section";
+import { rolesQuery, useRoleMutations } from "#web/lib/data";
+import { type AccessLevel, createPermissionAccessMapper } from "#web/lib/permissions";
 
-type AccessLevel = "default" | "read" | "write";
 type Resource = "api_keys" | "billing" | "content" | "workspace";
 type ResourceAccess = Record<Resource, AccessLevel>;
 
@@ -42,38 +42,17 @@ const resources: Array<{
     defaultView: true
   }
 ];
-const emptyAccess = (): ResourceAccess => ({
-  api_keys: "default",
-  billing: "default",
-  content: "default",
-  workspace: "default"
+const { accessToPermissions, emptyAccess, permissionsToAccess } = createPermissionAccessMapper<
+  Resource,
+  Permission
+>({
+  resources: [
+    { id: "api_keys", read: "read:api_keys", write: "api_keys" },
+    { id: "billing", read: "read:billing", write: "billing" },
+    { id: "content", write: "content" },
+    { id: "workspace", write: "workspace" }
+  ]
 });
-const permissionsToAccess = (permissions: Permission[]): ResourceAccess => {
-  const access = emptyAccess();
-
-  for (const permission of permissions) {
-    const readOnly = permission.startsWith("read:");
-    const resource = (readOnly ? permission.slice(5) : permission) as Resource;
-
-    if (!(resource in access)) continue;
-    if (!readOnly || access[resource] !== "write") {
-      access[resource] = readOnly ? "read" : "write";
-    }
-  }
-
-  return access;
-};
-const accessToPermissions = (access: ResourceAccess): Permission[] => {
-  return (Object.keys(access) as Resource[]).flatMap((resource) => {
-    if (access[resource] === "write") return [resource as Permission];
-    if (access[resource] === "read") return [`read:${resource}` as Permission];
-
-    return [];
-  });
-};
-
-const membershipsQuery = query(() => client.memberships.list(), "memberships");
-const rolesQuery = query(() => client.roles.list(), "roles");
 
 const RoleSettingsPage: Component = () => {
   const notify = useNotify();
@@ -98,6 +77,10 @@ const RoleSettingsPage: Component = () => {
   });
   const [roleName, setRoleName] = createSignal("");
   const [roleNameServerError, setRoleNameServerError] = createSignal("");
+  const { createRoleMutation, updateRoleMutation } = useRoleMutations({
+    navigateToPeople,
+    setDuplicateNameError: setRoleNameServerError
+  });
   const [resourceAccess, setResourceAccess] = createSignal<ResourceAccess>(emptyAccess());
   const formUnavailable = createMemo(() => {
     const role = currentRole();
@@ -123,55 +106,6 @@ const RoleSettingsPage: Component = () => {
 
     return "";
   });
-  const createRoleMutation = createMutation(() => ({
-    mutationFn: (input: { name: string; permissions: Permission[] }) => client.roles.create(input),
-    onSuccess: async () => {
-      await revalidate(rolesQuery.key);
-      notify({ type: "success", text: "Role created" });
-      navigateToPeople();
-    },
-    onError: (error) => {
-      const duplicateName =
-        error &&
-        typeof error === "object" &&
-        "code" in error &&
-        error.code === "ROLE_NAME_DUPLICATE";
-
-      if (duplicateName) {
-        setRoleNameServerError("A role with this name already exists");
-      }
-
-      console.error(error);
-      notify({
-        type: "error",
-        text: duplicateName ? "A role with this name already exists" : "Failed to create role"
-      });
-    }
-  }));
-  const updateRoleMutation = createMutation(() => ({
-    mutationFn: (input: { id: string; name: string; permissions: Permission[] }) => {
-      return client.roles.update(input);
-    },
-    onSuccess: async () => {
-      await revalidate([rolesQuery.key, membershipsQuery.key]);
-      notify({ type: "success", text: "Role updated" });
-      navigateToPeople();
-    },
-    onError: (error) => {
-      console.error(error);
-      const duplicateName =
-        error &&
-        typeof error === "object" &&
-        "code" in error &&
-        error.code === "ROLE_NAME_DUPLICATE";
-
-      if (duplicateName) setRoleNameServerError("A role with this name already exists");
-      notify({
-        type: "error",
-        text: duplicateName ? "A role with this name already exists" : "Failed to update role"
-      });
-    }
-  }));
   const mutationPending = () => createRoleMutation.isPending || updateRoleMutation.isPending;
 
   createEffect(() => {

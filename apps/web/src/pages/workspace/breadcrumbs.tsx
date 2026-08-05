@@ -1,7 +1,7 @@
 import { useParams } from "@solidjs/router";
-import { Component, createMemo, For, Show } from "solid-js";
+import { type Component, createMemo, For, Show } from "solid-js";
 import { useWorkspace } from "#web/context/workspace";
-import { useRouteData } from "#web/lib/routes";
+import { useRouteData } from "#web/lib/navigation";
 import { Button, IconButton, Skeleton } from "@andesine/components";
 
 const Breadcrumbs: Component = () => {

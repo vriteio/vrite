@@ -1,7 +1,7 @@
-import { Entry, client } from "#web/lib/client";
-import { generateUUID, toEntryID } from "#web/lib/id";
+import { type Entry, client } from "#web/lib/api";
+import { generateUUID, toEntryID } from "#web/lib/primitives";
 import { LexoRank } from "lexorank";
-import { WorkspaceContentOperationsInput } from "./types";
+import { type WorkspaceContentOperationsInput } from "./types";
 import { untrack } from "solid-js";
 
 const createEntryOperations = (input: WorkspaceContentOperationsInput) => {

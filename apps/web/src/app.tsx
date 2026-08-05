@@ -2,15 +2,14 @@ import { Router, createAsync, query, redirect, revalidate } from "@solidjs/route
 import { MetaProvider, Title } from "@solidjs/meta";
 import { TooltipProvider, ShortcutsProvider, IconButton } from "@andesine/components";
 import { QueryClient, QueryClientProvider } from "@tanstack/solid-query";
-import { ErrorBoundary, ParentComponent, Suspense, createSignal } from "solid-js";
+import { ErrorBoundary, type ParentComponent, Suspense, createSignal } from "solid-js";
 import { NotificationsProvider } from "./context/notifications";
 import { ClipboardProvider } from "./context/clipboard";
 import { LayoutProvider } from "./context/layout";
-import { authClient } from "./lib/client";
+import { authClient } from "./lib/api";
 import { getRequestEvent } from "solid-js/web";
-import { appendRedirectTo, normalizeRedirectTo } from "./lib/redirects";
-import { validateWorkspaceID } from "./lib/validate";
-import { routes } from "./lib/routes";
+import { appendRedirectTo, normalizeRedirectTo, routes } from "./lib/navigation";
+import { validateWorkspaceID } from "./lib/validation";
 
 const rootRedirectQuery = query(async () => {
   const event = getRequestEvent();
@@ -139,12 +138,10 @@ interface AppProps {
   url?: string;
 }
 
-const App = (props: AppProps) => {
-  return (
-    <Router url={props.url} root={RootLayout}>
-      {routes}
-    </Router>
-  );
-};
+const App = (props: AppProps) => (
+  <Router url={props.url} root={RootLayout}>
+    {routes}
+  </Router>
+);
 
 export default App;

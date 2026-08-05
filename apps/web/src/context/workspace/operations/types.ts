@@ -1,6 +1,6 @@
-import { Collection as LocalDBCollection } from "@signaldb/core";
-import { Collection, Entry } from "#web/lib/client";
-import { Accessor } from "solid-js";
+import { type Collection as LocalDBCollection } from "@signaldb/core";
+import { type Collection, type Entry } from "#web/lib/api";
+import { type Accessor } from "solid-js";
 
 interface WorkspaceContentOperationsInput {
   entriesCollection: Accessor<LocalDBCollection<Entry>>;

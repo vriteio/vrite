@@ -1,8 +1,8 @@
-import { Component, createEffect, onCleanup } from "solid-js";
+import { type Component, createEffect, onCleanup } from "solid-js";
 import { createSlashMenuPlugin, slashMenuPluginKey } from "./plugin";
-import { SlashMenuItem } from "./component";
+import { type SlashMenuItem } from "./component";
 import { createRef } from "@andesine/components";
-import { Editor } from "@tiptap/core";
+import { type Editor } from "@tiptap/core";
 
 interface SlashMenuProps {
   editor: Editor;

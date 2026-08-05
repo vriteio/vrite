@@ -1,4 +1,4 @@
-import { ParentComponent } from "solid-js";
+import { type ParentComponent } from "solid-js";
 
 const Fragment: ParentComponent<Record<string, unknown>> = (props) => <>{props.children}</>;
 

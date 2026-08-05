@@ -5,8 +5,8 @@ import {
   defaultComputePositionConfig
 } from "@tiptap/extension-drag-handle";
 import { IconButton } from "@andesine/components";
-import { Editor } from "@tiptap/core";
-import { Component, createSignal, onCleanup, onMount, Show } from "solid-js";
+import { type Editor } from "@tiptap/core";
+import { type Component, createSignal, onCleanup, onMount, Show } from "solid-js";
 
 interface DragHandleMenuProps {
   editor: Editor;

@@ -27,17 +27,15 @@ const TreeSelection = () => {
 
   return (
     <For each={selectionBlocks()}>
-      {(selectionBlock) => {
-        return (
-          <div
-            class="absolute bg-gradient-to-r opacity-10 from-secondary via-primary to-transparent w-full left-0 -z-10 rounded-lg"
-            style={{
-              top: `${selectionBlock.top}px`,
-              height: `${selectionBlock.height}px`
-            }}
-          />
-        );
-      }}
+      {(selectionBlock) => (
+        <div
+          class="absolute bg-gradient-to-r opacity-10 from-secondary via-primary to-transparent w-full left-0 -z-10 rounded-lg"
+          style={{
+            top: `${selectionBlock.top}px`,
+            height: `${selectionBlock.height}px`
+          }}
+        />
+      )}
     </For>
   );
 };

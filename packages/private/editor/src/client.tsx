@@ -22,9 +22,8 @@ import {
 } from "./schema";
 import { BubbleMenu } from "./ui/menus/bubble-menu";
 import { BlockSelection as BlockSelectionMenu } from "./ui/block-selection";
-import { HocuspocusProvider, HocuspocusProviderWebsocket } from "@hocuspocus/provider";
 import {
-  Component,
+  type Component,
   createEffect,
   createMemo,
   createSignal,
@@ -53,130 +52,20 @@ import {
 import { BubbleMenuWrapper } from "./ui/bubble-menu-wrapper";
 import { DragHandleMenu } from "./ui/drag-handle";
 
-type EditorProvider = HocuspocusProvider;
-type EditorCleanup = (() => void) | void;
-interface EditorProviderSetupResult {
-  cleanup?(): void;
-  renderImmediately: boolean;
-}
-type EditorProviderSetup = (
-  provider: EditorProvider
-) => EditorProviderSetupResult | Promise<EditorProviderSetupResult>;
-
-interface EditorProps {
-  url: string;
-  doc: string;
-  editable?: boolean;
-  providerAttempt?: number;
-  notify(type: "success" | "error", text: string): void;
-  collaborationUser?: {
-    name: string;
-    color: string;
-  };
-  beforeProviderAttach?: EditorProviderSetup;
-  onProvider?(provider: EditorProvider): EditorCleanup;
-  onProviderSetupError?(error: unknown, provider: EditorProvider): void;
-  onEditor?(editor: Editor): EditorCleanup;
-  onTitleChange?(title: string): void;
-}
+import type { EditorProps } from "./client-types";
+import { useEditorProvider } from "./use-editor-provider";
 
 const ClientEditor: Component<EditorProps> = (props) => {
   const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
   const [editorContentElement, setEditorContentElement] = createSignal<HTMLElement | null>(null);
-  const [provider, setProvider] = createSignal<EditorProvider | null>(null);
-
-  createEffect(() => {
-    const socketUrl = props.url;
-    const documentID = props.doc;
-    void props.providerAttempt;
-
-    const websocketProvider = new HocuspocusProviderWebsocket({
-      url: socketUrl
-    });
-    const nextProvider = new HocuspocusProvider({
-      websocketProvider,
-      name: documentID,
-      url: socketUrl
-    });
-    let isDisposed = false;
-    let beforeAttachCleanup: EditorCleanup = undefined;
-    let providerCleanup: EditorCleanup = undefined;
-    let providerRevealed = false;
-    let remoteAuthenticated = false;
-    let remoteSynced = false;
-
-    const revealProvider = () => {
-      if (isDisposed || providerRevealed) return;
-
-      providerRevealed = true;
-      setProvider(nextProvider);
-    };
-    const revealRemoteProvider = () => {
-      if (remoteAuthenticated && remoteSynced) revealProvider();
-    };
-    const handleAuthenticated = () => {
-      remoteAuthenticated = true;
-      revealRemoteProvider();
-    };
-    const handleSynced = (event: { state: boolean }) => {
-      remoteSynced = event.state;
-      revealRemoteProvider();
-    };
-
-    nextProvider.on("authenticated", handleAuthenticated);
-    nextProvider.on("synced", handleSynced);
-
-    (async () => {
-      try {
-        const beforeProviderAttach = props.beforeProviderAttach;
-        const setupResult = beforeProviderAttach
-          ? await untrack(() => beforeProviderAttach(nextProvider))
-          : { renderImmediately: true };
-
-        beforeAttachCleanup = setupResult.cleanup;
-
-        if (isDisposed) {
-          beforeAttachCleanup?.();
-
-          return;
-        }
-
-        providerCleanup = untrack(() => props.onProvider?.(nextProvider));
-
-        if (setupResult.renderImmediately) revealProvider();
-
-        nextProvider.attach();
-      } catch (error) {
-        untrack(() => props.onProviderSetupError?.(error, nextProvider));
-        if (!props.onProviderSetupError) {
-          props.notify("error", "Failed to prepare editor data.");
-        }
-        beforeAttachCleanup?.();
-        providerCleanup?.();
-        nextProvider.destroy();
-        websocketProvider.destroy();
-
-        return;
-      }
-
-      if (isDisposed) {
-        beforeAttachCleanup?.();
-        providerCleanup?.();
-        nextProvider.destroy();
-        websocketProvider.destroy();
-      }
-    })();
-
-    onCleanup(() => {
-      isDisposed = true;
-      setProvider((currentProvider) => (currentProvider === nextProvider ? null : currentProvider));
-      providerCleanup?.();
-      beforeAttachCleanup?.();
-      nextProvider.off("authenticated", handleAuthenticated);
-      nextProvider.off("synced", handleSynced);
-      nextProvider.destroy();
-      websocketProvider.destroy();
-    });
+  const provider = useEditorProvider({
+    url: () => props.url,
+    doc: () => props.doc,
+    attempt: () => props.providerAttempt,
+    beforeAttach: () => props.beforeProviderAttach,
+    onProvider: () => props.onProvider,
+    onError: () => props.onProviderSetupError,
+    notify: props.notify
   });
 
   const collaborationUser = () => {
@@ -355,4 +244,9 @@ const ClientEditor: Component<EditorProps> = (props) => {
 };
 
 export { ClientEditor };
-export type { EditorProps, EditorProvider, EditorProviderSetup, EditorProviderSetupResult };
+export type { EditorProps } from "./client-types";
+export type {
+  EditorProvider,
+  EditorProviderSetup,
+  EditorProviderSetupResult
+} from "./client-types";

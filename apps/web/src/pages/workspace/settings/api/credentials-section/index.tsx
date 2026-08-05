@@ -1,12 +1,12 @@
 import { Card, IconButton, Skeleton } from "@andesine/components";
 import { Tree, TREE_ROOT_ID, type TreeMap } from "#web/components/tree";
 import { useNotify } from "#web/context/notifications";
-import { client, Key, type KeyPermission } from "#web/lib/client";
-import { createAsync, query, revalidate, useNavigate, useParams } from "@solidjs/router";
+import { client, type Key, type KeyPermission } from "#web/lib/api";
+import { createAsync, revalidate, useNavigate, useParams } from "@solidjs/router";
 import { createMutation } from "@tanstack/solid-query";
 import {
   batch,
-  Component,
+  type Component,
   createMemo,
   createSignal,
   Show,
@@ -20,6 +20,7 @@ import { DeleteKeyDialog } from "./delete-key-dialog";
 import { RotateKeyDialog, type ExpirationOption } from "./rotate-key-dialog";
 import { NewKeyDialog } from "../../new-key-dialog";
 import { useWorkspace } from "#web/context/workspace";
+import { apiKeysQuery } from "#web/lib/data";
 
 interface APIKeyListProps {
   canManage: boolean;
@@ -27,8 +28,6 @@ interface APIKeyListProps {
   keysRefreshing?: boolean;
   refreshKeys(onRevalidate?: () => void): void;
 }
-
-const apiKeysQuery = query(() => client.keys.list(), "api-keys");
 
 const APIKeyList: Component<APIKeyListProps> = (props) => {
   const notify = useNotify();
@@ -107,7 +106,10 @@ const APIKeyList: Component<APIKeyListProps> = (props) => {
     return orderedKeys;
   });
   const keysTree = createMemo<TreeMap>(() => ({
-    [TREE_ROOT_ID]: { items: visibleKeys().map((key) => key.id), levels: [] }
+    [TREE_ROOT_ID]: {
+      items: visibleKeys().map((key) => key.id),
+      levels: []
+    }
   }));
 
   return (
@@ -192,9 +194,11 @@ const CredentialsSection: Component = () => {
   const keys = createAsync(() => apiKeysQuery(), { initialValue: [] });
   const [keysRefreshing, startKeysRefresh] = useTransition();
   const refreshKeys = (onRevalidate = () => {}) => {
-    startKeysRefresh(async () => {
-      await revalidate(apiKeysQuery.key);
-      onRevalidate();
+    void startKeysRefresh(() => {
+      void (async () => {
+        await revalidate(apiKeysQuery.key);
+        onRevalidate();
+      })();
     });
   };
 

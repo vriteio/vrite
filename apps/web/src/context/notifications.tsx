@@ -1,7 +1,7 @@
 import {
-  Component,
+  type Component,
   createSignal,
-  ParentComponent,
+  type ParentComponent,
   Show,
   useContext,
   createContext,
@@ -16,7 +16,7 @@ import { Card, Button, Spinner } from "@andesine/components";
 interface NotificationData {
   type: "success" | "error" | "info" | "loading";
   text: string;
-  promise?: Promise<any>;
+  promise?: Promise<unknown>;
 }
 interface NotificationProps extends NotificationData {
   onDismiss?(): void;
@@ -28,40 +28,35 @@ interface NotificationsContextData {
   notify(notification: NotificationData): void;
 }
 
-const Notification: Component<NotificationProps> = (props) => {
-  return (
-    <Card
-      color="contrast"
-      class="flex p-0 justify-center items-center w-full rounded-xl transition-shadow duration-250 shadow-lg"
-    >
-      <div class="flex w-full p-2 rounded-xl shadow-inner shadow-gray-200 shadow-opacity-60">
-        <Show
-          when={props.type !== "loading"}
-          fallback={<Spinner class="h-6 w-6" color="primary" />}
-        >
-          <div
-            class={clsx(
-              "h-6 w-6",
-              props.type === "success" && "text-green-500 i-lucide:circle-check",
-              props.type === "error" && "text-red-500 i-lucide:circle-alert",
-              props.type === "info" && "text-blue-500 i-lucide:info"
-            )}
-          />
-        </Show>
-        <span class="px-2 min-w-48 flex-1">{props.text}</span>
-        <Button
-          size="small"
-          variant="text"
-          text="soft"
-          onClick={() => props.onDismiss?.()}
-          class="py-0"
-        >
-          Close
-        </Button>
-      </div>
-    </Card>
-  );
-};
+const Notification: Component<NotificationProps> = (props) => (
+  <Card
+    color="contrast"
+    class="flex p-0 justify-center items-center w-full rounded-xl transition-shadow duration-250 shadow-lg"
+  >
+    <div class="flex w-full p-2 rounded-xl shadow-inner shadow-gray-200 shadow-opacity-60">
+      <Show when={props.type !== "loading"} fallback={<Spinner class="h-6 w-6" color="primary" />}>
+        <div
+          class={clsx(
+            "h-6 w-6",
+            props.type === "success" && "text-green-500 i-lucide:circle-check",
+            props.type === "error" && "text-red-500 i-lucide:circle-alert",
+            props.type === "info" && "text-blue-500 i-lucide:info"
+          )}
+        />
+      </Show>
+      <span class="px-2 min-w-48 flex-1">{props.text}</span>
+      <Button
+        size="small"
+        variant="text"
+        text="soft"
+        onClick={() => props.onDismiss?.()}
+        class="py-0"
+      >
+        Close
+      </Button>
+    </div>
+  </Card>
+);
 const NotificationsContext = createContext<NotificationsContextData>();
 const NotificationsProvider: ParentComponent = (props) => {
   const [notifications, setNotifications] = createSignal<ActiveNotification[]>([]);
@@ -202,39 +197,37 @@ const NotificationsProvider: ParentComponent = (props) => {
         }}
       >
         <For each={notifications()}>
-          {(notification, index) => {
-            return (
-              <div
-                ref={(element) => {
-                  notificationElements.set(notification.id, element);
-                  resizeObserver?.observe(element);
-                  onCleanup(() => {
-                    resizeObserver?.unobserve(element);
-                    notificationElements.delete(notification.id);
-                  });
-                }}
-                class="absolute bottom-0 left-0 w-full transition-all duration-200"
-                style={{
-                  "z-index": `${notifications().length - index()}`,
-                  "bottom": `${getBottomOffset(index())}px`,
-                  "opacity":
-                    enteringIds().has(notification.id) || dismissingIds().has(notification.id)
-                      ? "0"
-                      : expanded() || index() < 3
-                        ? "1"
-                        : "0",
-                  "transform": `${
-                    enteringIds().has(notification.id) || dismissingIds().has(notification.id)
-                      ? "translateX(1.5rem) "
-                      : ""
-                  }scale(${expanded() ? 1 : 1 - Math.min(index(), 2) * 0.04})`,
-                  "transform-origin": "bottom center"
-                }}
-              >
-                <Notification onDismiss={() => dismiss(notification.id)} {...notification} />
-              </div>
-            );
-          }}
+          {(notification, index) => (
+            <div
+              ref={(element) => {
+                notificationElements.set(notification.id, element);
+                resizeObserver?.observe(element);
+                onCleanup(() => {
+                  resizeObserver?.unobserve(element);
+                  notificationElements.delete(notification.id);
+                });
+              }}
+              class="absolute bottom-0 left-0 w-full transition-all duration-200"
+              style={{
+                "z-index": `${notifications().length - index()}`,
+                "bottom": `${getBottomOffset(index())}px`,
+                "opacity":
+                  enteringIds().has(notification.id) || dismissingIds().has(notification.id)
+                    ? "0"
+                    : expanded() || index() < 3
+                      ? "1"
+                      : "0",
+                "transform": `${
+                  enteringIds().has(notification.id) || dismissingIds().has(notification.id)
+                    ? "translateX(1.5rem) "
+                    : ""
+                }scale(${expanded() ? 1 : 1 - Math.min(index(), 2) * 0.04})`,
+                "transform-origin": "bottom center"
+              }}
+            >
+              <Notification onDismiss={() => dismiss(notification.id)} {...notification} />
+            </div>
+          )}
         </For>
       </div>
     </NotificationsContext.Provider>

@@ -1,7 +1,7 @@
 import clsx from "clsx";
-import { Component, For, createMemo, createSignal, onCleanup, useContext } from "solid-js";
-import { Editor } from "@tiptap/core";
-import { Card, createRef, IconButton, Shortcut, Tooltip } from "@andesine/components";
+import { type Component, For, createSignal, onCleanup, useContext } from "solid-js";
+import { type Editor } from "@tiptap/core";
+import { Card, IconButton, Shortcut, Tooltip } from "@andesine/components";
 import { BlockMenuContext } from "#editor/ui/menus/block-menu";
 
 type BubbleMenuMode = "format" | "link";

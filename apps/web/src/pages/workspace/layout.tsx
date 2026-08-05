@@ -1,12 +1,12 @@
 import { Card, useShortcuts } from "@andesine/components";
-import { RouteSectionProps, useNavigate, useParams, useSearchParams } from "@solidjs/router";
-import { Component, createEffect, onCleanup, Show, Suspense } from "solid-js";
+import { type RouteSectionProps, useNavigate, useParams, useSearchParams } from "@solidjs/router";
+import { type Component, createEffect, onCleanup, Show, Suspense } from "solid-js";
 import { useLayout } from "#web/context/layout";
 import { WorkspaceProvider } from "#web/context/workspace";
 import { Breadcrumbs } from "./breadcrumbs";
-import { Menu, MenuItem } from "./menu";
+import { Menu, type MenuItem } from "./menu";
 import { ProfileMenu } from "./profile-menu";
-import { PrimaryPanel, SidePanel, usePrimaryPanel } from "./side-panel";
+import { type PrimaryPanel, SidePanel, usePrimaryPanel } from "./side-panel";
 import { VerticalResizeHandle } from "./vertical-resize-handle";
 import { SnapshotErrorDialog } from "./snapshot-error-dialog";
 import { useConnectivitySignal } from "@solid-primitives/connectivity";

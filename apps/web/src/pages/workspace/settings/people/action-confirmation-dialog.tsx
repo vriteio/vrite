@@ -1,5 +1,5 @@
 import { Button, Card, createRef, IconButton, Overlay, ScrollShadow } from "@andesine/components";
-import { Component, For, JSX, Show } from "solid-js";
+import { type Component, For, type JSX, Show } from "solid-js";
 
 interface AffectedItem {
   detail?: string;

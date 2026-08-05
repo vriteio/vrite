@@ -7,18 +7,17 @@ import {
   Skeleton,
   Tooltip
 } from "@andesine/components";
-import { createAsync, query, revalidate, useNavigate, useParams } from "@solidjs/router";
+import { createAsync, revalidate, useNavigate, useParams } from "@solidjs/router";
 import { createMutation } from "@tanstack/solid-query";
-import { Component, createEffect, createMemo, createSignal, Suspense } from "solid-js";
+import { type Component, createEffect, createMemo, createSignal, Suspense } from "solid-js";
 import { Dynamic } from "solid-js/web";
 
 import { useNotify } from "#web/context/notifications";
-import { client } from "#web/lib/client";
+import { client } from "#web/lib/api";
 import { Setting } from "../setting";
 import { SettingsSection } from "../settings-section";
 import { NewInviteDialog } from "./new-invite-dialog";
-
-const rolesQuery = query(() => client.roles.list(), "roles");
+import { rolesQuery } from "#web/lib/data";
 
 const InviteSettingsPage: Component = () => {
   const notify = useNotify();

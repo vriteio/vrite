@@ -1,7 +1,7 @@
 import clsx from "clsx";
-import { Component, createSignal, onMount, Show } from "solid-js";
+import { type Component, createSignal, onMount, Show } from "solid-js";
 import { Card, IconButton, Input, Tooltip, createRef } from "@andesine/components";
-import { Editor } from "@tiptap/core";
+import { type Editor } from "@tiptap/core";
 import { validateURL } from "#editor/lib";
 
 const LinkMenu: Component<{

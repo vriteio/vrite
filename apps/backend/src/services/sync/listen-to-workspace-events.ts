@@ -36,8 +36,8 @@ const listenToWorkspaceEvents = (input: {
   auth: SessionData;
   signal?: AbortSignal;
   workspaceID: string;
-}) => {
-  return { events: createWorkspaceEventStream(input) };
-};
+}) => ({
+  events: createWorkspaceEventStream(input)
+});
 
 export { listenToWorkspaceEvents };

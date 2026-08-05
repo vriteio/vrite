@@ -2,7 +2,7 @@ import { useNotify } from "#web/context/notifications";
 import { useWorkspace } from "#web/context/workspace";
 import { Button, Card, IconButton, Overlay, Tooltip } from "@andesine/components";
 import { createMutation } from "@tanstack/solid-query";
-import { Component } from "solid-js";
+import { type Component } from "solid-js";
 
 const SnapshotErrorDialog: Component = () => {
   const notify = useNotify();

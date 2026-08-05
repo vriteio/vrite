@@ -1,17 +1,18 @@
 import { Card, IconButton, Skeleton } from "@andesine/components";
-import { createAsync, query, revalidate, useNavigate, useParams } from "@solidjs/router";
+import { createAsync, revalidate, useNavigate, useParams } from "@solidjs/router";
 import { createMutation } from "@tanstack/solid-query";
-import { Component, createMemo, createSignal, Show, Suspense, useTransition } from "solid-js";
+import { type Component, createMemo, createSignal, Show, Suspense, useTransition } from "solid-js";
 
 import { Tree, TREE_ROOT_ID, type TreeMap } from "#web/components/tree";
 import { useNotify } from "#web/context/notifications";
 import { useWorkspace } from "#web/context/workspace";
-import { settleBulkAction } from "#web/lib/bulk-action";
-import { client, Invite, Membership, Role, UserProfile } from "#web/lib/client";
+import { settleBulkAction } from "#web/lib/primitives";
+import { client, type Invite, type Membership, type Role, type UserProfile } from "#web/lib/api";
 import { Setting } from "../../setting";
 import { SettingsSection } from "../../settings-section";
-import { ActionConfirmationDialog, AffectedItem } from "../action-confirmation-dialog";
+import { ActionConfirmationDialog, type AffectedItem } from "../action-confirmation-dialog";
 import { RoleItem } from "./role-item";
+import { invitesQuery, membershipsQuery, rolesQuery } from "#web/lib/data";
 
 interface WorkspaceMember extends Membership {
   admin?: boolean;
@@ -32,10 +33,6 @@ interface RoleListProps {
   refresh(onRevalidated?: () => void): void;
   roles: Role[];
 }
-
-const membershipsQuery = query(() => client.memberships.list(), "memberships");
-const invitesQuery = query(() => client.memberships.listInvites(), "invites");
-const rolesQuery = query(() => client.roles.list(), "roles");
 
 const RoleList: Component<RoleListProps> = (props) => {
   const notify = useNotify();
@@ -87,7 +84,10 @@ const RoleList: Component<RoleListProps> = (props) => {
     ];
   });
   const rolesTree = createMemo<TreeMap>(() => ({
-    [TREE_ROOT_ID]: { items: optimisticRoles().map((role) => role.id), levels: [] }
+    [TREE_ROOT_ID]: {
+      items: optimisticRoles().map((role) => role.id),
+      levels: []
+    }
   }));
   const affectedMembers = createMemo(() => {
     return props.members.filter((member) => pendingDeleteIDs().includes(member.roleID));
@@ -185,9 +185,11 @@ const RolesSection: Component = () => {
   const [refreshing, startRefresh] = useTransition();
   const canManage = () => hasPermission("workspace");
   const refresh = (onRevalidated = () => {}) => {
-    startRefresh(async () => {
-      await revalidate([rolesQuery.key, membershipsQuery.key, invitesQuery.key]);
-      onRevalidated();
+    void startRefresh(() => {
+      void (async () => {
+        await revalidate([rolesQuery.key, membershipsQuery.key, invitesQuery.key]);
+        onRevalidated();
+      })();
     });
   };
 

@@ -1,4 +1,4 @@
-import { SubscribeToEvent, subscribeToEvent } from "#backend/lib/messaging";
+import { type SubscribeToEvent, subscribeToEvent } from "#backend/lib/messaging";
 import { entryEventType } from "./entries";
 import { keyEventType } from "./keys";
 import { membershipEventType } from "./memberships";

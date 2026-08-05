@@ -1,8 +1,8 @@
 import { DropdownArea, DropdownMenu, IconButton, Tooltip } from "@andesine/components";
-import { Component, createEffect, createMemo, createSignal, Show } from "solid-js";
+import { type Component, createEffect, createMemo, createSignal, Show } from "solid-js";
 import clsx from "clsx";
 import { TreeItem, useTree } from "#web/components/tree";
-import type { KeyPermission } from "#web/lib/client";
+import type { KeyPermission } from "#web/lib/api";
 import { format, formatDistanceToNow } from "date-fns";
 
 interface APIKeyItemProps {
@@ -81,23 +81,21 @@ const APIKeyItem: Component<APIKeyItemProps> = (props) => {
           </Show>
         }
         onClick={props.canManage ? props.onEdit : undefined}
-        renderLabel={(label) => {
-          return (
-            <div class="flex-1 flex items-center gap-1.5">
-              <div class="flex items-center flex-1 gap-1.5" title={props.name}>
-                <div class={clsx(props.expiresAt && "line-through")}>{label}</div>
-                <div class="w-px h-4 bg-gray-200 dark:bg-gray-700 rounded-full shrink-0" />
-                <span class="text-xs text-gray-400 dark:text-gray-500 shrink-0 font-mono">
-                  {props.prefix}...
-                </span>
-                <div class="flex-1" />
-                <span class={clsx("text-xs text-gray-400 dark:text-gray-500 shrink-0")}>
-                  {format(props.createdAt, "MMM d, yyyy")}
-                </span>
-              </div>
+        renderLabel={(label) => (
+          <div class="flex-1 flex items-center gap-1.5">
+            <div class="flex items-center flex-1 gap-1.5" title={props.name}>
+              <div class={clsx(props.expiresAt && "line-through")}>{label}</div>
+              <div class="w-px h-4 bg-gray-200 dark:bg-gray-700 rounded-full shrink-0" />
+              <span class="text-xs text-gray-400 dark:text-gray-500 shrink-0 font-mono">
+                {props.prefix}...
+              </span>
+              <div class="flex-1" />
+              <span class={clsx("text-xs text-gray-400 dark:text-gray-500 shrink-0")}>
+                {format(props.createdAt, "MMM d, yyyy")}
+              </span>
             </div>
-          );
-        }}
+          </div>
+        )}
         actions={
           <Show when={props.canManage}>
             <div onClick={(event: MouseEvent) => event.stopPropagation()}>

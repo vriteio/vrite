@@ -1,6 +1,6 @@
 import { Extension } from "@tiptap/core";
 import type { Range } from "@tiptap/core";
-import { ResolvedPos } from "@tiptap/pm/model";
+import { type ResolvedPos } from "@tiptap/pm/model";
 import { TextSelection, PluginKey, Plugin } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
 

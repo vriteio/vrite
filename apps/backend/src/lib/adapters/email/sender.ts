@@ -1,5 +1,5 @@
 import * as nodemailer from "nodemailer";
-import { CreateEmailResponse, Resend } from "resend";
+import { type CreateEmailResponse, Resend } from "resend";
 import { config } from "#backend/lib/config";
 import { ORPCError } from "@orpc/server";
 

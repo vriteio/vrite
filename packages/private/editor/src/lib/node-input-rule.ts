@@ -1,24 +1,24 @@
 import {
   InputRule,
-  InputRuleFinder,
-  ExtendedRegExpMatchArray,
-  Range,
+  type InputRuleFinder,
+  type ExtendedRegExpMatchArray,
+  type Range,
   callOrReturn
 } from "@tiptap/core";
-import { NodeType } from "@tiptap/pm/model";
-import { Transaction } from "@tiptap/pm/state";
+import { type NodeType } from "@tiptap/pm/model";
+import { type Transaction } from "@tiptap/pm/state";
 
 const nodeInputRule = (config: {
   find: InputRuleFinder;
   type: NodeType;
   getAttributes?:
-    | Record<string, any>
-    | ((match: ExtendedRegExpMatchArray) => Record<string, any>)
+    | Record<string, unknown>
+    | ((match: ExtendedRegExpMatchArray) => Record<string, unknown>)
     | false
     | null;
   appendTransaction?(input: {
     tr: Transaction;
-    attributes: Record<string, any>;
+    attributes: Record<string, unknown>;
     range: Range;
   }): void;
 }): InputRule => {

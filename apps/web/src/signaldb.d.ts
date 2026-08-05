@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Mirrors SignalDB's public generic defaults and constraints. */
 import type { BaseItem, Cursor, FindOptions, Selector } from "@signaldb/core";
 
 declare module "@signaldb/core" {

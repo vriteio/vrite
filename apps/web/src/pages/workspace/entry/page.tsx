@@ -1,6 +1,6 @@
 import { Title } from "@solidjs/meta";
 import { useParams } from "@solidjs/router";
-import { Component } from "solid-js";
+import { type Component } from "solid-js";
 import { useWorkspace } from "#web/context/workspace";
 import { EditorPane } from "./editor-pane";
 

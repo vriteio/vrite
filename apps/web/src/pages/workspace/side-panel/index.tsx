@@ -1,5 +1,5 @@
 import { useLocation, useParams, useSearchParams } from "@solidjs/router";
-import { Accessor, Component, Match, Switch } from "solid-js";
+import { type Accessor, type Component, Match, Switch } from "solid-js";
 
 import { ExplorerPanel } from "./explorer";
 import { HelpPanel } from "./help";

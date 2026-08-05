@@ -1,6 +1,6 @@
 import { LineChart } from "@andesine/components";
 import { format } from "date-fns";
-import { Component, createMemo } from "solid-js";
+import { type Component, createMemo } from "solid-js";
 
 interface UsageChartProps {
   currentDay: number;

@@ -5,6 +5,7 @@ interface IndexedDBAdapterOptions {
   databaseName?: string;
   storeName?: string;
   stores?: string[];
+  validate?(value: unknown): boolean;
 }
 interface ClearPersistenceDataOptions {
   persist?: string[];
@@ -78,6 +79,7 @@ const clearWorkspaceData = async (workspaceID: string, entryIDs: string[] = []):
 
   await deleteIndexedDBDatabases(databaseNames);
 };
+/* eslint-disable-next-line @typescript-eslint/no-explicit-any -- SignalDB adapters use its open-ended BaseItem shape. */
 const createIndexedDBAdapter = <T extends { id: I } & Record<string, any>, I extends IDBValidKey>(
   name: string,
   options?: IndexedDBAdapterOptions
@@ -85,7 +87,8 @@ const createIndexedDBAdapter = <T extends { id: I } & Record<string, any>, I ext
   const {
     databaseName: explicitDatabaseName,
     storeName = LEGACY_STORE_NAME,
-    stores = []
+    stores = [],
+    validate
   } = options || {};
   const databaseName = explicitDatabaseName || name;
   const requestedStores = Array.from(new Set([storeName, ...stores]));
@@ -143,7 +146,9 @@ const createIndexedDBAdapter = <T extends { id: I } & Record<string, any>, I ext
     }
 
     try {
-      return (await database.getAll(targetStoreName)) as T[];
+      const items: unknown[] = await database.getAll(targetStoreName);
+
+      return items.filter((item): item is T => (validate ? validate(item) : true));
     } finally {
       database.close();
     }
@@ -187,7 +192,7 @@ const createIndexedDBAdapter = <T extends { id: I } & Record<string, any>, I ext
       try {
         removed.forEach((item) => {
           if (!currentIDs.has(item.id)) {
-            store.delete(item.id);
+            void store.delete(item.id);
           }
         });
         added.forEach((item) => store.put(item));

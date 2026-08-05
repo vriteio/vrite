@@ -1,9 +1,9 @@
-import { Component, createMemo, createSignal, onMount, Match, Switch, Show } from "solid-js";
+import { type Component, createMemo, createSignal, onMount, Match, Switch, Show } from "solid-js";
 import { Title } from "@solidjs/meta";
 import { revalidate, useLocation, useNavigate } from "@solidjs/router";
-import { authClient, client } from "#web/lib/client";
+import { authClient, client } from "#web/lib/api";
 import { Button, Spinner } from "@andesine/components";
-import { appendRedirectTo } from "#web/lib/redirects";
+import { appendRedirectTo } from "#web/lib/navigation";
 import { createMutation } from "@tanstack/solid-query";
 
 type InviteErrorCode =
@@ -67,8 +67,7 @@ const InvitePage: Component = () => {
     appendRedirectTo("/auth/sign-in?addAccount=true", redirectTarget())
   );
   const canSwitchAccount = () => errorCode() === "INVITE_ACCOUNT_MISMATCH";
-
-  onMount(async () => {
+  const processInvite = async () => {
     const params = new URLSearchParams(location.search);
     const id = params.get("id");
     const expires = Number(params.get("expires"));
@@ -105,6 +104,10 @@ const InvitePage: Component = () => {
       setErrorMessage(inviteErrorMessages[details.code]);
       setStatus("error");
     }
+  };
+
+  onMount(() => {
+    void processInvite();
   });
 
   return (

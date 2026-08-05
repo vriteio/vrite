@@ -1,11 +1,11 @@
-import { Component, createEffect, createSignal, Match, onCleanup, Switch } from "solid-js";
+import { type Component, createEffect, createSignal, Match, onCleanup, Switch } from "solid-js";
 import { Title } from "@solidjs/meta";
 import { IconButton, Button, OTPInput, Input, Tooltip, createRef } from "@andesine/components";
 import { createAsync, query, useSearchParams } from "@solidjs/router";
 import { useNotify } from "#web/context/notifications";
-import { authClient, client } from "#web/lib/client";
-import { validateEmail } from "#web/lib/validate";
-import { appendRedirectTo, normalizeRedirectTo, redirectAfterAuth } from "#web/lib/redirects";
+import { authClient, client } from "#web/lib/api";
+import { validateEmail } from "#web/lib/validation";
+import { appendRedirectTo, normalizeRedirectTo, redirectAfterAuth } from "#web/lib/navigation";
 import { createMutation } from "@tanstack/solid-query";
 
 const verifyOTPTokenQuery = query(async (input: { token?: string }) => {
@@ -47,9 +47,7 @@ const EmailPage: Component = () => {
       Array.isArray(searchParams.redirectTo) ? searchParams.redirectTo[0] : searchParams.redirectTo
     );
   const otpFilled = () => otp().length === 6;
-  const verifyOTPTokenResult = createAsync(() => {
-    return verifyOTPTokenQuery({ token: otpToken() });
-  });
+  const verifyOTPTokenResult = createAsync(() => verifyOTPTokenQuery({ token: otpToken() }));
   const sendOTPMutation = createMutation(() => ({
     mutationFn: async (input: { email: string; mode: "sign-in" | "sign-up" }) => {
       // If the mode is sign in, only send OTP to verify the email, otherwise "sign-in" automatically creates an account if it doesn't exist (sign up)
@@ -95,7 +93,7 @@ const EmailPage: Component = () => {
 
       setView("otp");
       throttleOTP();
-    } catch (error) {
+    } catch {
       notify({ type: "error", text: "Couldn't continue with email" });
     }
   };
@@ -105,7 +103,7 @@ const EmailPage: Component = () => {
     try {
       await verifyOTPMutation.mutateAsync({ email: email(), otp: otp(), mode: mode() });
       await redirectAfterAuth(redirectTo());
-    } catch (error) {
+    } catch {
       notify({ type: "error", text: "Couldn't verify email" });
     }
   };
@@ -118,14 +116,14 @@ const EmailPage: Component = () => {
       await sendOTPMutation.mutateAsync({ email: email(), mode: mode() });
       throttleOTP();
       notify({ type: "success", text: "Code resent" });
-    } catch (error) {
+    } catch {
       notify({ type: "error", text: "Couldn't resend code" });
     }
   };
 
   createEffect(() => {
     if (otp().length === 6) {
-      handleVerifyOTP();
+      void handleVerifyOTP();
     }
   });
 

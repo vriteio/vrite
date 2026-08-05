@@ -1,5 +1,5 @@
-import { ParentComponent, createSignal, lazy } from "solid-js";
-import { Shortcuts, ShortcutsContext } from "./context";
+import { type ParentComponent, createSignal, lazy } from "solid-js";
+import { type Shortcuts, ShortcutsContext } from "./context";
 import { nanoid } from "nanoid";
 
 const ShortcutsHandler = lazy(async () => ({

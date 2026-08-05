@@ -6,10 +6,11 @@ import {
   createIndexedDBAdapter,
   deleteIndexedDBDatabase
 } from "./persistence";
-import { Collection, Entry, client, type WorkspaceEvent } from "#web/lib/client";
+import { type Collection, type Entry, client, type WorkspaceEvent } from "#web/lib/api";
 import solidReactivityAdapter from "@signaldb/solid";
 import { useConnectivitySignal } from "@solid-primitives/connectivity";
-import { Accessor, createEffect, createSignal, on } from "solid-js";
+import { type Accessor, createEffect, createSignal, on } from "solid-js";
+import { isPersistedCollection, isPersistedEntry } from "#web/lib/validation";
 
 type ExplorerTree = {
   workspaceID: string;
@@ -28,7 +29,8 @@ const createWorkspaceCollections = (workspaceID?: string) => {
       ? createIndexedDBAdapter("entries", {
           databaseName,
           storeName: "entries",
-          stores: storeNames
+          stores: storeNames,
+          validate: isPersistedEntry
         })
       : undefined,
     reactivity: solidReactivityAdapter
@@ -39,7 +41,8 @@ const createWorkspaceCollections = (workspaceID?: string) => {
       ? createIndexedDBAdapter("collections", {
           databaseName,
           storeName: "collections",
-          stores: storeNames
+          stores: storeNames,
+          validate: isPersistedCollection
         })
       : undefined,
     reactivity: solidReactivityAdapter
@@ -56,6 +59,7 @@ const createWorkspaceCollections = (workspaceID?: string) => {
 const clearWorkspaceContent = async (workspaceID: string) => {
   await deleteIndexedDBDatabase(getWorkspaceContentDatabaseName(workspaceID));
 };
+/* eslint-disable @typescript-eslint/no-explicit-any -- SignalDB selectors require its open-ended BaseItem shape. */
 const applyCollectionSnapshot = <T extends { id: IDBValidKey } & Record<string, any>>(
   collection: LocalDBCollection<T>,
   snapshot: T[]
@@ -107,12 +111,8 @@ const useWorkspaceContent = (workspaceID: Accessor<string>, canWrite: Accessor<b
     await clearWorkspaceData(targetWorkspaceID, entryIDs);
   };
 
-  const readOnly = () => {
-    return !isOnline() || !contentCollections().workspaceID || !canWrite();
-  };
-  const offline = () => {
-    return !isOnline();
-  };
+  const readOnly = () => !isOnline() || !contentCollections().workspaceID || !canWrite();
+  const offline = () => !isOnline();
   const applyExplorerTree = async (
     tree: ExplorerTree,
     targetCollections: ReturnType<typeof createWorkspaceCollections>
@@ -159,12 +159,12 @@ const useWorkspaceContent = (workspaceID: Accessor<string>, canWrite: Accessor<b
 
     switch (event.action) {
       case "entry:create":
-        contentOperations.applyEntryCreate(event.data);
+        contentOperations.sync.entries.applyCreate({ entry: event.data });
         break;
       case "entry:update": {
         const { id, ...updates } = event.data;
 
-        contentOperations.applyEntryUpdate(id, updates);
+        contentOperations.sync.entries.applyUpdate({ entryID: id, updates });
         break;
       }
       case "entry:move": {
@@ -178,30 +178,30 @@ const useWorkspaceContent = (workspaceID: Accessor<string>, canWrite: Accessor<b
           updates.collectionID = event.data.collectionID ?? undefined;
         }
 
-        contentOperations.applyEntryUpdate(event.data.id, updates);
+        contentOperations.sync.entries.applyUpdate({ entryID: event.data.id, updates });
         break;
       }
       case "entry:delete":
-        contentOperations.applyEntryDelete(event.data.ids);
+        contentOperations.sync.entries.applyDelete({ entryIDs: event.data.ids });
         break;
       case "collection:create":
-        contentOperations.applyCollectionCreate(event.data);
+        contentOperations.sync.collections.applyCreate({ collection: event.data });
         break;
       case "collection:update": {
         const { id, ...updates } = event.data;
 
-        contentOperations.applyCollectionUpdate(id, updates);
+        contentOperations.sync.collections.applyUpdate({ collectionID: id, updates });
         break;
       }
       case "collection:move":
-        contentOperations.applyCollectionMove(
-          event.data.id,
-          event.data.newParentID ?? null,
-          event.data.index
-        );
+        contentOperations.sync.collections.applyMove({
+          collectionID: event.data.id,
+          parentID: event.data.newParentID ?? null,
+          index: event.data.index
+        });
         break;
       case "collection:delete":
-        contentOperations.applyCollectionDelete(event.data.ids);
+        contentOperations.sync.collections.applyDelete({ collectionIDs: event.data.ids });
         break;
     }
   };
@@ -213,7 +213,8 @@ const useWorkspaceContent = (workspaceID: Accessor<string>, canWrite: Accessor<b
     const nextCollections = createWorkspaceCollections(currentWorkspaceID);
 
     setContentCollections(nextCollections);
-    previousCollections.dispose();
+
+    void previousCollections.dispose();
 
     if (previousWorkspaceID && !currentWorkspaceID) {
       await clearWorkspaceContent(previousWorkspaceID);
@@ -237,7 +238,7 @@ const useWorkspaceContent = (workspaceID: Accessor<string>, canWrite: Accessor<b
 
   createEffect(
     on(workspaceID, (currentWorkspaceID, previousWorkspaceID) => {
-      switchWorkspace(currentWorkspaceID, previousWorkspaceID);
+      void switchWorkspace(currentWorkspaceID, previousWorkspaceID);
     })
   );
 

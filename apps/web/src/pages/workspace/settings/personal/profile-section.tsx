@@ -1,11 +1,11 @@
-import { Component, createEffect, createSignal, Show, Suspense } from "solid-js";
+import { type Component, createEffect, createSignal, Show, Suspense } from "solid-js";
 import { SettingsSection } from "../settings-section";
 import { Input, Skeleton, Spinner } from "@andesine/components";
 import { Setting } from "../setting";
 import { useNotify } from "#web/context/notifications";
 import { useWorkspace } from "#web/context/workspace";
 import { revalidate } from "@solidjs/router";
-import { authClient } from "#web/lib/client";
+import { authClient } from "#web/lib/api";
 import { createMutation } from "@tanstack/solid-query";
 import clsx from "clsx";
 
@@ -16,7 +16,7 @@ const ProfileForm: Component = () => {
 
   const updateProfileNameMutation = createMutation(() => ({
     onSuccess: () => {
-      revalidate("sessions");
+      void revalidate("sessions");
     },
     onError: (error) => {
       console.error(error);
@@ -51,15 +51,13 @@ const ProfileForm: Component = () => {
           variant="outlined"
           value={name()}
           setValue={setName}
-          slot={() => {
-            return (
-              <Show when={updateProfileNameMutation.isPending}>
-                <div class="absolute right-0 p-1.5">
-                  <Spinner class="h-4 w-4" color="primary" />
-                </div>
-              </Show>
-            );
-          }}
+          slot={() => (
+            <Show when={updateProfileNameMutation.isPending}>
+              <div class="absolute right-0 p-1.5">
+                <Spinner class="h-4 w-4" color="primary" />
+              </div>
+            </Show>
+          )}
           onConfirm={() => {
             if (name() !== currentSession()?.user?.name) {
               updateProfileNameMutation.mutate({ name: name() });
@@ -73,16 +71,14 @@ const ProfileForm: Component = () => {
     </div>
   );
 };
-const ProfileSection: Component = () => {
-  return (
-    <SettingsSection label="Profile">
-      <Setting label="Full name" description="Your full name" fade={false}>
-        <Suspense fallback={<Skeleton class="h-9 w-full max-w-md rounded-lg" />}>
-          <ProfileForm />
-        </Suspense>
-      </Setting>
-    </SettingsSection>
-  );
-};
+const ProfileSection: Component = () => (
+  <SettingsSection label="Profile">
+    <Setting label="Full name" description="Your full name" fade={false}>
+      <Suspense fallback={<Skeleton class="h-9 w-full max-w-md rounded-lg" />}>
+        <ProfileForm />
+      </Suspense>
+    </Setting>
+  </SettingsSection>
+);
 
 export { ProfileSection };

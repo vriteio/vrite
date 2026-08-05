@@ -1,6 +1,6 @@
 import clsx from "clsx";
-import { Accessor, Component, For, JSX, Show } from "solid-js";
-import { TREE_ROOT_ID, TreeMap, useTree } from "./tree-context";
+import { type Accessor, type Component, For, type JSX, Show } from "solid-js";
+import { TREE_ROOT_ID, type TreeMap, useTree } from "./tree-context";
 
 interface TreeLevelProps {
   levelID: string;

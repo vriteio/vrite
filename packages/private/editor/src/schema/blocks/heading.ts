@@ -1,6 +1,6 @@
 import { nodePasteRule } from "#editor/lib";
 import {
-  ExtendedRegExpMatchArray,
+  type ExtendedRegExpMatchArray,
   mergeAttributes,
   Node,
   textblockTypeInputRule
@@ -11,7 +11,7 @@ type Level = 1 | 2 | 3 | 4 | 5 | 6;
 interface HeadingOptions {
   levels: Level[];
   enabledLevels: Level[];
-  HTMLAttributes: Record<string, any>;
+  HTMLAttributes: Record<string, unknown>;
 }
 
 declare module "@tiptap/core" {

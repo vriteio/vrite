@@ -35,9 +35,7 @@ const workspacesRouter = base.router({
 
       const { workspaces } = await Workspaces.list({
         activeUserID: context.auth.session!.userID,
-        userIDs: sessions.map((session) => {
-          return toUserID(toUUID(session.user.id));
-        })
+        userIDs: sessions.map((session) => toUserID(toUUID(session.user.id)))
       });
 
       return workspaces;

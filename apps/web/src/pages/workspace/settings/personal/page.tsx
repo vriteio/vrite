@@ -1,4 +1,4 @@
-import { Component } from "solid-js";
+import { type Component } from "solid-js";
 import { ProfileSection } from "./profile-section";
 import { SecuritySection } from "./security-section";
 

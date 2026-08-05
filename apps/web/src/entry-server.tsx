@@ -1,7 +1,7 @@
 /* @refresh reload */
 import { generateHydrationScript, renderToStream, ssr } from "solid-js/web";
 import { provideRequestEvent } from "solid-js/web/storage";
-import { FastifyReply, FastifyRequest } from "fastify";
+import { type FastifyReply, type FastifyRequest } from "fastify";
 import { PassThrough, Readable } from "node:stream";
 import App from "./app";
 
@@ -43,9 +43,9 @@ const createWebRequest = (fastifyRequest: FastifyRequest): Request => {
 
   return new Request(url, {
     method: fastifyRequest.method,
-    // @ts-expect-error
+    // @ts-expect-error: Fastify headers include values unsupported by the Fetch Headers type.
     headers: new Headers(fastifyRequest.headers),
-    // @ts-expect-error
+    // @ts-expect-error: Node's Request supports the duplex option for streamed request bodies.
     body: webBody,
     duplex: webBody ? "half" : undefined
   });

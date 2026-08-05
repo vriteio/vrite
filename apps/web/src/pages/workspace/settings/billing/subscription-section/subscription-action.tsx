@@ -1,14 +1,15 @@
 import { Button } from "@andesine/components";
-import { createAsync, query, revalidate } from "@solidjs/router";
+import { createAsync, revalidate } from "@solidjs/router";
 import { createMutation } from "@tanstack/solid-query";
-import { Component, createMemo, Show } from "solid-js";
+import { type Component, createMemo, Show } from "solid-js";
 
 import { useNotify } from "#web/context/notifications";
 import { useWorkspace } from "#web/context/workspace";
-import { client } from "#web/lib/client";
-import { config } from "#web/lib/config";
-import { formatUSD } from "#web/lib/format";
+import { client } from "#web/lib/api";
+import { config } from "#web/lib/api";
+import { formatUSD } from "#web/lib/primitives";
 import clsx from "clsx";
+import { subscriptionQuery } from "#web/lib/data";
 
 interface SubscriptionInfo {
   plan: string;
@@ -24,7 +25,6 @@ interface SubscriptionInfoProps {
   isPro: boolean;
 }
 
-const subscriptionQuery = query(() => client.billing.subscription(), "billing-subscription");
 const SubscriptionInfo: Component<SubscriptionInfoProps> = (props) => {
   const periodDate = createMemo(() => {
     const expiresAt = props.subscription.expiresAt;

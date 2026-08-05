@@ -1,6 +1,6 @@
 import { useClipboard } from "#web/context/clipboard";
 import { Overlay, Card, Button, IconButton } from "@andesine/components";
-import { Component, createEffect, createSignal } from "solid-js";
+import { type Component, createEffect, createSignal } from "solid-js";
 
 interface NewKeyDialogProps {
   key: string;

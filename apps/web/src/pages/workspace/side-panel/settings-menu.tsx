@@ -1,6 +1,6 @@
 import clsx from "clsx";
 import { A, useLocation, useParams } from "@solidjs/router";
-import { Component, createMemo, For, Show } from "solid-js";
+import { type Component, createMemo, For, Show } from "solid-js";
 
 import { useWorkspace } from "#web/context/workspace";
 
@@ -24,40 +24,38 @@ interface SettingsMenuItemRowProps {
   activeBackground?: boolean;
 }
 
-const SettingsMenuItemRow: Component<SettingsMenuItemRowProps> = (props) => {
-  return (
-    <A
-      href={props.item.href}
-      class={clsx(
-        ":base: group relative flex min-h-7 w-full flex-1 select-none items-center gap-1 overflow-hidden rounded-r-lg pl-0.5 text-left font-medium focus:outline-none",
-        !props.nested && ":base: rounded-l-lg",
-        !props.item.active &&
-          ":base: hover:bg-gradient-to-r hover:from-gray-500/10 hover:to-transparent"
-      )}
-    >
-      <Show when={props.item.active && (props.activeBackground ?? true)}>
-        <div
-          class={clsx(
-            "pointer-events-none absolute inset-0 rounded-r-lg bg-gradient-to-r from-secondary via-primary to-transparent opacity-10",
-            !props.nested && "rounded-l-lg"
-          )}
-        />
-      </Show>
-      <div class="relative flex h-6 w-6 items-center justify-center">
-        <div
-          class={clsx(
-            "h-5 w-5 text-gray-400 dark:text-gray-500",
-            props.item.icon,
-            props.item.active && "bg-gradient-to-tr"
-          )}
-        />
-      </div>
-      <span class="relative flex-1 line-clamp-1" title={props.item.label}>
-        {props.item.label}
-      </span>
-    </A>
-  );
-};
+const SettingsMenuItemRow: Component<SettingsMenuItemRowProps> = (props) => (
+  <A
+    href={props.item.href}
+    class={clsx(
+      ":base: group relative flex min-h-7 w-full flex-1 select-none items-center gap-1 overflow-hidden rounded-r-lg pl-0.5 text-left font-medium focus:outline-none",
+      !props.nested && ":base: rounded-l-lg",
+      !props.item.active &&
+        ":base: hover:bg-gradient-to-r hover:from-gray-500/10 hover:to-transparent"
+    )}
+  >
+    <Show when={props.item.active && (props.activeBackground ?? true)}>
+      <div
+        class={clsx(
+          "pointer-events-none absolute inset-0 rounded-r-lg bg-gradient-to-r from-secondary via-primary to-transparent opacity-10",
+          !props.nested && "rounded-l-lg"
+        )}
+      />
+    </Show>
+    <div class="relative flex h-6 w-6 items-center justify-center">
+      <div
+        class={clsx(
+          "h-5 w-5 text-gray-400 dark:text-gray-500",
+          props.item.icon,
+          props.item.active && "bg-gradient-to-tr"
+        )}
+      />
+    </div>
+    <span class="relative flex-1 line-clamp-1" title={props.item.label}>
+      {props.item.label}
+    </span>
+  </A>
+);
 
 const SettingsMenu: Component = () => {
   const location = useLocation();
