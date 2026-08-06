@@ -8,16 +8,15 @@ import {
   Heading,
   Html,
   Img,
-  Link,
   Preview,
   Section,
   Tailwind,
-  Hr,
-  Text,
-  Row,
-  Column
+  Text
 } from "@react-email/components";
 import * as React from "react";
+import { PUBLIC_APP_URL } from "../src/constants";
+import { EmailFooter } from "../src/email-footer";
+import { EmailHeader } from "../src/email-header";
 
 interface VerificationOTPProps {
   code?: string;
@@ -25,10 +24,6 @@ interface VerificationOTPProps {
   type?: "sign-in" | "email-verification";
 }
 
-// TODO: Update social links
-const HTTP_PROTOCOL = process.env.PUBLIC_SECURE === "true" ? "https" : "http";
-const PUBLIC_APP_HOST = process.env.PUBLIC_APP_HOST || "localhost:3000";
-const PUBLIC_APP_URL = `${HTTP_PROTOCOL}://${PUBLIC_APP_HOST}`;
 const VerificationOTP: React.FC<VerificationOTPProps> = ({
   code = "",
   link,
@@ -60,18 +55,7 @@ const VerificationOTP: React.FC<VerificationOTPProps> = ({
       <Tailwind>
         <Body className="text-gray-800 my-auto mx-auto font-sans">
           <Container className="mx-auto w-[560px]">
-            <Section className="my-[32px]">
-              <Img
-                src={`${PUBLIC_APP_URL}/assets/banner.png`}
-                width="500"
-                height="32"
-                alt="Andesine"
-                className="my-0 mr-auto"
-              />
-            </Section>
-            <Heading className="text-[36px] font-bold text-start p-0 mb-[12px] mx-0">
-              {content.heading}
-            </Heading>
+            <EmailHeader>{content.heading}</EmailHeader>
             <Text className="text-[20px] leading-[28px]">{content.text}</Text>
             <Section className="text-[30px] py-[48px] mt-[24px] bg-gray-100 rounded-[8px] text-center font-medium font-mono">
               {code}
@@ -90,35 +74,7 @@ const VerificationOTP: React.FC<VerificationOTPProps> = ({
             )}
 
             <Text className="text-[20px] leading-[28px]">{content.subtext}</Text>
-            <Hr className="my-[24px]" />
-            <Row className="mb-[16px]">
-              <Column className="my-0">
-                <Row>
-                  <Column className="my-0">
-                    <Link href="https://x.com/vriteio">
-                      <Img src={`${PUBLIC_APP_URL}/assets/x.svg`} className="w-[24px]" />
-                    </Link>
-                  </Column>
-                  <Column className="my-0">
-                    <Link href="https://www.linkedin.com/company/vrite">
-                      <Img src={`${PUBLIC_APP_URL}/assets/linkedin.svg`} className="w-[24px]" />
-                    </Link>
-                  </Column>
-                  <Column className="my-0">
-                    <Link href="https://github.com/vriteio/vrite">
-                      <Img src={`${PUBLIC_APP_URL}/assets/github.svg`} className="w-[24px]" />
-                    </Link>
-                  </Column>
-                </Row>
-              </Column>
-              <Column className="w-[80%] text-[16px] text-gray-300 my-0"></Column>
-            </Row>
-            <Row className="mb-[24px]">
-              <Column className="text-[12px] leading-[16px] text-gray-400 my-0 font-mono">
-                Andesine, the adaptive
-                <br /> content workspace.
-              </Column>
-            </Row>
+            <EmailFooter />
           </Container>
         </Body>
       </Tailwind>

@@ -8,20 +8,15 @@ import {
   Heading,
   Html,
   Img,
-  Link,
   Preview,
   Section,
   Tailwind,
-  Hr,
-  Text,
-  Row,
-  Column
+  Text
 } from "@react-email/components";
 import * as React from "react";
-
-const HTTP_PROTOCOL = process.env.PUBLIC_SECURE === "true" ? "https" : "http";
-const PUBLIC_APP_HOST = process.env.PUBLIC_APP_HOST || "localhost:3000";
-const PUBLIC_APP_URL = `${HTTP_PROTOCOL}://${PUBLIC_APP_HOST}`;
+import { PUBLIC_APP_URL } from "../src/constants";
+import { EmailFooter } from "../src/email-footer";
+import { EmailHeader } from "../src/email-header";
 
 interface WorkspaceInviteProps {
   workspaceName?: string;
@@ -40,74 +35,24 @@ const WorkspaceInvite: React.FC<WorkspaceInviteProps> = ({
     <Tailwind>
       <Body className="text-gray-800 my-auto mx-auto font-sans">
         <Container className="mx-auto w-[560px]">
-          <Section className="my-[32px]">
-            <Img
-              src={`${PUBLIC_APP_URL}/assets/banner.png`}
-              width="500"
-              height="32"
-              alt="Andesine"
-              className="my-0 mr-auto"
-            />
-          </Section>
-          <Heading className="text-[36px] font-bold text-start p-0 mb-[12px] mx-0">
-            You&apos;re invited to join {workspaceName}
-          </Heading>
+          <EmailHeader>You&apos;re invited to join {workspaceName}</EmailHeader>
           <Text className="text-[20px] leading-[28px]">
-            {inviterName} has invited you to collaborate on <strong>{workspaceName}</strong> in
-            Andesine.
+            {inviterName} has invited you to collaborate as a member of{" "}
+            <strong>{workspaceName}</strong> in Andesine. Use the link below to accept the
+            invitation:
           </Text>
-          <Text className="text-[20px] leading-[28px]">
-            Click the button below to accept the invitation and get started:
-          </Text>
-          <Section className="my-[24px] text-center">
+          <Section className="text-center mt-[12px] mb-[24px]">
             <Button
               href={inviteLink}
-              className="bg-gray-900 text-white text-[16px] font-semibold py-[12px] px-[24px] rounded-[8px] no-underline"
+              className="inline-block bg-gray-900 text-white text-[16px] font-medium py-[12px] rounded-[8px] w-[560px]"
             >
-              Accept Invite
+              Accept invite
             </Button>
           </Section>
-          <Text className="text-[14px] leading-[20px] text-gray-500">
-            If you weren&apos;t expecting this invitation, you can safely ignore this email.
+          <Text className="text-[20px] leading-[28px]">
+            If you weren&apos;t expecting this invitation, you can ignore this email.
           </Text>
-          <Hr className="my-[24px]" />
-          <Row className="mb-[16px]">
-            <Column className="my-0">
-              <Row>
-                <Column className="my-0">
-                  <Link href={PUBLIC_APP_URL}>
-                    <Img
-                      src={`${PUBLIC_APP_URL}/assets/x.svg`}
-                      className="opacity-30 h-[24px] w-[24px]"
-                    />
-                  </Link>
-                </Column>
-                <Column className="my-0">
-                  <Link href={PUBLIC_APP_URL}>
-                    <Img
-                      src={`${PUBLIC_APP_URL}/assets/linkedin.svg`}
-                      className="opacity-30 h-[24px] w-[24px]"
-                    />
-                  </Link>
-                </Column>
-                <Column className="my-0">
-                  <Link href={PUBLIC_APP_URL}>
-                    <Img
-                      src={`${PUBLIC_APP_URL}/assets/github.svg`}
-                      className="opacity-30 h-[24px] w-[24px]"
-                    />
-                  </Link>
-                </Column>
-              </Row>
-            </Column>
-            <Column className="w-[80%] text-[16px] text-gray-300 my-0"></Column>
-          </Row>
-          <Row className="mb-[24px]">
-            <Column className="text-[12px] leading-[16px] text-gray-400 my-0 font-mono">
-              Andesine, the adaptive
-              <br /> content workspace.
-            </Column>
-          </Row>
+          <EmailFooter />
         </Container>
       </Body>
     </Tailwind>

@@ -15,15 +15,15 @@ import {
   Text
 } from "@react-email/components";
 import * as React from "react";
+import { PUBLIC_APP_URL } from "../src/constants";
+import { EmailFooter } from "../src/email-footer";
+import { EmailHeader } from "../src/email-header";
 
 interface SessionVerificationProps {
   code?: string;
   link?: string;
 }
 
-const HTTP_PROTOCOL = process.env.PUBLIC_SECURE === "true" ? "https" : "http";
-const PUBLIC_APP_HOST = process.env.PUBLIC_APP_HOST || "localhost:3000";
-const PUBLIC_APP_URL = `${HTTP_PROTOCOL}://${PUBLIC_APP_HOST}`;
 const SessionVerification: React.FC<SessionVerificationProps> = ({ code = "", link }) => (
   <Html>
     <Head />
@@ -31,18 +31,7 @@ const SessionVerification: React.FC<SessionVerificationProps> = ({ code = "", li
     <Tailwind>
       <Body className="text-gray-800 my-auto mx-auto font-sans">
         <Container className="mx-auto w-[560px]">
-          <Section className="my-[32px]">
-            <Img
-              src={`${PUBLIC_APP_URL}/assets/banner.png`}
-              width="500"
-              height="32"
-              alt="Andesine"
-              className="my-0 mr-auto"
-            />
-          </Section>
-          <Heading className="text-[36px] font-bold text-start p-0 mb-[12px] mx-0">
-            Verify it's you
-          </Heading>
+          <EmailHeader>Verify it's you</EmailHeader>
           <Text className="text-[20px] leading-[28px]">
             A sensitive action was requested in your Andesine account. Use this code to verify your
             identity and continue:
@@ -64,11 +53,7 @@ const SessionVerification: React.FC<SessionVerificationProps> = ({ code = "", li
             If you didn't request this action, you can ignore this email. The code will expire in 5
             minutes.
           </Text>
-          <Hr className="my-[24px]" />
-          <Text className="text-[12px] leading-[16px] text-gray-400 font-mono">
-            Andesine, the adaptive
-            <br /> content workspace.
-          </Text>
+          <EmailFooter />
         </Container>
       </Body>
     </Tailwind>
