@@ -144,7 +144,8 @@ const getBlockControlTargetAtY = (
     }
   }
 
-  for (const pos of [position.inside, $pos.depth ? $pos.before(1) : -1, $pos.pos]) {
+  // Non-list content belongs to its top-level block, including blockquotes.
+  for (const pos of [$pos.depth ? $pos.before(1) : -1, position.inside, $pos.pos]) {
     const target = getBlockControlTargetAtPos(editor, pos);
 
     if (target) return target;

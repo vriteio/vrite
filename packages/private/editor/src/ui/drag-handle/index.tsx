@@ -23,6 +23,7 @@ import {
   registerSelectionControlHiding
 } from "#editor/ui/block-control-targeting";
 import type { BlockControlTarget } from "#editor/ui/block-control-targeting";
+import { createVerticalAutoScroll } from "#editor/ui/auto-scroll";
 import { EDITOR_MENU_Z_INDEX, LIST_ITEM_TYPES } from "#editor/ui/constants";
 import { createListItemTargetResolver } from "./list-item-target";
 import { DragHandleTargetPlugin, dragHandleTargetPluginKey } from "./drag-handle-target-plugin";
@@ -60,7 +61,12 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
     wrapperRef.remove();
     const editorEl = props.editor.view.dom;
     const scrollContainer = getEditorScrollContainer(props.editor);
+    const autoScroll = createVerticalAutoScroll(() => scrollContainer);
     const isDragging = () => dragStarting || wrapperRef.dataset.dragging === "true";
+    const handleDragOver = (event: DragEvent) => {
+      if (isDragging()) autoScroll.update(event);
+    };
+    const stopAutoScroll = () => autoScroll.stop();
     const updateHeadingIndicator = (visible: boolean) => {
       const target = currentControlTarget;
       const nextTargetPos = visible && target?.node.type.name === "heading" ? target.pos : null;
@@ -244,6 +250,9 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
 
     scrollContainer?.addEventListener("pointermove", handlePointerMove);
     scrollContainer?.addEventListener("pointerleave", handlePointerLeave);
+    window.addEventListener("dragover", handleDragOver);
+    window.addEventListener("dragend", stopAutoScroll);
+    window.addEventListener("drop", stopAutoScroll);
 
     const { plugin, unbind } = DragHandlePlugin({
       pluginKey: dragHandlePluginDefaultKey,
@@ -260,6 +269,7 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
       },
       onElementDragEnd: () => {
         dragStarting = false;
+        autoScroll.stop();
         setDragHandleAvailable(false);
       },
       onNodeChange: ({ pos, node }) => {
@@ -333,6 +343,10 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
       if (visibilityFrame !== null) cancelAnimationFrame(visibilityFrame);
       scrollContainer?.removeEventListener("pointermove", handlePointerMove);
       scrollContainer?.removeEventListener("pointerleave", handlePointerLeave);
+      window.removeEventListener("dragover", handleDragOver);
+      window.removeEventListener("dragend", stopAutoScroll);
+      window.removeEventListener("drop", stopAutoScroll);
+      autoScroll.stop();
       unbind();
       unregisterSelectionHandler();
       props.editor.unregisterPlugin(dragHandlePluginDefaultKey);

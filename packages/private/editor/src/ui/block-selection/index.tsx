@@ -1,21 +1,17 @@
 import { type Ref } from "@andesine/components";
 import { type Editor } from "@tiptap/core";
-import { nanoid } from "nanoid";
 import { createSignal, createEffect, onCleanup, Show, type ParentComponent } from "solid-js";
 import { Portal } from "solid-js/web";
+import { isBlockSelection } from "#editor/extensions/block-selection";
+import { createVerticalAutoScroll } from "#editor/ui/auto-scroll";
+import { createBlockSelectionShade } from "./shade";
 
 interface BlockSelectionProps {
   editor: Editor | null;
   scrollableContainerRef: Ref<HTMLElement | null>[0];
 }
-interface AutoScrollOptions {
-  direction?: "top" | "bottom";
-  speed?: number;
-}
-
 const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
   const [pointerDown, setPointerDown] = createSignal(false);
-  const [autoScrollHandle, setAutoScrollHandle] = createSignal("");
   const [scrollableContainerRect, setScrollableContainerRect] = createSignal<DOMRect | null>(null);
   const [nodes, setNodes] = createSignal<
     Record<string, { rect: DOMRect; pos: number; size: number }>
@@ -29,34 +25,6 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
     width: 0,
     height: 0
   });
-  const scroll = (options?: AutoScrollOptions) => {
-    const container = props.scrollableContainerRef();
-    const containerRect = scrollableContainerRect();
-
-    if (!container || !containerRect) return 0;
-
-    const scrollSpeed = options?.speed || 1;
-    const direction = options?.direction || "bottom";
-
-    if (direction === "top") {
-      if (container.scrollTop === 0) return 0;
-
-      container.scrollTop = Math.max(0, container.scrollTop - scrollSpeed);
-
-      return -scrollSpeed;
-    } else if (direction === "bottom") {
-      if (container.scrollTop + container.clientHeight >= container.scrollHeight) return 0;
-
-      container.scrollTop = Math.min(
-        container.scrollHeight - container.clientHeight,
-        container.scrollTop + scrollSpeed
-      );
-
-      return scrollSpeed;
-    }
-
-    return 0;
-  };
   const updateSelection = (position: { clientX: number; clientY: number }) => {
     const editor = props.editor;
     const container = props.scrollableContainerRef();
@@ -132,33 +100,12 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
 
     commandChain.run();
   };
-  const startAutoScroll = (
-    startPosition: { clientX: number; clientY: number },
-    options?: AutoScrollOptions
-  ) => {
-    const handle = nanoid();
-    const autoScrollFrame = () => {
-      if (autoScrollHandle() !== handle) return;
-
-      const offset = scroll(options);
-
-      if (offset !== 0) {
-        updateSelection({
-          clientX: startPosition.clientX,
-          clientY: startPosition.clientY + offset
-        });
-        requestAnimationFrame(autoScrollFrame);
-      } else {
-        setAutoScrollHandle("");
-      }
-    };
-
-    setAutoScrollHandle(handle);
-    autoScrollFrame();
-  };
-  const stopAutoScroll = () => {
-    setAutoScrollHandle("");
-  };
+  const autoScroll = createVerticalAutoScroll(
+    () => props.scrollableContainerRef(),
+    (position, offset) => {
+      updateSelection({ ...position, clientY: position.clientY + offset });
+    }
+  );
   const onPointerDown = (event: PointerEvent) => {
     const editor = props.editor;
 
@@ -236,43 +183,16 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
     editor.chain().setTextSelection(0).run();
   };
   const onPointerMove = (event: PointerEvent) => {
-    const container = props.scrollableContainerRef();
-    const containerRect = scrollableContainerRect();
+    if (!pointerDown()) return;
 
-    if (!pointerDown() || !container || !containerRect) return;
-
-    const scrollThreshold = 50;
-    const distanceFromTop = Math.max(0, event.clientY - containerRect.top);
-    const distanceFromBottom = Math.max(0, containerRect.bottom - event.clientY);
-
-    if (distanceFromTop < scrollThreshold) {
-      const scrollSpeedMultiplier = Math.max(
-        1,
-        ((scrollThreshold - distanceFromTop) / scrollThreshold) * 10
-      );
-
-      startAutoScroll(event, {
-        direction: "top",
-        speed: 3 * scrollSpeedMultiplier
-      });
-    } else if (distanceFromBottom < scrollThreshold) {
-      const scrollSpeedMultiplier = Math.max(
-        1,
-        ((scrollThreshold - distanceFromBottom) / scrollThreshold) * 10
-      );
-
-      startAutoScroll(event, { direction: "bottom", speed: 3 * scrollSpeedMultiplier });
-    } else {
-      stopAutoScroll();
-    }
-
+    autoScroll.update(event);
     updateSelection(event);
   };
   const onPointerEnd = () => {
     const editor = props.editor;
 
     setPointerDown(false);
-    stopAutoScroll();
+    autoScroll.stop();
     document.documentElement.classList.remove("select-none", "cursor-crosshair");
 
     if (boxSelection().active && editor) {
@@ -290,6 +210,76 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
   };
 
   createEffect(() => {
+    const editor = props.editor;
+    const container = props.scrollableContainerRef();
+
+    if (!editor || !container) return;
+
+    let frame: number | null = null;
+
+    const shade = createBlockSelectionShade(container, "block-selection-shade");
+
+    const update = () => {
+      frame = null;
+      const { doc, selection } = editor.state;
+
+      if (!isBlockSelection(selection)) {
+        shade.hide();
+        return;
+      }
+
+      const selectedBlocks: { first: HTMLElement | null; last: HTMLElement | null } = {
+        first: null,
+        last: null
+      };
+
+      doc.nodesBetween(selection.from, selection.to, (node, pos, parent) => {
+        if (parent !== doc) return false;
+        if (node.type.name !== "title" && !node.type.isInGroup("block")) return true;
+
+        const dom = editor.view.nodeDOM(pos);
+
+        if (dom instanceof HTMLElement) {
+          selectedBlocks.first ||= dom;
+          selectedBlocks.last = dom;
+        }
+
+        return false;
+      });
+
+      const { first, last } = selectedBlocks;
+
+      if (!first || !last) {
+        shade.hide();
+        return;
+      }
+
+      shade.show(editor.view.dom, first, last);
+    };
+    const scheduleUpdate = () => {
+      if (frame !== null) cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(update);
+    };
+    const refreshShade = () => shade.refresh();
+    const observer =
+      typeof ResizeObserver === "undefined" ? null : new ResizeObserver(refreshShade);
+
+    observer?.observe(editor.view.dom);
+    observer?.observe(container);
+    window.addEventListener("resize", refreshShade);
+    editor.on("transaction", scheduleUpdate);
+    scheduleUpdate();
+
+    onCleanup(() => {
+      if (frame !== null) cancelAnimationFrame(frame);
+      shade.remove();
+      observer?.disconnect();
+      window.removeEventListener("resize", refreshShade);
+      editor.off("transaction", scheduleUpdate);
+    });
+  });
+
+  createEffect(() => {
     window.addEventListener("pointermove", onPointerMove);
     window.addEventListener("pointerup", onPointerEnd);
     window.addEventListener("pointerleave", onPointerEnd);
@@ -297,7 +287,7 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
 
     onCleanup(() => {
       setPointerDown(false);
-      stopAutoScroll();
+      autoScroll.stop();
       document.documentElement.classList.remove("select-none", "cursor-crosshair");
       window.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("pointerup", onPointerEnd);
@@ -326,4 +316,4 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
   );
 };
 
-export { BlockSelection };
+export { BlockSelection, createBlockSelectionShade };

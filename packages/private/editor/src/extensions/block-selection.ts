@@ -60,7 +60,7 @@ const BlockSelectionExtension = NodeRange.extend({
             doc.nodesBetween(from, to, (node, pos) => {
               if (node.type.name === "title" || node.type.isInGroup("block")) {
                 decorations.push(
-                  Decoration.node(pos, pos + node.nodeSize, { class: "block-selection" })
+                  Decoration.node(pos, pos + node.nodeSize, { class: "block-selection-marker" })
                 );
 
                 return false;

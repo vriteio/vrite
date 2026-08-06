@@ -3,6 +3,7 @@ import { Plugin, PluginKey, type EditorState } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
 import { relativePositionToAbsolutePosition, ySyncPluginKey } from "@tiptap/y-tiptap";
 import { createRelativePositionFromJSON } from "yjs";
+import { createBlockSelectionShade } from "#editor/ui/block-selection";
 import { isBlockSelection } from "./block-selection";
 
 type CollaborationUser = {
@@ -95,7 +96,6 @@ const createBlockSelectionPlugin = (awareness: Awareness) => {
 
       const from = Math.min(anchor, head);
       const to = Math.max(anchor, head);
-      const user = awarenessState.user || {};
 
       state.doc.descendants((node, position, parent) => {
         if (parent !== state.doc) return false;
@@ -104,16 +104,12 @@ const createBlockSelectionPlugin = (awareness: Awareness) => {
           ? from <= position && to >= position + node.nodeSize
           : from <= position + 1 && to >= position + node.nodeSize - 1;
 
-        // Mirror full collaborative block selections with node decorations. Inline
-        // decorations alone cannot cover leaf nodes such as horizontal rules and
-        // don't match the editor's local block-selection treatment.
+        // Invisible node markers identify whole selected blocks, including leaf nodes.
         if ((node.type.name === "title" || node.type.isInGroup("block")) && selectsWholeBlock) {
           decorations.push(
             Decoration.node(position, position + node.nodeSize, {
-              "class": "collaboration-block-selection",
-              "style": `--collaboration-color: ${getCollaborationColor(user.color)}`,
-              "data-collaboration-client": String(clientID),
-              "data-collaboration-user": user.name || "Anonymous"
+              "class": "collaboration-block-selection-marker",
+              "data-collaboration-client": String(clientID)
             })
           );
         }
@@ -134,14 +130,18 @@ const createBlockSelectionPlugin = (awareness: Awareness) => {
           return createDecorations(newState);
         }
 
-        return decorations.map(transaction.mapping, transaction.doc);
+        return decorations;
       }
     },
     props: {
       decorations: (state) => blockSelectionPluginKey.getState(state) || null
     },
     view(view) {
+      const shades = new Map<string, ReturnType<typeof createBlockSelectionShade>>();
+      const container = view.dom.closest<HTMLElement>("[data-editor-scrollable-container]");
+
       let localBlockSelection: boolean | null = null;
+      let shadeFrame: number | null = null;
 
       const updateLocalBlockSelection = () => {
         const next = isBlockSelection(view.state.selection);
@@ -151,25 +151,67 @@ const createBlockSelectionPlugin = (awareness: Awareness) => {
         localBlockSelection = next;
         awareness.setLocalStateField("blockSelection", next);
       };
-      const updateCaretVisibility = () => {
-        const carets = view.dom.querySelectorAll<HTMLElement>(".collaboration-caret");
+      const updateRemoteSelections = () => {
+        const selections = new Map<string, { first: HTMLElement; last: HTMLElement }>();
+        const awarenessStates = awareness.getStates();
 
-        carets.forEach((caret) => {
-          caret.classList.remove("collaboration-caret--block-selection");
-        });
+        shadeFrame = null;
+
         view.dom
-          .querySelectorAll<HTMLElement>(".collaboration-block-selection")
+          .querySelectorAll<HTMLElement>(".collaboration-block-selection-marker")
           .forEach((selection) => {
             const clientID = selection.dataset.collaborationClient;
 
             if (!clientID) return;
 
-            carets.forEach((caret) => {
-              if (caret.dataset.collaborationClient === clientID) {
-                caret.classList.add("collaboration-caret--block-selection");
-              }
-            });
+            const blocks = selections.get(clientID);
+
+            if (blocks) {
+              blocks.last = selection;
+            } else {
+              selections.set(clientID, { first: selection, last: selection });
+            }
           });
+
+        view.dom.querySelectorAll<HTMLElement>(".collaboration-caret").forEach((caret) => {
+          const clientID = caret.dataset.collaborationClient;
+
+          caret.classList.toggle(
+            "collaboration-caret--block-selection",
+            Boolean(clientID && selections.has(clientID))
+          );
+        });
+
+        if (!container) return;
+
+        selections.forEach(({ first, last }, clientID) => {
+          let shade = shades.get(clientID);
+
+          if (!shade) {
+            shade = createBlockSelectionShade(container, "collaboration-block-selection-shade", {
+              prepend: true
+            });
+            shade.element.dataset.collaborationClient = clientID;
+            shades.set(clientID, shade);
+          }
+
+          const color = awarenessStates.get(Number(clientID))?.user?.color;
+
+          shade.element.style.setProperty("--collaboration-color", getCollaborationColor(color));
+          shade.show(view.dom, first, last);
+        });
+
+        shades.forEach((shade, clientID) => {
+          if (!selections.has(clientID)) {
+            shade.remove();
+            shades.delete(clientID);
+          }
+        });
+      };
+      const scheduleRemoteSelectionUpdate = () => {
+        if (shadeFrame !== null) cancelAnimationFrame(shadeFrame);
+
+        shadeFrame = requestAnimationFrame(updateRemoteSelections);
       };
       const handleAwarenessUpdate = (update: AwarenessUpdate) => {
         const changedClients = [...update.added, ...update.updated, ...update.removed];
@@ -178,17 +220,39 @@ const createBlockSelectionPlugin = (awareness: Awareness) => {
 
         view.dispatch(view.state.tr.setMeta(blockSelectionPluginKey, true));
       };
+      const refreshShades = () => {
+        shades.forEach((shade) => shade.refresh());
+      };
+      const resizeObserver =
+        typeof ResizeObserver === "undefined" ? null : new ResizeObserver(refreshShades);
 
       awareness.on("update", handleAwarenessUpdate);
+      window.addEventListener("resize", refreshShades);
+      resizeObserver?.observe(view.dom);
+
+      if (container) {
+        resizeObserver?.observe(container);
+      }
+
       updateLocalBlockSelection();
-      updateCaretVisibility();
+      scheduleRemoteSelectionUpdate();
 
       return {
-        update() {
+        update(view, previousState) {
           updateLocalBlockSelection();
-          updateCaretVisibility();
+          if (
+            blockSelectionPluginKey.getState(view.state) !==
+            blockSelectionPluginKey.getState(previousState)
+          ) {
+            scheduleRemoteSelectionUpdate();
+          }
         },
         destroy() {
+          if (shadeFrame !== null) cancelAnimationFrame(shadeFrame);
+
+          shades.forEach((shade) => shade.remove());
+          resizeObserver?.disconnect();
+          window.removeEventListener("resize", refreshShades);
           awareness.off("update", handleAwarenessUpdate);
           awareness.setLocalStateField("blockSelection", null);
         }
@@ -203,9 +267,8 @@ const CollaborationCaret = BaseCollaborationCaret.extend({
       ...this.parent?.(),
       render: createCaret,
       selectionRender: (user: CollaborationUser) => ({
-        "class": "collaboration-selection",
-        "style": `--collaboration-color: ${getCollaborationColor(user.color)}`,
-        "data-collaboration-user": user.name || "Anonymous"
+        class: "collaboration-selection",
+        style: `--collaboration-color: ${getCollaborationColor(user.color)}`
       })
     };
   },

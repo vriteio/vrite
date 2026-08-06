@@ -28,33 +28,18 @@ header[data-type="title"] {
   }
 
   // Block selection
-  .block-selection {
-    @apply relative z-1 select-none;
-    &::selection,
-    ::selection {
-      @apply bg-transparent;
-    }
-    hr {
-      @apply border border-tertiary;
-    }
-    &::after {
-      @apply absolute -left-2 -top-1 -z-1 bg-gradient-to-r from-secondary via-primary to-transparent opacity-10;
-      width: calc(100% + 1rem);
-      height: calc(100% + 0.5rem);
-      content: "";
-    }
-    &:not(.block-selection + .block-selection)::after {
-      @apply rounded-t-lg;
-    }
-    &:not(:has(+ .block-selection))::after {
-      @apply rounded-b-lg;
-    }
-    // The title has a larger bottom margin than content blocks. Extend only its
-    // decoration to meet the following selected block without shifting content.
-    &:is(header):has(+ .block-selection)::after {
-      height: calc(100% + 0.75rem);
-    }
+  .block-selection-marker {
+    @apply select-none;
   }
+}
+
+.block-selection-shade,
+.collaboration-block-selection-shade {
+  @apply absolute z-0 rounded-lg opacity-10 pointer-events-none;
+}
+
+.block-selection-shade {
+  @apply bg-gradient-to-r from-secondary via-primary to-transparent;
 }
 
 // Drop cursor
@@ -96,38 +81,12 @@ header[data-type="title"] {
   background: color-mix(in srgb, var(--collaboration-color) 22%, transparent);
 }
 
-.collaboration-block-selection {
-  @apply relative z-0;
+.collaboration-block-selection-marker .collaboration-selection {
+  @apply bg-transparent;
+}
 
-  &::before {
-    @apply absolute -left-2 -top-1 -z-2 opacity-10;
-    width: calc(100% + 1rem);
-    height: calc(100% + 0.5rem);
-    content: "";
-    background: linear-gradient(to right, var(--collaboration-color), transparent);
-  }
-
-  &:not(.collaboration-block-selection + .collaboration-block-selection)::before {
-    @apply rounded-t-lg;
-  }
-
-  &:not(:has(+ .collaboration-block-selection))::before {
-    @apply rounded-b-lg;
-  }
-
-  &:not(.collaboration-block-selection + .collaboration-block-selection):not(
-      :has(+ .collaboration-block-selection)
-    )::before {
-    @apply rounded-lg;
-  }
-
-  &:is(header):has(+ .collaboration-block-selection)::before {
-    height: calc(100% + 0.75rem);
-  }
-
-  .collaboration-selection {
-    @apply bg-transparent;
-  }
+.collaboration-block-selection-shade {
+  background: linear-gradient(to right, var(--collaboration-color), transparent);
 }
 
 // Empty-document placeholder
