@@ -11,7 +11,6 @@ import { IconButton } from "@andesine/components";
 import { type Editor } from "@tiptap/core";
 import { type Accessor, type Component, createSignal, onCleanup, onMount, Show } from "solid-js";
 import {
-  getBlockContentRect,
   getBlockControlAnchorRect,
   getBlockControlTargetAtY,
   getBlockSelectionTopTarget,
@@ -43,7 +42,6 @@ const shouldShowDragHandle = (
 const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
   let wrapperRef: HTMLDivElement | undefined;
   let hoverAreaRef: HTMLDivElement | undefined;
-  let hoverBridgeRef: HTMLDivElement | undefined;
   let pointer = { x: 0, y: 0 };
   let dragStarting = false;
   let dragHandleAvailable = false;
@@ -141,19 +139,6 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
           !usesSelection && source?.node.type.name === "paragraph" && source.node.content.size === 0
         )
       );
-
-      if (hoverBridgeRef) {
-        const listItem = target && LIST_ITEM_TYPES.has(target.node.type.name);
-
-        if (listItem) {
-          const reference = getBlockControlAnchorRect(props.editor, target);
-          const content = getBlockContentRect(props.editor, target);
-
-          hoverBridgeRef.style.width = `${Math.max(0, content.left - reference.left + 4)}px`;
-        } else {
-          hoverBridgeRef.style.width = "0px";
-        }
-      }
 
       return target;
     };
@@ -364,12 +349,6 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
         class="absolute inset-x-0 pointer-events-auto"
         ref={hoverAreaRef}
         data-drag-handle-hover-area
-      />
-      <div
-        class="absolute left-full inset-y-0 pointer-events-auto"
-        draggable={false}
-        ref={hoverBridgeRef}
-        data-drag-handle-hover-bridge
       />
       <Show when={isEmptyParagraph()}>
         <IconButton
