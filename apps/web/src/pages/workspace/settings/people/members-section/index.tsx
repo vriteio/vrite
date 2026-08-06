@@ -105,7 +105,8 @@ const MembersSection: Component = () => {
           </Suspense>
         </div>
         <Show when={canManage()}>
-          <Suspense>
+          {/* No fallback to only render invites sections if there are actual invites */}
+          <Suspense fallback={<></>}>
             <InvitationsSubsection invites={invites() || []} roles={roles() || []} />
           </Suspense>
         </Show>

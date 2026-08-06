@@ -1,5 +1,5 @@
-import { createRef, Skeleton } from "@andesine/components";
-import { type Component, createEffect, createMemo, Show, Suspense } from "solid-js";
+import { createRef } from "@andesine/components";
+import { type Component, createEffect, createMemo, Show } from "solid-js";
 import { Editor } from "@andesine/editor";
 import { useNavigate, useParams } from "@solidjs/router";
 import { useNotify } from "#web/context/notifications";
@@ -137,32 +137,30 @@ const EditorPane: Component = () => {
                 class="h-full w-full px-1"
                 classList={{ invisible: !entryLoadState().editorReady }}
               >
-                <Suspense>
-                  <Editor
-                    doc={entryID}
-                    url={`${config.PUBLIC_WS_API_URL}/collab`}
-                    providerAttempt={providerAttempt()}
-                    editable={editableEntryID() === entryID}
-                    notify={(type, text) => notify({ type, text })}
-                    collaborationUser={collaborationUser()}
-                    beforeProviderAttach={beforeProviderAttach}
-                    onProvider={handleProvider}
-                    onProviderSetupError={(error) => {
-                      if (!(error instanceof LocalSnapshotError)) {
-                        setLocalSnapshotFailure(entryID);
-                      }
-                    }}
-                    onEditor={() => markEditorReady(entryID)}
-                    onTitleChange={(title) => {
-                      const entries = content.entriesCollection();
-                      const entry = entries.findOne({ id: entryID }, { reactive: false });
+                <Editor
+                  doc={entryID}
+                  url={`${config.PUBLIC_WS_API_URL}/collab`}
+                  providerAttempt={providerAttempt()}
+                  editable={editableEntryID() === entryID}
+                  notify={(type, text) => notify({ type, text })}
+                  collaborationUser={collaborationUser()}
+                  beforeProviderAttach={beforeProviderAttach}
+                  onProvider={handleProvider}
+                  onProviderSetupError={(error) => {
+                    if (!(error instanceof LocalSnapshotError)) {
+                      setLocalSnapshotFailure(entryID);
+                    }
+                  }}
+                  onEditor={() => markEditorReady(entryID)}
+                  onTitleChange={(title) => {
+                    const entries = content.entriesCollection();
+                    const entry = entries.findOne({ id: entryID }, { reactive: false });
 
-                      if (entry && entry.name !== title) {
-                        entries.updateOne({ id: entryID }, { $set: { name: title } });
-                      }
-                    }}
-                  />
-                </Suspense>
+                    if (entry && entry.name !== title) {
+                      entries.updateOne({ id: entryID }, { $set: { name: title } });
+                    }
+                  }}
+                />
               </div>
             </div>
           )}

@@ -1,6 +1,6 @@
 import { Router, createAsync, query, redirect, revalidate } from "@solidjs/router";
 import { MetaProvider, Title } from "@solidjs/meta";
-import { TooltipProvider, ShortcutsProvider, IconButton } from "@andesine/components";
+import { TooltipProvider, ShortcutsProvider, IconButton, Spinner } from "@andesine/components";
 import { QueryClient, QueryClientProvider } from "@tanstack/solid-query";
 import { ErrorBoundary, type ParentComponent, Suspense, createSignal } from "solid-js";
 import { NotificationsProvider } from "./context/notifications";
@@ -122,6 +122,7 @@ const RootLayout: ParentComponent = (props) => {
               <ClipboardProvider>
                 <LayoutProvider>
                   <ErrorBoundary fallback={(_, reset) => <AppError reset={reset} />}>
+                    {/* No fallback here to avoid showing loading state while the root redirect query is being resolved */}
                     <Suspense>{props.children}</Suspense>
                   </ErrorBoundary>
                 </LayoutProvider>

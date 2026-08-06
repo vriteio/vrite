@@ -11,7 +11,7 @@ interface SettingProps {
 const Setting: ParentComponent<SettingProps> = (props) => (
   <div
     class={clsx(
-      "sticky top-5 z-20 -mx-2 bg-gray-50 px-2 py-2 dark:bg-gray-950 group/setting",
+      "-mx-2 bg-gray-50 px-2 py-2 dark:bg-gray-950 group/setting",
       props.fade !== false && "mask-edge-fading-b-4"
     )}
   >

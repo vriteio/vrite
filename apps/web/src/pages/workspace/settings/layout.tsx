@@ -1,4 +1,4 @@
-import { Card, ScrollShadow, createRef } from "@andesine/components";
+import { Card, ScrollShadow, Skeleton, Spinner, createRef } from "@andesine/components";
 import { Title } from "@solidjs/meta";
 import {
   revalidate,
@@ -7,7 +7,7 @@ import {
   useNavigate,
   useParams
 } from "@solidjs/router";
-import { type Component, createEffect, onCleanup, Show } from "solid-js";
+import { type Component, createEffect, onCleanup, Show, Suspense } from "solid-js";
 import { useWorkspace } from "#web/context/workspace";
 import { useRouteData } from "#web/lib/navigation";
 import { SettingsProvider } from "./settings-context";
@@ -119,11 +119,11 @@ const SettingsLayout: Component<RouteSectionProps> = (props) => {
     <SettingsProvider>
       <Title>{`${title()} settings | Andesine`}</Title>
       <Show when={!content.offline()}>
-        <div class="flex w-full flex-1 overflow-hidden px-4">
+        <div class="flex w-full flex-1 overflow-hidden px-1">
           <div class="relative flex h-full w-full overflow-hidden">
             <ScrollShadow scrollableContainerRef={scrollableContainerRef} />
-            <div class="relative z-0 w-full overflow-auto p-5" ref={setScrollableContainerRef}>
-              <div class="flex w-full flex-col items-center">
+            <div class="relative z-0 w-full overflow-auto" ref={setScrollableContainerRef}>
+              <div class="flex w-full flex-col items-center p-10 pt-16">
                 <div class="relative my-2 flex w-full max-w-[44rem] flex-col">
                   <h1 class="my-3 text-5xl font-semibold">{title()}</h1>
                   <Show

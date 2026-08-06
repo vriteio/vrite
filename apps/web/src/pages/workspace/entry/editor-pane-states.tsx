@@ -55,7 +55,7 @@ const EntryLoadError: Component<EntryLoadErrorProps> = (props) => {
 };
 
 const EntryContentSkeleton: Component = () => (
-  <div class="absolute inset-0 z-10 bg-gray-50 dark:bg-gray-950 p-10 pt-16">
+  <div class="absolute inset-0 z-10 bg-gray-50 dark:bg-gray-950 p-10 pt-20">
     <div class="relative mx-auto flex w-full max-w-[44rem] flex-col gap-2">
       <Skeleton class={["h-12 w-4/5", "h-32 w-full", "h-24 w-full", "h-8 w-3/5", "h-40 w-full"]} />
       <div

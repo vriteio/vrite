@@ -1,4 +1,4 @@
-import { Card, useShortcuts } from "@andesine/components";
+import { Card, Spinner, useShortcuts } from "@andesine/components";
 import {
   type RouteSectionProps,
   useLocation,
@@ -116,9 +116,7 @@ const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
           >
             <div class="flex h-full w-full flex-col p-2">
               <Menu menu={menu} class="w-full px-1" />
-              <Suspense>
-                <SidePanel />
-              </Suspense>
+              <SidePanel />
               <ProfileMenu />
             </div>
           </div>
@@ -132,7 +130,15 @@ const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
               shade
             >
               <Breadcrumbs />
-              <Suspense fallback={<div class="flex-1" />}>{props.children}</Suspense>
+              <Suspense
+                fallback={
+                  <div class="flex-1 w-full flex justify-center items-center text-gray-200">
+                    <Spinner />
+                  </div>
+                }
+              >
+                {props.children}
+              </Suspense>
             </Card>
           </div>
           <div class="w-3" />

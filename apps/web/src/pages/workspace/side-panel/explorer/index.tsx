@@ -17,6 +17,7 @@ import { useExplorerActions } from "./use-explorer-actions";
 import { useExplorerDrop } from "./use-explorer-drop";
 import { useExplorerKeyboard } from "./use-explorer-keyboard";
 import { useExplorerMarquee } from "./use-explorer-marquee";
+import clsx from "clsx";
 
 const Explorer = () => {
   const [{ gap }, { setFocusedID }] = useTree();
@@ -178,14 +179,13 @@ const Explorer = () => {
 };
 
 const ExplorerSkeleton = () => (
-  <div class="flex flex-col gap-1.5 py-1">
-    {["w-24", "w-32", "w-20", "w-28"].map((width) => (
-      <div class="flex gap-1 items-center pl-1">
-        <Skeleton class="h-6 w-6 rounded" />
-        <Skeleton class={`h-4 ${width}`} />
+  <>
+    {["w-36", "w-44", "w-32", "w-40"].map((className) => (
+      <div class="flex gap-1.5 items-center px-1 h-7">
+        <Skeleton class={["h-6 w-6", clsx("h-5 rounded-md", className)]} />
       </div>
     ))}
-  </div>
+  </>
 );
 
 const ExplorerPanel = () => (
