@@ -1,33 +1,17 @@
-import { type Component, createSignal, onMount, Show, Suspense } from "solid-js";
+import { type Component, Suspense } from "solid-js";
 import { type RouteSectionProps } from "@solidjs/router";
 import { AnimatedGradientCard } from "#web/components/animated-gradient-card";
-import { Dynamic } from "solid-js/web";
+import { NoHydration } from "solid-js/web";
 import { Skeleton } from "@andesine/components";
 
-// TODO: add more tips
-const tips: Component[] = [
-  () => (
-    <p>
-      Edit collaboratively in real time with the explorer on the left and a shared document on the
-      right.
-    </p>
-  ),
-  () => (
-    <p>
-      Invite teammates to a workspace, assign roles, and control access to content, billing, and API
-      operations.
-    </p>
-  ),
-  () => <p>Create API keys per workspace and keep an eye on plan usage without leaving the app.</p>
+const tips = [
+  "You're one invite away from collaborating with your team in real-time across your entire workspace.",
+  "You can use a Passkey to sign in with one click, no password or email code required.",
+  "You can work with multiple teams across different workspaces and accounts, easily switching between them.",
+  "You can structure your content the way you like with nested collections and some drag and drop."
 ];
 
 const AuthLayout: Component<RouteSectionProps> = (props) => {
-  const [activeTip, setActiveTip] = createSignal<Component>();
-
-  onMount(() => {
-    setActiveTip(() => tips[Math.floor(Math.random() * tips.length)]);
-  });
-
   return (
     <div class="flex flex-row h-full w-full">
       <div class="dots-background absolute mask-edge-fading-16" />
@@ -66,12 +50,7 @@ const AuthLayout: Component<RouteSectionProps> = (props) => {
             </div>
             <div class="relative w-full">
               <div class="text-2xl">
-                <Show
-                  when={activeTip()}
-                  fallback={<Skeleton class={["mx-auto my-1 h-7 w-4/5", "mx-auto h-7 w-3/5"]} />}
-                >
-                  <Dynamic component={activeTip()} />
-                </Show>
+                <NoHydration>{tips[Math.floor(Math.random() * tips.length)]}</NoHydration>
               </div>
             </div>
           </div>
