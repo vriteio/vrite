@@ -92,7 +92,8 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
           !target ||
           !isPointInBlockControlArea(editor, pointerTarget, {
             x: event.clientX,
-            y: event.clientY
+            y: event.clientY,
+            side: "right"
           })
         ) {
           setTriggerAvailable(false);

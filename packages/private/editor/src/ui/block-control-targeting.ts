@@ -8,8 +8,10 @@ import {
   getCachedElementRect,
   getEditorScrollContainer,
   isPointInBlockControlArea,
+  type BlockControlSide,
   type BlockControlTarget
 } from "./block-control-sizing";
+import { BLOCK_CONTROL_PROXIMITY_RATIO } from "./constants";
 
 interface BlockControlRange {
   from: number;
@@ -57,7 +59,7 @@ const isTargetInBlockSelection = (editor: Editor, target: BlockControlTarget): b
 
 const isPointInBlockSelectionControlArea = (
   editor: Editor,
-  { x, y }: { x: number; y: number }
+  { x, y, side }: { x: number; y: number; side?: BlockControlSide }
 ): boolean => {
   const { doc, selection } = editor.state;
 
@@ -67,6 +69,8 @@ const isPointInBlockSelectionControlArea = (
   let right = Number.NEGATIVE_INFINITY;
   let top = Number.POSITIVE_INFINITY;
   let bottom = Number.NEGATIVE_INFINITY;
+  let blockLeft = Number.POSITIVE_INFINITY;
+  let blockRight = Number.NEGATIVE_INFINITY;
 
   doc.nodesBetween(selection.from, selection.to, (node, pos, parent) => {
     if (parent !== doc) return false;
@@ -77,16 +81,24 @@ const isPointInBlockSelectionControlArea = (
     if (!target) return false;
 
     const rect = getBlockControlHoverRect(editor, target);
+    const block = getBlockControlAnchorRect(editor, target);
 
     left = Math.min(left, rect.left);
     right = Math.max(right, rect.right);
     top = Math.min(top, rect.top);
     bottom = Math.max(bottom, rect.bottom);
+    blockLeft = Math.min(blockLeft, block.left);
+    blockRight = Math.max(blockRight, block.right);
 
     return false;
   });
 
-  return x >= left && x <= right && y >= top && y <= bottom;
+  if (x < left || x > right || y < top || y > bottom) return false;
+  if (!side) return true;
+
+  const threshold = (blockRight - blockLeft) * BLOCK_CONTROL_PROXIMITY_RATIO;
+
+  return side === "left" ? x <= blockLeft + threshold : x >= blockRight - threshold;
 };
 
 const registerSelectionControlHiding = (editor: Editor, hideControls: () => void): (() => void) => {
@@ -166,4 +178,4 @@ export {
   isTargetInBlockSelection,
   registerSelectionControlHiding
 };
-export type { BlockControlTarget, BlockControlRange };
+export type { BlockControlSide, BlockControlTarget, BlockControlRange };

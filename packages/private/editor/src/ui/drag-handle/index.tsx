@@ -164,11 +164,15 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
         target &&
         isPointInBlockControlArea(props.editor, target, {
           x: pointer.x,
-          y: pointer.y
+          y: pointer.y,
+          side: "left"
         })
       );
     const isPointerInBlockSelectionArea = () => {
-      return isPointInBlockSelectionControlArea(props.editor, pointer);
+      return isPointInBlockSelectionControlArea(props.editor, {
+        ...pointer,
+        side: "left"
+      });
     };
     const positionDragHandle = (target: BlockControlTarget) => {
       const menuContainer = props.menuContainerRef();

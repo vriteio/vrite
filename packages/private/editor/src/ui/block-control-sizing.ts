@@ -1,12 +1,18 @@
 import type { Editor, EditorEvents } from "@tiptap/core";
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
-import { BLOCK_CONTROL_VIRTUAL_MARGIN_REM, LIST_ITEM_TYPES } from "./constants";
+import {
+  BLOCK_CONTROL_PROXIMITY_RATIO,
+  BLOCK_CONTROL_VIRTUAL_MARGIN_REM,
+  LIST_ITEM_TYPES
+} from "./constants";
 
 interface BlockControlTarget {
   dom: HTMLElement;
   node: ProseMirrorNode;
   pos: number;
 }
+
+type BlockControlSide = "left" | "right";
 
 type TargetRectName = "anchor" | "content" | "hover";
 type TargetRects = Partial<Record<TargetRectName, DOMRect>>;
@@ -229,12 +235,17 @@ const getBlockControlHoverRect = (editor: Editor, target: BlockControlTarget): D
 const isPointInBlockControlArea = (
   editor: Editor,
   target: BlockControlTarget,
-  { x, y }: { x: number; y: number }
+  { x, y, side }: { x: number; y: number; side?: BlockControlSide }
 ): boolean => {
-  const rect = getBlockControlHoverRect(editor, target);
+  const hover = getBlockControlHoverRect(editor, target);
 
-  // This shared virtual block area is the final pointer-based visibility boundary.
-  return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+  if (x < hover.left || x > hover.right || y < hover.top || y > hover.bottom) return false;
+  if (!side) return true;
+
+  const block = getBlockControlAnchorRect(editor, target);
+  const threshold = block.width * BLOCK_CONTROL_PROXIMITY_RATIO;
+
+  return side === "left" ? x <= block.left + threshold : x >= block.right - threshold;
 };
 
 export {
@@ -245,4 +256,4 @@ export {
   getEditorScrollContainer,
   isPointInBlockControlArea
 };
-export type { BlockControlTarget };
+export type { BlockControlSide, BlockControlTarget };
