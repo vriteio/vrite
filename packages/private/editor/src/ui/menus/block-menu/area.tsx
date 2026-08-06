@@ -1,13 +1,24 @@
 import { isBlockSelection } from "#editor/extensions";
 import { DropdownArea, useShortcuts } from "@andesine/components";
 import { type Editor, isTextSelection } from "@tiptap/core";
-import { createEffect, createSignal, onCleanup, type ParentComponent } from "solid-js";
+import {
+  type Accessor,
+  createEffect,
+  createSignal,
+  onCleanup,
+  type ParentComponent,
+  Show
+} from "solid-js";
+import { Portal } from "solid-js/web";
 import { BlockMenu } from "./block-menu";
 import { BlockMenuContext } from "./context";
+import type { BlockControlRange } from "#editor/ui/block-control-targeting";
 
 interface BlockMenuAreaProps {
   editor: Editor | null;
+  menuContainerRef: Accessor<HTMLElement | null>;
   notify(type: "success" | "error", text: string): void;
+  textMenuSelectionRange: BlockControlRange | null;
 }
 
 const BlockMenuArea: ParentComponent<BlockMenuAreaProps> = (props) => {
@@ -86,10 +97,15 @@ const BlockMenuArea: ParentComponent<BlockMenuAreaProps> = (props) => {
         isBlockSelection(editor.state.selection)
       );
     };
-    const unregister = registerShortcuts({
-      "$mod+backspace": (event) => canHandleShortcut(event) && handleDelete(),
-      "$mod+c": (event) => canHandleShortcut(event) && handleCopy()
-    });
+    const unregister = registerShortcuts(
+      {
+        "$mod+backspace": (event) => canHandleShortcut(event) && handleDelete(),
+        "$mod+c": (event) => canHandleShortcut(event) && handleCopy()
+      },
+      {
+        ignore: (event) => event.repeat || event.isComposing
+      }
+    );
 
     onCleanup(unregister);
   });
@@ -119,12 +135,19 @@ const BlockMenuArea: ParentComponent<BlockMenuAreaProps> = (props) => {
         }}
       >
         {props.children}
-        <BlockMenu
-          anchorPoint={menuAnchorPoint()}
-          editor={props.editor}
-          menuOpened={menuOpened()}
-          setMenuOpened={handleMenuOpenedChange}
-        />
+        <Show when={props.menuContainerRef()} keyed>
+          {(menuContainer) => (
+            <Portal mount={menuContainer}>
+              <BlockMenu
+                anchorPoint={menuAnchorPoint()}
+                editor={props.editor}
+                menuOpened={menuOpened()}
+                setMenuOpened={handleMenuOpenedChange}
+                textMenuSelectionRange={props.textMenuSelectionRange}
+              />
+            </Portal>
+          )}
+        </Show>
       </DropdownArea>
     </BlockMenuContext.Provider>
   );

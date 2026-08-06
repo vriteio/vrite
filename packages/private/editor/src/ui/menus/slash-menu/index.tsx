@@ -1,4 +1,4 @@
-import { type Component, createEffect, onCleanup } from "solid-js";
+import { type Accessor, type Component, createEffect, onCleanup } from "solid-js";
 import { createSlashMenuPlugin, slashMenuPluginKey } from "./plugin";
 import { type SlashMenuItem } from "./component";
 import { createRef } from "@andesine/components";
@@ -6,12 +6,14 @@ import { type Editor } from "@tiptap/core";
 
 interface SlashMenuProps {
   editor: Editor;
+  menuContainerRef: Accessor<HTMLElement | null>;
 }
 
 const SlashMenu: Component<SlashMenuProps> = (props) => {
   createEffect(() => {
     const slashMenuPlugin = createSlashMenuPlugin({
       editor: props.editor,
+      menuContainerRef: props.menuContainerRef,
       menuItems: () => {
         const headingLevels = [1, 2, 3, 4, 5, 6] as const;
         const headingIcons = [

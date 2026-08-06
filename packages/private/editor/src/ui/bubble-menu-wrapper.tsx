@@ -11,6 +11,7 @@ interface BubbleMenuWrapperProps {
   appendTo?: BubbleMenuPluginProps["appendTo"];
   shouldShow?: Exclude<Required<BubbleMenuPluginProps>["shouldShow"], null>;
   getReferencedVirtualElement?: BubbleMenuPluginProps["getReferencedVirtualElement"];
+  zIndex?: number;
 }
 
 const BubbleMenuWrapper: ParentComponent<BubbleMenuWrapperProps> = (props) => {
@@ -26,6 +27,8 @@ const BubbleMenuWrapper: ParentComponent<BubbleMenuWrapperProps> = (props) => {
 
     wrapper.style.visibility = "hidden";
     wrapper.style.position = "absolute";
+    wrapper.style.pointerEvents = "auto";
+    wrapper.style.zIndex = `${props.zIndex || 0}`;
 
     // Remove element from DOM; plugin will re-parent it when shown
     wrapper.remove();

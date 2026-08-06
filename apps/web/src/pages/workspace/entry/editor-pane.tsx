@@ -79,7 +79,7 @@ const EditorPane: Component = () => {
   });
 
   return (
-    <div class="flex flex-1 px-1 overflow-hidden w-full">
+    <div class="flex flex-1 overflow-hidden w-full">
       <Show
         when={selectedEntryID()}
         fallback={
@@ -133,8 +133,11 @@ const EditorPane: Component = () => {
                   onBack={() => navigate(`/${workspaceID()}`)}
                 />
               </Show>
-              <div class="h-full w-full" classList={{ invisible: !entryLoadState().editorReady }}>
-                <Suspense fallback={<Skeleton />}>
+              <div
+                class="h-full w-full px-1"
+                classList={{ invisible: !entryLoadState().editorReady }}
+              >
+                <Suspense>
                   <Editor
                     doc={entryID}
                     url={`${config.PUBLIC_WS_API_URL}/collab`}

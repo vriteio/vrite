@@ -19,6 +19,9 @@ const getCollaborationUser = (user?: { id?: string; name?: string | null; email?
 
 const getCollaborationStatus = (state: EntryLoadState): CollaborationStatus => {
   if (state.problem === "unauthorized" || state.problem === "failed") return state.problem;
+  if (state.hasLocalSnapshot && !state.initialSyncComplete && state.connection !== "disconnected") {
+    return "syncing";
+  }
   if (state.unsyncedChanges > 0) {
     return state.connection === "disconnected" ? "offline-changes" : "saved-locally";
   }

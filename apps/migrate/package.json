@@ -16,10 +16,10 @@
     "pg": "^8.22.0"
   },
   "devDependencies": {
-    "@types/node": "^25.9.1",
-    "@types/pg": "^8.20.0",
+    "@types/node": "^26.1.2",
+    "@types/pg": "^8.20.3",
     "drizzle-kit": "^0.31.10",
-    "rolldown": "^1.0.3",
+    "rolldown": "^1.2.2",
     "typescript": "6.0.3"
   }
 }

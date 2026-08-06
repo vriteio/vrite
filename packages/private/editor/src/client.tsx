@@ -42,7 +42,6 @@ import {
   CollaborationCaret,
   Placeholder,
   UniqueID,
-  NodeRange,
   BlockSelection,
   isBlockSelection,
   Gapcursor,
@@ -51,13 +50,18 @@ import {
 } from "./extensions";
 import { BubbleMenuWrapper } from "./ui/bubble-menu-wrapper";
 import { DragHandleMenu } from "./ui/drag-handle";
+import { EDITOR_MENU_Z_INDEX } from "./ui/constants";
+import type { BlockControlRange } from "./ui/block-control-targeting";
 
 import type { EditorProps } from "./client-types";
 import { useEditorProvider } from "./use-editor-provider";
 
 const ClientEditor: Component<EditorProps> = (props) => {
   const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
+  const [menuContainerRef, setMenuContainerRef] = createRef<HTMLElement | null>(null);
   const [editorContentElement, setEditorContentElement] = createSignal<HTMLElement | null>(null);
+  const [textMenuSelectionRange, setTextMenuSelectionRange] =
+    createSignal<BlockControlRange | null>(null);
   const provider = useEditorProvider({
     url: () => props.url,
     doc: () => props.doc,
@@ -113,7 +117,6 @@ const ClientEditor: Component<EditorProps> = (props) => {
         Gapcursor,
         Dropcursor,
         BlockSelection,
-        NodeRange,
         Collaboration.configure({
           document: currentProvider.document
         }),
@@ -166,6 +169,13 @@ const ClientEditor: Component<EditorProps> = (props) => {
   });
 
   const editableEditor = () => (props.editable === false ? null : editor());
+  const updateTextMenuSelectionRange = () => {
+    const selection = editor()?.state.selection;
+
+    if (selection && isTextSelection(selection) && !selection.empty) {
+      setTextMenuSelectionRange({ from: selection.from, to: selection.to });
+    }
+  };
 
   onCleanup(() => {
     editor()?.destroy();
@@ -204,8 +214,22 @@ const ClientEditor: Component<EditorProps> = (props) => {
     <BlockSelectionMenu editor={editableEditor()} scrollableContainerRef={scrollableContainerRef}>
       <div class="overflow-hidden relative flex h-full w-full">
         <ScrollShadow scrollableContainerRef={scrollableContainerRef} />
-        <div class="p-10 pt-5 overflow-auto w-full z-0 relative" ref={setScrollableContainerRef}>
-          <BlockMenuArea editor={editableEditor()} notify={props.notify}>
+        <div
+          class="p-10 pt-16 overflow-auto w-full z-0 relative"
+          ref={setScrollableContainerRef}
+          data-editor-scrollable-container
+        >
+          <div
+            class="absolute inset-0 z-20 pointer-events-none not-prose"
+            data-editor-menu-container
+            ref={setMenuContainerRef}
+          />
+          <BlockMenuArea
+            editor={editableEditor()}
+            menuContainerRef={menuContainerRef}
+            notify={props.notify}
+            textMenuSelectionRange={textMenuSelectionRange()}
+          >
             <div class="w-full flex flex-col items-center">
               <div
                 class="w-full prose-editor z-1 max-w-[44rem] prose prose-headings:font-semibold prose-headings:text-gray-700 prose-bold:text-gray-700 dark:prose-invert flex flex-col relative"
@@ -213,9 +237,16 @@ const ClientEditor: Component<EditorProps> = (props) => {
               >
                 <Show when={editableEditor()} keyed>
                   {/* Order of menus is important, as every `registerPlugin()` call re-triggers `onDestroy` */}
-                  <SlashMenu editor={editor()!} />
+                  <SlashMenu editor={editor()!} menuContainerRef={menuContainerRef} />
                   <BubbleMenuWrapper
+                    appendTo={() => menuContainerRef()!}
                     editor={editor()!}
+                    zIndex={EDITOR_MENU_Z_INDEX.bubbleMenu}
+                    options={{
+                      onHide: () => setTextMenuSelectionRange(null),
+                      onShow: updateTextMenuSelectionRange,
+                      onUpdate: updateTextMenuSelectionRange
+                    }}
                     shouldShow={({ editor }) => {
                       //if (pointerDown()) return false;
 
@@ -231,7 +262,7 @@ const ClientEditor: Component<EditorProps> = (props) => {
                   >
                     <BubbleMenu opened editor={editor()!} />
                   </BubbleMenuWrapper>
-                  <DragHandleMenu editor={editor()!} />
+                  <DragHandleMenu editor={editor()!} menuContainerRef={menuContainerRef} />
                 </Show>
                 <div ref={setEditorContentElement} class="min-h-full" />
               </div>

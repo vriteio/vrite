@@ -5,6 +5,7 @@ import { type Accessor, runWithOwner, getOwner, createSignal } from "solid-js";
 import { PluginKey } from "@tiptap/pm/state";
 import { type Editor } from "@tiptap/core";
 import { render } from "solid-js/web";
+import { EDITOR_MENU_Z_INDEX } from "#editor/ui/constants";
 
 const stringToRegex = (str: string): RegExp => {
   return new RegExp(str.replace(/[|\\{}()[\]^$+*?.]/g, "\\$&"), "i");
@@ -13,6 +14,7 @@ const slashMenuPluginKey = new PluginKey("slashMenu");
 const createSlashMenuPlugin = (options: {
   menuItems: Accessor<SlashMenuItem[]>;
   editor: Editor;
+  menuContainerRef: Accessor<HTMLElement | null>;
 }) => {
   const owner = getOwner();
 
@@ -80,8 +82,8 @@ const createSlashMenuPlugin = (options: {
       let component: {
         element: HTMLElement;
         unmount(): void;
-        onKeyDown(props: SuggestionKeyDownProps): boolean;
       } | null = null;
+      let keyDownHandler: ((props: SuggestionKeyDownProps) => boolean) | null = null;
       let popup: Instance | null = null;
 
       return {
@@ -89,7 +91,7 @@ const createSlashMenuPlugin = (options: {
           setSuggestionProps(props);
           setMenuVisible(true);
 
-          const target = document.querySelector("#editor-container")!;
+          const target = options.editor.view.dom.closest("#editor-container") as HTMLElement;
           const element = document.createElement("div");
           const unmount = render(
             () =>
@@ -103,9 +105,7 @@ const createSlashMenuPlugin = (options: {
                     popup?.hide();
                   },
                   setOnKeyDown(handler) {
-                    if (!component) return;
-
-                    component.onKeyDown = handler;
+                    keyDownHandler = handler;
                   }
                 });
                 return <SlashMenu state={state()} />;
@@ -113,7 +113,7 @@ const createSlashMenuPlugin = (options: {
             element
           );
 
-          component = { element, unmount, onKeyDown: () => false };
+          component = { element, unmount };
 
           if (!props.clientRect) {
             return;
@@ -121,9 +121,9 @@ const createSlashMenuPlugin = (options: {
 
           popup = tippy(target, {
             getReferenceClientRect: () => getReferenceClientRect(props),
-            appendTo: () => target,
+            appendTo: () => options.menuContainerRef() || target,
             duration: 0,
-            zIndex: 10,
+            zIndex: EDITOR_MENU_Z_INDEX.slashMenu,
             content: component.element,
             showOnCreate: true,
             interactive: true,
@@ -135,6 +135,7 @@ const createSlashMenuPlugin = (options: {
             }
           });
           popup.popper.classList.add("slash-menu");
+          popup.popper.style.pointerEvents = "auto";
         },
 
         onUpdate(props) {
@@ -157,13 +158,14 @@ const createSlashMenuPlugin = (options: {
             return true;
           }
 
-          return component?.onKeyDown(props) ?? false;
+          return keyDownHandler?.(props) ?? false;
         },
 
         onExit() {
           setMenuVisible(false);
           popup?.destroy();
           component?.unmount();
+          keyDownHandler = null;
         }
       };
     }

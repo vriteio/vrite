@@ -1,8 +1,7 @@
-import { Extension } from "@tiptap/core";
-import type { Range } from "@tiptap/core";
-import { type ResolvedPos } from "@tiptap/pm/model";
-import { TextSelection, PluginKey, Plugin } from "@tiptap/pm/state";
+import type { CommandProps, KeyboardShortcutCommand, Range } from "@tiptap/core";
+import { PluginKey, Plugin } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
+import { isNodeRangeSelection, NodeRange, NodeRangeSelection } from "@tiptap/extension-node-range";
 
 declare module "@tiptap/core" {
   interface Commands<ReturnType> {
@@ -12,24 +11,17 @@ declare module "@tiptap/core" {
   }
 }
 
-class BlockSelection extends TextSelection {
-  public constructor($anchor: ResolvedPos, $head?: ResolvedPos) {
-    super($anchor, $head);
-  }
-}
-
-const isBlockSelection = (value: unknown): value is BlockSelection => {
-  return value instanceof BlockSelection;
-};
-const BlockSelectionExtension = Extension.create({
+const BlockSelection = NodeRangeSelection;
+const isBlockSelection = isNodeRangeSelection;
+const BlockSelectionExtension = NodeRange.extend({
   name: "blockSelection",
-  // NodeRange also handles Mod-a and always consumes it. Run this extension's
-  // keymap first so progressive block selection gets a chance to handle it.
   priority: 1000,
   addProseMirrorPlugins() {
     const editor = this.editor;
+    const parentPlugins = (this as unknown as { parent?: () => Plugin[] }).parent?.() || [];
 
     return [
+      ...parentPlugins,
       new Plugin({
         key: new PluginKey("blockSelection"),
         props: {
@@ -62,6 +54,7 @@ const BlockSelectionExtension = Extension.create({
             const { doc, selection } = state;
             const { from, to } = selection;
             const decorations: Decoration[] = [];
+
             if (!isBlockSelection(selection)) return null;
 
             doc.nodesBetween(from, to, (node, pos) => {
@@ -84,8 +77,8 @@ const BlockSelectionExtension = Extension.create({
   },
   addCommands() {
     return {
-      setBlockSelection(position) {
-        return ({ tr }) => {
+      setBlockSelection(position: Range) {
+        return ({ tr }: CommandProps) => {
           tr.setSelection(
             new BlockSelection(tr.doc.resolve(position.from), tr.doc.resolve(position.to))
           );
@@ -96,8 +89,13 @@ const BlockSelectionExtension = Extension.create({
     };
   },
   addKeyboardShortcuts() {
+    const parentShortcuts =
+      (this as unknown as { parent?: () => Record<string, KeyboardShortcutCommand> }).parent?.() ||
+      {};
+
     return {
-      "Mod-a": ({ editor }) => {
+      ...parentShortcuts,
+      "Mod-a": ({ editor }: Parameters<KeyboardShortcutCommand>[0]) => {
         const { state } = editor;
         const { selection, doc } = state;
         const resolvedPos = selection.$from;

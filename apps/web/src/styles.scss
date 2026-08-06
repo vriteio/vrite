@@ -1,4 +1,7 @@
+// Browser reset
 @import "@unocss/reset/tailwind.css";
+
+// Application fonts
 @font-face {
   font-family: "NunitoVariable";
   font-style: normal;
@@ -27,21 +30,25 @@
   src: url("/jetbrains-mono-wghtOnly-normal.woff2") format("woff2");
 }
 
+// Shared theme colors
 :root {
-  --color-primary: #ff3617;
-  --color-secondary: #f88f52;
+  --color-primary: theme("colors.primary");
+  --color-secondary: theme("colors.secondary");
+  --color-tertiary: theme("colors.tertiary");
 }
 
 // Structure
 html {
-  @apply h-[100dvh] text-gray-700 bg-gray-100 from-secondary via-primary to-secondary overflow-hidden;
+  @apply overflow-hidden overscroll-y-none bg-gray-100 text-gray-700 from-secondary via-primary to-secondary;
+  height: 100dvh;
   font-family: "NunitoVariable", sans-serif;
-  overscroll-behavior-y: none;
   -webkit-overflow-scrolling: touch;
 }
+
 html.dark {
-  @apply text-white bg-gray-800;
+  @apply bg-gray-800 text-white;
 }
+
 body {
   @apply flex min-h-full;
 }
@@ -50,43 +57,23 @@ body {
   @apply flex flex-col flex-1 w-full h-screen;
 }
 
-// Custom classes
+// Dotted page background
 .dots-background {
-  @apply absolute h-full w-full top-0 left-0;
+  @apply left-0 top-0 -z-1 h-full w-full bg-center;
   background-image: radial-gradient(rgba(229, 231, 235, 0.8) 2px, transparent 0);
   background-size: 16px 16px;
-  background-position: center center;
-  z-index: -1;
-}
-.dark {
-  .dots-background {
-    background-image: radial-gradient(rgba(75, 85, 99, 0.2) 2px, transparent 0);
-  }
 }
 
-// Utilities
+.dark .dots-background {
+  background-image: radial-gradient(rgba(75, 85, 99, 0.2) 2px, transparent 0);
+}
+
+// Monospace utility
 .font-mono {
   font-family: "JetBrainsMonoVariable", monospace !important;
 }
 
-@keyframes animate-caret-blink {
-  0%,
-  70%,
-  100% {
-    opacity: 1;
-  }
-
-  20%,
-  50% {
-    opacity: 0;
-  }
-}
-.animate-caret-blink {
-  animation: animate-caret-blink 1.25s ease-out infinite;
-}
-.dropdown-opened #app {
-  @apply pointer-events-none;
-}
+// Global scrollbars
 ::-webkit-scrollbar {
   @apply w-3 bg-gray-50;
 }
@@ -113,7 +100,7 @@ body {
   }
 }
 
-// ARK UI Styles; TODO: PUT SOMEWHERE ELSE
+// Ark UI visibility state
 [hidden] {
   @apply hidden!;
 }

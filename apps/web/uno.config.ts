@@ -57,8 +57,10 @@ const config = defineConfig({
   ],
   theme: {
     colors: {
-      primary: "var(--color-primary)",
-      secondary: "var(--color-secondary)",
+      primary: "#ff3617",
+      secondary: "#f88f52",
+      // Mix of primary and secondary
+      tertiary: "#fc6335",
       gray: {
         ...colors,
         850: "#1b2534",

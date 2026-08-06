@@ -7,7 +7,10 @@ const Link = BaseLink.extend({
   inclusive: true,
   priority: 100,
   addOptions() {
+    const parentOptions = this.parent?.();
+
     return {
+      ...parentOptions,
       linkOnPaste: true,
       autolink: true,
       protocols: [],
@@ -18,6 +21,7 @@ const Link = BaseLink.extend({
         rel: "noopener noreferrer nofollow",
         class: null
       },
+      markdownLinks: parentOptions?.markdownLinks ?? false,
       openOnClick: false,
       validate: (url) => Boolean(validateURL(url)),
       isAllowedUri: (url) => Boolean(validateURL(url)),

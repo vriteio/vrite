@@ -1,6 +1,7 @@
 import { config } from "@andesine/backend/lib/config";
-import { pool } from "@andesine/backend/lib/postgres";
-import { stripe } from "@andesine/backend/lib/stripe";
+// Import specific adapters to avoid eager evaluation of other adapters like Redis
+import { pool } from "@andesine/backend/lib/adapters/postgres";
+import { stripe } from "@andesine/backend/lib/adapters/stripe";
 
 interface UsageLedgerRow {
   id: string;

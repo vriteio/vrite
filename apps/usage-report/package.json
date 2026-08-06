@@ -13,13 +13,13 @@
     "base-x": "^5.0.1",
     "drizzle-orm": "^0.45.2",
     "pg": "^8.22.0",
-    "stripe": "^22.1.1",
+    "stripe": "^22.4.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@types/node": "^25.9.1",
-    "@types/pg": "^8.20.0",
-    "rolldown": "^1.0.3",
+    "@types/node": "^26.1.2",
+    "@types/pg": "^8.20.3",
+    "rolldown": "^1.2.2",
     "typescript": "6.0.3"
   }
 }

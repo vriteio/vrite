@@ -7,6 +7,7 @@ import {
   type ComponentProps,
   createContext,
   createEffect,
+  createMemo,
   createSignal,
   type JSX,
   onCleanup,
@@ -30,8 +31,10 @@ interface DropdownProps extends JSX.HTMLAttributes<HTMLDivElement> {
   children: JSX.Element;
   opened?: boolean;
   portal?: boolean;
-  trigger?: Component<{ opened: boolean }>;
+  positioningStrategy?: "absolute" | "fixed";
+  trigger?: Component<{ contextMenu: boolean; opened: boolean }>;
   offset?: { mainAxis?: number; crossAxis?: number };
+  onContextMenuChange?(contextMenu: boolean): void;
   setOpened?(opened: boolean): void;
 }
 
@@ -82,8 +85,26 @@ const Dropdown: Component<DropdownProps> = (props) => {
   const [ghostAnchorRef, setGhostAnchorRef] = createRef<HTMLElement | null>(null);
   const [activatorRef, setActivatorRef] = createRef<HTMLElement | null>(null);
   const [opened, setOpened] = createSignal(props.opened || false);
+  let contextMenuFrame: number | null = null;
   const { onContextMenu } = useContext(DropdownAreaContext);
-  const anchorPoint = () => contextAnchorPoint() || props.anchorPoint;
+  const positioningStrategy = () => props.positioningStrategy || "fixed";
+  const toPositioningPoint = (point: Point): Point => {
+    if (positioningStrategy() !== "absolute") return point;
+
+    const offsetParent = ghostAnchorRef()?.offsetParent;
+    const offsetParentRect = offsetParent?.getBoundingClientRect();
+    const scrollLeft = offsetParent instanceof HTMLElement ? offsetParent.scrollLeft : 0;
+    const scrollTop = offsetParent instanceof HTMLElement ? offsetParent.scrollTop : 0;
+
+    return {
+      x: point.x - (offsetParentRect?.left || 0) + scrollLeft,
+      y: point.y - (offsetParentRect?.top || 0) + scrollTop
+    };
+  };
+  const externalAnchorPoint = createMemo(() => {
+    return props.anchorPoint ? toPositioningPoint(props.anchorPoint) : null;
+  });
+  const anchorPoint = () => contextAnchorPoint() || externalAnchorPoint();
   const getAnchorElement = (): HTMLElement | null => {
     // If context menu point is set, use ghost anchor; otherwise use activator
     if (anchorPoint()) {
@@ -120,18 +141,36 @@ const Dropdown: Component<DropdownProps> = (props) => {
   // Register with DropdownArea context for context menu handling
   createEffect(() => {
     onContextMenu((event) => {
+      const reopenCurrentDropdown = opened();
+
       if (activeContextMenuClose && activeContextMenuClose !== closeContextMenu) {
         activeContextMenuClose();
       }
 
-      setContextAnchorPoint({ x: event.clientX, y: event.clientY });
-      setOpened(true);
-      activeContextMenuClose = closeContextMenu;
+      const openContextMenu = () => {
+        setContextAnchorPoint(toPositioningPoint({ x: event.clientX, y: event.clientY }));
+        setOpened(true);
+        activeContextMenuClose = closeContextMenu;
+      };
+
+      if (reopenCurrentDropdown) {
+        closeContextMenu();
+        if (contextMenuFrame !== null) cancelAnimationFrame(contextMenuFrame);
+        contextMenuFrame = requestAnimationFrame(() => {
+          contextMenuFrame = null;
+          openContextMenu();
+        });
+      } else {
+        openContextMenu();
+      }
+
       event.preventDefault();
       event.stopPropagation();
     });
   });
   onCleanup(() => {
+    if (contextMenuFrame !== null) cancelAnimationFrame(contextMenuFrame);
+
     if (activeContextMenuClose === closeContextMenu) {
       activeContextMenuClose = null;
     }
@@ -143,6 +182,9 @@ const Dropdown: Component<DropdownProps> = (props) => {
   });
   createEffect(() => {
     props.setOpened?.(opened());
+  });
+  createEffect(() => {
+    props.onContextMenuChange?.(contextAnchorPoint() !== null);
   });
 
   return (
@@ -156,7 +198,7 @@ const Dropdown: Component<DropdownProps> = (props) => {
           crossAxis: props.offset?.crossAxis ?? 0
         },
         placement: placement(),
-        strategy: "fixed",
+        strategy: positioningStrategy(),
         getAnchorElement
       }}
       unmountOnExit
@@ -171,7 +213,10 @@ const Dropdown: Component<DropdownProps> = (props) => {
         {/* Ghost anchor for context menu positioning */}
         <div
           ref={setGhostAnchorRef}
-          class="fixed w-0 h-0 pointer-events-none"
+          class={clsx(
+            "w-0 h-0 pointer-events-none",
+            positioningStrategy() === "absolute" ? "absolute" : "fixed"
+          )}
           style={{
             top: `${anchorPoint()?.y || 0}px`,
             left: `${anchorPoint()?.x || 0}px`
@@ -185,7 +230,11 @@ const Dropdown: Component<DropdownProps> = (props) => {
             }}
             asChild={(triggerProps) => (
               <div ref={setActivatorRef} class="contents" {...triggerProps()}>
-                <Dynamic component={props.trigger} opened={opened()} />
+                <Dynamic
+                  component={props.trigger}
+                  contextMenu={contextAnchorPoint() !== null}
+                  opened={opened()}
+                />
               </div>
             )}
           />

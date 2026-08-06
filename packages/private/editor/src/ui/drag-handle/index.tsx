@@ -6,21 +6,44 @@ import {
 } from "@tiptap/extension-drag-handle";
 import { IconButton } from "@andesine/components";
 import { type Editor } from "@tiptap/core";
-import { type Component, createSignal, onCleanup, onMount, Show } from "solid-js";
+import { type Accessor, type Component, createSignal, onCleanup, onMount, Show } from "solid-js";
+import {
+  getBlockContentRect,
+  getBlockControlAnchorRect,
+  getBlockControlTargetAtY,
+  getBlockSelectionTopTarget,
+  getCachedElementRect,
+  getEditorScrollContainer,
+  isPointInBlockControlArea,
+  isTargetInBlockSelection,
+  registerSelectionControlHiding
+} from "#editor/ui/block-control-targeting";
+import type { BlockControlTarget } from "#editor/ui/block-control-targeting";
+import { EDITOR_MENU_Z_INDEX, LIST_ITEM_TYPES } from "#editor/ui/constants";
+import { createListItemTargetResolver } from "./list-item-target";
 
 interface DragHandleMenuProps {
   editor: Editor;
+  menuContainerRef: Accessor<HTMLElement | null>;
 }
+
+// Active drags stay visible; otherwise the pointer must resolve to a non-title block.
+const shouldShowDragHandle = (
+  available: boolean,
+  dragging: boolean,
+  target: BlockControlTarget | null
+): boolean => dragging || Boolean(available && target && target.node.type.name !== "title");
 
 const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
   let wrapperRef: HTMLDivElement | undefined;
   let hoverAreaRef: HTMLDivElement | undefined;
-  let currentNodePos = -1;
-  let currentMouseX = 0;
-  let lastMousePosition: { x: number; y: number } | null = null;
+  let hoverBridgeRef: HTMLDivElement | undefined;
+  let pointer = { x: 0, y: 0 };
+  let dragStarting = false;
+  let dragHandleAvailable = false;
+  let currentControlTarget: BlockControlTarget | null = null;
+  let pluginNodePos = -1;
   const [isEmptyParagraph, setIsEmptyParagraph] = createSignal(false);
-
-  const LEFT_THRESHOLD_PERCENT = 0.3; // fraction of node width from left edge within which handle is shown
 
   onMount(() => {
     if (!wrapperRef) return;
@@ -30,54 +53,147 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
     wrapperRef.style.position = "absolute";
     wrapperRef.remove();
     const editorEl = props.editor.view.dom;
-    const handleMouseMoveCapture = (event: MouseEvent) => {
-      if (lastMousePosition?.x === event.clientX && lastMousePosition.y === event.clientY) {
-        event.stopImmediatePropagation();
-        return;
-      }
+    const scrollContainer = getEditorScrollContainer(props.editor);
+    const isDragging = () => dragStarting || wrapperRef.dataset.dragging === "true";
+    const updateDragHandleVisibility = () => {
+      const visible = shouldShowDragHandle(dragHandleAvailable, isDragging(), currentControlTarget);
 
-      lastMousePosition = { x: event.clientX, y: event.clientY };
+      wrapperRef.style.visibility = visible ? "visible" : "hidden";
+      wrapperRef.style.opacity = visible ? "1" : "0";
+    };
+    const setDragHandleAvailable = (
+      available: boolean,
+      target: BlockControlTarget | null = currentControlTarget
+    ) => {
+      dragHandleAvailable = available;
+      currentControlTarget = target;
+      updateDragHandleVisibility();
     };
 
-    const handleMouseMove = (e: MouseEvent) => {
-      currentMouseX = e.clientX;
+    let visibilityFrame: number | null = null;
 
-      requestAnimationFrame(() => {
-        if (!wrapperRef || currentNodePos < 0) return;
+    const scheduleDragHandleVisibilityUpdate = () => {
+      if (visibilityFrame !== null) cancelAnimationFrame(visibilityFrame);
 
-        const node = props.editor.state.doc.nodeAt(currentNodePos);
-        const domNode = props.editor.view.nodeDOM(currentNodePos);
+      visibilityFrame = requestAnimationFrame(() => {
+        visibilityFrame = null;
+        updateDragHandleVisibility();
+      });
+    };
+    const listItemTargetResolver = createListItemTargetResolver(props.editor, () => pointer.y);
+    const setCurrentTarget = (source: BlockControlTarget | null) => {
+      const selection = getBlockSelectionTopTarget(props.editor);
+      const usesSelection = Boolean(
+        selection && source && isTargetInBlockSelection(props.editor, source)
+      );
+      const target = usesSelection ? selection : source;
 
-        if (!(domNode instanceof HTMLElement) || node?.type.name === "title") {
-          wrapperRef.style.visibility = "hidden";
-          wrapperRef.style.opacity = "0";
+      currentControlTarget = target;
+      setIsEmptyParagraph(
+        Boolean(
+          !usesSelection && source?.node.type.name === "paragraph" && source.node.content.size === 0
+        )
+      );
+
+      if (hoverBridgeRef) {
+        const listItem = target && LIST_ITEM_TYPES.has(target.node.type.name);
+
+        if (listItem) {
+          const reference = getBlockControlAnchorRect(props.editor, target);
+          const content = getBlockContentRect(props.editor, target);
+
+          hoverBridgeRef.style.width = `${Math.max(0, content.left - reference.left + 4)}px`;
+        } else {
+          hoverBridgeRef.style.width = "0px";
+        }
+      }
+
+      return target;
+    };
+    const isPointerTargetAvailable = (
+      target: BlockControlTarget | null
+    ): target is BlockControlTarget =>
+      Boolean(
+        target &&
+        isPointInBlockControlArea(props.editor, target, {
+          x: pointer.x,
+          y: pointer.y
+        })
+      );
+    const positionDragHandle = (target: BlockControlTarget) => {
+      const menuContainer = props.menuContainerRef();
+
+      if (!menuContainer) return;
+
+      const referenceRect = getBlockControlAnchorRect(props.editor, target);
+      const menuContainerRect = getCachedElementRect(props.editor, menuContainer);
+
+      wrapperRef.style.left = `${referenceRect.left - menuContainerRect.left - wrapperRef.offsetWidth}px`;
+      wrapperRef.style.top = `${
+        referenceRect.top -
+        menuContainerRect.top +
+        (referenceRect.height - wrapperRef.offsetHeight) / 2
+      }px`;
+    };
+    let pointerFrame: number | null = null;
+    let pendingPointer: { x: number; y: number } | null = null;
+    const handlePointerMove = (event: PointerEvent) => {
+      pendingPointer = { x: event.clientX, y: event.clientY };
+
+      if (pointerFrame !== null) return;
+
+      pointerFrame = requestAnimationFrame(() => {
+        pointerFrame = null;
+        const nextPointer = pendingPointer;
+
+        pendingPointer = null;
+        if (!nextPointer) return;
+
+        pointer = nextPointer;
+
+        const pointerTarget = listItemTargetResolver.resolve(
+          getBlockControlTargetAtY(props.editor, pointer.y)
+        );
+        const target = setCurrentTarget(pointerTarget);
+
+        // The handle is available only while the pointer remains in the resolved block area.
+        if (!target || !isPointerTargetAvailable(pointerTarget)) {
+          setDragHandleAvailable(false, target);
           return;
         }
 
-        const nodeRect = domNode.getBoundingClientRect();
-        const threshold = nodeRect.width * LEFT_THRESHOLD_PERCENT;
-        const distanceFromLeft = currentMouseX - nodeRect.left;
+        const nodeRect = getCachedElementRect(props.editor, target.dom);
+        positionDragHandle(target);
 
-        if (distanceFromLeft > threshold) {
-          wrapperRef.style.visibility = "hidden";
-          wrapperRef.style.opacity = "0";
-        } else {
-          if (hoverAreaRef) {
-            hoverAreaRef.style.top = `${wrapperRef.offsetHeight}px`;
-            hoverAreaRef.style.height = `${Math.max(
-              0,
-              nodeRect.height - wrapperRef.offsetHeight
-            )}px`;
-          }
+        if (hoverAreaRef) {
+          hoverAreaRef.style.top = `${wrapperRef.offsetHeight}px`;
+          hoverAreaRef.style.height = `${Math.max(0, nodeRect.height - wrapperRef.offsetHeight)}px`;
+        }
 
-          wrapperRef.style.visibility = "visible";
-          wrapperRef.style.opacity = "1";
+        setDragHandleAvailable(true, target);
+
+        if (pluginNodePos !== pointerTarget.pos) {
+          const editorRect = getCachedElementRect(props.editor, editorEl);
+
+          editorEl.dispatchEvent(
+            new MouseEvent("mousemove", {
+              bubbles: true,
+              clientX: editorRect.left + editorRect.width / 2,
+              clientY: pointer.y
+            })
+          );
         }
       });
     };
+    const handlePointerLeave = () => {
+      // Active drags retain the handle after the pointer leaves the editor.
+      if (isDragging()) return;
 
-    editorEl.addEventListener("mousemove", handleMouseMoveCapture, true);
-    editorEl.addEventListener("mousemove", handleMouseMove);
+      setDragHandleAvailable(false);
+    };
+
+    scrollContainer?.addEventListener("pointermove", handlePointerMove);
+    scrollContainer?.addEventListener("pointerleave", handlePointerLeave);
 
     const { plugin, unbind } = DragHandlePlugin({
       pluginKey: dragHandlePluginDefaultKey,
@@ -88,45 +204,73 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
         placement: "left",
         strategy: "absolute"
       },
+      onElementDragStart: () => {
+        dragStarting = true;
+        updateDragHandleVisibility();
+      },
+      onElementDragEnd: () => {
+        dragStarting = false;
+        setDragHandleAvailable(false);
+      },
       onNodeChange: ({ pos, node }) => {
-        currentNodePos = pos;
+        pluginNodePos = pos;
+        const candidateDOM = pos >= 0 ? props.editor.view.nodeDOM(pos) : null;
+        const candidateTarget =
+          node && candidateDOM instanceof HTMLElement ? { dom: candidateDOM, node, pos } : null;
+        const effectiveTarget = listItemTargetResolver.resolve(candidateTarget);
+        setCurrentTarget(effectiveTarget);
 
-        const isEmpty = node?.type.name === "paragraph" && node.content.size === 0;
+        dragHandleAvailable = isPointerTargetAvailable(effectiveTarget);
 
-        setIsEmptyParagraph(Boolean(isEmpty));
-
-        if (wrapperRef && node?.type.name === "title") {
-          wrapperRef.style.visibility = "hidden";
-          wrapperRef.style.opacity = "0";
-        }
+        // TipTap shows the handle after this callback, so re-apply visibility next frame.
+        scheduleDragHandleVisibilityUpdate();
       },
       getReferencedVirtualElement: () => {
-        if (currentNodePos < 0) return null;
+        const target = currentControlTarget;
 
-        const domNode = props.editor.view.nodeDOM(currentNodePos);
+        if (!target) return null;
 
-        if (!(domNode instanceof HTMLElement)) return null;
-
-        const nodeRect = domNode.getBoundingClientRect();
-        const lineHeightStyle = window.getComputedStyle(domNode).lineHeight;
-        const parsedLineHeight = Number.parseFloat(lineHeightStyle);
-        const lineHeight =
-          lineHeightStyle === "normal" || Number.isNaN(parsedLineHeight) ? 24 : parsedLineHeight;
-        const referenceRect = new DOMRect(nodeRect.x, nodeRect.y, nodeRect.width, lineHeight);
+        const referenceRect = getBlockControlAnchorRect(props.editor, target);
 
         return {
           getBoundingClientRect: () => referenceRect
         };
       },
-      nestedOptions: normalizeNestedOptions(false)
+      nestedOptions: normalizeNestedOptions({
+        edgeDetection: "none",
+        rules: [
+          {
+            id: "keepBlockquoteContentTogether",
+            evaluate: ({ parent }) => (parent?.type.name === "blockquote" ? 1000 : 0)
+          }
+        ]
+      })
     });
 
     props.editor.registerPlugin(plugin);
+    const pluginWrapper = wrapperRef.parentElement;
+    const menuContainer = props.menuContainerRef();
+
+    if (pluginWrapper && menuContainer) {
+      pluginWrapper.style.zIndex = String(EDITOR_MENU_Z_INDEX.dragHandle);
+      menuContainer.append(pluginWrapper);
+    }
+    const unregisterSelectionHandler = registerSelectionControlHiding(props.editor, () => {
+      if (isDragging()) return;
+
+      setDragHandleAvailable(false, null);
+      listItemTargetResolver.reset();
+      setIsEmptyParagraph(false);
+      props.editor.commands.setMeta("hideDragHandle", true);
+    });
 
     onCleanup(() => {
-      editorEl.removeEventListener("mousemove", handleMouseMoveCapture, true);
-      editorEl.removeEventListener("mousemove", handleMouseMove);
+      if (pointerFrame !== null) cancelAnimationFrame(pointerFrame);
+      if (visibilityFrame !== null) cancelAnimationFrame(visibilityFrame);
+      scrollContainer?.removeEventListener("pointermove", handlePointerMove);
+      scrollContainer?.removeEventListener("pointerleave", handlePointerLeave);
       unbind();
+      unregisterSelectionHandler();
       props.editor.unregisterPlugin(dragHandlePluginDefaultKey);
     });
   });
@@ -138,10 +282,15 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
         ref={hoverAreaRef}
         data-drag-handle-hover-area
       />
+      <div
+        class="absolute left-full inset-y-0 pointer-events-auto"
+        draggable={false}
+        ref={hoverBridgeRef}
+        data-drag-handle-hover-bridge
+      />
       <Show when={isEmptyParagraph()}>
         <IconButton
           icon="i-lucide:plus"
-          class="bg-gray-50"
           variant="text"
           color="contrast"
           size="small"
@@ -151,11 +300,13 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
             e.preventDefault();
             e.stopPropagation();
 
-            if (currentNodePos < 0) return;
+            const pos = currentControlTarget?.pos;
+
+            if (pos === undefined) return;
 
             props.editor
               .chain()
-              .setTextSelection(currentNodePos + 1)
+              .setTextSelection(pos + 1)
               .insertContent("/")
               .focus()
               .run();
@@ -164,7 +315,7 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
       </Show>
       <IconButton
         icon="i-lucide:grip-vertical"
-        class="bg-gray-50 cursor-grab active:cursor-grabbing"
+        class="cursor-grab active:cursor-grabbing"
         variant="text"
         color="contrast"
         size="small"

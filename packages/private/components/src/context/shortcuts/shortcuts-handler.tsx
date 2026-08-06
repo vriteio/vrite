@@ -20,7 +20,8 @@ const ShortcutsHandler = () => {
             }
           }
         ])
-      )
+      ),
+      { ignore: () => false }
     );
 
     onCleanup(() => {

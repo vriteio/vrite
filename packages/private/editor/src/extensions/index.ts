@@ -4,7 +4,7 @@ export * from "./unique-id";
 export * from "./block-selection";
 export * from "./drop-cursor";
 export * from "./node-character-limit";
+export * from "./collaboration-caret";
 export { Collaboration } from "@tiptap/extension-collaboration";
-export { CollaborationCaret } from "@tiptap/extension-collaboration-caret";
 export { NodeRange } from "@tiptap/extension-node-range";
 export { Gapcursor } from "@tiptap/extension-gapcursor";

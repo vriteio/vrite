@@ -1,29 +1,38 @@
 import { type ParentComponent, createSignal, lazy } from "solid-js";
-import { type Shortcuts, ShortcutsContext } from "./context";
+import { type ShortcutRegistrationOptions, type Shortcuts, ShortcutsContext } from "./context";
 import { nanoid } from "nanoid";
+import { defaultKeybindingsHandlerIgnore } from "tinykeys";
+
+interface ShortcutRegistration {
+  options?: ShortcutRegistrationOptions;
+  shortcuts: Shortcuts;
+}
 
 const ShortcutsHandler = lazy(async () => ({
   default: (await import("./shortcuts-handler")).ShortcutsHandler
 }));
 const ShortcutsProvider: ParentComponent = (props) => {
   const [shortcuts, setShortcuts] = createSignal<Shortcuts>({});
-  const registrations = new Map<string, Shortcuts>();
+  const registrations = new Map<string, ShortcutRegistration>();
   const updateShortcuts = () => {
-    const handlers = new Map<string, Array<Shortcuts[string]>>();
+    const handlers = new Map<string, ShortcutRegistration[]>();
 
     for (const registration of registrations.values()) {
-      for (const [key, handler] of Object.entries(registration)) {
-        handlers.set(key, [...(handlers.get(key) || []), handler]);
+      for (const key of Object.keys(registration.shortcuts)) {
+        handlers.set(key, [...(handlers.get(key) || []), registration]);
       }
     }
 
     setShortcuts(
       Object.fromEntries(
-        Array.from(handlers, ([key, registeredHandlers]) => [
+        Array.from(handlers, ([key, registeredShortcuts]) => [
           key,
           (event: KeyboardEvent) => {
-            for (let index = registeredHandlers.length - 1; index >= 0; index -= 1) {
-              if (registeredHandlers[index](event)) return true;
+            for (let index = registeredShortcuts.length - 1; index >= 0; index -= 1) {
+              const registration = registeredShortcuts[index];
+              const ignore = registration.options?.ignore ?? defaultKeybindingsHandlerIgnore;
+
+              if (!ignore(event) && registration.shortcuts[key](event)) return true;
             }
 
             return false;
@@ -32,10 +41,10 @@ const ShortcutsProvider: ParentComponent = (props) => {
       )
     );
   };
-  const registerShortcuts = (shortcuts: Shortcuts) => {
+  const registerShortcuts = (shortcuts: Shortcuts, options?: ShortcutRegistrationOptions) => {
     const id = nanoid();
 
-    registrations.set(id, shortcuts);
+    registrations.set(id, { shortcuts, options });
     updateShortcuts();
 
     return () => {

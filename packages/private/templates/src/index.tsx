@@ -45,7 +45,9 @@ const getEmailContent = <E extends keyof EmailTemplates>(
 ) => {
   const Component = emails[template].component as React.FC<EmailTemplateProps[E]>;
 
-  return render(<Component {...props} />, { plainText: options?.plainText });
+  const email = <Component {...props} />;
+
+  return options?.plainText ? render(email, { plainText: true }) : render(email);
 };
 const getEmailSubject = <E extends keyof EmailTemplates>(
   template: E,

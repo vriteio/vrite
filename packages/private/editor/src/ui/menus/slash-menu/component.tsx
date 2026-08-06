@@ -44,7 +44,6 @@ interface SlashMenuState {
   readonly visible: boolean;
   command(item: SlashMenuItem): void;
   close(): void;
-  onKeyDown?(props: SuggestionKeyDownProps): boolean;
   setOnKeyDown(callback: (props: SuggestionKeyDownProps) => boolean): void;
 }
 interface SlashMenuProps {
@@ -101,11 +100,19 @@ const SlashMenu: Component<SlashMenuProps> = (props) => {
     }
   };
   const upHandler = (): void => {
-    setSelectedIndex((selectedIndex() + props.state.items.length - 1) % props.state.items.length);
+    const itemCount = props.state.items.length;
+
+    if (itemCount === 0) return;
+
+    setSelectedIndex((selectedIndex() + itemCount - 1) % itemCount);
     scrollToSelectedItem();
   };
   const downHandler = (): void => {
-    setSelectedIndex((selectedIndex() + 1) % props.state.items.length);
+    const itemCount = props.state.items.length;
+
+    if (itemCount === 0) return;
+
+    setSelectedIndex((selectedIndex() + 1) % itemCount);
     scrollToSelectedItem();
   };
   const enterHandler = (): void => {
@@ -135,11 +142,7 @@ const SlashMenu: Component<SlashMenuProps> = (props) => {
   };
 
   onMount(() => {
-    void new Promise(() => {
-      if (!props.state.onKeyDown) {
-        props.state.setOnKeyDown(onKeyDown);
-      }
-    });
+    props.state.setOnKeyDown(onKeyDown);
   });
   createEffect(() => {
     if (!props.state.visible) {
