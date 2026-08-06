@@ -1,5 +1,11 @@
 import { Card, useShortcuts } from "@andesine/components";
-import { type RouteSectionProps, useNavigate, useParams, useSearchParams } from "@solidjs/router";
+import {
+  type RouteSectionProps,
+  useLocation,
+  useNavigate,
+  useParams,
+  useSearchParams
+} from "@solidjs/router";
 import { type Component, createEffect, onCleanup, Show, Suspense } from "solid-js";
 import { useLayout } from "#web/context/layout";
 import { WorkspaceProvider } from "#web/context/workspace";
@@ -17,6 +23,7 @@ const MAX_SIDE_PANEL_WIDTH = 640;
 
 const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
   const params = useParams<{ workspaceID: string }>();
+  const location = useLocation();
   const { layout, setLayout } = useLayout();
   const registerShortcuts = useShortcuts();
   const navigate = useNavigate();
@@ -25,6 +32,7 @@ const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
   const [, setSearchParams] = useSearchParams();
   const panel = usePrimaryPanel();
   const workspacePath = () => `/${params.workspaceID || ""}`;
+  const isSettingsRoute = () => location.pathname.startsWith(`${workspacePath()}/settings`);
   const openPanel = (nextPanel: PrimaryPanel) => {
     if (nextPanel === "settings") {
       if (!isOnline()) {
@@ -36,7 +44,7 @@ const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
       if (panel() !== "settings") {
         navigate(`${workspacePath()}/settings/personal`);
       }
-    } else if (panel() === "settings" && nextPanel === "explorer") {
+    } else if (nextPanel === "explorer" && isSettingsRoute()) {
       navigate(workspacePath());
     } else {
       setSearchParams({ p: nextPanel === "help" ? "help" : undefined });

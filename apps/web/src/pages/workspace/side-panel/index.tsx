@@ -14,6 +14,10 @@ const usePrimaryPanel = (): Accessor<PrimaryPanel> => {
   const settingsPath = () => `/${params.workspaceID || ""}/settings`;
 
   return () => {
+    if (searchParams.p === "help") {
+      return "help";
+    }
+
     if (
       location.pathname === settingsPath() ||
       location.pathname.startsWith(`${settingsPath()}/`)
@@ -21,7 +25,7 @@ const usePrimaryPanel = (): Accessor<PrimaryPanel> => {
       return "settings";
     }
 
-    return searchParams.p === "help" ? "help" : "explorer";
+    return "explorer";
   };
 };
 
