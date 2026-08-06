@@ -240,6 +240,7 @@ const isPointInBlockControlArea = (
 export {
   getBlockContentRect,
   getBlockControlAnchorRect,
+  getBlockControlHoverRect,
   getCachedElementRect,
   getEditorScrollContainer,
   isPointInBlockControlArea

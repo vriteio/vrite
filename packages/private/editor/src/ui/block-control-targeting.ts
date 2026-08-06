@@ -4,6 +4,7 @@ import { LIST_ITEM_TYPES } from "./constants";
 import {
   getBlockContentRect,
   getBlockControlAnchorRect,
+  getBlockControlHoverRect,
   getCachedElementRect,
   getEditorScrollContainer,
   isPointInBlockControlArea,
@@ -52,6 +53,40 @@ const isTargetInBlockSelection = (editor: Editor, target: BlockControlTarget): b
     target.pos < selection.to &&
     target.pos + target.node.nodeSize > selection.from
   );
+};
+
+const isPointInBlockSelectionControlArea = (
+  editor: Editor,
+  { x, y }: { x: number; y: number }
+): boolean => {
+  const { doc, selection } = editor.state;
+
+  if (!isBlockSelection(selection)) return false;
+
+  let left = Number.POSITIVE_INFINITY;
+  let right = Number.NEGATIVE_INFINITY;
+  let top = Number.POSITIVE_INFINITY;
+  let bottom = Number.NEGATIVE_INFINITY;
+
+  doc.nodesBetween(selection.from, selection.to, (node, pos, parent) => {
+    if (parent !== doc) return false;
+    if (!node.type.isInGroup("block")) return true;
+
+    const target = getBlockControlTargetAtPos(editor, pos);
+
+    if (!target) return false;
+
+    const rect = getBlockControlHoverRect(editor, target);
+
+    left = Math.min(left, rect.left);
+    right = Math.max(right, rect.right);
+    top = Math.min(top, rect.top);
+    bottom = Math.max(bottom, rect.bottom);
+
+    return false;
+  });
+
+  return x >= left && x <= right && y >= top && y <= bottom;
 };
 
 const registerSelectionControlHiding = (editor: Editor, hideControls: () => void): (() => void) => {
@@ -125,6 +160,7 @@ export {
   getBlockControlTargetAtY,
   getCachedElementRect,
   getEditorScrollContainer,
+  isPointInBlockSelectionControlArea,
   isPointInBlockControlArea,
   isTargetInBlockSelection,
   registerSelectionControlHiding

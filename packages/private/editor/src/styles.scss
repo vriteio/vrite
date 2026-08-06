@@ -159,6 +159,10 @@ header:only-of-type + p:only-of-type.is-empty::before {
       @apply absolute -left-10 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center text-center text-base font-normal leading-4 text-gray-400 dark:bg-gray-900;
       font-family: "JetBrainsMonoVariable", monospace;
     }
+
+    &[data-drag-handle-target]::before {
+      @apply hidden;
+    }
   }
 
   h1,

@@ -1,6 +1,7 @@
 import { IconButton } from "@andesine/components";
 import { type Component } from "solid-js";
 
+// TODO: Fix access
 const HelpPanel: Component = () => (
   <div class="flex flex-col gap-3 flex-1 overflow-y-auto scrollbar-sm w-full px-1 pb-1">
     <h2 class="text-2xl font-semibold my-0.5">Help</h2>

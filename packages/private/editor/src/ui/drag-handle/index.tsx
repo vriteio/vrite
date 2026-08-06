@@ -2,7 +2,10 @@ import {
   DragHandlePlugin,
   dragHandlePluginDefaultKey,
   normalizeNestedOptions,
-  defaultComputePositionConfig
+  defaultComputePositionConfig,
+  defaultRules,
+  type DragHandleRule,
+  type RuleContext
 } from "@tiptap/extension-drag-handle";
 import { IconButton } from "@andesine/components";
 import { type Editor } from "@tiptap/core";
@@ -14,6 +17,7 @@ import {
   getBlockSelectionTopTarget,
   getCachedElementRect,
   getEditorScrollContainer,
+  isPointInBlockSelectionControlArea,
   isPointInBlockControlArea,
   isTargetInBlockSelection,
   registerSelectionControlHiding
@@ -21,6 +25,7 @@ import {
 import type { BlockControlTarget } from "#editor/ui/block-control-targeting";
 import { EDITOR_MENU_Z_INDEX, LIST_ITEM_TYPES } from "#editor/ui/constants";
 import { createListItemTargetResolver } from "./list-item-target";
+import { DragHandleTargetPlugin, dragHandleTargetPluginKey } from "./drag-handle-target-plugin";
 
 interface DragHandleMenuProps {
   editor: Editor;
@@ -42,6 +47,7 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
   let dragStarting = false;
   let dragHandleAvailable = false;
   let currentControlTarget: BlockControlTarget | null = null;
+  let decoratedHeadingTargetPos: number | null = null;
   let pluginNodePos = -1;
   const [isEmptyParagraph, setIsEmptyParagraph] = createSignal(false);
 
@@ -55,11 +61,23 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
     const editorEl = props.editor.view.dom;
     const scrollContainer = getEditorScrollContainer(props.editor);
     const isDragging = () => dragStarting || wrapperRef.dataset.dragging === "true";
+    const updateHeadingIndicator = (visible: boolean) => {
+      const target = currentControlTarget;
+      const nextTargetPos = visible && target?.node.type.name === "heading" ? target.pos : null;
+
+      if (nextTargetPos === decoratedHeadingTargetPos) return;
+
+      decoratedHeadingTargetPos = nextTargetPos;
+      props.editor.view.dispatch(
+        props.editor.state.tr.setMeta(dragHandleTargetPluginKey, { pos: nextTargetPos })
+      );
+    };
     const updateDragHandleVisibility = () => {
       const visible = shouldShowDragHandle(dragHandleAvailable, isDragging(), currentControlTarget);
 
       wrapperRef.style.visibility = visible ? "visible" : "hidden";
       wrapperRef.style.opacity = visible ? "1" : "0";
+      updateHeadingIndicator(visible);
     };
     const setDragHandleAvailable = (
       available: boolean,
@@ -81,6 +99,29 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
       });
     };
     const listItemTargetResolver = createListItemTargetResolver(props.editor, () => pointer.y);
+    const isRuleTargetInBlockSelection = ({ node, pos, view }: RuleContext) => {
+      const dom = view.nodeDOM(pos);
+
+      return (
+        dom instanceof HTMLElement &&
+        isTargetInBlockSelection(props.editor, {
+          dom,
+          node,
+          pos
+        })
+      );
+    };
+    const selectionAwareListWrapperRule: DragHandleRule = {
+      id: "selectionAwareListWrapper",
+      evaluate: (context) => {
+        const firstChild = context.node.firstChild;
+        const isListWrapper = Boolean(firstChild && LIST_ITEM_TYPES.has(firstChild.type.name));
+
+        if (!isListWrapper) return 0;
+
+        return context.depth === 1 && isRuleTargetInBlockSelection(context) ? 0 : 1000;
+      }
+    };
     const setCurrentTarget = (source: BlockControlTarget | null) => {
       const selection = getBlockSelectionTopTarget(props.editor);
       const usesSelection = Boolean(
@@ -120,6 +161,9 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
           y: pointer.y
         })
       );
+    const isPointerInBlockSelectionArea = () => {
+      return isPointInBlockSelectionControlArea(props.editor, pointer);
+    };
     const positionDragHandle = (target: BlockControlTarget) => {
       const menuContainer = props.menuContainerRef();
 
@@ -154,10 +198,16 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
         const pointerTarget = listItemTargetResolver.resolve(
           getBlockControlTargetAtY(props.editor, pointer.y)
         );
-        const target = setCurrentTarget(pointerTarget);
+        const selectionTarget = getBlockSelectionTopTarget(props.editor);
+        const pointerInSelectionArea = Boolean(selectionTarget && isPointerInBlockSelectionArea());
+        const effectivePointerTarget = pointerInSelectionArea ? selectionTarget : pointerTarget;
+        const target = setCurrentTarget(effectivePointerTarget);
 
-        // The handle is available only while the pointer remains in the resolved block area.
-        if (!target || !isPointerTargetAvailable(pointerTarget)) {
+        // A block selection forms one continuous hover area, including gaps between blocks.
+        if (
+          !target ||
+          (!pointerInSelectionArea && !isPointerTargetAvailable(effectivePointerTarget))
+        ) {
           setDragHandleAvailable(false, target);
           return;
         }
@@ -172,7 +222,7 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
 
         setDragHandleAvailable(true, target);
 
-        if (pluginNodePos !== pointerTarget.pos) {
+        if (pluginNodePos !== target.pos) {
           const editorRect = getCachedElementRect(props.editor, editorEl);
 
           editorEl.dispatchEvent(
@@ -217,10 +267,14 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
         const candidateDOM = pos >= 0 ? props.editor.view.nodeDOM(pos) : null;
         const candidateTarget =
           node && candidateDOM instanceof HTMLElement ? { dom: candidateDOM, node, pos } : null;
-        const effectiveTarget = listItemTargetResolver.resolve(candidateTarget);
+        const selectionTarget = getBlockSelectionTopTarget(props.editor);
+        const pointerInSelectionArea = Boolean(selectionTarget && isPointerInBlockSelectionArea());
+        const effectiveTarget = pointerInSelectionArea
+          ? selectionTarget
+          : listItemTargetResolver.resolve(candidateTarget);
         setCurrentTarget(effectiveTarget);
 
-        dragHandleAvailable = isPointerTargetAvailable(effectiveTarget);
+        dragHandleAvailable = pointerInSelectionArea || isPointerTargetAvailable(effectiveTarget);
 
         // TipTap shows the handle after this callback, so re-apply visibility next frame.
         scheduleDragHandleVisibilityUpdate();
@@ -237,8 +291,17 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
         };
       },
       nestedOptions: normalizeNestedOptions({
+        defaultRules: false,
         edgeDetection: "none",
         rules: [
+          {
+            id: "preferTopLevelBlockSelection",
+            evaluate: (context) => {
+              return isRuleTargetInBlockSelection(context) && context.depth !== 1 ? 1000 : 0;
+            }
+          },
+          ...defaultRules.filter((rule) => rule.id !== "listWrapperDeprioritize"),
+          selectionAwareListWrapperRule,
           {
             id: "keepBlockquoteContentTogether",
             evaluate: ({ parent }) => (parent?.type.name === "blockquote" ? 1000 : 0)
@@ -247,6 +310,7 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
       })
     });
 
+    props.editor.registerPlugin(DragHandleTargetPlugin());
     props.editor.registerPlugin(plugin);
     const pluginWrapper = wrapperRef.parentElement;
     const menuContainer = props.menuContainerRef();
@@ -272,6 +336,7 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
       unbind();
       unregisterSelectionHandler();
       props.editor.unregisterPlugin(dragHandlePluginDefaultKey);
+      props.editor.unregisterPlugin(dragHandleTargetPluginKey);
     });
   });
 
