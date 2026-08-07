@@ -1,7 +1,8 @@
 import { Hr, Row, Column, Link, Img } from "@react-email/components";
 import { PUBLIC_APP_URL, X_URL, LINKEDIN_URL, GITHUB_URL } from "./constants";
+import * as React from "react";
 
-const EmailFooter = () => {
+const EmailFooter: React.FC = () => {
   return (
     <>
       <Hr className="my-[24px]" />
