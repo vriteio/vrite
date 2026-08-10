@@ -88,12 +88,12 @@ const VerticalResizeHandle: Component<VerticalResizeHandleProps> = (providedProp
       <div
         class={clsx(
           "absolute w-6 h-[calc(100%-2rem)] px-2 top-4 group flex justify-center items-center cursor-col-resize",
-          props.side === "left" ? "-left-[11.5px]" : "-right-[11.5px]"
+          props.side === "left" ? "-left-[0.71875rem]" : "-right-[0.71875rem]"
         )}
       >
         <div
           class={clsx(
-            "h-full w-1 group-hover:bg-gradient-to-tr absolute rounded-full hover:bg-gradient-to-tr",
+            "h-full w-1 media-mouse:group-hover:bg-gradient-to-tr absolute rounded-full @hover:bg-gradient-to-tr",
             active() && "bg-gradient-to-tr"
           )}
         />

@@ -122,7 +122,7 @@ const InvitePage: Component = () => {
           <Match when={status() === "success"}>
             <div class="h-12 w-12 i-lucide:check-circle text-green-500" />
             <span class="text-lg font-medium">Invite accepted!</span>
-            <span class="text-sm text-gray-400 dark:text-gray-500">
+            <span class="text-sm text-gray-400">
               <Show when={workspaceName()} fallback="Redirecting to your workspace...">
                 {(name) => <>Redirecting you to {name()}...</>}
               </Show>
@@ -131,7 +131,7 @@ const InvitePage: Component = () => {
           <Match when={status() === "error"}>
             <div class="h-12 w-12 i-lucide:x-circle text-red-500" />
             <span class="text-lg font-medium">Couldn't accept invite</span>
-            <span class="text-sm text-gray-400 dark:text-gray-500">{errorMessage()}</span>
+            <span class="text-sm text-gray-400">{errorMessage()}</span>
             <div class="mt-2 flex flex-col sm:flex-row gap-2">
               <Show when={canSwitchAccount()}>
                 <Button size="small" color="primary" link={switchAccountLink()}>

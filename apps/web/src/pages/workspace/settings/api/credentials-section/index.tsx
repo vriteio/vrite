@@ -153,7 +153,7 @@ const APIKeyList: Component<APIKeyListProps> = (props) => {
       >
         <Tree
           tree={keysTree}
-          itemHeight={32}
+          itemHeight="2rem"
           renderItem={(itemID) => {
             const key = () => visibleKeys().find((currentKey) => currentKey.id === itemID)!;
 

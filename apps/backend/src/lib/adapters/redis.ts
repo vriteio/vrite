@@ -1,10 +1,14 @@
 import { config } from "#backend/lib/config";
 import { createClient } from "redis";
 
-const redis = await createClient({ url: config.REDIS_URL }).connect();
-const subscriberRedis = await redis.duplicate().connect();
-const incrementWithExpiry = async (key: string, ttl: number) => {
-  const [count, , remainingTTL] = await redis
+const redis = createClient({ url: config.REDIS_URL });
+const subscriberRedis = redis.duplicate();
+const incrementWithExpiry = async (
+  redisClient: typeof redis | typeof subscriberRedis,
+  key: string,
+  ttl: number
+) => {
+  const [count, , remainingTTL] = await redisClient
     .multi()
     .incr(key)
     .expire(key, ttl, "NX")
@@ -14,4 +18,14 @@ const incrementWithExpiry = async (key: string, ttl: number) => {
   return { count: Number(count), ttl: Number(remainingTTL) };
 };
 
-export { incrementWithExpiry, redis, subscriberRedis };
+redis.on("error", (error) => {
+  console.error("Redis client error", { error });
+});
+subscriberRedis.on("error", (error) => {
+  console.error("Redis subscriber error", { error });
+});
+
+await redis.connect();
+await subscriberRedis.connect();
+
+export { redis, subscriberRedis, incrementWithExpiry };

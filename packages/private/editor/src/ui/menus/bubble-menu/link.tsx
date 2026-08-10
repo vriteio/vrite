@@ -41,7 +41,7 @@ const LinkMenu: Component<{
     <Card
       data-menu="link"
       class={clsx(
-        "relative flex p-1 gap-1 rounded-xl items-center not-prose bg-white",
+        "relative flex w-full max-w-full p-1 gap-1 rounded-none overflow-x-auto scrollbar-hidden items-center not-prose bg-gray-50 md:w-auto md:max-w-none md:rounded-xl md:overflow-visible",
         props.class
       )}
       shade
@@ -63,19 +63,23 @@ const LinkMenu: Component<{
           setUrl(value);
           setInvalid(false);
         }}
+        slot={() => (
+          <Show when={invalid()}>
+            <div class="absolute right-2">
+              <Tooltip content="Invalid URL. Only HTTP, HTTPS, and mailto links are allowed.">
+                <div class="i-lucide:triangle-alert h-4 w-4 text-red-500" />
+              </Tooltip>
+            </div>
+          </Show>
+        )}
         placeholder="Enter URL..."
         onEnter={saveLink}
-        class={clsx("py-0 my-0 flex-1 min-w-40", invalid() && "outline-red-400")}
+        class="py-0 my-0 flex-1 w-40"
         aria-invalid={invalid()}
         variant="outlined"
         color="contrast"
         size="xs"
       />
-      <Show when={invalid()}>
-        <Tooltip content="Invalid URL. Only HTTP, HTTPS, and mailto links are allowed.">
-          <div class="i-lucide:triangle-alert h-4 w-4 text-red-500" />
-        </Tooltip>
-      </Show>
       <IconButton
         icon="i-lucide:check"
         variant="text"

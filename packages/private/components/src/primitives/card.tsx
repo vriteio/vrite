@@ -3,9 +3,9 @@ import clsx from "clsx";
 import { type Component, type JSX, mergeProps, splitProps } from "solid-js";
 
 const cardColors = {
-  base: `:base: border-gray-200 bg-gray-50 dark:bg-gray-900 dark:border-gray-700`,
-  contrast: `:base: bg-gray-100 border-gray-200 dark:bg-gray-800 dark:border-gray-700`,
-  soft: `:base: bg-gray-200 border-gray-300 dark:bg-gray-700 dark:bg-opacity-30 dark:border-gray-700`,
+  base: `:base: border-gray-200 bg-gray-50`,
+  contrast: `:base: bg-gray-100 border-gray-200`,
+  soft: `:base: bg-gray-200 border-gray-300`,
   primary: `:base: text-white bg-gradient-to-tr`
 };
 
@@ -25,7 +25,7 @@ const Card: Component<CardProps> = (providedProps) => {
       {...passedProps}
       class={clsx(
         `:base: p-2 rounded-2xl outline-none`,
-        props.shade && ":base: shadow-[0_0_12px_0px] shadow-gray-200 dark:shadow-gray-900",
+        props.shade && ":base: shadow-[0_0_12px_0px] shadow-gray-200",
         props.color !== "primary" && ":base: border",
         cardColors[props.color],
         props.class

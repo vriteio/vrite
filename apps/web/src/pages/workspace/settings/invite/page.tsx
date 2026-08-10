@@ -148,7 +148,7 @@ const InviteSettingsPage: Component = () => {
           </Suspense>
         </SettingsSection>
         <div class="flex h-4 w-full items-center justify-center">
-          <div class="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
+          <div class="h-px flex-1 bg-gray-200" />
         </div>
         <div class="flex items-center justify-end gap-2">
           <Tooltip content="Go back">

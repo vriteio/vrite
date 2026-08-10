@@ -6,7 +6,6 @@ node_modules
 .pnp.js
 
 # Local env files
-TODO.md
 .env
 .env.local
 .env.development.local
@@ -39,3 +38,7 @@ yarn-error.log*
 # Misc
 .DS_Store
 *.pem
+
+# Notes
+TODO.md
+/AGENTS.override.md

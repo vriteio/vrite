@@ -87,7 +87,7 @@ const MemberItem: Component<{
         checkbox={props.canManage && !props.loading}
         selectable={props.canManage && !props.loading}
         class={clsx("px-1 py-0.5", props.loading && "animate-pulse")}
-        icon={<div class="i-lucide:id-card h-5 w-5 text-gray-400 dark:text-gray-500" />}
+        icon={<div class="i-lucide:id-card h-5 w-5 text-gray-400" />}
         renderLabel={(label) => (
           <div
             class="flex flex-1 items-center gap-1.5"
@@ -95,8 +95,8 @@ const MemberItem: Component<{
           >
             <div class="max-w-48 truncate">{label}</div>
             <Show when={memberEmail()}>
-              <div class="h-4 w-px rounded-full bg-gray-200 dark:bg-gray-700 shrink-0" />
-              <span class="max-w-48 truncate text-xs text-gray-400 dark:text-gray-500 shrink-0">
+              <div class="h-4 w-px rounded-full bg-gray-200 shrink-0" />
+              <span class="max-w-48 truncate text-xs text-gray-400 shrink-0">
                 {memberEmail()}
                 <Show when={props.currentUser}>
                   {" "}
@@ -108,7 +108,7 @@ const MemberItem: Component<{
             </Show>
             <div class="flex-1" />
             <Show when={roleName()}>
-              <span class="shrink-0 text-xs text-gray-400 dark:text-gray-500">{roleName()}</span>
+              <span class="shrink-0 text-xs text-gray-400">{roleName()}</span>
             </Show>
           </div>
         )}
@@ -123,7 +123,9 @@ const MemberItem: Component<{
                 trigger={() => (
                   <div
                     class={clsx(
-                      !menuOpened() && !props.loading && "opacity-20 group-hover:opacity-100"
+                      !menuOpened() &&
+                        !props.loading &&
+                        "opacity-20 media-mouse:group-hover:opacity-100"
                     )}
                   >
                     <IconButton

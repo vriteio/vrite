@@ -15,7 +15,7 @@ interface TreeLevelProps {
 }
 
 const TreeLevel: Component<TreeLevelProps> = (props) => {
-  const [{ isSelected, isExpanded, gap }] = useTree();
+  const [{ isSelected, isExpanded, gap, itemHeight }] = useTree();
   const isRoot = () => props.levelID === TREE_ROOT_ID;
   const levelData = () => props.tree()[props.levelID];
   const childLevelIDs = () => levelData()?.levels || [];
@@ -33,41 +33,43 @@ const TreeLevel: Component<TreeLevelProps> = (props) => {
   return (
     <Show when={isRoot() || isExpanded(props.levelID)}>
       <Show when={!isRoot()}>
-        <div class="flex" style={{ "margin-top": `${gap}px` }}>
+        <div class="flex" style={{ "margin-top": gap }}>
           <div class="min-w-3.5 pl-0.5 flex justify-end items-center">
             <div
               class={clsx(
-                "h-full w-px rounded-full bg-gray-300 dark:border-gray-600",
+                "h-full w-px rounded-full bg-gray-300",
                 (isSelected(props.levelID) || props.highlighted) && "bg-gradient-to-b"
               )}
             />
           </div>
           <div class="flex flex-col flex-1">
             <Show when={!childLevelIDs().length && !childItemIDs().length}>
-              <div class="h-7 flex items-center pl-2 rounded-r-lg relative">
+              <div
+                class="flex items-center pl-2 rounded-r-lg relative"
+                style={{ height: itemHeight }}
+              >
                 <PlaceholderHighlight />
                 <span
                   class={clsx(
                     "text-xs",
                     isSelected(props.levelID) || props.highlighted
                       ? "bg-gradient-to-tr bg-clip-text text-transparent select-none"
-                      : "text-gray-400 dark:text-gray-500"
+                      : "text-gray-400"
                   )}
                 >
                   {props.emptyMessage || "Empty"}
                 </span>
               </div>
             </Show>
-            <div class="flex flex-col" style={{ gap: `${gap}px` }}>
+            <div class="flex flex-col" style={{ gap }}>
               <For each={childLevelIDs()}>{renderLevel}</For>
             </div>
             {props.renderCollectionBoundary?.()}
             <div
               class="flex flex-col"
               style={{
-                "gap": `${gap}px`,
-                "margin-top":
-                  childLevelIDs().length && childItemIDs().length ? `${gap}px` : undefined
+                "gap": gap,
+                "margin-top": childLevelIDs().length && childItemIDs().length ? gap : undefined
               }}
             >
               <For each={childItemIDs()}>{renderItem}</For>
@@ -77,7 +79,7 @@ const TreeLevel: Component<TreeLevelProps> = (props) => {
         </div>
       </Show>
       <Show when={isRoot()}>
-        <div class="flex flex-col" style={{ gap: `${gap}px` }}>
+        <div class="flex flex-col" style={{ gap }}>
           <For each={childLevelIDs()}>{renderLevel}</For>
           <For each={childItemIDs()}>{renderItem}</For>
         </div>

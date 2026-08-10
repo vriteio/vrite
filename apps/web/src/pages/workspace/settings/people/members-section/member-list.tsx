@@ -155,7 +155,7 @@ const WorkspaceMemberList: Component<WorkspaceMemberListProps> = (props) => {
       >
         <Tree
           tree={membersTree}
-          itemHeight={32}
+          itemHeight="2rem"
           renderItem={(itemID) => {
             const member = () => optimisticMembers().find((current) => current.id === itemID)!;
 

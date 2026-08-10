@@ -20,7 +20,7 @@ import { useExplorerMarquee } from "./use-explorer-marquee";
 import clsx from "clsx";
 
 const Explorer = () => {
-  const [{ gap }, { setFocusedID }] = useTree();
+  const [{ gap, itemHeight }, { setFocusedID }] = useTree();
   const { content } = useWorkspace();
   const actions = useExplorerActions();
   const [dropRef, setDropRef] = createRef<HTMLElement | null>(null);
@@ -76,7 +76,7 @@ const Explorer = () => {
         <div
           data-explorer-panel
           tabIndex={0}
-          class="flex flex-col flex-1 justify-center items-start outline-none"
+          class="flex flex-col justify-center items-start outline-none md:flex-1"
           onPointerDown={marquee.onPointerDown}
           onPointerEnter={() => setPointerInside(true)}
           onPointerLeave={() => {
@@ -95,18 +95,18 @@ const Explorer = () => {
           <div class="my-0.5 flex items-center gap-2 px-1">
             <h2 class="text-2xl font-semibold">Explorer</h2>
             <Show when={content.offline()}>
-              <span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
+              <span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
                 Offline: read-only
               </span>
             </Show>
           </div>
           <div
             ref={setContainerRef}
-            class="flex flex-col flex-1 relative w-full overflow-y-auto px-1"
-            style={{ gap: `${gap}px` }}
+            class="relative flex w-full flex-col overflow-y-auto px-1 md:flex-1"
+            style={{ gap }}
           >
             <TreeSelection />
-            <Show when={!loading()} fallback={<ExplorerSkeleton />}>
+            <Show when={!loading()} fallback={<ExplorerSkeleton itemHeight={itemHeight} />}>
               <For each={collections()}>
                 {(collection) => (
                   <DropdownArea>
@@ -134,7 +134,7 @@ const Explorer = () => {
                           <div class="px-1 flex flex-1 gap-4">
                             <span class="flex-1 text-start">{option.label}</span>
                             <Shortcut
-                              class="opacity-0 group-hover/button:opacity-50 font-mono text-[90%]"
+                              class="opacity-0 media-mouse:group-hover/button:opacity-50 font-mono text-[90%]"
                               shortcut={option.shortcut}
                             />
                           </div>
@@ -148,7 +148,7 @@ const Explorer = () => {
                 </div>
               </Show>
             </Show>
-            <div ref={setDropRef} class="flex-1">
+            <div ref={setDropRef} class="md:flex-1">
               <Show when={isDraggedOver()}>
                 <div class="top-0 left-0 -z-10 rounded-lg absolute h-full w-full opacity-10 bg-gradient-to-tr" />
               </Show>
@@ -178,10 +178,10 @@ const Explorer = () => {
   );
 };
 
-const ExplorerSkeleton = () => (
+const ExplorerSkeleton = (props: { itemHeight: string }) => (
   <>
     {["w-36", "w-44", "w-32", "w-40"].map((className) => (
-      <div class="flex gap-1.5 items-center px-1 h-7">
+      <div class="flex gap-1.5 items-center px-1" style={{ height: props.itemHeight }}>
         <Skeleton class={["h-6 w-6", clsx("h-5 rounded-md", className)]} />
       </div>
     ))}

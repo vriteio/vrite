@@ -31,7 +31,7 @@ const SettingsMenuItemRow: Component<SettingsMenuItemRowProps> = (props) => (
       ":base: group relative flex min-h-7 w-full flex-1 select-none items-center gap-1 overflow-hidden rounded-r-lg pl-0.5 text-left font-medium focus:outline-none",
       !props.nested && ":base: rounded-l-lg",
       !props.item.active &&
-        ":base: hover:bg-gradient-to-r hover:from-gray-500/10 hover:to-transparent"
+        ":base: @hover:bg-gradient-to-r @hover:from-gray-500/10 @hover:to-transparent"
     )}
   >
     <Show when={props.item.active && (props.activeBackground ?? true)}>
@@ -45,7 +45,7 @@ const SettingsMenuItemRow: Component<SettingsMenuItemRowProps> = (props) => (
     <div class="relative flex h-6 w-6 items-center justify-center">
       <div
         class={clsx(
-          "h-5 w-5 text-gray-400 dark:text-gray-500",
+          "h-5 w-5 text-gray-400",
           props.item.icon,
           props.item.active && "bg-gradient-to-tr"
         )}
@@ -155,16 +155,14 @@ const SettingsMenu: Component = () => {
   });
 
   return (
-    <div class="flex min-h-0 flex-1 flex-col overflow-y-auto px-1 pb-1 scrollbar-sm">
+    <div class="flex min-h-0 flex-col overflow-y-auto px-1 pb-1 scrollbar-sm md:flex-1">
       <h2 class="my-0.5 text-2xl font-semibold">Settings</h2>
       <div class="flex flex-col gap-3">
         <For each={menu()}>
           {(subMenu) => (
             <div class="flex min-w-0 flex-col">
               <Show when={subMenu.label}>
-                <span class="ml-1 text-gray-400 dark:text-gray-500 text-xs leading-normal">
-                  {subMenu.label}
-                </span>
+                <span class="ml-1 text-gray-400 text-xs leading-normal">{subMenu.label}</span>
               </Show>
               <div class="flex flex-col gap-0.5">
                 <For each={subMenu.items.filter((item) => item.visible ?? true)}>
@@ -183,7 +181,7 @@ const SettingsMenu: Component = () => {
                             <div class="relative flex">
                               <div class="pointer-events-none absolute inset-0 rounded-lg bg-gradient-to-r from-secondary via-primary to-transparent opacity-10" />
                               <div class="relative flex min-w-3.5 items-center justify-end pl-0.5">
-                                <div class="h-full w-px rounded-full bg-gray-300 dark:bg-gray-600" />
+                                <div class="h-full w-px rounded-full bg-gray-300" />
                               </div>
                               <div class="relative flex flex-1 flex-col">
                                 <SettingsMenuItemRow

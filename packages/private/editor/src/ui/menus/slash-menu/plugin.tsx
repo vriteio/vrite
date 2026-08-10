@@ -12,7 +12,7 @@ const stringToRegex = (str: string): RegExp => {
 };
 const slashMenuPluginKey = new PluginKey("slashMenu");
 const createSlashMenuPlugin = (options: {
-  menuItems: Accessor<SlashMenuItem[]>;
+  menuItems: SlashMenuItem[];
   editor: Editor;
   menuContainerRef: Accessor<HTMLElement | null>;
 }) => {
@@ -25,6 +25,8 @@ const createSlashMenuPlugin = (options: {
     allowSpaces: true,
     startOfLine: true,
     allow({ editor }) {
+      if (!window.matchMedia("(min-width: 768px)").matches) return false;
+
       const { selection } = editor.state;
       const selectedNode = selection.$from.node(selection.$from.depth);
 
@@ -54,7 +56,7 @@ const createSlashMenuPlugin = (options: {
       ];
       const filteredItems: SlashMenuItem[] = [];
 
-      options.menuItems().forEach((item) => {
+      options.menuItems.forEach((item) => {
         for (const condition of conditions) {
           if (condition(item) && !filteredItems.includes(item)) {
             filteredItems.push(item);
@@ -113,7 +115,13 @@ const createSlashMenuPlugin = (options: {
             element
           );
 
-          component = { element, unmount };
+          component = {
+            element,
+            unmount() {
+              unmount();
+              element.remove();
+            }
+          };
 
           if (!props.clientRect) {
             return;

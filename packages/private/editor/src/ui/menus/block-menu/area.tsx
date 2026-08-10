@@ -1,4 +1,4 @@
-import { isBlockSelection } from "#editor/extensions";
+import { isBlockSelection, setBlockSelectionAtCoords } from "#editor/extensions";
 import { DropdownArea, useShortcuts } from "@andesine/components";
 import { type Editor, isTextSelection } from "@tiptap/core";
 import {
@@ -119,6 +119,14 @@ const BlockMenuArea: ParentComponent<BlockMenuAreaProps> = (props) => {
       }}
     >
       <DropdownArea
+        onLongPress={(event) => {
+          if (!props.editor) return;
+
+          setBlockSelectionAtCoords(props.editor, {
+            left: event.clientX,
+            top: event.clientY
+          });
+        }}
         enabled={(event) => {
           if (!props.editor) {
             return false;

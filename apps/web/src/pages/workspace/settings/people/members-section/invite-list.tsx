@@ -149,7 +149,7 @@ const InviteList: Component<InviteListProps> = (props) => {
       >
         <Tree
           tree={invitesTree}
-          itemHeight={32}
+          itemHeight="2rem"
           renderItem={(itemID) => {
             const invite = () => optimisticInvites().find((current) => current.id === itemID)!;
 

@@ -125,7 +125,7 @@ const LineChart: Component<LineChartProps> = (props) => {
 
   const defaultTooltipContent = (point: LineChartDataPoint): JSX.Element => (
     <div class="flex flex-col items-center gap-0.5">
-      <span class="text-[10px] opacity-70">{point.x}</span>
+      <span class="text-[0.625rem] opacity-70">{point.x}</span>
       <span class="font-bold text-xs" style={{ color: lineColor() }}>
         {point.y.toLocaleString()}
       </span>
@@ -273,13 +273,13 @@ const LineChart: Component<LineChartProps> = (props) => {
               : {
                   left: `${hoverPoint()!.px}px`,
                   top: `${hoverPoint()!.py}px`,
-                  transform: "translate(-50%, calc(-100% - 10px))"
+                  transform: "translate(-50%, calc(-100% - 0.625rem))"
                 }
           }
         >
           <div
             class={clsx(
-              "relative flex whitespace-nowrap rounded-md bg-gray-800 px-1.5 py-1 text-xs leading-none text-gray-50 ring-1 ring-gray-900 shadow-inner shadow-gray-900 shadow-opacity-20 dark:bg-gray-50 dark:text-gray-800 dark:ring-gray-200 dark:shadow-gray-200",
+              "relative flex whitespace-nowrap rounded-md bg-gray-800 px-1.5 py-1 text-xs leading-none text-gray-50 ring-1 ring-gray-900 shadow-inner shadow-gray-900 shadow-opacity-20",
               props.tooltipClass
             )}
           >

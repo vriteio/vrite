@@ -131,7 +131,7 @@ const RoleList: Component<RoleListProps> = (props) => {
       >
         <Tree
           tree={rolesTree}
-          itemHeight={32}
+          itemHeight="2rem"
           renderItem={(itemID) => {
             const role = () => optimisticRoles().find((current) => current.id === itemID)!;
 

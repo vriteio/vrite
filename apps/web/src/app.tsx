@@ -1,6 +1,6 @@
 import { Router, createAsync, query, redirect, revalidate } from "@solidjs/router";
 import { MetaProvider, Title } from "@solidjs/meta";
-import { TooltipProvider, ShortcutsProvider, IconButton, Spinner } from "@andesine/components";
+import { TooltipProvider, ShortcutsProvider, IconButton } from "@andesine/components";
 import { QueryClient, QueryClientProvider } from "@tanstack/solid-query";
 import { ErrorBoundary, type ParentComponent, Suspense, createSignal } from "solid-js";
 import { NotificationsProvider } from "./context/notifications";
@@ -85,18 +85,18 @@ const AppError = (props: AppErrorProps) => {
       <Title>Something went wrong | Andesine</Title>
       <div class="dots-background absolute mask-edge-fading-16" />
       <div class="relative p-4 lg:p-24">
-        <div class="absolute left-0 top-0 h-full w-full rounded-2xl bg-gray-100 mask-edge-fading-4 dark:bg-gray-850 lg:mask-edge-fading-24" />
+        <div class="absolute left-0 top-0 h-full w-full rounded-2xl bg-gray-100 mask-edge-fading-4 lg:mask-edge-fading-24" />
         <div class="relative flex w-72 flex-col gap-4">
           <div>
             <h1 class="text-2xl font-semibold">Something went wrong</h1>
-            <p class="text-sm leading-5 text-gray-400 dark:text-gray-500">
+            <p class="text-sm leading-5 text-gray-400">
               The page couldn’t be loaded. Check your connection and try again.
             </p>
           </div>
           <IconButton
             icon="i-lucide:rotate-cw"
             class="w-full @hover:bg-gray-50 gap-1"
-            iconProps={{ class: "h-5 w-5 text-gray-400 dark:text-gray-500" }}
+            iconProps={{ class: "h-5 w-5 text-gray-400" }}
             variant="outlined"
             color="contrast"
             label="Retry"

@@ -87,7 +87,7 @@ const BillingProcessingDialog: Component<BillingProcessingDialogProps> = (props)
             <h3 class="text-lg font-semibold leading-tight">
               {state() === "polling" ? "Confirming your subscription" : "Confirmation is delayed"}
             </h3>
-            <p class="text-sm leading-tight text-gray-400 dark:text-gray-500" aria-live="polite">
+            <p class="text-sm leading-tight text-gray-400" aria-live="polite">
               {state() === "polling"
                 ? "Stripe accepted your Checkout. Waiting for the subscription to appear in your workspace."
                 : "Stripe has not confirmed the subscription yet. You can refresh the status or return later; no additional Checkout is needed."}
@@ -97,7 +97,7 @@ const BillingProcessingDialog: Component<BillingProcessingDialogProps> = (props)
             when={state() === "delayed"}
             fallback={
               <div class="flex min-h-16 items-center justify-center gap-2 rounded-xl bg-gray-100 text-sm">
-                <Spinner class="h-5 w-5 text-gray-400 dark:text-gray-500" />
+                <Spinner class="h-5 w-5 text-gray-400" />
                 Waiting for Stripe
               </div>
             }

@@ -75,7 +75,7 @@ const VerificationDialogOTPView: Component<VerificationDialogOTPViewProps> = (pr
     <>
       <div class="flex flex-col gap-0.5">
         <h3 class="text-lg font-semibold leading-tight">Check your email</h3>
-        <p class="text-sm leading-tight text-gray-400 dark:text-gray-500">
+        <p class="text-sm leading-tight text-gray-400">
           Enter the six-digit code sent to <br />
           <span class="font-medium bg-gradient-to-tr bg-clip-text text-transparent">{email()}</span>
         </p>
@@ -112,7 +112,7 @@ const VerificationDialogOTPView: Component<VerificationDialogOTPViewProps> = (pr
           </Button>
         </div>
       </div>
-      <div class="flex flex-col items-start justify-center w-full text-sm text-gray-400 dark:text-gray-500">
+      <div class="flex flex-col items-start justify-center w-full text-sm text-gray-400">
         <span>Didn't receive the code?</span>
         <div class="relative inline-flex -my-1">
           <IconButton
@@ -240,7 +240,7 @@ const VerificationDialog: Component = () => {
             <Match when={view() === "methods"}>
               <div class="flex flex-col gap-0.5">
                 <h3 class="text-lg font-semibold leading-tight">Verification required</h3>
-                <p class="text-sm leading-tight text-gray-400 dark:text-gray-500">
+                <p class="text-sm leading-tight text-gray-400">
                   To change sensitive security settings, verify your identity using one of the
                   methods below
                 </p>
@@ -259,16 +259,16 @@ const VerificationDialog: Component = () => {
                     disabled={sendOTPMutation.isPending}
                     onClick={() => passkeyMutation.mutate()}
                   />
-                  <div class="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
-                    <div class="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
+                  <div class="flex items-center gap-2 text-xs text-gray-400">
+                    <div class="h-px flex-1 bg-gray-200" />
                     Or
-                    <div class="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
+                    <div class="h-px flex-1 bg-gray-200" />
                   </div>
                 </Show>
                 <IconButton
                   icon="i-lucide:mail"
                   iconProps={{
-                    class: clsx("h-4 w-4", hasPasskey() && "text-gray-400 dark:text-gray-500")
+                    class: clsx("h-4 w-4", hasPasskey() && "text-gray-400")
                   }}
                   size="small"
                   class="w-full"

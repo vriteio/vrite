@@ -28,7 +28,7 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
           icon={
             <div
               class={clsx(
-                "h-full w-full text-gray-400 dark:text-gray-500 i-lucide:file-text",
+                "h-full w-full text-gray-400 i-lucide:file-text",
                 isSelected(props.entry.id) && "bg-gradient-to-tr"
               )}
             />
@@ -61,8 +61,8 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
                       class={clsx(
                         "",
                         props.entry.id === params.slug
-                          ? !menuOpened() && "opacity-0 group-hover:opacity-100"
-                          : !menuOpened() && "hidden group-hover:flex"
+                          ? !menuOpened() && "opacity-0 media-mouse:group-hover:opacity-100"
+                          : !menuOpened() && "hidden media-mouse:group-hover:flex"
                       )}
                     >
                       <IconButton
@@ -80,7 +80,7 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
                 <div
                   class={clsx(
                     "flex justify-center items-center h-7 w-7 absolute right-0 top-0",
-                    selection().length <= 1 && "group-hover:hidden"
+                    selection().length <= 1 && "media-mouse:group-hover:hidden"
                   )}
                 >
                   <div class="i-lucide:pencil bg-gradient-to-tr h-4 w-4 from-secondary via-primary to-secondary" />

@@ -52,16 +52,12 @@ const Select = <O extends Option>(props: SelectProps<O>): JSX.Element => {
           <span class="flex flex-1 items-start text-start">
             <Show
               when={selectedOption()}
-              fallback={
-                <span class="mx-1 text-gray-400 dark:text-gray-500">
-                  {props.placeholder || "Select"}
-                </span>
-              }
+              fallback={<span class="mx-1 text-gray-400">{props.placeholder || "Select"}</span>}
             >
               {selectedOption()?.label}
             </Show>
           </span>
-          <span class="i-lucide:chevrons-up-down text-gray-400 dark:text-gray-500" />
+          <span class="i-lucide:chevrons-up-down text-gray-400" />
         </Button>
       )}
     />

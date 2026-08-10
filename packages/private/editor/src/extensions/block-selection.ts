@@ -1,4 +1,4 @@
-import type { CommandProps, KeyboardShortcutCommand, Range } from "@tiptap/core";
+import type { CommandProps, Editor, KeyboardShortcutCommand, Range } from "@tiptap/core";
 import { PluginKey, Plugin } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
 import { isNodeRangeSelection, NodeRange, NodeRangeSelection } from "@tiptap/extension-node-range";
@@ -13,6 +13,29 @@ declare module "@tiptap/core" {
 
 const BlockSelection = NodeRangeSelection;
 const isBlockSelection = isNodeRangeSelection;
+const setBlockSelectionAtCoords = (
+  editor: Editor,
+  coords: { left: number; top: number }
+): boolean => {
+  const { doc, selection } = editor.state;
+  const { pos } = editor.view.posAtCoords(coords) || {};
+
+  if (typeof pos !== "number") return false;
+
+  const resolvedPos = doc.resolve(pos);
+  const node = resolvedPos.node(1) || resolvedPos.nodeAfter;
+
+  if (!node) return false;
+
+  const from = resolvedPos.start(1);
+  const to = from + node.nodeSize - 2;
+
+  if (!(isBlockSelection(selection) && selection.from <= from && selection.to >= to)) {
+    editor.chain().setBlockSelection({ from, to }).run();
+  }
+
+  return true;
+};
 const BlockSelectionExtension = NodeRange.extend({
   name: "blockSelection",
   priority: 1000,
@@ -27,22 +50,13 @@ const BlockSelectionExtension = NodeRange.extend({
         props: {
           handleDOMEvents: {
             contextmenu(view, event) {
-              const { doc, selection } = view.state;
-              const { pos } = view.posAtCoords({ left: event.clientX, top: event.clientY }) || {};
-
-              if (typeof pos !== "number") return false;
-
-              const resolvedPos = doc.resolve(pos);
-              const node = resolvedPos.node(1) || resolvedPos.nodeAfter;
-
-              if (!node) return false;
-
-              const from = resolvedPos.start(1);
-              const to = from + (node.nodeSize || 0) - 2;
-
-              // If block selection already covers this node, keep existing selection
-              if (!(isBlockSelection(selection) && selection.from <= from && selection.to >= to)) {
-                editor.chain().setBlockSelection({ from, to }).focus().run();
+              if (
+                !setBlockSelectionAtCoords(editor, {
+                  left: event.clientX,
+                  top: event.clientY
+                })
+              ) {
+                return false;
               }
 
               event.preventDefault();
@@ -152,4 +166,4 @@ const BlockSelectionExtension = NodeRange.extend({
   }
 });
 
-export { BlockSelectionExtension as BlockSelection, isBlockSelection };
+export { BlockSelectionExtension as BlockSelection, isBlockSelection, setBlockSelectionAtCoords };

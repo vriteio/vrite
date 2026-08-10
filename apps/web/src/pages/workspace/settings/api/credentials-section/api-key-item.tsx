@@ -71,7 +71,7 @@ const APIKeyItem: Component<APIKeyItemProps> = (props) => {
         icon={
           <Show
             when={props.expiresAt}
-            fallback={<div class="h-5 w-5 i-lucide:key-round text-gray-400 dark:text-gray-500" />}
+            fallback={<div class="h-5 w-5 i-lucide:key-round text-gray-400" />}
           >
             <Tooltip
               content={`Expires ${formatDistanceToNow(new Date(props.expiresAt!), { addSuffix: true })}`}
@@ -85,12 +85,10 @@ const APIKeyItem: Component<APIKeyItemProps> = (props) => {
           <div class="flex-1 flex items-center gap-1.5">
             <div class="flex items-center flex-1 gap-1.5" title={props.name}>
               <div class={clsx(props.expiresAt && "line-through")}>{label}</div>
-              <div class="w-px h-4 bg-gray-200 dark:bg-gray-700 rounded-full shrink-0" />
-              <span class="text-xs text-gray-400 dark:text-gray-500 shrink-0 font-mono">
-                {props.prefix}...
-              </span>
+              <div class="w-px h-4 bg-gray-200 rounded-full shrink-0" />
+              <span class="text-xs text-gray-400 shrink-0 font-mono">{props.prefix}...</span>
               <div class="flex-1" />
-              <span class={clsx("text-xs text-gray-400 dark:text-gray-500 shrink-0")}>
+              <span class={clsx("text-xs text-gray-400 shrink-0")}>
                 {format(props.createdAt, "MMM d, yyyy")}
               </span>
             </div>
@@ -107,7 +105,9 @@ const APIKeyItem: Component<APIKeyItemProps> = (props) => {
                 trigger={() => (
                   <div
                     class={clsx(
-                      !menuOpened() && !props.loading && "opacity-20 group-hover:opacity-100"
+                      !menuOpened() &&
+                        !props.loading &&
+                        "opacity-20 media-mouse:group-hover:opacity-100"
                     )}
                   >
                     <IconButton

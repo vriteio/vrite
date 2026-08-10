@@ -86,7 +86,7 @@ const SignInPage: Component = () => {
       <Title>Sign in | Andesine</Title>
       <div>
         <span class="text-2xl font-semibold">Welcome back!</span>
-        <div class="text-gray-400 dark:text-gray-500 leading-5 text-sm">
+        <div class="text-gray-400 leading-5 text-sm">
           Use one of the methods below, or
           <br />
           <Button
@@ -117,7 +117,7 @@ const SignInPage: Component = () => {
         <IconButton
           icon="i-mdi:github"
           class="w-full @hover:bg-gray-50"
-          iconProps={{ class: "text-black dark:text-white" }}
+          iconProps={{ class: "text-black" }}
           variant="outlined"
           color="contrast"
           label={signingInWithGitHub() ? "Continuing with GitHub..." : "Continue with GitHub"}
@@ -126,15 +126,15 @@ const SignInPage: Component = () => {
             void signInWithProvider("github");
           }}
         />
-        <div class="flex items-center justify-start gap-2 text-gray-400 dark:text-gray-500 text-xs">
-          <div class="h-px flex-1 bg-gray-200 dark:bg-gray-700"></div>
+        <div class="flex items-center justify-start gap-2 text-gray-400 text-xs">
+          <div class="h-px flex-1 bg-gray-200"></div>
           Or sign in with
-          <div class="h-px flex-1 bg-gray-200 dark:bg-gray-700"></div>
+          <div class="h-px flex-1 bg-gray-200"></div>
         </div>
         <IconButton
           icon="i-lucide:fingerprint"
           class="w-full @hover:bg-gray-50 gap-1"
-          iconProps={{ class: "h-5 w-5 text-gray-400 dark:text-gray-500" }}
+          iconProps={{ class: "h-5 w-5 text-gray-400" }}
           variant="outlined"
           color="contrast"
           label="Passkey"
@@ -142,7 +142,7 @@ const SignInPage: Component = () => {
           disabled={signingInWithPasskey() || signingInWithGoogle() || signingInWithGitHub()}
         />
       </div>
-      <div class="flex flex-col items-start justify-center w-full transform -bottom-16 text-sm text-gray-400 dark:text-gray-500">
+      <div class="flex flex-col items-start justify-center w-full transform -bottom-16 text-sm text-gray-400">
         <span>Don't have an account?</span>
         <IconButton
           icon="i-lucide:arrow-right"

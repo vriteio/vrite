@@ -215,12 +215,12 @@ const ClientEditor: Component<EditorProps> = (props) => {
       <div class="overflow-hidden relative flex h-full w-full">
         <ScrollShadow scrollableContainerRef={scrollableContainerRef} />
         <div
-          class="p-10 pt-16 overflow-auto w-full z-0 relative"
+          class="relative z-0 w-full overflow-x-hidden overflow-y-auto p-4 md:overflow-auto md:p-10 md:pt-16"
           ref={setScrollableContainerRef}
           data-editor-scrollable-container
         >
           <div
-            class="absolute inset-0 z-20 pointer-events-none not-prose"
+            class="absolute inset-0 z-20 pointer-events-none not-prose [&>*]:pointer-events-auto"
             data-editor-menu-container
             ref={setMenuContainerRef}
           />
@@ -232,7 +232,7 @@ const ClientEditor: Component<EditorProps> = (props) => {
           >
             <div class="w-full flex flex-col items-center">
               <div
-                class="w-full prose-editor z-1 max-w-[44rem] prose prose-headings:font-semibold prose-headings:text-gray-700 prose-bold:text-gray-700 dark:prose-invert flex flex-col relative"
+                class="w-full prose-editor z-1 max-w-[44rem] prose prose-headings:font-semibold prose-headings:text-gray-700 prose-bold:text-gray-700 flex flex-col relative"
                 id="editor-container"
               >
                 <Show when={editableEditor()} keyed>

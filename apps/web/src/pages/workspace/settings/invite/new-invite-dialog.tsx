@@ -47,7 +47,7 @@ const NewInviteDialog: Component<NewInviteDialogProps> = (props) => {
         <Card class="flex w-lg flex-col gap-3 rounded-xl p-4" shade>
           <div class="flex flex-col gap-0.5">
             <h3 class="text-lg font-semibold leading-tight">Invitation created</h3>
-            <p class="text-sm leading-tight text-gray-400 dark:text-gray-500">{description()}</p>
+            <p class="text-sm leading-tight text-gray-400">{description()}</p>
           </div>
           <Card
             class="flex min-h-16 items-center justify-center break-all rounded-xl border-0 p-3 font-mono text-sm select-all"

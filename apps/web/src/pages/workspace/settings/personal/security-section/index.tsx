@@ -77,7 +77,7 @@ const PasskeyList: Component<PasskeyListProps> = (props) => {
     >
       <Tree
         tree={passkeysTree}
-        itemHeight={32}
+        itemHeight="2rem"
         renderItem={(itemID) => {
           const passkey = () => optimisticPasskeys().find(({ id }) => id === itemID)!;
 

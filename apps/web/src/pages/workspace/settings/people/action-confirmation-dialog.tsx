@@ -29,9 +29,7 @@ const ActionConfirmationDialog: Component<ActionConfirmationDialogProps> = (prop
         <Card class="flex w-md max-w-[calc(100vw-2rem)] flex-col gap-3 rounded-xl p-4" shade>
           <div class="flex flex-col gap-0.5">
             <h3 class="text-lg font-semibold leading-tight">{props.title}</h3>
-            <div class="text-sm leading-tight text-gray-400 dark:text-gray-500">
-              {props.description}
-            </div>
+            <div class="text-sm leading-tight text-gray-400">{props.description}</div>
           </div>
           <Show when={props.affected.length > 0}>
             <Card
@@ -52,15 +50,13 @@ const ActionConfirmationDialog: Component<ActionConfirmationDialogProps> = (prop
                       <div class="flex items-start justify-center gap-1.5 min-h-8">
                         <div class="h-6 w-6 flex justify-center items-center">
                           <div
-                            class={`${item.icon || "i-lucide:user"} h-5 w-5 shrink-0 text-gray-400 dark:text-gray-500`}
+                            class={`${item.icon || "i-lucide:user"} h-5 w-5 shrink-0 text-gray-400`}
                           />
                         </div>
                         <div class="flex min-w-0 flex-1 flex-col">
                           <span class="truncate text-base h-6">{item.label}</span>
                           <Show when={item.detail}>
-                            <span class="truncate text-xs text-gray-400 dark:text-gray-500 -mt-1">
-                              {item.detail}
-                            </span>
+                            <span class="truncate text-xs text-gray-400 -mt-1">{item.detail}</span>
                           </Show>
                         </div>
                       </div>
@@ -71,9 +67,7 @@ const ActionConfirmationDialog: Component<ActionConfirmationDialogProps> = (prop
             </Card>
           </Show>
           <Show when={props.warning}>
-            <div class="text-sm leading-tight text-gray-400 dark:text-gray-500">
-              {props.warning}
-            </div>
+            <div class="text-sm leading-tight text-gray-400">{props.warning}</div>
           </Show>
           <div class="flex justify-end gap-2">
             <IconButton

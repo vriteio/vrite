@@ -118,11 +118,11 @@ const ScrollShadow: Component<ScrollShadowProps> = (props) => {
     <>
       <div
         class={clsx(
-          "hidden lg:block pointer-events-none absolute z-1 duration-150 transition-opacity",
+          "pointer-events-none absolute z-1 duration-150 transition-opacity",
           props.direction === "horizontal" && "h-full w-8 bg-gradient-to-r",
           props.direction !== "horizontal" && "h-16 w-full bg-gradient-to-b",
-          props.color === "contrast" && "from-gray-100 dark:from-gray-800",
-          props.color !== "contrast" && "from-gray-50 dark:from-gray-900",
+          props.color === "contrast" && "from-gray-100",
+          props.color !== "contrast" && "from-gray-50",
           ["start", "none"].includes(scrollState()) && "opacity-0",
           (props.show === false ||
             (typeof props.show === "object" && props.show[firstAnchor()] === false)) &&
@@ -135,11 +135,11 @@ const ScrollShadow: Component<ScrollShadowProps> = (props) => {
       />
       <div
         class={clsx(
-          "hidden lg:block pointer-events-none absolute z-1 duration-150 transition-opacity",
+          "pointer-events-none absolute z-1 duration-150 transition-opacity",
           props.direction === "horizontal" && "h-full w-8 bg-gradient-to-l",
           props.direction !== "horizontal" && "h-16 w-full bg-gradient-to-t",
-          props.color === "contrast" && "from-gray-100 dark:from-gray-800",
-          props.color !== "contrast" && "from-gray-50 dark:from-gray-900",
+          props.color === "contrast" && "from-gray-100",
+          props.color !== "contrast" && "from-gray-50",
           ["end", "none"].includes(scrollState()) && "opacity-0",
           (props.show === false ||
             (typeof props.show === "object" && props.show[secondAnchor()] === false)) &&

@@ -45,8 +45,11 @@ html {
   -webkit-overflow-scrolling: touch;
 }
 
-html.dark {
-  @apply bg-gray-800 text-white;
+@screen lt-md {
+  html {
+    // Upscale UI on mobile
+    font-size: 18px;
+  }
 }
 
 body {
@@ -54,7 +57,9 @@ body {
 }
 
 #app {
-  @apply flex flex-col flex-1 w-full h-screen;
+  @apply flex flex-col flex-1 w-full;
+  height: 100vh;
+  height: 100dvh;
 }
 
 // Dotted page background
@@ -62,10 +67,6 @@ body {
   @apply left-0 top-0 -z-1 h-full w-full bg-center;
   background-image: radial-gradient(rgba(229, 231, 235, 0.8) 2px, transparent 0);
   background-size: 16px 16px;
-}
-
-.dark .dots-background {
-  background-image: radial-gradient(rgba(75, 85, 99, 0.2) 2px, transparent 0);
 }
 
 // Monospace utility
@@ -103,4 +104,32 @@ body {
 // Ark UI visibility state
 [hidden] {
   @apply hidden!;
+}
+
+// Notifications
+.notification-stack-item {
+  --notification-enter-translation: translateY(-1.5rem);
+  transform-origin: top center;
+}
+
+@screen md {
+  .notification-stack-item {
+    --notification-enter-translation: translateX(1.5rem);
+    transform-origin: bottom center;
+  }
+}
+
+@screen lt-md {
+  @keyframes mobile-dropdown-sheet-in {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+
+  .mobile-dropdown-sheet[data-state="open"] {
+    animation: mobile-dropdown-sheet-in 200ms ease-out;
+  }
 }

@@ -107,10 +107,12 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
     }
   );
   const onPointerDown = (event: PointerEvent) => {
-    const editor = props.editor;
-
+    // Disable marquee block selection for touch devices
+    if (event.pointerType === "touch") return;
     if (event.target instanceof HTMLElement && event.target.closest("[data-menu]")) return;
     if (event.target instanceof HTMLElement && event.target.closest("[data-drag-handle]")) return;
+
+    const editor = props.editor;
 
     if (!editor) return;
 

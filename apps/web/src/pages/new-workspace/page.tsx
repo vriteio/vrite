@@ -62,11 +62,11 @@ const NewWorkspacePage: Component = () => {
       </div>
       <div class="flex-1 relative flex justify-center items-center">
         <div class="p-4 lg:p-24 relative">
-          <div class="absolute h-full w-full top-0 left-0 mask-edge-fading-4 lg:mask-edge-fading-24 bg-gray-100 dark:bg-gray-850 rounded-2xl" />
+          <div class="absolute h-full w-full top-0 left-0 mask-edge-fading-4 lg:mask-edge-fading-24 bg-gray-100 rounded-2xl" />
           <div class="relative flex flex-col w-80 gap-4">
             <div>
               <span class="text-2xl font-semibold">New workspace</span>
-              <div class="text-gray-400 dark:text-gray-500 leading-5 text-sm">
+              <div class="text-gray-400 leading-5 text-sm">
                 Give your workspace a name to get started.
               </div>
             </div>
@@ -88,7 +88,7 @@ const NewWorkspacePage: Component = () => {
               </Button>
             </div>
             <Show when={(workspaces() || []).length > 0}>
-              <div class="flex flex-col items-start justify-center w-full transform text-sm text-gray-400 dark:text-gray-500">
+              <div class="flex flex-col items-start justify-center w-full transform text-sm text-gray-400">
                 <IconButton
                   icon="i-lucide:arrow-left"
                   label="Back"

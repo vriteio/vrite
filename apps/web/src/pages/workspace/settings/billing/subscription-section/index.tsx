@@ -13,7 +13,7 @@ const SubscriptionSection: Component = () => (
             <div class="h-4.5 w-4.5 i-andesine:logo bg-gradient-to-tr" />
             ndesine
           </div>
-          <div class="w-px h-4 rounded-full bg-gray-300 dark:bg-gray-600" />
+          <div class="w-px h-4 rounded-full bg-gray-300" />
           <div class="bg-gradient-to-tr text-transparent bg-clip-text">Pro</div>
         </div>
       }

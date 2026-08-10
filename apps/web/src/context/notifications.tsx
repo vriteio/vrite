@@ -187,7 +187,7 @@ const NotificationsProvider: ParentComponent = (props) => {
       {props.children}
       <div
         ref={container}
-        class="fixed w-92 max-w-full z-60 bottom-[calc(1.5rem+env(safe-area-inset-bottom,0px))] left-6 md:left-unset md:bottom-6 md:right-6 w-[calc(100%-2rem)] transition-[height] duration-200"
+        class="fixed left-4 right-4 top-[calc(1rem+env(safe-area-inset-top,0px))] z-60 w-auto transition-[height] duration-200 md:bottom-6 md:left-auto md:right-6 md:top-auto md:w-92"
         style={{ height: `${stackHeight()}px` }}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
@@ -207,7 +207,7 @@ const NotificationsProvider: ParentComponent = (props) => {
                   notificationElements.delete(notification.id);
                 });
               }}
-              class="absolute bottom-0 left-0 w-full transition-all duration-200"
+              class="notification-stack-item absolute bottom-0 left-0 w-full transition-all duration-200"
               style={{
                 "z-index": `${notifications().length - index()}`,
                 "bottom": `${getBottomOffset(index())}px`,
@@ -217,12 +217,13 @@ const NotificationsProvider: ParentComponent = (props) => {
                     : expanded() || index() < 3
                       ? "1"
                       : "0",
-                "transform": `${
-                  enteringIds().has(notification.id) || dismissingIds().has(notification.id)
-                    ? "translateX(1.5rem) "
-                    : ""
-                }scale(${expanded() ? 1 : 1 - Math.min(index(), 2) * 0.04})`,
-                "transform-origin": "bottom center"
+                "transform": [
+                  (enteringIds().has(notification.id) || dismissingIds().has(notification.id)) &&
+                    "var(--notification-enter-translation)",
+                  `scale(${expanded() ? 1 : 1 - Math.min(index(), 2) * 0.04})`
+                ]
+                  .filter(Boolean)
+                  .join(" ")
               }}
             >
               <Notification onDismiss={() => dismiss(notification.id)} {...notification} />

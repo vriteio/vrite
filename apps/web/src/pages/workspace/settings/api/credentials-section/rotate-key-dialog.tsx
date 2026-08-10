@@ -20,8 +20,8 @@ const expirationOptions: Array<{
     label: "Now",
     description: (
       <span>
-        The current key will stop working{" "}
-        <span class="font-medium text-gray-700 dark:text-white">immediately</span>.
+        The current key will stop working <span class="font-medium text-gray-700">immediately</span>
+        .
       </span>
     )
   },
@@ -30,8 +30,7 @@ const expirationOptions: Array<{
     label: "1 hour",
     description: (
       <span>
-        The current key will keep working for{" "}
-        <span class="font-medium text-gray-700 dark:text-white">1 hour</span>.
+        The current key will keep working for <span class="font-medium text-gray-700">1 hour</span>.
       </span>
     )
   },
@@ -41,7 +40,7 @@ const expirationOptions: Array<{
     description: (
       <span>
         The current key will keep working for{" "}
-        <span class="font-medium text-gray-700 dark:text-white">24 hours</span>.
+        <span class="font-medium text-gray-700">24 hours</span>.
       </span>
     )
   },
@@ -50,8 +49,7 @@ const expirationOptions: Array<{
     label: "7 days",
     description: (
       <span>
-        The current key will keep working for{" "}
-        <span class="font-medium text-gray-700 dark:text-white">7 days</span>.
+        The current key will keep working for <span class="font-medium text-gray-700">7 days</span>.
       </span>
     )
   }
@@ -83,7 +81,7 @@ const RotateKeyDialog: Component<RotateKeyDialogProps> = (props) => {
         <Card class="flex w-lg max-w-[calc(100vw-2rem)] flex-col gap-3 rounded-xl p-4" shade>
           <div class="flex flex-col gap-0.5">
             <h3 class="text-lg font-semibold leading-tight">Rotate API key?</h3>
-            <p class="text-sm leading-tight text-gray-400 dark:text-gray-500">
+            <p class="text-sm leading-tight text-gray-400">
               A replacement with the same name and permissions will be created. It'll be shown only
               once.
             </p>
@@ -93,17 +91,17 @@ const RotateKeyDialog: Component<RotateKeyDialogProps> = (props) => {
             color="contrast"
           >
             <div class="h-6 w-6 flex justify-center items-center">
-              <div class="i-lucide:key-round h-5 w-5 text-gray-400 dark:text-gray-500" />
+              <div class="i-lucide:key-round h-5 w-5 text-gray-400" />
             </div>
             <div class="flex items-center flex-1 gap-1.5">
               <span class="font-medium line-clamp-1">{visibleKey()?.name}</span>
-              <div class="w-px h-4 bg-gray-200 dark:bg-gray-700 rounded-full shrink-0" />
-              <span class="text-xs shrink-0 font-mono text-gray-400 dark:text-gray-500">
+              <div class="w-px h-4 bg-gray-200 rounded-full shrink-0" />
+              <span class="text-xs shrink-0 font-mono text-gray-400">
                 {visibleKey()?.prefix}...
               </span>
             </div>
           </Card>
-          <p class="text-sm leading-tight text-gray-400 dark:text-gray-500">
+          <p class="text-sm leading-tight text-gray-400">
             {expirationOptions.find(({ value }) => value === expiresIn())?.description}
           </p>
           <ToggleGroup

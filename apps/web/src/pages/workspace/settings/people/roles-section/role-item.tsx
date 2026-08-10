@@ -58,14 +58,14 @@ const RoleItem: Component<{
         checkbox={editable()}
         selectable={editable()}
         class="px-1 py-0.5 min-h-8"
-        icon={<div class="i-lucide:shield h-5.5 w-5.5 text-gray-400 dark:text-gray-500" />}
+        icon={<div class="i-lucide:shield h-5.5 w-5.5 text-gray-400" />}
         onClick={() => editable() && props.onEdit()}
         renderLabel={(label) => (
           <div class="flex min-w-0 flex-1 items-center gap-1.5">
             <div class="min-w-0 flex-1 truncate" title={props.role.name}>
               {label}
             </div>
-            <span class="shrink-0 text-xs text-gray-400 dark:text-gray-500">
+            <span class="shrink-0 text-xs text-gray-400">
               {props.role.baseRole
                 ? "System role"
                 : props.role.permissions.length
@@ -84,7 +84,11 @@ const RoleItem: Component<{
                   portal={false}
                   setOpened={setMenuOpened}
                   trigger={() => (
-                    <div class={clsx(!menuOpened() && "opacity-20 group-hover:opacity-100")}>
+                    <div
+                      class={clsx(
+                        !menuOpened() && "opacity-20 media-mouse:group-hover:opacity-100"
+                      )}
+                    >
                       <IconButton
                         icon="i-lucide:ellipsis-vertical"
                         size="small"
@@ -107,7 +111,9 @@ const RoleItem: Component<{
                   </div>
                 }
               >
-                <div class={clsx(!menuOpened() && "opacity-20 group-hover:opacity-100")}>
+                <div
+                  class={clsx(!menuOpened() && "opacity-20 media-mouse:group-hover:opacity-100")}
+                >
                   <IconButton
                     icon="i-lucide:lock"
                     iconProps={{ class: "h-4 w-4" }}

@@ -85,9 +85,7 @@ const EditorPane: Component = () => {
         fallback={
           <div class="flex flex-col items-center justify-center gap-2 h-full w-full">
             <div class="i-lucide:file-pen text-gray-200 h-12 w-12" />
-            <span class="text-xs text-gray-300 dark:text-gray-600">
-              Select an entry to start editing
-            </span>
+            <span class="text-xs text-gray-300">Select an entry to start editing</span>
           </div>
         }
       >
@@ -100,7 +98,7 @@ const EditorPane: Component = () => {
               fallback={
                 <div class="flex flex-col items-center justify-center gap-2 h-full w-full">
                   <div class="i-lucide:file-x text-gray-200 h-12 w-12" />
-                  <span class="text-xs text-gray-300 dark:text-gray-600">Entry not found</span>
+                  <span class="text-xs text-gray-300">Entry not found</span>
                 </div>
               }
             >
@@ -134,7 +132,7 @@ const EditorPane: Component = () => {
                 />
               </Show>
               <div
-                class="h-full w-full px-1"
+                class="h-full w-full md:px-1"
                 classList={{ invisible: !entryLoadState().editorReady }}
               >
                 <Editor

@@ -1,6 +1,5 @@
-import { Card } from "./card";
-import { Fragment } from "./fragment";
-import { createRef } from "../ref";
+import type { Card } from "../card";
+import { createRef } from "../../ref";
 import clsx from "clsx";
 import {
   type Component,
@@ -10,18 +9,25 @@ import {
   createMemo,
   createSignal,
   type JSX,
+  on,
   onCleanup,
   type ParentComponent,
   Show,
   useContext
 } from "solid-js";
 import { type Placement } from "@floating-ui/dom";
-import { Dynamic, Portal } from "solid-js/web";
+import { Dynamic } from "solid-js/web";
 import { Menu } from "@ark-ui/solid/menu";
+import { createMediaQuery } from "@solid-primitives/media";
+import { DropdownDesktopMenu } from "./dropdown-desktop-menu";
+import { DropdownMobileSheet } from "./dropdown-mobile-sheet";
+import { useDropdownLongPress } from "./use-dropdown-long-press";
 
 type Point = { x: number; y: number };
+
 interface DropdownAreaProps {
   enabled?(event: PointerEvent | MouseEvent): boolean;
+  onLongPress?(event: PointerEvent): void;
 }
 interface DropdownProps extends JSX.HTMLAttributes<HTMLDivElement> {
   anchorPoint?: Point | null;
@@ -39,14 +45,21 @@ interface DropdownProps extends JSX.HTMLAttributes<HTMLDivElement> {
 }
 
 const DropdownAreaContext = createContext<{
-  onContextMenu(callback: (event: MouseEvent) => void): void;
+  onContextMenu(callback: (event: MouseEvent | PointerEvent) => void): void;
 }>({
   onContextMenu: () => {}
 });
 const DropdownArea: ParentComponent<DropdownAreaProps> = (props) => {
   const [onContextMenuCallbackRef, setOnContextMenuCallbackRef] = createRef<
-    (event: MouseEvent) => void
+    (event: MouseEvent | PointerEvent) => void
   >(() => {});
+  const longPress = useDropdownLongPress({
+    enabled: (event) => !props.enabled || props.enabled(event),
+    onLongPress: (event) => {
+      props.onLongPress?.(event);
+      onContextMenuCallbackRef()(event);
+    }
+  });
 
   return (
     <DropdownAreaContext.Provider
@@ -57,6 +70,7 @@ const DropdownArea: ParentComponent<DropdownAreaProps> = (props) => {
       }}
     >
       <div
+        {...longPress}
         class="contents pointer-events-auto"
         onPointerDown={(event) => {
           const isContextMenu = event.button === 2;
@@ -64,7 +78,10 @@ const DropdownArea: ParentComponent<DropdownAreaProps> = (props) => {
           if (isContextMenu && (!props.enabled || props.enabled(event))) {
             event.stopPropagation();
             onContextMenuCallbackRef()(event);
+            return;
           }
+
+          longPress.onPointerDown(event);
         }}
         onContextMenu={(event) => {
           if (!props.enabled || props.enabled(event)) {
@@ -81,10 +98,13 @@ const DropdownArea: ParentComponent<DropdownAreaProps> = (props) => {
 let activeContextMenuClose: (() => void) | null = null;
 
 const Dropdown: Component<DropdownProps> = (props) => {
+  const md = createMediaQuery("(min-width: 768px)");
   const [contextAnchorPoint, setContextAnchorPoint] = createSignal<Point | null>(null);
   const [ghostAnchorRef, setGhostAnchorRef] = createRef<HTMLElement | null>(null);
   const [activatorRef, setActivatorRef] = createRef<HTMLElement | null>(null);
   const [opened, setOpened] = createSignal(props.opened || false);
+  const [closing, setClosing] = createSignal(false);
+  let closeTimer: ReturnType<typeof setTimeout> | null = null;
   let contextMenuFrame: number | null = null;
   const { onContextMenu } = useContext(DropdownAreaContext);
   const positioningStrategy = () => props.positioningStrategy || "fixed";
@@ -114,28 +134,41 @@ const Dropdown: Component<DropdownProps> = (props) => {
     return activatorRef()?.firstElementChild as HTMLElement | null;
   };
   const placement = () => {
-    const fallbackPlacement = "bottom-start";
     if (Array.isArray(props.placement)) {
-      return props.placement[0] || fallbackPlacement;
+      return props.placement[0] || "bottom-start";
     }
 
-    return props.placement || fallbackPlacement;
+    return props.placement || "bottom-start";
   };
-  const closeContextMenu = () => {
+  const finishClose = () => {
+    closeTimer = null;
     setOpened(false);
     setContextAnchorPoint(null);
-  };
 
-  const handleOpenChange = (details: { open: boolean }): void => {
-    setOpened(details.open);
-
-    if (!details.open) {
-      setContextAnchorPoint(null);
-
-      if (activeContextMenuClose === closeContextMenu) {
-        activeContextMenuClose = null;
-      }
+    if (activeContextMenuClose === closeDropdown) {
+      activeContextMenuClose = null;
     }
+  };
+  const closeDropdown = () => {
+    if (!md() && opened()) {
+      if (closing()) return;
+      setClosing(true);
+      closeTimer = setTimeout(finishClose, 200);
+    } else {
+      setClosing(false);
+      finishClose();
+    }
+  };
+  const handleOpenChange = (details: { open: boolean }): void => {
+    if (!details.open) {
+      closeDropdown();
+      return;
+    }
+
+    if (closeTimer) clearTimeout(closeTimer);
+    closeTimer = null;
+    setClosing(false);
+    setOpened(true);
   };
 
   // Register with DropdownArea context for context menu handling
@@ -143,18 +176,18 @@ const Dropdown: Component<DropdownProps> = (props) => {
     onContextMenu((event) => {
       const reopenCurrentDropdown = opened();
 
-      if (activeContextMenuClose && activeContextMenuClose !== closeContextMenu) {
+      if (activeContextMenuClose && activeContextMenuClose !== closeDropdown) {
         activeContextMenuClose();
       }
 
       const openContextMenu = () => {
         setContextAnchorPoint(toPositioningPoint({ x: event.clientX, y: event.clientY }));
-        setOpened(true);
-        activeContextMenuClose = closeContextMenu;
+        handleOpenChange({ open: true });
+        activeContextMenuClose = closeDropdown;
       };
 
       if (reopenCurrentDropdown) {
-        closeContextMenu();
+        closeDropdown();
         if (contextMenuFrame !== null) cancelAnimationFrame(contextMenuFrame);
         contextMenuFrame = requestAnimationFrame(() => {
           contextMenuFrame = null;
@@ -170,27 +203,36 @@ const Dropdown: Component<DropdownProps> = (props) => {
   });
   onCleanup(() => {
     if (contextMenuFrame !== null) cancelAnimationFrame(contextMenuFrame);
+    if (closeTimer) clearTimeout(closeTimer);
 
-    if (activeContextMenuClose === closeContextMenu) {
+    if (activeContextMenuClose === closeDropdown) {
       activeContextMenuClose = null;
     }
   });
-  createEffect(() => {
-    if (typeof props.opened !== "undefined") {
-      setOpened(props.opened);
-    }
-  });
+  createEffect(
+    on(
+      () => props.opened,
+      (externalOpened) => {
+        if (typeof externalOpened === "undefined") return;
+
+        if (externalOpened) handleOpenChange({ open: true });
+        else if (opened()) closeDropdown();
+      }
+    )
+  );
   createEffect(() => {
     props.setOpened?.(opened());
   });
   createEffect(() => {
     props.onContextMenuChange?.(contextAnchorPoint() !== null);
   });
-
   return (
     <Menu.Root
       open={opened()}
       onOpenChange={handleOpenChange}
+      onInteractOutside={(event) => {
+        if (!md()) event.preventDefault();
+      }}
       positioning={{
         flip: Array.isArray(props.placement) ? props.placement.slice(1) : true,
         offset: {
@@ -239,32 +281,23 @@ const Dropdown: Component<DropdownProps> = (props) => {
             )}
           />
         </Show>
-        <Dynamic component={props.portal === false ? Fragment : Portal}>
-          <Menu.Positioner>
-            <Menu.Content
-              asChild={(contentProps) => (
-                <Card
-                  {...contentProps()}
-                  {...(props.cardProps || {})}
-                  style={{
-                    "transform-origin": "var(--transform-origin)",
-                    ...(props.cardProps?.style || {})
-                  }}
-                  shade
-                  class={clsx(
-                    `:base-2: z-50 flex flex-col p-1 transform min-w-32 rounded-[0.625rem] pointer-events-auto transition duration-150 shadow-black shadow-opacity-15`,
-                    opened()
-                      ? `:base-2: visible opacity-100`
-                      : `:base-2: invisible opacity-0 !shadow-none`,
-                    props.cardProps?.class
-                  )}
-                >
-                  <div class="overflow-auto scrollbar-sm flex-1 min-w-fit">{props.children}</div>
-                </Card>
-              )}
-            />
-          </Menu.Positioner>
-        </Dynamic>
+        <Show
+          when={md()}
+          fallback={
+            <DropdownMobileSheet
+              cardProps={props.cardProps}
+              closing={closing()}
+              opened={opened()}
+              onClose={() => handleOpenChange({ open: false })}
+            >
+              {props.children}
+            </DropdownMobileSheet>
+          }
+        >
+          <DropdownDesktopMenu cardProps={props.cardProps} opened={opened()} portal={props.portal}>
+            {props.children}
+          </DropdownDesktopMenu>
+        </Show>
       </div>
     </Menu.Root>
   );

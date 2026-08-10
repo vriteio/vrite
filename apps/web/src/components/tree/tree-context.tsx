@@ -9,6 +9,7 @@ import {
   type Setter,
   useContext
 } from "solid-js";
+import { createMediaQuery } from "@solid-primitives/media";
 import {
   flattenTreeLayout,
   flattenTreeOrder,
@@ -22,6 +23,7 @@ interface TreeData {
 }
 
 type TreeMap = Record<string, TreeData>;
+type TreeSize = number | `${number}px` | `${number}rem`;
 type TreeFocusSource = "hover" | "keyboard";
 type TreeSelectionMode = "normal" | "exact";
 interface TreeContextValue {
@@ -29,8 +31,8 @@ interface TreeContextValue {
   expanded: Accessor<string[]>;
   focusedID: Accessor<string | null>;
   focusedSource: Accessor<TreeFocusSource | null>;
-  itemHeight: number;
-  gap: number;
+  itemHeight: string;
+  gap: string;
   isSelected(id: string): boolean;
   isFocused(id: string): boolean;
   isRenaming(id: string): boolean;
@@ -58,8 +60,8 @@ const TreeContext = createContext<TreeContextType>();
 interface TreeProviderProps {
   tree: Accessor<TreeMap>;
   levelIDs?: Accessor<Record<string, unknown>>;
-  itemHeight?: number;
-  gap?: number;
+  itemHeight?: TreeSize;
+  gap?: TreeSize;
   initialExpanded?: Accessor<string[] | undefined>;
   expandedSourceKey?: Accessor<string | null>;
   persistExpandedReady?: Accessor<boolean>;
@@ -67,6 +69,23 @@ interface TreeProviderProps {
 }
 
 const TreeProvider: ParentComponent<TreeProviderProps> = (props) => {
+  const md = createMediaQuery("(min-width: 768px)");
+  const itemHeight = () => props.itemHeight ?? "1.75rem";
+  const gap = () => props.gap ?? "0.125rem";
+  const toCSSLength = (size: TreeSize) => {
+    return typeof size === "number" ? `${size}px` : size;
+  };
+  const rootFontSize = () => {
+    // Match the root font size defined in the global styles
+    return md() ? 16 : 18;
+  };
+  const toPixels = (size: TreeSize) => {
+    if (typeof size === "number") return size;
+
+    const value = Number.parseFloat(size);
+
+    return size.endsWith("rem") ? value * rootFontSize() : value;
+  };
   const [rawSelection, setRawSelection] = createSignal<string[]>([]);
   const [selectionMode, setSelectionMode] = createSignal<TreeSelectionMode>("normal");
   const [expanded, setExpanded] = createSignal<string[]>(props.initialExpanded?.() ?? []);
@@ -76,14 +95,14 @@ const TreeProvider: ParentComponent<TreeProviderProps> = (props) => {
   const isRenaming = (id: string) => renaming() === id;
   const isExpanded = (id: string) => expanded().includes(id);
   const getItemHeight = (id: string) => {
-    const itemHeight = props.itemHeight ?? 28;
+    const resolvedItemHeight = toPixels(itemHeight());
     const level = props.tree()[id];
 
-    if (!level || !isExpanded(id)) return itemHeight;
+    if (!level || !isExpanded(id)) return resolvedItemHeight;
 
-    if (!level.items.length && !level.levels.length) return itemHeight * 2;
+    if (!level.items.length && !level.levels.length) return resolvedItemHeight * 2;
 
-    return itemHeight;
+    return resolvedItemHeight;
   };
   const toggleExpanded = (id: string) => {
     setExpanded((prev) =>
@@ -99,8 +118,8 @@ const TreeProvider: ParentComponent<TreeProviderProps> = (props) => {
       tree: props.tree(),
       expanded: expanded(),
       rootID: TREE_ROOT_ID,
-      itemHeight: props.itemHeight ?? 28,
-      gap: props.gap ?? 2
+      itemHeight: toPixels(itemHeight()),
+      gap: toPixels(gap())
     });
   };
 
@@ -196,8 +215,8 @@ const TreeProvider: ParentComponent<TreeProviderProps> = (props) => {
           expanded,
           focusedID,
           focusedSource,
-          itemHeight: props.itemHeight ?? 28,
-          gap: props.gap ?? 2,
+          itemHeight: toCSSLength(itemHeight()),
+          gap: toCSSLength(gap()),
           isSelected,
           isFocused,
           isRenaming,
@@ -225,4 +244,4 @@ const TreeProvider: ParentComponent<TreeProviderProps> = (props) => {
 const useTree = () => useContext(TreeContext)!;
 
 export { TREE_ROOT_ID, TreeProvider, useTree };
-export type { TreeData, TreeMap, TreeContextType };
+export type { TreeData, TreeMap, TreeContextType, TreeSize };

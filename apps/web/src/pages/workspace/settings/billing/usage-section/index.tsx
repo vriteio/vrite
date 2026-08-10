@@ -68,7 +68,7 @@ const UsageSection: Component = () => {
                     </div>
                   </Tooltip>
                   <Show when={!isPro()}>
-                    <span class="text-xs text-gray-400 dark:text-gray-500 leading-none">
+                    <span class="text-xs text-gray-400 leading-none">
                       <span class="opacity-50">/</span>{" "}
                       {formatNumber(usageData().limit, { compact: true })} limit
                     </span>

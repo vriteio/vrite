@@ -218,8 +218,14 @@ const useExplorerCollection = (props: ExplorerCollectionProps) => {
             render({ container }) {
               const el = document.createElement("div");
 
-              el.style.cssText =
-                "padding:4px 10px;background:#333;color:#fff;border-radius:6px;font-size:13px;white-space:nowrap";
+              Object.assign(el.style, {
+                padding: "0.25rem 0.625rem",
+                background: "#333",
+                color: "#fff",
+                borderRadius: "0.375rem",
+                fontSize: "0.8125rem",
+                whiteSpace: "nowrap"
+              });
               el.textContent = count > 1 ? `${count} items` : props.collection.name || "Untitled";
               container.appendChild(el);
 

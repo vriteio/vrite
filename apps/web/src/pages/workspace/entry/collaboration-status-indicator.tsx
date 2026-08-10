@@ -45,18 +45,16 @@ const CollaborationStatusIndicator: Component<CollaborationStatusIndicatorProps>
 
   return (
     <Show when={isVisible()}>
-      <div class="absolute bottom-4 right-4 z-20 inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 drop-shadow-[0_1px_1px_rgb(255_255_255)] dark:text-gray-400 dark:drop-shadow-[0_1px_1px_rgb(0_0_0)]">
+      <div class="absolute bottom-4 right-4 z-20 inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 drop-shadow-[0_1px_1px_rgb(255_255_255)]">
         <Show
           when={props.status !== "connecting" && props.status !== "syncing"}
           fallback={<Spinner class="h-3.5 w-3.5" color="primary" />}
         >
           <div
             classList={{
-              "i-lucide:cloud-off text-amber-600 dark:text-amber-400":
-                props.status === "offline-changes",
-              "i-lucide:shield-alert text-red-600 dark:text-red-400":
-                props.status === "unauthorized",
-              "i-lucide:cloud-alert text-red-600 dark:text-red-400": props.status === "failed"
+              "i-lucide:cloud-off text-amber-600": props.status === "offline-changes",
+              "i-lucide:shield-alert text-red-600": props.status === "unauthorized",
+              "i-lucide:cloud-alert text-red-600": props.status === "failed"
             }}
             class="h-3.5 w-3.5"
           />
@@ -71,7 +69,7 @@ const CollaborationStatusIndicator: Component<CollaborationStatusIndicatorProps>
         <Show when={props.status === "failed"}>
           <button
             type="button"
-            class="font-medium text-red-600 hover:underline dark:text-red-400"
+            class="font-medium text-red-600 @hover:underline"
             onClick={props.onRetry}
           >
             Retry
@@ -80,7 +78,7 @@ const CollaborationStatusIndicator: Component<CollaborationStatusIndicatorProps>
         <Show when={props.status === "unauthorized"}>
           <button
             type="button"
-            class="font-medium text-red-600 hover:underline dark:text-red-400"
+            class="font-medium text-red-600 @hover:underline"
             onClick={props.onBack}
           >
             Back

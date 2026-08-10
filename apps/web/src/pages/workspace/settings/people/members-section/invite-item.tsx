@@ -72,19 +72,17 @@ const InviteItem: Component<{
         checkbox={!props.loading}
         selectable={!props.loading}
         class={clsx("px-1 py-0.5", props.loading && "animate-pulse")}
-        icon={<div class="i-lucide:mail h-5 w-5 text-gray-400 dark:text-gray-500" />}
+        icon={<div class="i-lucide:mail h-5 w-5 text-gray-400" />}
         renderLabel={(label) => (
           <div
             class="flex flex-1 items-center gap-1.5"
             title={`${inviteEmail()} | ${inviteRoleName()}`}
           >
             <div class="max-w-48 truncate">{label}</div>
-            <div class="h-4 w-px shrink-0 rounded-full bg-gray-200 dark:bg-gray-700" />
-            <span class="shrink-0 text-xs text-gray-400 dark:text-gray-500">
-              {inviteRoleName()}
-            </span>
+            <div class="h-4 w-px shrink-0 rounded-full bg-gray-200" />
+            <span class="shrink-0 text-xs text-gray-400">{inviteRoleName()}</span>
             <div class="flex-1" />
-            <span class="shrink-0 text-xs text-gray-400 dark:text-gray-500">
+            <span class="shrink-0 text-xs text-gray-400">
               {format(props.invite.createdAt, "MMM d, yyyy")}
             </span>
           </div>
@@ -99,7 +97,9 @@ const InviteItem: Component<{
               trigger={() => (
                 <div
                   class={clsx(
-                    !menuOpened() && !props.loading && "opacity-20 group-hover:opacity-100"
+                    !menuOpened() &&
+                      !props.loading &&
+                      "opacity-20 media-mouse:group-hover:opacity-100"
                   )}
                 >
                   <IconButton

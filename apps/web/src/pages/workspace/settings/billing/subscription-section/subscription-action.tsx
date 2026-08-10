@@ -101,7 +101,7 @@ const SubscriptionInfo: Component<SubscriptionInfoProps> = (props) => {
   return (
     <Show when={billingStatus()}>
       {(state) => (
-        <div class="flex gap-1.5 text-xs text-gray-400 dark:text-gray-500">
+        <div class="flex gap-1.5 text-xs text-gray-400">
           <div class="border-r border-gray-200 pl-1 pr-1.5 flex justify-center items-start">
             <div class="h-4 w-4 flex justify-center items-center shrink-0">
               <div class={clsx("h-3.5 w-3.5", state().icon)} />

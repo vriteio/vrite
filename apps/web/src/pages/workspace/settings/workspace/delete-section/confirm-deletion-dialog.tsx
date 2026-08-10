@@ -74,7 +74,7 @@ const ConfirmDeletionDialog: Component<ConfirmDeletionDialogProps> = (props) => 
         <Card class="flex w-md max-w-[calc(100vw-2rem)] flex-col gap-3 rounded-xl p-4" shade>
           <div class="flex flex-col gap-0.5">
             <h3 class="text-lg font-semibold leading-tight">Delete workspace permanently?</h3>
-            <p class="text-sm leading-tight text-gray-400 dark:text-gray-500">
+            <p class="text-sm leading-tight text-gray-400">
               All workspace data will be permanently deleted and any active subscription cancelled.
               This cannot be undone.
             </p>

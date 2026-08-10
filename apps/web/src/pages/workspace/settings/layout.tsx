@@ -1,4 +1,4 @@
-import { Card, ScrollShadow, Skeleton, Spinner, createRef } from "@andesine/components";
+import { Card, ScrollShadow, createRef } from "@andesine/components";
 import { Title } from "@solidjs/meta";
 import {
   revalidate,
@@ -7,7 +7,7 @@ import {
   useNavigate,
   useParams
 } from "@solidjs/router";
-import { type Component, createEffect, onCleanup, Show, Suspense } from "solid-js";
+import { type Component, createEffect, onCleanup, Show } from "solid-js";
 import { useWorkspace } from "#web/context/workspace";
 import { useRouteData } from "#web/lib/navigation";
 import { SettingsProvider } from "./settings-context";
@@ -123,14 +123,14 @@ const SettingsLayout: Component<RouteSectionProps> = (props) => {
           <div class="relative flex h-full w-full overflow-hidden">
             <ScrollShadow scrollableContainerRef={scrollableContainerRef} />
             <div class="relative z-0 w-full overflow-auto" ref={setScrollableContainerRef}>
-              <div class="flex w-full flex-col items-center p-10 pt-16">
+              <div class="flex w-full flex-col items-center px-2.5 pb-5 pt-4 md:px-10 md:pb-10 md:pt-16">
                 <div class="relative my-2 flex w-full max-w-[44rem] flex-col">
-                  <h1 class="my-3 text-5xl font-semibold">{title()}</h1>
+                  <h1 class="my-3 text-4xl font-semibold md:text-5xl">{title()}</h1>
                   <Show
                     when={canAccessRoute()}
                     fallback={
                       <Card
-                        class="flex h-16 items-center justify-center gap-1 rounded-lg bg-white px-2 text-sm text-gray-400"
+                        class="flex h-16 items-center justify-center gap-1 rounded-lg bg-gray-50 px-2 text-sm text-gray-400"
                         shade
                       >
                         <div class="i-lucide:lock h-5.5 w-5.5 text-gray-300" />

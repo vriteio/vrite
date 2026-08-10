@@ -46,7 +46,7 @@ const DeleteKeyDialog: Component<DeleteKeyDialogProps> = (props) => {
             <h3 class="text-lg font-semibold leading-tight">
               Delete {visibleKeys().length > 1 ? `${visibleKeys().length} API keys` : "API key"}?
             </h3>
-            <p class="text-sm leading-tight text-gray-400 dark:text-gray-500">
+            <p class="text-sm leading-tight text-gray-400">
               {visibleKeys().length > 1 ? "These keys" : "This key"} will stop working immediately.
               This cannot be undone.
             </p>

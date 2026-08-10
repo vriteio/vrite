@@ -85,7 +85,7 @@ const auth = betterAuth({
       await redis.del(`auth:${key}`);
     },
     increment: async (key, ttl) => {
-      const result = await incrementWithExpiry(`auth:${key}`, ttl);
+      const result = await incrementWithExpiry(redis, `auth:${key}`, ttl);
 
       return result.count;
     }

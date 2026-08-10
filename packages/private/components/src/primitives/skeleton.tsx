@@ -11,19 +11,13 @@ const Skeleton: Component<SkeletonProps> = (props) => {
     return (
       <Index each={props.class}>
         {(cssClass) => (
-          <div
-            class={clsx(":base: bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse", cssClass())}
-          />
+          <div class={clsx(":base: bg-gray-200 rounded-lg animate-pulse", cssClass())} />
         )}
       </Index>
     );
   }
 
-  return (
-    <div
-      class={clsx(":base: bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse", props.class)}
-    />
-  );
+  return <div class={clsx(":base: bg-gray-200 rounded-lg animate-pulse", props.class)} />;
 };
 
 export { Skeleton };

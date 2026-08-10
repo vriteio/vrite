@@ -24,7 +24,7 @@ interface TreeItemProps {
 
 const TreeItem: Component<TreeItemProps> = (props) => {
   const [
-    { focusedSource, isFocused, isRenaming, isSelected, flattenedOrder },
+    { focusedSource, isFocused, isRenaming, isSelected, flattenedOrder, itemHeight },
     { setFocusedItem, setSelection, setRenaming }
   ] = useTree();
   const [currentName, setCurrentName] = createSignal("");
@@ -107,7 +107,7 @@ const TreeItem: Component<TreeItemProps> = (props) => {
   return (
     <div
       class={clsx(
-        ":base: relative flex flex-1 gap-1 min-h-7 font-medium items-center pl-0.5 rounded-r-lg group hover:cursor-pointer w-full overflow-hidden select-none",
+        ":base: relative flex flex-1 gap-1 font-medium items-center pl-0.5 rounded-r-lg group @hover:cursor-pointer w-full overflow-hidden select-none",
         props.selectable &&
           isFocused(props.id) &&
           !isSelected(props.id) &&
@@ -116,6 +116,7 @@ const TreeItem: Component<TreeItemProps> = (props) => {
         props.topLevel && ":base: rounded-l-lg",
         props.class
       )}
+      style={{ "min-height": itemHeight }}
       ref={props.ref}
       onClick={handleClick}
       onPointerEnter={focusItem}
@@ -142,14 +143,14 @@ const TreeItem: Component<TreeItemProps> = (props) => {
             <div
               class={clsx(
                 "h-6 w-6 flex justify-center items-center",
-                props.checkbox && "group-hover:hidden"
+                props.checkbox && "media-mouse:group-hover:hidden"
               )}
             >
               {props.icon}
             </div>
           </Show>
           <Show when={props.checkbox}>
-            <div class={clsx(!isSelected(props.id) && "hidden group-hover:block")}>
+            <div class={clsx(!isSelected(props.id) && "hidden media-mouse:group-hover:block")}>
               <Checkbox size="small" checked={isSelected(props.id)} />
             </div>
           </Show>

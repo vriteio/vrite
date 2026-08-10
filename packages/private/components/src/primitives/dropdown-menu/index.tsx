@@ -1,7 +1,7 @@
 import clsx from "clsx";
-import { Card } from "./card";
-import { Dropdown } from "./dropdown";
-import { Fragment } from "./fragment";
+import { Card } from "../card";
+import { Dropdown } from "../dropdown";
+import { Fragment } from "../fragment";
 import {
   type ComponentProps,
   createEffect,
@@ -13,16 +13,18 @@ import {
   splitProps
 } from "solid-js";
 import { Dynamic, Portal } from "solid-js/web";
-import { Shortcut } from "./shortcut";
-import { Spinner } from "./spinner";
+import { Shortcut } from "../shortcut";
+import { Spinner } from "../spinner";
 import { Menu } from "@ark-ui/solid/menu";
-import { Tooltip } from "./tooltip";
+import { Tooltip } from "../tooltip";
+import { createMediaQuery } from "@solid-primitives/media";
+import { MobileMenuItems } from "./dropdown-menu-mobile";
 import {
   addIndices,
   flattenWithSeparators,
   isJSXFactory,
   type MenuItem
-} from "./dropdown-menu-items";
+} from "../dropdown-menu-items";
 
 interface DropdownMenuProps<O extends MenuItem> extends Omit<
   ComponentProps<typeof Dropdown>,
@@ -40,7 +42,7 @@ const MenuItems = <O extends MenuItem>(props: {
   <For each={props.items}>
     {(optionOrSeparator) => {
       if (optionOrSeparator === "separator") {
-        return <Menu.Separator class="my-0.5 h-px bg-gray-200 dark:bg-gray-700" />;
+        return <Menu.Separator class="my-0.5 h-px bg-gray-200" />;
       }
 
       if (isJSXFactory(optionOrSeparator)) {
@@ -66,8 +68,8 @@ const MenuItems = <O extends MenuItem>(props: {
               class={clsx(
                 "w-full flex items-center gap-1 justify-start px-1 py-0.5 rounded-md cursor-pointer outline-none",
                 option.color === "danger"
-                  ? "data-[highlighted]:bg-red-600 data-[highlighted]:bg-opacity-10 dark:data-[highlighted]:bg-red-600 dark:data-[highlighted]:bg-opacity-10"
-                  : "data-[highlighted]:bg-gray-100 dark:data-[highlighted]:bg-gray-800"
+                  ? "data-[highlighted]:bg-red-600 data-[highlighted]:bg-opacity-10"
+                  : "data-[highlighted]:bg-gray-100"
               )}
             >
               <Show when={option.icon}>
@@ -75,7 +77,7 @@ const MenuItems = <O extends MenuItem>(props: {
                   class={clsx(
                     "h-4.5 w-4.5",
                     typeof option.icon === "string" && option.icon,
-                    option.color === "danger" ? "text-red-500" : "text-gray-500 dark:text-gray-400"
+                    option.color === "danger" ? "text-red-500" : "text-gray-500"
                   )}
                 >
                   {typeof option.icon === "function" && <Dynamic component={option.icon} />}
@@ -86,12 +88,12 @@ const MenuItems = <O extends MenuItem>(props: {
                   title={option.label}
                   class={clsx(
                     "flex-1 text-start text-sm line-clamp-1",
-                    option.color === "danger" ? "text-red-500" : "text-gray-700 dark:text-gray-200"
+                    option.color === "danger" ? "text-red-500" : "text-gray-700"
                   )}
                 >
                   {option.label}
                 </span>
-                <div class="h-4 w-4 i-lucide-chevron-right text-gray-400 dark:text-gray-500" />
+                <div class="h-4 w-4 i-lucide-chevron-right text-gray-400" />
               </div>
             </Menu.TriggerItem>
             <Dynamic component={props.portal === false ? Fragment : Portal}>
@@ -163,8 +165,8 @@ const MenuItems = <O extends MenuItem>(props: {
               option.selected
                 ? "relative group/menu-item"
                 : option.color === "danger"
-                  ? "data-[highlighted]:bg-red-600 data-[highlighted]:bg-opacity-10 dark:data-[highlighted]:bg-red-600 dark:data-[highlighted]:bg-opacity-10"
-                  : "data-[highlighted]:bg-gray-100 dark:data-[highlighted]:bg-gray-800"
+                  ? "data-[highlighted]:bg-red-600 data-[highlighted]:bg-opacity-10"
+                  : "data-[highlighted]:bg-gray-100"
             )}
           >
             <div class={clsx("contents", loading() && "invisible")}>
@@ -180,7 +182,7 @@ const MenuItems = <O extends MenuItem>(props: {
                       ? "bg-gradient-to-tr group-data-[highlighted]/menu-item:text-white group-data-[highlighted]/menu-item:from-white group-data-[highlighted]/menu-item:to-white"
                       : option.color === "danger"
                         ? "text-red-500"
-                        : "text-gray-500 dark:text-gray-400"
+                        : "text-gray-500"
                   )}
                 >
                   {typeof option.icon === "function" && option.icon()}
@@ -195,7 +197,7 @@ const MenuItems = <O extends MenuItem>(props: {
                       ? "bg-gradient-to-tr bg-clip-text text-transparent group-data-[highlighted]/menu-item:text-white group-data-[highlighted]/menu-item:from-white group-data-[highlighted]/menu-item:to-white"
                       : option.color === "danger"
                         ? "text-red-500"
-                        : "text-gray-700 dark:text-gray-200"
+                        : "text-gray-700"
                   )}
                 >
                   {option.label}
@@ -217,6 +219,7 @@ const MenuItems = <O extends MenuItem>(props: {
   </For>
 );
 const DropdownMenu = <O extends MenuItem>(props: DropdownMenuProps<O>) => {
+  const md = createMediaQuery("(min-width: 768px)");
   const [, dropdownProps] = splitProps(props, ["items"]);
   const [opened, setOpened] = createSignal(props.opened || false);
   const optionsWithIndices = createMemo(() => addIndices(props.items));
@@ -245,14 +248,25 @@ const DropdownMenu = <O extends MenuItem>(props: DropdownMenuProps<O>) => {
       portal={props.portal}
       setOpened={setOpened}
     >
-      <div class="flex flex-col w-full gap-0.5">
-        <MenuItems
+      <Show
+        when={!md()}
+        fallback={
+          <div class="flex flex-col w-full gap-0.5">
+            <MenuItems
+              items={flattenOptionsAndSeparators()}
+              onClose={() => setOpened(false)}
+              cardProps={props.cardProps}
+              portal={props.portal}
+            />
+          </div>
+        }
+      >
+        <MobileMenuItems
           items={flattenOptionsAndSeparators()}
+          opened={opened()}
           onClose={() => setOpened(false)}
-          cardProps={props.cardProps}
-          portal={props.portal}
         />
-      </div>
+      </Show>
     </Dropdown>
   );
 };

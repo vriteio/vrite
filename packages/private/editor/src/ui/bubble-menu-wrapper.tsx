@@ -50,7 +50,11 @@ const BubbleMenuWrapper: ParentComponent<BubbleMenuWrapperProps> = (props) => {
     });
   });
 
-  return <div ref={setWrapperRef}>{props.children}</div>;
+  return (
+    <div ref={setWrapperRef} data-text-menu>
+      {props.children}
+    </div>
+  );
 };
 
 export { BubbleMenuWrapper };

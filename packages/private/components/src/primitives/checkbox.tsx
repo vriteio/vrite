@@ -28,7 +28,7 @@ const Checkbox: Component<CheckboxProps> = (props) => (
     <BaseCheckbox.Control
       class={clsx(
         `:base: flex items-center justify-center outline outline-2 -outline-offset-2 cursor-pointer`,
-        `:base: outline-gray-400 dark:outline-gray-500`,
+        `:base: outline-gray-400`,
         `:base: data-[state=checked]:outline-transparent data-[state=checked]:bg-gradient-to-tr`,
         `:base: data-[disabled]:opacity-70 data-[disabled]:pointer-events-none`,
         sizeClasses[props.size || "medium"].control

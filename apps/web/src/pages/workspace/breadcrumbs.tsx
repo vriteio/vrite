@@ -34,7 +34,7 @@ const Breadcrumbs: Component = () => {
   });
 
   return (
-    <div class="flex h-11 w-full items-center justify-center gap-2 p-2 absolute top-0 left-0 z-20">
+    <div class="absolute left-0 top-0 z-20 hidden h-11 w-full items-center justify-center gap-2 p-2 md:flex">
       <Show when={items().length > 0 || isEntryTitleLoading()}>
         <span class="inline-flex items-center justify-center text-base font-medium leading-[1] bg-gray-50/2.5 backdrop-blur-sm rounded-lg">
           <IconButton

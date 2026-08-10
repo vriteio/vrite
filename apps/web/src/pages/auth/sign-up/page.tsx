@@ -49,7 +49,7 @@ const SignUpPage: Component = () => {
       <Title>Sign up | Andesine</Title>
       <div>
         <span class="text-2xl font-semibold">Welcome!</span>
-        <div class="text-gray-400 dark:text-gray-500 leading-5 text-sm">
+        <div class="text-gray-400 leading-5 text-sm">
           By registering you agree to our{" "}
           <Button
             link="https://andesine.app/privacy"
@@ -91,7 +91,7 @@ const SignUpPage: Component = () => {
         <IconButton
           icon="i-mdi:github"
           class="w-full @hover:bg-gray-50 gap-1"
-          iconProps={{ class: "text-black dark:text-white" }}
+          iconProps={{ class: "text-black" }}
           variant="outlined"
           color="contrast"
           label={signingUpWithGitHub() ? "Continuing with GitHub..." : "Continue with GitHub"}
@@ -101,10 +101,10 @@ const SignUpPage: Component = () => {
           }}
         />
 
-        <div class="flex items-center justify-start gap-2 text-gray-400 dark:text-gray-500 text-xs">
-          <div class="h-px flex-1 bg-gray-200 dark:bg-gray-700"></div>
+        <div class="flex items-center justify-start gap-2 text-gray-400 text-xs">
+          <div class="h-px flex-1 bg-gray-200"></div>
           Or sign up with
-          <div class="h-px flex-1 bg-gray-200 dark:bg-gray-700"></div>
+          <div class="h-px flex-1 bg-gray-200"></div>
         </div>
         <div class="flex items-center justify-center gap-1">
           <IconButton
@@ -112,13 +112,13 @@ const SignUpPage: Component = () => {
             class="w-full @hover:bg-gray-50 gap-1"
             color="contrast"
             variant="outlined"
-            iconProps={{ class: "h-5.5 w-5.5 text-gray-400 dark:text-gray-500" }}
+            iconProps={{ class: "h-5.5 w-5.5 text-gray-400" }}
             icon="i-fluent:mail-16-filled"
             link={appendRedirectTo("/auth/email?mode=sign-up", redirectTo())}
           />
         </div>
       </div>
-      <div class="flex flex-col items-start justify-center w-full transform text-sm text-gray-400 dark:text-gray-500">
+      <div class="flex flex-col items-start justify-center w-full transform text-sm text-gray-400">
         <span>Already have an account?</span>
         <IconButton
           icon="i-lucide:arrow-right"

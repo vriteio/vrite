@@ -1,6 +1,6 @@
 // Reusable checkbox control
 @mixin checkbox {
-  @apply h-6 w-6 shrink-0 cursor-pointer appearance-none rounded-lg bg-transparent outline outline-2 -outline-offset-2 outline-gray-400 disabled:pointer-events-none disabled:opacity-70 dark:outline-gray-500;
+  @apply h-6 w-6 shrink-0 cursor-pointer appearance-none rounded-lg bg-transparent outline outline-2 -outline-offset-2 outline-gray-400 disabled:pointer-events-none disabled:opacity-70;
 
   &:checked {
     background-image:
@@ -16,6 +16,12 @@
 // Document title
 header[data-type="title"] {
   @apply font-semibold text-5xl my-3;
+}
+
+@screen lt-md {
+  header[data-type="title"] {
+    @apply text-4xl;
+  }
 }
 
 // Text and block selection
@@ -49,8 +55,18 @@ header[data-type="title"] {
 
 // Collaboration
 .collaboration-caret {
-  @apply relative z-5 inline w-0 -mx-px border-l-2 pointer-events-auto;
-  border-color: var(--collaboration-color);
+  @apply relative z-5 inline-block w-0 pointer-events-auto;
+  height: 1.2em;
+  vertical-align: -0.2em;
+
+  &::before {
+    @apply absolute pointer-events-none top-0;
+    bottom: -0.1em;
+    left: -0.5px;
+    width: 1.5px;
+    background-color: var(--collaboration-color);
+    content: "";
+  }
 
   &::after {
     @apply absolute;
@@ -75,6 +91,12 @@ header[data-type="title"] {
   transition:
     opacity 120ms ease,
     transform 120ms ease;
+}
+
+@screen lt-md {
+  .collaboration-caret {
+    pointer-events: none !important;
+  }
 }
 
 .collaboration-selection {
@@ -115,7 +137,7 @@ header:only-of-type + p:only-of-type.is-empty::before {
   font-kerning: none;
   :where(h1, h2, h3, h4, h5, h6):not(:where(.not-prose, .not-prose *)) {
     &::before {
-      @apply absolute -left-10 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center text-center text-base font-normal leading-4 text-gray-400 dark:bg-gray-900;
+      @apply absolute -left-10 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center text-center text-base font-normal leading-4 text-gray-400;
       font-family: "JetBrainsMonoVariable", monospace;
     }
 
@@ -189,14 +211,38 @@ header:only-of-type + p:only-of-type.is-empty::before {
     }
   }
   :where([data-type="horizontal-rule"]):not(:where(.not-prose, .not-prose *)) {
-    @apply box-border w-full cursor-pointer rounded-lg px-2 py-3 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800;
+    @apply box-border w-full cursor-pointer rounded-lg px-2 py-3 transition-colors @hover:bg-gray-100;
 
     > hr {
-      @apply m-0! rounded-full border border-gray-200 pointer-events-none dark:border-gray-700;
+      @apply m-0! rounded-full border border-gray-200 pointer-events-none;
     }
 
     &.ProseMirror-selectednode > hr {
       @apply border border-tertiary;
+    }
+  }
+}
+
+@screen lt-md {
+  .prose-editor {
+    :where(h1, h2, h3, h4, h5, h6):not(:where(.not-prose, .not-prose *))::before {
+      @apply hidden!;
+    }
+
+    :where(h1):not(:where(.not-prose, .not-prose *)) {
+      font-size: 1.5em;
+    }
+
+    :where(h2):not(:where(.not-prose, .not-prose *)) {
+      font-size: 1.25em;
+    }
+
+    :where(h3, h4):not(:where(.not-prose, .not-prose *)) {
+      font-size: 1em;
+    }
+
+    :where(h5, h6):not(:where(.not-prose, .not-prose *)) {
+      font-size: 0.875em;
     }
   }
 }
@@ -224,7 +270,7 @@ header:only-of-type + p:only-of-type.is-empty::before {
   }
 
   :where(blockquote):not(:where(.not-prose, .not-prose *)) {
-    @apply border-l-3 pl-5.5 border-solid border-gray-300 dark:border-gray-700 not-italic text-gray-500 dark:text-gray-400;
+    @apply border-l-3 pl-5.5 border-solid border-gray-300 not-italic text-gray-500;
   }
   :where(code):not(:where(.not-prose, .not-prose *)) {
     &::after {
@@ -261,16 +307,30 @@ header:only-of-type + p:only-of-type.is-empty::before {
 
 .code-mark-cursor {
   @apply relative z-1 inline-block w-px -translate-y-px -mr-px align-middle bg-gray-700 pointer-events-none;
-  height: 21.5px;
+  height: 1.34375rem;
   animation: code-mark-cursor-blink 1s steps(1, end) infinite;
-}
-
-.dark .code-mark-cursor {
-  @apply bg-gray-300;
 }
 
 .code-mark-cursor--inside {
   // Use the same inherited gradient stops and direction as the code text.
   @apply bg-tertiary;
-  height: 18.5px;
+  height: 1.15625rem;
+}
+
+// Editor menus
+@screen lt-md {
+  [data-text-menu] {
+    width: 100dvw !important;
+    max-width: 100dvw;
+
+    > [data-menu] {
+      border-right-width: 0 !important;
+      border-left-width: 0 !important;
+    }
+  }
+
+  [data-drag-handle],
+  [data-block-menu-trigger] {
+    display: none !important;
+  }
 }

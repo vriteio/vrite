@@ -154,7 +154,7 @@ const KeySettingsPage: Component = () => {
           </For>
         </SettingsSection>
         <div class="w-full h-4 flex justify-center items-center">
-          <div class="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+          <div class="flex-1 h-px bg-gray-200" />
         </div>
         <div class="flex items-center justify-end gap-2">
           <Tooltip content="Go back">

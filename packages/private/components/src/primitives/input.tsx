@@ -5,12 +5,12 @@ import { createRef, type Ref } from "../ref";
 import { Fragment } from "./fragment";
 
 const inputColors = {
-  base: `:base: bg-gray-200 dark:bg-gray-800 outline-gray-200 dark:outline-gray-800`,
-  contrast: `:base: bg-white dark:bg-gray-850 outline-gray-200 dark:outline-gray-700 shadow-gray-200 dark:shadow-gray-900`
+  base: `:base: bg-gray-200 outline-gray-200`,
+  contrast: `:base: bg-white outline-gray-200 shadow-gray-200`
 };
 const inputVariants = {
   solid: `:base: focus:outline-none focus:shadow-inner`,
-  outlined: `:base: outline outline-1 shadow-md focus:outline-1 focus:bg-gray-100 dark:focus:bg-gray-950`
+  outlined: `:base: outline outline-1 shadow-md focus:outline-1 focus:bg-gray-100`
 };
 
 interface InputProps extends Omit<JSX.InputHTMLAttributes<HTMLInputElement>, "slot" | "onCancel"> {
@@ -83,7 +83,7 @@ const Input: Component<InputProps> = (props) => {
         <label
           for={inputID()}
           class={clsx(
-            ":base: leading-[1] text-gray-400 dark:text-gray-500 group-focus-within:text-gray-500 group-focus-within:dark:text-gray-400",
+            ":base: leading-[1] text-gray-400 group-focus-within:text-gray-500",
             inputSizes[props.size || "medium"].label,
             props.labelClass
           )}

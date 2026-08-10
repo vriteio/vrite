@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { incrementWithExpiry } from "#backend/lib/adapters";
+import { incrementWithExpiry, redis } from "#backend/lib/adapters";
 
 const RATE_LIMITS = {
   authentication: { max: 20, window: 60 },
@@ -21,6 +21,7 @@ interface RateLimitInput {
 const consumeRateLimit = async (input: RateLimitInput) => {
   const keyHash = createHash("sha256").update(input.key).digest("hex");
   const { count, ttl } = await incrementWithExpiry(
+    redis,
     `rate-limit:${input.scope}:${keyHash}`,
     input.limit.window
   );

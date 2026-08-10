@@ -104,7 +104,7 @@ const FormatMenu: Component<{
     <Card
       data-menu="format"
       class={clsx(
-        "z-10 relative flex p-1 gap-1 rounded-xl overflow-x-auto scrollbar-hidden md:overflow-initial not-prose bg-white items-center",
+        "z-10 relative flex w-full max-w-full p-1 gap-1 rounded-none overflow-x-auto scrollbar-hidden not-prose bg-gray-50 items-center md:w-auto md:max-w-none md:rounded-xl md:overflow-initial",
         props.class
       )}
       shade
@@ -124,7 +124,7 @@ const FormatMenu: Component<{
           };
 
           return (
-            <div class="snap-start">
+            <div class="snap-start shrink-0">
               <Tooltip
                 content={
                   <div class="flex flex-col items-center justify-center gap-0.5">
@@ -137,11 +137,11 @@ const FormatMenu: Component<{
                 side="bottom"
               >
                 <IconButton
-                  class={clsx(active() && "group/menu-item hover:bg-gradient-to-tr")}
+                  class={clsx(active() && "group/menu-item @hover:bg-gradient-to-tr")}
                   iconProps={{
                     class: clsx(
                       active() &&
-                        "bg-gradient-to-tr group-hover/menu-item:from-white group-hover/menu-item:to-white"
+                        "bg-gradient-to-tr media-mouse:group-hover/menu-item:from-white media-mouse:group-hover/menu-item:to-white"
                     )
                   }}
                   icon={menu.icon}
@@ -169,7 +169,20 @@ const FormatMenu: Component<{
           );
         }}
       </For>
-      <div class="w-px h-6 rounded-full bg-gray-200" />
+      <Tooltip content="Close keyboard" side="bottom" wrapperClass="snap-start shrink-0 md:hidden">
+        <IconButton
+          variant="text"
+          icon="i-lucide:keyboard-off"
+          size="xs"
+          aria-label="Close keyboard"
+          onClick={(event) => {
+            props.editor.commands.blur();
+            event.preventDefault();
+            event.stopPropagation();
+          }}
+        />
+      </Tooltip>
+      <div class="w-px h-6 shrink-0 rounded-full bg-gray-200" />
       <Tooltip
         content={
           <div class="flex flex-col items-center justify-center gap-0.5">
@@ -177,7 +190,7 @@ const FormatMenu: Component<{
           </div>
         }
         side="bottom"
-        wrapperClass="snap-start"
+        wrapperClass="snap-start shrink-0"
       >
         <IconButton
           variant="text"

@@ -20,7 +20,7 @@ const SnapshotErrorDialog: Component = () => {
         <Card class="flex w-sm flex-col gap-3 rounded-xl p-4" shade>
           <div class="flex flex-col gap-0.5">
             <h3 class="text-lg font-semibold leading-tight">Couldn't load this workspace</h3>
-            <p class="text-sm leading-tight text-gray-400 dark:text-gray-500">
+            <p class="text-sm leading-tight text-gray-400">
               Workspace content couldn't be synced from the server. Check your connection and try
               again.
             </p>

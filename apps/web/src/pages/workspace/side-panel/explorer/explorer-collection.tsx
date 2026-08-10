@@ -66,7 +66,7 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
                 <div
                   data-element="collection-icon"
                   class={clsx(
-                    "h-6 w-6 text-gray-400 dark:text-gray-500 transition-transform",
+                    "h-6 w-6 text-gray-400 transition-transform",
                     (isSelected(props.collection.id) || isDraggedOver()) && "bg-gradient-to-tr",
                     isExpanded(props.collection.id)
                       ? "i-material-symbols:folder-open-rounded"
@@ -85,7 +85,7 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
                 setOpened={setMenuOpened}
                 trigger={() => (
                   <IconButton
-                    class={clsx(!menuOpened() && "opacity-0 group-hover:opacity-100")}
+                    class={clsx(!menuOpened() && "opacity-0 media-mouse:group-hover:opacity-100")}
                     icon="i-lucide:ellipsis-vertical"
                     size="small"
                     variant="text"

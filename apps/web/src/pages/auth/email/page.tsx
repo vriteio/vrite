@@ -145,7 +145,7 @@ const EmailPage: Component = () => {
           <span class="text-2xl font-semibold">
             {mode() === "sign-in" ? "Welcome back!" : "Welcome!"}
           </span>
-          <div class="text-gray-400 dark:text-gray-500 leading-5 text-sm">
+          <div class="text-gray-400 leading-5 text-sm">
             Provide your email to continue, or <br />
             <Button
               variant="text"
@@ -185,7 +185,7 @@ const EmailPage: Component = () => {
           </div>
           <Switch>
             <Match when={mode() === "sign-in"}>
-              <div class="flex flex-col items-start justify-center w-full transform -bottom-16 text-sm text-gray-400 dark:text-gray-500">
+              <div class="flex flex-col items-start justify-center w-full transform -bottom-16 text-sm text-gray-400">
                 <span>Don't have an account?</span>
                 <IconButton
                   icon="i-lucide:arrow-right"
@@ -202,7 +202,7 @@ const EmailPage: Component = () => {
               </div>
             </Match>
             <Match when={mode() === "sign-up"}>
-              <div class="flex flex-col items-start justify-center w-full transform text-sm text-gray-400 dark:text-gray-500">
+              <div class="flex flex-col items-start justify-center w-full transform text-sm text-gray-400">
                 <span>Already have an account?</span>
                 <IconButton
                   icon="i-lucide:arrow-right"
@@ -222,7 +222,7 @@ const EmailPage: Component = () => {
         </Match>
         <Match when={view() === "otp"}>
           <span class="text-2xl font-semibold">Almost there!</span>
-          <div class="text-gray-400 dark:text-gray-500 leading-5 text-sm">
+          <div class="text-gray-400 leading-5 text-sm">
             {mode() === "sign-in"
               ? "To verify your sign request, enter the code sent to:"
               : "To complete registration, enter the code sent to:"}
@@ -254,7 +254,7 @@ const EmailPage: Component = () => {
               Continue
             </Button>
           </div>
-          <div class="flex flex-col items-start justify-center w-full transform text-sm text-gray-400 dark:text-gray-500">
+          <div class="flex flex-col items-start justify-center w-full transform text-sm text-gray-400">
             <span>Didn't receive the code?</span>
             <div class="inline-flex -mt-1">
               <IconButton

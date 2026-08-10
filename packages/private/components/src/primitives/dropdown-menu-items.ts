@@ -10,15 +10,17 @@ interface MenuItem {
   items?: Array<MenuItem | (() => JSX.Element)> | Array<Array<MenuItem | (() => JSX.Element)>>;
   onClick?: (() => void) | (() => Promise<unknown>);
 }
+
+type FlattenedMenuItem<O extends MenuItem> =
+  "separator" | (O & { value: string }) | (() => JSX.Element);
+
 const isMenuItem = (item: unknown): item is MenuItem => {
   return typeof item === "object" && item !== null && typeof (item as MenuItem).label === "string";
 };
 const isJSXFactory = (item: unknown): item is () => JSX.Element => typeof item === "function";
 const flattenWithSeparators = <O extends MenuItem>(
-  options:
-    | Array<(O & { value: string }) | (() => JSX.Element) | "separator">
-    | Array<Array<(O & { value: string }) | (() => JSX.Element) | "separator">>
-): Array<"separator" | (O & { value: string }) | (() => JSX.Element)> => {
+  options: Array<FlattenedMenuItem<O>> | Array<Array<FlattenedMenuItem<O>>>
+): Array<FlattenedMenuItem<O>> => {
   return options
     .map((option, index) => {
       if (Array.isArray(option)) {
@@ -85,4 +87,4 @@ const addIndices = <O extends MenuItem>(
 };
 
 export { addIndices, flattenWithSeparators, isJSXFactory, isMenuItem };
-export type { MenuItem };
+export type { MenuItem, FlattenedMenuItem };

@@ -17,12 +17,12 @@ interface OTPInputProps extends JSX.InputHTMLAttributes<HTMLInputElement> {
   onEnter?(event: KeyboardEvent): void;
 }
 const OTPInputColors = {
-  base: `:base: bg-gray-200 dark:bg-gray-800 outline-gray-200 dark:outline-gray-800`,
-  contrast: `:base: bg-white dark:bg-gray-850 outline-gray-200 dark:outline-gray-700 shadow-gray-200 dark:shadow-gray-900`
+  base: `:base: bg-gray-200 outline-gray-200`,
+  contrast: `:base: bg-white outline-gray-200 shadow-gray-200`
 };
 const OTPInputVariants = {
   solid: `:base: focus:outline-none focus:shadow-inner`,
-  outlined: `:base: outline outline-1 shadow-md focus:outline-1 focus:bg-gray-100 dark:focus:bg-gray-950`
+  outlined: `:base: outline outline-1 shadow-md focus:outline-1 focus:bg-gray-100`
 };
 
 const OTPInputSlot: Component<OTPInputSlotProps> = (props) => (
@@ -74,7 +74,7 @@ const OTPInput: Component<OTPInputProps> = (props) => {
               />
               <Show when={index() + 1 === length() / 2}>
                 <div class="w-4 flex justify-center items-center">
-                  <div class="h-0.5 w-full bg-gray-400 dark:text-gray-500 rounded-full"></div>
+                  <div class="h-0.5 w-full bg-gray-400 rounded-full"></div>
                 </div>
               </Show>
             </>

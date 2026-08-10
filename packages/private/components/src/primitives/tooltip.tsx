@@ -96,7 +96,7 @@ const Tooltip: Component<TooltipProps> = (props) => {
         <BaseTooltip.Positioner class="flex justify-center items-center">
           <BaseTooltip.Content
             class={clsx(
-              `:base: relative flex text-xs whitespace-nowrap py-1 px-1.5 leading-none dark:bg-gray-50 dark:text-gray-800 rounded-md bg-gray-800 text-gray-50 z-60 pointer-events-none ring-1 ring-gray-900 dark:ring-gray-200 shadow-inner shadow-gray-900 dark:shadow-gray-200`,
+              `:base: relative flex text-xs whitespace-nowrap py-1 px-1.5 leading-none rounded-md bg-gray-800 text-gray-50 z-60 pointer-events-none ring-1 ring-gray-900 shadow-inner shadow-gray-900`,
               `:base: data-[state='open']:(scale-100 opacity-100) data-[state='closed']:(scale-90 opacity-0)`,
               !visibleTooltip() && `:base: transition`,
               props.class
@@ -108,7 +108,7 @@ const Tooltip: Component<TooltipProps> = (props) => {
             }}
           >
             {props.content}
-            <div class="absolute h-full w-full top-0 left-0 shadow-md shadow-gray-900 dark:shadow-gray-200 shadow-opacity-20 dark:shadow-opacity-20 -z-1 rounded-md" />
+            <div class="absolute h-full w-full top-0 left-0 shadow-md shadow-gray-900 shadow-opacity-20 -z-1 rounded-md" />
           </BaseTooltip.Content>
         </BaseTooltip.Positioner>
       </Portal>

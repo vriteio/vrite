@@ -59,16 +59,14 @@ const PasskeyItem: Component<{
         checkbox={!props.loading}
         selectable={!props.loading}
         class={clsx("px-1 py-0.5", props.loading && "animate-pulse")}
-        icon={
-          <div class="i-fluent:person-passkey-16-regular h-5.5 w-5.5 text-gray-400 dark:text-gray-500" />
-        }
+        icon={<div class="i-fluent:person-passkey-16-regular h-5.5 w-5.5 text-gray-400" />}
         onRename={props.onRename}
         renderLabel={(label) => (
           <div class="flex-1 flex items-center gap-1.5">
             <div class="flex items-center flex-1 gap-1.5" title={props.name}>
               <div>{label}</div>
-              <div class="w-px h-4 bg-gray-200 dark:bg-gray-700 rounded-full shrink-0" />
-              <span class="text-xs text-gray-400 dark:text-gray-500 shrink-0">
+              <div class="w-px h-4 bg-gray-200 rounded-full shrink-0" />
+              <span class="text-xs text-gray-400 shrink-0">
                 {format(props.createdAt, "MMM d, yyyy")}
               </span>
               <div class="flex-1" />
@@ -85,7 +83,9 @@ const PasskeyItem: Component<{
               trigger={() => (
                 <div
                   class={clsx(
-                    !menuOpened() && !props.loading && "opacity-20 group-hover:opacity-100"
+                    !menuOpened() &&
+                      !props.loading &&
+                      "opacity-20 media-mouse:group-hover:opacity-100"
                   )}
                 >
                   <IconButton

@@ -1,6 +1,6 @@
 import { authClient } from "#web/lib/api";
 import { DropdownArea, DropdownMenu, type MenuItem } from "@andesine/components";
-import { type Component, createMemo, createSignal, type JSX } from "solid-js";
+import { type Component, createMemo, createSignal, type JSX, Show } from "solid-js";
 import { useNavigate } from "@solidjs/router";
 import { useWorkspace } from "#web/context/workspace";
 import { clearPersistenceData } from "#web/context/workspace/persistence";
@@ -10,6 +10,7 @@ import { createMutation } from "@tanstack/solid-query";
 interface ProfileMenuProps {
   color?: "base" | "contrast";
   class?: string;
+  compact?: boolean;
 }
 
 const ProfileMenu: Component<ProfileMenuProps> = (props) => {
@@ -65,12 +66,10 @@ const ProfileMenu: Component<ProfileMenuProps> = (props) => {
     dropdownOptions.push([
       () => (
         <div class="px-1 py-0.5 flex flex-col">
-          <span class="text-sm leading-5 font-medium text-gray-900 dark:text-white line-clamp-1">
+          <span class="text-sm leading-5 font-medium text-gray-900 line-clamp-1">
             {currentUser?.name || currentUser?.email}
           </span>
-          <span class="text-xs leading-none text-gray-500 dark:text-gray-400 line-clamp-1">
-            {currentUser?.email}
-          </span>
+          <span class="text-xs leading-none text-gray-500 line-clamp-1">{currentUser?.email}</span>
         </div>
       )
     ]);
@@ -84,10 +83,10 @@ const ProfileMenu: Component<ProfileMenuProps> = (props) => {
             [
               () => (
                 <div class="px-1 py-0.5 flex flex-col">
-                  <span class="text-sm leading-5 font-medium text-gray-700 dark:text-gray-300 truncate">
+                  <span class="text-sm leading-5 font-medium text-gray-700 truncate">
                     {session.user.name || session.user.email}
                   </span>
-                  <span class="text-xs leading-none text-gray-500 dark:text-gray-400 truncate">
+                  <span class="text-xs leading-none text-gray-500 truncate">
                     {session.user.email}
                   </span>
                 </div>
@@ -202,25 +201,30 @@ const ProfileMenu: Component<ProfileMenuProps> = (props) => {
     return dropdownOptions;
   });
   return (
-    <div class={clsx("p-1", props.class)}>
+    <div class={props.class}>
       <DropdownArea>
         <DropdownMenu
-          cardProps={{ class: "w-56" }}
+          class={props.compact ? "h-full w-full" : undefined}
+          cardProps={{ class: "w-56 max-md:bg-gray-100" }}
           opened={menuOpened()}
           setOpened={setMenuOpened}
           placement="top-start"
           trigger={() => (
             <button
+              aria-label={props.compact ? "Account" : undefined}
               class={clsx(
-                "flex gap-1 items-center w-full rounded-lg px-1 py-1 transition-colors focus:outline-none",
-                "hover:bg-gray-200 dark:hover:bg-gray-800"
+                "flex gap-1 items-center w-full px-1 py-1 transition-colors focus:outline-none",
+                props.compact ? "h-full justify-center" : "rounded-lg",
+                "@hover:bg-gray-200"
               )}
             >
-              <div class="i-lucide:hexagon h-5 w-5 text-gray-500 dark:text-gray-400" />
-              <span class="flex-1 text-start text-sm font-medium truncate">
-                {currentWorkspace()?.name || "Workspace"}
-              </span>
-              <div class="i-lucide:chevrons-up-down h-4 w-4 text-gray-400 dark:text-gray-500" />
+              <div class="i-lucide:hexagon h-5 w-5 text-gray-500" />
+              <Show when={!props.compact}>
+                <span class="flex-1 truncate text-start text-sm font-medium">
+                  {currentWorkspace()?.name || "Workspace"}
+                </span>
+                <div class="i-lucide:chevrons-up-down h-4 w-4 text-gray-400" />
+              </Show>
             </button>
           )}
           items={dropdownOptions()}

@@ -83,6 +83,8 @@ const useExplorerMarquee = (container: () => HTMLElement | null) => {
     setScrollFrame(window.requestAnimationFrame(scroll));
   };
   const onPointerDown = (event: PointerEvent) => {
+    // Disable marquee selection on touch devices
+    if (event.pointerType === "touch") return;
     if (!(event.target instanceof HTMLElement) || event.button !== 0) return;
     if (
       !event.target.closest("[data-explorer-panel]") ||
