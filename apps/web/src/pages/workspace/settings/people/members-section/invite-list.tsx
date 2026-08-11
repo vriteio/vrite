@@ -172,7 +172,7 @@ const InviteList: Component<InviteListProps> = (props) => {
         description="These invite links will stop working immediately."
         affected={affectedInvites()}
         confirmLabel="Revoke"
-        danger
+        confirmColor="danger"
         onClose={() => setPendingRevokeIDs([])}
         onConfirm={() => {
           const ids = pendingRevokeIDs();

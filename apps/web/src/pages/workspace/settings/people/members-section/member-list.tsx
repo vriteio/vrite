@@ -197,7 +197,7 @@ const WorkspaceMemberList: Component<WorkspaceMemberListProps> = (props) => {
             : undefined
         }
         confirmLabel={pendingAction()?.type === "remove" ? "Remove" : "Assign role"}
-        danger={pendingAction()?.type === "remove"}
+        confirmColor={pendingAction()?.type === "remove" ? "danger" : "primary"}
         onClose={() => setPendingAction(null)}
         onConfirm={confirmPendingAction}
       />

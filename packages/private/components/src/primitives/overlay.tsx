@@ -1,7 +1,7 @@
 import { Fragment } from "./fragment";
 import { Dialog } from "@ark-ui/solid/dialog";
 import clsx from "clsx";
-import { type Component, type JSX, splitProps } from "solid-js";
+import { type Component, createSignal, type JSX, splitProps } from "solid-js";
 import { Dynamic, Portal } from "solid-js/web";
 
 interface OverlayProps extends JSX.HTMLAttributes<HTMLDivElement> {
@@ -20,6 +20,7 @@ interface OverlayProps extends JSX.HTMLAttributes<HTMLDivElement> {
 }
 
 const Overlay: Component<OverlayProps> = (props) => {
+  const [transitionInProgress, setTransitionInProgress] = createSignal(false);
   const [, passedProps] = splitProps(props, [
     "opened",
     "children",
@@ -43,9 +44,8 @@ const Overlay: Component<OverlayProps> = (props) => {
       preventScroll={props.lockScroll !== false}
       restoreFocus={props.restoreFocus !== false}
       closeOnEscape={props.closeOnEscape !== false}
-      closeOnInteractOutside
       onOpenChange={(details) => {
-        if (!details.open) {
+        if (!details.open && !transitionInProgress()) {
           props.onOverlayClick?.();
         }
       }}
@@ -60,6 +60,8 @@ const Overlay: Component<OverlayProps> = (props) => {
               : props.hiddenClass || "opacity-0 invisible",
             props.class
           )}
+          onTransitionStart={() => setTransitionInProgress(true)}
+          onTransitionEnd={() => setTransitionInProgress(false)}
         >
           <Dialog.Backdrop
             class={clsx(

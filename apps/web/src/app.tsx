@@ -21,6 +21,7 @@ const rootRedirectQuery = query(async () => {
   const { data } = await authClient.getSession();
   const url = new URL(event ? event.request.url : window.location.href);
   const isAuthRoute = url.pathname.startsWith("/auth");
+  const isInviteRoute = url.pathname === "/invite";
   const isNewWorkspaceRoute = url.pathname === "/new-workspace";
   const workspaceID = url.pathname.split("/")[1] || "";
   const isAddAccount = url.searchParams.get("addAccount") === "true";
@@ -36,6 +37,10 @@ const rootRedirectQuery = query(async () => {
     const { currentWorkspaceID } = data.user;
 
     if (isAuthRoute && isAddAccount) {
+      return { success: true };
+    }
+
+    if (isInviteRoute) {
       return { success: true };
     }
 

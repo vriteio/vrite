@@ -59,9 +59,9 @@ const FormatMenu: Component<{
   };
   const activeGroups = () => {
     const active = activeMarks();
-    const gap = 4;
-    const padding = 4;
-    const menuOptionWidth = 26;
+    const gap = 0.25;
+    const padding = 0.25;
+    const menuOptionWidth = 1.625;
     const activeGroups: FormatMenuItemGroup[] = [];
 
     let left = padding;
@@ -113,7 +113,7 @@ const FormatMenu: Component<{
         {(group) => (
           <div
             class="absolute top-1 bottom-1 -z-1 rounded-lg bg-gradient-to-tr opacity-10 pointer-events-none"
-            style={{ left: `${group.left}px`, width: `${group.width}px` }}
+            style={{ left: `${group.left}rem`, width: `${group.width}rem` }}
           />
         )}
       </For>
@@ -202,14 +202,17 @@ const FormatMenu: Component<{
             let from = 0;
             let to = 0;
 
+            event.preventDefault();
+            event.stopPropagation();
             doc.nodesBetween(selection.from, selection.to, (node, pos) => {
               from = from || pos;
               to = pos + node.nodeSize;
 
               return false;
             });
-            props.editor.chain().setBlockSelection({ from, to }).focus().run();
             openMenu(reference);
+            props.editor.view.dispatch(props.editor.state.tr.setMeta("bubbleMenu", "hide"));
+            props.editor.chain().setBlockSelection({ from, to }).focus().run();
           }}
         />
       </Tooltip>

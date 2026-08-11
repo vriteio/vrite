@@ -1,8 +1,8 @@
 import { type Component, createMemo, createSignal, onMount, Match, Switch, Show } from "solid-js";
 import { Title } from "@solidjs/meta";
-import { revalidate, useLocation, useNavigate } from "@solidjs/router";
+import { useLocation, useNavigate } from "@solidjs/router";
 import { authClient, client } from "#web/lib/api";
-import { Button, Spinner } from "@andesine/components";
+import { IconButton } from "@andesine/components";
 import { appendRedirectTo } from "#web/lib/navigation";
 import { createMutation } from "@tanstack/solid-query";
 
@@ -18,16 +18,18 @@ const getInviteErrorDetails = (error: unknown): { code: InviteErrorCode; workspa
   if (!error || typeof error !== "object") return { code: "UNKNOWN" };
 
   const details = error as { code?: unknown; data?: unknown };
-  const supportedCodes: InviteErrorCode[] = [
+  const supportedCodes: Array<Exclude<InviteErrorCode, "UNKNOWN">> = [
     "INVITE_ACCOUNT_MISMATCH",
     "INVITE_ALREADY_ACCEPTED",
     "INVITE_EXPIRED",
     "INVITE_INVALID",
     "UNAUTHORIZED"
   ];
-  const code =
-    typeof details.code === "string" && supportedCodes.includes(details.code as InviteErrorCode)
-      ? (details.code as InviteErrorCode)
+  const rawCode = typeof details.code === "string" ? details.code : "UNKNOWN";
+  const code = supportedCodes.includes(rawCode as Exclude<InviteErrorCode, "UNKNOWN">)
+    ? (rawCode as InviteErrorCode)
+    : rawCode === "FORBIDDEN"
+      ? "UNAUTHORIZED"
       : "UNKNOWN";
   const data =
     details.data && typeof details.data === "object"
@@ -43,7 +45,8 @@ const inviteErrorMessages: Record<InviteErrorCode, string> = {
   INVITE_ACCOUNT_MISMATCH: "This invitation was sent to another account.",
   INVITE_ALREADY_ACCEPTED: "This invitation has already been accepted.",
   INVITE_EXPIRED: "This invitation has expired. Ask a workspace admin for a new link.",
-  INVITE_INVALID: "This invitation link is invalid.",
+  INVITE_INVALID:
+    "This invitation link is invalid. Refresh the page to try again or contact the workspace admin.",
   UNAUTHORIZED: "Sign in to the invited account to accept this invitation.",
   UNKNOWN: "Failed to accept the invitation. Please try again."
 };
@@ -63,10 +66,6 @@ const InvitePage: Component = () => {
   }));
   const redirectTarget = createMemo(() => `${location.pathname}${location.search}${location.hash}`);
   const signInLink = createMemo(() => appendRedirectTo("/auth/sign-in", redirectTarget()));
-  const switchAccountLink = createMemo(() =>
-    appendRedirectTo("/auth/sign-in?addAccount=true", redirectTarget())
-  );
-  const canSwitchAccount = () => errorCode() === "INVITE_ACCOUNT_MISMATCH";
   const processInvite = async () => {
     const params = new URLSearchParams(location.search);
     const id = params.get("id");
@@ -92,10 +91,9 @@ const InvitePage: Component = () => {
     try {
       const result = await acceptInviteMutation.mutateAsync({ id, expires, signature });
 
-      await revalidate("workspaces");
       setWorkspaceName(result.workspaceName);
       setStatus("success");
-      setTimeout(() => navigate(`/${result.workspaceID}/`), 1600);
+      window.location.replace(`/${result.workspaceID}/`);
     } catch (error) {
       const details = getInviteErrorDetails(error);
 
@@ -111,69 +109,113 @@ const InvitePage: Component = () => {
   });
 
   return (
-    <div class="flex h-full w-full items-center justify-center">
+    <main class="relative flex h-full w-full items-center justify-center">
       <Title>Workspace invitation | Andesine</Title>
-      <div class="flex flex-col items-center gap-4 text-center max-w-sm px-4">
-        <Switch>
-          <Match when={status() === "loading"}>
-            <Spinner class="h-12 w-12" />
-            <span class="text-lg font-medium">Checking your invite...</span>
-          </Match>
-          <Match when={status() === "success"}>
-            <div class="h-12 w-12 i-lucide:check-circle text-green-500" />
-            <span class="text-lg font-medium">Invite accepted!</span>
-            <span class="text-sm text-gray-400">
-              <Show when={workspaceName()} fallback="Redirecting to your workspace...">
-                {(name) => <>Redirecting you to {name()}...</>}
-              </Show>
-            </span>
-          </Match>
-          <Match when={status() === "error"}>
-            <div class="h-12 w-12 i-lucide:x-circle text-red-500" />
-            <span class="text-lg font-medium">Couldn't accept invite</span>
-            <span class="text-sm text-gray-400">{errorMessage()}</span>
-            <div class="mt-2 flex flex-col sm:flex-row gap-2">
-              <Show when={canSwitchAccount()}>
-                <Button size="small" color="primary" link={switchAccountLink()}>
-                  Sign in with another account
-                </Button>
-              </Show>
-              <Show when={errorCode() === "UNAUTHORIZED"}>
-                <Button size="small" color="primary" link={signInLink()}>
-                  Go to sign in
-                </Button>
-              </Show>
-              <Show when={errorCode() === "INVITE_ALREADY_ACCEPTED" && acceptedWorkspaceID()}>
-                <Button size="small" color="primary" link={`/${acceptedWorkspaceID()}/`}>
-                  Open workspace
-                </Button>
-              </Show>
-              <Show when={errorCode() === "UNKNOWN"}>
-                <Button size="small" color="primary" onClick={() => window.location.reload()}>
-                  Try again
-                </Button>
-              </Show>
-              <Show
-                when={
-                  errorCode() === "INVITE_EXPIRED" ||
-                  errorCode() === "INVITE_INVALID" ||
-                  (errorCode() === "INVITE_ALREADY_ACCEPTED" && !acceptedWorkspaceID())
-                }
-              >
-                <Button
-                  size="small"
-                  variant="outlined"
-                  text="soft"
-                  onClick={() => window.history.back()}
+      <div class="dots-background absolute mask-edge-fading-16" />
+      <div class="relative p-4 lg:p-24">
+        <div class="absolute left-0 top-0 h-full w-full rounded-2xl bg-gray-100 mask-edge-fading-4 lg:mask-edge-fading-24" />
+        <div class="relative flex w-72 flex-col gap-4">
+          <Switch>
+            <Match when={status() === "loading"}>
+              <div>
+                <h1 class="text-2xl font-semibold">Checking invitation</h1>
+                <p class="text-sm leading-5 text-gray-400">
+                  Please wait while we verify this invitation and your account.
+                </p>
+              </div>
+              <IconButton
+                icon="i-lucide:loader-circle"
+                class="w-full gap-1"
+                iconProps={{ class: "h-5 w-5 text-gray-400" }}
+                variant="outlined"
+                color="contrast"
+                label="Checking invitation..."
+                loading={true}
+                disabled
+              />
+            </Match>
+            <Match when={status() === "success"}>
+              <div>
+                <h1 class="text-2xl font-semibold">Invitation accepted</h1>
+                <p class="text-sm leading-5 text-gray-400">
+                  <Show when={workspaceName()} fallback="Opening your workspace...">
+                    {(name) => <>Opening {name()}...</>}
+                  </Show>
+                </p>
+              </div>
+              <IconButton
+                icon="i-lucide:loader-circle"
+                class="w-full gap-1"
+                iconProps={{ class: "h-5 w-5 text-gray-400" }}
+                variant="outlined"
+                color="success"
+                label="Redirecting..."
+                loading={true}
+                disabled
+              />
+            </Match>
+            <Match when={status() === "error"}>
+              <div>
+                <h1 class="text-2xl font-semibold">Couldn't accept invitation</h1>
+                <p class="text-sm leading-5 text-gray-400">{errorMessage()}</p>
+              </div>
+              <div class="flex flex-col gap-2">
+                <Show when={errorCode() === "UNAUTHORIZED"}>
+                  <IconButton
+                    icon="i-lucide:log-in"
+                    class="w-full @hover:bg-gray-50 gap-1"
+                    iconProps={{ class: "h-5 w-5 text-gray-400" }}
+                    variant="outlined"
+                    color="contrast"
+                    label="Go to sign in"
+                    link={signInLink()}
+                  />
+                </Show>
+                <Show when={errorCode() === "INVITE_ALREADY_ACCEPTED" && acceptedWorkspaceID()}>
+                  <IconButton
+                    icon="i-lucide:arrow-right"
+                    class="w-full @hover:bg-gray-50 gap-1"
+                    iconProps={{ class: "h-5 w-5 text-gray-400" }}
+                    variant="outlined"
+                    color="contrast"
+                    label="Open workspace"
+                    link={`/${acceptedWorkspaceID()}/`}
+                  />
+                </Show>
+                <Show when={errorCode() === "UNKNOWN"}>
+                  <IconButton
+                    icon="i-lucide:rotate-cw"
+                    class="w-full @hover:bg-gray-50 gap-1"
+                    iconProps={{ class: "h-5 w-5 text-gray-400" }}
+                    variant="outlined"
+                    color="contrast"
+                    label="Try again"
+                    onClick={() => window.location.reload()}
+                  />
+                </Show>
+                <Show
+                  when={
+                    errorCode() === "INVITE_EXPIRED" ||
+                    errorCode() === "INVITE_INVALID" ||
+                    (errorCode() === "INVITE_ALREADY_ACCEPTED" && !acceptedWorkspaceID())
+                  }
                 >
-                  Go back
-                </Button>
-              </Show>
-            </div>
-          </Match>
-        </Switch>
+                  <IconButton
+                    icon="i-lucide:arrow-left"
+                    class="w-full @hover:bg-gray-50 gap-1"
+                    iconProps={{ class: "h-5 w-5 text-gray-400" }}
+                    variant="outlined"
+                    color="contrast"
+                    label="Go back"
+                    onClick={() => window.history.back()}
+                  />
+                </Show>
+              </div>
+            </Match>
+          </Switch>
+        </div>
       </div>
-    </div>
+    </main>
   );
 };
 

@@ -58,7 +58,8 @@ const getColorClasses = (color: ButtonColor, variant: ButtonVariant) => {
     contrast: ":base: bg-white border-gray-200 shadow-gray-200",
     danger: ":base: bg-red-500 border-red-600 text-white",
     success: ":base: bg-green-500 border-green-600 text-white",
-    primary: ":base: bg-gradient-to-tr bg-[length:125%_auto] text-white border-tertiary"
+    primary:
+      ":base: bg-gradient-to-tr from-secondary via-primary to-secondary bg-[length:125%_auto] text-white border-tertiary"
   };
   const variants: Record<ButtonVariant, string> = {
     solid: "",
@@ -73,7 +74,7 @@ const getColorClasses = (color: ButtonColor, variant: ButtonVariant) => {
   if (color === "primary")
     return clsx(
       variants.text,
-      ":base: text-transparent bg-clip-text bg-gradient-to-tr border-tertiary"
+      ":base: text-transparent bg-clip-text bg-gradient-to-tr from-secondary via-primary to-secondary border-tertiary"
     );
   if (color === "danger") {
     return clsx(variants.text, ":base: text-red-500");
@@ -146,7 +147,10 @@ const getUnderlineClasses = (
     ":base: after:absolute after:opacity-0 after:transition after:delay-50 after:duration-200 after:ease-out after:origin-left after:scale-x-0 after:w-full after:h-1px after:bottom-px after:left-0 after-rounded-lg after:content-[''] @hover:after:scale-100 focus-visible:after:scale-100 @hover:after:opacity-100 focus-visible:after:opacity-100";
 
   if (color === "primary" && variant === "text") {
-    return clsx(baseUnderline, ":base: after:bg-gradient-to-tr");
+    return clsx(
+      baseUnderline,
+      ":base: after:bg-gradient-to-tr after:from-secondary after:via-primary after:to-secondary"
+    );
   }
   if (variant === "text" && text === "soft") {
     return clsx(baseUnderline, ":base: after:bg-gray-400");
@@ -270,7 +274,7 @@ const IconButton: Component<IconButtonProps> = (providedProps) => {
         {...props.iconProps}
         class={clsx(
           iconButtonSizes[props.size].icon,
-          props.text === "primary" && "bg-gradient-to-tr",
+          props.text === "primary" && "bg-gradient-to-tr from-secondary via-primary to-secondary",
           props.icon,
           props.iconProps?.class
         )}

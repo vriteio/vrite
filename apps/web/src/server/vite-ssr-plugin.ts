@@ -34,7 +34,10 @@ const viteSSRPlugin: FastifyPluginAsync = async (app) => {
     const { createServer } = await import("vite");
 
     vite = await createServer({
-      server: { middlewareMode: true },
+      server: {
+        middlewareMode: true,
+        ws: { server: app.server }
+      },
       appType: "custom",
       base
     });

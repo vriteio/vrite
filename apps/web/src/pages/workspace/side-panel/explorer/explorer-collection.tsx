@@ -5,6 +5,7 @@ import { type Component, Show } from "solid-js";
 import { ExplorerEntry } from "./explorer-entry";
 import { MAX_CONTENT_NAME_LENGTH, normalizeCollectionName } from "#web/lib/validation";
 import { useExplorerCollection, type ExplorerCollectionProps } from "./use-explorer-collection";
+import { EXPLORER_GESTURE_PROPS } from "./explorer-dnd";
 
 const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
   const {
@@ -23,10 +24,11 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
     setMenuOpened,
     setSubtreeRef,
     toggleExpanded,
-    treeMap
+    treeMap,
+    swipe
   } = useExplorerCollection(props);
   return (
-    <DropdownArea>
+    <DropdownArea {...EXPLORER_GESTURE_PROPS}>
       <div class="relative">
         <Show when={isDraggedOver() && isExpandedEmpty() && !isSelected(props.collection.id)}>
           <div
@@ -37,65 +39,100 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
           />
         </Show>
         <div class="flex relative min-h-7">
-          <TreeItem
-            id={props.collection.id}
-            label={props.collection.name}
-            topLevel={props.topLevel}
-            highlighted={isDraggedOver() && !isExpandedEmpty()}
-            selectable
-            ref={setElementRef}
-            dataAttributes={{ collection: props.collection.id }}
-            onClick={() => {
-              toggleExpanded(props.collection.id);
-            }}
-            onRename={(name) => {
-              if (content.readOnly()) return;
-
-              const normalizedName = normalizeCollectionName(name);
-
-              if (!normalizedName) return;
-
-              content.collections.update({
-                collectionID: props.collection.id,
-                updates: { name: normalizedName }
-              });
-            }}
-            labelMaxLength={MAX_CONTENT_NAME_LENGTH}
-            icon={
-              <div class="relative flex justify-center items-center">
-                <div
-                  data-element="collection-icon"
-                  class={clsx(
-                    "h-6 w-6 text-gray-400 transition-transform",
-                    (isSelected(props.collection.id) || isDraggedOver()) && "bg-gradient-to-tr",
-                    isExpanded(props.collection.id)
-                      ? "i-material-symbols:folder-open-rounded"
-                      : "i-material-symbols:folder-rounded"
-                  )}
-                />
-              </div>
-            }
-            actions={
-              <DropdownMenu
-                cardProps={{
-                  class: "w-48"
-                }}
-                opened={menuOpened()}
-                portal={false}
-                setOpened={setMenuOpened}
-                trigger={() => (
-                  <IconButton
-                    class={clsx(!menuOpened() && "opacity-0 media-mouse:group-hover:opacity-100")}
-                    icon="i-lucide:ellipsis-vertical"
-                    size="small"
-                    variant="text"
-                    text="soft"
-                  />
+          <Show when={swipe.swiping()}>
+            <div class="pointer-events-none absolute inset-y-0 left-0 z-10 w-12 bg-gradient-to-r from-gray-100 to-transparent">
+              <div
+                class={clsx(
+                  "absolute inset-y-0 right-full w-screen bg-gray-100",
+                  !props.topLevel && "border-r border-gray-300"
                 )}
-                items={dropdownOptions()}
               />
-            }
-          />
+            </div>
+          </Show>
+          <div
+            {...swipe.gestureProps}
+            class={clsx(
+              "flex relative w-full touch-pan-y",
+              !swipe.swiping() && "transition-transform"
+            )}
+            data-explorer-item
+            style={{ transform: `translateX(-${swipe.offset()}px)` }}
+          >
+            <TreeItem
+              class="!overflow-visible"
+              id={props.collection.id}
+              label={props.collection.name}
+              topLevel={props.topLevel}
+              highlighted={isDraggedOver() && !isExpandedEmpty()}
+              selectable
+              ref={setElementRef}
+              dataAttributes={{ collection: props.collection.id }}
+              onClick={() => {
+                toggleExpanded(props.collection.id);
+              }}
+              onRename={(name) => {
+                if (content.readOnly()) return;
+
+                const normalizedName = normalizeCollectionName(name);
+
+                if (!normalizedName) return;
+
+                content.collections.update({
+                  collectionID: props.collection.id,
+                  updates: { name: normalizedName }
+                });
+              }}
+              labelMaxLength={MAX_CONTENT_NAME_LENGTH}
+              icon={
+                <div class="relative flex justify-center items-center">
+                  <div
+                    data-element="collection-icon"
+                    class={clsx(
+                      "h-6 w-6 text-gray-400 transition-transform",
+                      (isSelected(props.collection.id) || isDraggedOver()) && "bg-gradient-to-tr",
+                      isExpanded(props.collection.id)
+                        ? "i-material-symbols:folder-open-rounded"
+                        : "i-material-symbols:folder-rounded"
+                    )}
+                  />
+                </div>
+              }
+              actions={
+                <DropdownMenu
+                  cardProps={{
+                    class: "w-48"
+                  }}
+                  opened={menuOpened()}
+                  mobileSheetDragFromContent={false}
+                  portal={false}
+                  setOpened={setMenuOpened}
+                  trigger={() => (
+                    <div
+                      class={clsx(
+                        "flex shrink-0",
+                        !menuOpened() &&
+                          !swipe.swiping() &&
+                          "opacity-20 media-mouse:opacity-0 media-mouse:group-hover:opacity-100",
+                        !swipe.swiping() && "transition-transform"
+                      )}
+                      style={{
+                        opacity: swipe.swiping() ? `${0.2 + swipe.progress() * 0.8}` : undefined,
+                        transform: `translateX(${swipe.offset()}px)`
+                      }}
+                    >
+                      <IconButton
+                        icon="i-lucide:ellipsis-vertical"
+                        size="small"
+                        variant="text"
+                        text="soft"
+                      />
+                    </div>
+                  )}
+                  items={dropdownOptions()}
+                />
+              }
+            />
+          </div>
           <Show when={closestEdge() && !renderBottomDropLineAfterSubtree()}>
             <div
               class={clsx(
@@ -135,7 +172,7 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
 
               return (
                 <Show when={entry()}>
-                  <DropdownArea>
+                  <DropdownArea {...EXPLORER_GESTURE_PROPS}>
                     <ExplorerEntry
                       entry={entry()!}
                       onParentDragHighlightChange={setIsChildOrderDraggedOver}

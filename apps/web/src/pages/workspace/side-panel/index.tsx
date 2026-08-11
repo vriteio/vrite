@@ -5,6 +5,10 @@ import { ExplorerPanel } from "./explorer";
 import { HelpPanel } from "./help";
 import { SettingsMenu } from "./settings-menu";
 
+interface SidePanelProps {
+  selectedPanel?: PrimaryPanel;
+}
+
 type PrimaryPanel = "explorer" | "help" | "settings";
 
 const usePrimaryPanel = (): Accessor<PrimaryPanel> => {
@@ -29,8 +33,9 @@ const usePrimaryPanel = (): Accessor<PrimaryPanel> => {
   };
 };
 
-const SidePanel: Component = () => {
-  const panel = usePrimaryPanel();
+const SidePanel: Component<SidePanelProps> = (props) => {
+  const routePanel = usePrimaryPanel();
+  const panel = () => props.selectedPanel || routePanel();
 
   return (
     <Switch>

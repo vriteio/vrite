@@ -1,4 +1,12 @@
-import { type Component, createEffect, createSignal, Match, onCleanup, Switch } from "solid-js";
+import {
+  type Component,
+  createEffect,
+  createSignal,
+  Match,
+  onCleanup,
+  Switch,
+  untrack
+} from "solid-js";
 import { Title } from "@solidjs/meta";
 import { IconButton, Button, OTPInput, Input, Tooltip, createRef } from "@andesine/components";
 import { createAsync, query, useSearchParams } from "@solidjs/router";
@@ -22,6 +30,7 @@ const EmailPage: Component = () => {
   const [email, setEmail] = createSignal("");
   const [otp, setOTP] = createSignal("");
   const [otpResendSeconds, setOTPResendSeconds] = createSignal(0);
+  const [verifyingOTP, setVerifyingOTP] = createSignal(false);
   const [otpThrottleInterval, setOTPThrottleInterval] = createRef(0);
   const throttlingOTP = () => otpResendSeconds() > 0;
   const throttleOTP = () => {
@@ -98,12 +107,15 @@ const EmailPage: Component = () => {
     }
   };
   const handleVerifyOTP = async () => {
-    if (!otpFilled()) return;
+    if (!otpFilled() || untrack(verifyingOTP)) return;
+
+    setVerifyingOTP(true);
 
     try {
       await verifyOTPMutation.mutateAsync({ email: email(), otp: otp(), mode: mode() });
       await redirectAfterAuth(redirectTo());
     } catch {
+      setVerifyingOTP(false);
       notify({ type: "error", text: "Couldn't verify email" });
     }
   };
@@ -245,7 +257,7 @@ const EmailPage: Component = () => {
           <div class="flex flex-col my-4 gap-2.5">
             <OTPInput value={otp()} setValue={setOTP} onEnter={handleVerifyOTP} />
             <Button
-              loading={verifyOTPMutation.isPending}
+              loading={verifyingOTP()}
               color="primary"
               disabled={!otpFilled()}
               class="w-full mt-1"

@@ -15,8 +15,14 @@ import {
   type Edge,
   extractClosestEdge
 } from "@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge";
-import { canOrderEntries, createDragData, getDraggedEntryIDs } from "./explorer-dnd";
+import {
+  canOrderEntries,
+  createDragData,
+  getDraggedEntryIDs,
+  getExplorerDragPreviewOffset
+} from "./explorer-dnd";
 import { useEntryMenu } from "./use-entry-menu";
+import { useExplorerItemSwipe } from "./use-explorer-item-swipe";
 
 interface ExplorerEntryProps {
   entry: Entry;
@@ -30,6 +36,10 @@ const useExplorerEntry = (props: ExplorerEntryProps) => {
   const { workspaceID, content } = useWorkspace();
   const [{ isSelected, selection, flattenedOrder }, { setSelection }] = useTree();
   const { dropdownOptions, menuOpened, setMenuOpened } = useEntryMenu(props.entry.id);
+  const swipe = useExplorerItemSwipe({
+    enabled: () => selection().length <= 1,
+    onOpen: () => setMenuOpened(true)
+  });
   const [elementRef, setElementRef] = createRef<HTMLElement | null>(null);
   const [closestEdge, setClosestEdge] = createSignal<Edge | null>(null);
   const getCollectionParentID = (collectionID: string) => {
@@ -74,6 +84,7 @@ const useExplorerEntry = (props: ExplorerEntryProps) => {
     const cleanup = combine(
       draggable({
         element,
+        canDrag: () => !content.readOnly() && !menuOpened() && !swipe.swiping(),
         getInitialData: () => {
           const sel = selection();
           const isDraggingSelected = sel.includes(props.entry.id);
@@ -103,6 +114,7 @@ const useExplorerEntry = (props: ExplorerEntryProps) => {
 
           setCustomNativeDragPreview({
             nativeSetDragImage,
+            getOffset: getExplorerDragPreviewOffset,
             render({ container }) {
               const el = document.createElement("div");
 
@@ -175,7 +187,8 @@ const useExplorerEntry = (props: ExplorerEntryProps) => {
     menuOpened,
     params,
     selection,
-    setMenuOpened
+    setMenuOpened,
+    swipe
   };
 };
 

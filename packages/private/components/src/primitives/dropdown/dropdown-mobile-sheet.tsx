@@ -9,6 +9,7 @@ interface DropdownMobileSheetProps {
   cardProps?: Partial<ComponentProps<typeof Card>>;
   children: JSX.Element;
   closing: boolean;
+  dragFromContent: boolean;
   opened: boolean;
   onClose(): void;
 }
@@ -61,15 +62,17 @@ const DropdownMobileSheet: Component<DropdownMobileSheetProps> = (props) => {
                 props.cardProps?.class
               )}
             >
-              <div {...drag.gestureProps} class="flex min-h-0 w-full flex-1 flex-col">
+              <div class="flex min-h-0 w-full flex-1 flex-col">
                 <div
+                  {...drag.gestureProps}
                   aria-hidden="true"
-                  class="flex h-5 w-full shrink-0 cursor-ns-resize items-center justify-center outline-none"
+                  class="flex h-5 w-full shrink-0 touch-none cursor-ns-resize items-center justify-center outline-none"
                 >
                   <span class="h-1 w-10 rounded-full bg-gray-300" />
                 </div>
                 <div
-                  class="min-h-0 w-full min-w-fit flex-1 overflow-auto scrollbar-sm"
+                  {...(props.dragFromContent ? drag.gestureProps : {})}
+                  class="min-h-0 w-full min-w-fit flex-1 overflow-auto scrollbar-sm flex flex-col"
                   data-dropdown-mobile-scroll
                 >
                   {props.children}

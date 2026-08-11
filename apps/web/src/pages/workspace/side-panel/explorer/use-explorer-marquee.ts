@@ -22,28 +22,59 @@ const emptyBox = (): BoxSelection => ({
   height: 0
 });
 
-const useExplorerMarquee = (container: () => HTMLElement | null) => {
+const useExplorerMarquee = (
+  container: () => HTMLElement | null,
+  contentContainer: () => HTMLElement | null
+) => {
   const [{ selection, flattenedLayout }, { setExactSelection }] = useTree();
   const [pointerDown, setPointerDown] = createSignal(false);
   const [boxSelection, setBoxSelection] = createSignal(emptyBox());
   const [initialSelection, setInitialSelection] = createRef<string[]>([]);
   const [mode, setMode] = createRef<"replace" | "add" | "remove">("replace");
   const [scrollFrame, setScrollFrame] = createRef(0);
+  const [containerRect, setContainerRect] = createRef<DOMRect | null>(null);
+  const [contentOffsetTop, setContentOffsetTop] = createRef(0);
+  const getContainerRect = () => {
+    const cachedRect = containerRect();
+
+    if (cachedRect) return cachedRect;
+
+    const element = container();
+
+    if (!element) return null;
+
+    const rect = element.getBoundingClientRect();
+
+    setContainerRect(rect);
+
+    return rect;
+  };
+  const clampToContainer = (x: number, y: number) => {
+    const rect = getContainerRect();
+
+    if (!rect) return { x, y };
+
+    return {
+      x: Math.min(rect.right, Math.max(rect.left, x)),
+      y: Math.min(rect.bottom, Math.max(rect.top, y))
+    };
+  };
   const stopAutoScroll = () => {
     window.cancelAnimationFrame(scrollFrame());
     setScrollFrame(0);
   };
   const applySelection = (box = boxSelection()) => {
     const element = container();
-    if (!element || !box.active) return;
+    const rect = getContainerRect();
 
-    const rect = element.getBoundingClientRect();
+    if (!element || !rect || !box.active) return;
+
     const left = Math.min(box.x, box.currentX);
     const right = Math.max(box.x, box.currentX);
     const top = Math.min(box.y, box.currentY);
     const bottom = Math.max(box.y, box.currentY);
     const selected = flattenedLayout().flatMap((item) => {
-      const itemTop = rect.top + item.top - element.scrollTop;
+      const itemTop = rect.top + contentOffsetTop() + item.top - element.scrollTop;
       const intersects =
         rect.left < right && itemTop < bottom && rect.right > left && itemTop + item.height > top;
 
@@ -66,7 +97,10 @@ const useExplorerMarquee = (container: () => HTMLElement | null) => {
       const box = boxSelection();
       if (!element || !pointerDown() || !box.active) return stopAutoScroll();
 
-      const rect = element.getBoundingClientRect();
+      const rect = getContainerRect();
+
+      if (!rect) return stopAutoScroll();
+
       const threshold = 36;
       const speed =
         box.currentY < rect.top + threshold
@@ -83,14 +117,24 @@ const useExplorerMarquee = (container: () => HTMLElement | null) => {
     setScrollFrame(window.requestAnimationFrame(scroll));
   };
   const onPointerDown = (event: PointerEvent) => {
-    // Disable marquee selection on touch devices
-    if (event.pointerType === "touch") return;
     if (!(event.target instanceof HTMLElement) || event.button !== 0) return;
     if (
       !event.target.closest("[data-explorer-panel]") ||
       event.target.matches("[data-entry] *, [data-collection] *")
-    )
+    ) {
       return;
+    }
+
+    const point = clampToContainer(event.clientX, event.clientY);
+    const element = container();
+    const contentElement = contentContainer();
+    const rect = getContainerRect();
+
+    if (element && contentElement && rect) {
+      const contentRect = contentElement.getBoundingClientRect();
+
+      setContentOffsetTop(contentRect.top - rect.top + element.scrollTop);
+    }
 
     document.documentElement.style.userSelect = "none";
     setInitialSelection(selection());
@@ -100,23 +144,24 @@ const useExplorerMarquee = (container: () => HTMLElement | null) => {
     setPointerDown(true);
     setBoxSelection({
       ...emptyBox(),
-      x: event.clientX,
-      y: event.clientY,
-      currentX: event.clientX,
-      currentY: event.clientY
+      x: point.x,
+      y: point.y,
+      currentX: point.x,
+      currentY: point.y
     });
   };
   const onPointerMove = (event: PointerEvent) => {
     if (!pointerDown()) return;
 
     const previous = boxSelection();
-    const width = Math.abs(event.clientX - previous.x);
-    const height = Math.abs(event.clientY - previous.y);
+    const point = clampToContainer(event.clientX, event.clientY);
+    const width = Math.abs(point.x - previous.x);
+    const height = Math.abs(point.y - previous.y);
     const next = {
       ...previous,
       active: previous.active || width > 10 || height > 10,
-      currentX: event.clientX,
-      currentY: event.clientY,
+      currentX: point.x,
+      currentY: point.y,
       width,
       height
     };
@@ -128,6 +173,8 @@ const useExplorerMarquee = (container: () => HTMLElement | null) => {
   };
   const onPointerEnd = () => {
     setPointerDown(false);
+    setContainerRect(null);
+    setContentOffsetTop(0);
     stopAutoScroll();
     document.documentElement.style.userSelect = "";
     setBoxSelection(emptyBox());

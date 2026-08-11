@@ -11,5 +11,6 @@ export default defineConfig(() => ({
     ]
   },
   plugins: [unoCSS(), solid({ ssr: true })],
-  resolve: { tsconfigPaths: true }
+  resolve: { tsconfigPaths: true },
+  server: { allowedHosts: [".local"] }
 }));

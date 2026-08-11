@@ -22,10 +22,12 @@ import {
   canTargetCollection,
   createDragData,
   getDraggedCollectionIDs,
-  getDraggedEntryIDs
+  getDraggedEntryIDs,
+  getExplorerDragPreviewOffset
 } from "./explorer-dnd";
 import { CollectionBoundaryDropTarget } from "./collection-boundary-drop-target";
 import { useCollectionMenu } from "./use-collection-menu";
+import { useExplorerItemSwipe } from "./use-explorer-item-swipe";
 
 interface ExplorerCollectionProps {
   collection: Collection;
@@ -42,6 +44,7 @@ const useExplorerCollection = (props: ExplorerCollectionProps) => {
   ] = useTree();
   const { content } = useWorkspace();
   const { dropdownOptions, menuOpened, setMenuOpened } = useCollectionMenu(props.collection.id);
+  const swipe = useExplorerItemSwipe({ onOpen: () => setMenuOpened(true) });
   const [elementRef, setElementRef] = createRef<HTMLElement | null>(null);
   const [subtreeRef, setSubtreeRef] = createRef<HTMLElement | null>(null);
   const [isLabelDraggedOver, setIsLabelDraggedOver] = createSignal(false);
@@ -186,6 +189,7 @@ const useExplorerCollection = (props: ExplorerCollectionProps) => {
     const cleanup = combine(
       draggable({
         element,
+        canDrag: () => !content.readOnly() && !menuOpened() && !swipe.swiping(),
         getInitialData: () => {
           const sel = selection();
           const isDraggingSelected = sel.includes(props.collection.id);
@@ -215,6 +219,7 @@ const useExplorerCollection = (props: ExplorerCollectionProps) => {
 
           setCustomNativeDragPreview({
             nativeSetDragImage,
+            getOffset: getExplorerDragPreviewOffset,
             render({ container }) {
               const el = document.createElement("div");
 
@@ -321,7 +326,8 @@ const useExplorerCollection = (props: ExplorerCollectionProps) => {
     setMenuOpened,
     setSubtreeRef,
     toggleExpanded,
-    treeMap
+    treeMap,
+    swipe
   };
 };
 

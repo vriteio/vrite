@@ -9,7 +9,6 @@ type MenuItem =
       active?: boolean;
       link?: string;
       shortcut?: string;
-      secondaryActionMenu?: boolean;
       onClick?: () => void;
     }
   | { separator: true };
@@ -84,20 +83,13 @@ const Menu: Component<MenuProps> = (props) => (
                     )}
                     onClick={item().onClick}
                   >
-                    <div class="relative h-5 w-5">
-                      <div
-                        class={clsx(
-                          "h-5 w-5 z-1",
-                          item().active ? "bg-gradient-to-tr" : "text-gray-500",
-                          item().icon
-                        )}
-                      />
-                      <Show when={item().active && item().secondaryActionMenu}>
-                        <div class="h-3 w-3 bg-gray-500/10 rounded-lg flex justify-center items-center absolute -right-1.5 -top-1.5">
-                          <div class="i-lucide:chevron-up h-3 w-3 bg-gradient-to-tr" />
-                        </div>
-                      </Show>
-                    </div>
+                    <div
+                      class={clsx(
+                        "h-5 w-5 z-1",
+                        item().active ? "bg-gradient-to-tr" : "text-gray-500",
+                        item().icon
+                      )}
+                    />
                   </button>
                 </Show>
               </div>

@@ -11,7 +11,7 @@ interface AffectedItem {
 interface ActionConfirmationDialogProps {
   affected: AffectedItem[];
   confirmLabel: string;
-  danger?: boolean;
+  confirmColor: "danger" | "base" | "primary";
   description: JSX.Element;
   onClose(): void;
   onConfirm(): void;
@@ -81,7 +81,13 @@ const ActionConfirmationDialog: Component<ActionConfirmationDialogProps> = (prop
               Cancel
             </IconButton>
             <Button
-              color={props.danger ? "danger" : "contrast"}
+              color={
+                props.confirmColor === "danger"
+                  ? "danger"
+                  : props.confirmColor === "primary"
+                    ? "primary"
+                    : "contrast"
+              }
               variant="outlined"
               size="small"
               onClick={props.onConfirm}

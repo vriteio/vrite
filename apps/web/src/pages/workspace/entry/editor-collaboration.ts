@@ -2,14 +2,18 @@ import type { EntryLoadState } from "./entry-load-state";
 import type { CollaborationStatus } from "./collaboration-status-indicator";
 
 const collaborationColors = ["#0ea5e9", "#f97316", "#22c55e", "#eab308", "#ec4899", "#8b5cf6"];
+const collaborationColorByUser = new Map<string, string>();
 
 const getCollaborationColor = (seed: string) => {
-  let hash = 0;
-  for (const character of seed) {
-    hash = (hash << 5) - hash + character.charCodeAt(0);
-    hash |= 0;
-  }
-  return collaborationColors[Math.abs(hash) % collaborationColors.length];
+  const assignedColor = collaborationColorByUser.get(seed);
+
+  if (assignedColor) return assignedColor;
+
+  const color = collaborationColors[Math.floor(Math.random() * collaborationColors.length)]!;
+
+  collaborationColorByUser.set(seed, color);
+
+  return color;
 };
 
 const getCollaborationUser = (user?: { id?: string; name?: string | null; email?: string }) => {

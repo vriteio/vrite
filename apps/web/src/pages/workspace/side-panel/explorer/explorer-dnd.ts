@@ -1,5 +1,31 @@
 type ExplorerDragData = Record<string | symbol, unknown>;
 
+const DRAG_PREVIEW_POINTER_GAP = 8;
+const isExplorerLongPressEnabled = (event: PointerEvent | MouseEvent) => {
+  const target = event.target;
+  const isTouchPointer = "pointerType" in event && event.pointerType === "touch";
+  const isExplorerItem =
+    target instanceof Element && Boolean(target.closest("[data-explorer-item]"));
+
+  return !isTouchPointer || !isExplorerItem;
+};
+const EXPLORER_GESTURE_PROPS = {
+  enabled: isExplorerLongPressEnabled,
+  longPressDelay: 750,
+  longPressTolerance: 10
+};
+
+const getExplorerDragPreviewOffset = ({ container }: { container: HTMLElement }) => {
+  if (!window.matchMedia("(pointer: coarse)").matches) return { x: 0, y: 0 };
+
+  const { height, width } = container.getBoundingClientRect();
+
+  return {
+    x: width + DRAG_PREVIEW_POINTER_GAP,
+    y: height + DRAG_PREVIEW_POINTER_GAP
+  };
+};
+
 const getDraggedEntryIDs = (data: ExplorerDragData) => {
   if (data.type === "entry") return typeof data.id === "string" ? [data.id] : [];
   if (data.type === "multi") return toStringIDs(data.entries);
@@ -141,11 +167,13 @@ const createDragData = (input: {
 };
 
 export {
+  EXPLORER_GESTURE_PROPS,
   canOrderCollections,
   canOrderEntries,
   canChangeParent,
   canTargetCollection,
   createDragData,
+  getExplorerDragPreviewOffset,
   getDraggedCollectionIDs,
   getDraggedEntryIDs,
   hasDraggedCollections,

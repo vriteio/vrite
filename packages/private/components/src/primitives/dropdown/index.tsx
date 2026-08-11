@@ -27,6 +27,8 @@ type Point = { x: number; y: number };
 
 interface DropdownAreaProps {
   enabled?(event: PointerEvent | MouseEvent): boolean;
+  longPressDelay?: number;
+  longPressTolerance?: number;
   onLongPress?(event: PointerEvent): void;
 }
 interface DropdownProps extends JSX.HTMLAttributes<HTMLDivElement> {
@@ -40,6 +42,7 @@ interface DropdownProps extends JSX.HTMLAttributes<HTMLDivElement> {
   positioningStrategy?: "absolute" | "fixed";
   trigger?: Component<{ contextMenu: boolean; opened: boolean }>;
   offset?: { mainAxis?: number; crossAxis?: number };
+  mobileSheetDragFromContent?: boolean;
   onContextMenuChange?(contextMenu: boolean): void;
   setOpened?(opened: boolean): void;
 }
@@ -54,11 +57,13 @@ const DropdownArea: ParentComponent<DropdownAreaProps> = (props) => {
     (event: MouseEvent | PointerEvent) => void
   >(() => {});
   const longPress = useDropdownLongPress({
+    delay: props.longPressDelay,
     enabled: (event) => !props.enabled || props.enabled(event),
     onLongPress: (event) => {
       props.onLongPress?.(event);
       onContextMenuCallbackRef()(event);
-    }
+    },
+    tolerance: props.longPressTolerance
   });
 
   return (
@@ -287,6 +292,7 @@ const Dropdown: Component<DropdownProps> = (props) => {
             <DropdownMobileSheet
               cardProps={props.cardProps}
               closing={closing()}
+              dragFromContent={props.mobileSheetDragFromContent !== false}
               opened={opened()}
               onClose={() => handleOpenChange({ open: false })}
             >

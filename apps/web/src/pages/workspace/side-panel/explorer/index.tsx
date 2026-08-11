@@ -6,12 +6,15 @@ import {
   DropdownArea,
   DropdownMenu,
   IconButton,
+  ScrollShadow,
   Skeleton,
   Shortcut
 } from "@andesine/components";
 import { createSignal, For, Show } from "solid-js";
+import { Portal } from "solid-js/web";
 import { ExplorerCollection } from "./explorer-collection";
 import { ExplorerProvider } from "./explorer-context";
+import { EXPLORER_GESTURE_PROPS } from "./explorer-dnd";
 import { ExplorerEntry } from "./explorer-entry";
 import { useExplorerActions } from "./use-explorer-actions";
 import { useExplorerDrop } from "./use-explorer-drop";
@@ -24,15 +27,17 @@ const Explorer = () => {
   const { content } = useWorkspace();
   const actions = useExplorerActions();
   const [dropRef, setDropRef] = createRef<HTMLElement | null>(null);
-  const [containerRef, setContainerRef] = createRef<HTMLElement | null>(null);
+  const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
+  const [contentContainerRef, setContentContainerRef] = createRef<HTMLElement | null>(null);
+  const [titleRef, setTitleRef] = createRef<HTMLElement | null>(null);
   const [pointerInside, setPointerInside] = createSignal(false);
   const [focusInside, setFocusInside] = createSignal(false);
   const [menuOpened, setMenuOpened] = createSignal(false);
   const loading = createDebounced(content.loading, 100);
   const { isDraggedOver } = useExplorerDrop(dropRef);
-  const marquee = useExplorerMarquee(containerRef);
+  const marquee = useExplorerMarquee(scrollableContainerRef, contentContainerRef);
   const scrollItemIntoView = (id: string) => {
-    const container = containerRef();
+    const container = scrollableContainerRef();
     const item = container
       ? Array.from(container.querySelectorAll<HTMLElement>("[data-tree-item]")).find(
           (element) => element.dataset.treeItem === id
@@ -42,7 +47,9 @@ const Explorer = () => {
 
     const containerRect = container.getBoundingClientRect();
     const itemRect = item.getBoundingClientRect();
-    if (itemRect.top < containerRect.top) container.scrollTop -= containerRect.top - itemRect.top;
+    const visibleTop = titleRef()?.getBoundingClientRect().bottom ?? containerRect.top;
+
+    if (itemRect.top < visibleTop) container.scrollTop -= visibleTop - itemRect.top;
     else if (itemRect.bottom > containerRect.bottom)
       container.scrollTop += itemRect.bottom - containerRect.bottom;
   };
@@ -71,12 +78,12 @@ const Explorer = () => {
   const { collections, entries } = content.tree.getLevel({ parentID: null });
 
   return (
-    <DropdownArea>
+    <DropdownArea {...EXPLORER_GESTURE_PROPS}>
       <TreeRoot>
         <div
           data-explorer-panel
           tabIndex={0}
-          class="flex flex-col justify-center items-start outline-none md:flex-1"
+          class="flex min-h-0 flex-1 flex-col items-start justify-center outline-none"
           onPointerDown={marquee.onPointerDown}
           onPointerEnter={() => setPointerInside(true)}
           onPointerLeave={() => {
@@ -92,82 +99,102 @@ const Explorer = () => {
             resetFocus();
           }}
         >
-          <div class="my-0.5 flex items-center gap-2 px-1">
-            <h2 class="text-2xl font-semibold">Explorer</h2>
-            <Show when={content.offline()}>
-              <span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
-                Offline: read-only
-              </span>
-            </Show>
-          </div>
-          <div
-            ref={setContainerRef}
-            class="relative flex w-full flex-col overflow-y-auto px-1 md:flex-1"
-            style={{ gap }}
-          >
-            <TreeSelection />
-            <Show when={!loading()} fallback={<ExplorerSkeleton itemHeight={itemHeight} />}>
-              <For each={collections()}>
-                {(collection) => (
-                  <DropdownArea>
-                    <ExplorerCollection collection={collection} topLevel />
-                  </DropdownArea>
-                )}
-              </For>
-              <For each={entries()}>
-                {(entry) => (
-                  <DropdownArea>
-                    <ExplorerEntry entry={entry} topLevel />
-                  </DropdownArea>
-                )}
-              </For>
-              <Show when={!collections().length && !entries().length}>
-                <div>
-                  <For each={options}>
-                    {(option) => (
-                      <IconButton
-                        icon={option.icon}
-                        class="flex justify-start items-center w-full group/button"
-                        disabled={menuOpened() || content.readOnly()}
-                        onClick={option.onClick}
-                        label={() => (
-                          <div class="px-1 flex flex-1 gap-4">
-                            <span class="flex-1 text-start">{option.label}</span>
-                            <Shortcut
-                              class="opacity-0 media-mouse:group-hover/button:opacity-50 font-mono text-[90%]"
-                              shortcut={option.shortcut}
-                            />
-                          </div>
-                        )}
-                        variant="text"
-                        text="softer"
-                        size="small"
-                      />
+          <div class="relative flex min-h-0 w-full flex-1">
+            <div class="pointer-events-none absolute inset-y-0 left-0 right-3 overflow-hidden">
+              <ScrollShadow
+                color="contrast"
+                offset={{ top: "2.25rem" }}
+                scrollableContainerRef={scrollableContainerRef}
+              />
+            </div>
+            <div
+              ref={setScrollableContainerRef}
+              class="relative flex min-h-0 w-full flex-1 flex-col scrollbar-contrast overflow-y-auto px-1"
+            >
+              <div
+                ref={setTitleRef}
+                class="sticky top-0 z-20 -mx-1 flex h-9 shrink-0 items-center gap-2 bg-gray-100 px-1 max-md:bg-gray-100"
+              >
+                <h2 class="text-2xl font-semibold">Explorer</h2>
+                <Show when={content.offline()}>
+                  <span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
+                    Offline: read-only
+                  </span>
+                </Show>
+              </div>
+              <div
+                ref={setContentContainerRef}
+                class="relative flex flex-1 flex-col"
+                style={{ gap }}
+              >
+                <TreeSelection />
+                <Show when={!loading()} fallback={<ExplorerSkeleton itemHeight={itemHeight} />}>
+                  <For each={collections()}>
+                    {(collection) => (
+                      <DropdownArea {...EXPLORER_GESTURE_PROPS}>
+                        <ExplorerCollection collection={collection} topLevel />
+                      </DropdownArea>
                     )}
                   </For>
+                  <For each={entries()}>
+                    {(entry) => (
+                      <DropdownArea {...EXPLORER_GESTURE_PROPS}>
+                        <ExplorerEntry entry={entry} topLevel />
+                      </DropdownArea>
+                    )}
+                  </For>
+                  <Show when={!collections().length && !entries().length}>
+                    <div>
+                      <For each={options}>
+                        {(option) => (
+                          <IconButton
+                            icon={option.icon}
+                            class="flex justify-start items-center w-full group/button"
+                            disabled={menuOpened() || content.readOnly()}
+                            onClick={option.onClick}
+                            label={() => (
+                              <div class="px-1 flex flex-1 gap-4">
+                                <span class="flex-1 text-start">{option.label}</span>
+                                <Shortcut
+                                  class="opacity-0 media-mouse:group-hover/button:opacity-50 font-mono text-[90%]"
+                                  shortcut={option.shortcut}
+                                />
+                              </div>
+                            )}
+                            variant="text"
+                            text="softer"
+                            size="small"
+                          />
+                        )}
+                      </For>
+                    </div>
+                  </Show>
+                </Show>
+                <div ref={setDropRef} class="md:flex-1">
+                  <Show when={isDraggedOver()}>
+                    <div class="top-0 left-0 -z-10 rounded-lg absolute h-full w-full opacity-10 bg-gradient-to-tr" />
+                  </Show>
                 </div>
-              </Show>
-            </Show>
-            <div ref={setDropRef} class="md:flex-1">
-              <Show when={isDraggedOver()}>
-                <div class="top-0 left-0 -z-10 rounded-lg absolute h-full w-full opacity-10 bg-gradient-to-tr" />
-              </Show>
+              </div>
             </div>
           </div>
           <Show when={marquee.boxSelection().active}>
-            <div
-              class="pointer-events-none fixed bg-gradient-to-tr opacity-10 rounded-lg"
-              style={{
-                top: `${Math.min(marquee.boxSelection().y, marquee.boxSelection().currentY)}px`,
-                left: `${Math.min(marquee.boxSelection().x, marquee.boxSelection().currentX)}px`,
-                width: `${marquee.boxSelection().width}px`,
-                height: `${marquee.boxSelection().height}px`
-              }}
-            />
+            <Portal>
+              <div
+                class="pointer-events-none fixed z-60 rounded-lg bg-gradient-to-tr opacity-10"
+                style={{
+                  top: `${Math.min(marquee.boxSelection().y, marquee.boxSelection().currentY)}px`,
+                  left: `${Math.min(marquee.boxSelection().x, marquee.boxSelection().currentX)}px`,
+                  width: `${marquee.boxSelection().width}px`,
+                  height: `${marquee.boxSelection().height}px`
+                }}
+              />
+            </Portal>
           </Show>
           <DropdownMenu
             cardProps={{ class: "w-52" }}
             items={options}
+            mobileSheetDragFromContent={false}
             opened={menuOpened()}
             portal={false}
             setOpened={setMenuOpened}

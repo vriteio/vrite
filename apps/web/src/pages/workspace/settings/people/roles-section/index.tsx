@@ -162,7 +162,7 @@ const RoleList: Component<RoleListProps> = (props) => {
             : undefined
         }
         confirmLabel="Delete"
-        danger
+        confirmColor="danger"
         onClose={() => setPendingDeleteIDs([])}
         onConfirm={() => {
           const ids = pendingDeleteIDs();

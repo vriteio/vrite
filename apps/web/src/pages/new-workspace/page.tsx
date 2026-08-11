@@ -4,6 +4,7 @@ import { type Component, createSignal, Show } from "solid-js";
 import { AnimatedGradientCard } from "#web/components/animated-gradient-card";
 import { Button, IconButton, Input } from "@andesine/components";
 import { client } from "#web/lib/api";
+import { getPostAuthRedirectPath } from "#web/lib/navigation";
 import { createMutation } from "@tanstack/solid-query";
 
 const workspacesQuery = query(() => client.workspaces.list(), "workspaces");
@@ -39,6 +40,16 @@ const NewWorkspacePage: Component = () => {
     } catch {
       setError("Failed to create workspace");
     }
+  };
+  const goBack = async () => {
+    const fallbackWorkspaceID = workspaces()?.[0]?.id;
+    const redirectPath = await getPostAuthRedirectPath();
+
+    navigate(
+      redirectPath === "/new-workspace" && fallbackWorkspaceID
+        ? `/${fallbackWorkspaceID}/`
+        : redirectPath
+    );
   };
 
   return (
@@ -95,7 +106,7 @@ const NewWorkspacePage: Component = () => {
                   variant="text"
                   size="small"
                   text="soft"
-                  onClick={() => navigate("/")}
+                  onClick={goBack}
                 />
               </div>
             </Show>

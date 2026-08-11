@@ -48,10 +48,11 @@ const Tooltip: Component<TooltipProps> = (props) => {
   };
   const placement = () => props.side || "bottom";
   const tooltipID = nanoid();
-
-  onCleanup(() => {
+  const closeTooltip = () => {
     setActiveTooltip((activeTooltip) => (activeTooltip === tooltipID ? "" : activeTooltip));
-  });
+  };
+
+  onCleanup(closeTooltip);
 
   return (
     <BaseTooltip.Root
@@ -85,7 +86,9 @@ const Tooltip: Component<TooltipProps> = (props) => {
                 `:base: relative flex flex-col items-center justify-center`,
                 props.wrapperClass
               ),
-              style: props.wrapperStyle
+              style: props.wrapperStyle,
+              onClick: closeTooltip,
+              onPointerDown: closeTooltip
             })}
           >
             {props.children}

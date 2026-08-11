@@ -6,7 +6,15 @@ import {
   useParams,
   useSearchParams
 } from "@solidjs/router";
-import { type Component, createEffect, createSignal, onCleanup, Show, Suspense } from "solid-js";
+import {
+  type Component,
+  createEffect,
+  createSignal,
+  onCleanup,
+  onMount,
+  Show,
+  Suspense
+} from "solid-js";
 import { useLayout } from "#web/context/layout";
 import { WorkspaceProvider } from "#web/context/workspace";
 import { Breadcrumbs } from "./breadcrumbs";
@@ -33,19 +41,28 @@ const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
   const isOnline = useConnectivitySignal();
   const [, setSearchParams] = useSearchParams();
   const panel = usePrimaryPanel();
+  const [mobilePanel, setMobilePanel] = createSignal<PrimaryPanel>(panel());
   const [mobilePanelOpened, setMobilePanelOpened] = createSignal(false);
   const workspacePath = () => `/${params.workspaceID || ""}`;
   const isSettingsRoute = () => location.pathname.startsWith(`${workspacePath()}/settings`);
+  const activePanel = () => (md() || !mobilePanelOpened() ? panel() : mobilePanel());
   const openPanel = (nextPanel: PrimaryPanel) => {
-    const alreadyActive = panel() === nextPanel;
-
     if (nextPanel === "settings") {
       if (!isOnline()) {
         notify({ type: "error", text: "Settings are unavailable while offline" });
 
         return;
       }
+    }
 
+    if (!md()) {
+      setMobilePanel(nextPanel);
+      setMobilePanelOpened(true);
+
+      return;
+    }
+
+    if (nextPanel === "settings") {
       if (panel() !== "settings") {
         navigate(`${workspacePath()}/settings/personal`);
       }
@@ -58,19 +75,14 @@ const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
     if (md() && layout.leftSidePanelWidth === 0) {
       setLayout("leftSidePanelWidth", DEFAULT_SIDE_PANEL_WIDTH);
     }
-
-    if (!md()) {
-      setMobilePanelOpened(nextPanel === "help" || alreadyActive);
-    }
   };
   const menu: MenuItem[] = [
     {
       label: "Explorer",
       icon: "i-lucide:files",
       get active() {
-        return panel() === "explorer";
+        return activePanel() === "explorer";
       },
-      secondaryActionMenu: true,
       onClick() {
         openPanel("explorer");
       }
@@ -80,7 +92,7 @@ const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
       label: "Help",
       icon: "i-lucide:help-circle",
       get active() {
-        return panel() === "help" && (!md() || layout.leftSidePanelWidth > 0);
+        return activePanel() === "help" && (!md() || layout.leftSidePanelWidth > 0);
       },
       onClick() {
         openPanel("help");
@@ -91,9 +103,8 @@ const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
       shortcut: "$mod+,",
       icon: "i-lucide:settings-2",
       get active() {
-        return panel() === "settings";
+        return activePanel() === "settings";
       },
-      secondaryActionMenu: true,
       onClick() {
         openPanel("settings");
       }
@@ -115,6 +126,21 @@ const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
     if (md()) {
       setMobilePanelOpened(false);
     }
+  });
+
+  onMount(() => {
+    const closeOnNavigation = (event: MouseEvent) => {
+      const target = event.target;
+      const navigationTarget = target instanceof Element && target.closest("a, [data-entry]");
+      const mobilePanelTarget = target instanceof Element && target.closest("[data-mobile-panel]");
+
+      if (navigationTarget && mobilePanelTarget) {
+        setMobilePanelOpened(false);
+      }
+    };
+
+    document.addEventListener("click", closeOnNavigation, true);
+    onCleanup(() => document.removeEventListener("click", closeOnNavigation, true));
   });
 
   return (
@@ -172,20 +198,17 @@ const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
       <Dropdown
         class="md:hidden"
         anchorPoint={{ x: 0, y: 0 }}
+        mobileSheetDragFromContent={mobilePanel() !== "explorer"}
         opened={mobilePanelOpened()}
         setOpened={setMobilePanelOpened}
-        cardProps={{ class: "max-md:bg-gray-100" }}
+        cardProps={{
+          class: "max-md:bg-gray-100",
+          style: { "min-height": mobilePanel() === "explorer" ? "50dvh" : undefined }
+        }}
         portal
       >
-        <div
-          class="flex w-full flex-col"
-          onClick={(event) => {
-            if (event.target instanceof Element && event.target.closest("a, [data-entry]")) {
-              setMobilePanelOpened(false);
-            }
-          }}
-        >
-          <SidePanel />
+        <div data-mobile-panel class="flex min-h-0 w-full flex-1 flex-col">
+          <SidePanel selectedPanel={mobilePanel()} />
         </div>
       </Dropdown>
       <SnapshotErrorDialog />

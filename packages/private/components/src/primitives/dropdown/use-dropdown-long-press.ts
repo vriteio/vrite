@@ -2,13 +2,17 @@ import { type JSX, onCleanup } from "solid-js";
 import { createRef } from "../../ref";
 
 interface DropdownLongPressOptions {
+  delay?: number;
   enabled(event: PointerEvent): boolean;
   onLongPress(event: PointerEvent): void;
+  tolerance?: number;
 }
 
 const handledLongPressEvents = new WeakSet<Event>();
 
 const useDropdownLongPress = (options: DropdownLongPressOptions) => {
+  const delay = () => options.delay ?? 500;
+  const tolerance = () => options.tolerance ?? 10;
   const [start, setStart] = createRef<{ x: number; y: number } | null>(null);
   const [timeout, setTimeoutRef] = createRef(0);
   const [triggered, setTriggered] = createRef(false);
@@ -37,7 +41,7 @@ const useDropdownLongPress = (options: DropdownLongPressOptions) => {
         setTimeoutRef(0);
         setTriggered(true);
         options.onLongPress(event);
-      }, 500)
+      }, delay())
     );
   };
   const onPointerMove: JSX.EventHandler<HTMLDivElement, PointerEvent> = (event) => {
@@ -45,7 +49,7 @@ const useDropdownLongPress = (options: DropdownLongPressOptions) => {
 
     if (
       initialPoint &&
-      Math.hypot(event.clientX - initialPoint.x, event.clientY - initialPoint.y) > 10
+      Math.hypot(event.clientX - initialPoint.x, event.clientY - initialPoint.y) > tolerance()
     ) {
       cancelGesture();
     }
@@ -66,6 +70,7 @@ const useDropdownLongPress = (options: DropdownLongPressOptions) => {
     onPointerUp: releaseGesture,
     onPointerCancel: cancelGesture,
     onPointerLeave: cancelGesture,
+    onDragStart: cancelGesture,
     onClick
   };
 };

@@ -3,9 +3,11 @@ import { TreeItem } from "#web/components/tree";
 import clsx from "clsx";
 import { type Component, Show } from "solid-js";
 import { MAX_CONTENT_NAME_LENGTH, normalizeEntryName } from "#web/lib/validation";
+import { useWorkspace } from "#web/context/workspace";
 import { useExplorerEntry, type ExplorerEntryProps } from "./use-explorer-entry";
 
 const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
+  const { hasPermission } = useWorkspace();
   const {
     closestEdge,
     content,
@@ -16,12 +18,30 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
     menuOpened,
     params,
     selection,
-    setMenuOpened
+    setMenuOpened,
+    swipe
   } = useExplorerEntry(props);
   return (
     <div class="flex relative min-h-7">
-      <div class="flex relative w-full" data-entry={props.entry.id}>
+      <Show when={swipe.swiping()}>
+        <div class="pointer-events-none absolute inset-y-0 left-0 z-10 w-12 bg-gradient-to-r from-gray-100 to-transparent">
+          <div
+            class={clsx(
+              "absolute inset-y-0 right-full w-screen bg-gray-100",
+              !props.topLevel && "border-r border-gray-300"
+            )}
+          />
+        </div>
+      </Show>
+      <div
+        {...swipe.gestureProps}
+        class={clsx("flex relative w-full touch-pan-y", !swipe.swiping() && "transition-transform")}
+        data-entry={props.entry.id}
+        data-explorer-item
+        style={{ transform: `translateX(-${swipe.offset()}px)` }}
+      >
         <TreeItem
+          class="!overflow-visible"
           id={props.entry.id}
           label={props.entry.name}
           topLevel={props.topLevel}
@@ -52,6 +72,7 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
                   class: "w-48"
                 }}
                 opened={menuOpened()}
+                mobileSheetDragFromContent={false}
                 portal={false}
                 setOpened={setMenuOpened}
                 onClick={(event) => event.stopPropagation()}
@@ -59,11 +80,20 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
                   <Show when={selection().length <= 1} fallback={<div />}>
                     <div
                       class={clsx(
-                        "",
-                        props.entry.id === params.slug
-                          ? !menuOpened() && "opacity-0 media-mouse:group-hover:opacity-100"
-                          : !menuOpened() && "hidden media-mouse:group-hover:flex"
+                        "shrink-0",
+                        swipe.swiping() && "flex",
+                        !swipe.swiping() &&
+                          (props.entry.id === params.slug
+                            ? !menuOpened() &&
+                              "opacity-20 media-mouse:opacity-0 media-mouse:group-hover:opacity-100"
+                            : !menuOpened() &&
+                              "opacity-20 media-mouse:hidden media-mouse:group-hover:flex media-mouse:group-hover:opacity-100"),
+                        !swipe.swiping() && "transition-transform"
                       )}
+                      style={{
+                        opacity: swipe.swiping() ? `${0.2 + swipe.progress() * 0.8}` : undefined,
+                        transform: `translateX(${swipe.offset()}px)`
+                      }}
                     >
                       <IconButton
                         icon="i-lucide:ellipsis-vertical"
@@ -79,11 +109,16 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
               <Show when={props.entry.id === params.slug && !menuOpened()}>
                 <div
                   class={clsx(
-                    "flex justify-center items-center h-7 w-7 absolute right-0 top-0",
+                    "hidden media-mouse:flex justify-center items-center h-7 w-7 absolute right-0 top-0",
                     selection().length <= 1 && "media-mouse:group-hover:hidden"
                   )}
                 >
-                  <div class="i-lucide:pencil bg-gradient-to-tr h-4 w-4 from-secondary via-primary to-secondary" />
+                  <div
+                    class={clsx(
+                      "bg-gradient-to-tr h-4 w-4 from-secondary via-primary to-secondary",
+                      hasPermission("content") ? "i-lucide:pencil" : "i-lucide:eye"
+                    )}
+                  />
                 </div>
               </Show>
             </>
