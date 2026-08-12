@@ -10,7 +10,10 @@ interface SettingProps {
 
 const Setting: ParentComponent<SettingProps> = (props) => (
   <div
-    class={clsx("-mx-2 px-2 py-2 group/setting", props.fade !== false && "mask-edge-fading-b-4")}
+    class={clsx(
+      "-mx-2 px-2 py-2 group/setting relative",
+      props.fade !== false && "mask-edge-fading-b-4"
+    )}
   >
     <Show when={props.hover}>
       <div class="absolute h-full w-full top-0 left-0 media-mouse:group-hover/setting:bg-gradient-to-r from-gray-500/5 to-transparent -z-1 rounded-lg" />

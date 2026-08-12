@@ -1,5 +1,12 @@
-import { DropdownArea, DropdownMenu, IconButton, Tooltip } from "@andesine/components";
-import { type Component, createEffect, createMemo, createSignal, Show } from "solid-js";
+import { Card, DropdownArea, DropdownMenu, IconButton, Tooltip } from "@andesine/components";
+import {
+  type Component,
+  ComponentProps,
+  createEffect,
+  createMemo,
+  createSignal,
+  Show
+} from "solid-js";
 import clsx from "clsx";
 import { TreeItem, useTree } from "#web/components/tree";
 import type { KeyPermission } from "#web/lib/api";
@@ -101,7 +108,12 @@ const APIKeyItem: Component<APIKeyItemProps> = (props) => {
             <div onClick={(event: MouseEvent) => event.stopPropagation()}>
               <DropdownMenu
                 title={props.name}
-                cardProps={{ class: "w-48" }}
+                cardProps={
+                  {
+                    "class": "w-48",
+                    "data-tree-interaction": ""
+                  } as Partial<ComponentProps<typeof Card>>
+                }
                 opened={menuOpened()}
                 portal={false}
                 setOpened={setMenuOpened}

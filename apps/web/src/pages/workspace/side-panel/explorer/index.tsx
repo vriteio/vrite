@@ -1,6 +1,7 @@
 import { TreeRoot, TreeSelection, useTree } from "#web/components/tree";
 import { useWorkspace } from "#web/context/workspace";
 import {
+  type Card,
   createDebounced,
   createRef,
   DropdownArea,
@@ -10,7 +11,7 @@ import {
   Skeleton,
   Shortcut
 } from "@andesine/components";
-import { createSignal, For, Show } from "solid-js";
+import { type ComponentProps, createSignal, For, Show } from "solid-js";
 import { Portal } from "solid-js/web";
 import { ExplorerCollection } from "./explorer-collection";
 import { ExplorerProvider } from "./explorer-context";
@@ -115,7 +116,7 @@ const Explorer = () => {
             >
               <div
                 ref={setTitleRef}
-                class="sticky top-0 z-20 -mx-1 flex h-9 shrink-0 items-center gap-2 px-1 bg-gray-50 md:bg-gray-100"
+                class="group/explorer-header sticky top-0 z-20 -mx-1 flex h-9 shrink-0 items-center gap-2 px-1 bg-gray-50 md:bg-gray-100"
               >
                 <h2 class="text-2xl font-semibold flex-1">Explorer</h2>
                 <Show when={content.offline()}>
@@ -124,6 +125,35 @@ const Explorer = () => {
                     <span class="text-gray-500">Offline</span>
                   </div>
                 </Show>
+                <DropdownMenu
+                  title="Explorer"
+                  cardProps={
+                    {
+                      "class": "w-52",
+                      "data-tree-interaction": ""
+                    } as Partial<ComponentProps<typeof Card>>
+                  }
+                  items={options}
+                  mobileSheetDragFromContent={false}
+                  opened={menuOpened()}
+                  portal={false}
+                  setOpened={setMenuOpened}
+                  trigger={() => (
+                    <div
+                      class={clsx(
+                        !menuOpened() &&
+                          "opacity-20 media-mouse:opacity-0 media-mouse:group-hover/explorer-header:opacity-100"
+                      )}
+                    >
+                      <IconButton
+                        icon="i-lucide:ellipsis-vertical"
+                        size="small"
+                        text="soft"
+                        variant="text"
+                      />
+                    </div>
+                  )}
+                />
               </div>
               <div
                 ref={setContentContainerRef}
@@ -194,15 +224,6 @@ const Explorer = () => {
               />
             </Portal>
           </Show>
-          <DropdownMenu
-            title="Explorer"
-            cardProps={{ class: "w-52", ...{ "data-tree-interaction": "" } }}
-            items={options}
-            mobileSheetDragFromContent={false}
-            opened={menuOpened()}
-            portal={false}
-            setOpened={setMenuOpened}
-          />
         </div>
       </TreeRoot>
     </DropdownArea>

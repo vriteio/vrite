@@ -1,8 +1,15 @@
 import { type Membership, type Role, type UserProfile } from "#backend/db";
 import { useTree, TreeItem } from "#web/components/tree";
-import { DropdownArea, DropdownMenu, IconButton } from "@andesine/components";
+import { Card, DropdownArea, DropdownMenu, IconButton } from "@andesine/components";
 import clsx from "clsx";
-import { type Component, createSignal, createMemo, createEffect, Show } from "solid-js";
+import {
+  type Component,
+  createSignal,
+  createMemo,
+  createEffect,
+  Show,
+  ComponentProps
+} from "solid-js";
 
 const MemberItem: Component<{
   canManage: boolean;
@@ -117,7 +124,11 @@ const MemberItem: Component<{
             <div onClick={(event: MouseEvent) => event.stopPropagation()}>
               <DropdownMenu
                 title={memberName()}
-                cardProps={{ class: "w-48" }}
+                cardProps={
+                  { "class": "w-48", "data-tree-interaction": "" } as Partial<
+                    ComponentProps<typeof Card>
+                  >
+                }
                 opened={menuOpened()}
                 portal={false}
                 setOpened={setMenuOpened}

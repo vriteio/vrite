@@ -1,6 +1,6 @@
 import { TreeItem, useTree } from "#web/components/tree";
-import { DropdownArea, DropdownMenu, IconButton } from "@andesine/components";
-import { type Component, createEffect, createMemo, createSignal } from "solid-js";
+import { Card, DropdownArea, DropdownMenu, IconButton } from "@andesine/components";
+import { type Component, ComponentProps, createEffect, createMemo, createSignal } from "solid-js";
 import clsx from "clsx";
 import { format } from "date-fns";
 
@@ -77,7 +77,11 @@ const PasskeyItem: Component<{
           <div onClick={(event: MouseEvent) => event.stopPropagation()}>
             <DropdownMenu
               title={props.name}
-              cardProps={{ class: "w-40" }}
+              cardProps={
+                { "class": "w-40", "data-tree-interaction": "" } as Partial<
+                  ComponentProps<typeof Card>
+                >
+              }
               opened={menuOpened()}
               portal={false}
               setOpened={setMenuOpened}

@@ -124,7 +124,7 @@ const DropdownMobileSheet: Component<DropdownMobileSheetProps> = (props) => {
               </Show>
               <div
                 {...(activeEntry()?.getDragFromContent() !== false ? drag.gestureProps : {})}
-                class="min-h-0 w-full min-w-fit flex-1 overflow-auto scrollbar-sm flex flex-col"
+                class="min-h-0 w-full min-w-fit flex-1 overflow-auto scrollbar-sm flex flex-col [&>div]:contents"
                 data-dropdown-mobile-scroll
                 ref={setMobileDropdownContentContainer}
               />
