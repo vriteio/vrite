@@ -28,7 +28,8 @@ services:
   migrate:
     build:
       context: .
-      dockerfile: apps/migrate/Dockerfile
+      dockerfile: apps/backend/Dockerfile
+    command: node ./dist/migrate.js
     depends_on:
       postgres:
         condition: service_healthy

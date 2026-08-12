@@ -13,7 +13,10 @@ const externals = new Set([
 
 export default defineConfig({
   cwd: __dirname,
-  input: "./src/index.ts",
+  input: {
+    index: "./src/index.ts",
+    migrate: "./src/migrate.ts"
+  },
   platform: "node",
   tsconfig: "./tsconfig.json",
   resolve: {
@@ -29,7 +32,8 @@ export default defineConfig({
     return !id.startsWith(".") && !path.isAbsolute(id) && !id.startsWith("#backend/");
   },
   output: {
-    file: path.resolve(__dirname, "dist/index.js"),
+    dir: path.resolve(__dirname, "dist"),
+    entryFileNames: "[name].js",
     format: "esm",
     sourcemap: false
   }
