@@ -27,7 +27,7 @@ const getCollaborationStatus = (state: EntryLoadState): CollaborationStatus => {
     return "syncing";
   }
   if (state.unsyncedChanges > 0) {
-    return state.connection === "disconnected" ? "offline-changes" : "saved-locally";
+    return state.connection === "connected" ? "saved-locally" : "offline-changes";
   }
   if (state.connection === "connected" && state.synced) return "synced";
   return "connecting";

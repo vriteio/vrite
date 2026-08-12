@@ -33,9 +33,12 @@ const CollaborationStatusIndicator: Component<CollaborationStatusIndicatorProps>
   };
 
   createEffect(() => {
-    setShowDelayedStatus(false);
+    if (props.status !== "connecting" && props.status !== "offline-changes") {
+      setShowDelayedStatus(false);
+      return;
+    }
 
-    if (props.status !== "connecting" && props.status !== "offline-changes") return;
+    if (showDelayedStatus()) return;
 
     const delay =
       props.status === "offline-changes" ? OFFLINE_INDICATOR_DELAY : CONNECTING_INDICATOR_DELAY;
