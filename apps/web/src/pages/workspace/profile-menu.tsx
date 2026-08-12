@@ -3,7 +3,7 @@ import { DropdownArea, DropdownMenu, type MenuItem } from "@andesine/components"
 import { type Component, createMemo, createSignal, type JSX, Show } from "solid-js";
 import { useNavigate } from "@solidjs/router";
 import { useWorkspace } from "#web/context/workspace";
-import { clearPersistenceData } from "#web/context/workspace/persistence";
+import { clearPersistenceData } from "#web/context/workspace/indexeddb";
 import clsx from "clsx";
 import { createMutation } from "@tanstack/solid-query";
 

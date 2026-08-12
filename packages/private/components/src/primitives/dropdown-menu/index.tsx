@@ -160,15 +160,16 @@ const MenuItems = <O extends MenuItem>(props: MenuItemsProps<O>) => (
                 props.onClose();
               }
             }}
-            closeOnSelect={!option.items && !loading()}
+            closeOnSelect={false}
             class={clsx(
               "relative w-full flex items-center gap-1 justify-start px-1 py-0.5 rounded-md cursor-pointer outline-none",
               (option.disabled || loading()) && "cursor-not-allowed opacity-70",
-              option.selected
-                ? "relative group/menu-item"
-                : option.color === "danger"
+              option.selected && "relative group/menu-item",
+              !option.selected &&
+                !loading() &&
+                (option.color === "danger"
                   ? "data-[highlighted]:bg-red-600 data-[highlighted]:bg-opacity-10"
-                  : "data-[highlighted]:bg-gray-100"
+                  : "data-[highlighted]:bg-gray-100")
             )}
           >
             <div class={clsx("contents", loading() && "invisible")}>
@@ -210,8 +211,18 @@ const MenuItems = <O extends MenuItem>(props: MenuItemsProps<O>) => (
               </div>
             </div>
             <Show when={loading()}>
-              <div class="absolute inset-0 flex items-center justify-center p-1.5">
-                <Spinner class="h-full" />
+              <div
+                class={clsx(
+                  "absolute inset-0 flex items-center justify-center p-1.5",
+                  option.color === "danger" ? "bg-red-600 bg-opacity-10" : "bg-gray-100"
+                )}
+              >
+                <Spinner
+                  class={clsx(
+                    "h-full",
+                    option.color === "danger" ? "text-red-500" : "text-gray-500"
+                  )}
+                />
               </div>
             </Show>
           </Menu.Item>

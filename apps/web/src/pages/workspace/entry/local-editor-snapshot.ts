@@ -1,14 +1,12 @@
 import type { EditorProvider } from "@andesine/editor";
-import { IndexeddbPersistence } from "y-indexeddb";
-import {
-  deleteIndexedDBDatabase,
-  getWorkspaceEntryDatabaseName
-} from "#web/context/workspace/persistence";
+import { getWorkspaceDatabaseName } from "#web/context/workspace/indexeddb";
+import { clearDocument, WorkspaceIndexedDBPersistence } from "#web/context/workspace/y-indexeddb";
 
 const LOCAL_SNAPSHOT_TIMEOUT = 10_000;
 
 class LocalSnapshotError extends Error {}
 class LocalSnapshotTimeoutError extends LocalSnapshotError {}
+class LocalSnapshotAbortError extends LocalSnapshotError {}
 
 const withTimeout = <T>(promise: Promise<T>, timeout: number): Promise<T> =>
   new Promise((resolve, reject) => {
@@ -27,6 +25,9 @@ const withTimeout = <T>(promise: Promise<T>, timeout: number): Promise<T> =>
       }
     );
   });
+const isAbortError = (error: unknown): boolean => {
+  return error instanceof Error && error.name === "AbortError";
+};
 
 interface LocalEditorSnapshotInput {
   workspaceID(): string;
@@ -40,14 +41,20 @@ interface LocalEditorSnapshotInput {
 const createLocalEditorSnapshotLifecycle = (input: LocalEditorSnapshotInput) => {
   const beforeProviderAttach = async (provider: EditorProvider) => {
     const entryID = provider.configuration.name;
-    const databaseName = getWorkspaceEntryDatabaseName(input.workspaceID(), entryID);
-    let persistence: IndexeddbPersistence | null = null;
+    const databaseName = getWorkspaceDatabaseName(input.workspaceID());
+
+    let persistence: WorkspaceIndexedDBPersistence | null = null;
 
     try {
       if (input.discardLocalSnapshot()) {
-        await withTimeout(deleteIndexedDBDatabase(databaseName), LOCAL_SNAPSHOT_TIMEOUT);
+        await withTimeout(clearDocument(databaseName, entryID), LOCAL_SNAPSHOT_TIMEOUT);
       }
-      persistence = new IndexeddbPersistence(databaseName, provider.document);
+      persistence = new WorkspaceIndexedDBPersistence(databaseName, entryID, provider.document, {
+        onError() {
+          input.setLocalSnapshotFailure(entryID);
+          input.notifyError("Failed to save local editor data.");
+        }
+      });
       await withTimeout(persistence.whenSynced, LOCAL_SNAPSHOT_TIMEOUT);
 
       const available = provider.document.store.clients.size > 0;
@@ -60,7 +67,12 @@ const createLocalEditorSnapshotLifecycle = (input: LocalEditorSnapshotInput) => 
       };
     } catch (error) {
       void persistence?.destroy();
-      if (error instanceof LocalSnapshotTimeoutError) {
+
+      if (isAbortError(error)) {
+        throw new LocalSnapshotAbortError("Local editor data loading was aborted.", {
+          cause: error
+        });
+      } else if (error instanceof LocalSnapshotTimeoutError) {
         input.setLocalSnapshotTimeout(entryID);
       } else {
         input.setLocalSnapshotFailure(entryID);

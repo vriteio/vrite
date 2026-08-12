@@ -46,7 +46,7 @@
     "solid-js": "^1.9.14",
     "srvx": "^0.12.5",
     "tinykeys": "^4.0.0",
-    "y-indexeddb": "^9.0.12"
+    "yjs": "^13.6.32"
   },
   "devDependencies": {
     "@andesine/backend": "workspace:*",

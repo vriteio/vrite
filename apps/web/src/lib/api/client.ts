@@ -11,7 +11,7 @@ import {
 import { passkeyClient } from "@better-auth/passkey/client";
 import { config } from "./config";
 import { getRequestEvent } from "solid-js/web";
-import { clearPersistenceData } from "#web/context/workspace/persistence";
+import { clearPersistenceData } from "#web/context/workspace/indexeddb";
 import { validateWorkspaceID } from "#web/lib/validation";
 
 const getRouteWorkspaceID = () => {

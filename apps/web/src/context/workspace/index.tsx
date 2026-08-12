@@ -14,7 +14,7 @@ import { createMutation } from "@tanstack/solid-query";
 import { toUserID } from "#web/lib/primitives";
 import { hasPermission as hasGrantedPermission } from "#web/lib/policy";
 import { isWorkspaceEvent } from "#web/lib/validation";
-import { clearPersistenceData } from "./persistence";
+import { clearPersistenceData } from "./indexeddb";
 
 interface WorkspaceInfo {
   id: string;

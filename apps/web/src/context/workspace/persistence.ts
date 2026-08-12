@@ -1,143 +1,20 @@
 import { createPersistenceAdapter } from "@signaldb/core";
-import { deleteDB, openDB, type IDBPDatabase } from "idb";
+import { isIndexedDBAvailable, openWorkspaceDatabase } from "./indexeddb";
 
 interface IndexedDBAdapterOptions {
-  databaseName?: string;
-  storeName?: string;
-  stores?: string[];
+  databaseName: string;
+  storeName: string;
   validate?(value: unknown): boolean;
 }
-interface ClearPersistenceDataOptions {
-  persist?: string[];
-}
 
-const WORKSPACE_DATA_PREFIX = "andesine:";
-const WORKSPACE_ENTRY_DATA_PREFIX = `${WORKSPACE_DATA_PREFIX}entry:`;
-const LEGACY_STORE_NAME = "items";
-const isIndexedDBAvailable = () => {
-  return typeof window !== "undefined" && typeof indexedDB !== "undefined";
-};
-const deleteIndexedDBDatabase = async (name: string) => {
-  if (!isIndexedDBAvailable()) {
-    return;
-  }
-
-  await deleteDB(name);
-};
-const listIndexedDBDatabaseNames = async (): Promise<string[]> => {
-  if (!isIndexedDBAvailable() || typeof window.indexedDB.databases !== "function") return [];
-
-  const databases = await window.indexedDB.databases();
-
-  return databases.flatMap(({ name }) => (name ? [name] : []));
-};
-const deleteIndexedDBDatabases = async (names: Iterable<string>): Promise<void> => {
-  await Promise.allSettled(Array.from(new Set(names)).map((name) => deleteIndexedDBDatabase(name)));
-};
-const getDatabaseWorkspaceID = (name: string): string | null => {
-  if (name.startsWith(WORKSPACE_ENTRY_DATA_PREFIX)) {
-    return name.slice(WORKSPACE_ENTRY_DATA_PREFIX.length).split(":")[0] || null;
-  }
-
-  if (name.startsWith(`${WORKSPACE_DATA_PREFIX}ws_`)) {
-    return name.slice(WORKSPACE_DATA_PREFIX.length);
-  }
-
-  return null;
-};
-const clearPersistenceData = async (options: ClearPersistenceDataOptions = {}): Promise<void> => {
-  const persistedWorkspaceIDs = new Set(options.persist);
-  const databaseNames = await listIndexedDBDatabaseNames();
-
-  await deleteIndexedDBDatabases(
-    databaseNames.filter((name) => {
-      if (!name.startsWith(WORKSPACE_DATA_PREFIX)) return false;
-
-      const workspaceID = getDatabaseWorkspaceID(name);
-
-      return workspaceID === null || !persistedWorkspaceIDs.has(workspaceID);
-    })
-  );
-};
-const getWorkspaceEntryDatabaseName = (workspaceID: string, entryID?: string) => {
-  return `${WORKSPACE_ENTRY_DATA_PREFIX}${workspaceID}:${entryID || ""}`;
-};
-const clearWorkspaceData = async (workspaceID: string, entryIDs: string[] = []): Promise<void> => {
-  if (!isIndexedDBAvailable()) return;
-
-  const databaseNames = new Set([
-    `${WORKSPACE_DATA_PREFIX}${workspaceID}`,
-    ...entryIDs.map((entryID) => getWorkspaceEntryDatabaseName(workspaceID, entryID))
-  ]);
-  const discoveredDatabaseNames = await listIndexedDBDatabaseNames();
-
-  for (const name of discoveredDatabaseNames) {
-    if (getDatabaseWorkspaceID(name) === workspaceID) {
-      databaseNames.add(name);
-    }
-  }
-
-  await deleteIndexedDBDatabases(databaseNames);
-};
 /* eslint-disable-next-line @typescript-eslint/no-explicit-any -- SignalDB adapters use its open-ended BaseItem shape. */
 const createIndexedDBAdapter = <T extends { id: I } & Record<string, any>, I extends IDBValidKey>(
-  name: string,
-  options?: IndexedDBAdapterOptions
+  options: IndexedDBAdapterOptions
 ) => {
-  const {
-    databaseName: explicitDatabaseName,
-    storeName = LEGACY_STORE_NAME,
-    stores = [],
-    validate
-  } = options || {};
-  const databaseName = explicitDatabaseName || name;
-  const requestedStores = Array.from(new Set([storeName, ...stores]));
+  const { databaseName, storeName, validate } = options;
 
-  async function openDatabase(
-    targetDatabaseName: string,
-    targetStoreNames: string[]
-  ): Promise<IDBPDatabase | null> {
-    if (!isIndexedDBAvailable()) {
-      return null;
-    }
-
-    const database = await openDB(targetDatabaseName);
-
-    database.addEventListener("versionchange", () => database.close());
-
-    const missingStores = targetStoreNames.filter(
-      (targetStoreName) => !database.objectStoreNames.contains(targetStoreName)
-    );
-
-    if (missingStores.length === 0) {
-      return database;
-    }
-
-    const nextVersion = database.version + 1;
-
-    database.close();
-
-    const upgradedDatabase = await openDB(targetDatabaseName, nextVersion, {
-      upgrade(upgradeDatabase) {
-        for (const targetStoreName of targetStoreNames) {
-          if (!upgradeDatabase.objectStoreNames.contains(targetStoreName)) {
-            upgradeDatabase.createObjectStore(targetStoreName, { keyPath: "id" });
-          }
-        }
-      }
-    });
-
-    upgradedDatabase.addEventListener("versionchange", () => upgradedDatabase.close());
-
-    return upgradedDatabase;
-  }
-
-  async function readAllItems(
-    targetDatabaseName: string,
-    targetStoreName: string,
-    targetStores: string[] = [targetStoreName]
-  ): Promise<T[]> {
-    const database = await openDatabase(targetDatabaseName, targetStores);
+  async function readAllItems(targetDatabaseName: string, targetStoreName: string): Promise<T[]> {
+    const database = await openWorkspaceDatabase(targetDatabaseName);
 
     if (!database || !database.objectStoreNames.contains(targetStoreName)) {
       database?.close();
@@ -159,7 +36,7 @@ const createIndexedDBAdapter = <T extends { id: I } & Record<string, any>, I ext
    * @returns A promise that resolves with an array of items.
    */
   async function getAllItems(): Promise<T[]> {
-    return readAllItems(databaseName, storeName, requestedStores);
+    return readAllItems(databaseName, storeName);
   }
 
   return createPersistenceAdapter<T, I>({
@@ -173,13 +50,11 @@ const createIndexedDBAdapter = <T extends { id: I } & Record<string, any>, I ext
 
         return { items };
       } catch {
-        void deleteIndexedDBDatabase(databaseName).catch(() => {});
-
         return { items: [] as T[] };
       }
     },
     async save(items, { added, modified, removed }) {
-      const database = await openDatabase(databaseName, requestedStores);
+      const database = await openWorkspaceDatabase(databaseName);
 
       if (!database) {
         return;
@@ -209,11 +84,4 @@ const createIndexedDBAdapter = <T extends { id: I } & Record<string, any>, I ext
   });
 };
 
-export {
-  WORKSPACE_DATA_PREFIX,
-  clearPersistenceData,
-  clearWorkspaceData,
-  createIndexedDBAdapter,
-  deleteIndexedDBDatabase,
-  getWorkspaceEntryDatabaseName
-};
+export { createIndexedDBAdapter };

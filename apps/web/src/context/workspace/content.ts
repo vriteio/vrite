@@ -1,11 +1,13 @@
 import { Collection as LocalDBCollection } from "@signaldb/core";
 import { createWorkspaceContentOperations } from "./operations";
 import {
-  WORKSPACE_DATA_PREFIX,
+  WORKSPACE_COLLECTIONS_STORE_NAME,
+  WORKSPACE_ENTRIES_STORE_NAME,
   clearWorkspaceData,
-  createIndexedDBAdapter,
-  deleteIndexedDBDatabase
-} from "./persistence";
+  deleteIndexedDBDatabase,
+  getWorkspaceDatabaseName
+} from "./indexeddb";
+import { createIndexedDBAdapter } from "./persistence";
 import { type Collection, type Entry, client, type WorkspaceEvent } from "#web/lib/api";
 import solidReactivityAdapter from "@signaldb/solid";
 import { useConnectivitySignal } from "@solid-primitives/connectivity";
@@ -18,18 +20,16 @@ type ExplorerTree = {
   entries: Entry[];
 };
 const getWorkspaceContentDatabaseName = (workspaceID?: string) => {
-  return `${WORKSPACE_DATA_PREFIX}${workspaceID || "ephemeral"}`;
+  return getWorkspaceDatabaseName(workspaceID || "ephemeral");
 };
 const createWorkspaceCollections = (workspaceID?: string) => {
   const databaseName = getWorkspaceContentDatabaseName(workspaceID);
-  const storeNames = ["entries", "collections"];
   const entries = new LocalDBCollection<Entry>({
     name: `${databaseName}:entries`,
     persistence: workspaceID
-      ? createIndexedDBAdapter("entries", {
+      ? createIndexedDBAdapter({
           databaseName,
-          storeName: "entries",
-          stores: storeNames,
+          storeName: WORKSPACE_ENTRIES_STORE_NAME,
           validate: isPersistedEntry
         })
       : undefined,
@@ -38,10 +38,9 @@ const createWorkspaceCollections = (workspaceID?: string) => {
   const collections = new LocalDBCollection<Collection>({
     name: `${databaseName}:collections`,
     persistence: workspaceID
-      ? createIndexedDBAdapter("collections", {
+      ? createIndexedDBAdapter({
           databaseName,
-          storeName: "collections",
-          stores: storeNames,
+          storeName: WORKSPACE_COLLECTIONS_STORE_NAME,
           validate: isPersistedCollection
         })
       : undefined,
@@ -92,13 +91,6 @@ const useWorkspaceContent = (workspaceID: Accessor<string>, canWrite: Accessor<b
   });
   const disposeWorkspaceContent = async (targetWorkspaceID: string) => {
     const currentCollections = contentCollections();
-    const entryIDs =
-      currentCollections.workspaceID === targetWorkspaceID
-        ? currentCollections.entries
-            .find()
-            .fetch()
-            .map(({ id }) => id)
-        : [];
 
     if (currentCollections.workspaceID === targetWorkspaceID) {
       const nextCollections = createWorkspaceCollections();
@@ -108,7 +100,7 @@ const useWorkspaceContent = (workspaceID: Accessor<string>, canWrite: Accessor<b
       await currentCollections.collections.dispose();
     }
 
-    await clearWorkspaceData(targetWorkspaceID, entryIDs);
+    await clearWorkspaceData(targetWorkspaceID);
   };
 
   const readOnly = () => !isOnline() || !contentCollections().workspaceID || !canWrite();
