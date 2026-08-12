@@ -83,7 +83,7 @@ const resolveStripeSubscriptionEvent = async (
     return resolveSubscription(event.data.object, false);
   }
 
-  if (event.type === "invoice.payment_failed") {
+  if (event.type === "invoice.paid" || event.type === "invoice.payment_failed") {
     const subscriptionRef = event.data.object.parent?.subscription_details?.subscription;
     const subscriptionID =
       typeof subscriptionRef === "string" ? subscriptionRef : subscriptionRef?.id;
