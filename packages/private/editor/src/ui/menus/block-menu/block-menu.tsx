@@ -1,8 +1,8 @@
 import { isBlockSelection } from "#editor/extensions/block-selection";
 import { DropdownMenu, IconButton } from "@andesine/components";
 import { type Editor } from "@tiptap/core";
-import { createEffect, createSignal, onCleanup, type ParentComponent, useContext } from "solid-js";
-import { BlockMenuContext } from "./context";
+import { createEffect, createSignal, onCleanup, type ParentComponent } from "solid-js";
+import { useBlockMenuContext } from "./context";
 import {
   getBlockControlAnchorRect,
   getBlockControlTargetAtY,
@@ -25,7 +25,7 @@ interface BlockMenuProps {
 }
 
 const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
-  const { handleCopy, handleDelete } = useContext(BlockMenuContext);
+  const { handleCopy, handleDelete } = useBlockMenuContext();
   const [currentNodePos, setCurrentNodePos] = createSignal(-1);
   const [coords, setCoords] = createSignal({ top: -10000, left: -10000 });
   const [hoverAreaHeight, setHoverAreaHeight] = createSignal(0);

@@ -11,20 +11,21 @@ import {
 } from "solid-js";
 import { Portal } from "solid-js/web";
 import { BlockMenu } from "./block-menu";
-import { BlockMenuContext } from "./context";
+import { BlockMenuContextProvider } from "./context";
 import type { BlockControlRange } from "#editor/ui/block-control-targeting";
 
 interface BlockMenuAreaProps {
   editor: Editor | null;
   menuContainerRef: Accessor<HTMLElement | null>;
   notify(type: "success" | "error", text: string): void;
-  textMenuSelectionRange: BlockControlRange | null;
 }
 
 const BlockMenuArea: ParentComponent<BlockMenuAreaProps> = (props) => {
   const registerShortcuts = useShortcuts();
   const [menuOpened, setMenuOpened] = createSignal(false);
   const [menuAnchorPoint, setMenuAnchorPoint] = createSignal<{ x: number; y: number } | null>(null);
+  const [textMenuSelectionRange, setTextMenuSelectionRange] =
+    createSignal<BlockControlRange | null>(null);
   const handleCopy = () => {
     const editor = props.editor;
 
@@ -111,11 +112,12 @@ const BlockMenuArea: ParentComponent<BlockMenuAreaProps> = (props) => {
   });
 
   return (
-    <BlockMenuContext.Provider
+    <BlockMenuContextProvider
       value={{
         handleCopy,
         handleDelete,
-        openMenu
+        openMenu,
+        setTextMenuSelectionRange
       }}
     >
       <DropdownArea
@@ -151,13 +153,13 @@ const BlockMenuArea: ParentComponent<BlockMenuAreaProps> = (props) => {
                 editor={props.editor}
                 menuOpened={menuOpened()}
                 setMenuOpened={handleMenuOpenedChange}
-                textMenuSelectionRange={props.textMenuSelectionRange}
+                textMenuSelectionRange={textMenuSelectionRange()}
               />
             </Portal>
           )}
         </Show>
       </DropdownArea>
-    </BlockMenuContext.Provider>
+    </BlockMenuContextProvider>
   );
 };
 

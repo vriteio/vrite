@@ -44,15 +44,11 @@ import {
   Placeholder,
   UniqueID,
   BlockSelection,
-  isBlockSelection,
   Gapcursor,
   Dropcursor,
   NodeCharacterLimit
 } from "./extensions";
-import { BubbleMenuWrapper } from "./ui/bubble-menu-wrapper";
 import { DragHandleMenu } from "./ui/drag-handle";
-import { EDITOR_MENU_Z_INDEX } from "./ui/constants";
-import type { BlockControlRange } from "./ui/block-control-targeting";
 
 import type { EditorProps } from "./client-types";
 import { useEditorProvider } from "./use-editor-provider";
@@ -61,8 +57,6 @@ const ClientEditor: Component<EditorProps> = (props) => {
   const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
   const [menuContainerRef, setMenuContainerRef] = createRef<HTMLElement | null>(null);
   const [editorContentElement, setEditorContentElement] = createSignal<HTMLElement | null>(null);
-  const [textMenuSelectionRange, setTextMenuSelectionRange] =
-    createSignal<BlockControlRange | null>(null);
   const provider = useEditorProvider({
     url: () => props.url,
     doc: () => props.doc,
@@ -170,13 +164,6 @@ const ClientEditor: Component<EditorProps> = (props) => {
   });
 
   const editableEditor = () => (props.editable === false ? null : editor());
-  const updateTextMenuSelectionRange = () => {
-    const selection = editor()?.state.selection;
-
-    if (selection && isTextSelection(selection) && !selection.empty) {
-      setTextMenuSelectionRange({ from: selection.from, to: selection.to });
-    }
-  };
 
   onCleanup(() => {
     editor()?.destroy();
@@ -232,7 +219,6 @@ const ClientEditor: Component<EditorProps> = (props) => {
             editor={editableEditor()}
             menuContainerRef={menuContainerRef}
             notify={props.notify}
-            textMenuSelectionRange={textMenuSelectionRange()}
           >
             <div class="w-full flex flex-col items-center">
               <div
@@ -242,32 +228,7 @@ const ClientEditor: Component<EditorProps> = (props) => {
                 <Show when={editableEditor()} keyed>
                   {/* Order of menus is important, as every `registerPlugin()` call re-triggers `onDestroy` */}
                   <SlashMenu editor={editor()!} menuContainerRef={menuContainerRef} />
-                  <BubbleMenuWrapper
-                    appendTo={() => menuContainerRef()!}
-                    editor={editor()!}
-                    zIndex={EDITOR_MENU_Z_INDEX.bubbleMenu}
-                    options={{
-                      onHide: () => setTextMenuSelectionRange(null),
-                      onShow: updateTextMenuSelectionRange,
-                      onUpdate: updateTextMenuSelectionRange
-                    }}
-                    shouldShow={({ editor }) => {
-                      //if (pointerDown()) return false;
-
-                      const { state } = editor;
-                      const { selection } = state;
-                      const isTitleSelection = selection.$from.parent.type.name === "title";
-
-                      return (
-                        !isTitleSelection &&
-                        !isBlockSelection(selection) &&
-                        isTextSelection(selection) &&
-                        !selection.empty
-                      );
-                    }}
-                  >
-                    <BubbleMenu opened editor={editor()!} />
-                  </BubbleMenuWrapper>
+                  <BubbleMenu editor={editor()!} menuContainerRef={menuContainerRef} />
                   <DragHandleMenu editor={editor()!} menuContainerRef={menuContainerRef} />
                 </Show>
                 <div ref={setEditorContentElement} class="min-h-full" />

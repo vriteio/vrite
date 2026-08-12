@@ -75,8 +75,6 @@ const Tooltip: Component<TooltipProps> = (props) => {
         placement: placement()
       }}
       disabled={!md() || !enabled()}
-      lazyMount
-      unmountOnExit
     >
       <BaseTooltip.Trigger
         asChild={(triggerProps) => (
@@ -86,9 +84,7 @@ const Tooltip: Component<TooltipProps> = (props) => {
                 `:base: relative flex flex-col items-center justify-center`,
                 props.wrapperClass
               ),
-              style: props.wrapperStyle,
-              onClick: closeTooltip,
-              onPointerDown: closeTooltip
+              style: props.wrapperStyle
             })}
           >
             {props.children}

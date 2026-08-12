@@ -1,15 +1,17 @@
 import clsx from "clsx";
 import { type Component, createSignal, onMount, Show } from "solid-js";
-import { Card, IconButton, Input, Tooltip, createRef } from "@andesine/components";
+import { Card, IconButton, Input, Shortcut, Tooltip, createRef } from "@andesine/components";
 import { type Editor } from "@tiptap/core";
 import { validateURL } from "#editor/lib";
 
 const LinkMenu: Component<{
-  class?: string;
   editor: Editor;
+  class?: string;
+  opened?: boolean;
   setMode(mode: string): void;
 }> = (props) => {
   const [url, setUrl] = createSignal("");
+  const [hasLink, setHasLink] = createSignal(false);
   const [invalid, setInvalid] = createSignal(false);
   const [inputRef, setInputRef] = createRef<HTMLInputElement | null>(null);
   const saveLink = (): void => {
@@ -34,6 +36,7 @@ const LinkMenu: Component<{
     const href = props.editor.getAttributes("link").href || "";
 
     setUrl(href);
+    setHasLink(Boolean(href));
     setTimeout(() => inputRef()?.focus(), 50);
   });
 
@@ -46,16 +49,27 @@ const LinkMenu: Component<{
       )}
       shade
     >
-      <IconButton
-        icon="i-lucide:arrow-left"
-        variant="text"
-        size="xs"
-        onClick={(event) => {
-          props.setMode("format");
-          event.preventDefault();
-          event.stopPropagation();
-        }}
-      />
+      <Tooltip
+        content={
+          <div class="flex flex-col items-center justify-center gap-0.5">
+            <span>Go back</span>
+          </div>
+        }
+        side="bottom"
+        wrapperClass="snap-start shrink-0"
+        enabled={props.opened}
+      >
+        <IconButton
+          icon="i-lucide:arrow-left"
+          variant="text"
+          size="xs"
+          onClick={(event) => {
+            props.setMode("format");
+            event.preventDefault();
+            event.stopPropagation();
+          }}
+        />
+      </Tooltip>
       <Input
         ref={setInputRef}
         value={url()}
@@ -80,26 +94,50 @@ const LinkMenu: Component<{
         color="contrast"
         size="xs"
       />
-      <IconButton
-        icon="i-lucide:check"
-        variant="text"
-        size="xs"
-        onClick={(event) => {
-          saveLink();
-          event.preventDefault();
-          event.stopPropagation();
-        }}
-      />
-      <IconButton
-        icon="i-lucide:trash-2"
-        variant="text"
-        size="xs"
-        onClick={(event) => {
-          removeLink();
-          event.preventDefault();
-          event.stopPropagation();
-        }}
-      />
+      <Tooltip
+        content={
+          <div class="flex flex-col items-center justify-center gap-0.5">
+            <span>Save link</span>
+            <Shortcut class="opacity-50 font-mono text-[80%]" shortcut="enter" />
+          </div>
+        }
+        enabled={props.opened}
+        side="bottom"
+      >
+        <IconButton
+          icon="i-lucide:check"
+          variant="text"
+          size="xs"
+          onClick={(event) => {
+            saveLink();
+            event.preventDefault();
+            event.stopPropagation();
+          }}
+        />
+      </Tooltip>
+      <Show when={hasLink()}>
+        <Tooltip
+          content={
+            <div class="flex flex-col items-center justify-center gap-0.5">
+              <span>Remove link</span>
+            </div>
+          }
+          side="bottom"
+          wrapperClass="snap-start shrink-0"
+          enabled={props.opened}
+        >
+          <IconButton
+            icon="i-lucide:trash-2"
+            variant="text"
+            size="xs"
+            onClick={(event) => {
+              removeLink();
+              event.preventDefault();
+              event.stopPropagation();
+            }}
+          />
+        </Tooltip>
+      </Show>
     </Card>
   );
 };

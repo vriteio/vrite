@@ -1,8 +1,8 @@
 import clsx from "clsx";
-import { type Component, For, createSignal, onCleanup, useContext } from "solid-js";
+import { type Component, For, createSignal, onCleanup } from "solid-js";
 import { type Editor } from "@tiptap/core";
 import { Card, IconButton, Shortcut, Tooltip } from "@andesine/components";
-import { BlockMenuContext } from "#editor/ui/menus/block-menu";
+import { useBlockMenuContext } from "#editor/ui/menus/block-menu";
 
 type BubbleMenuMode = "format" | "link";
 
@@ -13,11 +13,12 @@ interface FormatMenuItemGroup {
 }
 
 const FormatMenu: Component<{
-  class?: string;
   editor: Editor;
+  class?: string;
+  opened?: boolean;
   setMode(mode: BubbleMenuMode): void;
 }> = (props) => {
-  const { openMenu } = useContext(BlockMenuContext)!;
+  const { openMenu } = useBlockMenuContext();
   const [activeMarks, setActiveMarks] = createSignal<string[]>([]);
   const menuItems: Array<{
     icon: string;
@@ -134,6 +135,7 @@ const FormatMenu: Component<{
                     )}
                   </div>
                 }
+                enabled={props.opened}
                 side="bottom"
               >
                 <IconButton
@@ -169,7 +171,16 @@ const FormatMenu: Component<{
           );
         }}
       </For>
-      <Tooltip content="Close keyboard" side="bottom" wrapperClass="snap-start shrink-0 md:hidden">
+      <Tooltip
+        content={
+          <div class="flex flex-col items-center justify-center gap-0.5">
+            <span>Close keyboard</span>
+          </div>
+        }
+        side="bottom"
+        wrapperClass="snap-start shrink-0 md:hidden"
+        enabled={props.opened}
+      >
         <IconButton
           variant="text"
           icon="i-lucide:keyboard-off"
@@ -190,6 +201,7 @@ const FormatMenu: Component<{
           </div>
         }
         side="bottom"
+        enabled={props.opened}
         wrapperClass="snap-start shrink-0"
       >
         <IconButton
@@ -211,8 +223,12 @@ const FormatMenu: Component<{
               return false;
             });
             openMenu(reference);
-            props.editor.view.dispatch(props.editor.state.tr.setMeta("bubbleMenu", "hide"));
-            props.editor.chain().setBlockSelection({ from, to }).focus().run();
+            props.editor
+              .chain()
+              .setMeta("bubbleMenu", "hide")
+              .setBlockSelection({ from, to })
+              .focus()
+              .run();
           }}
         />
       </Tooltip>
