@@ -1,10 +1,14 @@
 import { toUUID } from "#backend/lib/primitives";
-import { db } from "#backend/lib/adapters";
-import { memberships, users } from "#backend/db";
+import { auth, db } from "#backend/lib/adapters";
+import { memberships } from "#backend/db";
 import { and, eq } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 
-const switchWorkspace = async (input: { workspaceID: string; userID: string }) => {
+const switchWorkspace = async (input: {
+  headers: Headers;
+  workspaceID: string;
+  userID: string;
+}) => {
   const userID = toUUID(input.userID);
   const workspaceID = toUUID(input.workspaceID);
   const membership = await db.query.memberships.findFirst({
@@ -15,10 +19,12 @@ const switchWorkspace = async (input: { workspaceID: string; userID: string }) =
     throw new ORPCError("FORBIDDEN", { message: "You are not a member of this workspace" });
   }
 
-  await db
-    .update(users)
-    .set({ currentWorkspaceID: workspaceID, updatedAt: new Date() })
-    .where(eq(users.id, userID));
+  await auth.api.updateUser({
+    headers: input.headers,
+    body: {
+      currentWorkspaceID: input.workspaceID
+    }
+  });
 };
 
 export { switchWorkspace };

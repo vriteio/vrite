@@ -1,6 +1,6 @@
 import { toCollectionID, toEntryID, toUUID } from "#backend/lib/primitives";
 import { db } from "#backend/lib/adapters";
-import { collections, entries, workspaces } from "#backend/db";
+import { collections, entries, memberships, workspaces } from "#backend/db";
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 
@@ -79,6 +79,21 @@ const deleteCollections = async (input: {
         )
       )
       .returning({ id: entries.id });
+
+    if (deletedEntries.length > 0) {
+      await tx
+        .update(memberships)
+        .set({ currentEntryID: null, updatedAt: new Date() })
+        .where(
+          and(
+            eq(memberships.workspaceID, workspaceID),
+            inArray(
+              memberships.currentEntryID,
+              deletedEntries.map(({ id }) => id)
+            )
+          )
+        );
+    }
 
     return {
       collectionIDs: collectionIDs.map(toCollectionID),

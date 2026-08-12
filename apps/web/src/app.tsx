@@ -1,4 +1,4 @@
-import { Router, createAsync, query, redirect, revalidate } from "@solidjs/router";
+import { Router, createAsync, query, redirect, revalidate, useLocation } from "@solidjs/router";
 import { MetaProvider, Title } from "@solidjs/meta";
 import {
   DropdownProvider,
@@ -11,13 +11,13 @@ import { ErrorBoundary, type ParentComponent, Suspense, createSignal } from "sol
 import { NotificationsProvider } from "./context/notifications";
 import { ClipboardProvider } from "./context/clipboard";
 import { LayoutProvider } from "./context/layout";
-import { authClient } from "./lib/api";
+import { authClient, client } from "./lib/api";
 import { getRequestEvent } from "solid-js/web";
 import { appendRedirectTo, normalizeRedirectTo, routes } from "./lib/navigation";
 import { validateWorkspaceID } from "./lib/validation";
 import { DotsBackground } from "./components/dots-background";
 
-const rootRedirectQuery = query(async () => {
+const rootRedirectQuery = query(async (path: string) => {
   const event = getRequestEvent();
 
   if (!event && typeof window === "undefined") {
@@ -25,11 +25,13 @@ const rootRedirectQuery = query(async () => {
   }
 
   const { data } = await authClient.getSession();
-  const url = new URL(event ? event.request.url : window.location.href);
+  const url = event ? new URL(event.request.url) : new URL(path, window.location.origin);
   const isAuthRoute = url.pathname.startsWith("/auth");
   const isInviteRoute = url.pathname === "/invite";
   const isNewWorkspaceRoute = url.pathname === "/new-workspace";
-  const workspaceID = url.pathname.split("/")[1] || "";
+  const pathSegments = url.pathname.split("/").filter(Boolean);
+  const workspaceID = pathSegments[0] || "";
+  const isWorkspaceEditor = validateWorkspaceID(workspaceID) && pathSegments.length === 1;
   const isAddAccount = url.searchParams.get("addAccount") === "true";
   const redirectTo = normalizeRedirectTo(url.searchParams.get("redirectTo"));
 
@@ -59,6 +61,15 @@ const rootRedirectQuery = query(async () => {
     }
 
     if (workspaceID && validateWorkspaceID(workspaceID)) {
+      if (isWorkspaceEditor) {
+        const workspaces = await client.workspaces.list();
+        const currentEntryID = workspaces.find(({ id }) => id === workspaceID)?.currentEntryID;
+
+        if (currentEntryID) {
+          throw redirect(`/${workspaceID}/${currentEntryID}`);
+        }
+      }
+
       return { success: true };
     }
 
@@ -121,8 +132,10 @@ const AppError = (props: AppErrorProps) => {
 };
 const RootLayout: ParentComponent = (props) => {
   const queryClient = new QueryClient();
+  const location = useLocation();
+  const path = () => `${location.pathname}${location.search}`;
 
-  createAsync(() => rootRedirectQuery(), { deferStream: true });
+  createAsync(() => rootRedirectQuery(path()), { deferStream: true });
 
   return (
     <MetaProvider>

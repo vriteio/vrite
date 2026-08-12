@@ -1,0 +1,2 @@
+ALTER TABLE "memberships" ADD COLUMN "current_entry_id" uuid;--> statement-breakpoint
+ALTER TABLE "memberships" ADD CONSTRAINT "memberships_current_entry_id_entries_id_fk" FOREIGN KEY ("current_entry_id") REFERENCES "public"."entries"("id") ON DELETE set null ON UPDATE no action;

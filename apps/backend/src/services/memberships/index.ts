@@ -6,6 +6,7 @@ import { acceptInvite } from "./accept-invite";
 import { type InviteDetails, listInvites } from "./list-invites";
 import { revokeInvite } from "./revoke-invite";
 import { resendInvite } from "./resend-invite";
+import { setCurrentEntry } from "./set-current-entry";
 
 const Memberships = {
   list: listMembers,
@@ -14,6 +15,7 @@ const Memberships = {
   invite: inviteMember,
   acceptInvite,
   listInvites,
+  setCurrentEntry,
   revokeInvite,
   resendInvite
 };

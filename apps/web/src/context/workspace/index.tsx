@@ -21,6 +21,7 @@ interface WorkspaceInfo {
   name: string;
   logo?: string;
   userID: string;
+  currentEntryID?: string;
   permissions: Permission[];
   admin: boolean;
 }

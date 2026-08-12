@@ -1,6 +1,6 @@
 import { toEntryID, toUUID } from "#backend/lib/primitives";
 import { db } from "#backend/lib/adapters";
-import { entries } from "#backend/db";
+import { entries, memberships } from "#backend/db";
 import { and, eq, inArray, isNull } from "drizzle-orm";
 
 const deleteEntries = async (input: {
@@ -20,6 +20,21 @@ const deleteEntries = async (input: {
       )
     )
     .returning({ id: entries.id });
+
+  if (deleted.length > 0) {
+    await db
+      .update(memberships)
+      .set({ currentEntryID: null, updatedAt: new Date() })
+      .where(
+        and(
+          eq(memberships.workspaceID, toUUID(input.workspaceID)),
+          inArray(
+            memberships.currentEntryID,
+            deleted.map(({ id }) => id)
+          )
+        )
+      );
+  }
 
   return { entryIDs: deleted.map(({ id }) => toEntryID(id)) };
 };

@@ -1,8 +1,9 @@
 import { id } from "#backend/lib/primitives";
 import { foreignKey, index, pgTable, unique, uuid } from "drizzle-orm/pg-core";
 import * as z from "zod";
-import { timestamps } from "./shared";
+import { entries } from "./entries";
 import { roles } from "./roles";
+import { timestamps } from "./shared";
 import { users } from "./users";
 import { workspaces } from "./workspaces";
 
@@ -23,6 +24,9 @@ const memberships = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     roleID: uuid("role_id").notNull(),
+    currentEntryID: uuid("current_entry_id").references(() => entries.id, {
+      onDelete: "set null"
+    }),
     ...timestamps
   },
   (table) => [
