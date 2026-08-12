@@ -35,6 +35,7 @@ import { Editor, isTextSelection } from "@tiptap/core";
 import { SlashMenu } from "./ui/menus/slash-menu";
 import { BlockMenuArea } from "./ui/menus/block-menu";
 import { ScrollShadow, createRef } from "@andesine/components";
+import clsx from "clsx";
 import { MAX_ENTRY_TITLE_LENGTH, normalizeEntryTitle, Title } from "./schema/title";
 import {
   TrailingNode,
@@ -215,7 +216,10 @@ const ClientEditor: Component<EditorProps> = (props) => {
       <div class="overflow-hidden relative flex h-full w-full">
         <ScrollShadow scrollableContainerRef={scrollableContainerRef} />
         <div
-          class="relative z-0 w-full overflow-x-hidden overflow-y-auto p-4 md:overflow-auto md:p-10 md:pt-16"
+          class={clsx(
+            "relative z-0 w-full overflow-x-hidden overflow-y-auto md:overflow-auto",
+            props.class
+          )}
           ref={setScrollableContainerRef}
           data-editor-scrollable-container
         >
@@ -252,8 +256,10 @@ const ClientEditor: Component<EditorProps> = (props) => {
 
                       const { state } = editor;
                       const { selection } = state;
+                      const isTitleSelection = selection.$from.parent.type.name === "title";
 
                       return (
+                        !isTitleSelection &&
                         !isBlockSelection(selection) &&
                         isTextSelection(selection) &&
                         !selection.empty

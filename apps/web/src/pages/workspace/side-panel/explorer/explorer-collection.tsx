@@ -40,10 +40,10 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
         </Show>
         <div class="flex relative min-h-7">
           <Show when={swipe.swiping()}>
-            <div class="pointer-events-none absolute inset-y-0 left-0 z-10 w-12 bg-gradient-to-r from-gray-100 to-transparent">
+            <div class="pointer-events-none absolute inset-y-0 left-0 z-10 w-12 bg-gradient-to-r from-gray-50 to-transparent">
               <div
                 class={clsx(
-                  "absolute inset-y-0 right-full w-screen bg-gray-100",
+                  "absolute inset-y-0 right-full w-screen bg-gray-50",
                   !props.topLevel && "border-r border-gray-300"
                 )}
               />
@@ -99,6 +99,7 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
               }
               actions={
                 <DropdownMenu
+                  title={props.collection.name}
                   cardProps={{
                     class: "w-48"
                   }}
@@ -121,6 +122,7 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
                       }}
                     >
                       <IconButton
+                        data-collection-menu-trigger
                         icon="i-lucide:ellipsis-vertical"
                         size="small"
                         variant="text"
@@ -187,7 +189,7 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
           <div class="relative h-0">
             <div class="flex bg-gradient-to-tr h-2.5px w-full absolute top-[-1.25px] items-center justify-center rounded-full pointer-events-none shadow-[0_0_8px_0] shadow-primary z-10">
               <div class="h-2.25 w-2.25 bg-gradient-to-tr rounded-full -left-1 flex justify-center items-center absolute">
-                <div class="h-1 w-1 bg-gray-100 rounded-full" />
+                <div class="h-1 w-1 bg-gray-50 md:bg-gray-100 rounded-full" />
               </div>
             </div>
           </div>

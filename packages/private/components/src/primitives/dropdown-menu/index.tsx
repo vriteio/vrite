@@ -18,7 +18,7 @@ import { Spinner } from "../spinner";
 import { Menu } from "@ark-ui/solid/menu";
 import { Tooltip } from "../tooltip";
 import { createMediaQuery } from "@solid-primitives/media";
-import { MobileMenuItems } from "./dropdown-menu-mobile";
+import { type MobileMenuNavigation, MobileMenuItems } from "./dropdown-menu-mobile";
 import {
   addIndices,
   flattenWithSeparators,
@@ -33,12 +33,14 @@ interface DropdownMenuProps<O extends MenuItem> extends Omit<
   items: Array<O | (() => JSX.Element)> | Array<Array<O | (() => JSX.Element)>>;
 }
 
-const MenuItems = <O extends MenuItem>(props: {
+interface MenuItemsProps<O extends MenuItem> {
   items: Array<"separator" | (O & { value: string }) | (() => JSX.Element)>;
   onClose(): void;
   cardProps?: Partial<ComponentProps<typeof Card>>;
   portal?: boolean;
-}) => (
+}
+
+const MenuItems = <O extends MenuItem>(props: MenuItemsProps<O>) => (
   <For each={props.items}>
     {(optionOrSeparator) => {
       if (optionOrSeparator === "separator") {
@@ -105,7 +107,7 @@ const MenuItems = <O extends MenuItem>(props: {
                       {...(props.cardProps || {})}
                       shade
                       class={clsx(
-                        `:base-2: z-50 flex flex-col p-1 transform min-w-32 rounded-[0.625rem] pointer-events-auto transition duration-150 shadow-black shadow-opacity-15 min-w-48 bg-white`,
+                        `:base-2: z-50 flex flex-col p-1 transform min-w-32 rounded-[0.625rem] pointer-events-auto transition duration-150 shadow-black shadow-opacity-15 min-w-48 bg-gray-50`,
                         props.cardProps?.class
                       )}
                       style={{
@@ -220,32 +222,44 @@ const MenuItems = <O extends MenuItem>(props: {
 );
 const DropdownMenu = <O extends MenuItem>(props: DropdownMenuProps<O>) => {
   const md = createMediaQuery("(min-width: 768px)");
-  const [, dropdownProps] = splitProps(props, ["items"]);
-  const [opened, setOpened] = createSignal(props.opened || false);
-  const optionsWithIndices = createMemo(() => addIndices(props.items));
+  const [localProps, dropdownProps] = splitProps(props, [
+    "items",
+    "opened",
+    "setOpened",
+    "placement",
+    "cardProps",
+    "portal",
+    "title"
+  ]);
+  const [opened, setOpened] = createSignal(localProps.opened || false);
+  const [mobileNavigation, setMobileNavigation] = createSignal<MobileMenuNavigation>();
   const flattenOptionsAndSeparators = createMemo(() => {
-    return flattenWithSeparators(optionsWithIndices());
+    return flattenWithSeparators(addIndices(localProps.items));
   });
 
   createEffect(() => {
-    if (typeof props.opened !== "undefined") {
-      setOpened(props.opened);
+    if (typeof localProps.opened !== "undefined") {
+      setOpened(localProps.opened);
     }
   });
   createEffect(() => {
-    props.setOpened?.(opened());
+    localProps.setOpened?.(opened());
   });
 
   return (
     <Dropdown
       {...dropdownProps}
-      placement={props.placement || "bottom-end"}
+      placement={localProps.placement || "bottom-end"}
       cardProps={{
-        ...props.cardProps,
-        class: clsx(":base-2: min-w-48 bg-white", props.cardProps?.class)
+        ...localProps.cardProps,
+        class: clsx(":base-2: min-w-48 bg-gray-50", localProps.cardProps?.class)
       }}
       opened={opened()}
-      portal={props.portal}
+      portal={localProps.portal}
+      title={localProps.title}
+      mobileNavigationBackAvailable={mobileNavigation()?.backAvailable}
+      mobileNavigationTitle={mobileNavigation()?.destinationTitle}
+      onMobileNavigationBack={() => mobileNavigation()?.onBack()}
       setOpened={setOpened}
     >
       <Show
@@ -255,8 +269,8 @@ const DropdownMenu = <O extends MenuItem>(props: DropdownMenuProps<O>) => {
             <MenuItems
               items={flattenOptionsAndSeparators()}
               onClose={() => setOpened(false)}
-              cardProps={props.cardProps}
-              portal={props.portal}
+              cardProps={localProps.cardProps}
+              portal={localProps.portal}
             />
           </div>
         }
@@ -264,7 +278,9 @@ const DropdownMenu = <O extends MenuItem>(props: DropdownMenuProps<O>) => {
         <MobileMenuItems
           items={flattenOptionsAndSeparators()}
           opened={opened()}
+          title={localProps.title}
           onClose={() => setOpened(false)}
+          onNavigationChange={setMobileNavigation}
         />
       </Show>
     </Dropdown>

@@ -6,6 +6,7 @@ const normalizeEntryTitle = (title: string) => title.trim() || "Untitled";
 const Title = Node.create({
   name: "title",
   content: "text*",
+  marks: "",
   priority: 1000,
   parseHTML() {
     return [{ tag: "header[data-type='title']" }];

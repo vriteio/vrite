@@ -2,8 +2,10 @@ import { type Accessor, createEffect, createSignal, type JSX } from "solid-js";
 import { createRef } from "../../ref";
 
 interface MobileDropdownDragOptions {
+  expanded: Accessor<boolean>;
   opened: Accessor<boolean>;
   close(): void;
+  setExpanded(expanded: boolean): void;
 }
 
 const DRAG_ACTIVATION_DISTANCE = 8;
@@ -89,6 +91,7 @@ const useMobileDropdownDrag = (options: MobileDropdownDragOptions) => {
     suppressNextClick();
 
     if (shouldExpand) {
+      options.setExpanded(true);
       setHeight(viewportHeight());
     } else if (shouldClose) {
       options.close();
@@ -256,7 +259,15 @@ const useMobileDropdownDrag = (options: MobileDropdownDragOptions) => {
   };
 
   createEffect(() => {
-    if (!options.opened()) resetGesture();
+    const expanded = options.expanded();
+
+    if (!options.opened()) {
+      resetGesture();
+    } else if (expanded && !dragging()) {
+      setHeight(viewportHeight());
+    } else if (!dragging() && !heightCleanupPending()) {
+      setHeight(null);
+    }
   });
 
   return {

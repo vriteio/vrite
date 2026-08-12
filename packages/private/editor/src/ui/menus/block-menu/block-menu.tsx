@@ -148,6 +148,7 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
 
   return (
     <DropdownMenu
+      title="Block actions"
       anchorPoint={props.anchorPoint}
       portal={false}
       positioningStrategy="absolute"

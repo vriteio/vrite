@@ -62,11 +62,11 @@ const PasskeyItem: Component<{
         icon={<div class="i-fluent:person-passkey-16-regular h-5.5 w-5.5 text-gray-400" />}
         onRename={props.onRename}
         renderLabel={(label) => (
-          <div class="flex-1 flex items-center gap-1.5">
-            <div class="flex items-center flex-1 gap-1.5" title={props.name}>
-              <div>{label}</div>
-              <div class="w-px h-4 bg-gray-200 rounded-full shrink-0" />
-              <span class="text-xs text-gray-400 shrink-0">
+          <div class="flex min-w-0 flex-1 items-center gap-1.5">
+            <div class="flex min-w-0 flex-1 items-center gap-1.5" title={props.name}>
+              <div class="min-w-0 truncate">{label}</div>
+              <div class="hidden h-4 w-px shrink-0 rounded-full bg-gray-200 md:block" />
+              <span class="hidden shrink-0 text-xs text-gray-400 md:inline">
                 {format(props.createdAt, "MMM d, yyyy")}
               </span>
               <div class="flex-1" />
@@ -76,6 +76,7 @@ const PasskeyItem: Component<{
         actions={
           <div onClick={(event: MouseEvent) => event.stopPropagation()}>
             <DropdownMenu
+              title={props.name}
               cardProps={{ class: "w-40" }}
               opened={menuOpened()}
               portal={false}

@@ -44,7 +44,7 @@ const ToggleGroup: Component<ToggleGroupProps> = (props) => (
           <BaseToggleGroup.Item
             value={option.value}
             class={clsx(
-              ":base: relative flex items-center justify-center gap-1 rounded-md font-medium text-gray-700",
+              ":base: relative flex items-center justify-center gap-1 rounded-md font-medium text-gray-700 whitespace-nowrap",
               active()
                 ? ":base: bg-white outline-gray-200 outline outline-1 shadow-md"
                 : ":base: focus:outline-none @hover:bg-gray-50 focus:bg-gray-50",

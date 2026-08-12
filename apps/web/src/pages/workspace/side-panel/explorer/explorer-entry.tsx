@@ -24,10 +24,10 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
   return (
     <div class="flex relative min-h-7">
       <Show when={swipe.swiping()}>
-        <div class="pointer-events-none absolute inset-y-0 left-0 z-10 w-12 bg-gradient-to-r from-gray-100 to-transparent">
+        <div class="pointer-events-none absolute inset-y-0 left-0 z-10 w-12 bg-gradient-to-r from-gray-50 to-transparent">
           <div
             class={clsx(
-              "absolute inset-y-0 right-full w-screen bg-gray-100",
+              "absolute inset-y-0 right-full w-screen bg-gray-50",
               !props.topLevel && "border-r border-gray-300"
             )}
           />
@@ -68,6 +68,7 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
           actions={
             <>
               <DropdownMenu
+                title={props.entry.name}
                 cardProps={{
                   class: "w-48"
                 }}
@@ -96,6 +97,7 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
                       }}
                     >
                       <IconButton
+                        data-entry-menu-trigger
                         icon="i-lucide:ellipsis-vertical"
                         size="small"
                         variant="text"
@@ -133,7 +135,7 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
           )}
         >
           <div class="h-2.25 w-2.25 bg-gradient-to-tr rounded-full -left-1 flex justify-center items-center absolute">
-            <div class="h-1 w-1 bg-gray-100 rounded-full" />
+            <div class="h-1 w-1 bg-gray-50 md:bg-gray-100 rounded-full" />
           </div>
         </div>
       </Show>

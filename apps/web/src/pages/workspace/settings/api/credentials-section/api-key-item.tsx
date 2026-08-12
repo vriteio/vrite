@@ -82,11 +82,13 @@ const APIKeyItem: Component<APIKeyItemProps> = (props) => {
         }
         onClick={props.canManage ? props.onEdit : undefined}
         renderLabel={(label) => (
-          <div class="flex-1 flex items-center gap-1.5">
-            <div class="flex items-center flex-1 gap-1.5" title={props.name}>
-              <div class={clsx(props.expiresAt && "line-through")}>{label}</div>
-              <div class="w-px h-4 bg-gray-200 rounded-full shrink-0" />
-              <span class="text-xs text-gray-400 shrink-0 font-mono">{props.prefix}...</span>
+          <div class="flex min-w-0 flex-1 items-center gap-1.5">
+            <div class="flex min-w-0 flex-1 items-center gap-1.5" title={props.name}>
+              <div class={clsx("min-w-0 truncate", props.expiresAt && "line-through")}>{label}</div>
+              <div class="hidden h-4 w-px shrink-0 rounded-full bg-gray-200 md:block" />
+              <span class="hidden shrink-0 font-mono text-xs text-gray-400 md:inline">
+                {props.prefix}...
+              </span>
               <div class="flex-1" />
               <span class={clsx("text-xs text-gray-400 shrink-0")}>
                 {format(props.createdAt, "MMM d, yyyy")}
@@ -98,6 +100,7 @@ const APIKeyItem: Component<APIKeyItemProps> = (props) => {
           <Show when={props.canManage}>
             <div onClick={(event: MouseEvent) => event.stopPropagation()}>
               <DropdownMenu
+                title={props.name}
                 cardProps={{ class: "w-48" }}
                 opened={menuOpened()}
                 portal={false}

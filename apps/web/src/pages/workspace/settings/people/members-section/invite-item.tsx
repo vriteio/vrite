@@ -75,12 +75,12 @@ const InviteItem: Component<{
         icon={<div class="i-lucide:mail h-5 w-5 text-gray-400" />}
         renderLabel={(label) => (
           <div
-            class="flex flex-1 items-center gap-1.5"
+            class="flex min-w-0 flex-1 items-center gap-1.5"
             title={`${inviteEmail()} | ${inviteRoleName()}`}
           >
-            <div class="max-w-48 truncate">{label}</div>
-            <div class="h-4 w-px shrink-0 rounded-full bg-gray-200" />
-            <span class="shrink-0 text-xs text-gray-400">{inviteRoleName()}</span>
+            <div class="min-w-0 max-w-48 truncate">{label}</div>
+            <div class="hidden h-4 w-px shrink-0 rounded-full bg-gray-200 md:block" />
+            <span class="hidden shrink-0 text-xs text-gray-400 md:inline">{inviteRoleName()}</span>
             <div class="flex-1" />
             <span class="shrink-0 text-xs text-gray-400">
               {format(props.invite.createdAt, "MMM d, yyyy")}
@@ -90,6 +90,7 @@ const InviteItem: Component<{
         actions={
           <div onClick={(event: MouseEvent) => event.stopPropagation()}>
             <DropdownMenu
+              title={inviteEmail()}
               cardProps={{ class: "w-52" }}
               opened={menuOpened()}
               portal={false}

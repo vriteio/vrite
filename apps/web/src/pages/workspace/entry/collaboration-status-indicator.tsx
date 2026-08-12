@@ -1,4 +1,5 @@
 import { Spinner } from "@andesine/components";
+import clsx from "clsx";
 import { type Component, createEffect, createSignal, onCleanup, Show } from "solid-js";
 
 type CollaborationStatus =
@@ -51,12 +52,11 @@ const CollaborationStatusIndicator: Component<CollaborationStatusIndicatorProps>
           fallback={<Spinner class="h-3.5 w-3.5" color="primary" />}
         >
           <div
-            classList={{
-              "i-lucide:cloud-off text-amber-600": props.status === "offline-changes",
-              "i-lucide:shield-alert text-red-600": props.status === "unauthorized",
-              "i-lucide:cloud-alert text-red-600": props.status === "failed"
-            }}
-            class="h-3.5 w-3.5"
+            class={clsx("h-3.5 w-3.5", {
+              "i-lucide:cloud-off bg-gradient-to-tr": props.status === "offline-changes",
+              "i-lucide:shield-alert text-red-500": props.status === "unauthorized",
+              "i-lucide:cloud-alert text-red-500": props.status === "failed"
+            })}
           />
         </Show>
         <span>

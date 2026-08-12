@@ -11,6 +11,8 @@ import { getCollaborationStatus, getCollaborationUser } from "./editor-collabora
 import { EntryContentSkeleton, EntryLoadError } from "./editor-pane-states";
 import { createLocalEditorSnapshotLifecycle, LocalSnapshotError } from "./local-editor-snapshot";
 
+const EDITOR_CONTENT_PADDING = "px-2.5 pb-5 pt-5 md:px-10 md:pb-10 md:pt-20";
+
 const EditorPane: Component = () => {
   const { currentWorkspace, currentSession, content, hasPermission } = useWorkspace();
   const isContentLoading = () => content.loading();
@@ -103,7 +105,7 @@ const EditorPane: Component = () => {
               }
             >
               <div class="relative h-full w-full overflow-hidden">
-                <EntryContentSkeleton />
+                <EntryContentSkeleton class={EDITOR_CONTENT_PADDING} />
               </div>
             </Show>
           }
@@ -111,7 +113,7 @@ const EditorPane: Component = () => {
           {(entryID) => (
             <div class="relative flex h-full w-full overflow-hidden">
               <Show when={isShowingContentSkeleton()}>
-                <EntryContentSkeleton />
+                <EntryContentSkeleton class={EDITOR_CONTENT_PADDING} />
               </Show>
               <Show when={entryLoadState().problem} keyed>
                 {(problem) => (
@@ -136,6 +138,7 @@ const EditorPane: Component = () => {
                 classList={{ invisible: !entryLoadState().editorReady }}
               >
                 <Editor
+                  class={EDITOR_CONTENT_PADDING}
                   doc={entryID}
                   url={`${config.PUBLIC_WS_API_URL}/collab`}
                   providerAttempt={providerAttempt()}

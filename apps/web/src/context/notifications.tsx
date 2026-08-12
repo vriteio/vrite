@@ -12,6 +12,7 @@ import {
 } from "solid-js";
 import clsx from "clsx";
 import { Card, Button, Spinner } from "@andesine/components";
+import styles from "./notifications.module.scss";
 
 interface NotificationData {
   type: "success" | "error" | "info" | "loading";
@@ -187,7 +188,8 @@ const NotificationsProvider: ParentComponent = (props) => {
       {props.children}
       <div
         ref={container}
-        class="fixed left-4 right-4 top-[calc(1rem+env(safe-area-inset-top,0px))] z-60 w-auto transition-[height] duration-200 md:bottom-6 md:left-auto md:right-6 md:top-auto md:w-92"
+        class="fixed left-4 right-4 top-[calc(1rem+env(safe-area-inset-top,0px))] z-80 w-auto transition-[height] duration-200 md:bottom-6 md:left-auto md:right-6 md:top-auto md:w-92"
+        data-notifications
         style={{ height: `${stackHeight()}px` }}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
@@ -207,7 +209,10 @@ const NotificationsProvider: ParentComponent = (props) => {
                   notificationElements.delete(notification.id);
                 });
               }}
-              class="notification-stack-item absolute bottom-0 left-0 w-full transition-all duration-200"
+              class={clsx(
+                styles.stackItem,
+                "absolute bottom-0 left-0 w-full transition-all duration-200"
+              )}
               style={{
                 "z-index": `${notifications().length - index()}`,
                 "bottom": `${getBottomOffset(index())}px`,

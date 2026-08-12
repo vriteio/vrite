@@ -1,6 +1,8 @@
 import { IconButton, Skeleton } from "@andesine/components";
 import { type Component, Show } from "solid-js";
+import clsx from "clsx";
 import type { EntryLoadState } from "./entry-load-state";
+import { DotsBackground } from "#web/components/dots-background";
 
 interface EntryLoadErrorProps {
   problem: Exclude<EntryLoadState["problem"], null>;
@@ -9,12 +11,16 @@ interface EntryLoadErrorProps {
   onBack(): void;
 }
 
+interface EntryContentSkeletonProps {
+  class?: string;
+}
+
 const EntryLoadError: Component<EntryLoadErrorProps> = (props) => {
   const isUnauthorized = () => props.problem === "unauthorized";
   const isLocalTimeout = () => props.problem === "local-timeout";
   return (
     <div class="absolute inset-0 z-10 flex items-center justify-center bg-gray-50 md:px-5">
-      <div class="dots-background absolute mask-edge-fading-16" />
+      <DotsBackground class="absolute mask-edge-fading-16" />
       <div class="relative p-4 lg:p-24">
         <div class="absolute left-0 top-0 h-full w-full rounded-2xl bg-gray-100 mask-edge-fading-4 lg:mask-edge-fading-24" />
         <div class="relative flex w-72 flex-col gap-4">
@@ -54,8 +60,8 @@ const EntryLoadError: Component<EntryLoadErrorProps> = (props) => {
   );
 };
 
-const EntryContentSkeleton: Component = () => (
-  <div class="absolute inset-0 z-10 bg-gray-50 px-2.5 pb-5 pt-5 md:px-10 md:pb-10 md:pt-20">
+const EntryContentSkeleton: Component<EntryContentSkeletonProps> = (props) => (
+  <div class={clsx("absolute inset-0 z-10 bg-gray-50", props.class)}>
     <div class="relative mx-auto flex w-full max-w-[44rem] flex-col gap-2">
       <Skeleton class={["h-12 w-4/5", "h-32 w-full", "h-24 w-full", "h-8 w-3/5", "h-40 w-full"]} />
       <div

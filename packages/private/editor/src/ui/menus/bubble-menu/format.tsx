@@ -176,7 +176,7 @@ const FormatMenu: Component<{
           size="xs"
           aria-label="Close keyboard"
           onClick={(event) => {
-            props.editor.commands.blur();
+            props.editor.chain().blur().setMeta("bubbleMenu", "hide").run();
             event.preventDefault();
             event.stopPropagation();
           }}

@@ -13,6 +13,7 @@ interface SelectProps<O extends Option> {
   options: O[];
   value?: string;
   placeholder?: string;
+  title?: string;
   class?: string;
   setOpened?(opened: boolean): void;
   setValue?(value: string): void;
@@ -33,6 +34,7 @@ const Select = <O extends Option>(props: SelectProps<O>): JSX.Element => {
 
   return (
     <DropdownMenu
+      title={props.title || props.placeholder || "Select"}
       placement="bottom-end"
       class={props.class}
       disabled={props.disabled}

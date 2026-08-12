@@ -11,6 +11,7 @@ type EditorProviderSetup = (
   provider: EditorProvider
 ) => EditorProviderSetupResult | Promise<EditorProviderSetupResult>;
 interface EditorProps {
+  class?: string;
   url: string;
   doc: string;
   editable?: boolean;

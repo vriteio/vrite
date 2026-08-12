@@ -1,8 +1,9 @@
-import { Fragment } from "./fragment";
+import { Fragment } from "../fragment";
 import { Dialog } from "@ark-ui/solid/dialog";
 import clsx from "clsx";
 import { type Component, createSignal, type JSX, splitProps } from "solid-js";
 import { Dynamic, Portal } from "solid-js/web";
+import styles from "./styles.module.scss";
 
 interface OverlayProps extends JSX.HTMLAttributes<HTMLDivElement> {
   opened: boolean;
@@ -11,7 +12,6 @@ interface OverlayProps extends JSX.HTMLAttributes<HTMLDivElement> {
   shadeClass?: string;
   portal?: boolean;
   wrapperClass?: string;
-  hiddenClass?: string;
   onOverlayClick?(): void;
   closeOnEscape?: boolean;
   trapFocus?: boolean;
@@ -20,7 +20,7 @@ interface OverlayProps extends JSX.HTMLAttributes<HTMLDivElement> {
 }
 
 const Overlay: Component<OverlayProps> = (props) => {
-  const [transitionInProgress, setTransitionInProgress] = createSignal(false);
+  const [entryAnimationInProgress, setEntryAnimationInProgress] = createSignal(false);
   const [, passedProps] = splitProps(props, [
     "opened",
     "children",
@@ -29,7 +29,6 @@ const Overlay: Component<OverlayProps> = (props) => {
     "portal",
     "onOverlayClick",
     "wrapperClass",
-    "hiddenClass",
     "closeOnEscape",
     "trapFocus",
     "restoreFocus",
@@ -44,28 +43,25 @@ const Overlay: Component<OverlayProps> = (props) => {
       preventScroll={props.lockScroll !== false}
       restoreFocus={props.restoreFocus !== false}
       closeOnEscape={props.closeOnEscape !== false}
+      persistentElements={[() => document.querySelector("[data-notifications]")]}
       onOpenChange={(details) => {
-        if (!details.open && !transitionInProgress()) {
+        if (!details.open && !entryAnimationInProgress()) {
           props.onOverlayClick?.();
         }
       }}
     >
-      <Dynamic component={props.portal ? Portal : Fragment}>
+      <Dynamic component={props.portal === false ? Fragment : Portal}>
         <Dialog.Positioner
           {...passedProps}
           class={clsx(
-            `:base: fixed top-0 left-0 z-50 flex items-center justify-center w-[100dvw] h-[100dvh] transition-all duration-300 transform`,
-            props.opened
-              ? "opacity-100 visible backdrop-blur-sm"
-              : props.hiddenClass || "opacity-0 invisible",
+            ":base: fixed top-0 left-0 z-70 flex items-center justify-center w-[100dvw] h-[100dvh]",
             props.class
           )}
-          onTransitionStart={() => setTransitionInProgress(true)}
-          onTransitionEnd={() => setTransitionInProgress(false)}
         >
           <Dialog.Backdrop
             class={clsx(
-              `:base: absolute w-full h-full bg-gradient-to-b from-black from-opacity-20 to-black to-opacity-60`,
+              styles.backdrop,
+              ":base: absolute w-full h-full bg-gradient-to-b md:from-black md:from-opacity-20 md:to-black md:to-opacity-60 from-transparent via-black via-opacity-20 to-transparent",
               props.shadeClass
             )}
             onPointerDown={(event) => {
@@ -75,11 +71,22 @@ const Overlay: Component<OverlayProps> = (props) => {
             }}
           />
           <Dialog.Content
-            class={clsx(
-              "z-0 transition-all duration-300 outline-none",
-              !props.opened && "translate-y-5 opacity-0",
-              props.wrapperClass
-            )}
+            class={clsx(styles.content, "z-0 outline-none", props.wrapperClass)}
+            onAnimationStart={(event) => {
+              if (event.currentTarget === event.target && props.opened) {
+                setEntryAnimationInProgress(true);
+              }
+            }}
+            onAnimationEnd={(event) => {
+              if (event.currentTarget === event.target) {
+                setEntryAnimationInProgress(false);
+              }
+            }}
+            onAnimationCancel={(event) => {
+              if (event.currentTarget === event.target) {
+                setEntryAnimationInProgress(false);
+              }
+            }}
           >
             {props.children}
           </Dialog.Content>

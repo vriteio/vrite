@@ -15,7 +15,7 @@
 
 // Document title
 header[data-type="title"] {
-  @apply font-semibold text-5xl my-3;
+  @apply font-semibold text-5xl mb-3;
 }
 
 @screen lt-md {

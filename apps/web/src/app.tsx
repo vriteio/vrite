@@ -1,6 +1,11 @@
 import { Router, createAsync, query, redirect, revalidate } from "@solidjs/router";
 import { MetaProvider, Title } from "@solidjs/meta";
-import { TooltipProvider, ShortcutsProvider, IconButton } from "@andesine/components";
+import {
+  DropdownProvider,
+  IconButton,
+  ShortcutsProvider,
+  TooltipProvider
+} from "@andesine/components";
 import { QueryClient, QueryClientProvider } from "@tanstack/solid-query";
 import { ErrorBoundary, type ParentComponent, Suspense, createSignal } from "solid-js";
 import { NotificationsProvider } from "./context/notifications";
@@ -10,6 +15,7 @@ import { authClient } from "./lib/api";
 import { getRequestEvent } from "solid-js/web";
 import { appendRedirectTo, normalizeRedirectTo, routes } from "./lib/navigation";
 import { validateWorkspaceID } from "./lib/validation";
+import { DotsBackground } from "./components/dots-background";
 
 const rootRedirectQuery = query(async () => {
   const event = getRequestEvent();
@@ -88,7 +94,7 @@ const AppError = (props: AppErrorProps) => {
   return (
     <main class="relative flex h-full w-full items-center justify-center">
       <Title>Something went wrong | Andesine</Title>
-      <div class="dots-background absolute mask-edge-fading-16" />
+      <DotsBackground class="absolute mask-edge-fading-16" />
       <div class="relative p-4 lg:p-24">
         <div class="absolute left-0 top-0 h-full w-full rounded-2xl bg-gray-100 mask-edge-fading-4 lg:mask-edge-fading-24" />
         <div class="relative flex w-72 flex-col gap-4">
@@ -122,18 +128,20 @@ const RootLayout: ParentComponent = (props) => {
     <MetaProvider>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
-          <ShortcutsProvider>
-            <NotificationsProvider>
-              <ClipboardProvider>
-                <LayoutProvider>
-                  <ErrorBoundary fallback={(_, reset) => <AppError reset={reset} />}>
-                    {/* No fallback here to avoid showing loading state while the root redirect query is being resolved */}
-                    <Suspense>{props.children}</Suspense>
-                  </ErrorBoundary>
-                </LayoutProvider>
-              </ClipboardProvider>
-            </NotificationsProvider>
-          </ShortcutsProvider>
+          <DropdownProvider>
+            <ShortcutsProvider>
+              <NotificationsProvider>
+                <ClipboardProvider>
+                  <LayoutProvider>
+                    <ErrorBoundary fallback={(_, reset) => <AppError reset={reset} />}>
+                      {/* No fallback here to avoid showing loading state while the root redirect query is being resolved */}
+                      <Suspense>{props.children}</Suspense>
+                    </ErrorBoundary>
+                  </LayoutProvider>
+                </ClipboardProvider>
+              </NotificationsProvider>
+            </ShortcutsProvider>
+          </DropdownProvider>
         </TooltipProvider>
       </QueryClientProvider>
     </MetaProvider>

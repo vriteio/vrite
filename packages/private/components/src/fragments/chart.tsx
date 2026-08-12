@@ -102,10 +102,24 @@ const LineChart: Component<LineChartProps> = (props) => {
   const xTickIndices = createMemo(() => {
     const n = props.data.length;
     const step = Math.max(1, Math.ceil(n / MAX_X_TICKS));
+
     return n === 0
       ? []
-      : props.data.map((_, i) => i).filter((i) => i === 0 || i % step === 0 || i === n - 1);
+      : props.data
+          .map((_, i) => i)
+          .filter((i) => {
+            const isEdgeTick = i === 0 || i === n - 1;
+            const isSpacedStepTick = i % step === 0 && n - 1 - i >= step;
+
+            return isEdgeTick || isSpacedStepTick;
+          });
   });
+  const xTickAnchor = (index: number) => {
+    if (index === 0) return "start";
+    if (index === props.data.length - 1) return "end";
+
+    return "middle";
+  };
 
   const handleMouseMove = (e: MouseEvent) => {
     const n = props.data.length;
@@ -233,7 +247,7 @@ const LineChart: Component<LineChartProps> = (props) => {
             <text
               x={xScale()(xTickIndex)}
               y={svgH() - PAD.bottom + 14}
-              text-anchor="middle"
+              text-anchor={xTickAnchor(xTickIndex)}
               font-size="10"
               fill="rgba(156,163,175,0.85)"
             >

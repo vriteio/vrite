@@ -43,6 +43,7 @@ const SlashMenuDropdown: Component<SlashMenuDropdownProps> = (props) => {
 
   return (
     <DropdownMenu
+      title="Commands"
       anchorPoint={props.anchorPoint}
       cardProps={{ class: "w-64" }}
       class={props.class}

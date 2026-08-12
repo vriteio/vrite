@@ -132,9 +132,11 @@ const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
     const closeOnNavigation = (event: MouseEvent) => {
       const target = event.target;
       const navigationTarget = target instanceof Element && target.closest("a, [data-entry]");
+      const menuTriggerTarget =
+        target instanceof Element && target.closest("[data-entry-menu-trigger]");
       const mobilePanelTarget = target instanceof Element && target.closest("[data-mobile-panel]");
 
-      if (navigationTarget && mobilePanelTarget) {
+      if (navigationTarget && mobilePanelTarget && !menuTriggerTarget) {
         setMobilePanelOpened(false);
       }
     };
@@ -196,13 +198,19 @@ const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
         </div>
       </div>
       <Dropdown
+        title={
+          mobilePanel() === "explorer"
+            ? "Explorer"
+            : mobilePanel() === "settings"
+              ? "Settings"
+              : "Help"
+        }
         class="md:hidden"
         anchorPoint={{ x: 0, y: 0 }}
         mobileSheetDragFromContent={mobilePanel() !== "explorer"}
         opened={mobilePanelOpened()}
         setOpened={setMobilePanelOpened}
         cardProps={{
-          class: "max-md:bg-gray-100",
           style: { "min-height": mobilePanel() === "explorer" ? "50dvh" : undefined }
         }}
         portal

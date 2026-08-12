@@ -123,9 +123,9 @@ const SettingsLayout: Component<RouteSectionProps> = (props) => {
           <div class="relative flex h-full w-full overflow-hidden">
             <ScrollShadow scrollableContainerRef={scrollableContainerRef} />
             <div class="relative z-0 w-full overflow-auto" ref={setScrollableContainerRef}>
-              <div class="flex w-full flex-col items-center px-2.5 pb-5 pt-4 md:px-10 md:pb-10 md:pt-16">
-                <div class="relative my-2 flex w-full max-w-[44rem] flex-col">
-                  <h1 class="my-3 text-4xl font-semibold md:text-5xl">{title()}</h1>
+              <div class="flex w-full flex-col items-center px-2.5 pb-5 pt-5 md:px-10 md:pb-10 md:pt-20">
+                <div class="relative flex w-full max-w-[44rem] flex-col">
+                  <h1 class="mb-3 text-4xl font-semibold md:text-5xl">{title()}</h1>
                   <Show
                     when={canAccessRoute()}
                     fallback={

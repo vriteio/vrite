@@ -1,0 +1,6 @@
+/* Background */
+.background {
+  @apply left-0 top-0 -z-1 h-full w-full bg-center;
+  background-image: radial-gradient(rgba(229, 231, 235, 0.8) 2px, transparent 0);
+  background-size: 16px 16px;
+}

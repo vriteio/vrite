@@ -113,13 +113,14 @@ const Explorer = () => {
             >
               <div
                 ref={setTitleRef}
-                class="sticky top-0 z-20 -mx-1 flex h-9 shrink-0 items-center gap-2 bg-gray-100 px-1 max-md:bg-gray-100"
+                class="sticky top-0 z-20 -mx-1 flex h-9 shrink-0 items-center gap-2 px-1 bg-gray-50 md:bg-gray-100"
               >
-                <h2 class="text-2xl font-semibold">Explorer</h2>
+                <h2 class="text-2xl font-semibold flex-1">Explorer</h2>
                 <Show when={content.offline()}>
-                  <span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
-                    Offline: read-only
-                  </span>
+                  <div class="flex text-xs gap-1 items-center bg-gray-50 px-1.5 py-0.5 rounded-lg border border-gray-200">
+                    <div class="i-lucide:cloud-off h-3.5 w-3.5 bg-gradient-to-tr" />
+                    <span class="text-gray-500">Offline</span>
+                  </div>
                 </Show>
               </div>
               <div
@@ -192,6 +193,7 @@ const Explorer = () => {
             </Portal>
           </Show>
           <DropdownMenu
+            title="Explorer"
             cardProps={{ class: "w-52" }}
             items={options}
             mobileSheetDragFromContent={false}

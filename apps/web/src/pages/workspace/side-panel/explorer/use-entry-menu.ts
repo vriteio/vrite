@@ -9,6 +9,10 @@ const useEntryMenu = (entryID: string) => {
   const { content } = useWorkspace();
   const [{ selection }, { setRenaming, setSelection }] = useTree();
   const [menuOpened, setMenuOpened] = createSignal(false);
+  const startRenaming = () => {
+    setMenuOpened(false);
+    queueMicrotask(() => setRenaming(entryID));
+  };
   const dropdownOptions = createMemo(() => {
     const options: Array<MenuItem[]> = [];
     const selectedCount = selection().length;
@@ -32,7 +36,7 @@ const useEntryMenu = (entryID: string) => {
           icon: "i-lucide:pencil",
           shortcut: "f2",
           onClick: () => {
-            if (!content.readOnly()) setRenaming(entryID);
+            if (!content.readOnly()) startRenaming();
           }
         }
       ]);

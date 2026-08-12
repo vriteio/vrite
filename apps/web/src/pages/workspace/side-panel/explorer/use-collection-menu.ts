@@ -9,6 +9,10 @@ const useCollectionMenu = (collectionID: string) => {
   const { content } = useWorkspace();
   const [{ selection }, { setExpanded, setRenaming, setSelection }] = useTree();
   const [menuOpened, setMenuOpened] = createSignal(false);
+  const startRenaming = (id: string) => {
+    setMenuOpened(false);
+    queueMicrotask(() => setRenaming(id));
+  };
   const dropdownOptions = createMemo(() => {
     const opts: Array<MenuItem[]> = [];
     const selectedCount = selection().length;
@@ -33,7 +37,7 @@ const useCollectionMenu = (collectionID: string) => {
           onClick: () => {
             if (content.readOnly()) return;
 
-            setRenaming(collectionID);
+            startRenaming(collectionID);
           },
           shortcut: "f2"
         }
@@ -47,7 +51,7 @@ const useCollectionMenu = (collectionID: string) => {
 
             const entry = content.entries.create({ collectionID });
 
-            setRenaming(entry?.id || "");
+            startRenaming(entry?.id || "");
             setExpanded((prev) => {
               return prev.includes(collectionID) ? prev : [...prev, collectionID];
             });
@@ -62,7 +66,7 @@ const useCollectionMenu = (collectionID: string) => {
 
             const collection = content.collections.create({ parentID: collectionID });
 
-            setRenaming(collection?.id || "");
+            startRenaming(collection?.id || "");
             setExpanded((prev) => {
               return prev.includes(collectionID) ? prev : [...prev, collectionID];
             });

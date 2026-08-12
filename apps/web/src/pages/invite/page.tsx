@@ -5,6 +5,7 @@ import { authClient, client } from "#web/lib/api";
 import { IconButton } from "@andesine/components";
 import { appendRedirectTo } from "#web/lib/navigation";
 import { createMutation } from "@tanstack/solid-query";
+import { DotsBackground } from "#web/components/dots-background";
 
 type InviteErrorCode =
   | "INVITE_ACCOUNT_MISMATCH"
@@ -111,7 +112,7 @@ const InvitePage: Component = () => {
   return (
     <main class="relative flex h-full w-full items-center justify-center">
       <Title>Workspace invitation | Andesine</Title>
-      <div class="dots-background absolute mask-edge-fading-16" />
+      <DotsBackground class="absolute mask-edge-fading-16" />
       <div class="relative p-4 lg:p-24">
         <div class="absolute left-0 top-0 h-full w-full rounded-2xl bg-gray-100 mask-edge-fading-4 lg:mask-edge-fading-24" />
         <div class="relative flex w-72 flex-col gap-4">

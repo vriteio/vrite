@@ -90,13 +90,13 @@ const MemberItem: Component<{
         icon={<div class="i-lucide:id-card h-5 w-5 text-gray-400" />}
         renderLabel={(label) => (
           <div
-            class="flex flex-1 items-center gap-1.5"
+            class="flex min-w-0 flex-1 items-center gap-1.5"
             title={[memberName(), memberEmail()].filter(Boolean).join(" | ")}
           >
-            <div class="max-w-48 truncate">{label}</div>
+            <div class="min-w-0 max-w-48 truncate">{label}</div>
             <Show when={memberEmail()}>
-              <div class="h-4 w-px rounded-full bg-gray-200 shrink-0" />
-              <span class="max-w-48 truncate text-xs text-gray-400 shrink-0">
+              <div class="hidden h-4 w-px shrink-0 rounded-full bg-gray-200 md:block" />
+              <span class="hidden max-w-48 shrink-0 truncate text-xs text-gray-400 md:inline">
                 {memberEmail()}
                 <Show when={props.currentUser}>
                   {" "}
@@ -116,6 +116,7 @@ const MemberItem: Component<{
           <Show when={props.canManage}>
             <div onClick={(event: MouseEvent) => event.stopPropagation()}>
               <DropdownMenu
+                title={memberName()}
                 cardProps={{ class: "w-48" }}
                 opened={menuOpened()}
                 portal={false}

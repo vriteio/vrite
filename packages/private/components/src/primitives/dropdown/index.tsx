@@ -20,10 +20,14 @@ import { Dynamic } from "solid-js/web";
 import { Menu } from "@ark-ui/solid/menu";
 import { createMediaQuery } from "@solid-primitives/media";
 import { DropdownDesktopMenu } from "./dropdown-desktop-menu";
-import { DropdownMobileSheet } from "./dropdown-mobile-sheet";
+import { DropdownProvider, useDropdownContext } from "./dropdown-context";
+import { DropdownMobileContent, DropdownMobileSheet } from "./dropdown-mobile-sheet";
 import { useDropdownLongPress } from "./use-dropdown-long-press";
 
-type Point = { x: number; y: number };
+interface Point {
+  x: number;
+  y: number;
+}
 
 interface DropdownAreaProps {
   enabled?(event: PointerEvent | MouseEvent): boolean;
@@ -41,15 +45,21 @@ interface DropdownProps extends JSX.HTMLAttributes<HTMLDivElement> {
   portal?: boolean;
   positioningStrategy?: "absolute" | "fixed";
   trigger?: Component<{ contextMenu: boolean; opened: boolean }>;
+  title?: string;
   offset?: { mainAxis?: number; crossAxis?: number };
   mobileSheetDragFromContent?: boolean;
+  mobileNavigationBackAvailable?: boolean;
+  mobileNavigationTitle?: string;
   onContextMenuChange?(contextMenu: boolean): void;
+  onMobileNavigationBack?(): void;
   setOpened?(opened: boolean): void;
 }
 
-const DropdownAreaContext = createContext<{
+interface DropdownAreaContextValue {
   onContextMenu(callback: (event: MouseEvent | PointerEvent) => void): void;
-}>({
+}
+
+const DropdownAreaContext = createContext<DropdownAreaContextValue>({
   onContextMenu: () => {}
 });
 const DropdownArea: ParentComponent<DropdownAreaProps> = (props) => {
@@ -103,14 +113,20 @@ const DropdownArea: ParentComponent<DropdownAreaProps> = (props) => {
 let activeContextMenuClose: (() => void) | null = null;
 
 const Dropdown: Component<DropdownProps> = (props) => {
+  const mobileDropdownId = Symbol("mobile-dropdown");
   const md = createMediaQuery("(min-width: 768px)");
   const [contextAnchorPoint, setContextAnchorPoint] = createSignal<Point | null>(null);
   const [ghostAnchorRef, setGhostAnchorRef] = createRef<HTMLElement | null>(null);
   const [activatorRef, setActivatorRef] = createRef<HTMLElement | null>(null);
   const [opened, setOpened] = createSignal(props.opened || false);
   const [closing, setClosing] = createSignal(false);
-  let closeTimer: ReturnType<typeof setTimeout> | null = null;
-  let contextMenuFrame: number | null = null;
+  const {
+    activeMobileDropdown: getActiveMobileDropdown,
+    closeMobileDropdowns,
+    mobileDropdownStack,
+    removeMobileDropdown,
+    setMobileDropdownStack
+  } = useDropdownContext();
   const { onContextMenu } = useContext(DropdownAreaContext);
   const positioningStrategy = () => props.positioningStrategy || "fixed";
   const toPositioningPoint = (point: Point): Point => {
@@ -130,6 +146,13 @@ const Dropdown: Component<DropdownProps> = (props) => {
     return props.anchorPoint ? toPositioningPoint(props.anchorPoint) : null;
   });
   const anchorPoint = () => contextAnchorPoint() || externalAnchorPoint();
+  const mobileDropdownIndex = () => {
+    return mobileDropdownStack().findIndex((entry) => entry.id === mobileDropdownId);
+  };
+  const activeMobileDropdown = () => {
+    return getActiveMobileDropdown()?.id === mobileDropdownId;
+  };
+  const mobileDropdownHost = () => mobileDropdownIndex() === 0;
   const getAnchorElement = (): HTMLElement | null => {
     // If context menu point is set, use ghost anchor; otherwise use activator
     if (anchorPoint()) {
@@ -146,9 +169,9 @@ const Dropdown: Component<DropdownProps> = (props) => {
     return props.placement || "bottom-start";
   };
   const finishClose = () => {
-    closeTimer = null;
     setOpened(false);
     setContextAnchorPoint(null);
+    removeMobileDropdown(mobileDropdownId);
 
     if (activeContextMenuClose === closeDropdown) {
       activeContextMenuClose = null;
@@ -158,20 +181,22 @@ const Dropdown: Component<DropdownProps> = (props) => {
     if (!md() && opened()) {
       if (closing()) return;
       setClosing(true);
-      closeTimer = setTimeout(finishClose, 200);
     } else {
       setClosing(false);
       finishClose();
     }
   };
+  const closeDropdownImmediately = () => {
+    setClosing(false);
+    finishClose();
+  };
   const handleOpenChange = (details: { open: boolean }): void => {
     if (!details.open) {
-      closeDropdown();
+      if (md()) closeDropdown();
+
       return;
     }
 
-    if (closeTimer) clearTimeout(closeTimer);
-    closeTimer = null;
     setClosing(false);
     setOpened(true);
   };
@@ -181,23 +206,19 @@ const Dropdown: Component<DropdownProps> = (props) => {
     onContextMenu((event) => {
       const reopenCurrentDropdown = opened();
 
-      if (activeContextMenuClose && activeContextMenuClose !== closeDropdown) {
+      if (md() && activeContextMenuClose && activeContextMenuClose !== closeDropdown) {
         activeContextMenuClose();
       }
 
       const openContextMenu = () => {
         setContextAnchorPoint(toPositioningPoint({ x: event.clientX, y: event.clientY }));
         handleOpenChange({ open: true });
-        activeContextMenuClose = closeDropdown;
+        if (md()) activeContextMenuClose = closeDropdown;
       };
 
       if (reopenCurrentDropdown) {
         closeDropdown();
-        if (contextMenuFrame !== null) cancelAnimationFrame(contextMenuFrame);
-        contextMenuFrame = requestAnimationFrame(() => {
-          contextMenuFrame = null;
-          openContextMenu();
-        });
+        queueMicrotask(openContextMenu);
       } else {
         openContextMenu();
       }
@@ -207,11 +228,33 @@ const Dropdown: Component<DropdownProps> = (props) => {
     });
   });
   onCleanup(() => {
-    if (contextMenuFrame !== null) cancelAnimationFrame(contextMenuFrame);
-    if (closeTimer) clearTimeout(closeTimer);
-
     if (activeContextMenuClose === closeDropdown) {
       activeContextMenuClose = null;
+    }
+
+    removeMobileDropdown(mobileDropdownId);
+  });
+  createEffect(() => {
+    const stackIndex = mobileDropdownIndex();
+
+    if (!md() && opened() && stackIndex === -1) {
+      setMobileDropdownStack((stack) => [
+        ...stack,
+        {
+          id: mobileDropdownId,
+          close: closeDropdown,
+          closeImmediately: closeDropdownImmediately,
+          getCardProps: () => props.cardProps,
+          getClosing: closing,
+          getDragFromContent: () => props.mobileSheetDragFromContent !== false,
+          getNavigationBackAvailable: () => Boolean(props.mobileNavigationBackAvailable),
+          getNavigationTitle: () => props.mobileNavigationTitle,
+          getTitle: () => props.title,
+          onNavigationBack: () => props.onMobileNavigationBack?.()
+        }
+      ]);
+    } else if ((md() || !opened()) && stackIndex !== -1) {
+      removeMobileDropdown(mobileDropdownId);
     }
   });
   createEffect(
@@ -221,7 +264,11 @@ const Dropdown: Component<DropdownProps> = (props) => {
         if (typeof externalOpened === "undefined") return;
 
         if (externalOpened) handleOpenChange({ open: true });
-        else if (opened()) closeDropdown();
+        else if (opened()) {
+          if (md()) closeDropdown();
+          else if (mobileDropdownIndex() > 0) closeDropdownImmediately();
+          else closeMobileDropdowns();
+        }
       }
     )
   );
@@ -274,6 +321,7 @@ const Dropdown: Component<DropdownProps> = (props) => {
             disabled={props.disabled}
             onClick={(event) => {
               event.stopPropagation();
+              if (!md() && opened()) closeMobileDropdowns();
             }}
             asChild={(triggerProps) => (
               <div ref={setActivatorRef} class="contents" {...triggerProps()}>
@@ -289,15 +337,12 @@ const Dropdown: Component<DropdownProps> = (props) => {
         <Show
           when={md()}
           fallback={
-            <DropdownMobileSheet
-              cardProps={props.cardProps}
-              closing={closing()}
-              dragFromContent={props.mobileSheetDragFromContent !== false}
-              opened={opened()}
-              onClose={() => handleOpenChange({ open: false })}
-            >
-              {props.children}
-            </DropdownMobileSheet>
+            <>
+              <DropdownMobileSheet host={mobileDropdownHost()} />
+              <DropdownMobileContent active={activeMobileDropdown()} opened={opened()}>
+                {props.children}
+              </DropdownMobileContent>
+            </>
           }
         >
           <DropdownDesktopMenu cardProps={props.cardProps} opened={opened()} portal={props.portal}>
@@ -309,4 +354,4 @@ const Dropdown: Component<DropdownProps> = (props) => {
   );
 };
 
-export { Dropdown, DropdownArea };
+export { Dropdown, DropdownArea, DropdownProvider };

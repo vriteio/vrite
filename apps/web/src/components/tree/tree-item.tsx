@@ -165,10 +165,10 @@ const TreeItem: Component<TreeItemProps> = (props) => {
               <input
                 ref={(el) => {
                   setCurrentName(props.label);
-                  setTimeout(() => {
+                  queueMicrotask(() => {
                     el.focus();
                     el.select();
-                  }, 0);
+                  });
                 }}
                 type="text"
                 value={currentName()}

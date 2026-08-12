@@ -3,6 +3,7 @@ import { type RouteSectionProps } from "@solidjs/router";
 import { AnimatedGradientCard } from "#web/components/animated-gradient-card";
 import { NoHydration } from "solid-js/web";
 import { Skeleton } from "@andesine/components";
+import { DotsBackground } from "#web/components/dots-background";
 
 const tips = [
   "You're one invite away from collaborating with your team in real-time across your entire workspace.",
@@ -14,7 +15,7 @@ const tips = [
 const AuthLayout: Component<RouteSectionProps> = (props) => {
   return (
     <div class="flex flex-row h-full w-full">
-      <div class="dots-background absolute mask-edge-fading-16" />
+      <DotsBackground class="absolute mask-edge-fading-16" />
       <div class="flex items-center font-bold text-3xl top-4 left-4 absolute">
         <div class="h-8 w-8 i-andesine:logo bg-gradient-to-tr" />
         ndesine

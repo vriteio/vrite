@@ -79,6 +79,7 @@ const RoleItem: Component<{
             <Match when={editable()}>
               <div onClick={(event: MouseEvent) => event.stopPropagation()}>
                 <DropdownMenu
+                  title={props.role.name}
                   cardProps={{ class: "w-48" }}
                   opened={menuOpened()}
                   portal={false}

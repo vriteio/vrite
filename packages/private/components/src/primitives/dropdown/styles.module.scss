@@ -1,0 +1,66 @@
+/* Backdrop */
+.backdrop {
+  animation: dropdown-backdrop-in 200ms ease-out both;
+
+  &.closing {
+    animation: dropdown-backdrop-out 200ms ease-in both;
+  }
+}
+
+/* Sheet */
+.sheet {
+  animation: dropdown-sheet-in 200ms ease-out both;
+
+  &.closing {
+    animation: dropdown-sheet-out 200ms ease-in both;
+  }
+}
+
+/* Animations */
+@keyframes dropdown-backdrop-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes dropdown-backdrop-out {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes dropdown-sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes dropdown-sheet-out {
+  from {
+    transform: translateY(0);
+  }
+
+  to {
+    transform: translateY(100%);
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .backdrop,
+  .sheet {
+    animation-duration: 1ms;
+  }
+}

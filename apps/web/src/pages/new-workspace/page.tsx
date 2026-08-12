@@ -2,10 +2,11 @@ import { createAsync, query, revalidate, useNavigate } from "@solidjs/router";
 import { Title } from "@solidjs/meta";
 import { type Component, createSignal, Show } from "solid-js";
 import { AnimatedGradientCard } from "#web/components/animated-gradient-card";
-import { Button, IconButton, Input } from "@andesine/components";
+import { IconButton, Input, Tooltip } from "@andesine/components";
 import { client } from "#web/lib/api";
 import { getPostAuthRedirectPath } from "#web/lib/navigation";
 import { createMutation } from "@tanstack/solid-query";
+import { DotsBackground } from "#web/components/dots-background";
 
 const workspacesQuery = query(() => client.workspaces.list(), "workspaces");
 
@@ -55,7 +56,7 @@ const NewWorkspacePage: Component = () => {
   return (
     <div class="flex flex-row-reverse h-full w-full">
       <Title>Create a workspace | Andesine</Title>
-      <div class="dots-background absolute mask-edge-fading-16" />
+      <DotsBackground class="absolute mask-edge-fading-16" />
       <div class="hidden lg:block flex-1 p-3 max-w-5/12">
         <AnimatedGradientCard class="h-full w-full rounded-2xl">
           <div class="flex flex-col items-center text-center max-w-xl relative p-4">
@@ -74,40 +75,49 @@ const NewWorkspacePage: Component = () => {
       <div class="flex-1 relative flex justify-center items-center">
         <div class="p-4 lg:p-24 relative">
           <div class="absolute h-full w-full top-0 left-0 mask-edge-fading-4 lg:mask-edge-fading-24 bg-gray-100 rounded-2xl" />
-          <div class="relative flex flex-col w-80 gap-4">
+          <div class="relative flex flex-col w-80 max-w-full">
             <div>
               <span class="text-2xl font-semibold">New workspace</span>
               <div class="text-gray-400 leading-5 text-sm">
                 Give your workspace a name to get started.
               </div>
             </div>
-            <div class="flex flex-col gap-2.5">
+            <div class="flex flex-col my-4 gap-2.5">
               <Input
                 placeholder="Workspace name"
                 value={name()}
                 setValue={setName}
                 onEnter={handleCreate}
+                labelWrapperClass="flex"
+                slotWrapperClass="gap-1.5"
+                slot={() => (
+                  <Tooltip content="Continue">
+                    <IconButton
+                      disabled={!name().trim() || createWorkspaceMutation.isPending}
+                      icon="i-lucide:arrow-right"
+                      color="primary"
+                      onClick={handleCreate}
+                    />
+                  </Tooltip>
+                )}
               />
               {error() && <div class="text-red-500 text-sm">{error()}</div>}
-              <Button
-                class="w-full"
-                color="primary"
-                onClick={handleCreate}
-                loading={createWorkspaceMutation.isPending}
-              >
-                Create workspace
-              </Button>
             </div>
             <Show when={(workspaces() || []).length > 0}>
               <div class="flex flex-col items-start justify-center w-full transform text-sm text-gray-400">
+                <span>Already have a workspace?</span>
                 <IconButton
                   icon="i-lucide:arrow-left"
-                  label="Back"
+                  iconProps={{ class: "h-4 w-4" }}
                   variant="text"
+                  text="primary"
+                  color="primary"
                   size="small"
-                  text="soft"
+                  label={() => <span>Go back</span>}
+                  hover="underline"
+                  class="gap-1 inline-flex font-medium px-0 -mt-1"
                   onClick={goBack}
-                />
+                ></IconButton>
               </div>
             </Show>
           </div>
