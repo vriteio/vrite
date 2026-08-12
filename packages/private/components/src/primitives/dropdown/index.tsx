@@ -16,9 +16,10 @@ import {
   useContext
 } from "solid-js";
 import { type Placement } from "@floating-ui/dom";
-import { Dynamic } from "solid-js/web";
+import { Dynamic, Portal } from "solid-js/web";
 import { Menu } from "@ark-ui/solid/menu";
 import { createMediaQuery } from "@solid-primitives/media";
+import { Fragment } from "../fragment";
 import { DropdownDesktopMenu } from "./dropdown-desktop-menu";
 import { DropdownProvider, useDropdownContext } from "./dropdown-context";
 import { DropdownMobileContent, DropdownMobileSheet } from "./dropdown-mobile-sheet";
@@ -129,6 +130,7 @@ const Dropdown: Component<DropdownProps> = (props) => {
   } = useDropdownContext();
   const { onContextMenu } = useContext(DropdownAreaContext);
   const positioningStrategy = () => props.positioningStrategy || "fixed";
+  const desktopPortal = () => props.portal !== false || positioningStrategy() === "fixed";
   const toPositioningPoint = (point: Point): Point => {
     if (positioningStrategy() !== "absolute") return point;
 
@@ -305,17 +307,19 @@ const Dropdown: Component<DropdownProps> = (props) => {
         tabindex="0"
       >
         {/* Ghost anchor for context menu positioning */}
-        <div
-          ref={setGhostAnchorRef}
-          class={clsx(
-            "w-0 h-0 pointer-events-none",
-            positioningStrategy() === "absolute" ? "absolute" : "fixed"
-          )}
-          style={{
-            top: `${anchorPoint()?.y || 0}px`,
-            left: `${anchorPoint()?.x || 0}px`
-          }}
-        />
+        <Dynamic component={positioningStrategy() === "fixed" ? Portal : Fragment}>
+          <div
+            ref={setGhostAnchorRef}
+            class={clsx(
+              "w-0 h-0 pointer-events-none",
+              positioningStrategy() === "absolute" ? "absolute" : "fixed"
+            )}
+            style={{
+              top: `${anchorPoint()?.y || 0}px`,
+              left: `${anchorPoint()?.x || 0}px`
+            }}
+          />
+        </Dynamic>
         <Show when={props.trigger}>
           <Menu.Trigger
             disabled={props.disabled}
@@ -345,7 +349,11 @@ const Dropdown: Component<DropdownProps> = (props) => {
             </>
           }
         >
-          <DropdownDesktopMenu cardProps={props.cardProps} opened={opened()} portal={props.portal}>
+          <DropdownDesktopMenu
+            cardProps={props.cardProps}
+            opened={opened()}
+            portal={desktopPortal()}
+          >
             {props.children}
           </DropdownDesktopMenu>
         </Show>

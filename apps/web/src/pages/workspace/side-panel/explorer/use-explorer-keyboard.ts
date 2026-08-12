@@ -9,6 +9,9 @@ interface ExplorerKeyboardInput {
   scrollItemIntoView(id: string): void;
 }
 
+const isExplorerMenuElement = (target: EventTarget | null) => {
+  return target instanceof Element && Boolean(target.closest('[data-scope="menu"]'));
+};
 const isEditingText = () => {
   const element = document.activeElement;
 
@@ -173,7 +176,7 @@ const useExplorerKeyboard = (input: ExplorerKeyboardInput) => {
     return Boolean(match);
   };
   const onKeyDown = (event: KeyboardEvent) => {
-    if (!input.active() || isEditingText()) return;
+    if (!input.active() || isEditingText() || isExplorerMenuElement(event.target)) return;
     const handled = (() => {
       if (event.key === "ArrowDown" || event.key === "ArrowUp") {
         const direction = event.key === "ArrowDown" ? "down" : "up";
@@ -198,7 +201,9 @@ const useExplorerKeyboard = (input: ExplorerKeyboardInput) => {
 
   onMount(() => {
     document.body.addEventListener("keydown", onKeyDown);
-    const canHandle = () => input.active() && !isEditingText();
+    const canHandle = () => {
+      return input.active() && !isEditingText() && !isExplorerMenuElement(document.activeElement);
+    };
     const unregister = registerShortcuts({
       "$mod+E": () => (canHandle() ? (actions.createEntry(), true) : false),
       "$mod+shift+E": () => (canHandle() ? (actions.createCollection(), true) : false),
@@ -220,4 +225,4 @@ const useExplorerKeyboard = (input: ExplorerKeyboardInput) => {
   return { resetRange };
 };
 
-export { useExplorerKeyboard };
+export { isExplorerMenuElement, useExplorerKeyboard };

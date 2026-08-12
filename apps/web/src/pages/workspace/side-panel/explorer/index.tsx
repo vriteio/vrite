@@ -18,7 +18,7 @@ import { EXPLORER_GESTURE_PROPS } from "./explorer-dnd";
 import { ExplorerEntry } from "./explorer-entry";
 import { useExplorerActions } from "./use-explorer-actions";
 import { useExplorerDrop } from "./use-explorer-drop";
-import { useExplorerKeyboard } from "./use-explorer-keyboard";
+import { isExplorerMenuElement, useExplorerKeyboard } from "./use-explorer-keyboard";
 import { useExplorerMarquee } from "./use-explorer-marquee";
 import clsx from "clsx";
 
@@ -86,8 +86,9 @@ const Explorer = () => {
           class="flex min-h-0 flex-1 flex-col items-start justify-center outline-none"
           onPointerDown={marquee.onPointerDown}
           onPointerEnter={() => setPointerInside(true)}
-          onPointerLeave={() => {
+          onPointerLeave={(event) => {
             setPointerInside(false);
+            if (isExplorerMenuElement(event.relatedTarget)) return;
             if (!focusInside()) resetFocus();
           }}
           onFocusIn={() => setFocusInside(true)}
@@ -96,6 +97,7 @@ const Explorer = () => {
             if (next instanceof Node && event.currentTarget.contains(next)) return;
             setFocusInside(false);
             setPointerInside(false);
+            if (isExplorerMenuElement(next)) return;
             resetFocus();
           }}
         >
@@ -194,7 +196,7 @@ const Explorer = () => {
           </Show>
           <DropdownMenu
             title="Explorer"
-            cardProps={{ class: "w-52" }}
+            cardProps={{ class: "w-52", ...{ "data-tree-interaction": "" } }}
             items={options}
             mobileSheetDragFromContent={false}
             opened={menuOpened()}

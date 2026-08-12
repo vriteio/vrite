@@ -1,7 +1,7 @@
-import { DropdownArea, DropdownMenu, IconButton } from "@andesine/components";
+import { Card, DropdownArea, DropdownMenu, IconButton } from "@andesine/components";
 import { TreeItem, TreeLevel } from "#web/components/tree";
 import clsx from "clsx";
-import { type Component, Show } from "solid-js";
+import { type Component, ComponentProps, Show } from "solid-js";
 import { ExplorerEntry } from "./explorer-entry";
 import { MAX_CONTENT_NAME_LENGTH, normalizeCollectionName } from "#web/lib/validation";
 import { useExplorerCollection, type ExplorerCollectionProps } from "./use-explorer-collection";
@@ -100,9 +100,12 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
               actions={
                 <DropdownMenu
                   title={props.collection.name}
-                  cardProps={{
-                    class: "w-48"
-                  }}
+                  cardProps={
+                    {
+                      "class": "w-48",
+                      "data-tree-interaction": ""
+                    } as Partial<ComponentProps<typeof Card>>
+                  }
                   opened={menuOpened()}
                   mobileSheetDragFromContent={false}
                   portal={false}

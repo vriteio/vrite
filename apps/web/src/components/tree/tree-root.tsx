@@ -20,10 +20,15 @@ const TreeRoot: ParentComponent = (props) => {
       const target = event.target;
       const root = rootRef();
       const interactionTarget =
-        target instanceof Element ? target.closest("[data-tree-item], [role='menu']") : null;
+        target instanceof Element
+          ? target.closest("[data-tree-item], [data-tree-interaction]")
+          : null;
       const isInsideRoot = Boolean(root && target instanceof Node && root.contains(target));
       const isTreeInteraction = Boolean(
-        root && interactionTarget && root.contains(interactionTarget)
+        root &&
+        interactionTarget &&
+        (root.contains(interactionTarget) ||
+          interactionTarget.hasAttribute("data-tree-interaction"))
       );
       const isModifiedInteraction =
         event.metaKey || event.ctrlKey || event.shiftKey || event.altKey;
@@ -33,7 +38,7 @@ const TreeRoot: ParentComponent = (props) => {
         return;
       }
 
-      const shouldClearSelection = !isInsideRoot || !isTreeInteraction;
+      const shouldClearSelection = !isTreeInteraction;
 
       if (!shouldClearSelection) {
         setTouchGesture(null);
