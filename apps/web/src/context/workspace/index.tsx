@@ -24,6 +24,7 @@ interface WorkspaceInfo {
   currentEntryID?: string;
   permissions: Permission[];
   admin: boolean;
+  subscriptionPlan: string;
 }
 
 interface SessionInfo {

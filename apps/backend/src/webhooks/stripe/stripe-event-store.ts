@@ -1,4 +1,4 @@
-import { stripeWebhookEvents, workspaces } from "#backend/db";
+import { invitations, stripeWebhookEvents, workspaces } from "#backend/db";
 import { db } from "#backend/lib/adapters";
 import { and, eq, ne, sql } from "drizzle-orm";
 import type Stripe from "stripe";
@@ -32,24 +32,32 @@ const persistStripeWebhookResult = async (input: {
   eventID: string;
   workspaceID: string | null;
   update?: Partial<typeof workspaces.$inferInsert>;
-}): Promise<void> => {
-  await db.transaction(async (tx) => {
+}): Promise<{ revokedInviteIDs: string[] }> => {
+  return db.transaction(async (tx) => {
     const [record] = await tx
       .select({ status: stripeWebhookEvents.status })
       .from(stripeWebhookEvents)
       .where(eq(stripeWebhookEvents.id, input.eventID))
       .for("update");
 
-    if (!record || record.status === "processed") return;
+    if (!record || record.status === "processed") return { revokedInviteIDs: [] };
 
     const [workspace] = input.workspaceID
       ? await tx
-          .select({ id: workspaces.id, deletingAt: workspaces.deletingAt })
+          .select({
+            id: workspaces.id,
+            deletingAt: workspaces.deletingAt,
+            subscriptionPlan: workspaces.subscriptionPlan
+          })
           .from(workspaces)
           .where(eq(workspaces.id, input.workspaceID))
           .for("update")
       : [];
     const persistedWorkspaceID = workspace?.id ?? null;
+    const isDowngrade =
+      workspace?.subscriptionPlan === "pro" && input.update?.subscriptionPlan === "free";
+
+    let revokedInviteIDs: string[] = [];
 
     await tx
       .update(stripeWebhookEvents)
@@ -63,12 +71,28 @@ const persistStripeWebhookResult = async (input: {
 
     if (persistedWorkspaceID && !workspace?.deletingAt && input.update) {
       await tx.update(workspaces).set(input.update).where(eq(workspaces.id, persistedWorkspaceID));
+
+      if (isDowngrade) {
+        const revokedInvites = await tx
+          .delete(invitations)
+          .where(
+            and(
+              eq(invitations.workspaceID, persistedWorkspaceID),
+              eq(invitations.status, "pending")
+            )
+          )
+          .returning({ id: invitations.id });
+
+        revokedInviteIDs = revokedInvites.map(({ id }) => id);
+      }
     }
 
     await tx
       .update(stripeWebhookEvents)
       .set({ status: "processed", processedAt: new Date() })
       .where(eq(stripeWebhookEvents.id, input.eventID));
+
+    return { revokedInviteIDs };
   });
 };
 const failStripeWebhookEvent = async (eventID: string, error: unknown): Promise<void> => {

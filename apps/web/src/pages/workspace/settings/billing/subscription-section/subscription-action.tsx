@@ -40,11 +40,23 @@ const SubscriptionInfo: Component<SubscriptionInfoProps> = (props) => {
   });
   const billingStatus = createMemo(() => {
     const status = props.subscription?.status;
+    const expiresAt = props.subscription.expiresAt;
+    const hasRemainingPaidPeriod =
+      (status === "active" || status === "canceled") &&
+      expiresAt &&
+      new Date(expiresAt).getTime() > Date.now();
 
     if (status === "past_due" || status === "unpaid") {
       return {
         icon: "i-lucide:triangle-alert",
         text: "Your latest payment failed. Update your payment method to prevent interruption."
+      } as const;
+    }
+
+    if (hasRemainingPaidPeriod && periodDate()) {
+      return {
+        icon: "i-lucide:calendar-x",
+        text: `Your Pro subscription was canceled. You can use Andesine Pro until ${periodDate()} (UTC).`
       } as const;
     }
 
@@ -168,6 +180,17 @@ const SubscriptionAction: Component = () => {
       {(subscriptionData) => {
         const isPro = () => subscriptionData().plan === "pro";
         const setupPending = () => subscriptionData().status === "incomplete";
+        const isRedirecting = () => checkoutMutation.isPending || portalMutation.isPending;
+        const showUpgradePrice = () => {
+          return canManageBilling() && !isPro() && !setupPending() && !isRedirecting();
+        };
+        const buttonLabel = () => {
+          if (isRedirecting()) return "Redirecting...";
+          if (setupPending()) return "Setup pending...";
+          if (!canManageBilling()) return "Current plan";
+
+          return "Manage subscription";
+        };
 
         return (
           <div class="flex flex-col gap-2 w-full max-w-64">
@@ -197,32 +220,20 @@ const SubscriptionAction: Component = () => {
                 }}
               />
               <span class="opacity-50 text-xs font-semibold w-full text-start">
-                {checkoutMutation.isPending || portalMutation.isPending
-                  ? "Redirecting"
-                  : setupPending()
-                    ? "Processing"
-                    : canManageBilling()
-                      ? isPro()
-                        ? "Manage"
-                        : "Upgrade"
-                      : "View only"}
+                {canManageBilling() && !setupPending() && !isPro() ? "Upgrade" : "Andesine Pro"}
               </span>
-              <div class="w-full flex">
-                <span class="flex-1 font-semibold text-start">
-                  {canManageBilling()
-                    ? setupPending()
-                      ? "Subscription setup"
-                      : isPro()
-                        ? "Manage subscription"
-                        : "Pro Plan"
-                    : "Current plan"}
-                </span>
-                <span class="text-base">
-                  {formatUSD(config.PRICE_PER_SEAT_USD)}
-                  <span class="opacity-50 mx-0.5">/</span>seat
-                  <span class="opacity-50 mx-0.5">/</span>
-                  mo.
-                </span>
+              <div class="w-full text-start">
+                <Show
+                  when={showUpgradePrice()}
+                  fallback={<span class="font-semibold">{buttonLabel()}</span>}
+                >
+                  <span class="text-base">
+                    {formatUSD(config.PRICE_PER_SEAT_USD)}
+                    <span class="opacity-50 mx-0.5">/</span>seat
+                    <span class="opacity-50 mx-0.5">/</span>
+                    mo.
+                  </span>
+                </Show>
               </div>
             </Button>
             <SubscriptionInfo

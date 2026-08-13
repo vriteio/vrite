@@ -15,6 +15,7 @@ interface WorkspaceListItem extends Pick<Workspace, "id" | "name"> {
   currentEntryID?: string;
   permissions: Permission[];
   admin: boolean;
+  subscriptionPlan: string;
 }
 
 const listWorkspaces = async (input: {
@@ -32,7 +33,8 @@ const listWorkspaces = async (input: {
       userID: memberships.userID,
       currentEntryID: entries.id,
       permissions: roles.permissions,
-      baseRole: roles.baseRole
+      baseRole: roles.baseRole,
+      subscriptionPlan: workspaces.subscriptionPlan
     })
     .from(memberships)
     .innerJoin(workspaces, eq(workspaces.id, memberships.workspaceID))
@@ -49,13 +51,15 @@ const listWorkspaces = async (input: {
 
   return {
     workspaces: rows
+      .filter((row) => row.baseRole === "admin" || row.subscriptionPlan === "pro")
       .map((row): WorkspaceListItem => ({
         id: toWorkspaceID(row.id),
         name: row.name,
         userID: toUserID(row.userID),
         currentEntryID: row.currentEntryID ? toEntryID(row.currentEntryID) : undefined,
         permissions: row.permissions,
-        admin: row.baseRole === "admin"
+        admin: row.baseRole === "admin",
+        subscriptionPlan: row.subscriptionPlan
       }))
       .sort(
         (a, b) => Number(b.userID === input.activeUserID) - Number(a.userID === input.activeUserID)

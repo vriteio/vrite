@@ -16,7 +16,8 @@ const workspaceListItemType = workspaceSummaryType.extend({
   userID: id().describe("ID of the user associated with this workspace membership"),
   currentEntryID: id().optional().describe("ID of the member's latest active entry"),
   permissions: z.array(permissionType).describe("Permissions granted to the current member"),
-  admin: z.boolean().describe("Whether the current member has the system admin role")
+  admin: z.boolean().describe("Whether the current member has the system admin role"),
+  subscriptionPlan: z.string().describe("Current billing plan identifier")
 });
 
 const workspacesRouter = base.router({

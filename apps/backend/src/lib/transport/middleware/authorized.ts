@@ -42,6 +42,13 @@ const authorizeSession = (sessionData: SessionData, required?: AuthorizationRequ
 const shouldTrackUsage = (sessionData: SessionData, trackUsage?: boolean): boolean => {
   return (sessionData.type === "key" && trackUsage !== false) || trackUsage === true;
 };
+const checkPlanAccess = (sessionData: SessionData, requireProPlan?: boolean): void => {
+  if (!requireProPlan || sessionData.subscriptionPlan === "pro") return;
+
+  throw new ORPCError("FORBIDDEN", {
+    message: "This action requires an Andesine Pro subscription"
+  });
+};
 const checkUsageAllowance = async (sessionData: SessionData): Promise<void> => {
   const plan = sessionData.subscriptionPlan || "free";
   const limit = plan === "pro" ? Infinity : config.INCLUDED_API_CALLS;
@@ -71,6 +78,7 @@ const authorized = base.middleware(async ({ procedure, context, next }) => {
   });
 
   authorizeSession(sessionData, meta.required);
+  checkPlanAccess(sessionData, meta.requireProPlan);
 
   if (shouldTrackUsage(sessionData, meta.trackUsage)) {
     await checkUsageAllowance(sessionData);

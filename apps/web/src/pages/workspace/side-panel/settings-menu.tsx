@@ -73,6 +73,7 @@ const SettingsMenu: Component = () => {
     const editingKey = Boolean(params.keyID);
     const roleActive = isRoute("/role") || editingRole;
     const keyActive = isRoute("/key") || editingKey;
+    const isPro = currentWorkspace()?.subscriptionPlan === "pro";
 
     return [
       {
@@ -109,7 +110,7 @@ const SettingsMenu: Component = () => {
                       label: "Invite member",
                       href: `${settingsPath()}/invite`,
                       active: isRoute("/invite"),
-                      visible: hasPermission("workspace")
+                      visible: hasPermission("workspace") && isPro
                     },
                     {
                       icon: "i-lucide:shield-plus",
@@ -118,7 +119,7 @@ const SettingsMenu: Component = () => {
                         ? `${settingsPath()}/role/${encodeURIComponent(params.roleID!)}`
                         : `${settingsPath()}/role`,
                       active: roleActive,
-                      visible: hasPermission("workspace")
+                      visible: hasPermission("workspace") && isPro
                     }
                   ]
                 },

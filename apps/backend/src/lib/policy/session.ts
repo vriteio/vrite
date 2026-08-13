@@ -64,6 +64,10 @@ const parseSessionData = (serialized: string): SessionData | null => {
 const isSessionAuthorizationEvent = (auth: SessionData, event: WorkspaceEvent): boolean => {
   if (auth.type !== "session" || !auth.session) return false;
 
+  if (event.action === "workspace:update" && event.data.subscriptionPlan === "free") {
+    return !auth.session.admin;
+  }
+
   if (event.action === "membership:update" || event.action === "membership:remove") {
     return event.data.id === auth.session.memberID;
   }

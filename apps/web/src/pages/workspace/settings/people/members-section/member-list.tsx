@@ -165,6 +165,8 @@ const WorkspaceMemberList: Component<WorkspaceMemberListProps> = (props) => {
                 members={props.members}
                 roles={props.roles}
                 canManage={props.canManage}
+                canManageRoles={props.canManageRoles}
+                disabled={!member().admin && props.disabledNonAdmins}
                 currentUser={member().userID === props.currentUserID}
                 loading={member().optimistic}
                 onUpdateRole={(roleID, ids) =>

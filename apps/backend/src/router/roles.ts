@@ -34,6 +34,7 @@ const rolesRouter = base.prefix("/roles").router({
       path: "/"
     })
     .meta({
+      requireProPlan: true,
       required: {
         session: ["workspace"],
         key: ["roles"]
@@ -68,6 +69,7 @@ const rolesRouter = base.prefix("/roles").router({
       path: "/:id"
     })
     .meta({
+      requireProPlan: true,
       required: {
         session: ["workspace"],
         key: ["roles"]
@@ -112,6 +114,7 @@ const rolesRouter = base.prefix("/roles").router({
       path: "/:id"
     })
     .meta({
+      requireProPlan: true,
       required: {
         session: ["workspace"],
         key: ["roles"]

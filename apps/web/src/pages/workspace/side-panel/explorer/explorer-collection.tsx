@@ -141,7 +141,7 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
           <Show when={closestEdge() && !renderBottomDropLineAfterSubtree()}>
             <div
               class={clsx(
-                "flex bg-gradient-to-tr h-2.5px w-full absolute items-center justify-center rounded-full pointer-events-none shadow-[0_0_8px_0] shadow-primary z-10",
+                "flex bg-gradient-to-tr h-2.5px w-full absolute items-center justify-center rounded-full pointer-events-none shadow-[0_0_8px_0] shadow-tertiary z-10",
                 closestEdge() === "top" ? "-top-[1.25px]" : "-bottom-[1.25px]"
               )}
             >
@@ -190,7 +190,7 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
         </div>
         <Show when={renderBottomDropLineAfterSubtree()}>
           <div class="relative h-0">
-            <div class="flex bg-gradient-to-tr h-2.5px w-full absolute top-[-1.25px] items-center justify-center rounded-full pointer-events-none shadow-[0_0_8px_0] shadow-primary z-10">
+            <div class="flex bg-gradient-to-tr h-2.5px w-full absolute top-[-1.25px] items-center justify-center rounded-full pointer-events-none shadow-[0_0_8px_0] shadow-tertiary z-10">
               <div class="h-2.25 w-2.25 bg-gradient-to-tr rounded-full -left-1 flex justify-center items-center absolute">
                 <div class="h-1 w-1 bg-gray-50 md:bg-gray-100 rounded-full" />
               </div>

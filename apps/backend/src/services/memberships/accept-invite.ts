@@ -34,13 +34,22 @@ const acceptInvite = async (input: {
     }
 
     const [workspace] = await tx
-      .select({ id: workspaces.id, name: workspaces.name })
+      .select({
+        id: workspaces.id,
+        name: workspaces.name,
+        subscriptionPlan: workspaces.subscriptionPlan
+      })
       .from(workspaces)
       .where(eq(workspaces.id, invite.workspaceID));
     const [user] = await tx.select().from(users).where(eq(users.id, userID));
 
     if (!workspace) throw new ORPCError("NOT_FOUND", { message: "Workspace not found" });
     if (!user) throw new ORPCError("UNAUTHORIZED", { message: "User not found" });
+    if (workspace.subscriptionPlan !== "pro") {
+      throw new ORPCError("FORBIDDEN", {
+        message: "This workspace must upgrade to Andesine Pro before you can accept the invite"
+      });
+    }
     if (user.email.trim().toLowerCase() !== invite.email.trim().toLowerCase()) {
       throw new ORPCError("INVITE_ACCOUNT_MISMATCH", {
         status: 403,

@@ -16,7 +16,8 @@ declare module "#backend/lib/messaging/events" {
 
 const workspaceSummaryEventType = workspaceType.pick({
   id: true,
-  name: true
+  name: true,
+  subscriptionPlan: true
 });
 const workspaceStateEventType = z.union([
   z.object({

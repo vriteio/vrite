@@ -1,6 +1,8 @@
 import { config } from "#backend/lib/config";
-import { toUUID } from "#backend/lib/primitives";
+import { emitMembershipEvent, emitWorkspaceStateEvent } from "#backend/events";
+import { toInviteID, toUUID } from "#backend/lib/primitives";
 import { stripe } from "#backend/lib/adapters";
+import { Auth } from "#backend/services/auth";
 import { Billing } from "#backend/services/billing";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import type Stripe from "stripe";
@@ -63,11 +65,30 @@ const handleStripeWebhook = async (
       }
     }
 
-    await persistStripeWebhookResult({
+    const { revokedInviteIDs } = await persistStripeWebhookResult({
       eventID: event.id,
       workspaceID,
       update: result.update
     });
+
+    if (result.workspaceID && result.update?.subscriptionPlan) {
+      await Auth.invalidateSessionData({ workspaceID: result.workspaceID });
+
+      emitWorkspaceStateEvent(result.workspaceID, {
+        action: "workspace:update",
+        data: {
+          id: result.workspaceID,
+          subscriptionPlan: result.update.subscriptionPlan
+        }
+      });
+
+      for (const inviteID of revokedInviteIDs) {
+        emitMembershipEvent(result.workspaceID, {
+          action: "invite:revoke",
+          data: { id: toInviteID(inviteID) }
+        });
+      }
+    }
   } catch (error) {
     await failStripeWebhookEvent(event.id, error);
     request.log.error(error, "Stripe webhook processing failed");

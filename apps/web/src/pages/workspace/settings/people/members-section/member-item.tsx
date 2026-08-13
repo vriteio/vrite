@@ -1,6 +1,6 @@
 import { type Membership, type Role, type UserProfile } from "#backend/db";
 import { useTree, TreeItem } from "#web/components/tree";
-import { Card, DropdownArea, DropdownMenu, IconButton } from "@andesine/components";
+import { type Card, DropdownArea, DropdownMenu, IconButton } from "@andesine/components";
 import clsx from "clsx";
 import {
   type Component,
@@ -8,12 +8,14 @@ import {
   createMemo,
   createEffect,
   Show,
-  ComponentProps
+  type ComponentProps
 } from "solid-js";
 
 const MemberItem: Component<{
   canManage: boolean;
+  canManageRoles: boolean;
   currentUser?: boolean;
+  disabled?: boolean;
   loading?: boolean;
   member: Membership & { profile: UserProfile; admin?: boolean };
   members: Array<Membership & { profile: UserProfile; admin?: boolean }>;
@@ -45,21 +47,25 @@ const MemberItem: Component<{
     const targetIDs = isMulti ? selectedIDs : [props.member.id];
 
     return [
-      [
-        {
-          label: "Set role",
-          icon: "i-lucide:shield",
-          items: props.roles.map((role) => ({
-            label: role.name,
-            disabled:
-              role.baseRole !== "admin" && affectsEveryAdmin(targetIDs)
-                ? "At least one workspace admin is required"
-                : undefined,
-            selected: !isMulti && props.member.roleID === role.id,
-            onClick: () => props.onUpdateRole(role.id, targetIDs)
-          }))
-        }
-      ],
+      ...(props.canManageRoles
+        ? [
+            [
+              {
+                label: "Set role",
+                icon: "i-lucide:shield",
+                items: props.roles.map((role) => ({
+                  label: role.name,
+                  disabled:
+                    role.baseRole !== "admin" && affectsEveryAdmin(targetIDs)
+                      ? "At least one workspace admin is required"
+                      : undefined,
+                  selected: !isMulti && props.member.roleID === role.id,
+                  onClick: () => props.onUpdateRole(role.id, targetIDs)
+                }))
+              }
+            ]
+          ]
+        : []),
       [
         {
           label: isMulti ? `Remove ${selectedIDs.length} members` : "Remove",
@@ -105,12 +111,16 @@ const MemberItem: Component<{
               <div class="hidden h-4 w-px shrink-0 rounded-full bg-gray-200 md:block" />
               <span class="hidden max-w-48 shrink-0 truncate text-xs text-gray-400 md:inline">
                 {memberEmail()}
-                <Show when={props.currentUser}>
-                  {" "}
-                  <span class="inline-block px-1 py-px rounded-md from-secondary via-primary to-secondary bg-gradient-to-tr text-white">
-                    You
-                  </span>
-                </Show>
+              </span>
+            </Show>
+            <Show when={props.currentUser}>
+              <span class="text-xs px-1 py-px rounded-md from-secondary via-primary to-secondary bg-gradient-to-tr text-white border border-tertiary">
+                You
+              </span>
+            </Show>
+            <Show when={props.disabled}>
+              <span class="shrink-0 rounded-md bg-gray-100 border border-gray-200 px-1 py-px text-xs text-gray-500">
+                Disabled
               </span>
             </Show>
             <div class="flex-1" />

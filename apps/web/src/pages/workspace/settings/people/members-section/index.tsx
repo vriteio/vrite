@@ -58,7 +58,10 @@ const MembersSection: Component = () => {
   const params = useParams<{ workspaceID?: string }>();
   const members = createAsync(() => membershipsQuery());
   const canManage = () => hasPermission("workspace");
-  const invites = createAsync(async () => (canManage() ? invitesQuery() : []));
+  const canManageProFeatures = () => {
+    return canManage() && currentWorkspace()?.subscriptionPlan === "pro";
+  };
+  const invites = createAsync(async () => (canManageProFeatures() ? invitesQuery() : []));
   const roles = createAsync(() => rolesQuery());
   const [membersRefreshing, startMembersRefresh] = useTransition();
   const refreshMembers = (onRevalidated = () => {}) => {
@@ -78,7 +81,7 @@ const MembersSection: Component = () => {
           description="Manage people who have access to this workspace"
           fade={false}
         >
-          <Show when={canManage()}>
+          <Show when={canManageProFeatures()}>
             <IconButton
               label={() => <span class="px-1">Invite member</span>}
               class="flex-row-reverse pr-1"
@@ -98,13 +101,15 @@ const MembersSection: Component = () => {
               members={members() || []}
               roles={roles() || []}
               canManage={canManage()}
+              canManageRoles={canManageProFeatures()}
+              disabledNonAdmins={currentWorkspace()?.subscriptionPlan !== "pro"}
               currentUserID={currentWorkspace()?.userID}
               membersRefreshing={membersRefreshing()}
               refreshMembers={refreshMembers}
             />
           </Suspense>
         </div>
-        <Show when={canManage()}>
+        <Show when={canManageProFeatures()}>
           {/* No fallback to only render invites sections if there are actual invites */}
           <Suspense fallback={<></>}>
             <InvitationsSubsection invites={invites() || []} roles={roles() || []} />

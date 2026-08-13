@@ -25,7 +25,7 @@ const billingUsageType = z.object({
   startDate: z.date().describe("Start of the billing usage window"),
   endDate: z.date().describe("End of the billing usage window"),
   resetDate: z.date().describe("Next monthly allowance reset at 00:00 UTC"),
-  limit: z.number().int().min(0).describe("Included API request limit for the current plan")
+  limit: z.number().int().min(0).describe("Hard limit or included usage for the current plan")
 });
 
 const billingRouter = base.router({

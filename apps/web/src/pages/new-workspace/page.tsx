@@ -3,7 +3,7 @@ import { Title } from "@solidjs/meta";
 import { type Component, createSignal, Show } from "solid-js";
 import { AnimatedGradientCard } from "#web/components/animated-gradient-card";
 import { IconButton, Input, Tooltip } from "@andesine/components";
-import { client } from "#web/lib/api";
+import { authClient, client } from "#web/lib/api";
 import { getPostAuthRedirectPath } from "#web/lib/navigation";
 import { createMutation } from "@tanstack/solid-query";
 import { DotsBackground } from "#web/components/dots-background";
@@ -18,6 +18,13 @@ const NewWorkspacePage: Component = () => {
   const createWorkspaceMutation = createMutation(() => ({
     mutationFn: (input: { name: string }) => {
       return client.workspaces.create(input);
+    }
+  }));
+  const signOutMutation = createMutation(() => ({
+    mutationFn: async () => {
+      await authClient.signOut();
+
+      return true;
     }
   }));
   const handleCreate = async () => {
@@ -103,8 +110,31 @@ const NewWorkspacePage: Component = () => {
               />
               {error() && <div class="text-red-500 text-sm">{error()}</div>}
             </div>
-            <Show when={(workspaces() || []).length > 0}>
-              <div class="flex flex-col items-start justify-center w-full transform text-sm text-gray-400">
+            <div class="flex flex-col items-start justify-center w-full transform text-sm text-gray-400">
+              <Show
+                when={(workspaces() || []).length > 0}
+                fallback={
+                  <>
+                    <span>Not right now?</span>
+                    <IconButton
+                      icon="i-lucide:log-out"
+                      iconProps={{ class: "h-4 w-4" }}
+                      variant="text"
+                      text="primary"
+                      color="primary"
+                      size="small"
+                      label={() => <span>Log out</span>}
+                      hover="underline"
+                      class="gap-1 inline-flex font-medium px-0 -mt-1"
+                      loading={signOutMutation.isPending}
+                      onClick={async () => {
+                        await signOutMutation.mutateAsync();
+                        window.location.href = "/auth/sign-in";
+                      }}
+                    ></IconButton>
+                  </>
+                }
+              >
                 <span>Already have a workspace?</span>
                 <IconButton
                   icon="i-lucide:arrow-left"
@@ -118,8 +148,8 @@ const NewWorkspacePage: Component = () => {
                   class="gap-1 inline-flex font-medium px-0 -mt-1"
                   onClick={goBack}
                 ></IconButton>
-              </div>
-            </Show>
+              </Show>
+            </div>
           </div>
         </div>
       </div>

@@ -1,6 +1,6 @@
 import { Skeleton, Tooltip } from "@andesine/components";
 import { createAsync } from "@solidjs/router";
-import { type Component, Show, Suspense } from "solid-js";
+import { type Component, createEffect, Show, Suspense } from "solid-js";
 import { subscriptionQuery, usageQuery } from "#web/lib/data";
 import { Setting } from "../../setting";
 import { SettingsSection } from "../../settings-section";
@@ -67,12 +67,11 @@ const UsageSection: Component = () => {
                       </span>
                     </div>
                   </Tooltip>
-                  <Show when={!isPro()}>
-                    <span class="text-xs text-gray-400 leading-none">
-                      <span class="opacity-50">/</span>{" "}
-                      {formatNumber(usageData().limit, { compact: true })} limit
-                    </span>
-                  </Show>
+                  <span class="text-xs text-gray-400 leading-none">
+                    <span class="opacity-50">/</span>{" "}
+                    {formatNumber(usageData().limit, { compact: true })}{" "}
+                    {isPro() ? "included" : "limit"}
+                  </span>
                 </div>
               </Setting>
               <div class="flex flex-col gap-4">

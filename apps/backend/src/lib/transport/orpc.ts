@@ -12,6 +12,7 @@ interface WSORPCContext {
 }
 interface ORPCMeta {
   requireWorkspace?: boolean;
+  requireProPlan?: boolean;
   trackUsage?: boolean;
   required?: {
     key?: KeyPermission[] | true;

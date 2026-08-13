@@ -133,7 +133,7 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
       <Show when={closestEdge()}>
         <div
           class={clsx(
-            "flex bg-gradient-to-tr h-2.5px w-full absolute items-center justify-center rounded-full pointer-events-none shadow-[0_0_8px_0] shadow-primary z-10",
+            "flex bg-gradient-to-tr h-2.5px w-full absolute items-center justify-center rounded-full pointer-events-none shadow-[0_0_8px_0] shadow-tertiary z-10",
             closestEdge() === "top" ? "-top-[1.25px]" : "-bottom-[1.25px]"
           )}
         >

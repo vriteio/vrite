@@ -98,6 +98,11 @@ const getUserSessionData = async (
     .where(and(eq(memberships.userID, userID), eq(memberships.workspaceID, workspaceID)));
 
   if (!row) throw new ORPCError("UNAUTHORIZED");
+  if (row.subscriptionPlan !== "pro" && row.baseRole !== "admin") {
+    throw new ORPCError("FORBIDDEN", {
+      message: "This workspace is only available to admins while it is on the Free plan"
+    });
+  }
 
   const data: SessionData = {
     id: cacheKey,

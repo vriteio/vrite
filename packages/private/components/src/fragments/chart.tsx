@@ -49,7 +49,7 @@ const LineChart: Component<LineChartProps> = (props) => {
   const areaMaskID = nanoid(8);
   const lineGradientID = nanoid(8);
   const svgH = () => props.height ?? 176;
-  const lineColor = () => props.lineColor ?? "var(--color-primary)";
+  const lineColor = () => props.lineColor ?? "var(--color-tertiary)";
   const formatY = () => props.formatY ?? defaultFormatY;
   const tooltipPlacement = () => props.tooltipPlacement ?? "point";
 

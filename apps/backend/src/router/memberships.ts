@@ -61,6 +61,7 @@ const membershipsRouter = base.prefix("/memberships").router({
       path: "/:id"
     })
     .meta({
+      requireProPlan: true,
       required: {
         session: ["workspace"],
         key: ["memberships"]
@@ -140,6 +141,7 @@ const membershipsRouter = base.prefix("/memberships").router({
       path: "/"
     })
     .meta({
+      requireProPlan: true,
       required: {
         session: ["workspace"],
         key: ["memberships"]
@@ -175,6 +177,7 @@ const membershipsRouter = base.prefix("/memberships").router({
       path: "/invites"
     })
     .meta({
+      requireProPlan: true,
       required: {
         session: ["workspace"],
         key: ["memberships"]
@@ -195,6 +198,7 @@ const membershipsRouter = base.prefix("/memberships").router({
       path: "/invites/:id/resend"
     })
     .meta({
+      requireProPlan: true,
       required: {
         session: ["workspace"],
         key: ["memberships"]
@@ -221,6 +225,7 @@ const membershipsRouter = base.prefix("/memberships").router({
       path: "/invites/:id"
     })
     .meta({
+      requireProPlan: true,
       required: {
         session: ["workspace"],
         key: ["memberships"]

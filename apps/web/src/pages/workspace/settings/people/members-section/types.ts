@@ -10,6 +10,8 @@ interface InviteDetails extends Invite {
 }
 interface WorkspaceMemberListProps {
   canManage: boolean;
+  canManageRoles: boolean;
+  disabledNonAdmins: boolean;
   currentUserID?: string;
   members: WorkspaceMember[];
   membersRefreshing?: boolean;

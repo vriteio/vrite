@@ -71,7 +71,7 @@ const CollectionBoundaryDropTarget: Component<CollectionBoundaryDropTargetProps>
     <div class="relative h-0">
       <div ref={setBoundaryRef} class="absolute inset-x-0 -top-3 h-6 pointer-events-none" />
       <Show when={isDraggedOver() || props.forcedType() === props.type}>
-        <div class="flex bg-gradient-to-tr h-2.5px w-full absolute top-[-1.25px] items-center justify-center rounded-full pointer-events-none shadow-[0_0_8px_0] shadow-primary z-10">
+        <div class="flex bg-gradient-to-tr h-2.5px w-full absolute top-[-1.25px] items-center justify-center rounded-full pointer-events-none shadow-[0_0_8px_0] shadow-tertiary z-10">
           <div class="h-2.25 w-2.25 bg-gradient-to-tr rounded-full -left-1 flex justify-center items-center absolute">
             <div class="h-1 w-1 bg-gray-100 rounded-full" />
           </div>
