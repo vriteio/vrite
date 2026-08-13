@@ -17,6 +17,7 @@ import { ExplorerCollection } from "./explorer-collection";
 import { ExplorerProvider } from "./explorer-context";
 import { EXPLORER_GESTURE_PROPS } from "./explorer-dnd";
 import { ExplorerEntry } from "./explorer-entry";
+import { ExplorerSyncStatusIndicator } from "./explorer-sync-status-indicator";
 import { useExplorerActions } from "./use-explorer-actions";
 import { useExplorerDrop } from "./use-explorer-drop";
 import { isExplorerMenuElement, useExplorerKeyboard } from "./use-explorer-keyboard";
@@ -119,41 +120,48 @@ const Explorer = () => {
                 class="group/explorer-header sticky top-0 z-20 -mx-1 flex h-9 shrink-0 items-center gap-2 px-1 bg-gray-50 md:bg-gray-100"
               >
                 <h2 class="text-2xl font-semibold flex-1">Explorer</h2>
-                <Show when={content.offline()}>
-                  <div class="flex text-xs gap-1 items-center bg-gray-50 px-1.5 py-0.5 rounded-lg border border-gray-200">
-                    <div class="i-lucide:cloud-off h-3.5 w-3.5 bg-gradient-to-tr" />
-                    <span class="text-gray-500">Offline</span>
-                  </div>
-                </Show>
-                <DropdownMenu
-                  title="Explorer"
-                  cardProps={
-                    {
-                      "class": "w-52",
-                      "data-tree-interaction": ""
-                    } as Partial<ComponentProps<typeof Card>>
-                  }
-                  items={options}
-                  mobileSheetDragFromContent={false}
-                  opened={menuOpened()}
-                  portal={false}
-                  setOpened={setMenuOpened}
-                  trigger={() => (
-                    <div
-                      class={clsx(
-                        !menuOpened() &&
-                          "opacity-20 media-mouse:opacity-0 media-mouse:group-hover/explorer-header:opacity-100"
-                      )}
-                    >
-                      <IconButton
-                        icon="i-lucide:ellipsis-vertical"
-                        size="small"
-                        text="soft"
-                        variant="text"
-                      />
-                    </div>
+                <div
+                  class={clsx(
+                    "media-mouse:group-hover/explorer-header:opacity-0",
+                    menuOpened() && "opacity-0"
                   )}
-                />
+                >
+                  <ExplorerSyncStatusIndicator
+                    offline={content.offline()}
+                    syncing={content.syncing()}
+                  />
+                </div>
+                <div class="md:absolute right-1">
+                  <DropdownMenu
+                    title="Explorer"
+                    cardProps={
+                      {
+                        "class": "w-52",
+                        "data-tree-interaction": ""
+                      } as Partial<ComponentProps<typeof Card>>
+                    }
+                    items={options}
+                    mobileSheetDragFromContent={false}
+                    opened={menuOpened()}
+                    portal={false}
+                    setOpened={setMenuOpened}
+                    trigger={() => (
+                      <div
+                        class={clsx(
+                          !menuOpened() &&
+                            "opacity-20 media-mouse:opacity-0 media-mouse:group-hover/explorer-header:opacity-100 md:relative"
+                        )}
+                      >
+                        <IconButton
+                          icon="i-lucide:ellipsis-vertical"
+                          size="small"
+                          text="soft"
+                          variant="text"
+                        />
+                      </div>
+                    )}
+                  />
+                </div>
               </div>
               <div
                 ref={setContentContainerRef}

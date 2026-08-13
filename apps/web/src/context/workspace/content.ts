@@ -82,7 +82,9 @@ const useWorkspaceContent = (workspaceID: Accessor<string>, canWrite: Accessor<b
   const isOnline = useConnectivitySignal();
   const [contentCollections, setContentCollections] = createSignal(createWorkspaceCollections());
   const [loading, setLoading] = createSignal(Boolean(workspaceID()));
+  const [syncing, setSyncing] = createSignal(false);
   const [snapshotError, setSnapshotError] = createSignal(false);
+  const syncingWorkspaces = new Map<string, number>();
   const entriesCollection = () => contentCollections().entries;
   const collectionsCollection = () => contentCollections().collections;
   const contentOperations = createWorkspaceContentOperations({
@@ -127,6 +129,12 @@ const useWorkspaceContent = (workspaceID: Accessor<string>, canWrite: Accessor<b
   const syncWorkspaceContent = async (targetWorkspaceID: string) => {
     if (!targetWorkspaceID) return;
 
+    syncingWorkspaces.set(targetWorkspaceID, (syncingWorkspaces.get(targetWorkspaceID) ?? 0) + 1);
+
+    if (contentCollections().workspaceID === targetWorkspaceID) {
+      setSyncing(true);
+    }
+
     try {
       const explorerTree = await client.sync.getExplorerTree();
       const targetCollections = contentCollections();
@@ -142,6 +150,18 @@ const useWorkspaceContent = (workspaceID: Accessor<string>, canWrite: Accessor<b
       }
 
       throw error;
+    } finally {
+      const remainingSyncs = (syncingWorkspaces.get(targetWorkspaceID) ?? 1) - 1;
+
+      if (remainingSyncs > 0) {
+        syncingWorkspaces.set(targetWorkspaceID, remainingSyncs);
+      } else {
+        syncingWorkspaces.delete(targetWorkspaceID);
+      }
+
+      if (contentCollections().workspaceID === targetWorkspaceID) {
+        setSyncing(remainingSyncs > 0);
+      }
     }
   };
   const applyWorkspaceEvent = (targetWorkspaceID: string, event: WorkspaceEvent) => {
@@ -199,6 +219,7 @@ const useWorkspaceContent = (workspaceID: Accessor<string>, canWrite: Accessor<b
   };
   const switchWorkspace = async (currentWorkspaceID: string, previousWorkspaceID?: string) => {
     setLoading(Boolean(currentWorkspaceID));
+    setSyncing((syncingWorkspaces.get(currentWorkspaceID) ?? 0) > 0);
     setSnapshotError(false);
 
     const previousCollections = contentCollections();
@@ -241,6 +262,7 @@ const useWorkspaceContent = (workspaceID: Accessor<string>, canWrite: Accessor<b
     applyWorkspaceEvent,
     syncWorkspaceContent,
     loading,
+    syncing,
     snapshotError,
     readOnly,
     offline,

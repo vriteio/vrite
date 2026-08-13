@@ -2,7 +2,6 @@ import { type Entry, client } from "#web/lib/api";
 import { generateUUID, toEntryID } from "#web/lib/primitives";
 import { LexoRank } from "lexorank";
 import { type WorkspaceContentOperationsInput } from "./types";
-import { untrack } from "solid-js";
 
 const createEntryOperations = (input: WorkspaceContentOperationsInput) => {
   const { entriesCollection } = input;
@@ -22,7 +21,7 @@ const createEntryOperations = (input: WorkspaceContentOperationsInput) => {
     );
   };
   const getEntry = (id: string) => {
-    return untrack(() => entriesCollection().findOne({ id }));
+    return entriesCollection().findOne({ id });
   };
   const applyEntryCreate = (entry: Entry) => {
     const entries = entriesCollection();

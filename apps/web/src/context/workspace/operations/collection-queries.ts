@@ -1,5 +1,4 @@
 import { type Collection } from "#web/lib/api";
-import { untrack } from "solid-js";
 import { ROOT_COLLECTION_NAME, type WorkspaceContentOperationsInput } from "./types";
 
 const createCollectionQueries = (input: WorkspaceContentOperationsInput) => {
@@ -7,11 +6,9 @@ const createCollectionQueries = (input: WorkspaceContentOperationsInput) => {
   const isRootCollection = (collection: Collection) =>
     collection.name === ROOT_COLLECTION_NAME && collection.ancestors.length === 0;
   const getRootCollection = () => {
-    return untrack(() => {
-      return collectionsCollection().findOne({
-        name: ROOT_COLLECTION_NAME,
-        ancestors: { $size: 0 }
-      });
+    return collectionsCollection().findOne({
+      name: ROOT_COLLECTION_NAME,
+      ancestors: { $size: 0 }
     });
   };
   const getVisibleCollections = () =>
@@ -36,7 +33,8 @@ const createCollectionQueries = (input: WorkspaceContentOperationsInput) => {
   };
   const getCollectionParentID = (collection: Collection) => collection.ancestors.at(-1) ?? null;
   const getCollection = (id: string) => {
-    const collection = untrack(() => collectionsCollection().findOne({ id }));
+    const collection = collectionsCollection().findOne({ id });
+
     return collection && !isRootCollection(collection) ? collection : undefined;
   };
   const getCollectionsInParent = (parentID: string | null) => {
