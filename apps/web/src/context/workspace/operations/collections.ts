@@ -260,7 +260,7 @@ const createCollectionOperations = (input: WorkspaceContentOperationsInput) => {
 
     applyCollectionDelete(deletedCollectionIDs);
 
-    client.collections.delete({ ids: deletedCollectionIDs }).catch(() => {
+    client.collections.bulkDelete({ ids: deletedCollectionIDs }).catch(() => {
       collections.batch(() => {
         if (originalRootCollection) {
           collections.replaceOne({ id: originalRootCollection.id }, originalRootCollection, {

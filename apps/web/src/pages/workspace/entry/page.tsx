@@ -1,5 +1,5 @@
 import { Title } from "@solidjs/meta";
-import { useParams } from "@solidjs/router";
+import { revalidate, useParams } from "@solidjs/router";
 import { type Component, createEffect } from "solid-js";
 import { useWorkspace } from "#web/context/workspace";
 import { client } from "#web/lib/api";
@@ -26,7 +26,10 @@ const EntryPage: Component = () => {
     if (!entry) return;
 
     setPersistedEntryID(entryID);
-    void client.sync.setCurrentEntry({ entryID }).catch(() => {});
+    void client.sync
+      .setCurrentEntry({ entryID })
+      .then(() => revalidate("workspaces"))
+      .catch(() => {});
   });
 
   return (

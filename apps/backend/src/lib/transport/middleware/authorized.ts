@@ -49,25 +49,49 @@ const checkPlanAccess = (sessionData: SessionData, requireProPlan?: boolean): vo
     message: "This action requires an Andesine Pro subscription"
   });
 };
-const checkUsageAllowance = async (sessionData: SessionData): Promise<void> => {
+const getUsageAllowance = async (sessionData: SessionData) => {
   const plan = sessionData.subscriptionPlan || "free";
-  const limit = plan === "pro" ? Infinity : config.INCLUDED_API_CALLS;
 
-  if (limit === Infinity) return;
-
-  const usage = await Billing.Metering.getUsage({
+  return Billing.Metering.getUsage({
     workspaceID: sessionData.workspaceID,
     plan
   });
+};
+const checkUsageAllowance = (
+  sessionData: SessionData,
+  usage: Awaited<ReturnType<typeof getUsageAllowance>>,
+  headers?: Headers
+): void => {
+  const limit = sessionData.subscriptionPlan === "pro" ? Infinity : config.INCLUDED_API_CALLS;
 
-  if (usage.totalUsage >= limit) {
-    throw new ORPCError("FORBIDDEN", {
+  if (limit !== Infinity && usage.totalUsage >= limit) {
+    const retryAfter = Math.max(Math.ceil((usage.resetDate.getTime() - Date.now()) / 1000), 1);
+
+    headers?.set("Retry-After", `${retryAfter}`);
+
+    throw new ORPCError("TOO_MANY_REQUESTS", {
       message: `API request limit reached (${config.INCLUDED_API_CALLS} requests/month on the Free plan). Upgrade to Pro for higher limits.`
     });
   }
 };
 const recordUsage = async (sessionData: SessionData): Promise<void> => {
   await Billing.Metering.recordUsage({ workspaceID: sessionData.workspaceID });
+};
+const setUsageHeaders = (
+  headers: Headers | undefined,
+  usage: Awaited<ReturnType<typeof getUsageAllowance>>
+): void => {
+  if (!headers) return;
+
+  const remaining = Math.max(usage.limit - usage.totalUsage, 0);
+  const reset = Math.ceil(usage.resetDate.getTime() / 1000);
+
+  headers.set("X-API-Usage", `${usage.totalUsage}`);
+  headers.set("X-API-Usage-Limit", `${usage.limit}`);
+  headers.set("X-API-Usage-Reset", `${reset}`);
+  headers.set("X-RateLimit-Limit", `${usage.limit}`);
+  headers.set("X-RateLimit-Remaining", `${remaining}`);
+  headers.set("X-RateLimit-Reset", `${reset}`);
 };
 
 const authorized = base.middleware(async ({ procedure, context, next }) => {
@@ -80,16 +104,35 @@ const authorized = base.middleware(async ({ procedure, context, next }) => {
   authorizeSession(sessionData, meta.required);
   checkPlanAccess(sessionData, meta.requireProPlan);
 
+  let usage: Awaited<ReturnType<typeof getUsageAllowance>> | undefined;
+
   if (shouldTrackUsage(sessionData, meta.trackUsage)) {
-    await checkUsageAllowance(sessionData);
-    await recordUsage(sessionData);
+    usage = await getUsageAllowance(sessionData);
+    setUsageHeaders(context.resHeaders, usage);
+    checkUsageAllowance(sessionData, usage, context.resHeaders);
   }
 
-  return next({
+  const result = await next({
     context: {
       auth: sessionData
     }
   });
+
+  if (usage) {
+    try {
+      await recordUsage(sessionData);
+      usage = { ...usage, totalUsage: usage.totalUsage + 1 };
+    } catch (error) {
+      console.error("Failed to record API usage", {
+        error,
+        workspaceID: sessionData.workspaceID
+      });
+    }
+
+    setUsageHeaders(context.resHeaders, usage);
+  }
+
+  return result;
 });
 
 export { authorized };

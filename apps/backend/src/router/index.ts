@@ -8,11 +8,13 @@ import { membershipsRouter } from "./memberships";
 import { workspacesRouter } from "./workspaces";
 import { authRouter } from "./auth";
 import { type FastifyPluginAsync, type FastifyReply, type FastifyRequest } from "fastify";
+import { OpenAPIGenerator } from "@orpc/openapi";
 import { OpenAPIHandler } from "@orpc/openapi/fastify";
 import { RequestHeadersPlugin, ResponseHeadersPlugin } from "@orpc/server/plugins";
 import { onError, ORPCError } from "@orpc/server";
 import { RPCHandler } from "@orpc/server/fastify";
 import { RATE_LIMITS, consumeRateLimit } from "#backend/lib/security";
+import { config } from "#backend/lib/config";
 
 const router = {
   auth: authRouter,
@@ -77,10 +79,32 @@ const routerPlugin: FastifyPluginAsync = async (app) => {
       })
     ]
   });
+  const openAPIDocument = await new OpenAPIGenerator().generate(router, {
+    filter: ({ contract }) => Boolean(contract["~orpc"].meta.required?.key),
+    info: {
+      title: "Andesine API",
+      version: "1.0.0"
+    },
+    servers: [{ url: config.PUBLIC_API_URL }],
+    security: [{ apiKey: [] }],
+    components: {
+      securitySchemes: {
+        apiKey: {
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "Andesine API key",
+          description: "Use an Andesine API key as a Bearer token"
+        }
+      }
+    }
+  });
 
   app.removeAllContentTypeParsers();
   app.addContentTypeParser("*", function (_request, _payload, done) {
     done(null, undefined);
+  });
+  app.get("/openapi.json", async (_request, reply) => {
+    return reply.send(openAPIDocument);
   });
   app.route({
     url: "/rpc/*",

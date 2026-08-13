@@ -36,10 +36,7 @@ const acceptedInviteType = z.object({
 
 const membershipsRouter = base.prefix("/memberships").router({
   list: base
-    .route({
-      method: "GET",
-      path: "/"
-    })
+    .route({ method: "GET", path: "/" })
     .meta({
       required: {
         session: ["workspace"],
@@ -56,10 +53,7 @@ const membershipsRouter = base.prefix("/memberships").router({
       return members;
     }),
   update: base
-    .route({
-      method: "PATCH",
-      path: "/:id"
-    })
+    .route({ method: "PATCH", path: "/:id" })
     .meta({
       requireProPlan: true,
       required: {
@@ -97,10 +91,7 @@ const membershipsRouter = base.prefix("/memberships").router({
       });
     }),
   remove: base
-    .route({
-      method: "DELETE",
-      path: "/:id"
-    })
+    .route({ method: "DELETE", path: "/:id" })
     .meta({
       required: {
         session: ["workspace"],
@@ -136,10 +127,7 @@ const membershipsRouter = base.prefix("/memberships").router({
       await Billing.updateSeats({ workspaceID: context.auth.workspaceID });
     }),
   invite: base
-    .route({
-      method: "POST",
-      path: "/"
-    })
+    .route({ method: "POST", path: "/" })
     .meta({
       requireProPlan: true,
       required: {
@@ -172,10 +160,7 @@ const membershipsRouter = base.prefix("/memberships").router({
       return newInviteDetails;
     }),
   listInvites: base
-    .route({
-      method: "GET",
-      path: "/invites"
-    })
+    .route({ method: "GET", path: "/invites" })
     .meta({
       requireProPlan: true,
       required: {
@@ -193,10 +178,7 @@ const membershipsRouter = base.prefix("/memberships").router({
       return invites;
     }),
   resendInvite: base
-    .route({
-      method: "POST",
-      path: "/invites/:id/resend"
-    })
+    .route({ method: "POST", path: "/invites/:id/resend" })
     .meta({
       requireProPlan: true,
       required: {
@@ -220,10 +202,7 @@ const membershipsRouter = base.prefix("/memberships").router({
       return { emailDelivery };
     }),
   revokeInvite: base
-    .route({
-      method: "DELETE",
-      path: "/invites/:id"
-    })
+    .route({ method: "DELETE", path: "/invites/:id" })
     .meta({
       requireProPlan: true,
       required: {

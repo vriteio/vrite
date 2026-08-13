@@ -9,10 +9,7 @@ import * as z from "zod";
 
 const rolesRouter = base.prefix("/roles").router({
   list: base
-    .route({
-      method: "GET",
-      path: "/"
-    })
+    .route({ method: "GET", path: "/" })
     .meta({
       required: {
         session: ["workspace"],
@@ -29,10 +26,7 @@ const rolesRouter = base.prefix("/roles").router({
       return roles;
     }),
   create: base
-    .route({
-      method: "POST",
-      path: "/"
-    })
+    .route({ method: "POST", path: "/" })
     .meta({
       requireProPlan: true,
       required: {
@@ -64,10 +58,7 @@ const rolesRouter = base.prefix("/roles").router({
       return newRole;
     }),
   update: base
-    .route({
-      method: "PUT",
-      path: "/:id"
-    })
+    .route({ method: "PUT", path: "/:id" })
     .meta({
       requireProPlan: true,
       required: {
@@ -109,10 +100,7 @@ const rolesRouter = base.prefix("/roles").router({
       });
     }),
   delete: base
-    .route({
-      method: "DELETE",
-      path: "/:id"
-    })
+    .route({ method: "DELETE", path: "/:id" })
     .meta({
       requireProPlan: true,
       required: {

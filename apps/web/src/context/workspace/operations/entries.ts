@@ -163,7 +163,7 @@ const createEntryOperations = (input: WorkspaceContentOperationsInput) => {
 
     applyEntryDelete(entryIDs);
 
-    client.entries.delete({ ids: entryIDs }).catch(() => {
+    client.entries.bulkDelete({ ids: entryIDs }).catch(() => {
       entries.batch(() => {
         for (const entry of deletedEntries) {
           entries.replaceOne({ id: entry.id }, entry, { upsert: true });

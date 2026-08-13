@@ -7,24 +7,16 @@ import { ORPCError } from "@orpc/server";
 const listEntries = async (input: {
   workspaceID: string;
   collectionID?: string;
-  lastOrder?: string;
-  lastID?: string;
-  perPage?: number;
-  page?: number;
-}): Promise<{ entries: Entry[] }> => {
-  const perPage = input.perPage || 50;
-  const page = input.page || 1;
+  cursor?: string;
+  limit?: number;
+}): Promise<{ entries: Entry[]; nextCursor: string | null }> => {
+  const limit = input.limit || 50;
   const workspaceID = toUUID(input.workspaceID);
   const collectionID = input.collectionID !== undefined ? toUUID(input.collectionID) : undefined;
   const filters = [eq(entries.workspaceID, workspaceID), isNull(entries.deletedAt)];
 
-  if (input.lastOrder && collectionID === undefined) {
-    throw new ORPCError("BAD_REQUEST", {
-      message: "collectionID is required when lastOrder is provided"
-    });
-  }
-  if (input.lastID) {
-    const cursorID = toUUID(input.lastID);
+  if (input.cursor) {
+    const cursorID = toUUID(input.cursor);
     const cursorFilters = [
       eq(entries.id, cursorID),
       eq(entries.workspaceID, workspaceID),
@@ -44,13 +36,12 @@ const listEntries = async (input: {
       });
     }
 
-    const cursorRank = input.lastOrder ?? cursor.rank;
-
     filters.push(
-      or(lt(entries.rank, cursorRank), and(eq(entries.rank, cursorRank), lt(entries.id, cursorID)))!
+      or(
+        lt(entries.rank, cursor.rank),
+        and(eq(entries.rank, cursor.rank), lt(entries.id, cursorID))
+      )!
     );
-  } else if (input.lastOrder) {
-    filters.push(lt(entries.rank, input.lastOrder));
   }
   if (collectionID) filters.push(eq(entries.collectionID, collectionID));
 
@@ -59,16 +50,18 @@ const listEntries = async (input: {
     .from(entries)
     .where(and(...filters))
     .orderBy(desc(entries.rank), desc(entries.id))
-    .limit(perPage)
-    .offset(input.lastOrder || input.lastID ? 0 : (page - 1) * perPage);
+    .limit(limit + 1);
+  const hasMore = rows.length > limit;
+  const pageRows = hasMore ? rows.slice(0, limit) : rows;
 
   return {
-    entries: rows.map((entry) => ({
+    entries: pageRows.map((entry) => ({
       id: toEntryID(entry.id),
       name: entry.name,
       order: entry.rank,
       collectionID: entry.collectionID ? toCollectionID(entry.collectionID) : undefined
-    }))
+    })),
+    nextCursor: hasMore ? toEntryID(pageRows[pageRows.length - 1].id) : null
   };
 };
 

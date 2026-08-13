@@ -5,7 +5,51 @@ import { authorized, base } from "#backend/lib/transport";
 import { id } from "#backend/lib/primitives";
 import { entryName } from "#backend/lib/validation";
 import { Entries } from "#backend/services/entries";
+import type { ContentNode } from "#backend/services/entries/get";
+import { ORPCError } from "@orpc/server";
 import * as z from "zod";
+
+const contentMarkType = z.object({
+  type: z.string(),
+  attrs: z.record(z.string(), z.unknown()).optional()
+});
+const contentNodeType: z.ZodType<ContentNode> = z.lazy(() => {
+  return z.object({
+    type: z.string(),
+    attrs: z.record(z.string(), z.unknown()).optional(),
+    content: z.array(contentNodeType).optional(),
+    marks: z.array(contentMarkType).optional(),
+    text: z.string().optional()
+  });
+});
+const entryDetailsType = entryType.extend({
+  updatedAt: z.iso.datetime().describe("Time when the entry content was last updated"),
+  content: contentNodeType,
+  fragments: z.record(
+    z.string(),
+    z.object({
+      name: z.string().describe("Source fragment name"),
+      content: contentNodeType
+    })
+  ),
+  properties: z.record(
+    z.string(),
+    z.object({
+      name: z.string().describe("Source property name"),
+      type: z
+        .enum(["text", "long-text", "number", "checkbox", "date", "url", "select", "multi-select"])
+        .describe("Property type"),
+      value: z.union([z.string(), z.number(), z.boolean(), z.array(z.string()), z.null()])
+    })
+  )
+});
+const entryListType = z.object({
+  data: z.array(entryType),
+  pagination: z.object({
+    nextCursor: id().nullable(),
+    hasMore: z.boolean()
+  })
+});
 
 const entriesRouter = base.prefix("/entries").router({
   create: base
@@ -33,8 +77,8 @@ const entriesRouter = base.prefix("/entries").router({
 
       return newEntry;
     }),
-  delete: base
-    .route({ method: "DELETE", path: "/" })
+  bulkDelete: base
+    .route({ method: "POST", path: "/bulk/delete" })
     .meta({
       required: {
         session: ["content"],
@@ -44,7 +88,7 @@ const entriesRouter = base.prefix("/entries").router({
     .use(authorized)
     .input(
       z.object({
-        ids: z.array(id()).describe("Comma-separated IDs of the entries to be deleted")
+        ids: z.array(id()).describe("IDs of the entries to delete")
       })
     )
     .output(z.void())
@@ -58,6 +102,35 @@ const entriesRouter = base.prefix("/entries").router({
         action: "entry:delete",
         data: { ids: entryIDs },
         memberID: context.auth.session?.memberID
+      });
+    }),
+  delete: base
+    .route({ method: "DELETE", path: "/:id" })
+    .meta({
+      required: {
+        key: ["entries"]
+      }
+    })
+    .use(authorized)
+    .input(
+      z.object({
+        id: id().describe("ID of the entry to delete")
+      })
+    )
+    .output(z.void())
+    .handler(async ({ context, input }) => {
+      const { entryIDs } = await Entries.delete({
+        workspaceID: context.auth.workspaceID,
+        ids: [input.id]
+      });
+
+      if (entryIDs.length === 0) {
+        throw new ORPCError("NOT_FOUND");
+      }
+
+      emitEntryEvent(context.auth.workspaceID, {
+        action: "entry:delete",
+        data: { ids: entryIDs }
       });
     }),
   update: base
@@ -129,6 +202,27 @@ const entriesRouter = base.prefix("/entries").router({
 
       return { order };
     }),
+  get: base
+    .route({ method: "GET", path: "/:id" })
+    .meta({
+      required: {
+        key: ["read:entries"],
+        session: true
+      }
+    })
+    .use(authorized)
+    .input(
+      z.object({
+        id: id().describe("ID of the entry to get")
+      })
+    )
+    .output(entryDetailsType)
+    .handler(async ({ context, input }) => {
+      return Entries.get({
+        id: input.id,
+        workspaceID: context.auth.workspaceID
+      });
+    }),
   list: base
     .route({ method: "GET", path: "/list" })
     .meta({
@@ -141,26 +235,26 @@ const entriesRouter = base.prefix("/entries").router({
     .input(
       z.object({
         collectionID: id().optional().describe("ID of the collection to get entries from"),
-        lastOrder: lexoRank()
-          .optional()
-          .describe("Last LexoRank to get entries from; requires collectionID"),
-        lastID: id().optional().describe("Last entry ID to get entries from"),
-        perPage: z.number().int().min(1).max(100).optional().describe("Number of entries per page"),
-        page: z.number().int().min(1).max(1e6).optional().describe("Page number")
+        cursor: id().optional().describe("Cursor from the previous page"),
+        limit: z.number().int().min(1).max(100).optional().describe("Maximum entries to return")
       })
     )
-    .output(z.array(entryType))
+    .output(entryListType)
     .handler(async ({ context, input }) => {
-      const { entries } = await Entries.list({
+      const { entries, nextCursor } = await Entries.list({
         workspaceID: context.auth.workspaceID,
         collectionID: input.collectionID,
-        lastOrder: input.lastOrder,
-        lastID: input.lastID,
-        perPage: input.perPage,
-        page: input.page
+        cursor: input.cursor,
+        limit: input.limit
       });
 
-      return entries;
+      return {
+        data: entries,
+        pagination: {
+          nextCursor,
+          hasMore: nextCursor !== null
+        }
+      };
     })
 });
 

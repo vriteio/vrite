@@ -22,6 +22,15 @@ const allowedHeaders = [
   "X-Session-Verification",
   "X-Session-Verification-Callback"
 ];
+const exposedHeaders = [
+  "Retry-After",
+  "X-API-Usage",
+  "X-API-Usage-Limit",
+  "X-API-Usage-Reset",
+  "X-RateLimit-Limit",
+  "X-RateLimit-Remaining",
+  "X-RateLimit-Reset"
+];
 const host = process.env.HOST ?? "0.0.0.0";
 const port = Number(process.env.PORT ?? 3333);
 const httpsKeyPath = process.env.HTTPS_KEY_PATH;
@@ -76,6 +85,7 @@ await app.register(corsPlugin, {
   origin: allowedOrigins,
   methods: allowedMethods,
   allowedHeaders: allowedHeaders,
+  exposedHeaders,
   credentials: true,
   maxAge: 86400
 });

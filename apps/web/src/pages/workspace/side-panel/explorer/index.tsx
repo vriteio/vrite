@@ -211,7 +211,7 @@ const Explorer = () => {
                     </div>
                   </Show>
                 </Show>
-                <div ref={setDropRef} class="md:flex-1">
+                <div ref={setDropRef} class="flex-1">
                   <Show when={isDraggedOver()}>
                     <div class="top-0 left-0 -z-10 rounded-lg absolute h-full w-full opacity-10 bg-gradient-to-tr" />
                   </Show>

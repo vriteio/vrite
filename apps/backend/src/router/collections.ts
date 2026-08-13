@@ -6,6 +6,14 @@ import { collectionName } from "#backend/lib/validation";
 import { Collections } from "#backend/services/collections";
 import * as z from "zod";
 
+const collectionListType = z.object({
+  data: z.array(collectionType),
+  pagination: z.object({
+    nextCursor: id().nullable(),
+    hasMore: z.boolean()
+  })
+});
+
 const collectionsRouter = base.prefix("/collections").router({
   create: base
     .route({ method: "POST", path: "/" })
@@ -39,8 +47,8 @@ const collectionsRouter = base.prefix("/collections").router({
 
       return newCollection;
     }),
-  delete: base
-    .route({ method: "DELETE", path: "/" })
+  bulkDelete: base
+    .route({ method: "POST", path: "/bulk/delete" })
     .meta({
       required: {
         session: ["content"],
@@ -50,7 +58,7 @@ const collectionsRouter = base.prefix("/collections").router({
     .use(authorized)
     .input(
       z.object({
-        ids: z.array(id()).describe("Comma-separated IDs of the collections to be deleted")
+        ids: z.array(id()).describe("IDs of the collections to delete")
       })
     )
     .output(z.void())
@@ -58,6 +66,41 @@ const collectionsRouter = base.prefix("/collections").router({
       const deleted = await Collections.delete({
         workspaceID: context.auth.workspaceID,
         ids: input.ids
+      });
+
+      emitCollectionEvent(context.auth.workspaceID, {
+        action: "collection:delete",
+        data: { ids: deleted.collectionIDs },
+        memberID: context.auth.session?.memberID
+      });
+
+      if (deleted.entryIDs.length > 0) {
+        emitEntryEvent(context.auth.workspaceID, {
+          action: "entry:delete",
+          data: { ids: deleted.entryIDs },
+          memberID: context.auth.session?.memberID
+        });
+      }
+    }),
+  delete: base
+    .route({ method: "DELETE", path: "/:id" })
+    .meta({
+      required: {
+        session: ["content"],
+        key: ["collections"]
+      }
+    })
+    .use(authorized)
+    .input(
+      z.object({
+        id: id().describe("ID of the collection to delete")
+      })
+    )
+    .output(z.void())
+    .handler(async ({ context, input }) => {
+      const deleted = await Collections.delete({
+        workspaceID: context.auth.workspaceID,
+        ids: [input.id]
       });
 
       emitCollectionEvent(context.auth.workspaceID, {
@@ -156,27 +199,27 @@ const collectionsRouter = base.prefix("/collections").router({
     .input(
       z.object({
         ancestorID: id().optional().describe("ID of the parent collection"),
-        perPage: z
-          .number()
-          .int()
-          .min(1)
-          .max(100)
-          .optional()
-          .describe("Number of collections per page"),
-        page: z.number().int().min(1).max(1e6).optional().describe("Page number")
+        cursor: id().optional().describe("Cursor from the previous page"),
+        limit: z.number().int().min(1).max(100).optional().describe("Maximum collections to return")
       })
     )
     .use(authorized)
-    .output(z.array(collectionType))
+    .output(collectionListType)
     .handler(async ({ context, input }) => {
-      const { collections } = await Collections.list({
+      const { collections, nextCursor } = await Collections.list({
         workspaceID: context.auth.workspaceID,
         ancestorID: input.ancestorID,
-        perPage: input.perPage,
-        page: input.page
+        cursor: input.cursor,
+        limit: input.limit
       });
 
-      return collections;
+      return {
+        data: collections,
+        pagination: {
+          nextCursor,
+          hasMore: nextCursor !== null
+        }
+      };
     })
 });
 
