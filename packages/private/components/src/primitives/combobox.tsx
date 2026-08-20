@@ -175,18 +175,18 @@ const Combobox = <O extends ComboboxOption>(props: ComboboxProps<O>): JSX.Elemen
                           ":base: relative flex w-full cursor-pointer items-center justify-start gap-1 rounded-md px-1 py-0.5 outline-none",
                           selected()
                             ? ":base: group/combobox-item"
-                            : ":base: data-[highlighted]:bg-gray-100"
+                            : ":base: media-mouse:data-[highlighted]:bg-gray-100"
                         )}
                       >
                         <Show when={selected()}>
-                          <div class=":base: absolute inset-0 -z-1 rounded-md bg-gradient-to-tr opacity-10 group-data-[highlighted]/combobox-item:opacity-100 pointer-events-none" />
+                          <div class=":base: absolute inset-0 -z-1 rounded-md bg-gradient-to-tr opacity-10 media-mouse:group-data-[highlighted]/combobox-item:opacity-100 pointer-events-none" />
                         </Show>
                         <ArkCombobox.ItemText
                           title={option.label}
                           class={clsx(
                             ":base: flex-1 px-1 text-start text-sm line-clamp-1",
                             selected()
-                              ? ":base: bg-gradient-to-tr bg-clip-text text-transparent group-data-[highlighted]/combobox-item:text-white group-data-[highlighted]/combobox-item:from-white group-data-[highlighted]/combobox-item:to-white"
+                              ? ":base: bg-gradient-to-tr bg-clip-text text-transparent media-mouse:group-data-[highlighted]/combobox-item:text-white media-mouse:group-data-[highlighted]/combobox-item:from-white media-mouse:group-data-[highlighted]/combobox-item:to-white"
                               : ":base: text-gray-700"
                           )}
                         >

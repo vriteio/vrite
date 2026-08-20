@@ -384,6 +384,9 @@ importers:
       '@solid-primitives/media':
         specifier: ^2.3.6
         version: 2.3.6(solid-js@1.9.14)
+      '@solid-primitives/scheduled':
+        specifier: ^1.5.3
+        version: 1.5.3(solid-js@1.9.14)
       '@tiptap/core':
         specifier: 3.29.2
         version: 3.29.2(@tiptap/pm@3.29.2)

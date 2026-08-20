@@ -81,8 +81,8 @@ const MenuItems = <O extends MenuItem>(props: MenuItemsProps<O>) => (
               class={clsx(
                 "w-full flex items-center gap-1 justify-start px-1 py-0.5 rounded-md cursor-pointer outline-none",
                 option.color === "danger"
-                  ? "data-[highlighted]:bg-red-600 data-[highlighted]:bg-opacity-10"
-                  : "data-[highlighted]:bg-gray-100"
+                  ? "media-mouse:data-[highlighted]:bg-red-600 media-mouse:data-[highlighted]:bg-opacity-10"
+                  : "media-mouse:data-[highlighted]:bg-gray-100"
               )}
             >
               <Show when={option.icon}>
@@ -179,13 +179,13 @@ const MenuItems = <O extends MenuItem>(props: MenuItemsProps<O>) => (
               !option.selected &&
                 !loading() &&
                 (option.color === "danger"
-                  ? "data-[highlighted]:bg-red-600 data-[highlighted]:bg-opacity-10"
-                  : "data-[highlighted]:bg-gray-100")
+                  ? "media-mouse:data-[highlighted]:bg-red-600 media-mouse:data-[highlighted]:bg-opacity-10"
+                  : "media-mouse:data-[highlighted]:bg-gray-100")
             )}
           >
             <div class={clsx("contents", loading() && "invisible")}>
               <Show when={option.selected}>
-                <div class="absolute inset-0 -z-1 rounded-md bg-gradient-to-tr opacity-10 group-data-[highlighted]/menu-item:opacity-100 pointer-events-none" />
+                <div class="absolute inset-0 -z-1 rounded-md bg-gradient-to-tr opacity-10 media-mouse:group-data-[highlighted]/menu-item:opacity-100 pointer-events-none" />
               </Show>
               <Show when={option.icon}>
                 <div
@@ -193,7 +193,7 @@ const MenuItems = <O extends MenuItem>(props: MenuItemsProps<O>) => (
                     "h-4.5 w-4.5",
                     typeof option.icon === "string" && option.icon,
                     option.selected
-                      ? "bg-gradient-to-tr group-data-[highlighted]/menu-item:text-white group-data-[highlighted]/menu-item:from-white group-data-[highlighted]/menu-item:to-white"
+                      ? "bg-gradient-to-tr media-mouse:group-data-[highlighted]/menu-item:text-white media-mouse:group-data-[highlighted]/menu-item:from-white media-mouse:group-data-[highlighted]/menu-item:to-white"
                       : option.color === "danger"
                         ? "text-red-500"
                         : "text-gray-500"
@@ -208,7 +208,7 @@ const MenuItems = <O extends MenuItem>(props: MenuItemsProps<O>) => (
                   class={clsx(
                     "flex-1 text-start text-sm line-clamp-1",
                     option.selected
-                      ? "bg-gradient-to-tr bg-clip-text text-transparent group-data-[highlighted]/menu-item:text-white group-data-[highlighted]/menu-item:from-white group-data-[highlighted]/menu-item:to-white"
+                      ? "bg-gradient-to-tr bg-clip-text text-transparent media-mouse:group-data-[highlighted]/menu-item:text-white media-mouse:group-data-[highlighted]/menu-item:from-white media-mouse:group-data-[highlighted]/menu-item:to-white"
                       : option.color === "danger"
                         ? "text-red-500"
                         : "text-gray-700"

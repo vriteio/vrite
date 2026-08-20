@@ -1,4 +1,4 @@
-import { Button, Card, IconButton, Overlay } from "@andesine/components";
+import { Button, Card, Dialog, IconButton } from "@andesine/components";
 import { type Component, createEffect, createSignal } from "solid-js";
 
 import { useClipboard } from "#web/context/clipboard";
@@ -42,42 +42,43 @@ const NewInviteDialog: Component<NewInviteDialogProps> = (props) => {
   });
 
   return (
-    <Overlay opened={Boolean(props.link)} onOverlayClick={props.onClose} aria-label="Invite link">
-      <Card color="contrast" class="p-1.5">
-        <Card class="flex w-lg flex-col gap-3 rounded-xl p-4" shade>
-          <div class="flex flex-col gap-0.5">
-            <h3 class="text-lg font-semibold leading-tight">Invitation created</h3>
-            <p class="text-sm leading-tight text-gray-400">{description()}</p>
-          </div>
-          <Card
-            class="flex min-h-16 items-center justify-center break-all rounded-xl border-0 p-3 font-mono text-sm select-all"
-            color="contrast"
-          >
-            {props.link}
-          </Card>
-          <div class="flex gap-2">
-            <IconButton
-              variant="outlined"
-              color="contrast"
-              text="soft"
-              size="small"
-              icon="i-lucide:x"
-              onClick={props.onClose}
-            />
-            <Button
-              color="primary"
-              variant="outlined"
-              size="small"
-              onClick={copyLink}
-              disabled={copied()}
-              class="flex-1"
-            >
-              {copied() ? "Copied!" : "Copy link"}
-            </Button>
-          </div>
-        </Card>
+    <Dialog
+      opened={Boolean(props.link)}
+      onOverlayClick={props.onClose}
+      size="large"
+      aria-label="Invite link"
+    >
+      <div class="flex flex-col gap-0.5">
+        <h3 class="text-lg font-semibold leading-tight">Invitation created</h3>
+        <p class="text-sm leading-tight text-gray-400">{description()}</p>
+      </div>
+      <Card
+        class="flex min-h-16 items-center justify-center break-all rounded-xl border-0 p-3 font-mono text-sm select-all"
+        color="contrast"
+      >
+        {props.link}
       </Card>
-    </Overlay>
+      <div class="flex gap-2">
+        <IconButton
+          variant="outlined"
+          color="contrast"
+          text="soft"
+          size="small"
+          icon="i-lucide:x"
+          onClick={props.onClose}
+        />
+        <Button
+          color="primary"
+          variant="outlined"
+          size="small"
+          onClick={copyLink}
+          disabled={copied()}
+          class="flex-1"
+        >
+          {copied() ? "Copied!" : "Copy link"}
+        </Button>
+      </div>
+    </Dialog>
   );
 };
 

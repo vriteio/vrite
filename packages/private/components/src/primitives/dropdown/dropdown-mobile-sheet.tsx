@@ -41,6 +41,7 @@ const DropdownMobileSheet: Component<DropdownMobileSheetProps> = (props) => {
       : previousTitle();
   };
   const cardProps = () => activeEntry()?.getCardProps();
+  const dragFromContent = () => activeEntry()?.getDragFromContent() !== false;
   const drag = useMobileDropdownDrag({
     expanded: mobileDropdownExpanded,
     opened,
@@ -95,9 +96,12 @@ const DropdownMobileSheet: Component<DropdownMobileSheetProps> = (props) => {
               cardProps()?.class
             )}
           >
-            <div class="flex min-h-0 max-h-full w-full min-w-0 max-w-full flex-1 flex-col overflow-hidden">
+            <div
+              {...(dragFromContent() ? drag.gestureProps : {})}
+              class="flex min-h-0 max-h-full w-full min-w-0 max-w-full flex-1 flex-col overflow-hidden"
+            >
               <div
-                {...drag.gestureProps}
+                {...(!dragFromContent() ? drag.gestureProps : {})}
                 aria-hidden="true"
                 class="flex h-6 w-full shrink-0 touch-none cursor-ns-resize items-center justify-center outline-none"
               >
@@ -123,7 +127,6 @@ const DropdownMobileSheet: Component<DropdownMobileSheetProps> = (props) => {
                 </button>
               </Show>
               <div
-                {...(activeEntry()?.getDragFromContent() !== false ? drag.gestureProps : {})}
                 class="min-h-0 w-full min-w-0 max-w-full flex-1 overflow-x-hidden overflow-y-auto scrollbar-sm flex flex-col [&>div]:contents"
                 data-dropdown-mobile-scroll
                 ref={setMobileDropdownContentContainer}

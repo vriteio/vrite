@@ -11,7 +11,7 @@ import {
   onMount
 } from "solid-js";
 import clsx from "clsx";
-import { Card, Button, Spinner } from "@andesine/components";
+import { Card, Button, Spinner, IconButton } from "@andesine/components";
 import styles from "./notifications.module.scss";
 
 interface NotificationData {
@@ -34,27 +34,29 @@ const Notification: Component<NotificationProps> = (props) => (
     color="contrast"
     class="flex p-0 justify-center items-center w-full rounded-xl transition-shadow duration-250 shadow-lg"
   >
-    <div class="flex w-full p-2 rounded-xl shadow-inner shadow-gray-200 shadow-opacity-60">
+    <div class="flex w-full p-1 rounded-xl shadow-inner shadow-gray-200 shadow-opacity-60 justify-start">
       <Show when={props.type !== "loading"} fallback={<Spinner class="h-6 w-6" color="primary" />}>
-        <div
-          class={clsx(
-            "h-6 w-6",
-            props.type === "success" && "text-green-500 i-lucide:circle-check",
-            props.type === "error" && "text-red-500 i-lucide:circle-alert",
-            props.type === "info" && "text-blue-500 i-lucide:info"
-          )}
-        />
+        <div class="p-1 flex justify-center items-center">
+          <div
+            class={clsx(
+              "h-5 w-5",
+              props.type === "success" && "text-green-500 i-lucide:circle-check",
+              props.type === "error" && "text-red-500 i-lucide:circle-alert",
+              props.type === "info" && "text-blue-500 i-lucide:info"
+            )}
+          />
+        </div>
       </Show>
-      <span class="px-2 min-w-48 flex-1">{props.text}</span>
-      <Button
+      <span class="flex items-center px-1 min-w-48 flex-1 text-[16px] md:text-base">
+        {props.text}
+      </span>
+      <IconButton
         size="small"
         variant="text"
         text="soft"
         onClick={() => props.onDismiss?.()}
-        class="py-0"
-      >
-        Close
-      </Button>
+        icon="i-lucide:x"
+      />
     </div>
   </Card>
 );

@@ -118,12 +118,14 @@ const FragmentMenu = (props: FragmentMenuProps): JSX.Element => {
           </Show>
           <span class="relative flex h-9 min-w-0 items-center gap-1">
             <span
+              data-node-selection-icon
               class={clsx(
                 "h-4.5 w-4.5 shrink-0 i-lucide:letter-text",
                 props.selected ? "bg-gradient-to-tr" : "text-gray-300"
               )}
             />
             <span
+              data-node-selection-label
               class={clsx(
                 "min-w-0 truncate text-start",
                 props.selected ? "bg-gradient-to-tr bg-clip-text text-transparent" : "text-gray-500"
@@ -133,6 +135,7 @@ const FragmentMenu = (props: FragmentMenuProps): JSX.Element => {
             </span>
           </span>
           <span
+            data-node-selection-line
             class={clsx(
               "h-px flex-1 rounded-full",
               props.selected

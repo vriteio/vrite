@@ -54,6 +54,9 @@ const LineChart: Component<LineChartProps> = (props) => {
   const tooltipPlacement = () => props.tooltipPlacement ?? "point";
 
   let containerEl!: HTMLDivElement;
+  let activeTouchPointerID: number | null = null;
+  let chartLeft = 0;
+
   const [svgWidth, setSvgWidth] = createSignal(0);
   const [hoverIdx, setHoverIdx] = createSignal<number | null>(null);
   const plotW = () => svgWidth() - PAD.left - PAD.right;
@@ -121,14 +124,42 @@ const LineChart: Component<LineChartProps> = (props) => {
     return "middle";
   };
 
-  const handleMouseMove = (e: MouseEvent) => {
+  const updateHoverPoint = (clientX: number) => {
     const n = props.data.length;
+
     if (!n) return;
-    const raw =
-      ((e.clientX - (e.currentTarget as SVGSVGElement).getBoundingClientRect().left - PAD.left) /
-        plotW()) *
-      (n - 1);
+
+    const raw = ((clientX - chartLeft - PAD.left) / plotW()) * (n - 1);
+
     setHoverIdx(Math.max(0, Math.min(n - 1, Math.round(raw))));
+  };
+  const handleMouseEnter = (event: MouseEvent) => {
+    chartLeft = (event.currentTarget as SVGSVGElement).getBoundingClientRect().left;
+    updateHoverPoint(event.clientX);
+  };
+  const handleMouseMove = (event: MouseEvent) => {
+    updateHoverPoint(event.clientX);
+  };
+  const handlePointerDown = (event: PointerEvent) => {
+    const svgElement = event.currentTarget as SVGSVGElement;
+
+    if (event.pointerType !== "touch") return;
+
+    activeTouchPointerID = event.pointerId;
+    chartLeft = svgElement.getBoundingClientRect().left;
+    svgElement.setPointerCapture(event.pointerId);
+    updateHoverPoint(event.clientX);
+  };
+  const handlePointerMove = (event: PointerEvent) => {
+    if (event.pointerId !== activeTouchPointerID) return;
+
+    updateHoverPoint(event.clientX);
+  };
+  const handlePointerEnd = (event: PointerEvent) => {
+    if (event.pointerId !== activeTouchPointerID) return;
+
+    activeTouchPointerID = null;
+    setHoverIdx(null);
   };
 
   const hoverPoint = createMemo(() => {
@@ -163,15 +194,22 @@ const LineChart: Component<LineChartProps> = (props) => {
       style={{ position: "relative", height: `${svgH()}px` }}
     >
       <svg
+        class="select-none"
         width={svgWidth()}
         height={svgH()}
         style={{
-          display: "block",
-          overflow: "visible",
-          visibility: svgWidth() > 0 ? "visible" : "hidden"
+          "display": "block",
+          "overflow": "visible",
+          "touch-action": "none",
+          "visibility": svgWidth() > 0 ? "visible" : "hidden"
         }}
+        onMouseEnter={handleMouseEnter}
         onMouseMove={handleMouseMove}
         onMouseLeave={() => setHoverIdx(null)}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerEnd}
+        onPointerCancel={handlePointerEnd}
       >
         <defs>
           <linearGradient id={areaGradientID} x1="1" y1="1" x2="0" y2="0">

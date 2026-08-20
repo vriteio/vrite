@@ -1,44 +1,87 @@
 import { CollaborationCaret as BaseCollaborationCaret } from "@tiptap/extension-collaboration-caret";
-import { Plugin, PluginKey, type EditorState } from "@tiptap/pm/state";
+import { GapCursor } from "@tiptap/pm/gapcursor";
+import {
+  NodeSelection,
+  Plugin,
+  PluginKey,
+  type EditorState,
+  type Selection
+} from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
-import { relativePositionToAbsolutePosition, ySyncPluginKey } from "@tiptap/y-tiptap";
+import {
+  absolutePositionToRelativePosition,
+  relativePositionToAbsolutePosition,
+  yCursorPluginKey,
+  ySyncPluginKey
+} from "@tiptap/y-tiptap";
 import { createRelativePositionFromJSON } from "yjs";
 import { createBlockSelectionShade } from "#editor/ui/block-selection";
 import { forEachSelectedBlock, selectionCoversNode } from "#editor/ui/block-utils";
 import { isBlockSelection } from "./block-selection";
 
-type CollaborationUser = {
+interface CollaborationUser {
   color?: string;
   name?: string;
-};
+}
 
-type AwarenessState = {
-  blockSelection?: boolean;
-  cursor?: {
-    anchor: Parameters<typeof createRelativePositionFromJSON>[0];
-    head: Parameters<typeof createRelativePositionFromJSON>[0];
-  };
+interface AwarenessSelection {
+  anchor: Parameters<typeof createRelativePositionFromJSON>[0];
+  head: Parameters<typeof createRelativePositionFromJSON>[0];
+}
+
+interface CollaborationSelection extends AwarenessSelection {
+  depth?: number;
+  type: "block" | "gap" | "node";
+}
+
+interface AwarenessState {
+  collaborationSelection?: CollaborationSelection | null;
+  cursor?: AwarenessSelection;
   user?: CollaborationUser;
-};
+}
 
-type AwarenessUpdate = {
-  added: number[];
-  removed: number[];
-  updated: number[];
-};
-
-type Awareness = {
+interface Awareness {
   clientID: number;
   getStates(): Map<number, AwarenessState>;
   setLocalStateField(field: string, value: unknown): void;
-  on(event: "update", listener: (update: AwarenessUpdate) => void): void;
-  off(event: "update", listener: (update: AwarenessUpdate) => void): void;
-};
+}
 
-const blockSelectionPluginKey = new PluginKey<DecorationSet>("collaborationBlockSelection");
+interface LocalCollaborationSelection {
+  depth?: number;
+  from: number;
+  to: number;
+  type: CollaborationSelection["type"];
+}
+
+const collaborationSelectionPluginKey = new PluginKey<DecorationSet>("collaborationSelection");
 const DEFAULT_COLLABORATION_COLOR = "#f59e0b";
 const getCollaborationColor = (color?: string) => {
   return color && /^#[\da-f]{6}$/i.test(color) ? color : DEFAULT_COLLABORATION_COLOR;
+};
+const getLocalCollaborationSelection = (
+  selection: Selection
+): LocalCollaborationSelection | null => {
+  if (isBlockSelection(selection)) {
+    return {
+      depth: selection.depth,
+      from: selection.from,
+      to: selection.to,
+      type: "block"
+    };
+  }
+
+  if (selection instanceof GapCursor) {
+    return { from: selection.from, to: selection.to, type: "gap" };
+  }
+
+  if (
+    selection instanceof NodeSelection &&
+    ["fragment", "property"].includes(selection.node.type.name)
+  ) {
+    return { from: selection.from, to: selection.to, type: "node" };
+  }
+
+  return null;
 };
 
 const createCaret = (user: CollaborationUser, clientID?: number): HTMLElement => {
@@ -60,8 +103,17 @@ const createCaret = (user: CollaborationUser, clientID?: number): HTMLElement =>
 
   return caret;
 };
+const createGapCursor = (user: CollaborationUser, clientID: number): HTMLElement => {
+  const cursor = document.createElement("span");
 
-const createBlockSelectionPlugin = (awareness: Awareness) => {
+  cursor.className = "collaboration-gap-cursor";
+  cursor.dataset.collaborationClient = String(clientID);
+  cursor.style.setProperty("--collaboration-color", getCollaborationColor(user.color));
+
+  return cursor;
+};
+
+const createCollaborationSelectionPlugin = (awareness: Awareness) => {
   const createDecorations = (state: EditorState): DecorationSet => {
     const syncState = ySyncPluginKey.getState(state);
 
@@ -72,56 +124,91 @@ const createBlockSelectionPlugin = (awareness: Awareness) => {
     const decorations: Decoration[] = [];
 
     awareness.getStates().forEach((awarenessState, clientID) => {
-      if (
-        clientID === awareness.clientID ||
-        !awarenessState.blockSelection ||
-        !awarenessState.cursor
-      ) {
-        return;
-      }
+      if (clientID === awareness.clientID) return;
+
+      const collaborationSelection = awarenessState.collaborationSelection;
+      const relativeSelection = collaborationSelection || awarenessState.cursor;
+
+      if (!relativeSelection) return;
 
       const anchor = relativePositionToAbsolutePosition(
         syncState.doc,
         syncState.type,
-        createRelativePositionFromJSON(awarenessState.cursor.anchor),
+        createRelativePositionFromJSON(relativeSelection.anchor),
         syncState.binding.mapping
       );
       const head = relativePositionToAbsolutePosition(
         syncState.doc,
         syncState.type,
-        createRelativePositionFromJSON(awarenessState.cursor.head),
+        createRelativePositionFromJSON(relativeSelection.head),
         syncState.binding.mapping
       );
 
-      if (anchor === null || head === null || anchor === head) return;
+      if (anchor === null || head === null) return;
 
       const from = Math.min(anchor, head);
       const to = Math.max(anchor, head);
 
-      forEachSelectedBlock(state.doc, from, to, (node, position) => {
-        const selectsWholeBlock = selectionCoversNode(node, position, from, to);
+      if (collaborationSelection?.type === "node") {
+        const node = state.doc.nodeAt(from);
+        const supportedNode = node && ["fragment", "property"].includes(node.type.name);
 
-        // Invisible node markers identify whole selected blocks, including leaf nodes.
-        if (selectsWholeBlock) {
+        if (supportedNode && to === from + node.nodeSize) {
           decorations.push(
-            Decoration.node(position, position + node.nodeSize, {
-              "class": "collaboration-block-selection-marker",
-              "data-collaboration-client": String(clientID)
+            Decoration.node(from, to, {
+              "data-collaboration-client": `${clientID}`,
+              "class": "collaboration-node-selection",
+              "style": `--collaboration-color: ${getCollaborationColor(awarenessState.user?.color)}`
             })
           );
         }
-      });
+
+        return;
+      }
+
+      if (collaborationSelection?.type === "block") {
+        forEachSelectedBlock(
+          state.doc,
+          from,
+          to,
+          (node, position) => {
+            const selectsWholeBlock = selectionCoversNode(node, position, from, to);
+
+            // Invisible node markers identify whole selected blocks, including leaf nodes.
+            if (selectsWholeBlock) {
+              decorations.push(
+                Decoration.node(position, position + node.nodeSize, {
+                  "class": "collaboration-block-selection-marker",
+                  "data-collaboration-client": String(clientID)
+                })
+              );
+            }
+          },
+          { includeCoveredFragments: collaborationSelection.depth !== 1 }
+        );
+
+        return;
+      }
+
+      if (collaborationSelection?.type === "gap") {
+        decorations.push(
+          Decoration.widget(head, () => createGapCursor(awarenessState.user || {}, clientID), {
+            key: `collaboration-gap-cursor-${clientID}`,
+            side: 10
+          })
+        );
+      }
     });
 
     return DecorationSet.create(state.doc, decorations);
   };
 
   return new Plugin<DecorationSet>({
-    key: blockSelectionPluginKey,
+    key: collaborationSelectionPluginKey,
     state: {
       init: (_, state) => createDecorations(state),
       apply(transaction, decorations, _oldState, newState) {
-        if (transaction.docChanged || transaction.getMeta(blockSelectionPluginKey)) {
+        if (transaction.docChanged || transaction.getMeta(yCursorPluginKey)) {
           return createDecorations(newState);
         }
 
@@ -129,51 +216,95 @@ const createBlockSelectionPlugin = (awareness: Awareness) => {
       }
     },
     props: {
-      decorations: (state) => blockSelectionPluginKey.getState(state) || null
+      decorations: (state) => collaborationSelectionPluginKey.getState(state) || null
     },
     view(view) {
       const shades = new Map<string, ReturnType<typeof createBlockSelectionShade>>();
       const container = view.dom.closest<HTMLElement>("[data-editor-scrollable-container]");
 
-      let localBlockSelection: boolean | null = null;
+      let localSelection: LocalCollaborationSelection | null | undefined;
       let shadeFrame: number | null = null;
 
-      const updateLocalBlockSelection = () => {
-        const next = isBlockSelection(view.state.selection);
+      const updateLocalSelection = (documentChanged = false) => {
+        const nextSelection = getLocalCollaborationSelection(view.state.selection);
+        const selectionChanged =
+          localSelection === undefined ||
+          localSelection?.type !== nextSelection?.type ||
+          localSelection?.depth !== nextSelection?.depth ||
+          localSelection?.from !== nextSelection?.from ||
+          localSelection?.to !== nextSelection?.to;
 
-        if (next === localBlockSelection) return;
+        if (!(selectionChanged || (nextSelection && documentChanged))) return;
 
-        localBlockSelection = next;
-        awareness.setLocalStateField("blockSelection", next);
+        if (!nextSelection) {
+          localSelection = null;
+          awareness.setLocalStateField("collaborationSelection", null);
+          return;
+        }
+
+        const syncState = ySyncPluginKey.getState(view.state);
+
+        if (!syncState?.type || !syncState.binding?.mapping) return;
+
+        localSelection = nextSelection;
+        awareness.setLocalStateField("collaborationSelection", {
+          anchor: absolutePositionToRelativePosition(
+            nextSelection.from,
+            syncState.type,
+            syncState.binding.mapping
+          ),
+          depth: nextSelection.depth,
+          head: absolutePositionToRelativePosition(
+            nextSelection.to,
+            syncState.type,
+            syncState.binding.mapping
+          ),
+          type: nextSelection.type
+        } satisfies CollaborationSelection);
       };
       const updateRemoteSelections = () => {
         const selections = new Map<string, { first: HTMLElement; last: HTMLElement }>();
+        const gapSelections = new Set<string>();
+        const nodeSelections = new Set<string>();
         const awarenessStates = awareness.getStates();
+        const carets: HTMLElement[] = [];
 
         shadeFrame = null;
 
         view.dom
-          .querySelectorAll<HTMLElement>(".collaboration-block-selection-marker")
-          .forEach((selection) => {
-            const clientID = selection.dataset.collaborationClient;
+          .querySelectorAll<HTMLElement>(
+            ".collaboration-block-selection-marker, .collaboration-gap-cursor, .collaboration-node-selection, .collaboration-caret"
+          )
+          .forEach((element) => {
+            const clientID = element.dataset.collaborationClient;
 
             if (!clientID) return;
 
-            const blocks = selections.get(clientID);
+            if (element.classList.contains("collaboration-block-selection-marker")) {
+              const blocks = selections.get(clientID);
 
-            if (blocks) {
-              blocks.last = selection;
+              if (blocks) {
+                blocks.last = element;
+              } else {
+                selections.set(clientID, { first: element, last: element });
+              }
+            } else if (element.classList.contains("collaboration-gap-cursor")) {
+              gapSelections.add(clientID);
+            } else if (element.classList.contains("collaboration-node-selection")) {
+              nodeSelections.add(clientID);
             } else {
-              selections.set(clientID, { first: selection, last: selection });
+              carets.push(element);
             }
           });
 
-        view.dom.querySelectorAll<HTMLElement>(".collaboration-caret").forEach((caret) => {
-          const clientID = caret.dataset.collaborationClient;
+        carets.forEach((caret) => {
+          const clientID = caret.dataset.collaborationClient!;
 
+          caret.classList.toggle("collaboration-caret--block-selection", selections.has(clientID));
+          caret.classList.toggle("collaboration-caret--gap-cursor", gapSelections.has(clientID));
           caret.classList.toggle(
-            "collaboration-caret--block-selection",
-            Boolean(clientID && selections.has(clientID))
+            "collaboration-caret--node-selection",
+            nodeSelections.has(clientID)
           );
         });
 
@@ -208,20 +339,12 @@ const createBlockSelectionPlugin = (awareness: Awareness) => {
 
         shadeFrame = requestAnimationFrame(updateRemoteSelections);
       };
-      const handleAwarenessUpdate = (update: AwarenessUpdate) => {
-        const changedClients = [...update.added, ...update.updated, ...update.removed];
-
-        if (!changedClients.some((clientID) => clientID !== awareness.clientID)) return;
-
-        view.dispatch(view.state.tr.setMeta(blockSelectionPluginKey, true));
-      };
       const refreshShades = () => {
         shades.forEach((shade) => shade.refresh());
       };
       const resizeObserver =
         typeof ResizeObserver === "undefined" ? null : new ResizeObserver(refreshShades);
 
-      awareness.on("update", handleAwarenessUpdate);
       window.addEventListener("resize", refreshShades);
       resizeObserver?.observe(view.dom);
 
@@ -229,15 +352,15 @@ const createBlockSelectionPlugin = (awareness: Awareness) => {
         resizeObserver?.observe(container);
       }
 
-      updateLocalBlockSelection();
+      updateLocalSelection();
       scheduleRemoteSelectionUpdate();
 
       return {
         update(view, previousState) {
-          updateLocalBlockSelection();
+          updateLocalSelection(view.state.doc !== previousState.doc);
           if (
-            blockSelectionPluginKey.getState(view.state) !==
-            blockSelectionPluginKey.getState(previousState)
+            collaborationSelectionPluginKey.getState(view.state) !==
+            collaborationSelectionPluginKey.getState(previousState)
           ) {
             scheduleRemoteSelectionUpdate();
           }
@@ -248,8 +371,7 @@ const createBlockSelectionPlugin = (awareness: Awareness) => {
           shades.forEach((shade) => shade.remove());
           resizeObserver?.disconnect();
           window.removeEventListener("resize", refreshShades);
-          awareness.off("update", handleAwarenessUpdate);
-          awareness.setLocalStateField("blockSelection", null);
+          awareness.setLocalStateField("collaborationSelection", null);
         }
       };
     }
@@ -271,8 +393,10 @@ const CollaborationCaret = BaseCollaborationCaret.extend({
     const awareness = this.options.provider?.awareness as Awareness | undefined;
     const parentPlugins = this.parent?.() || [];
 
-    // Publish the selection kind before yCursorPlugin publishes its matching range.
-    return awareness ? [createBlockSelectionPlugin(awareness), ...parentPlugins] : parentPlugins;
+    // Publish special selections even when controls outside the editor have focus.
+    return awareness
+      ? [createCollaborationSelectionPlugin(awareness), ...parentPlugins]
+      : parentPlugins;
   }
 });
 

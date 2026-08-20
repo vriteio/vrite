@@ -1,19 +1,40 @@
 import type { CommandProps, Editor, KeyboardShortcutCommand, Range } from "@tiptap/core";
-import { PluginKey, Plugin } from "@tiptap/pm/state";
+import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
+import { PluginKey, Plugin, type Selection } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
 import { isNodeRangeSelection, NodeRange, NodeRangeSelection } from "@tiptap/extension-node-range";
 import { forEachSelectedBlock } from "#editor/ui/block-utils";
 
+interface BlockSelectionRange extends Range {
+  depth?: number;
+}
+
 declare module "@tiptap/core" {
   interface Commands<ReturnType> {
     blockSelection: {
-      setBlockSelection: (position: Range) => ReturnType;
+      setBlockSelection: (position: BlockSelectionRange) => ReturnType;
     };
   }
 }
 
 const BlockSelection = NodeRangeSelection;
 const isBlockSelection = isNodeRangeSelection;
+const createBlockRangeSelection = (
+  doc: ProseMirrorNode,
+  position: BlockSelectionRange
+): NodeRangeSelection => {
+  return new BlockSelection(doc.resolve(position.from), doc.resolve(position.to), position.depth);
+};
+const isFragmentChildBlockSelection = (selection: Selection): boolean => {
+  return isBlockSelection(selection) && selection.depth === 1;
+};
+const isSameBlockSelection = (selection: Selection, nextSelection: NodeRangeSelection): boolean => {
+  return (
+    isBlockSelection(selection) &&
+    selection.depth === nextSelection.depth &&
+    selection.eq(nextSelection)
+  );
+};
 const setBlockSelectionAtCoords = (
   editor: Editor,
   coords: { left: number; top: number }
@@ -72,11 +93,17 @@ const BlockSelectionExtension = NodeRange.extend({
 
             if (!isBlockSelection(selection)) return null;
 
-            forEachSelectedBlock(doc, from, to, (node, pos) => {
-              decorations.push(
-                Decoration.node(pos, pos + node.nodeSize, { class: "block-selection-marker" })
-              );
-            });
+            forEachSelectedBlock(
+              doc,
+              from,
+              to,
+              (node, pos) => {
+                decorations.push(
+                  Decoration.node(pos, pos + node.nodeSize, { class: "block-selection-marker" })
+                );
+              },
+              { includeCoveredFragments: !isFragmentChildBlockSelection(selection) }
+            );
 
             return DecorationSet.create(state.doc, decorations);
           }
@@ -86,11 +113,13 @@ const BlockSelectionExtension = NodeRange.extend({
   },
   addCommands() {
     return {
-      setBlockSelection(position: Range) {
+      setBlockSelection(position: BlockSelectionRange) {
         return ({ tr }: CommandProps) => {
-          tr.setSelection(
-            new BlockSelection(tr.doc.resolve(position.from), tr.doc.resolve(position.to))
-          );
+          const selection = createBlockRangeSelection(tr.doc, position);
+
+          if (isSameBlockSelection(tr.selection, selection)) return true;
+
+          tr.setSelection(selection);
 
           return true;
         };
@@ -161,4 +190,11 @@ const BlockSelectionExtension = NodeRange.extend({
   }
 });
 
-export { BlockSelectionExtension as BlockSelection, isBlockSelection, setBlockSelectionAtCoords };
+export {
+  BlockSelectionExtension as BlockSelection,
+  createBlockRangeSelection,
+  isBlockSelection,
+  isFragmentChildBlockSelection,
+  isSameBlockSelection,
+  setBlockSelectionAtCoords
+};

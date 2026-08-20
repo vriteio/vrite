@@ -1,4 +1,7 @@
-import { isBlockSelection } from "#editor/extensions/block-selection";
+import {
+  isBlockSelection,
+  isFragmentChildBlockSelection
+} from "#editor/extensions/block-selection";
 import type { Editor } from "@tiptap/core";
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import { forEachSelectedBlock, selectionCoversNode } from "./block-utils";
@@ -186,6 +189,8 @@ const isTargetInBlockSelection = (editor: Editor, target: BlockControlTarget): b
 
   if (!isBlockSelection(selection)) return false;
   if (target.node.type.name === "fragment") {
+    if (isFragmentChildBlockSelection(selection)) return false;
+
     return selectionCoversNode(target.node, target.pos, selection.from, selection.to);
   }
 
@@ -221,8 +226,7 @@ const registerSelectionControlHiding = (editor: Editor, hideControls: () => void
   const setKeyboardInput = () => (keyboardInput = true);
   const clearKeyboardInput = () => (keyboardInput = false);
   const handleSelectionUpdate = () => {
-    // Ranges and keyboard-driven caret moves hide controls; pointer caret moves do not.
-    const shouldHide = !editor.state.selection.empty || keyboardInput;
+    const shouldHide = keyboardInput;
 
     keyboardInput = false;
     if (shouldHide) hideControls();

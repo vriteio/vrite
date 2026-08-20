@@ -4,10 +4,7 @@ import {
   Body,
   Button,
   Container,
-  Head,
-  Heading,
   Html,
-  Img,
   Preview,
   Section,
   Tailwind,
@@ -17,6 +14,7 @@ import * as React from "react";
 import { PUBLIC_APP_URL } from "../src/constants";
 import { EmailFooter } from "../src/email-footer";
 import { EmailHeader } from "../src/email-header";
+import { EmailHead } from "../src/email-head";
 
 interface WorkspaceInviteProps {
   workspaceName?: string;
@@ -30,11 +28,11 @@ const WorkspaceInvite: React.FC<WorkspaceInviteProps> = ({
   inviteLink = `${PUBLIC_APP_URL}/invite?id=inv_example&expires=1893456000&signature=example`
 }) => (
   <Html>
-    <Head />
+    <EmailHead />
     <Preview>You've been invited to join {workspaceName} on Andesine</Preview>
     <Tailwind>
-      <Body className="text-gray-800 my-auto mx-auto font-sans">
-        <Container className="mx-auto w-[560px]">
+      <Body className="email-body bg-white text-gray-800 my-auto mx-auto font-sans">
+        <Container className="email-container bg-white mx-auto w-[560px]">
           <EmailHeader>You&apos;re invited to join {workspaceName}</EmailHeader>
           <Text className="text-[20px] leading-[28px]">
             {inviterName} has invited you to collaborate as a member of{" "}
@@ -44,7 +42,7 @@ const WorkspaceInvite: React.FC<WorkspaceInviteProps> = ({
           <Section className="text-center mt-[12px] mb-[24px]">
             <Button
               href={inviteLink}
-              className="inline-block bg-gray-900 text-white text-[16px] font-medium py-[12px] rounded-[8px] w-[560px]"
+              className="email-button inline-block bg-gray-900 text-white text-[16px] font-medium py-[12px] rounded-[8px] w-[560px]"
             >
               Accept invite
             </Button>

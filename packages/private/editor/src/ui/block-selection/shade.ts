@@ -19,6 +19,27 @@ const createBlockSelectionShade = (
     container.append(element);
   }
 
+  const getFragment = (block: HTMLElement): HTMLElement | null => {
+    if (block.matches("[data-fragment-node-view]")) return block;
+
+    return block.querySelector<HTMLElement>("[data-fragment-node-view]");
+  };
+  const getFirstVisualBlock = (block: HTMLElement): HTMLElement => {
+    const fragment = getFragment(block);
+
+    if (!fragment) return block;
+
+    return fragment.querySelector<HTMLElement>("[data-fragment-header]") || block;
+  };
+  const getLastVisualBlock = (block: HTMLElement): HTMLElement => {
+    const fragment = getFragment(block);
+
+    if (!fragment) return block;
+
+    const content = fragment.querySelector<HTMLElement>("[data-node-view-content]");
+
+    return content?.lastElementChild instanceof HTMLElement ? content.lastElementChild : block;
+  };
   const position = () => {
     if (!currentEditor || !currentFirstBlock || !currentLastBlock) return;
 
@@ -33,11 +54,13 @@ const createBlockSelectionShade = (
     element.style.width = `${editorRect.width + 16}px`;
   };
   const show = (editor: HTMLElement, firstBlock: HTMLElement, lastBlock: HTMLElement) => {
-    const changed = firstBlock !== currentFirstBlock || lastBlock !== currentLastBlock;
+    const firstVisualBlock = getFirstVisualBlock(firstBlock);
+    const lastVisualBlock = getLastVisualBlock(lastBlock);
+    const changed = firstVisualBlock !== currentFirstBlock || lastVisualBlock !== currentLastBlock;
 
     currentEditor = editor;
-    currentFirstBlock = firstBlock;
-    currentLastBlock = lastBlock;
+    currentFirstBlock = firstVisualBlock;
+    currentLastBlock = lastVisualBlock;
     if (changed) position();
     element.hidden = false;
   };

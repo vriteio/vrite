@@ -11,6 +11,7 @@ interface MobileDropdownDragOptions {
 const DRAG_ACTIVATION_DISTANCE = 8;
 const SNAP_DISTANCE = 64;
 const MIN_SHEET_HEIGHT = 72;
+const SCROLLABLE_OVERFLOW_VALUES = new Set(["auto", "scroll"]);
 
 const useMobileDropdownDrag = (options: MobileDropdownDragOptions) => {
   const [height, setHeight] = createSignal<number | null>(null);
@@ -19,6 +20,7 @@ const useMobileDropdownDrag = (options: MobileDropdownDragOptions) => {
   const [gesturePending, setGesturePending] = createRef(false);
   const [scrollableElement, setScrollableElement] = createRef<HTMLElement | null>(null);
   const [clickSuppressed, setClickSuppressed] = createRef(false);
+  const [closingFromGesture, setClosingFromGesture] = createRef(false);
   const [heightCleanupPending, setHeightCleanupPending] = createRef(false);
   const [heightCleanupInterrupted, setHeightCleanupInterrupted] = createRef(false);
   const viewportHeight = () => window.visualViewport?.height || window.innerHeight;
@@ -32,6 +34,7 @@ const useMobileDropdownDrag = (options: MobileDropdownDragOptions) => {
     setGesturePending(false);
     setScrollableElement(null);
     setClickSuppressed(false);
+    setClosingFromGesture(false);
     setDragging(false);
     setHeight(null);
   };
@@ -87,6 +90,7 @@ const useMobileDropdownDrag = (options: MobileDropdownDragOptions) => {
     }
 
     setHeightCleanupInterrupted(false);
+    if (shouldClose) setClosingFromGesture(true);
     setDragging(false);
     suppressNextClick();
 
@@ -103,9 +107,22 @@ const useMobileDropdownDrag = (options: MobileDropdownDragOptions) => {
     }
   };
   const findScrollableElement = (target: EventTarget | null) => {
-    const element = target instanceof HTMLElement ? target : null;
+    let element = target instanceof Element ? target : null;
 
-    return element?.closest<HTMLElement>("[data-dropdown-mobile-scroll]") ?? null;
+    while (element) {
+      if (element instanceof HTMLElement) {
+        const overflowY = window.getComputedStyle(element).overflowY;
+        const isScrollable =
+          SCROLLABLE_OVERFLOW_VALUES.has(overflowY) && element.scrollHeight > element.clientHeight;
+
+        if (isScrollable) return element;
+      }
+
+      if (element.hasAttribute("data-dropdown-mobile-sheet")) return null;
+      element = element.parentElement;
+    }
+
+    return null;
   };
   const canContinueScrolling = (movement: number) => {
     const element = scrollableElement();
@@ -244,10 +261,10 @@ const useMobileDropdownDrag = (options: MobileDropdownDragOptions) => {
     onPointerMove,
     onPointerUp,
     onPointerCancel,
-    onTouchStart,
-    onTouchMove,
-    onTouchEnd,
-    onTouchCancel: resetGesture,
+    "on:touchstart": onTouchStart,
+    "on:touchmove": { handleEvent: onTouchMove, passive: false },
+    "on:touchend": onTouchEnd,
+    "on:touchcancel": resetGesture,
     ...clickSuppressionProps
   };
   const backdropGestureProps = {
@@ -263,6 +280,8 @@ const useMobileDropdownDrag = (options: MobileDropdownDragOptions) => {
 
     if (!options.opened()) {
       resetGesture();
+    } else if (closingFromGesture()) {
+      return;
     } else if (expanded && !dragging()) {
       setHeight(viewportHeight());
     } else if (!dragging() && !heightCleanupPending()) {

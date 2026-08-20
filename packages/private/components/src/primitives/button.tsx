@@ -242,7 +242,14 @@ const Button: Component<ButtonProps> = (providedProps) => {
       </div>
       <Show when={props.loading}>
         <div class="flex justify-center items-center absolute w-full h-full p-1.5 top-0 left-0">
-          <Spinner class="h-full" color={props.color === "primary" ? "primary" : "base"} />
+          <Spinner
+            class={clsx(
+              "h-full",
+              (props.text === "primary" ||
+                (props.color === "primary" && props.variant === "text" && !props.text)) &&
+                ":base: bg-gradient-to-tr from-secondary via-primary to-secondary"
+            )}
+          />
         </div>
       </Show>
     </Dynamic>

@@ -1,9 +1,15 @@
 import { type Ref } from "@andesine/components";
 import { type Editor } from "@tiptap/core";
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
+import { TextSelection } from "@tiptap/pm/state";
 import { createSignal, createEffect, onCleanup, Show, type ParentComponent } from "solid-js";
 import { Portal } from "solid-js/web";
-import { isBlockSelection } from "#editor/extensions/block-selection";
+import {
+  createBlockRangeSelection,
+  isBlockSelection,
+  isFragmentChildBlockSelection,
+  isSameBlockSelection
+} from "#editor/extensions/block-selection";
 import { createVerticalAutoScroll } from "#editor/ui/auto-scroll";
 import { forEachSelectedBlock, isEditorBlock } from "#editor/ui/block-utils";
 import { createBlockSelectionShade } from "./shade";
@@ -17,11 +23,18 @@ interface BlockSelectionProps {
   editor: Editor | null;
   scrollableContainerRef: Ref<HTMLElement | null>[0];
 }
+interface RectBounds {
+  bottom: number;
+  left: number;
+  right: number;
+  top: number;
+}
 interface MarqueeNode {
+  fragmentChildCount?: number;
   fragmentPos?: number;
   fragmentRoot?: boolean;
   pos: number;
-  rect: DOMRect;
+  rect: RectBounds;
   size: number;
 }
 
@@ -72,7 +85,7 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
     const selectionTop = Math.min(newBoxSelection.y, newBoxSelection.currentY);
     const selectionBottom = Math.max(newBoxSelection.y, newBoxSelection.currentY);
     const marqueeNodes = nodes();
-    const intersects = ({ rect }: MarqueeNode): boolean => {
+    const intersects = (rect: RectBounds): boolean => {
       return (
         rect.left < selectionRight &&
         rect.top < selectionBottom &&
@@ -80,34 +93,60 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
         rect.bottom > selectionTop
       );
     };
-    const fullySelectedFragments = new Set(
-      marqueeNodes
-        .filter((node) => {
-          return (
-            node.fragmentRoot &&
-            selectionTop <= node.rect.top &&
-            selectionBottom >= node.rect.bottom
-          );
-        })
-        .map((node) => node.pos)
-    );
+    const fullySelectedFragments = new Set<number>();
+    const intersectedNodes = marqueeNodes.filter((node) => {
+      return !node.fragmentRoot && intersects(node.rect);
+    });
+    const selectionContexts = new Set(intersectedNodes.map((node) => node.fragmentPos ?? "root"));
+    const selectedFragmentChildren = new Map<number, number>();
+
+    if (marqueeNodes.some((node) => node.fragmentRoot && intersects(node.rect))) {
+      selectionContexts.add("root");
+    }
+    intersectedNodes.forEach((node) => {
+      if (node.fragmentPos === undefined) return;
+
+      selectedFragmentChildren.set(
+        node.fragmentPos,
+        (selectedFragmentChildren.get(node.fragmentPos) || 0) + 1
+      );
+    });
+    marqueeNodes.forEach((node) => {
+      if (!node.fragmentRoot) return;
+
+      const selectedChildren = selectedFragmentChildren.get(node.pos) || 0;
+      const allChildrenSelected =
+        Boolean(node.fragmentChildCount) && selectedChildren === node.fragmentChildCount;
+      const crossesSelectionContext = selectedChildren > 0 && selectionContexts.size > 1;
+
+      if (intersects(node.rect) || allChildrenSelected || crossesSelectionContext) {
+        fullySelectedFragments.add(node.pos);
+      }
+    });
     const selectedNodes = marqueeNodes.filter((node) => {
       if (node.fragmentRoot) return fullySelectedFragments.has(node.pos);
       if (node.fragmentPos !== undefined && fullySelectedFragments.has(node.fragmentPos)) {
         return false;
       }
 
-      return intersects(node);
+      return intersects(node.rect);
     });
-    const commandChain = editor.chain();
-
     if (selectedNodes.length) {
       const firstNode = selectedNodes[0];
       const lastNode = selectedNodes[selectedNodes.length - 1];
+      const fragmentPos = firstNode.fragmentPos;
+      const selectsFragmentChildren =
+        fragmentPos !== undefined &&
+        selectedNodes.every((node) => node.fragmentPos === fragmentPos);
       const from = firstNode.pos;
       const to = lastNode.pos + lastNode.size;
+      const position = { from, to, depth: selectsFragmentChildren ? 1 : undefined };
+      const selection = createBlockRangeSelection(editor.state.doc, position);
+      const currentSelection = editor.state.selection;
 
-      commandChain.setBlockSelection({ from, to });
+      if (isSameBlockSelection(currentSelection, selection)) return;
+
+      editor.chain().setBlockSelection(position).run();
     } else {
       const { inside = 0 } =
         editor.view.posAtCoords({
@@ -115,10 +154,17 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
           top: newBoxSelection.y
         }) || {};
 
-      commandChain.setTextSelection(inside || 0);
-    }
+      const position = inside || 0;
 
-    commandChain.run();
+      if (
+        editor.state.selection instanceof TextSelection &&
+        editor.state.selection.from === position
+      ) {
+        return;
+      }
+
+      editor.chain().setTextSelection(position).run();
+    }
   };
   const autoScroll = createVerticalAutoScroll(
     () => props.scrollableContainerRef(),
@@ -173,44 +219,71 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
       width: 0,
       height: 0
     });
+    const toLocalRect = (rect: DOMRect): RectBounds => {
+      return {
+        bottom: rect.bottom - containerRect.y + container.scrollTop,
+        left: rect.left - containerRect.x + container.scrollLeft,
+        right: rect.right - containerRect.x + container.scrollLeft,
+        top: rect.top - containerRect.y + container.scrollTop
+      };
+    };
     const addNode = (
       node: ProseMirrorNode,
       pos: number,
-      options: Pick<MarqueeNode, "fragmentPos" | "fragmentRoot"> = {}
-    ) => {
+      options: Pick<MarqueeNode, "fragmentPos"> = {}
+    ): MarqueeNode | null => {
       const dom = editor.view.nodeDOM(pos);
 
       if (dom instanceof HTMLElement) {
-        const rect = dom.getBoundingClientRect();
-        const fragmentBoundary = options.fragmentRoot
-          ? dom.nextElementSibling?.closest<HTMLElement>("[data-fragment-end-boundary]")
-          : null;
-        const fragmentBoundaryRect = fragmentBoundary?.getBoundingClientRect();
-        const localRect: DOMRect = new DOMRect(
-          rect.x - containerRect.x + container.scrollLeft,
-          rect.y - containerRect.y + container.scrollTop,
-          rect.width,
-          Math.max(rect.bottom, fragmentBoundaryRect?.bottom || rect.bottom) - rect.top
-        );
-
-        boundingBoxes.push({
+        const marqueeNode: MarqueeNode = {
           ...options,
           size: node.nodeSize,
-          rect: localRect,
+          rect: toLocalRect(dom.getBoundingClientRect()),
           pos
-        });
+        };
+
+        boundingBoxes.push(marqueeNode);
+
+        return marqueeNode;
       }
+
+      return null;
     };
 
     editor.state.doc.forEach((node, pos) => {
       if (node.type.name !== "title" && !isEditorBlock(node)) return;
 
-      addNode(node, pos, { fragmentRoot: node.type.name === "fragment" });
-
       if (node.type.name === "fragment") {
+        const dom = editor.view.nodeDOM(pos);
+        const fragmentHeader =
+          dom instanceof HTMLElement
+            ? dom.querySelector<HTMLElement>("[data-fragment-header]")
+            : null;
+        const fragmentHeaderRect = fragmentHeader?.getBoundingClientRect();
+        const localFragmentHeaderRect = fragmentHeaderRect ? toLocalRect(fragmentHeaderRect) : null;
+        const fragmentNode: MarqueeNode | null = localFragmentHeaderRect
+          ? {
+              fragmentChildCount: 0,
+              fragmentRoot: true,
+              pos,
+              rect: localFragmentHeaderRect,
+              size: node.nodeSize
+            }
+          : null;
+
+        if (fragmentNode) boundingBoxes.push(fragmentNode);
+
         node.forEach((child, offset) => {
-          if (isEditorBlock(child)) addNode(child, pos + 1 + offset, { fragmentPos: pos });
+          if (isEditorBlock(child)) {
+            const childNode = addNode(child, pos + 1 + offset, { fragmentPos: pos });
+
+            if (fragmentNode && childNode) {
+              fragmentNode.fragmentChildCount = (fragmentNode.fragmentChildCount || 0) + 1;
+            }
+          }
         });
+      } else {
+        addNode(node, pos);
       }
     });
     setNodes(boundingBoxes);
@@ -259,14 +332,20 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
         last: null
       };
 
-      forEachSelectedBlock(doc, selection.from, selection.to, (_node, pos) => {
-        const dom = editor.view.nodeDOM(pos);
+      forEachSelectedBlock(
+        doc,
+        selection.from,
+        selection.to,
+        (_node, pos) => {
+          const dom = editor.view.nodeDOM(pos);
 
-        if (dom instanceof HTMLElement) {
-          selectedBlocks.first ||= dom;
-          selectedBlocks.last = dom;
-        }
-      });
+          if (dom instanceof HTMLElement) {
+            selectedBlocks.first ||= dom;
+            selectedBlocks.last = dom;
+          }
+        },
+        { includeCoveredFragments: !isFragmentChildBlockSelection(selection) }
+      );
 
       const { first, last } = selectedBlocks;
 

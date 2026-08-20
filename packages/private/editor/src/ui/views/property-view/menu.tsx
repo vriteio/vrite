@@ -210,6 +210,7 @@ const PropertyMenu = (props: PropertyMenuProps): JSX.Element => {
             <div class="absolute inset-y-0 -left-2.5 -z-10 w-[calc(100%+1.25rem)] bg-gradient-to-r from-secondary via-primary to-transparent opacity-10 md:-left-2 md:w-[calc(100%+0.75rem)] md:rounded-lg" />
           </Show>
           <div
+            data-node-selection-icon
             class={clsx(
               "h-4.5 w-4.5 shrink-0",
               propertyTypeDetails[props.attrs.type].icon,
@@ -217,6 +218,7 @@ const PropertyMenu = (props: PropertyMenuProps): JSX.Element => {
             )}
           />
           <span
+            data-node-selection-label
             class={clsx(
               "min-w-0 truncate text-start",
               props.selected ? "bg-gradient-to-tr bg-clip-text text-transparent" : "text-gray-500"
@@ -225,6 +227,7 @@ const PropertyMenu = (props: PropertyMenuProps): JSX.Element => {
             {props.attrs.label || "Property"}
           </span>
           <span
+            data-node-selection-line
             class={clsx(
               "ml-1 h-px flex-1 rounded-full md:hidden",
               props.selected

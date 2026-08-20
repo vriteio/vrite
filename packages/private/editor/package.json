@@ -14,6 +14,7 @@
     "@andesine/components": "workspace:*",
     "@hocuspocus/provider": "^4.4.0",
     "@solid-primitives/media": "^2.3.6",
+    "@solid-primitives/scheduled": "^1.5.3",
     "@tiptap/core": "3.29.2",
     "@tiptap/extension-blockquote": "^3.29.2",
     "@tiptap/extension-bold": "^3.29.2",

@@ -1,5 +1,6 @@
 import { isBlockSelection } from "#editor/extensions/block-selection";
 import { DropdownMenu, IconButton } from "@andesine/components";
+import { debounce } from "@solid-primitives/scheduled";
 import { type Editor } from "@tiptap/core";
 import { createEffect, createSignal, onCleanup, type ParentComponent } from "solid-js";
 import { useBlockMenuContext } from "./context";
@@ -14,7 +15,11 @@ import {
   registerSelectionControlHiding
 } from "#editor/ui/block-control-targeting";
 import type { BlockControlTarget, BlockControlRange } from "#editor/ui/block-control-targeting";
-import { BLOCK_CONTROL_SIZE, EDITOR_MENU_Z_INDEX } from "#editor/ui/constants";
+import {
+  BLOCK_CONTROL_HIDE_DELAY,
+  BLOCK_CONTROL_SIZE,
+  EDITOR_MENU_Z_INDEX
+} from "#editor/ui/constants";
 
 interface BlockMenuProps {
   editor: Editor | null;
@@ -73,6 +78,9 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
       return;
     }
 
+    const hideTrigger = debounce(() => {
+      if (!props.menuOpened) setTriggerAvailable(false);
+    }, BLOCK_CONTROL_HIDE_DELAY);
     const updatePosition = (event: PointerEvent) => {
       if (props.menuOpened && !contextMenuMode()) return;
 
@@ -96,7 +104,7 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
             side: "right"
           })
         ) {
-          setTriggerAvailable(false);
+          hideTrigger();
           return;
         }
 
@@ -105,7 +113,7 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
         const scrollContainer = getEditorScrollContainer(editor);
 
         if (!scrollContainer) {
-          setTriggerAvailable(false);
+          hideTrigger();
           return;
         }
 
@@ -121,25 +129,28 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
           left: blockRect.right - scrollContainerRect.left + scrollContainer.scrollLeft + 8
         });
         setHoverAreaHeight(blockRect.height);
+        hideTrigger.clear();
         setTriggerAvailable(true);
       } catch {
-        setTriggerAvailable(false);
+        hideTrigger();
       }
     };
     const handlePointerLeave = () => {
       // Opened dropdown forces the trigger to remain visible
       if (!props.menuOpened) {
-        setTriggerAvailable(false);
+        hideTrigger();
       }
     };
     const scrollContainer = getEditorScrollContainer(editor);
     const unregisterSelectionHandler = registerSelectionControlHiding(editor, () => {
+      hideTrigger.clear();
       setTriggerAvailable(false);
     });
 
     scrollContainer?.addEventListener("pointermove", updatePosition);
     scrollContainer?.addEventListener("pointerleave", handlePointerLeave);
     onCleanup(() => {
+      hideTrigger.clear();
       scrollContainer?.removeEventListener("pointermove", updatePosition);
       scrollContainer?.removeEventListener("pointerleave", handlePointerLeave);
       unregisterSelectionHandler();

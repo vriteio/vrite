@@ -1,4 +1,5 @@
 import { IconButton } from "@andesine/components";
+import { debounce } from "@solid-primitives/scheduled";
 import { type Editor } from "@tiptap/core";
 import { type Accessor, type Component, createSignal, onCleanup, onMount, Show } from "solid-js";
 import {
@@ -14,7 +15,7 @@ import {
 } from "#editor/ui/block-control-targeting";
 import type { BlockControlTarget } from "#editor/ui/block-control-targeting";
 import { createVerticalAutoScroll } from "#editor/ui/auto-scroll";
-import { EDITOR_MENU_Z_INDEX } from "#editor/ui/constants";
+import { BLOCK_CONTROL_HIDE_DELAY, EDITOR_MENU_Z_INDEX } from "#editor/ui/constants";
 import { createDragHandlePlugin, dragHandlePluginKey } from "./drag-handle-plugin";
 import { createListItemTargetResolver } from "./list-item-target";
 import { DragHandleTargetPlugin, dragHandleTargetPluginKey } from "./drag-handle-target-plugin";
@@ -78,6 +79,7 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
       dragHandleAvailable = available;
       updateDragHandleVisibility();
     };
+    const hideDragHandle = debounce(() => setDragHandleAvailable(false), BLOCK_CONTROL_HIDE_DELAY);
 
     const listItemTargetResolver = createListItemTargetResolver(props.editor, () => pointer.y);
     const setCurrentTarget = (
@@ -147,6 +149,7 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
         pointer = nextPointer;
 
         if (!props.editor.isEditable) {
+          hideDragHandle.clear();
           setDragHandleAvailable(false);
           return;
         }
@@ -157,17 +160,23 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
         const selectionTarget = getBlockSelectionTopTarget(props.editor);
         const pointerInSelectionArea = Boolean(selectionTarget && isPointerInBlockSelectionArea());
         const effectivePointerTarget = pointerInSelectionArea ? selectionTarget : pointerTarget;
-        const target = setCurrentTarget(effectivePointerTarget, selectionTarget);
+        const usesSelection = Boolean(
+          selectionTarget &&
+          effectivePointerTarget &&
+          isTargetInBlockSelection(props.editor, effectivePointerTarget)
+        );
+        const target = usesSelection ? selectionTarget : effectivePointerTarget;
 
         // A block selection forms one continuous hover area, including gaps between blocks.
         if (
           !target ||
           (!pointerInSelectionArea && !isPointerTargetAvailable(effectivePointerTarget))
         ) {
-          setDragHandleAvailable(false);
+          hideDragHandle();
           return;
         }
 
+        setCurrentTarget(effectivePointerTarget, selectionTarget);
         const nodeRect =
           target.node.type.name === "fragment"
             ? getBlockControlAnchorRect(props.editor, target)
@@ -179,6 +188,7 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
           hoverAreaRef.style.height = `${Math.max(0, nodeRect.height - wrapperRef.offsetHeight)}px`;
         }
 
+        hideDragHandle.clear();
         setDragHandleAvailable(true);
       });
     };
@@ -186,7 +196,7 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
       // Active drags retain the handle after the pointer leaves the editor.
       if (isDragging()) return;
 
-      setDragHandleAvailable(false);
+      hideDragHandle();
     };
 
     scrollContainer?.addEventListener("pointermove", handlePointerMove);
@@ -200,10 +210,12 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
       editor: props.editor,
       getDragTarget: () => currentControlTarget,
       onDragStart: () => {
+        hideDragHandle.clear();
         dragStarting = true;
         updateDragHandleVisibility();
       },
       onDragEnd: () => {
+        hideDragHandle.clear();
         dragStarting = false;
         autoScroll.stop();
         setDragHandleAvailable(false);
@@ -222,6 +234,7 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
     const unregisterSelectionHandler = registerSelectionControlHiding(props.editor, () => {
       if (isDragging()) return;
 
+      hideDragHandle.clear();
       setCurrentTarget(null, null);
       setDragHandleAvailable(false);
       listItemTargetResolver.reset();
@@ -230,6 +243,7 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
 
     onCleanup(() => {
       if (pointerFrame !== null) cancelAnimationFrame(pointerFrame);
+      hideDragHandle.clear();
       scrollContainer?.removeEventListener("pointermove", handlePointerMove);
       scrollContainer?.removeEventListener("pointerleave", handlePointerLeave);
       window.removeEventListener("dragover", handleDragOver);

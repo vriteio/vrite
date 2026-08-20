@@ -11,7 +11,7 @@ import { createIndexedDBAdapter } from "./persistence";
 import { type Collection, type Entry, client, type WorkspaceEvent } from "#web/lib/api";
 import solidReactivityAdapter from "@signaldb/solid";
 import { useConnectivitySignal } from "@solid-primitives/connectivity";
-import { type Accessor, createEffect, createSignal, on } from "solid-js";
+import { type Accessor, createEffect, createSignal, on, untrack } from "solid-js";
 import { isPersistedCollection, isPersistedEntry } from "#web/lib/validation";
 
 type ExplorerTree = {
@@ -105,7 +105,9 @@ const useWorkspaceContent = (workspaceID: Accessor<string>, canWrite: Accessor<b
     await clearWorkspaceData(targetWorkspaceID);
   };
 
-  const readOnly = () => !isOnline() || !contentCollections().workspaceID || !canWrite();
+  const readOnly = () => {
+    return !isOnline() || syncing() || !contentCollections().workspaceID || !canWrite();
+  };
   const offline = () => !isOnline();
   const applyExplorerTree = async (
     tree: ExplorerTree,

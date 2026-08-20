@@ -32,7 +32,9 @@ const useAddPasskeyMutation = (
     mutationFn: async () => {
       startedAt = Date.now();
       const { error, data } = await authClient.passkey.addPasskey({ name: input.name() });
+
       if (error) throw error;
+
       return data;
     },
     onSuccess: () => {

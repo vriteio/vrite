@@ -92,18 +92,20 @@ const Select = <O extends Option>(props: SelectProps<O>): JSX.Element => {
                             item={option}
                             class={clsx(
                               "relative flex w-full cursor-pointer items-center justify-start gap-1 rounded-md px-1 py-0.5 outline-none",
-                              selected() ? "group/select-item" : "data-[highlighted]:bg-gray-100"
+                              selected()
+                                ? "group/select-item"
+                                : "media-mouse:data-[highlighted]:bg-gray-100"
                             )}
                           >
                             <Show when={selected()}>
-                              <div class="absolute inset-0 -z-1 rounded-md bg-gradient-to-tr opacity-10 group-data-[highlighted]/select-item:opacity-100 pointer-events-none" />
+                              <div class="absolute inset-0 -z-1 rounded-md bg-gradient-to-tr opacity-10 media-mouse:group-data-[highlighted]/select-item:opacity-100 pointer-events-none" />
                             </Show>
                             <ArkSelect.ItemText
                               title={option.label}
                               class={clsx(
                                 "flex-1 px-1 text-start text-sm line-clamp-1",
                                 selected()
-                                  ? "bg-gradient-to-tr bg-clip-text text-transparent group-data-[highlighted]/select-item:text-white group-data-[highlighted]/select-item:from-white group-data-[highlighted]/select-item:to-white"
+                                  ? "bg-gradient-to-tr bg-clip-text text-transparent media-mouse:group-data-[highlighted]/select-item:text-white media-mouse:group-data-[highlighted]/select-item:from-white media-mouse:group-data-[highlighted]/select-item:to-white"
                                   : "text-gray-700"
                               )}
                             >

@@ -113,7 +113,7 @@ const SubscriptionInfo: Component<SubscriptionInfoProps> = (props) => {
   return (
     <Show when={billingStatus()}>
       {(state) => (
-        <div class="flex gap-1.5 text-xs text-gray-400">
+        <div class="flex gap-1.5 text-xs text-gray-400 max-w-72">
           <div class="border-r border-gray-200 pl-1 pr-1.5 flex justify-center items-start">
             <div class="h-4 w-4 flex justify-center items-center shrink-0">
               <div class={clsx("h-3.5 w-3.5", state().icon)} />
@@ -193,7 +193,7 @@ const SubscriptionAction: Component = () => {
         };
 
         return (
-          <div class="flex flex-col gap-2 w-full max-w-64">
+          <div class="flex flex-col gap-2 w-full md:max-w-64">
             <Button
               color="primary"
               class="flex flex-col items-start rounded-xl px-3 py-2 h-full w-full relative overflow-hidden"

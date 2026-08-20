@@ -21,8 +21,9 @@ const useExplorerActions = () => {
 
     return selected.length ? (selected.length === 1 ? selected[0] : null) : getFocusedVisibleID();
   };
-  const notifyReadOnly = () =>
-    notify({ type: "error", text: "Explorer is read-only while offline" });
+  const notifyReadOnly = () => {
+    return notify({ type: "error", text: "Explorer is read-only while syncing or offline" });
+  };
   const ensureWritable = () => {
     if (!content.readOnly()) return true;
 

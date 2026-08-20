@@ -85,7 +85,7 @@ const SubscriptionSection: Component = () => {
         }
         fade={false}
       >
-        <Suspense fallback={<Skeleton class="h-14 w-full max-w-64 rounded-xl" />}>
+        <Suspense fallback={<Skeleton class="h-14 w-full md:max-w-64 rounded-xl" />}>
           <SubscriptionAction />
         </Suspense>
       </Setting>

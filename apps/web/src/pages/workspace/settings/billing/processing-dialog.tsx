@@ -1,4 +1,4 @@
-import { Button, Card, IconButton, Overlay, Spinner } from "@andesine/components";
+import { Button, Dialog, IconButton, Spinner } from "@andesine/components";
 import { type Component, createEffect, createSignal, on, onCleanup, Show } from "solid-js";
 import { client } from "#web/lib/api";
 
@@ -74,61 +74,57 @@ const BillingProcessingDialog: Component<BillingProcessingDialogProps> = (props)
   onCleanup(() => pollController?.abort());
 
   return (
-    <Overlay
+    <Dialog
       opened={props.opened}
       onOverlayClick={close}
       closeOnEscape={state() === "delayed"}
       portal
       aria-label="Confirming subscription"
     >
-      <Card color="contrast" class="p-1.5">
-        <Card class="flex w-md max-w-[calc(100vw-2rem)] flex-col gap-3 rounded-xl p-4" shade>
-          <div class="flex flex-col gap-0.5">
-            <h3 class="text-lg font-semibold leading-tight">
-              {state() === "polling" ? "Confirming your subscription" : "Confirmation is delayed"}
-            </h3>
-            <p class="text-sm leading-tight text-gray-400" aria-live="polite">
-              {state() === "polling"
-                ? "Stripe accepted your Checkout. Waiting for the subscription to appear in your workspace."
-                : "Stripe has not confirmed the subscription yet. You can refresh the status or return later; no additional Checkout is needed."}
-            </p>
+      <div class="flex flex-col gap-0.5">
+        <h3 class="text-lg font-semibold leading-tight">
+          {state() === "polling" ? "Confirming your subscription" : "Confirmation is delayed"}
+        </h3>
+        <p class="text-sm leading-tight text-gray-400" aria-live="polite">
+          {state() === "polling"
+            ? "Stripe accepted your Checkout. Waiting for the subscription to appear in your workspace."
+            : "Stripe has not confirmed the subscription yet. You can refresh the status or return later; no additional Checkout is needed."}
+        </p>
+      </div>
+      <Show
+        when={state() === "delayed"}
+        fallback={
+          <div class="flex min-h-16 items-center justify-center gap-2 rounded-xl bg-gray-100 text-sm">
+            <Spinner class="h-5 w-5 text-gray-400" />
+            Waiting for Stripe
           </div>
-          <Show
-            when={state() === "delayed"}
-            fallback={
-              <div class="flex min-h-16 items-center justify-center gap-2 rounded-xl bg-gray-100 text-sm">
-                <Spinner class="h-5 w-5 text-gray-400" />
-                Waiting for Stripe
-              </div>
-            }
+        }
+      >
+        <div class="flex gap-2">
+          <IconButton
+            variant="outlined"
+            color="contrast"
+            text="soft"
+            size="small"
+            icon="i-lucide:x"
+            onClick={close}
           >
-            <div class="flex gap-2">
-              <IconButton
-                variant="outlined"
-                color="contrast"
-                text="soft"
-                size="small"
-                icon="i-lucide:x"
-                onClick={close}
-              >
-                Close
-              </IconButton>
-              <Button
-                color="primary"
-                variant="outlined"
-                size="small"
-                class="flex-1"
-                onClick={() => {
-                  void poll();
-                }}
-              >
-                Refresh status
-              </Button>
-            </div>
-          </Show>
-        </Card>
-      </Card>
-    </Overlay>
+            Close
+          </IconButton>
+          <Button
+            color="primary"
+            variant="outlined"
+            size="small"
+            class="flex-1"
+            onClick={() => {
+              void poll();
+            }}
+          >
+            Refresh status
+          </Button>
+        </div>
+      </Show>
+    </Dialog>
   );
 };
 

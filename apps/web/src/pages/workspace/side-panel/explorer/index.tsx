@@ -117,7 +117,7 @@ const Explorer = () => {
             >
               <div
                 ref={setTitleRef}
-                class="group/explorer-header sticky top-0 z-20 -mx-1 flex h-9 shrink-0 items-center gap-2 px-1 bg-gray-50 md:bg-gray-100"
+                class="group/explorer-header sticky top-0 z-20 -mx-1 flex h-9 shrink-0 items-center gap-2 px-1 bg-white md:bg-gray-100"
               >
                 <h2 class="text-2xl font-semibold flex-1">Explorer</h2>
                 <div

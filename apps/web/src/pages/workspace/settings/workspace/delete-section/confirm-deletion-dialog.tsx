@@ -1,4 +1,4 @@
-import { Button, Card, IconButton, Input, Overlay } from "@andesine/components";
+import { Button, Dialog, IconButton, Input } from "@andesine/components";
 import { type Component, createSignal } from "solid-js";
 import { createMutation } from "@tanstack/solid-query";
 import { useNotify } from "#web/context/notifications";
@@ -69,71 +69,67 @@ const ConfirmDeletionDialog: Component<ConfirmDeletionDialogProps> = (props) => 
   };
 
   return (
-    <Overlay opened={props.opened} onOverlayClick={close} portal aria-label="Delete workspace">
-      <Card color="contrast" class="p-1.5">
-        <Card class="flex w-md max-w-[calc(100vw-2rem)] flex-col gap-3 rounded-xl p-4" shade>
-          <div class="flex flex-col gap-0.5">
-            <h3 class="text-lg font-semibold leading-tight">Delete workspace permanently?</h3>
-            <p class="text-sm leading-tight text-gray-400">
-              All workspace data will be permanently deleted and any active subscription cancelled.
-              This cannot be undone.
-            </p>
-          </div>
-          <label class="flex flex-col gap-1 text-xs">
-            <span>
-              Type{" "}
-              <span class="relative">
-                <div class="absolute rounded-md top-0 left-0 h-full w-full bg-gray-950/2.5" />
-                <span class="font-mono relative font-medium py-0.5 px-1 whitespace-pre-wrap leading-normal">
-                  {currentWorkspace()?.name}
-                </span>
-              </span>{" "}
-              to confirm
+    <Dialog opened={props.opened} onOverlayClick={close} portal aria-label="Delete workspace">
+      <div class="flex flex-col gap-0.5">
+        <h3 class="text-lg font-semibold leading-tight">Delete workspace permanently?</h3>
+        <p class="text-sm leading-tight text-gray-400">
+          All workspace data will be permanently deleted and any active subscription cancelled. This
+          cannot be undone.
+        </p>
+      </div>
+      <label class="flex flex-col gap-1 text-xs">
+        <span>
+          Type{" "}
+          <span class="relative">
+            <div class="absolute rounded-md top-0 left-0 h-full w-full bg-gray-950/2.5" />
+            <span class="font-mono relative font-medium py-0.5 px-1 whitespace-pre-wrap leading-normal">
+              {currentWorkspace()?.name}
             </span>
-            <Input
-              value={confirmation()}
-              setValue={setConfirmation}
-              disabled={deleteWorkspaceMutation.isPending}
-              placeholder={currentWorkspace()?.name}
-              class="font-mono"
-              size="small"
-              color="contrast"
-              variant="outlined"
-              onKeyDown={(event) => {
-                if (event.key !== "Enter" || !canConfirm()) return;
+          </span>{" "}
+          to confirm
+        </span>
+        <Input
+          value={confirmation()}
+          setValue={setConfirmation}
+          disabled={deleteWorkspaceMutation.isPending}
+          placeholder={currentWorkspace()?.name}
+          class="font-mono"
+          size="small"
+          color="contrast"
+          variant="outlined"
+          onKeyDown={(event) => {
+            if (event.key !== "Enter" || !canConfirm()) return;
 
-                event.preventDefault();
-                deleteWorkspaceMutation.mutate();
-              }}
-            />
-          </label>
-          <div class="flex justify-end gap-2">
-            <IconButton
-              variant="outlined"
-              color="contrast"
-              size="small"
-              text="soft"
-              icon="i-lucide:x"
-              disabled={deleteWorkspaceMutation.isPending}
-              onClick={close}
-            >
-              Cancel
-            </IconButton>
-            <Button
-              color="danger"
-              variant="outlined"
-              size="small"
-              loading={deleteWorkspaceMutation.isPending}
-              disabled={!canConfirm()}
-              onClick={() => deleteWorkspaceMutation.mutate()}
-              class="flex-1"
-            >
-              Delete permanently
-            </Button>
-          </div>
-        </Card>
-      </Card>
-    </Overlay>
+            event.preventDefault();
+            deleteWorkspaceMutation.mutate();
+          }}
+        />
+      </label>
+      <div class="flex justify-end gap-2">
+        <IconButton
+          variant="outlined"
+          color="contrast"
+          size="small"
+          text="soft"
+          icon="i-lucide:x"
+          disabled={deleteWorkspaceMutation.isPending}
+          onClick={close}
+        >
+          Cancel
+        </IconButton>
+        <Button
+          color="danger"
+          variant="outlined"
+          size="small"
+          loading={deleteWorkspaceMutation.isPending}
+          disabled={!canConfirm()}
+          onClick={() => deleteWorkspaceMutation.mutate()}
+          class="flex-1"
+        >
+          Delete permanently
+        </Button>
+      </div>
+    </Dialog>
   );
 };
 

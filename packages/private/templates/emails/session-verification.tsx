@@ -4,20 +4,17 @@ import {
   Body,
   Button,
   Container,
-  Head,
-  Heading,
   Html,
-  Img,
   Preview,
   Section,
   Tailwind,
-  Hr,
   Text
 } from "@react-email/components";
 import * as React from "react";
 import { PUBLIC_APP_URL } from "../src/constants";
 import { EmailFooter } from "../src/email-footer";
 import { EmailHeader } from "../src/email-header";
+import { EmailHead } from "../src/email-head";
 
 interface SessionVerificationProps {
   code?: string;
@@ -26,24 +23,24 @@ interface SessionVerificationProps {
 
 const SessionVerification: React.FC<SessionVerificationProps> = ({ code = "", link }) => (
   <Html>
-    <Head />
+    <EmailHead />
     <Preview>Confirm this sensitive action. Your verification code: {code}</Preview>
     <Tailwind>
-      <Body className="text-gray-800 my-auto mx-auto font-sans">
-        <Container className="mx-auto w-[560px]">
+      <Body className="email-body bg-white text-gray-800 my-auto mx-auto font-sans">
+        <Container className="email-container bg-white mx-auto w-[560px]">
           <EmailHeader>Verify it's you</EmailHeader>
           <Text className="text-[20px] leading-[28px]">
             A sensitive action was requested in your Andesine account. Use this code to verify your
             identity and continue:
           </Text>
-          <Section className="text-[30px] py-[48px] mt-[24px] bg-gray-100 rounded-[8px] text-center font-medium font-mono">
+          <Section className="email-code text-[30px] py-[48px] mt-[24px] bg-gray-100 rounded-[8px] text-center font-medium font-mono">
             {code}
           </Section>
           {link && (
             <Section className="text-center mt-[12px] mb-[24px]">
               <Button
                 href={link}
-                className="inline-block bg-gray-900 text-white text-[16px] font-medium py-[12px] rounded-[8px] w-[560px]"
+                className="email-button inline-block bg-gray-900 text-white text-[16px] font-medium py-[12px] rounded-[8px] w-[560px]"
               >
                 Or verify with this link
               </Button>

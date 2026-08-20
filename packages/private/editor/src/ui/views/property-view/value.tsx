@@ -213,6 +213,7 @@ const PropertyValue = (props: PropertyValueProps): JSX.Element => {
                   values={multiSelectValues()}
                   setValues={(value) => props.updateAttributes({ value })}
                 />
+                <hr class="my-0.5 h-px bg-gray-200" />
               </div>
               <Combobox
                 class="w-full min-w-0 md:[&>label]:hidden"

@@ -49,7 +49,7 @@ const MobileMenuIcon: Component<MobileMenuIconProps> = (props) => (
           "h-5 w-5",
           typeof props.option.icon === "string" && props.option.icon,
           props.option.selected
-            ? "bg-gradient-to-tr group-data-[highlighted]/menu-item:text-white group-data-[highlighted]/menu-item:from-white group-data-[highlighted]/menu-item:to-white"
+            ? "bg-gradient-to-tr media-mouse:group-data-[highlighted]/menu-item:text-white media-mouse:group-data-[highlighted]/menu-item:from-white media-mouse:group-data-[highlighted]/menu-item:to-white"
             : props.option.color === "danger"
               ? "text-red-500"
               : "text-gray-500"
@@ -70,8 +70,8 @@ const MobileMenuOption = <O extends MenuItem>(props: MobileMenuOptionProps<O>) =
       props.option.selected
         ? "group/menu-item"
         : props.option.color === "danger"
-          ? "data-[highlighted]:bg-red-600 data-[highlighted]:bg-opacity-10"
-          : "data-[highlighted]:bg-gray-100"
+          ? "media-mouse:data-[highlighted]:bg-red-600 media-mouse:data-[highlighted]:bg-opacity-10"
+          : "media-mouse:data-[highlighted]:bg-gray-100"
     );
   };
   const handleSelect = () => {
@@ -123,7 +123,7 @@ const MobileMenuOption = <O extends MenuItem>(props: MobileMenuOptionProps<O>) =
         >
           <div class={clsx("contents", loading() && "invisible")}>
             <Show when={props.option.selected}>
-              <div class="absolute inset-0 -z-1 rounded-md bg-gradient-to-tr opacity-10 group-data-[highlighted]/menu-item:opacity-100 pointer-events-none" />
+              <div class="absolute inset-0 -z-1 rounded-md bg-gradient-to-tr opacity-10 media-mouse:group-data-[highlighted]/menu-item:opacity-100 pointer-events-none" />
             </Show>
             <MobileMenuIcon option={props.option} />
             <div class="flex flex-1 gap-4">
@@ -132,7 +132,7 @@ const MobileMenuOption = <O extends MenuItem>(props: MobileMenuOptionProps<O>) =
                 class={clsx(
                   "flex-1 text-start text-[16px] font-medium line-clamp-1",
                   props.option.selected
-                    ? "bg-gradient-to-tr bg-clip-text text-transparent group-data-[highlighted]/menu-item:text-white group-data-[highlighted]/menu-item:from-white group-data-[highlighted]/menu-item:to-white"
+                    ? "bg-gradient-to-tr bg-clip-text text-transparent media-mouse:group-data-[highlighted]/menu-item:text-white media-mouse:group-data-[highlighted]/menu-item:from-white media-mouse:group-data-[highlighted]/menu-item:to-white"
                     : props.option.color === "danger"
                       ? "text-red-500"
                       : "text-gray-700"
