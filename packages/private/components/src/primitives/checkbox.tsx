@@ -11,6 +11,8 @@ const sizeClasses: Record<CheckboxSize, { control: string; icon: string }> = {
 };
 
 interface CheckboxProps {
+  controlClass?: string;
+  iconClass?: string;
   size?: CheckboxSize;
   disabled?: boolean;
   checked?: boolean;
@@ -31,12 +33,17 @@ const Checkbox: Component<CheckboxProps> = (props) => (
         `:base: outline-gray-400`,
         `:base: data-[state=checked]:outline-transparent data-[state=checked]:bg-gradient-to-tr`,
         `:base: data-[disabled]:opacity-70 data-[disabled]:pointer-events-none`,
-        sizeClasses[props.size || "medium"].control
+        sizeClasses[props.size || "medium"].control,
+        props.controlClass
       )}
     >
       <BaseCheckbox.Indicator>
         <div
-          class={clsx(`:base: i-lucide:check text-white`, sizeClasses[props.size || "medium"].icon)}
+          class={clsx(
+            `:base: i-lucide:check text-white`,
+            sizeClasses[props.size || "medium"].icon,
+            props.iconClass
+          )}
         />
       </BaseCheckbox.Indicator>
     </BaseCheckbox.Control>

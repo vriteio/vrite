@@ -1,30 +1,35 @@
 import { type Ref } from "@andesine/components";
 import { type Editor } from "@tiptap/core";
+import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import { createSignal, createEffect, onCleanup, Show, type ParentComponent } from "solid-js";
 import { Portal } from "solid-js/web";
 import { isBlockSelection } from "#editor/extensions/block-selection";
 import { createVerticalAutoScroll } from "#editor/ui/auto-scroll";
+import { forEachSelectedBlock, isEditorBlock } from "#editor/ui/block-utils";
 import { createBlockSelectionShade } from "./shade";
+import {
+  EMPTY_BOX_SELECTION,
+  MARQUEE_ACTIVATION_THRESHOLD,
+  MARQUEE_MARGIN
+} from "#editor/ui/constants";
 
 interface BlockSelectionProps {
   editor: Editor | null;
   scrollableContainerRef: Ref<HTMLElement | null>[0];
 }
+interface MarqueeNode {
+  fragmentPos?: number;
+  fragmentRoot?: boolean;
+  pos: number;
+  rect: DOMRect;
+  size: number;
+}
+
 const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
   const [pointerDown, setPointerDown] = createSignal(false);
   const [scrollableContainerRect, setScrollableContainerRect] = createSignal<DOMRect | null>(null);
-  const [nodes, setNodes] = createSignal<
-    Record<string, { rect: DOMRect; pos: number; size: number }>
-  >({});
-  const [boxSelection, setBoxSelection] = createSignal({
-    active: false,
-    x: 0,
-    y: 0,
-    currentX: 0,
-    currentY: 0,
-    width: 0,
-    height: 0
-  });
+  const [nodes, setNodes] = createSignal<MarqueeNode[]>([]);
+  const [boxSelection, setBoxSelection] = createSignal(EMPTY_BOX_SELECTION);
   const updateSelection = (position: { clientX: number; clientY: number }) => {
     const editor = props.editor;
     const container = props.scrollableContainerRef();
@@ -32,27 +37,26 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
 
     if (!editor || !pointerDown() || !container || !containerRect) return;
 
-    const marginY = 16;
+    const currentSelection = boxSelection();
     const localX = Math.max(
       0,
       Math.min(position.clientX - containerRect.left + container.scrollLeft, container.scrollWidth)
     );
     const localY = Math.max(
-      marginY,
+      MARQUEE_MARGIN,
       Math.min(
         position.clientY - containerRect.top + container.scrollTop,
-        container.scrollHeight - marginY
+        container.scrollHeight - MARQUEE_MARGIN
       )
     );
-    const newBoxSelectionWidth = Math.abs(localX - boxSelection().x);
-    const newBoxSelectionHeight = Math.abs(localY - boxSelection().y);
-    const activationThreshold = 10;
+    const newBoxSelectionWidth = Math.abs(localX - currentSelection.x);
+    const newBoxSelectionHeight = Math.abs(localY - currentSelection.y);
     const newBoxSelection = {
-      ...boxSelection(),
+      ...currentSelection,
       active:
-        boxSelection().active ||
-        newBoxSelectionWidth > activationThreshold ||
-        newBoxSelectionHeight > activationThreshold,
+        currentSelection.active ||
+        newBoxSelectionWidth > MARQUEE_ACTIVATION_THRESHOLD ||
+        newBoxSelectionHeight > MARQUEE_ACTIVATION_THRESHOLD,
       currentX: localX,
       currentY: localY,
       width: newBoxSelectionWidth,
@@ -63,27 +67,43 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
 
     if (!newBoxSelection.active) return;
 
-    const selectedIDs: string[] = [];
+    const selectionLeft = Math.min(newBoxSelection.x, newBoxSelection.currentX);
+    const selectionRight = Math.max(newBoxSelection.x, newBoxSelection.currentX);
+    const selectionTop = Math.min(newBoxSelection.y, newBoxSelection.currentY);
+    const selectionBottom = Math.max(newBoxSelection.y, newBoxSelection.currentY);
+    const marqueeNodes = nodes();
+    const intersects = ({ rect }: MarqueeNode): boolean => {
+      return (
+        rect.left < selectionRight &&
+        rect.top < selectionBottom &&
+        rect.right > selectionLeft &&
+        rect.bottom > selectionTop
+      );
+    };
+    const fullySelectedFragments = new Set(
+      marqueeNodes
+        .filter((node) => {
+          return (
+            node.fragmentRoot &&
+            selectionTop <= node.rect.top &&
+            selectionBottom >= node.rect.bottom
+          );
+        })
+        .map((node) => node.pos)
+    );
+    const selectedNodes = marqueeNodes.filter((node) => {
+      if (node.fragmentRoot) return fullySelectedFragments.has(node.pos);
+      if (node.fragmentPos !== undefined && fullySelectedFragments.has(node.fragmentPos)) {
+        return false;
+      }
+
+      return intersects(node);
+    });
     const commandChain = editor.chain();
 
-    Object.entries(nodes()).forEach(([id, { rect }]) => {
-      if (!rect) return;
-
-      if (
-        rect.x < Math.max(newBoxSelection.x, newBoxSelection.currentX ?? newBoxSelection.x) &&
-        rect.y < Math.max(newBoxSelection.y, newBoxSelection.currentY ?? newBoxSelection.y) &&
-        rect.x + rect.width >
-          Math.min(newBoxSelection.x, newBoxSelection.currentX ?? newBoxSelection.x) &&
-        rect.y + rect.height >
-          Math.min(newBoxSelection.y, newBoxSelection.currentY ?? newBoxSelection.y)
-      ) {
-        selectedIDs.push(id);
-      }
-    });
-
-    if (selectedIDs.length) {
-      const firstNode = nodes()[selectedIDs[0]];
-      const lastNode = nodes()[selectedIDs[selectedIDs.length - 1]];
+    if (selectedNodes.length) {
+      const firstNode = selectedNodes[0];
+      const lastNode = selectedNodes[selectedNodes.length - 1];
       const from = firstNode.pos;
       const to = lastNode.pos + lastNode.size;
 
@@ -125,29 +145,21 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
     if (pos || !container || event.button !== 0) return;
 
     const containerRect = container.getBoundingClientRect();
-    const margin = 16;
     const localX = Math.max(
-      margin,
+      MARQUEE_MARGIN,
       Math.min(
         event.clientX - containerRect.left + container.scrollLeft,
-        container.scrollWidth - margin
+        container.scrollWidth - MARQUEE_MARGIN
       )
     );
     const localY = Math.max(
-      margin,
+      MARQUEE_MARGIN,
       Math.min(
         event.clientY - containerRect.top + container.scrollTop,
-        container.scrollHeight - margin
+        container.scrollHeight - MARQUEE_MARGIN
       )
     );
-    const boundingBoxes: Record<
-      string,
-      {
-        rect: DOMRect;
-        pos: number;
-        size: number;
-      }
-    > = {};
+    const boundingBoxes: MarqueeNode[] = [];
 
     document.documentElement.classList.add("select-none", "cursor-crosshair");
     setScrollableContainerRect(containerRect);
@@ -161,25 +173,45 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
       width: 0,
       height: 0
     });
-    editor.state.doc.descendants((node, pos) => {
+    const addNode = (
+      node: ProseMirrorNode,
+      pos: number,
+      options: Pick<MarqueeNode, "fragmentPos" | "fragmentRoot"> = {}
+    ) => {
       const dom = editor.view.nodeDOM(pos);
 
       if (dom instanceof HTMLElement) {
         const rect = dom.getBoundingClientRect();
+        const fragmentBoundary = options.fragmentRoot
+          ? dom.nextElementSibling?.closest<HTMLElement>("[data-fragment-end-boundary]")
+          : null;
+        const fragmentBoundaryRect = fragmentBoundary?.getBoundingClientRect();
         const localRect: DOMRect = new DOMRect(
           rect.x - containerRect.x + container.scrollLeft,
           rect.y - containerRect.y + container.scrollTop,
           rect.width,
-          rect.height
+          Math.max(rect.bottom, fragmentBoundaryRect?.bottom || rect.bottom) - rect.top
         );
 
-        boundingBoxes[node.attrs.id] = {
+        boundingBoxes.push({
+          ...options,
           size: node.nodeSize,
           rect: localRect,
           pos
-        };
+        });
       }
-      return false;
+    };
+
+    editor.state.doc.forEach((node, pos) => {
+      if (node.type.name !== "title" && !isEditorBlock(node)) return;
+
+      addNode(node, pos, { fragmentRoot: node.type.name === "fragment" });
+
+      if (node.type.name === "fragment") {
+        node.forEach((child, offset) => {
+          if (isEditorBlock(child)) addNode(child, pos + 1 + offset, { fragmentPos: pos });
+        });
+      }
     });
     setNodes(boundingBoxes);
     editor.chain().setTextSelection(0).run();
@@ -198,15 +230,7 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
     document.documentElement.classList.remove("select-none", "cursor-crosshair");
 
     if (boxSelection().active && editor) {
-      setBoxSelection({
-        active: false,
-        x: 0,
-        y: 0,
-        width: 0,
-        height: 0,
-        currentX: 0,
-        currentY: 0
-      });
+      setBoxSelection(EMPTY_BOX_SELECTION);
       editor.chain().focus(undefined, { scrollIntoView: false }).run();
     }
   };
@@ -235,18 +259,13 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
         last: null
       };
 
-      doc.nodesBetween(selection.from, selection.to, (node, pos, parent) => {
-        if (parent !== doc) return false;
-        if (node.type.name !== "title" && !node.type.isInGroup("block")) return true;
-
+      forEachSelectedBlock(doc, selection.from, selection.to, (_node, pos) => {
         const dom = editor.view.nodeDOM(pos);
 
         if (dom instanceof HTMLElement) {
           selectedBlocks.first ||= dom;
           selectedBlocks.last = dom;
         }
-
-        return false;
       });
 
       const { first, last } = selectedBlocks;
@@ -259,7 +278,8 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
       shade.show(editor.view.dom, first, last);
     };
     const scheduleUpdate = () => {
-      if (frame !== null) cancelAnimationFrame(frame);
+      if (frame !== null) return;
+
       frame = requestAnimationFrame(update);
     };
     const refreshShade = () => shade.refresh();
@@ -306,8 +326,8 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
           <div
             class="absolute bg-gradient-to-tr opacity-10 rounded-lg z-10"
             style={{
-              top: `${Math.min(boxSelection().y, boxSelection().currentY ?? boxSelection().y)}px`,
-              left: `${Math.min(boxSelection().x, boxSelection().currentX ?? boxSelection().x)}px`,
+              top: `${Math.min(boxSelection().y, boxSelection().currentY)}px`,
+              left: `${Math.min(boxSelection().x, boxSelection().currentX)}px`,
               width: `${boxSelection().width}px`,
               height: `${boxSelection().height}px`
             }}

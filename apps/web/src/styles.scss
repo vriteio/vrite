@@ -67,6 +67,11 @@ body {
   font-family: "JetBrainsMonoVariable", monospace !important;
 }
 
+// Selection
+::selection {
+  @apply bg-tertiary/10;
+}
+
 // Global scrollbars
 ::-webkit-scrollbar {
   @apply w-3 bg-gray-50;

@@ -81,9 +81,10 @@ const MobileMenuOption = <O extends MenuItem>(props: MobileMenuOptionProps<O>) =
       setLoading(true);
       void result.finally(() => {
         setLoading(false);
-        props.onClose();
+
+        if (props.option.closeOnSelect !== false) props.onClose();
       });
-    } else {
+    } else if (props.option.closeOnSelect !== false) {
       props.onClose();
     }
   };
@@ -102,7 +103,7 @@ const MobileMenuOption = <O extends MenuItem>(props: MobileMenuOptionProps<O>) =
             <span
               title={props.option.label}
               class={clsx(
-                "flex-1 text-start text-base font-medium line-clamp-1",
+                "flex-1 text-start text-[16px] font-medium line-clamp-1",
                 props.option.color === "danger" ? "text-red-500" : "text-gray-700"
               )}
             >
@@ -129,7 +130,7 @@ const MobileMenuOption = <O extends MenuItem>(props: MobileMenuOptionProps<O>) =
               <span
                 title={props.option.label}
                 class={clsx(
-                  "flex-1 text-start text-base font-medium line-clamp-1",
+                  "flex-1 text-start text-[16px] font-medium line-clamp-1",
                   props.option.selected
                     ? "bg-gradient-to-tr bg-clip-text text-transparent group-data-[highlighted]/menu-item:text-white group-data-[highlighted]/menu-item:from-white group-data-[highlighted]/menu-item:to-white"
                     : props.option.color === "danger"
@@ -183,7 +184,7 @@ const MobileMenuItems = <O extends MenuItem>(props: MobileMenuItemsProps<O>) => 
   });
 
   return (
-    <div class="flex min-w-0 flex-col gap-0.5 overflow-y-auto overscroll-contain scrollbar-sm">
+    <div class="flex w-full min-w-0 max-w-full flex-col gap-0.5 overflow-y-auto overscroll-contain scrollbar-sm">
       <For each={currentPage().items}>
         {(optionOrSeparator) => {
           const jsxFactory = isJSXFactory(optionOrSeparator) ? optionOrSeparator : null;

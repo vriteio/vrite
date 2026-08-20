@@ -11,6 +11,8 @@ const UniqueID = BaseUniqueID.configure({
     "blockquote",
     "horizontalRule",
     "heading",
+    "fragment",
+    "property",
     "listItem",
     "taskItem"
   ],

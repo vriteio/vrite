@@ -54,7 +54,6 @@ const SECTION_HEADING_HEIGHT = 24;
 const ITEM_HEIGHT = 28;
 const MENU_PADDING_TOP = 4;
 const SlashMenu: Component<SlashMenuProps> = (props) => {
-  const { setActiveTooltip } = useTooltipContext();
   const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
   const [selectedIndex, setSelectedIndex] = createSignal(0);
   const [blockHoverSelect, setBlockHoverSelect] = createSignal(false);
@@ -144,14 +143,6 @@ const SlashMenu: Component<SlashMenuProps> = (props) => {
   onMount(() => {
     props.state.setOnKeyDown(onKeyDown);
   });
-  createEffect(() => {
-    if (!props.state.visible) {
-      setActiveTooltip("");
-    }
-  });
-  onCleanup(() => {
-    setActiveTooltip("");
-  });
   createEffect(
     on(
       () => props.state.items,
@@ -164,17 +155,14 @@ const SlashMenu: Component<SlashMenuProps> = (props) => {
   return (
     <Card
       class={clsx(
-        "md:w-64 m-0 overflow-hidden transition duration-200 transform origin-top-left p-2 pt-1 relative bg-white"
+        "md:w-64 m-0 overflow-hidden transition duration-200 transform origin-top-left py-0 pl-2 pr-1 relative bg-white"
       )}
       data-menu
       shade
     >
-      <ScrollShadow
-        scrollableContainerRef={scrollableContainerRef}
-        offset={{ top: "0.25rem", bottom: "0.5rem" }}
-      />
+      <ScrollShadow scrollableContainerRef={scrollableContainerRef} />
       <div
-        class={clsx("w-full h-full overflow-auto max-h-96 scrollbar-sm")}
+        class={clsx("w-full h-full overflow-auto max-h-96 scrollbar-sm scrollbar-white pt-1 pb-2")}
         ref={setScrollableContainerRef}
       >
         <For
@@ -202,7 +190,7 @@ const SlashMenu: Component<SlashMenuProps> = (props) => {
                 component={menuItem.shortcut ? Tooltip : Fragment}
                 {...(menuItem.shortcut && {
                   wrapperClass: props.state.items.length > 11 ? "w-[calc(100%-0.25rem)]" : "w-full",
-                  enabled: !blockHoverSelect(),
+                  enabled: !blockHoverSelect() && props.state.visible,
                   content: <Shortcut shortcut={menuItem.shortcut || ""} />,
                   fixed: true,
                   side: "right"

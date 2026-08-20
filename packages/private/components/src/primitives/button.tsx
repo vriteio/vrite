@@ -36,7 +36,7 @@ interface IconButtonProps extends ButtonProps {
 }
 
 const baseClasses =
-  ":base: transition-all relative ease-out duration-200 font-medium !ring-0 !outline-none !focus:ring-0 !focus:outline-none disabled:opacity-70";
+  ":base: transition-[background-position,opacity] relative ease-out duration-200 font-medium !ring-0 !outline-none !focus:ring-0 !focus:outline-none disabled:opacity-70";
 const sizeClasses: Record<ButtonSize, string> = {
   xs: ":base: px-1 py-0.5 text-xs rounded-lg",
   small: ":base: px-1.5 py-1 text-sm rounded-lg",

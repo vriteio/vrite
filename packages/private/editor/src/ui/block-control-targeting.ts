@@ -1,22 +1,45 @@
 import { isBlockSelection } from "#editor/extensions/block-selection";
 import type { Editor } from "@tiptap/core";
-import { LIST_ITEM_TYPES } from "./constants";
+import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
+import { forEachSelectedBlock, selectionCoversNode } from "./block-utils";
 import {
-  getBlockContentRect,
   getBlockControlAnchorRect,
   getBlockControlHoverRect,
+  getBlockControlLayoutVersion,
   getCachedElementRect,
   getEditorScrollContainer,
   isPointInBlockControlArea,
   type BlockControlSide,
   type BlockControlTarget
 } from "./block-control-sizing";
-import { BLOCK_CONTROL_PROXIMITY_RATIO } from "./constants";
+import { BLOCK_CONTROL_PROXIMITY_RATIO, LIST_ITEM_TYPES } from "./constants";
 
 interface BlockControlRange {
   from: number;
   to: number;
 }
+interface BlockControlHit {
+  insideFragment: boolean;
+  target: BlockControlTarget | null;
+}
+interface BlockSelectionBounds {
+  blockLeft: number;
+  blockRight: number;
+  bottom: number;
+  left: number;
+  right: number;
+  top: number;
+}
+interface BlockSelectionTargetCache {
+  bounds?: BlockSelectionBounds;
+  doc: ProseMirrorNode;
+  from: number;
+  layoutVersion: number;
+  targets: BlockControlTarget[];
+  to: number;
+}
+
+const blockSelectionTargetCaches = new WeakMap<Editor, BlockSelectionTargetCache>();
 
 const getBlockControlTargetAtPos = (editor: Editor, pos: number): BlockControlTarget | null => {
   if (pos < 0) return null;
@@ -29,69 +52,158 @@ const getBlockControlTargetAtPos = (editor: Editor, pos: number): BlockControlTa
     : null;
 };
 
-const getBlockSelectionTopTarget = (editor: Editor): BlockControlTarget | null => {
+const getNodeViewTarget = (
+  editor: Editor,
+  dom: HTMLElement,
+  type: "fragment" | "property"
+): BlockControlTarget | null => {
+  const { state, view } = editor;
+
+  try {
+    const domPos = view.posAtDOM(dom, 0);
+    const directTarget = getBlockControlTargetAtPos(editor, domPos);
+
+    if (directTarget?.node.type.name === type) return directTarget;
+
+    const $pos = state.doc.resolve(domPos);
+
+    for (let depth = $pos.depth; depth > 0; depth -= 1) {
+      if ($pos.node(depth).type.name === type) {
+        return getBlockControlTargetAtPos(editor, $pos.before(depth));
+      }
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+};
+
+const getStructureHitAtPoint = (editor: Editor, x: number, y: number): BlockControlHit => {
+  const elements = editor.view.root.elementsFromPoint(x, y);
+  let fragmentDOM: HTMLElement | null = null;
+  let insideFragment = false;
+  let propertyDOM: HTMLElement | null = null;
+
+  elements.forEach((element) => {
+    const fragment = element.closest<HTMLElement>("[data-fragment-node-view]");
+
+    insideFragment ||= Boolean(fragment);
+
+    if (!fragmentDOM && fragment && element.closest("[data-fragment-header]")) {
+      fragmentDOM = fragment;
+    }
+
+    propertyDOM ||= element.closest<HTMLElement>("[data-property-node-view]");
+  });
+
+  if (fragmentDOM) {
+    return {
+      insideFragment,
+      target: getNodeViewTarget(editor, fragmentDOM, "fragment")
+    };
+  }
+
+  return {
+    insideFragment,
+    target: propertyDOM ? getNodeViewTarget(editor, propertyDOM, "property") : null
+  };
+};
+const getBlockSelectionTargetCache = (editor: Editor): BlockSelectionTargetCache | null => {
   const { doc, selection } = editor.state;
 
   if (!isBlockSelection(selection)) return null;
 
-  let target: BlockControlTarget | null = null;
+  const layoutVersion = getBlockControlLayoutVersion(editor);
+  const cached = blockSelectionTargetCaches.get(editor);
 
-  doc.nodesBetween(selection.from, selection.to, (node, pos, parent) => {
-    if (target || parent !== doc) return false;
-    if (!node.type.isInGroup("block")) return true;
+  if (cached?.doc === doc && cached.from === selection.from && cached.to === selection.to) {
+    if (cached.layoutVersion !== layoutVersion) {
+      cached.bounds = undefined;
+      cached.layoutVersion = layoutVersion;
+    }
 
-    target = getBlockControlTargetAtPos(editor, pos);
-    return !target;
+    return cached;
+  }
+
+  const targets: BlockControlTarget[] = [];
+
+  forEachSelectedBlock(doc, selection.from, selection.to, (_node, pos) => {
+    const target = getBlockControlTargetAtPos(editor, pos);
+
+    if (target) targets.push(target);
   });
 
-  return target;
+  const nextCache: BlockSelectionTargetCache = {
+    doc,
+    from: selection.from,
+    layoutVersion,
+    targets,
+    to: selection.to
+  };
+
+  blockSelectionTargetCaches.set(editor, nextCache);
+
+  return nextCache;
+};
+const getBlockSelectionBounds = (
+  editor: Editor,
+  cache: BlockSelectionTargetCache
+): BlockSelectionBounds => {
+  if (cache.bounds) return cache.bounds;
+
+  const bounds: BlockSelectionBounds = {
+    blockLeft: Number.POSITIVE_INFINITY,
+    blockRight: Number.NEGATIVE_INFINITY,
+    bottom: Number.NEGATIVE_INFINITY,
+    left: Number.POSITIVE_INFINITY,
+    right: Number.NEGATIVE_INFINITY,
+    top: Number.POSITIVE_INFINITY
+  };
+
+  cache.targets.forEach((target) => {
+    const rect = getBlockControlHoverRect(editor, target);
+    const block = getBlockControlAnchorRect(editor, target);
+
+    bounds.left = Math.min(bounds.left, rect.left);
+    bounds.right = Math.max(bounds.right, rect.right);
+    bounds.top = Math.min(bounds.top, rect.top);
+    bounds.bottom = Math.max(bounds.bottom, rect.bottom);
+    bounds.blockLeft = Math.min(bounds.blockLeft, block.left);
+    bounds.blockRight = Math.max(bounds.blockRight, block.right);
+  });
+  cache.bounds = bounds;
+
+  return bounds;
+};
+
+const getBlockSelectionTopTarget = (editor: Editor): BlockControlTarget | null => {
+  return getBlockSelectionTargetCache(editor)?.targets[0] ?? null;
 };
 
 const isTargetInBlockSelection = (editor: Editor, target: BlockControlTarget): boolean => {
   const { selection } = editor.state;
 
-  return (
-    isBlockSelection(selection) &&
-    target.pos < selection.to &&
-    target.pos + target.node.nodeSize > selection.from
-  );
+  if (!isBlockSelection(selection)) return false;
+  if (target.node.type.name === "fragment") {
+    return selectionCoversNode(target.node, target.pos, selection.from, selection.to);
+  }
+
+  return target.pos < selection.to && target.pos + target.node.nodeSize > selection.from;
 };
 
 const isPointInBlockSelectionControlArea = (
   editor: Editor,
   { x, y, side }: { x: number; y: number; side?: BlockControlSide }
 ): boolean => {
-  const { doc, selection } = editor.state;
+  const cache = getBlockSelectionTargetCache(editor);
 
-  if (!isBlockSelection(selection)) return false;
+  if (!cache?.targets.length) return false;
 
-  let left = Number.POSITIVE_INFINITY;
-  let right = Number.NEGATIVE_INFINITY;
-  let top = Number.POSITIVE_INFINITY;
-  let bottom = Number.NEGATIVE_INFINITY;
-  let blockLeft = Number.POSITIVE_INFINITY;
-  let blockRight = Number.NEGATIVE_INFINITY;
-
-  doc.nodesBetween(selection.from, selection.to, (node, pos, parent) => {
-    if (parent !== doc) return false;
-    if (!node.type.isInGroup("block")) return true;
-
-    const target = getBlockControlTargetAtPos(editor, pos);
-
-    if (!target) return false;
-
-    const rect = getBlockControlHoverRect(editor, target);
-    const block = getBlockControlAnchorRect(editor, target);
-
-    left = Math.min(left, rect.left);
-    right = Math.max(right, rect.right);
-    top = Math.min(top, rect.top);
-    bottom = Math.max(bottom, rect.bottom);
-    blockLeft = Math.min(blockLeft, block.left);
-    blockRight = Math.max(blockRight, block.right);
-
-    return false;
-  });
+  const { blockLeft, blockRight, bottom, left, right, top } = getBlockSelectionBounds(
+    editor,
+    cache
+  );
 
   if (x < left || x > right || y < top || y > bottom) return false;
   if (!side) return true;
@@ -131,44 +243,73 @@ const registerSelectionControlHiding = (editor: Editor, hideControls: () => void
   };
 };
 
-const getBlockControlTargetAtY = (
+const getBlockControlHitAtY = (
   editor: Editor,
   y: number,
   { listItemSpecific = true }: { listItemSpecific?: boolean } = {}
-): BlockControlTarget | null => {
+): BlockControlHit => {
   const { state, view } = editor;
   const editorRect = getCachedElementRect(editor, view.dom);
-  const position = view.posAtCoords({ left: editorRect.x + editorRect.width / 2, top: y });
+  const x = editorRect.x + editorRect.width / 2;
+  const structureHit = getStructureHitAtPoint(editor, x, y);
 
-  if (!position) return null;
+  if (structureHit.target) return structureHit;
+
+  const position = view.posAtCoords({ left: x, top: y });
+
+  if (!position) return structureHit;
 
   const $pos = state.doc.resolve(position.pos);
 
   if (!listItemSpecific) {
     const pos = $pos.depth ? $pos.before(1) : position.inside >= 0 ? position.inside : $pos.pos;
 
-    return getBlockControlTargetAtPos(editor, pos);
+    return { ...structureHit, target: getBlockControlTargetAtPos(editor, pos) };
   }
 
   for (let depth = $pos.depth; depth > 0; depth -= 1) {
     if (LIST_ITEM_TYPES.has($pos.node(depth).type.name)) {
-      return getBlockControlTargetAtPos(editor, $pos.before(depth));
+      return {
+        ...structureHit,
+        target: getBlockControlTargetAtPos(editor, $pos.before(depth))
+      };
     }
   }
+
+  // A fragment header controls the complete fragment. Its content keeps
+  // individual block controls for direct children.
+  for (let depth = $pos.depth; depth > 1; depth -= 1) {
+    if ($pos.node(depth - 1).type.name === "fragment") {
+      return {
+        ...structureHit,
+        target: getBlockControlTargetAtPos(editor, $pos.before(depth))
+      };
+    }
+  }
+
+  // Gaps inside a fragment do not control the fragment. Only its header does.
+  if ($pos.depth > 0 && $pos.node(1).type.name === "fragment") return structureHit;
 
   // Non-list content belongs to its top-level block, including blockquotes.
   for (const pos of [$pos.depth ? $pos.before(1) : -1, position.inside, $pos.pos]) {
     const target = getBlockControlTargetAtPos(editor, pos);
 
-    if (target) return target;
+    if (target) return { ...structureHit, target };
   }
 
-  return null;
+  return structureHit;
+};
+const getBlockControlTargetAtY = (
+  editor: Editor,
+  y: number,
+  options?: { listItemSpecific?: boolean }
+): BlockControlTarget | null => {
+  return getBlockControlHitAtY(editor, y, options).target;
 };
 
 export {
-  getBlockContentRect,
   getBlockControlAnchorRect,
+  getBlockControlHitAtY,
   getBlockSelectionTopTarget,
   getBlockControlTargetAtY,
   getCachedElementRect,

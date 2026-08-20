@@ -4,6 +4,7 @@ import { Decoration, DecorationSet } from "@tiptap/pm/view";
 import { relativePositionToAbsolutePosition, ySyncPluginKey } from "@tiptap/y-tiptap";
 import { createRelativePositionFromJSON } from "yjs";
 import { createBlockSelectionShade } from "#editor/ui/block-selection";
+import { forEachSelectedBlock, selectionCoversNode } from "#editor/ui/block-utils";
 import { isBlockSelection } from "./block-selection";
 
 type CollaborationUser = {
@@ -97,15 +98,11 @@ const createBlockSelectionPlugin = (awareness: Awareness) => {
       const from = Math.min(anchor, head);
       const to = Math.max(anchor, head);
 
-      state.doc.descendants((node, position, parent) => {
-        if (parent !== state.doc) return false;
-
-        const selectsWholeBlock = node.isLeaf
-          ? from <= position && to >= position + node.nodeSize
-          : from <= position + 1 && to >= position + node.nodeSize - 1;
+      forEachSelectedBlock(state.doc, from, to, (node, position) => {
+        const selectsWholeBlock = selectionCoversNode(node, position, from, to);
 
         // Invisible node markers identify whole selected blocks, including leaf nodes.
-        if ((node.type.name === "title" || node.type.isInGroup("block")) && selectsWholeBlock) {
+        if (selectsWholeBlock) {
           decorations.push(
             Decoration.node(position, position + node.nodeSize, {
               "class": "collaboration-block-selection-marker",
@@ -113,8 +110,6 @@ const createBlockSelectionPlugin = (awareness: Awareness) => {
             })
           );
         }
-
-        return false;
       });
     });
 
@@ -209,7 +204,7 @@ const createBlockSelectionPlugin = (awareness: Awareness) => {
         });
       };
       const scheduleRemoteSelectionUpdate = () => {
-        if (shadeFrame !== null) cancelAnimationFrame(shadeFrame);
+        if (shadeFrame !== null) return;
 
         shadeFrame = requestAnimationFrame(updateRemoteSelections);
       };

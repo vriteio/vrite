@@ -2,6 +2,7 @@ import type { CommandProps, Editor, KeyboardShortcutCommand, Range } from "@tipt
 import { PluginKey, Plugin } from "@tiptap/pm/state";
 import { Decoration, DecorationSet } from "@tiptap/pm/view";
 import { isNodeRangeSelection, NodeRange, NodeRangeSelection } from "@tiptap/extension-node-range";
+import { forEachSelectedBlock } from "#editor/ui/block-utils";
 
 declare module "@tiptap/core" {
   interface Commands<ReturnType> {
@@ -71,16 +72,10 @@ const BlockSelectionExtension = NodeRange.extend({
 
             if (!isBlockSelection(selection)) return null;
 
-            doc.nodesBetween(from, to, (node, pos) => {
-              if (node.type.name === "title" || node.type.isInGroup("block")) {
-                decorations.push(
-                  Decoration.node(pos, pos + node.nodeSize, { class: "block-selection-marker" })
-                );
-
-                return false;
-              }
-
-              return true;
+            forEachSelectedBlock(doc, from, to, (node, pos) => {
+              decorations.push(
+                Decoration.node(pos, pos + node.nodeSize, { class: "block-selection-marker" })
+              );
             });
 
             return DecorationSet.create(state.doc, decorations);

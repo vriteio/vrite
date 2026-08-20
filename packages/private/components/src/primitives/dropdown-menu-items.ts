@@ -7,6 +7,7 @@ interface MenuItem {
   disabled?: boolean | string;
   shortcut?: string;
   selected?: boolean;
+  closeOnSelect?: boolean;
   items?: Array<MenuItem | (() => JSX.Element)> | Array<Array<MenuItem | (() => JSX.Element)>>;
   onClick?: (() => void) | (() => Promise<unknown>);
 }

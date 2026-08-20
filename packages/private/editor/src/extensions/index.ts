@@ -5,6 +5,8 @@ export * from "./block-selection";
 export * from "./drop-cursor";
 export * from "./node-character-limit";
 export * from "./collaboration-caret";
+export * from "./separator";
+export * from "./resource-name-tracker";
 export { Collaboration } from "@tiptap/extension-collaboration";
 export { NodeRange } from "@tiptap/extension-node-range";
 export { Gapcursor } from "@tiptap/extension-gapcursor";

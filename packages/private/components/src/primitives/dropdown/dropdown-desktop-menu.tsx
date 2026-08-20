@@ -26,7 +26,7 @@ const DropdownDesktopMenu: Component<DropdownDesktopMenuProps> = (props) => (
             }}
             shade
             class={clsx(
-              ":base-2: z-50 flex min-w-32 transform flex-col select-none rounded-[0.625rem] p-1 pointer-events-auto shadow-black shadow-opacity-15 transition duration-200",
+              ":base-2: z-50 flex min-w-32 transform flex-col select-none rounded-[0.625rem] p-1 pointer-events-auto shadow-black shadow-opacity-15 transition duration-200 bg-white",
               props.opened
                 ? ":base-2: visible translate-y-0 opacity-100"
                 : ":base-2: invisible opacity-0 !shadow-none",

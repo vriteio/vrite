@@ -48,9 +48,18 @@ header[data-type="title"] {
   @apply bg-gradient-to-r from-secondary via-primary to-transparent;
 }
 
-// Drop cursor
-.drop-cursor {
+// Drop and gap cursors
+.drop-cursor,
+.ProseMirror-gapcursor::after {
   @apply h-0.5! bg-gradient-to-tr! rounded-full;
+}
+
+.ProseMirror-gapcursor {
+  @apply inset-x-0!;
+}
+
+.ProseMirror-gapcursor::after {
+  @apply w-full! border-0!;
 }
 
 // Collaboration
@@ -266,6 +275,10 @@ header:only-of-type + p:only-of-type.is-empty::before {
         .ProseMirror-widget:not(:has([data-collab-cursor]))
       ) {
       @apply my-2;
+    }
+
+    & > [data-property-node-view] + [data-fragment-node-view] {
+      @apply my-0!;
     }
   }
 

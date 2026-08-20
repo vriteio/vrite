@@ -16,8 +16,7 @@ interface ContentNode {
   marks?: ContentMark[];
   text?: string;
 }
-type PropertyType =
-  "text" | "long-text" | "number" | "checkbox" | "date" | "url" | "select" | "multi-select";
+type PropertyType = "text" | "number" | "checkbox" | "date" | "url" | "select" | "multi-select";
 
 interface EntryDetails extends Entry {
   updatedAt: string;
@@ -38,9 +37,9 @@ interface TextDelta {
 }
 
 const HASHED_MARK_NAME_PATTERN = /(.*)(--[a-zA-Z0-9+/=]{8})$/;
+const MAX_BLOCK_NAME_LENGTH = 50;
 const PROPERTY_TYPES: PropertyType[] = [
   "text",
-  "long-text",
   "number",
   "checkbox",
   "date",
@@ -48,14 +47,31 @@ const PROPERTY_TYPES: PropertyType[] = [
   "select",
   "multi-select"
 ];
+const normalizeSourceName = (name: unknown, fallback: string): string => {
+  const normalizedName = Array.from(
+    String(name || "")
+      .normalize("NFC")
+      .trim()
+  )
+    .slice(0, MAX_BLOCK_NAME_LENGTH)
+    .join("");
+
+  return normalizedName || fallback;
+};
 const normalizeBlockName = (name: string, fallback: string): string => {
-  const normalizedName = name
-    .trim()
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
+  const words = name
+    .normalize("NFKC")
+    .replace(/([\p{Ll}\p{N}])(\p{Lu})/gu, "$1 $2")
+    .match(/[\p{L}\p{N}\p{M}]+/gu);
+  const normalizedName = words
+    ?.map((word, index) => {
+      const [firstCharacter = "", ...remainingCharacters] = Array.from(word.toLowerCase());
+
+      if (index === 0) return `${firstCharacter}${remainingCharacters.join("")}`;
+
+      return `${firstCharacter.toUpperCase()}${remainingCharacters.join("")}`;
+    })
+    .join("");
 
   return normalizedName || fallback;
 };
@@ -63,9 +79,9 @@ const getUniqueBlockName = (record: Record<string, unknown>, name: string): stri
   let uniqueName = name;
   let suffix = 1;
 
-  while (uniqueName in record) {
+  while (Object.prototype.hasOwnProperty.call(record, uniqueName)) {
     suffix += 1;
-    uniqueName = `${name}-${suffix}`;
+    uniqueName = `${name}${suffix}`;
   }
 
   return uniqueName;
@@ -162,7 +178,7 @@ const getEntry = async (input: { id: string; workspaceID: string }): Promise<Ent
 
   for (const node of content.content || []) {
     if (node.type === "fragment") {
-      const sourceName = String(node.attrs?.name || "").trim() || "Content";
+      const sourceName = normalizeSourceName(node.attrs?.name, "Content");
       const normalizedName = normalizeBlockName(sourceName, "content");
       const name = getUniqueBlockName(fragments, normalizedName);
 
@@ -173,7 +189,7 @@ const getEntry = async (input: { id: string; workspaceID: string }): Promise<Ent
     }
 
     if (node.type === "property") {
-      const sourceName = String(node.attrs?.label || "").trim() || "Property";
+      const sourceName = normalizeSourceName(node.attrs?.label, "Property");
       const type = normalizePropertyType(node.attrs?.type);
       const normalizedName = normalizeBlockName(sourceName, "property");
       const name = getUniqueBlockName(properties, normalizedName);

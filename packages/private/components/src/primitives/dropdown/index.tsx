@@ -53,7 +53,9 @@ interface DropdownProps extends JSX.HTMLAttributes<HTMLDivElement> {
   mobileNavigationTitle?: string;
   onContextMenuChange?(contextMenu: boolean): void;
   onMobileNavigationBack?(): void;
+  onPlacementChange?(placement: Placement): void;
   setOpened?(opened: boolean): void;
+  sameWidth?: boolean;
 }
 
 interface DropdownAreaContextValue {
@@ -294,8 +296,17 @@ const Dropdown: Component<DropdownProps> = (props) => {
           crossAxis: props.offset?.crossAxis ?? 0
         },
         placement: placement(),
+        sameWidth: md() && props.sameWidth,
         strategy: positioningStrategy(),
-        getAnchorElement
+        getAnchorElement,
+        async updatePosition(data) {
+          await data.updatePosition();
+
+          const content = data.floatingElement?.querySelector<HTMLElement>('[data-part="content"]');
+          const resolvedPlacement = content?.getAttribute("data-placement") as Placement | null;
+
+          if (resolvedPlacement) props.onPlacementChange?.(resolvedPlacement);
+        }
       }}
       unmountOnExit
       lazyMount

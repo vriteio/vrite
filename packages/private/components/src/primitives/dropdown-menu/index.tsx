@@ -9,13 +9,14 @@ import {
   createSignal,
   For,
   type JSX,
+  type ParentComponent,
   Show,
   splitProps
 } from "solid-js";
 import { Dynamic, Portal } from "solid-js/web";
 import { Shortcut } from "../shortcut";
 import { Spinner } from "../spinner";
-import { Menu } from "@ark-ui/solid/menu";
+import { Menu, useMenuContext } from "@ark-ui/solid/menu";
 import { Tooltip } from "../tooltip";
 import { createMediaQuery } from "@solid-primitives/media";
 import { type MobileMenuNavigation, MobileMenuItems } from "./dropdown-menu-mobile";
@@ -40,6 +41,16 @@ interface MenuItemsProps<O extends MenuItem> {
   portal?: boolean;
 }
 
+const CustomMenuContent: ParentComponent = (props) => {
+  const menu = useMenuContext();
+
+  return (
+    <div class="contents" onPointerMove={() => menu().setHighlightedValue("")}>
+      {props.children}
+    </div>
+  );
+};
+
 const MenuItems = <O extends MenuItem>(props: MenuItemsProps<O>) => (
   <For each={props.items}>
     {(optionOrSeparator) => {
@@ -48,7 +59,7 @@ const MenuItems = <O extends MenuItem>(props: MenuItemsProps<O>) => (
       }
 
       if (isJSXFactory(optionOrSeparator)) {
-        return optionOrSeparator();
+        return <CustomMenuContent>{optionOrSeparator()}</CustomMenuContent>;
       }
 
       const option = optionOrSeparator as O & { value: string };
@@ -105,9 +116,9 @@ const MenuItems = <O extends MenuItem>(props: MenuItemsProps<O>) => (
                     <Card
                       {...contentProps()}
                       {...(props.cardProps || {})}
-                      shade
+                      shade={props.cardProps?.shade ?? true}
                       class={clsx(
-                        `:base-2: z-50 flex flex-col p-1 transform min-w-32 rounded-[0.625rem] pointer-events-auto transition duration-150 shadow-black shadow-opacity-15 min-w-48 bg-gray-50`,
+                        `:base-2: z-50 flex flex-col p-1 transform min-w-32 rounded-[0.625rem] pointer-events-auto transition duration-150 shadow-black shadow-opacity-15 min-w-48 bg-white`,
                         props.cardProps?.class
                       )}
                       style={{
@@ -154,9 +165,9 @@ const MenuItems = <O extends MenuItem>(props: MenuItemsProps<O>) => (
                 setLoading(true);
                 void result.finally(() => {
                   setLoading(false);
-                  props.onClose();
+                  if (option.closeOnSelect !== false) props.onClose();
                 });
-              } else {
+              } else if (option.closeOnSelect !== false) {
                 props.onClose();
               }
             }}
@@ -263,7 +274,7 @@ const DropdownMenu = <O extends MenuItem>(props: DropdownMenuProps<O>) => {
       placement={localProps.placement || "bottom-end"}
       cardProps={{
         ...localProps.cardProps,
-        class: clsx(":base-2: min-w-48 bg-gray-50", localProps.cardProps?.class)
+        class: clsx(":base-2: min-w-48 bg-white", localProps.cardProps?.class)
       }}
       opened={opened()}
       portal={localProps.portal}

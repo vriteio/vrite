@@ -11,17 +11,17 @@ interface BlockControlTarget {
   node: ProseMirrorNode;
   pos: number;
 }
-
-type BlockControlSide = "left" | "right";
-
-type TargetRectName = "anchor" | "content" | "hover";
-type TargetRects = Partial<Record<TargetRectName, DOMRect>>;
 interface BlockControlRectCache {
   elements: WeakMap<HTMLElement, DOMRect>;
   fontSize?: number;
+  layoutVersion: number;
   scrollContainer: HTMLElement | null;
   targets: WeakMap<HTMLElement, TargetRects>;
 }
+
+type BlockControlSide = "left" | "right";
+type TargetRectName = "anchor" | "content" | "hover";
+type TargetRects = Partial<Record<TargetRectName, DOMRect>>;
 
 const caches = new WeakMap<Editor, BlockControlRectCache>();
 
@@ -31,12 +31,14 @@ const createCache = (editor: Editor): BlockControlRectCache => {
   );
   const cache: BlockControlRectCache = {
     elements: new WeakMap(),
+    layoutVersion: 0,
     scrollContainer,
     targets: new WeakMap()
   };
   const invalidate = () => {
     cache.elements = new WeakMap();
     cache.fontSize = undefined;
+    cache.layoutVersion += 1;
     cache.targets = new WeakMap();
   };
   const onTransaction = ({ transaction }: EditorEvents["transaction"]) => {
@@ -113,6 +115,9 @@ const getCachedTargetRect = (
 const getEditorScrollContainer = (editor: Editor): HTMLElement | null => {
   return getCache(editor).scrollContainer;
 };
+const getBlockControlLayoutVersion = (editor: Editor): number => {
+  return getCache(editor).layoutVersion;
+};
 
 const getTargetList = (target: BlockControlTarget): HTMLElement | null => {
   const parent = LIST_ITEM_TYPES.has(target.node.type.name) ? target.dom.parentElement : null;
@@ -160,6 +165,9 @@ const getFirstLineRect = (editor: Editor, element: HTMLElement): DOMRect => {
 const getBlockContentRect = (editor: Editor, target: BlockControlTarget): DOMRect => {
   return getCachedTargetRect(editor, target, "content", () => {
     const outerRect = getCachedElementRect(editor, target.dom);
+    const customAnchor = target.dom.querySelector<HTMLElement>("[data-block-control-anchor]");
+
+    if (customAnchor) return getCachedElementRect(editor, customAnchor);
 
     if (target.node.type.name === "horizontalRule") {
       const line = target.dom.matches("hr") ? target.dom : target.dom.querySelector("hr");
@@ -252,6 +260,7 @@ export {
   getBlockContentRect,
   getBlockControlAnchorRect,
   getBlockControlHoverRect,
+  getBlockControlLayoutVersion,
   getCachedElementRect,
   getEditorScrollContainer,
   isPointInBlockControlArea

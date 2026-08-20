@@ -66,7 +66,7 @@ const ProfileMenu: Component<ProfileMenuProps> = (props) => {
     dropdownOptions.push([
       () => (
         <div class="flex min-h-10 flex-col justify-center px-1 py-1 md:min-h-0 md:py-0.5">
-          <span class="text-base leading-5 font-medium text-gray-900 line-clamp-1 md:text-sm">
+          <span class="text-[16px] leading-5 font-medium text-gray-900 line-clamp-1 md:text-sm">
             {currentUser?.name || currentUser?.email}
           </span>
           <span class="text-sm leading-4 text-gray-500 line-clamp-1 md:text-xs md:leading-none">
@@ -85,7 +85,7 @@ const ProfileMenu: Component<ProfileMenuProps> = (props) => {
             [
               () => (
                 <div class="flex min-h-10 flex-col justify-center px-1 py-1 md:min-h-0 md:py-0.5">
-                  <span class="text-base leading-5 font-medium text-gray-700 truncate md:text-sm">
+                  <span class="text-[16px] leading-5 font-medium text-gray-700 truncate md:text-sm">
                     {session.user.name || session.user.email}
                   </span>
                   <span class="text-sm leading-4 text-gray-500 truncate md:text-xs md:leading-none">

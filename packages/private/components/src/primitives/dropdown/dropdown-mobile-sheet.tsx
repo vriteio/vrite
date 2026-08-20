@@ -51,7 +51,7 @@ const DropdownMobileSheet: Component<DropdownMobileSheetProps> = (props) => {
   return (
     <Show when={props.host && opened()}>
       <Portal>
-        <Menu.Positioner class="!fixed !inset-0 !z-50 !transform-none flex select-none items-end pointer-events-none">
+        <Menu.Positioner class="!fixed !inset-0 !z-50 !w-auto !min-w-0 !max-w-none !transform-none flex select-none items-end pointer-events-none">
           <div
             {...drag.backdropGestureProps}
             class={clsx(
@@ -89,13 +89,13 @@ const DropdownMobileSheet: Component<DropdownMobileSheetProps> = (props) => {
             }}
             class={clsx(
               styles.sheet,
-              ":base-2: fixed bottom-0 left-0 z-50 flex !w-full transform flex-col select-none rounded-b-none !border-0 p-1 pb-[calc(0.25rem+env(safe-area-inset-bottom,0px))] pointer-events-auto shadow-black shadow-opacity-15 shadow-xl",
+              ":base-2: fixed bottom-0 left-0 z-50 flex !w-full min-w-0 max-w-full transform flex-col overflow-hidden select-none rounded-b-none !border-0 p-1 pb-[calc(0.25rem+env(safe-area-inset-bottom,0px))] pointer-events-auto shadow-black shadow-opacity-15 shadow-xl bg-white",
               mobileDropdownExpanded() ? ":base-2: rounded-t-none" : ":base-2: rounded-t-2xl",
               activeEntry()?.getClosing() && styles.closing,
               cardProps()?.class
             )}
           >
-            <div class="flex min-h-0 w-full flex-1 flex-col">
+            <div class="flex min-h-0 max-h-full w-full min-w-0 max-w-full flex-1 flex-col overflow-hidden">
               <div
                 {...drag.gestureProps}
                 aria-hidden="true"
@@ -117,14 +117,14 @@ const DropdownMobileSheet: Component<DropdownMobileSheetProps> = (props) => {
                   <div class="flex h-6 w-6 shrink-0 items-center justify-center">
                     <div class="i-lucide:chevron-left h-5 w-5 text-gray-400" />
                   </div>
-                  <span class="min-w-0 flex-1 truncate pr-7 text-center text-base font-medium">
+                  <span class="min-w-0 flex-1 truncate pr-7 text-center text-[16px] font-medium">
                     {navigationTitle() ? `Back to ${navigationTitle()}` : "Back"}
                   </span>
                 </button>
               </Show>
               <div
                 {...(activeEntry()?.getDragFromContent() !== false ? drag.gestureProps : {})}
-                class="min-h-0 w-full min-w-fit flex-1 overflow-auto scrollbar-sm flex flex-col [&>div]:contents"
+                class="min-h-0 w-full min-w-0 max-w-full flex-1 overflow-x-hidden overflow-y-auto scrollbar-sm flex flex-col [&>div]:contents"
                 data-dropdown-mobile-scroll
                 ref={setMobileDropdownContentContainer}
               />
@@ -144,7 +144,7 @@ const DropdownMobileContent: Component<DropdownMobileContentProps> = (props) => 
       {(container) => (
         <Portal mount={container}>
           <Menu.Content
-            class="flex min-h-0 w-full min-w-fit flex-1 flex-col focus:outline-none"
+            class="flex min-h-0 w-full min-w-0 max-w-full flex-1 flex-col overflow-hidden focus:outline-none"
             style={{ display: props.active ? undefined : "none" }}
           >
             {props.children}

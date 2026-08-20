@@ -1,4 +1,7 @@
 import {
+  MAX_ENTRY_TITLE_LENGTH,
+  normalizeEntryTitle,
+  Title,
   Document,
   Text,
   Paragraph,
@@ -18,7 +21,9 @@ import {
   OrderedList,
   TaskList,
   TaskItem,
-  ListItem
+  ListItem,
+  Property,
+  Fragment
 } from "./schema";
 import { BubbleMenu } from "./ui/menus/bubble-menu";
 import { BlockSelection as BlockSelectionMenu } from "./ui/block-selection";
@@ -36,8 +41,9 @@ import { SlashMenu } from "./ui/menus/slash-menu";
 import { BlockMenuArea } from "./ui/menus/block-menu";
 import { ScrollShadow, createRef } from "@andesine/components";
 import clsx from "clsx";
-import { MAX_ENTRY_TITLE_LENGTH, normalizeEntryTitle, Title } from "./schema/title";
 import {
+  ResourceNameTracker,
+  Separator,
   TrailingNode,
   Collaboration,
   CollaborationCaret,
@@ -52,11 +58,14 @@ import { DragHandleMenu } from "./ui/drag-handle";
 
 import type { EditorProps } from "./client-types";
 import { useEditorProvider } from "./use-editor-provider";
+import { createFragmentViewRenderer, createPropertyViewRenderer } from "./ui/views";
+import { getOwner } from "solid-js/web";
 
 const ClientEditor: Component<EditorProps> = (props) => {
   const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
   const [menuContainerRef, setMenuContainerRef] = createRef<HTMLElement | null>(null);
   const [editorContentElement, setEditorContentElement] = createSignal<HTMLElement | null>(null);
+  const owner = getOwner();
   const provider = useEditorProvider({
     url: () => props.url,
     doc: () => props.doc,
@@ -88,6 +97,16 @@ const ClientEditor: Component<EditorProps> = (props) => {
         Text,
         HardBreak,
         Title,
+        Property.extend({
+          addNodeView() {
+            return createPropertyViewRenderer(owner);
+          }
+        }),
+        Fragment.extend({
+          addNodeView() {
+            return createFragmentViewRenderer(owner);
+          }
+        }),
         NodeCharacterLimit.configure({ limits: { title: MAX_ENTRY_TITLE_LENGTH } }),
         // Marks
         Link,
@@ -108,6 +127,7 @@ const ClientEditor: Component<EditorProps> = (props) => {
         TaskItem,
         ListItem,
         // Other
+        ResourceNameTracker,
         UniqueID,
         Gapcursor,
         Dropcursor,
@@ -120,7 +140,8 @@ const ClientEditor: Component<EditorProps> = (props) => {
           user: collaborationUser()
         }),
         TrailingNode,
-        Placeholder
+        Placeholder,
+        Separator
       ],
       editorProps: { attributes: { class: `outline-none min-h-full` } },
       onUpdate: ({ editor }) => {

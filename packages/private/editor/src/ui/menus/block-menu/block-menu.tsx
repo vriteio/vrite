@@ -169,8 +169,11 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
             style={{ height: `${hoverAreaHeight()}px` }}
           />
           <div
-            class="absolute left-0 top-7 w-full pointer-events-auto"
-            style={{ height: `${Math.max(0, hoverAreaHeight() - 28)}px` }}
+            class="absolute left-0 w-full pointer-events-auto"
+            style={{
+              height: `${Math.max(0, hoverAreaHeight() - BLOCK_CONTROL_SIZE)}px`,
+              top: `${BLOCK_CONTROL_SIZE}px`
+            }}
           />
           <IconButton
             icon="i-lucide:ellipsis"

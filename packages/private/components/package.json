@@ -10,10 +10,12 @@
     "@solid-primitives/active-element": "^2.1.6",
     "@solid-primitives/media": "^2.3.6",
     "@solid-primitives/scheduled": "^1.5.3",
+    "chrono-node": "^2.10.1",
     "clsx": "^2.1.1",
     "d3-array": "^3.2.4",
     "d3-scale": "^4.0.2",
     "d3-shape": "^3.2.0",
+    "date-fns": "^4.4.0",
     "nanoid": "^6.0.1",
     "solid-js": "^1.9.14",
     "tinykeys": "^4.0.0"

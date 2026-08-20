@@ -37,7 +37,7 @@ const entryDetailsType = entryType.extend({
     z.object({
       name: z.string().describe("Source property name"),
       type: z
-        .enum(["text", "long-text", "number", "checkbox", "date", "url", "select", "multi-select"])
+        .enum(["text", "number", "checkbox", "date", "url", "select", "multi-select"])
         .describe("Property type"),
       value: z.union([z.string(), z.number(), z.boolean(), z.array(z.string()), z.null()])
     })

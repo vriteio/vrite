@@ -105,7 +105,7 @@ const FormatMenu: Component<{
     <Card
       data-menu="format"
       class={clsx(
-        "z-10 relative flex w-full max-w-full p-1 gap-1 rounded-none overflow-x-auto scrollbar-hidden not-prose bg-gray-50 items-center md:w-auto md:max-w-none md:rounded-xl md:overflow-initial",
+        "z-10 relative flex w-full max-w-full p-1 gap-1 rounded-none overflow-x-auto scrollbar-hidden not-prose bg-white items-center md:w-auto md:max-w-none md:rounded-xl md:overflow-initial",
         props.class
       )}
       shade

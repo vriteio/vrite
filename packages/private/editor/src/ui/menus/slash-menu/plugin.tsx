@@ -96,23 +96,24 @@ const createSlashMenuPlugin = (options: {
           const target = options.editor.view.dom.closest("#editor-container") as HTMLElement;
           const element = document.createElement("div");
           const unmount = render(
-            () =>
-              runWithOwner(owner, () => {
-                const state = (): SlashMenuState => ({
-                  ...suggestionProps()!,
-                  clientRect: () => getReferenceClientRect(suggestionProps()!),
-                  visible: menuVisible(),
-                  close() {
-                    setMenuVisible(false);
-                    popup?.hide();
-                  },
-                  setOnKeyDown(handler) {
-                    keyDownHandler = handler;
-                  }
-                });
-                return <SlashMenu state={state()} />;
-              }),
-            element
+            () => {
+              const state = (): SlashMenuState => ({
+                ...suggestionProps()!,
+                clientRect: () => getReferenceClientRect(suggestionProps()!),
+                visible: menuVisible(),
+                close() {
+                  setMenuVisible(false);
+                  popup?.hide();
+                },
+                setOnKeyDown(handler) {
+                  keyDownHandler = handler;
+                }
+              });
+              return <SlashMenu state={state()} />;
+            },
+            element,
+            undefined,
+            { owner }
           );
 
           component = {

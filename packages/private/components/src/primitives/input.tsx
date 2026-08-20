@@ -31,19 +31,20 @@ interface InputProps extends Omit<JSX.InputHTMLAttributes<HTMLInputElement>, "sl
   onCancel?(event: KeyboardEvent): void;
 }
 
+// Use minimum 16px font size for inputs to avoid zooming on iOS devices
 const inputSizes = {
   xs: {
     label: ":base: text-xs",
     input: ":base: h-6.5 max-h-6.5",
-    field: ":base: p-0.5 px-1.5 text-sm"
+    field: ":base: p-0.5 px-1.5 text-[16px] md:text-sm"
   },
   small: {
     label: ":base: text-xs",
     input: ":base: h-7 max-h-7",
-    field: ":base: p-1 px-2 text-sm"
+    field: ":base: p-1 px-2 text-[16px] md:text-sm"
   },
   medium: {
-    label: ":base: text-sm",
+    label: ":base: text-[16px] md:text-sm",
     input: ":base: h-8 max-h-8",
     field: ":base: p-2"
   }
@@ -59,6 +60,7 @@ const Input: Component<InputProps> = (props) => {
     "onCancel",
     "onBlur",
     "onFocus",
+    "onKeyDown",
     "class",
     "value",
     "setValue",
