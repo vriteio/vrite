@@ -7,6 +7,10 @@ import { workspaces } from "./workspaces";
 
 const permissionEnum = pgEnum("permission", [
   "content",
+  "versions",
+  "read:versions",
+  "publishing",
+  "read:publishing",
   "api_keys",
   "read:api_keys",
   "billing",
@@ -16,6 +20,10 @@ const permissionEnum = pgEnum("permission", [
 const baseRoleEnum = pgEnum("base_role", ["admin", "viewer"]);
 const permissionType = z.enum([
   "content",
+  "versions",
+  "read:versions",
+  "publishing",
+  "read:publishing",
   "api_keys",
   "read:api_keys",
   "billing",

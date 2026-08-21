@@ -1,18 +1,81 @@
 import { rankBetweenNeighbors, toCollectionID, toUUID } from "#backend/lib/primitives";
 import { db } from "#backend/lib/adapters";
-import { collections, workspaces } from "#backend/db";
-import { and, asc, eq, isNull, sql } from "drizzle-orm";
+import { collections, entryPublications, workspaces } from "#backend/db";
+import {
+  getDisabledEntryIDs,
+  getSubtreeCollectionIDs,
+  getSubtreeEntryIDs,
+  isCollectionPublishingEnabled,
+  loadPublishingTree,
+  PUBLISHED_CHANNEL_NAME,
+  publishEntries,
+  syncEntrySnapshots
+} from "#backend/lib/publishing";
+import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
+import type { VersionSummary } from "#backend/lib/data";
 
 const moveCollection = async (input: {
   id: string;
   workspaceID: string;
   newParentID?: string | null;
   index?: number;
-}): Promise<{ index: number; newParentID: string | null }> => {
+  publish?: boolean;
+  canPublish: boolean;
+  contributorIDs: string[];
+}): Promise<{
+  affectedPublishingEntryIDs: string[];
+  createdVersions: VersionSummary[];
+  index: number;
+  newParentID: string | null;
+}> => {
   const workspaceID = toUUID(input.workspaceID);
   const collectionID = toUUID(input.id);
   const requestedParentID = input.newParentID ? toUUID(input.newParentID) : null;
+
+  if (input.publish) {
+    if (!input.canPublish) {
+      throw new ORPCError("FORBIDDEN", {
+        message: "Publishing permission is required to move this collection"
+      });
+    }
+
+    const entryIDs = await db.transaction(async (tx) => {
+      const tree = await loadPublishingTree(tx, workspaceID);
+      const collection = tree.collections.find(({ id }) => id === collectionID);
+      const parentID = requestedParentID || tree.rootID;
+      const parent = tree.collections.find(({ id }) => id === parentID);
+
+      if (!collection) throw new ORPCError("NOT_FOUND");
+      if (!collection.parentID) {
+        throw new ORPCError("BAD_REQUEST", { message: "Cannot move the root collection" });
+      }
+
+      if (parentID === collectionID) {
+        throw new ORPCError("BAD_REQUEST", { message: "Cannot move a collection into itself" });
+      }
+
+      if (!parent) throw new ORPCError("NOT_FOUND", { message: "Parent collection not found" });
+
+      const subtreeCollectionIDs = getSubtreeCollectionIDs(tree, collectionID);
+
+      if (subtreeCollectionIDs.includes(parentID)) {
+        throw new ORPCError("BAD_REQUEST", {
+          message: "Cannot move a collection into one of its descendants"
+        });
+      }
+
+      const wasPublishingEnabled = isCollectionPublishingEnabled(tree, collectionID);
+      const parentPublishingEnabled = isCollectionPublishingEnabled(tree, parentID);
+      const willBePublishingEnabled = collection.publishingEnabled || parentPublishingEnabled;
+
+      if (wasPublishingEnabled || !willBePublishingEnabled) return [];
+
+      return getSubtreeEntryIDs(tx, workspaceID, tree, collectionID);
+    });
+
+    await syncEntrySnapshots(workspaceID, entryIDs);
+  }
 
   return db.transaction(async (tx) => {
     await tx
@@ -88,6 +151,24 @@ const moveCollection = async (input: {
       });
     }
 
+    const publishingTree = await loadPublishingTree(tx, workspaceID);
+    const wasPublishingEnabled = isCollectionPublishingEnabled(publishingTree, collectionID);
+    const parentPublishingEnabled = isCollectionPublishingEnabled(publishingTree, parentID);
+    const willBePublishingEnabled = collection.publishingEnabled || parentPublishingEnabled;
+    const crossesPublishingBoundary = wasPublishingEnabled !== willBePublishingEnabled;
+
+    if (crossesPublishingBoundary && !input.canPublish) {
+      throw new ORPCError("FORBIDDEN", {
+        message: "Publishing permission is required to move this collection"
+      });
+    }
+
+    if (!wasPublishingEnabled && willBePublishingEnabled && input.publish === undefined) {
+      throw new ORPCError("BAD_REQUEST", {
+        message: "Choose whether to publish the latest entry versions"
+      });
+    }
+
     const siblings = await tx
       .select({ id: collections.id, rank: collections.rank })
       .from(collections)
@@ -116,9 +197,48 @@ const moveCollection = async (input: {
         )
       );
 
+    const treeCollection = publishingTree.collections.find((item) => item.id === collectionID);
+    let createdVersions: VersionSummary[] = [];
+
+    if (treeCollection) treeCollection.parentID = parentID;
+
+    if (!wasPublishingEnabled && willBePublishingEnabled && input.publish) {
+      const entryIDs = await getSubtreeEntryIDs(tx, workspaceID, publishingTree, collectionID);
+
+      const result = await publishEntries(tx, {
+        workspaceID,
+        entryIDs,
+        channel: PUBLISHED_CHANNEL_NAME,
+        contributorIDs: input.contributorIDs
+      });
+
+      createdVersions = result.createdVersions;
+    }
+
+    if (wasPublishingEnabled && !willBePublishingEnabled) {
+      const disabledEntryIDs = await getDisabledEntryIDs(
+        tx,
+        workspaceID,
+        publishingTree,
+        collectionID
+      );
+
+      if (disabledEntryIDs.length > 0) {
+        await tx
+          .delete(entryPublications)
+          .where(inArray(entryPublications.entryID, disabledEntryIDs));
+      }
+    }
+
+    const affectedPublishingEntryIDs = crossesPublishingBoundary
+      ? await getSubtreeEntryIDs(tx, workspaceID, publishingTree, collectionID)
+      : [];
+
     return {
       index,
-      newParentID: requestedParentID ? toCollectionID(requestedParentID) : null
+      newParentID: requestedParentID ? toCollectionID(requestedParentID) : null,
+      affectedPublishingEntryIDs,
+      createdVersions
     };
   });
 };

@@ -4,6 +4,8 @@ import { keyEventType } from "./keys";
 import { membershipEventType } from "./memberships";
 import { collectionEventType } from "./collections";
 import { roleEventType } from "./roles";
+import { publishingEventType } from "./publishing";
+import { versionEventType } from "./versions";
 import { workspaceStateEventType } from "./workspaces";
 import * as z from "zod";
 
@@ -18,6 +20,8 @@ const workspaceEventType = z.union([
   collectionEventType,
   membershipEventType,
   roleEventType,
+  publishingEventType,
+  versionEventType,
   keyEventType,
   workspaceStateEventType
 ]);
@@ -48,3 +52,5 @@ export * from "./memberships";
 export * from "./roles";
 export * from "./keys";
 export * from "./workspaces";
+export * from "./publishing";
+export * from "./versions";

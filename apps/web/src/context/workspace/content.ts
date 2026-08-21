@@ -11,14 +11,22 @@ import { createIndexedDBAdapter } from "./persistence";
 import { type Collection, type Entry, client, type WorkspaceEvent } from "#web/lib/api";
 import solidReactivityAdapter from "@signaldb/solid";
 import { useConnectivitySignal } from "@solid-primitives/connectivity";
-import { type Accessor, createEffect, createSignal, on, untrack } from "solid-js";
+import { type Accessor, createEffect, createSignal, on } from "solid-js";
 import { isPersistedCollection, isPersistedEntry } from "#web/lib/validation";
 
-type ExplorerTree = {
+interface PublishingState {
+  enabledCollectionIDs: Set<string>;
+  unpublishedEntryIDs: Set<string>;
+}
+interface ExplorerTree {
   workspaceID: string;
   collections: Collection[];
   entries: Entry[];
-};
+  publishing: {
+    enabledCollectionIDs: string[];
+    unpublishedEntryIDs: string[];
+  } | null;
+}
 const getWorkspaceContentDatabaseName = (workspaceID?: string) => {
   return getWorkspaceDatabaseName(workspaceID || "ephemeral");
 };
@@ -84,6 +92,7 @@ const useWorkspaceContent = (workspaceID: Accessor<string>, canWrite: Accessor<b
   const [loading, setLoading] = createSignal(Boolean(workspaceID()));
   const [syncing, setSyncing] = createSignal(false);
   const [snapshotError, setSnapshotError] = createSignal(false);
+  const [publishing, setPublishing] = createSignal<PublishingState | null>(null);
   const syncingWorkspaces = new Map<string, number>();
   const entriesCollection = () => contentCollections().entries;
   const collectionsCollection = () => contentCollections().collections;
@@ -109,6 +118,32 @@ const useWorkspaceContent = (workspaceID: Accessor<string>, canWrite: Accessor<b
     return !isOnline() || syncing() || !contentCollections().workspaceID || !canWrite();
   };
   const offline = () => !isOnline();
+  const removePublishingEntries = (entryIDs: string[]) => {
+    setPublishing((current) => {
+      if (!current) return current;
+
+      const unpublishedEntryIDs = new Set(current.unpublishedEntryIDs);
+
+      for (const entryID of entryIDs) {
+        unpublishedEntryIDs.delete(entryID);
+      }
+
+      return { ...current, unpublishedEntryIDs };
+    });
+  };
+  const removePublishingCollections = (collectionIDs: string[]) => {
+    setPublishing((current) => {
+      if (!current) return current;
+
+      const enabledCollectionIDs = new Set(current.enabledCollectionIDs);
+
+      for (const collectionID of collectionIDs) {
+        enabledCollectionIDs.delete(collectionID);
+      }
+
+      return { ...current, enabledCollectionIDs };
+    });
+  };
   const applyExplorerTree = async (
     tree: ExplorerTree,
     targetCollections: ReturnType<typeof createWorkspaceCollections>
@@ -125,6 +160,14 @@ const useWorkspaceContent = (workspaceID: Accessor<string>, canWrite: Accessor<b
 
     applyCollectionSnapshot(targetCollections.entries, tree.entries);
     applyCollectionSnapshot(targetCollections.collections, tree.collections);
+    setPublishing(
+      tree.publishing
+        ? {
+            enabledCollectionIDs: new Set(tree.publishing.enabledCollectionIDs),
+            unpublishedEntryIDs: new Set(tree.publishing.unpublishedEntryIDs)
+          }
+        : null
+    );
     setSnapshotError(false);
     setLoading(false);
   };
@@ -197,6 +240,7 @@ const useWorkspaceContent = (workspaceID: Accessor<string>, canWrite: Accessor<b
       }
       case "entry:delete":
         contentOperations.sync.entries.applyDelete({ entryIDs: event.data.ids });
+        removePublishingEntries(event.data.ids);
         break;
       case "collection:create":
         contentOperations.sync.collections.applyCreate({ collection: event.data });
@@ -216,6 +260,41 @@ const useWorkspaceContent = (workspaceID: Accessor<string>, canWrite: Accessor<b
         break;
       case "collection:delete":
         contentOperations.sync.collections.applyDelete({ collectionIDs: event.data.ids });
+        removePublishingCollections(event.data.ids);
+        break;
+      case "publishing:collection-update":
+        setPublishing((current) => {
+          if (!current) return current;
+
+          const enabledCollectionIDs = new Set(current.enabledCollectionIDs);
+
+          if (event.data.enabled) {
+            enabledCollectionIDs.add(event.data.id);
+          } else {
+            enabledCollectionIDs.delete(event.data.id);
+          }
+
+          return { ...current, enabledCollectionIDs };
+        });
+        break;
+      case "publishing:entries-update":
+        if (event.data.channel !== "published") break;
+
+        setPublishing((current) => {
+          if (!current) return current;
+
+          const unpublishedEntryIDs = new Set(current.unpublishedEntryIDs);
+
+          for (const entry of event.data.entries) {
+            if (entry.hasUnpublishedChanges) {
+              unpublishedEntryIDs.add(entry.entryID);
+            } else {
+              unpublishedEntryIDs.delete(entry.entryID);
+            }
+          }
+
+          return { ...current, unpublishedEntryIDs };
+        });
         break;
     }
   };
@@ -223,6 +302,7 @@ const useWorkspaceContent = (workspaceID: Accessor<string>, canWrite: Accessor<b
     setLoading(Boolean(currentWorkspaceID));
     setSyncing((syncingWorkspaces.get(currentWorkspaceID) ?? 0) > 0);
     setSnapshotError(false);
+    setPublishing(null);
 
     const previousCollections = contentCollections();
     const nextCollections = createWorkspaceCollections(currentWorkspaceID);
@@ -266,6 +346,7 @@ const useWorkspaceContent = (workspaceID: Accessor<string>, canWrite: Accessor<b
     loading,
     syncing,
     snapshotError,
+    publishing,
     readOnly,
     offline,
     ...contentOperations

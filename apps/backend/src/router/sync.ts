@@ -1,5 +1,10 @@
 import { collectionType, entryType } from "#backend/db";
 import { id } from "#backend/lib/primitives";
+import {
+  canReadPublishing,
+  PUBLISHED_CHANNEL_NAME,
+  publishingChannelNameType
+} from "#backend/lib/publishing";
 import { authorized, base } from "#backend/lib/transport";
 import { Memberships } from "#backend/services/memberships";
 import { Sync } from "#backend/services/sync";
@@ -7,7 +12,13 @@ import * as z from "zod";
 
 const explorerTreeType = z.object({
   collections: z.array(collectionType),
-  entries: z.array(entryType)
+  entries: z.array(entryType),
+  publishing: z
+    .object({
+      enabledCollectionIDs: z.array(id()),
+      unpublishedEntryIDs: z.array(id())
+    })
+    .nullable()
 });
 
 const syncRouter = base.router({
@@ -41,7 +52,32 @@ const syncRouter = base.router({
     .output(explorerTreeType)
     .handler(async ({ context }) => {
       return Sync.getExplorerTree({
-        workspaceID: context.auth.workspaceID
+        workspaceID: context.auth.workspaceID,
+        includePublishing: canReadPublishing(context.auth)
+      });
+    }),
+  getPublishingStatus: base
+    .meta({
+      required: {
+        session: ["read:publishing"]
+      }
+    })
+    .use(authorized)
+    .input(
+      z.object({
+        channel: publishingChannelNameType.optional().default(PUBLISHED_CHANNEL_NAME)
+      })
+    )
+    .output(
+      z.object({
+        channel: publishingChannelNameType,
+        unpublishedEntryIDs: z.array(id())
+      })
+    )
+    .handler(({ context, input }) => {
+      return Sync.getPublishingStatus({
+        workspaceID: context.auth.workspaceID,
+        channel: input.channel
       });
     }),
   workspaceUpdates: base.use(authorized).handler(async function* ({ context, signal }) {

@@ -36,6 +36,41 @@
       "when": 1786553510085,
       "tag": "0004_current-entry",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1787262851238,
+      "tag": "0005_content-document",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1787263143414,
+      "tag": "0006_entry-versions",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1787264058875,
+      "tag": "0007_version-permissions",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1787267838025,
+      "tag": "0008_automatic-versions",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1787305667593,
+      "tag": "0009_publishing-foundation",
+      "breakpoints": true
     }
   ]
 }

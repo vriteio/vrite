@@ -1,15 +1,84 @@
 import { rankBetweenNeighbors, toUUID } from "#backend/lib/primitives";
 import { db } from "#backend/lib/adapters";
-import { collections, entries, workspaces } from "#backend/db";
+import { collections, entries, entryPublications, workspaces } from "#backend/db";
+import {
+  isCollectionPublishingEnabled,
+  loadPublishingTree,
+  PUBLISHED_CHANNEL_NAME,
+  publishEntries,
+  syncEntrySnapshots
+} from "#backend/lib/publishing";
 import { and, desc, eq, gt, isNull, lt, ne } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
+import type { VersionSummary } from "#backend/lib/data";
 
+const shouldSyncPublishingSnapshot = async (input: {
+  workspaceID: string;
+  entryID: string;
+  destinationCollectionID?: string | null;
+}): Promise<boolean> => {
+  return db.transaction(async (tx) => {
+    const [workspace] = await tx
+      .select({ id: workspaces.id })
+      .from(workspaces)
+      .where(eq(workspaces.id, input.workspaceID));
+
+    if (!workspace) throw new ORPCError("NOT_FOUND");
+
+    const [entry] = await tx
+      .select({ collectionID: entries.collectionID })
+      .from(entries)
+      .where(
+        and(
+          eq(entries.id, input.entryID),
+          eq(entries.workspaceID, input.workspaceID),
+          isNull(entries.deletedAt)
+        )
+      );
+
+    if (!entry) throw new ORPCError("NOT_FOUND");
+
+    const destinationCollectionID =
+      input.destinationCollectionID === undefined
+        ? entry.collectionID
+        : input.destinationCollectionID;
+
+    if (destinationCollectionID) {
+      const [collection] = await tx
+        .select({ id: collections.id })
+        .from(collections)
+        .where(
+          and(
+            eq(collections.id, destinationCollectionID),
+            eq(collections.workspaceID, input.workspaceID),
+            isNull(collections.deletedAt)
+          )
+        );
+
+      if (!collection) throw new ORPCError("BAD_REQUEST", { message: "Collection not found" });
+    }
+
+    const publishingTree = await loadPublishingTree(tx, input.workspaceID);
+
+    return (
+      !isCollectionPublishingEnabled(publishingTree, entry.collectionID) &&
+      isCollectionPublishingEnabled(publishingTree, destinationCollectionID)
+    );
+  });
+};
 const moveEntry = async (input: {
   id: string;
   workspaceID: string;
   order: string;
   collectionID?: string | null;
-}): Promise<{ order: string }> => {
+  publish?: boolean;
+  canPublish: boolean;
+  contributorIDs: string[];
+}): Promise<{
+  affectedPublishingEntryIDs: string[];
+  createdVersions: VersionSummary[];
+  order: string;
+}> => {
   const workspaceID = toUUID(input.workspaceID);
   const entryID = toUUID(input.id);
   const collectionID =
@@ -18,6 +87,22 @@ const moveEntry = async (input: {
       : input.collectionID === null
         ? null
         : toUUID(input.collectionID);
+
+  if (input.publish) {
+    if (!input.canPublish) {
+      throw new ORPCError("FORBIDDEN", {
+        message: "Publishing permission is required to move this entry"
+      });
+    }
+
+    const shouldSync = await shouldSyncPublishingSnapshot({
+      workspaceID,
+      entryID,
+      destinationCollectionID: collectionID
+    });
+
+    if (shouldSync) await syncEntrySnapshots(workspaceID, [entryID]);
+  }
 
   return db.transaction(async (tx) => {
     const [workspace] = await tx
@@ -58,6 +143,26 @@ const moveEntry = async (input: {
         .for("update");
 
       if (!collection) throw new ORPCError("BAD_REQUEST", { message: "Collection not found" });
+    }
+
+    const publishingTree = await loadPublishingTree(tx, workspaceID);
+    const wasPublishingEnabled = isCollectionPublishingEnabled(publishingTree, entry.collectionID);
+    const willBePublishingEnabled = isCollectionPublishingEnabled(
+      publishingTree,
+      destinationCollectionID
+    );
+    const crossesPublishingBoundary = wasPublishingEnabled !== willBePublishingEnabled;
+
+    if (crossesPublishingBoundary && !input.canPublish) {
+      throw new ORPCError("FORBIDDEN", {
+        message: "Publishing permission is required to move this entry"
+      });
+    }
+
+    if (!wasPublishingEnabled && willBePublishingEnabled && input.publish === undefined) {
+      throw new ORPCError("BAD_REQUEST", {
+        message: "Choose whether to publish the latest entry version"
+      });
     }
 
     const siblingFilter = destinationCollectionID
@@ -117,7 +222,28 @@ const moveEntry = async (input: {
         )
       );
 
-    return { order: rank };
+    let createdVersions: VersionSummary[] = [];
+
+    if (!wasPublishingEnabled && willBePublishingEnabled && input.publish) {
+      const result = await publishEntries(tx, {
+        workspaceID,
+        entryIDs: [entryID],
+        channel: PUBLISHED_CHANNEL_NAME,
+        contributorIDs: input.contributorIDs
+      });
+
+      createdVersions = result.createdVersions;
+    }
+
+    if (wasPublishingEnabled && !willBePublishingEnabled) {
+      await tx.delete(entryPublications).where(eq(entryPublications.entryID, entryID));
+    }
+
+    return {
+      order: rank,
+      affectedPublishingEntryIDs: crossesPublishingBoundary ? [input.id] : [],
+      createdVersions
+    };
   });
 };
 

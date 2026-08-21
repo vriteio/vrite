@@ -1,4 +1,4 @@
-import { redis, subscriberRedis } from "#backend/lib/adapters";
+import { redis, subscriberRedis } from "#backend/lib/adapters/redis";
 import type * as z from "zod";
 
 /* eslint-disable @typescript-eslint/no-empty-object-type, @typescript-eslint/no-explicit-any -- Event payloads are supplied through declaration merging. */

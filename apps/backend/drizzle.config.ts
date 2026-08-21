@@ -11,9 +11,11 @@ export default defineConfig({
     "./src/db/invitations.ts",
     "./src/db/keys.ts",
     "./src/db/memberships.ts",
+    "./src/db/publishing.ts",
     "./src/db/roles.ts",
     "./src/db/usage.ts",
     "./src/db/users.ts",
+    "./src/db/versions.ts",
     "./src/db/workspaces.ts"
   ],
   out: "./drizzle",

@@ -38,6 +38,20 @@ const isWorkspaceEventVisible = (
     return canAccess(auth, { session: true, key: ["read:collections"] });
   }
 
+  if (event.action.startsWith("publishing:")) {
+    return canAccess(auth, {
+      session: ["read:publishing"],
+      key: ["read:publishing"]
+    });
+  }
+
+  if (event.action.startsWith("version:")) {
+    return canAccess(auth, {
+      session: ["read:versions"],
+      key: ["read:versions"]
+    });
+  }
+
   if (event.action.startsWith("membership:")) {
     return canAccess(auth, { session: ["workspace"], key: ["read:memberships"] });
   }

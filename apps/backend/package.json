@@ -25,6 +25,7 @@
     "@hocuspocus/server": "^4.4.0",
     "@orpc/openapi": "^1.14.14",
     "@orpc/server": "^1.14.14",
+    "@orpc/zod": "^1.14.14",
     "base-x": "^5.0.1",
     "better-auth": "^1.6.25",
     "date-fns": "^4.4.0",

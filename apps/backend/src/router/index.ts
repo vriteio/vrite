@@ -1,11 +1,14 @@
 import { billingRouter } from "./billing";
 import { collectionsRouter } from "./collections";
+import { contentRouter } from "./content";
 import { entriesRouter } from "./entries";
 import { syncRouter } from "./sync";
 import { keysRouter } from "./keys";
 import { rolesRouter } from "./roles";
 import { membershipsRouter } from "./memberships";
+import { publishingRouter } from "./publishing";
 import { workspacesRouter } from "./workspaces";
+import { versionsRouter } from "./versions";
 import { authRouter } from "./auth";
 import { type FastifyPluginAsync, type FastifyReply, type FastifyRequest } from "fastify";
 import { OpenAPIGenerator } from "@orpc/openapi";
@@ -13,6 +16,7 @@ import { OpenAPIHandler } from "@orpc/openapi/fastify";
 import { RequestHeadersPlugin, ResponseHeadersPlugin } from "@orpc/server/plugins";
 import { onError, ORPCError } from "@orpc/server";
 import { RPCHandler } from "@orpc/server/fastify";
+import { ZodToJsonSchemaConverter } from "@orpc/zod/zod4";
 import { RATE_LIMITS, consumeRateLimit } from "#backend/lib/security";
 import { config } from "#backend/lib/config";
 
@@ -20,11 +24,14 @@ const router = {
   auth: authRouter,
   entries: entriesRouter,
   collections: collectionsRouter,
+  content: contentRouter,
   billing: billingRouter,
   keys: keysRouter,
   roles: rolesRouter,
   memberships: membershipsRouter,
+  publishing: publishingRouter,
   workspaces: workspacesRouter,
+  versions: versionsRouter,
   sync: syncRouter
 };
 const routerPlugin: FastifyPluginAsync = async (app) => {
@@ -79,7 +86,9 @@ const routerPlugin: FastifyPluginAsync = async (app) => {
       })
     ]
   });
-  const openAPIDocument = await new OpenAPIGenerator().generate(router, {
+  const openAPIDocument = await new OpenAPIGenerator({
+    schemaConverters: [new ZodToJsonSchemaConverter()]
+  }).generate(router, {
     filter: ({ contract }) => Boolean(contract["~orpc"].meta.required?.key),
     info: {
       title: "Andesine API",

@@ -67,6 +67,18 @@ const configSchema = z.object({
     .int()
     .min(0)
     .describe("Number of API calls included in the Pro plan"),
+  VERSION_RETENTION_DAYS: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .default(7)
+    .describe("Number of days to keep automatic versions by default"),
+  PRO_VERSION_RETENTION_DAYS: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .default(30)
+    .describe("Number of days to keep automatic versions on the Pro plan"),
   STRIPE_SECRET_KEY: z.string().optional().describe("Stripe secret API key"),
   STRIPE_WEBHOOK_SECRET: z.string().optional().describe("Stripe webhook signing secret"),
   STRIPE_PRO_SEAT_PRICE_ID: z

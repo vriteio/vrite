@@ -4,7 +4,7 @@ import * as z from "zod";
 const UUID_REGEX = /^[a-f\d]{8}-[a-f\d]{4}-[1-8][a-f\d]{3}-[89ab][a-f\d]{3}-[a-f\d]{12}$/i;
 const ID_REGEX = /^(?:\w+?_[A-Za-z\d]{1,22})$/;
 
-type PublicIDPrefix = "usr" | "ws" | "rl" | "ms" | "inv" | "coll" | "ent" | "adn";
+type PublicIDPrefix = "usr" | "ws" | "rl" | "ms" | "inv" | "coll" | "ent" | "adn" | "ver";
 
 const id = (options?: Exclude<Parameters<typeof z.regex>[1], string>) => {
   return z.string().regex(ID_REGEX, { error: "invalid id", ...options });
@@ -52,6 +52,7 @@ const toInviteID = (value: string) => fromUUID(value, "inv");
 const toCollectionID = (value: string) => fromUUID(value, "coll");
 const toEntryID = (value: string) => fromUUID(value, "ent");
 const toKeyID = (value: string) => fromUUID(value, "adn");
+const toVersionID = (value: string) => fromUUID(value, "ver");
 
 export {
   fromUUID,
@@ -65,6 +66,7 @@ export {
   toMembershipID,
   toRoleID,
   toUserID,
+  toVersionID,
   toUUID,
   toWorkspaceID
 };

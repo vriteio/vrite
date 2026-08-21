@@ -2,6 +2,7 @@ import { id } from "#backend/lib/primitives";
 import { collectionName } from "#backend/lib/validation";
 import { sql } from "drizzle-orm";
 import {
+  boolean,
   check,
   foreignKey,
   index,
@@ -34,6 +35,7 @@ const collections = pgTable(
     parentID: uuid("parent_id"),
     name: text("name").notNull(),
     rank: varchar("rank", { length: 255 }).notNull(),
+    publishingEnabled: boolean("publishing_enabled").notNull().default(false),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
     ...timestamps
   },

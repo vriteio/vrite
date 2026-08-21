@@ -1,6 +1,15 @@
-import { collections, memberships, roles, type Permission, users, workspaces } from "#backend/db";
+import {
+  collections,
+  memberships,
+  publishingChannels,
+  roles,
+  type Permission,
+  users,
+  workspaces
+} from "#backend/db";
 import { rankBetweenNeighbors, toUUID, toWorkspaceID } from "#backend/lib/primitives";
 import { db } from "#backend/lib/adapters";
+import { PUBLISHED_CHANNEL_NAME } from "#backend/lib/publishing";
 import { ROOT_COLLECTION_NAME } from "#backend/lib/validation";
 import { eq } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
@@ -11,9 +20,9 @@ const DEFAULT_ROLES: Array<{
   baseRole?: "admin" | "viewer";
 }> = [
   { name: "Admin", permissions: [], baseRole: "admin" },
-  { name: "Developer", permissions: ["content", "api_keys"] },
-  { name: "Editor", permissions: ["content"] },
-  { name: "Viewer", permissions: [], baseRole: "viewer" }
+  { name: "Developer", permissions: ["content", "versions", "publishing", "api_keys"] },
+  { name: "Editor", permissions: ["content", "versions", "publishing"] },
+  { name: "Viewer", permissions: ["read:publishing"], baseRole: "viewer" }
 ];
 
 const createWorkspace = async (input: { name: string; userID: string }) => {
@@ -46,6 +55,11 @@ const createWorkspace = async (input: { name: string; userID: string }) => {
       parentID: null,
       name: ROOT_COLLECTION_NAME,
       rank: rankBetweenNeighbors()
+    });
+    await tx.insert(publishingChannels).values({
+      workspaceID: workspace.id,
+      name: PUBLISHED_CHANNEL_NAME,
+      builtIn: true
     });
     await tx.insert(memberships).values({
       userID,

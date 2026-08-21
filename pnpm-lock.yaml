@@ -74,6 +74,9 @@ importers:
       '@orpc/server':
         specifier: ^1.14.14
         version: 1.14.14(crossws@0.4.10(srvx@0.12.5))(fastify@5.11.2)(ws@8.21.2)
+      '@orpc/zod':
+        specifier: ^1.14.14
+        version: 1.14.14(@orpc/contract@1.14.14)(@orpc/server@1.14.14(crossws@0.4.10(srvx@0.12.5))(fastify@5.11.2)(ws@8.21.2))(crossws@0.4.10(srvx@0.12.5))(fastify@5.11.2)(ws@8.21.2)(zod@4.4.3)
       base-x:
         specifier: ^5.0.1
         version: 5.0.1
@@ -1888,6 +1891,9 @@ packages:
   '@orpc/interop@1.14.14':
     resolution: {integrity: sha512-zAdgDPmxPeB6rEg2E+GdcxKXnDWuh1YUNgrz/WGFP4Jm5gW9qdGt8dNC6AMTsO6pb91r0eBYz7p/T8ew4Iuuyg==}
 
+  '@orpc/json-schema@1.14.14':
+    resolution: {integrity: sha512-YdI76g5muZkz3aQz7+VgIcTdjP61C/WuP5jXLUqgyuXZ7sc6VVBOtRKi7aZOMLX52pxKFyQR6/WSvSl80QHJ1w==}
+
   '@orpc/openapi-client@1.14.14':
     resolution: {integrity: sha512-fszAYPn8PWVSr9HkSpMduPzityUEbQ8mkbVro2K68wpOMf4bIttyF+DRfg+iQsaEE4dz3lIVCrFKVRbJxjaR5Q==}
 
@@ -1935,6 +1941,13 @@ packages:
 
   '@orpc/standard-server@1.14.14':
     resolution: {integrity: sha512-VOAm1xZblk1O2P+YH1O9ZpIWRCL8078JPw5wht5QEpDxCdZ4ZHg6qXr4oBsGUWuRVZ+3Hs5aSG7w9kOD/o+w9w==}
+
+  '@orpc/zod@1.14.14':
+    resolution: {integrity: sha512-XvE3YKhNnpUTnIM2mmQ/86XSLftXDm3s1xK1AxB+cRxZ1iqKJET48sL37ngDHGPBb39+3pEK3FOEaZ2eaen65A==}
+    peerDependencies:
+      '@orpc/contract': 1.14.14
+      '@orpc/server': 1.14.14
+      zod: '>=3.25.0'
 
   '@oxc-parser/binding-android-arm-eabi@0.131.0':
     resolution: {integrity: sha512-t2xicr9pfzkSRYx5aPqZqlLaayIwJTqgQ81Jor31Xep2nGyL2Aq3d0K5wOfeR7VevaSdxaS9dzSQP9xDwn8fDg==}
@@ -3818,6 +3831,10 @@ packages:
     resolution: {integrity: sha512-TtpcNJ3XAzx3Gq8sWRzJaVajRs0uVxA2YAkdb1jm2YkPz4G6egUFAyA3n5vtEIZefPk5Wa4UXbKuS5fKkJWdgA==}
     engines: {node: '>=10'}
 
+  escape-string-regexp@5.0.0:
+    resolution: {integrity: sha512-/veY75JbMK4j1yjvuUxuVsiS/hr/4iHs9FTT6cgTexxdE0Ly/glccBAkloH/DofkjRbZU3bnoj38mOmhkZ0lHw==}
+    engines: {node: '>=12'}
+
   eslint-config-prettier@10.1.8:
     resolution: {integrity: sha512-82GZUjRS0p/jganf6q1rEO25VSoHH0hKPCTrgillPjdI/3bgBhAE1QzHrHTizjpRvy6pGAvKjDJtk2pF9NDq8w==}
     hasBin: true
@@ -5266,6 +5283,9 @@ packages:
     engines: {node: '>= 8'}
     hasBin: true
 
+  wildcard-match@5.1.4:
+    resolution: {integrity: sha512-wldeCaczs8XXq7hj+5d/F38JE2r7EXgb6WQDM84RVwxy81T/sxB5e9+uZLK9Q9oNz1mlvjut+QtvgaOQFPVq/g==}
+
   word-wrap@1.2.5:
     resolution: {integrity: sha512-BN22B5eaMMI9UMtjrGd5g5eCYPpCPDUy0FJXbYsaT5zYxjFOckS53SQDE3pWkVoWpHXVb3BrYcEN4Twa55B5cA==}
     engines: {node: '>=0.10.0'}
@@ -6442,6 +6462,20 @@ snapshots:
 
   '@orpc/interop@1.14.14': {}
 
+  '@orpc/json-schema@1.14.14(crossws@0.4.10(srvx@0.12.5))(fastify@5.11.2)(ws@8.21.2)':
+    dependencies:
+      '@orpc/contract': 1.14.14
+      '@orpc/interop': 1.14.14
+      '@orpc/openapi': 1.14.14(crossws@0.4.10(srvx@0.12.5))(fastify@5.11.2)(ws@8.21.2)
+      '@orpc/server': 1.14.14(crossws@0.4.10(srvx@0.12.5))(fastify@5.11.2)(ws@8.21.2)
+      '@orpc/shared': 1.14.14
+      json-schema-typed: 8.0.2
+    transitivePeerDependencies:
+      - '@opentelemetry/api'
+      - crossws
+      - fastify
+      - ws
+
   '@orpc/openapi-client@1.14.14':
     dependencies:
       '@orpc/client': 1.14.14
@@ -6539,6 +6573,22 @@ snapshots:
       '@orpc/shared': 1.14.14
     transitivePeerDependencies:
       - '@opentelemetry/api'
+
+  '@orpc/zod@1.14.14(@orpc/contract@1.14.14)(@orpc/server@1.14.14(crossws@0.4.10(srvx@0.12.5))(fastify@5.11.2)(ws@8.21.2))(crossws@0.4.10(srvx@0.12.5))(fastify@5.11.2)(ws@8.21.2)(zod@4.4.3)':
+    dependencies:
+      '@orpc/contract': 1.14.14
+      '@orpc/json-schema': 1.14.14(crossws@0.4.10(srvx@0.12.5))(fastify@5.11.2)(ws@8.21.2)
+      '@orpc/openapi': 1.14.14(crossws@0.4.10(srvx@0.12.5))(fastify@5.11.2)(ws@8.21.2)
+      '@orpc/server': 1.14.14(crossws@0.4.10(srvx@0.12.5))(fastify@5.11.2)(ws@8.21.2)
+      '@orpc/shared': 1.14.14
+      escape-string-regexp: 5.0.0
+      wildcard-match: 5.1.4
+      zod: 4.4.3
+    transitivePeerDependencies:
+      - '@opentelemetry/api'
+      - crossws
+      - fastify
+      - ws
 
   '@oxc-parser/binding-android-arm-eabi@0.131.0':
     optional: true
@@ -8657,6 +8707,8 @@ snapshots:
 
   escape-string-regexp@4.0.0: {}
 
+  escape-string-regexp@5.0.0: {}
+
   eslint-config-prettier@10.1.8(eslint@10.8.0(jiti@2.7.0)):
     dependencies:
       eslint: 10.8.0(jiti@2.7.0)
@@ -10088,6 +10140,8 @@ snapshots:
   which@2.0.2:
     dependencies:
       isexe: 2.0.0
+
+  wildcard-match@5.1.4: {}
 
   word-wrap@1.2.5: {}
 

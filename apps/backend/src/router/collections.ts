@@ -1,8 +1,14 @@
 import { collectionType } from "#backend/db";
-import { emitCollectionEvent, emitEntryEvent } from "#backend/events";
+import {
+  emitCollectionEvent,
+  emitEntryEvent,
+  emitPublishingEvent,
+  emitVersionCreationEvents
+} from "#backend/events";
 import { authorized, base } from "#backend/lib/transport";
 import { id } from "#backend/lib/primitives";
 import { collectionName } from "#backend/lib/validation";
+import { canManagePublishing, emitPublishingStatusUpdates } from "#backend/lib/publishing";
 import { Collections } from "#backend/services/collections";
 import * as z from "zod";
 
@@ -74,6 +80,14 @@ const collectionsRouter = base.prefix("/collections").router({
         memberID: context.auth.session?.memberID
       });
 
+      for (const collectionID of deleted.collectionIDs) {
+        emitPublishingEvent(context.auth.workspaceID, {
+          action: "publishing:collection-update",
+          data: { id: collectionID, enabled: false },
+          memberID: context.auth.session?.memberID
+        });
+      }
+
       if (deleted.entryIDs.length > 0) {
         emitEntryEvent(context.auth.workspaceID, {
           action: "entry:delete",
@@ -108,6 +122,14 @@ const collectionsRouter = base.prefix("/collections").router({
         data: { ids: deleted.collectionIDs },
         memberID: context.auth.session?.memberID
       });
+
+      for (const collectionID of deleted.collectionIDs) {
+        emitPublishingEvent(context.auth.workspaceID, {
+          action: "publishing:collection-update",
+          data: { id: collectionID, enabled: false },
+          memberID: context.auth.session?.memberID
+        });
+      }
 
       if (deleted.entryIDs.length > 0) {
         emitEntryEvent(context.auth.workspaceID, {
@@ -165,7 +187,11 @@ const collectionsRouter = base.prefix("/collections").router({
           .int()
           .min(0)
           .optional()
-          .describe("New zero-based index in the parent collection's descendants array")
+          .describe("New zero-based index in the parent collection's descendants array"),
+        publish: z
+          .boolean()
+          .optional()
+          .describe("Whether to publish latest versions when entering an enabled tree")
       })
     )
     .output(z.void())
@@ -175,7 +201,10 @@ const collectionsRouter = base.prefix("/collections").router({
         id: input.id,
         workspaceID: context.auth.workspaceID,
         newParentID: input.newParentID,
-        index: input.index
+        index: input.index,
+        publish: input.publish,
+        canPublish: canManagePublishing(context.auth),
+        contributorIDs: context.auth.session ? [context.auth.session.memberID] : []
       });
 
       emitCollectionEvent(context.auth.workspaceID, {
@@ -187,6 +216,20 @@ const collectionsRouter = base.prefix("/collections").router({
         },
         memberID: context.auth.session?.memberID
       });
+
+      if (result.affectedPublishingEntryIDs.length > 0) {
+        await emitPublishingStatusUpdates({
+          workspaceID: context.auth.workspaceID,
+          entryIDs: result.affectedPublishingEntryIDs,
+          memberID: context.auth.session?.memberID
+        });
+      }
+
+      emitVersionCreationEvents(
+        context.auth.workspaceID,
+        result.createdVersions,
+        context.auth.session?.memberID
+      );
     }),
   list: base
     .route({ method: "GET", path: "/list" })

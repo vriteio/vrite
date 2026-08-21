@@ -1,27 +1,15 @@
 import { entryType, lexoRank } from "#backend/db";
 import { updateDocumentTitle } from "#backend/collaboration";
-import { emitEntryEvent } from "#backend/events";
+import { emitEntryEvent, emitVersionCreationEvents } from "#backend/events";
 import { authorized, base } from "#backend/lib/transport";
+import { contentNodeType } from "#backend/lib/content";
 import { id } from "#backend/lib/primitives";
 import { entryName } from "#backend/lib/validation";
+import { canManagePublishing, emitPublishingStatusUpdates } from "#backend/lib/publishing";
 import { Entries } from "#backend/services/entries";
-import type { ContentNode } from "#backend/services/entries/get";
 import { ORPCError } from "@orpc/server";
 import * as z from "zod";
 
-const contentMarkType = z.object({
-  type: z.string(),
-  attrs: z.record(z.string(), z.unknown()).optional()
-});
-const contentNodeType: z.ZodType<ContentNode> = z.lazy(() => {
-  return z.object({
-    type: z.string(),
-    attrs: z.record(z.string(), z.unknown()).optional(),
-    content: z.array(contentNodeType).optional(),
-    marks: z.array(contentMarkType).optional(),
-    text: z.string().optional()
-  });
-});
 const entryDetailsType = entryType.extend({
   updatedAt: z.iso.datetime().describe("Time when the entry content was last updated"),
   content: contentNodeType,
@@ -73,6 +61,12 @@ const entriesRouter = base.prefix("/entries").router({
         action: "entry:create",
         memberID: context.auth.session?.memberID,
         data: newEntry
+      });
+
+      await emitPublishingStatusUpdates({
+        workspaceID: context.auth.workspaceID,
+        entryIDs: [newEntry.id],
+        memberID: context.auth.session?.memberID
       });
 
       return newEntry;
@@ -159,7 +153,12 @@ const entriesRouter = base.prefix("/entries").router({
       });
 
       if (name !== undefined) {
-        await updateDocumentTitle(input.id, name);
+        await updateDocumentTitle(
+          input.id,
+          name,
+          context.auth.workspaceID,
+          context.auth.session?.memberID
+        );
       }
 
       emitEntryEvent(context.auth.workspaceID, {
@@ -178,29 +177,50 @@ const entriesRouter = base.prefix("/entries").router({
       z.object({
         id: id().describe("ID of the entry to be moved"),
         order: lexoRank().describe("New LexoRank order of the entry"),
-        collectionID: id().optional().nullable().describe("ID of the new parent collection")
+        collectionID: id().optional().nullable().describe("ID of the new parent collection"),
+        publish: z
+          .boolean()
+          .optional()
+          .describe("Whether to publish the latest version when entering an enabled tree")
       })
     )
     .use(authorized)
     .output(z.object({ order: z.string() }))
     .handler(async ({ context, input }) => {
-      const { order } = await Entries.move({
+      const result = await Entries.move({
         id: input.id,
         workspaceID: context.auth.workspaceID,
         order: input.order,
-        collectionID: input.collectionID
+        collectionID: input.collectionID,
+        publish: input.publish,
+        canPublish: canManagePublishing(context.auth),
+        contributorIDs: context.auth.session ? [context.auth.session.memberID] : []
       });
       emitEntryEvent(context.auth.workspaceID, {
         action: "entry:move",
         data: {
           id: input.id,
-          order,
+          order: result.order,
           collectionID: input.collectionID
         },
         memberID: context.auth.session?.memberID
       });
 
-      return { order };
+      if (result.affectedPublishingEntryIDs.length > 0) {
+        await emitPublishingStatusUpdates({
+          workspaceID: context.auth.workspaceID,
+          entryIDs: result.affectedPublishingEntryIDs,
+          memberID: context.auth.session?.memberID
+        });
+      }
+
+      emitVersionCreationEvents(
+        context.auth.workspaceID,
+        result.createdVersions,
+        context.auth.session?.memberID
+      );
+
+      return { order: result.order };
     }),
   get: base
     .route({ method: "GET", path: "/:id" })

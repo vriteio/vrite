@@ -6,4 +6,6 @@ export * from "./billing";
 export * from "./keys";
 export * from "./roles";
 export * from "./memberships";
+export * from "./publishing";
 export * from "./workspaces";
+export * from "./versions";

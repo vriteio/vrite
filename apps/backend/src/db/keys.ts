@@ -17,6 +17,10 @@ import { workspaces } from "./workspaces";
 const keyPermissionEnum = pgEnum("key_permission", [
   "entries",
   "read:entries",
+  "versions",
+  "read:versions",
+  "publishing",
+  "read:publishing",
   "collections",
   "read:collections",
   "memberships",
@@ -27,6 +31,10 @@ const keyPermissionEnum = pgEnum("key_permission", [
 const keyPermissionType = z.enum([
   "entries",
   "read:entries",
+  "versions",
+  "read:versions",
+  "publishing",
+  "read:publishing",
   "collections",
   "read:collections",
   "memberships",

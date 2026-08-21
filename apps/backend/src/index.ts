@@ -11,18 +11,21 @@ import { webhooksPlugin } from "./webhooks";
 import { auth, pool } from "#backend/lib/adapters";
 import { redis, subscriberRedis } from "#backend/lib/adapters";
 import { RATE_LIMITS, consumeRateLimit } from "#backend/lib/security";
+import { startAutomaticVersionQueue, stopAutomaticVersionQueue } from "#backend/lib/versioning";
 
 const allowedOrigins = [...new Set([config.PUBLIC_APP_URL, config.PUBLIC_API_URL])];
 const allowedMethods = ["GET", "HEAD", "PUT", "POST", "DELETE", "PATCH", "OPTIONS"];
 const allowedHeaders = [
   "Content-Type",
   "Authorization",
+  "If-None-Match",
   "X-Workspace-ID",
   "X-Requested-With",
   "X-Session-Verification",
   "X-Session-Verification-Callback"
 ];
 const exposedHeaders = [
+  "ETag",
   "Retry-After",
   "X-API-Usage",
   "X-API-Usage-Limit",
@@ -176,6 +179,7 @@ await app.listen({
   host,
   port
 });
+startAutomaticVersionQueue();
 
 console.log(`Server is running on ${httpsEnabled ? "https" : "http"}://${host}:${port}`);
 
@@ -190,6 +194,10 @@ const shutdown = (): Promise<void> => {
       exitCode = 1;
       console.error("Failed to close the HTTP server", error);
     });
+    const versionQueueClose = stopAutomaticVersionQueue().catch((error) => {
+      exitCode = 1;
+      console.error("Failed to stop the automatic version queue", error);
+    });
     try {
       const collaborationClosed = await shutdownCollaboration(SHUTDOWN_TIMEOUT_MS);
 
@@ -202,7 +210,7 @@ const shutdown = (): Promise<void> => {
       console.error("Failed to shut down collaboration", error);
     }
 
-    await appClose;
+    await Promise.all([appClose, versionQueueClose]);
     const dependencies = await Promise.allSettled([
       redis.close(),
       subscriberRedis.close(),
