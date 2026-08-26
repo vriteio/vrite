@@ -10,6 +10,10 @@ const externals = new Set([
   ...builtinModules,
   ...builtinModules.map((moduleName) => `node:${moduleName}`)
 ]);
+const bundledModules = new Set([
+  "@andesine/editor/normalize-resource-name",
+  "@andesine/editor/normalize-source-name"
+]);
 
 export default defineConfig({
   cwd: __dirname,
@@ -27,6 +31,10 @@ export default defineConfig({
   external(id) {
     if (externals.has(id)) {
       return true;
+    }
+
+    if (bundledModules.has(id)) {
+      return false;
     }
 
     return !id.startsWith(".") && !path.isAbsolute(id) && !id.startsWith("#backend/");
