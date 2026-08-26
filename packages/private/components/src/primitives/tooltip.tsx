@@ -13,15 +13,17 @@ import {
   onCleanup
 } from "solid-js";
 import { Tooltip as BaseTooltip } from "@ark-ui/solid/tooltip";
-import { Portal } from "solid-js/web";
+import { Dynamic, Portal } from "solid-js/web";
 import { createMediaQuery } from "@solid-primitives/media";
 import { nanoid } from "nanoid";
+import type { Placement } from "@floating-ui/dom";
+import { Fragment } from "./fragment";
 
 interface TooltipProps {
   children: JSX.Element;
   content: JSX.Element;
   class?: string;
-  side?: "top" | "bottom" | "left" | "right";
+  placement?: Placement;
   enabled?: boolean;
   fixed?: boolean;
   wrapperClass?: string;
@@ -46,7 +48,7 @@ const Tooltip: Component<TooltipProps> = (props) => {
   const enabled = (): boolean => {
     return typeof props.enabled === "boolean" ? props.enabled : true;
   };
-  const placement = () => props.side || "bottom";
+  const placement = () => props.placement || "bottom";
   const tooltipID = nanoid();
   const closeTooltip = () => {
     setActiveTooltip((activeTooltip) => (activeTooltip === tooltipID ? "" : activeTooltip));
@@ -91,7 +93,7 @@ const Tooltip: Component<TooltipProps> = (props) => {
           </div>
         )}
       />
-      <Portal>
+      <Dynamic component={props.fixed ? Portal : Fragment}>
         <BaseTooltip.Positioner class="flex justify-center items-center">
           <BaseTooltip.Content
             class={clsx(
@@ -110,7 +112,7 @@ const Tooltip: Component<TooltipProps> = (props) => {
             <div class="absolute h-full w-full top-0 left-0 shadow-md shadow-gray-900 shadow-opacity-20 -z-1 rounded-md" />
           </BaseTooltip.Content>
         </BaseTooltip.Positioner>
-      </Portal>
+      </Dynamic>
     </BaseTooltip.Root>
   );
 };

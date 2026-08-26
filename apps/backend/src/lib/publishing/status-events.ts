@@ -1,5 +1,5 @@
 import { emitPublishingEntryUpdates } from "#backend/events/publishing";
-import { PUBLISHED_CHANNEL_NAME } from "./config";
+import { PUBLISHED_CHANNEL_CODE } from "./config";
 import { getPublishingStatusSnapshot } from "./status";
 
 const emitPublishingStatusUpdates = async (input: {
@@ -8,7 +8,7 @@ const emitPublishingStatusUpdates = async (input: {
   channel?: string;
   memberID?: string;
 }): Promise<void> => {
-  const channel = input.channel || PUBLISHED_CHANNEL_NAME;
+  const channel = input.channel || PUBLISHED_CHANNEL_CODE;
 
   try {
     const snapshot = await getPublishingStatusSnapshot({

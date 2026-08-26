@@ -10,7 +10,10 @@ import { settleBulkAction } from "#web/lib/primitives";
 import { client, type Invite, type Membership, type Role, type UserProfile } from "#web/lib/api";
 import { Setting } from "../../setting";
 import { SettingsSection } from "../../settings-section";
-import { ActionConfirmationDialog, type AffectedItem } from "../action-confirmation-dialog";
+import {
+  ActionConfirmationDialog,
+  type AffectedItem
+} from "#web/components/action-confirmation-dialog";
 import { RoleItem } from "./role-item";
 import { invitesQuery, membershipsQuery, rolesQuery } from "#web/lib/data";
 
@@ -161,15 +164,17 @@ const RoleList: Component<RoleListProps> = (props) => {
             ? "This includes you. Your permissions will immediately change to Viewer."
             : undefined
         }
-        confirmLabel="Delete"
-        confirmColor="danger"
-        onClose={() => setPendingDeleteIDs([])}
-        onConfirm={() => {
-          const ids = pendingDeleteIDs();
+        action={{
+          color: "danger",
+          label: "Delete",
+          onClick: () => {
+            const ids = pendingDeleteIDs();
 
-          setPendingDeleteIDs([]);
-          deleteMutation.mutate({ ids });
+            setPendingDeleteIDs([]);
+            deleteMutation.mutate({ ids });
+          }
         }}
+        onClose={() => setPendingDeleteIDs([])}
       />
     </>
   );

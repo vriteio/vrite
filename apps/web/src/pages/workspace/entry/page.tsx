@@ -1,13 +1,15 @@
 import { Title } from "@solidjs/meta";
-import { revalidate, useParams } from "@solidjs/router";
-import { type Component, createEffect } from "solid-js";
+import { revalidate, useParams, useSearchParams } from "@solidjs/router";
+import { type Component, createEffect, Show } from "solid-js";
 import { useWorkspace } from "#web/context/workspace";
 import { client } from "#web/lib/api";
 import { EditorPane } from "./editor-pane";
 import { createRef } from "@andesine/components";
+import { VersionPreviewPane } from "./version-preview-pane";
 
 const EntryPage: Component = () => {
   const params = useParams<{ slug?: string }>();
+  const [searchParams] = useSearchParams();
   const { content, currentWorkspace } = useWorkspace();
   const [persistedEntryID, setPersistedEntryID] = createRef<string | undefined>(undefined);
   const title = () => {
@@ -35,7 +37,9 @@ const EntryPage: Component = () => {
   return (
     <>
       <Title>{title()}</Title>
-      <EditorPane />
+      <Show when={typeof searchParams.version === "string"} fallback={<EditorPane />}>
+        <VersionPreviewPane />
+      </Show>
     </>
   );
 };

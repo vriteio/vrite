@@ -1566,6 +1566,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "code": {
+          "name": "code",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true
+        },
         "built_in": {
           "name": "built_in",
           "type": "boolean",
@@ -1607,21 +1613,21 @@
           "nullsNotDistinct": false,
           "columns": ["workspace_id", "id"]
         },
-        "publishing_channels_workspace_name_unique": {
-          "name": "publishing_channels_workspace_name_unique",
+        "publishing_channels_workspace_code_unique": {
+          "name": "publishing_channels_workspace_code_unique",
           "nullsNotDistinct": false,
-          "columns": ["workspace_id", "name"]
+          "columns": ["workspace_id", "code"]
         }
       },
       "policies": {},
       "checkConstraints": {
-        "publishing_channels_name_format": {
-          "name": "publishing_channels_name_format",
-          "value": "\"publishing_channels\".\"name\" ~ '^[a-z0-9]+(-[a-z0-9]+)*$'"
+        "publishing_channels_code_not_empty": {
+          "name": "publishing_channels_code_not_empty",
+          "value": "length(\"publishing_channels\".\"code\") > 0"
         },
-        "publishing_channels_built_in_name": {
-          "name": "publishing_channels_built_in_name",
-          "value": "not \"publishing_channels\".\"built_in\" or \"publishing_channels\".\"name\" = 'published'"
+        "publishing_channels_built_in_code": {
+          "name": "publishing_channels_built_in_code",
+          "value": "not \"publishing_channels\".\"built_in\" or \"publishing_channels\".\"code\" = 'published'"
         }
       },
       "isRLSEnabled": false

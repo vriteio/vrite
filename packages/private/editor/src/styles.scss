@@ -48,6 +48,85 @@ header[data-type="title"] {
   @apply bg-gradient-to-r from-secondary via-primary to-transparent;
 }
 
+// Version diff
+// Content
+.version-diff-block {
+  @apply relative z-0;
+
+  &::after {
+    @apply pointer-events-none absolute inset-y-0 -inset-x-2 -z-1 rounded-lg;
+    content: "";
+  }
+}
+
+.version-diff-inline {
+  @apply rounded-lg;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.version-diff-block.version-diff-added::after,
+.version-diff-inline.version-diff-added {
+  @apply bg-green-500/10;
+}
+
+.version-diff-block.version-diff-removed::after,
+.version-diff-inline.version-diff-removed {
+  @apply bg-red-500/10;
+}
+
+.version-diff-block.version-diff-modified::after,
+.version-diff-inline.version-diff-modified {
+  @apply bg-blue-500/10;
+}
+
+.version-diff-removed-inline {
+  @apply line-through decoration-red-500;
+}
+
+// Badges
+.version-diff-badges-anchor {
+  @apply absolute h-0 w-0 select-none;
+}
+
+.version-diff-badges-anchor-block {
+  .version-diff-badges {
+    @apply right-4;
+  }
+}
+
+.version-diff-badges-anchor-nested {
+  @apply left-0 top-0;
+}
+
+.version-diff-badges {
+  @apply absolute right-2 top-0 z-10 flex gap-1;
+}
+
+.version-diff-badge {
+  @apply pointer-events-auto relative flex h-6 w-6 shrink-0 items-center justify-center rounded-lg;
+}
+
+.version-diff-badge-icon {
+  @apply h-3.5 w-3.5;
+}
+
+.version-diff-badge-added {
+  @apply bg-green-500/10 text-green-500;
+}
+
+.version-diff-badge-removed {
+  @apply bg-red-500/10 text-red-500;
+}
+
+.version-diff-badge-modified {
+  @apply bg-blue-500/10 text-blue-500;
+}
+
+.prose-editor :where(h1, h2, h3, h4, h5, h6):has(.version-diff-badges-anchor)::before {
+  @apply hidden;
+}
+
 // Drop and gap cursors
 .drop-cursor,
 .ProseMirror-gapcursor::after {

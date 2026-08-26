@@ -55,7 +55,7 @@ const LinkMenu: Component<{
             <span>Go back</span>
           </div>
         }
-        side="bottom"
+        placement="bottom"
         wrapperClass="snap-start shrink-0"
         enabled={props.opened}
       >
@@ -102,7 +102,7 @@ const LinkMenu: Component<{
           </div>
         }
         enabled={props.opened}
-        side="bottom"
+        placement="bottom"
       >
         <IconButton
           icon="i-lucide:check"
@@ -122,7 +122,7 @@ const LinkMenu: Component<{
               <span>Remove link</span>
             </div>
           }
-          side="bottom"
+          placement="bottom"
           wrapperClass="snap-start shrink-0"
           enabled={props.opened}
         >

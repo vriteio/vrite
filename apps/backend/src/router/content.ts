@@ -1,6 +1,6 @@
 import { contentNodeType } from "#backend/lib/content";
 import { versionSummaryType } from "#backend/lib/data";
-import { PUBLISHED_CHANNEL_NAME, publishingChannelNameType } from "#backend/lib/publishing";
+import { PUBLISHED_CHANNEL_CODE, publishingChannelCodeType } from "#backend/lib/publishing";
 import { id } from "#backend/lib/primitives";
 import {
   authorized,
@@ -28,7 +28,7 @@ interface PublishedTreeCollectionOutput {
 }
 
 const publishedContentType = z.object({
-  channel: publishingChannelNameType.describe("Publishing channel used for delivery"),
+  channel: publishingChannelCodeType.describe("Publishing channel used for delivery"),
   name: z.string().describe("Entry name stored in the published version"),
   version: versionSummaryType,
   content: contentNodeType,
@@ -80,7 +80,7 @@ const cachedPublishedContentType = z.union([
   })
 ]);
 const publishedTreeType = z.object({
-  channel: publishingChannelNameType,
+  channel: publishingChannelCodeType,
   collection: publishedTreeCollectionType
 });
 const cachedPublishedTreeType = z.union([
@@ -110,9 +110,9 @@ const contentRouter = base.prefix("/content").router({
     .input(
       z.object({
         entryID: id().describe("Entry whose published content to get"),
-        channel: publishingChannelNameType
+        channel: publishingChannelCodeType
           .optional()
-          .default(PUBLISHED_CHANNEL_NAME)
+          .default(PUBLISHED_CHANNEL_CODE)
           .describe("Publishing channel, defaults to published")
       })
     )
@@ -147,9 +147,9 @@ const contentRouter = base.prefix("/content").router({
     .input(
       z.object({
         collectionID: id().describe("Publishing-enabled collection whose tree to get"),
-        channel: publishingChannelNameType
+        channel: publishingChannelCodeType
           .optional()
-          .default(PUBLISHED_CHANNEL_NAME)
+          .default(PUBLISHED_CHANNEL_CODE)
           .describe("Publishing channel, defaults to published")
       })
     )

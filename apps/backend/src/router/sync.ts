@@ -2,8 +2,8 @@ import { collectionType, entryType } from "#backend/db";
 import { id } from "#backend/lib/primitives";
 import {
   canReadPublishing,
-  PUBLISHED_CHANNEL_NAME,
-  publishingChannelNameType
+  PUBLISHED_CHANNEL_CODE,
+  publishingChannelCodeType
 } from "#backend/lib/publishing";
 import { authorized, base } from "#backend/lib/transport";
 import { Memberships } from "#backend/services/memberships";
@@ -65,12 +65,12 @@ const syncRouter = base.router({
     .use(authorized)
     .input(
       z.object({
-        channel: publishingChannelNameType.optional().default(PUBLISHED_CHANNEL_NAME)
+        channel: publishingChannelCodeType.optional().default(PUBLISHED_CHANNEL_CODE)
       })
     )
     .output(
       z.object({
-        channel: publishingChannelNameType,
+        channel: publishingChannelCodeType,
         unpublishedEntryIDs: z.array(id())
       })
     )

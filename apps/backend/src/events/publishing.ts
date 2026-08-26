@@ -1,4 +1,7 @@
-import { publishingChannelNameType } from "#backend/lib/publishing/channel";
+import {
+  publishingChannelCodeType,
+  publishingChannelNameType
+} from "#backend/lib/publishing/channel";
 import {
   emitEvent,
   type EmitEvent,
@@ -16,7 +19,8 @@ declare module "#backend/lib/messaging/events" {
 
 const publishingEntryStatusType = z.object({
   entryID: id(),
-  hasUnpublishedChanges: z.boolean()
+  hasUnpublishedChanges: z.boolean(),
+  versionID: id().nullable()
 });
 const publishingEventType = z.union([
   z.object({
@@ -31,7 +35,7 @@ const publishingEventType = z.union([
     action: z.literal("publishing:entries-update"),
     memberID: id().optional(),
     data: z.object({
-      channel: publishingChannelNameType,
+      channel: publishingChannelCodeType,
       entries: z.array(publishingEntryStatusType)
     })
   }),
@@ -39,6 +43,7 @@ const publishingEventType = z.union([
     action: z.literal("publishing:channel-create"),
     memberID: id().optional(),
     data: z.object({
+      code: publishingChannelCodeType,
       name: publishingChannelNameType,
       builtIn: z.boolean(),
       createdAt: z.iso.datetime(),
@@ -48,7 +53,7 @@ const publishingEventType = z.union([
   z.object({
     action: z.literal("publishing:channel-delete"),
     memberID: id().optional(),
-    data: z.object({ name: publishingChannelNameType })
+    data: z.object({ code: publishingChannelCodeType })
   })
 ]);
 

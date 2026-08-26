@@ -7,6 +7,7 @@ export * from "./node-character-limit";
 export * from "./collaboration-caret";
 export * from "./separator";
 export * from "./resource-name-tracker";
+export * from "./version-diff";
 export { Collaboration } from "@tiptap/extension-collaboration";
 export { NodeRange } from "@tiptap/extension-node-range";
 export { Gapcursor } from "@tiptap/extension-gapcursor";

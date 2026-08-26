@@ -3,10 +3,12 @@ import { createEffect, createMemo, createSignal, on } from "solid-js";
 import { useTree } from "#web/components/tree";
 import { useClipboard } from "#web/context/clipboard";
 import { useWorkspace } from "#web/context/workspace";
+import { usePublishingActions } from "./publishing-actions";
 
 const useEntryMenu = (entryID: string) => {
   const { copyText } = useClipboard();
-  const { content } = useWorkspace();
+  const { content, hasPermission } = useWorkspace();
+  const publishingActions = usePublishingActions();
   const [{ selection }, { setRenaming, setSelection }] = useTree();
   const [menuOpened, setMenuOpened] = createSignal(false);
   const startRenaming = () => {
@@ -17,6 +19,31 @@ const useEntryMenu = (entryID: string) => {
     const options: Array<MenuItem[]> = [];
     const selectedCount = selection().length;
     const isMulti = selectedCount > 1;
+    const entry = content.entries.get({ entryID });
+    const selectedEntries = selection().flatMap((id) => {
+      const selectedEntry = content.entries.get({ entryID: id });
+
+      return selectedEntry ? [selectedEntry] : [];
+    });
+    const targetEntries = isMulti ? selectedEntries : entry ? [entry] : [];
+    const entriesOnly = targetEntries.length === selectedCount;
+    const publishingEnabled = targetEntries.every((selectedEntry) => {
+      const status = content.getEntryPublishingStatus(selectedEntry.id);
+
+      return status === "published" || status === "unpublished";
+    });
+    const publishingTarget = {
+      items: targetEntries.map((selectedEntry) => ({
+        id: selectedEntry.id,
+        label: selectedEntry.name
+      })),
+      type: "entry" as const
+    };
+    const canManagePublishing =
+      hasPermission("publishing") &&
+      content.publishing() !== null &&
+      !content.offline() &&
+      !content.syncing();
 
     if (!isMulti) {
       options.push([
@@ -42,6 +69,21 @@ const useEntryMenu = (entryID: string) => {
       ]);
     }
 
+    if (entriesOnly && publishingEnabled && canManagePublishing) {
+      options.push([
+        {
+          label: isMulti ? `Publish current for ${selectedCount} entries` : "Publish current",
+          icon: "i-material-symbols:publish-rounded",
+          onClick: () => publishingActions.open("publish", publishingTarget)
+        },
+        {
+          label: isMulti ? `Unpublish ${selectedCount} entries` : "Unpublish",
+          icon: "i-material-symbols:unpublished-outline-rounded",
+          onClick: () => publishingActions.open("unpublish", publishingTarget)
+        }
+      ]);
+    }
+
     options.push([
       {
         label: isMulti ? `Delete ${selectedCount} items` : "Delete",
@@ -60,7 +102,9 @@ const useEntryMenu = (entryID: string) => {
 
   createEffect(
     on(menuOpened, (opened) => {
-      if (opened) setSelection((current) => (current.includes(entryID) ? current : [entryID]));
+      if (!opened) return;
+
+      setSelection((current) => (current.includes(entryID) ? current : [entryID]));
     })
   );
 

@@ -8,10 +8,9 @@ import { useWorkspace } from "#web/context/workspace";
 import { CollaborationStatusIndicator } from "./collaboration-status-indicator";
 import { useEntryLoadState } from "./entry-load-state";
 import { getCollaborationStatus, getCollaborationUser } from "./editor-collaboration";
-import { EntryContentSkeleton, EntryLoadError } from "./editor-pane-states";
+import { EDITOR_CONTENT_PADDING, EntryContentSkeleton, EntryLoadError } from "./editor-pane-states";
 import { createLocalEditorSnapshotLifecycle, LocalSnapshotError } from "./local-editor-snapshot";
-
-const EDITOR_CONTENT_PADDING = "px-2.5 pb-5 pt-5 md:px-10 md:pb-10 md:pt-20";
+import clsx from "clsx";
 
 const EditorPane: Component = () => {
   const { currentWorkspace, currentSession, content, hasPermission } = useWorkspace();
@@ -134,8 +133,7 @@ const EditorPane: Component = () => {
                 />
               </Show>
               <div
-                class="h-full w-full md:px-1"
-                classList={{ invisible: !entryLoadState().editorReady }}
+                class={clsx("h-full w-full md:px-1", !entryLoadState().editorReady && "invisible")}
               >
                 <Editor
                   class={EDITOR_CONTENT_PADDING}

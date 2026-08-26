@@ -1,13 +1,15 @@
-import { Card, DropdownMenu, IconButton } from "@andesine/components";
+import { type Card, DropdownMenu, IconButton, Spinner, Tooltip } from "@andesine/components";
 import { TreeItem } from "#web/components/tree";
 import clsx from "clsx";
-import { type Component, ComponentProps, Show } from "solid-js";
+import { type Component, type ComponentProps, Show } from "solid-js";
 import { MAX_CONTENT_NAME_LENGTH, normalizeEntryName } from "#web/lib/validation";
 import { useWorkspace } from "#web/context/workspace";
+import { usePublishing } from "#web/context/publishing";
 import { useExplorerEntry, type ExplorerEntryProps } from "./use-explorer-entry";
 
 const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
   const { hasPermission } = useWorkspace();
+  const publishing = usePublishing();
   const {
     closestEdge,
     content,
@@ -21,6 +23,24 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
     setMenuOpened,
     swipe
   } = useExplorerEntry(props);
+  const publishingStatus = () => publishing.getEntryPublishingStatus(props.entry.id);
+  const publishingLabel = () => {
+    const status = publishingStatus();
+    const defaultChannel = publishing.channel() === "published";
+    const channelName = publishing.getChannelName();
+
+    if (status === "loading") {
+      return defaultChannel ? "Loading publishing status" : `Loading ${channelName} status`;
+    }
+
+    if (status === "error") {
+      return defaultChannel ? "Publishing status unavailable" : `${channelName} status unavailable`;
+    }
+
+    if (status === "published") return defaultChannel ? "Published" : `Published to ${channelName}`;
+
+    return defaultChannel ? "Unpublished" : `Unpublished in ${channelName}`;
+  };
   return (
     <div class="flex relative min-h-7">
       <Show when={swipe.swiping()}>
@@ -46,12 +66,40 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
           label={props.entry.name}
           topLevel={props.topLevel}
           icon={
-            <div
-              class={clsx(
-                "h-full w-full text-gray-400 i-lucide:file-text",
-                isSelected(props.entry.id) && "bg-gradient-to-tr"
-              )}
-            />
+            <div class="relative h-full w-full">
+              <div
+                class={clsx(
+                  "h-full w-full text-gray-400 i-lucide:file-text",
+                  isSelected(props.entry.id) && "bg-gradient-to-tr"
+                )}
+              />
+              <Show when={publishingStatus() && publishingStatus() !== "outside"}>
+                <Tooltip
+                  content={publishingLabel()}
+                  placement="right"
+                  wrapperClass="absolute -bottom-1 -right-1 h-3 w-3"
+                >
+                  <div class="flex h-3 w-3 items-center justify-center">
+                    <Show
+                      when={publishingStatus() !== "loading"}
+                      fallback={<Spinner class="h-2 w-2" color="primary" />}
+                    >
+                      <div
+                        class={clsx(
+                          "flex justify-center items-center h-2 w-2 shadow-sm",
+                          publishingStatus() === "error" &&
+                            "bg-red-500/90 rounded-full shadow-red-500/50",
+                          publishingStatus() === "published" &&
+                            "bg-green-500/90 rounded-full shadow-green-500/50",
+                          publishingStatus() === "unpublished" &&
+                            "bg-amber-500/90 rounded-full shadow-amber-500/50"
+                        )}
+                      />
+                    </Show>
+                  </div>
+                </Tooltip>
+              </Show>
+            </div>
           }
           selectable
           ref={setElementRef}
@@ -71,7 +119,7 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
                 title={props.entry.name}
                 cardProps={
                   {
-                    "class": "w-48",
+                    "class": "w-52",
                     "data-tree-interaction": ""
                   } as Partial<ComponentProps<typeof Card>>
                 }

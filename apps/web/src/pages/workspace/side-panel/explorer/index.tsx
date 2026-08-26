@@ -7,9 +7,11 @@ import {
   DropdownArea,
   DropdownMenu,
   IconButton,
+  type MenuItem,
   ScrollShadow,
   Skeleton,
-  Shortcut
+  Shortcut,
+  Button
 } from "@andesine/components";
 import { type ComponentProps, createSignal, For, Show } from "solid-js";
 import { Portal } from "solid-js/web";
@@ -23,10 +25,14 @@ import { useExplorerDrop } from "./use-explorer-drop";
 import { isExplorerMenuElement, useExplorerKeyboard } from "./use-explorer-keyboard";
 import { useExplorerMarquee } from "./use-explorer-marquee";
 import clsx from "clsx";
+import { PublishingMoveDialog } from "./publishing-move-dialog";
+import { PublishingActionsProvider } from "./publishing-actions";
+import { usePublishing } from "#web/context/publishing";
 
 const Explorer = () => {
   const [{ gap, itemHeight }, { setFocusedID }] = useTree();
   const { content } = useWorkspace();
+  const publishing = usePublishing();
   const actions = useExplorerActions();
   const [dropRef, setDropRef] = createRef<HTMLElement | null>(null);
   const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
@@ -36,7 +42,8 @@ const Explorer = () => {
   const [focusInside, setFocusInside] = createSignal(false);
   const [menuOpened, setMenuOpened] = createSignal(false);
   const loading = createDebounced(content.loading, 100);
-  const { isDraggedOver } = useExplorerDrop(dropRef);
+  const { closePublishingMove, confirmPublishingMove, isDraggedOver, pendingPublishingMove } =
+    useExplorerDrop(dropRef);
   const marquee = useExplorerMarquee(scrollableContainerRef, contentContainerRef);
   const scrollItemIntoView = (id: string) => {
     const container = scrollableContainerRef();
@@ -63,6 +70,9 @@ const Explorer = () => {
     setFocusedID(null);
     keyboard.resetRange();
   };
+  const isRenameInteraction = (target: EventTarget | null) => {
+    return target instanceof Element && Boolean(target.closest("[data-tree-rename]"));
+  };
   const options = [
     {
       label: "New entry",
@@ -73,20 +83,68 @@ const Explorer = () => {
     {
       label: "New collection",
       icon: "i-material-symbols:create-new-folder-outline-rounded",
-      shortcut: "$mod+shift+E",
+      shortcut: "$mod+shift+c",
       onClick: async () => actions.createCollection()
     }
+  ];
+  const channelCodes = () => {
+    const codes = new Set(["published", publishing.channel()]);
+
+    for (const channel of publishing.channels()) codes.add(channel.code);
+
+    return [...codes];
+  };
+  const headerOptions = (): MenuItem[][] => [
+    options,
+    [
+      ...(channelCodes().length > 1
+        ? [
+            {
+              label: `Channel: ${publishing.getChannelName()}`,
+              icon: "i-lucide:radio",
+              items: [
+                { label: "Channel", type: "header" } satisfies MenuItem,
+                ...channelCodes().map((code) => ({
+                  label: publishing.getChannelName(code),
+                  selected: code === publishing.channel(),
+                  onClick: () => publishing.setChannel(code)
+                }))
+              ]
+            }
+          ]
+        : []),
+      ...(publishing.channelsError() || publishing.statusError()
+        ? [
+            {
+              label: "Retry publishing status",
+              icon: "i-lucide:refresh-cw",
+              onClick: publishing.retry
+            }
+          ]
+        : [])
+    ]
   ];
   const { collections, entries } = content.tree.getLevel({ parentID: null });
 
   return (
     <DropdownArea {...EXPLORER_GESTURE_PROPS}>
+      <PublishingMoveDialog
+        move={pendingPublishingMove()}
+        onClose={closePublishingMove}
+        onConfirm={confirmPublishingMove}
+      />
       <TreeRoot>
         <div
           data-explorer-panel
           tabIndex={0}
-          class="flex min-h-0 flex-1 flex-col items-start justify-center outline-none"
+          class="flex min-h-0 flex-1 flex-col items-start justify-center outline-none select-none"
+          style={{ "-webkit-touch-callout": "none" }}
           onPointerDown={marquee.onPointerDown}
+          onSelectStart={(event) => {
+            if (isRenameInteraction(event.target)) return;
+
+            event.preventDefault();
+          }}
           onPointerEnter={() => setPointerInside(true)}
           onPointerLeave={(event) => {
             setPointerInside(false);
@@ -127,6 +185,9 @@ const Explorer = () => {
                   )}
                 >
                   <ExplorerSyncStatusIndicator
+                    channel={
+                      publishing.channel() === "published" ? undefined : publishing.getChannelName()
+                    }
                     offline={content.offline()}
                     syncing={content.syncing()}
                   />
@@ -140,7 +201,7 @@ const Explorer = () => {
                         "data-tree-interaction": ""
                       } as Partial<ComponentProps<typeof Card>>
                     }
-                    items={options}
+                    items={headerOptions()}
                     mobileSheetDragFromContent={false}
                     opened={menuOpened()}
                     portal={false}
@@ -188,24 +249,19 @@ const Explorer = () => {
                     <div>
                       <For each={options}>
                         {(option) => (
-                          <IconButton
-                            icon={option.icon}
-                            class="flex justify-start items-center w-full group/button"
-                            disabled={menuOpened() || content.readOnly()}
-                            onClick={option.onClick}
-                            label={() => (
-                              <div class="px-1 flex flex-1 gap-4">
-                                <span class="flex-1 text-start">{option.label}</span>
-                                <Shortcut
-                                  class="opacity-0 media-mouse:group-hover/button:opacity-50 font-mono text-[90%]"
-                                  shortcut={option.shortcut}
-                                />
-                              </div>
-                            )}
+                          <Button
+                            class="flex justify-start items-center w-full group/button gap-1 pl-0.5 py-0.5"
                             variant="text"
-                            text="softer"
-                            size="small"
-                          />
+                          >
+                            <div class="flex h-6 w-6 items-center justify-center">
+                              <div class={clsx(option.icon, "h-5 w-5 text-gray-400")} />
+                            </div>
+                            <span class="text-left flex-1 line-clamp-1">{option.label}</span>
+                            <Shortcut
+                              class="opacity-0 media-mouse:group-hover/button:opacity-50 font-mono text-[90%]"
+                              shortcut={option.shortcut}
+                            />
+                          </Button>
                         )}
                       </For>
                     </div>
@@ -242,7 +298,7 @@ const ExplorerSkeleton = (props: { itemHeight: string }) => (
   <>
     {["w-36", "w-44", "w-32", "w-40"].map((className) => (
       <div class="flex gap-1.5 items-center px-1" style={{ height: props.itemHeight }}>
-        <Skeleton class={["h-6 w-6", clsx("h-5 rounded-md", className)]} />
+        <Skeleton class={["h-5 w-5 rounded-md", clsx("h-5 rounded-md", className)]} />
       </div>
     ))}
   </>
@@ -250,7 +306,9 @@ const ExplorerSkeleton = (props: { itemHeight: string }) => (
 
 const ExplorerPanel = () => (
   <ExplorerProvider>
-    <Explorer />
+    <PublishingActionsProvider>
+      <Explorer />
+    </PublishingActionsProvider>
   </ExplorerProvider>
 );
 

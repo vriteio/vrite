@@ -39,6 +39,7 @@ const SettingsLayout: Component<RouteSectionProps> = (props) => {
     if (route === "people") {
       return hasPermission("workspace");
     }
+    if (route === "publishing") return hasPermission("read:publishing");
     if (route === "billing") return hasPermission("read:billing");
     if (route === "api") return hasPermission("read:api_keys");
     if (route === "key") {
@@ -82,6 +83,14 @@ const SettingsLayout: Component<RouteSectionProps> = (props) => {
 
     if (route === "api" && event.action.startsWith("key:")) {
       queryKeys.add("api-keys");
+    }
+
+    if (route === "publishing" && event.action.startsWith("publishing:channel-")) {
+      queryKeys.add("publishing-channels-with-usage");
+    }
+
+    if (route === "publishing" && event.action === "publishing:entries-update") {
+      queryKeys.add("publishing-channels-with-usage");
     }
 
     if (route === "key" && event.action.startsWith("key:")) {
@@ -134,7 +143,7 @@ const SettingsLayout: Component<RouteSectionProps> = (props) => {
           <div class="relative flex h-full w-full overflow-hidden">
             <ScrollShadow scrollableContainerRef={scrollableContainerRef} />
             <div class="relative z-0 w-full overflow-auto" ref={setScrollableContainerRef}>
-              <div class="flex w-full flex-col items-center px-2.5 pb-5 pt-5 md:px-10 md:pb-10 md:pt-20">
+              <div class="flex w-full flex-col items-center px-2.5 pb-5 pt-5 md:px-10 md:pb-10 md:pt-9">
                 <div class="relative flex w-full max-w-[44rem] flex-col">
                   <h1 class="mb-3 text-4xl font-semibold md:text-5xl">{title()}</h1>
                   <Show

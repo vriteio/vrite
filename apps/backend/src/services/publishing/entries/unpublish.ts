@@ -1,20 +1,22 @@
 import { entries, entryPublications, publishingChannels, workspaces } from "#backend/db";
 import { db } from "#backend/lib/adapters";
-import { normalizePublishingChannelName } from "#backend/lib/publishing";
+import { normalizePublishingChannelCode } from "#backend/lib/publishing";
 import { toUUID } from "#backend/lib/primitives";
 import { ORPCError } from "@orpc/server";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 
 const unpublishEntry = async (input: {
   workspaceID: string;
-  entryID: string;
+  entryIDs: string[];
   channel: string;
-}): Promise<void> => {
+  versionID?: string;
+}): Promise<boolean> => {
   const workspaceID = toUUID(input.workspaceID);
-  const entryID = toUUID(input.entryID);
-  const channelName = normalizePublishingChannelName(input.channel);
+  const entryIDs = [...new Set(input.entryIDs.map(toUUID))];
+  const versionID = input.versionID ? toUUID(input.versionID) : null;
+  const channelCode = normalizePublishingChannelCode(input.channel);
 
-  await db.transaction(async (tx) => {
+  return db.transaction(async (tx) => {
     const [workspace] = await tx
       .select({ id: workspaces.id })
       .from(workspaces)
@@ -23,18 +25,20 @@ const unpublishEntry = async (input: {
 
     if (!workspace) throw new ORPCError("NOT_FOUND", { message: "Workspace not found" });
 
-    const [entry] = await tx
+    const currentEntries = await tx
       .select({ id: entries.id })
       .from(entries)
       .where(
         and(
-          eq(entries.id, entryID),
+          inArray(entries.id, entryIDs),
           eq(entries.workspaceID, workspaceID),
           isNull(entries.deletedAt)
         )
       );
 
-    if (!entry) throw new ORPCError("NOT_FOUND", { message: "Entry not found" });
+    if (currentEntries.length !== entryIDs.length) {
+      throw new ORPCError("NOT_FOUND", { message: "Entry not found" });
+    }
 
     const [channel] = await tx
       .select({ id: publishingChannels.id })
@@ -42,17 +46,25 @@ const unpublishEntry = async (input: {
       .where(
         and(
           eq(publishingChannels.workspaceID, workspaceID),
-          eq(publishingChannels.name, channelName)
+          eq(publishingChannels.code, channelCode)
         )
       );
 
     if (!channel) throw new ORPCError("NOT_FOUND", { message: "Publishing channel not found" });
 
-    await tx
+    const filters = [
+      inArray(entryPublications.entryID, entryIDs),
+      eq(entryPublications.channelID, channel.id)
+    ];
+
+    if (versionID) filters.push(eq(entryPublications.versionID, versionID));
+
+    const removed = await tx
       .delete(entryPublications)
-      .where(
-        and(eq(entryPublications.entryID, entryID), eq(entryPublications.channelID, channel.id))
-      );
+      .where(and(...filters))
+      .returning({ versionID: entryPublications.versionID });
+
+    return removed.length > 0;
   });
 };
 

@@ -65,7 +65,8 @@ const MobileMenuOption = <O extends MenuItem>(props: MobileMenuOptionProps<O>) =
   const [loading, setLoading] = createSignal(false);
   const itemClass = () => {
     return clsx(
-      "relative flex min-h-7 w-full cursor-pointer items-center justify-start gap-1 rounded-md px-0.5 outline-none",
+      "relative flex min-h-7 w-full cursor-pointer items-center justify-start gap-1 rounded-md pr-1.5 outline-none",
+      props.option.icon ? "pl-0.5" : "pl-1.5",
       (props.option.disabled || loading()) && "cursor-not-allowed opacity-70",
       props.option.selected
         ? "group/menu-item"
@@ -200,6 +201,13 @@ const MobileMenuItems = <O extends MenuItem>(props: MobileMenuItemsProps<O>) => 
               </Match>
               <Match when={jsxFactory} keyed>
                 {(Factory) => <Dynamic component={Factory} />}
+              </Match>
+              <Match when={option?.type === "header"}>
+                <div class="flex flex-col justify-center px-1 py-1 md:min-h-0 md:py-0.5">
+                  <span class="truncate text-sm leading-4 text-gray-500 md:text-xs md:leading-tight">
+                    {option?.label}
+                  </span>
+                </div>
               </Match>
               <Match when={option} keyed>
                 {(menuOption) => (

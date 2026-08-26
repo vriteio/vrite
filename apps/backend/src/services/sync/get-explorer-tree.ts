@@ -2,7 +2,7 @@ import { toCollectionID, toEntryID, toUUID } from "#backend/lib/primitives";
 import { db } from "#backend/lib/adapters";
 import { entries, type Collection, type Entry } from "#backend/db";
 import { loadCollectionTree } from "#backend/lib/data";
-import { getPublishingStatusSnapshot, PUBLISHED_CHANNEL_NAME } from "#backend/lib/publishing";
+import { getPublishingStatusSnapshot, PUBLISHED_CHANNEL_CODE } from "#backend/lib/publishing";
 import { and, desc, eq, isNull } from "drizzle-orm";
 
 const getExplorerTree = async (input: {
@@ -24,7 +24,7 @@ const getExplorerTree = async (input: {
     input.includePublishing
       ? getPublishingStatusSnapshot({
           workspaceID,
-          channel: PUBLISHED_CHANNEL_NAME
+          channel: PUBLISHED_CHANNEL_CODE
         })
       : null
   ]);

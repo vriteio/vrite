@@ -2,6 +2,7 @@ import type { Collection, Entry, WorkspaceEvent } from "#web/lib/api";
 
 interface PersistedLayout {
   leftSidePanelWidth: number;
+  rightSidePanelWidth?: number;
 }
 
 const isPersistedEntry = (value: unknown): value is Entry => Boolean((value as Entry | null)?.id);
@@ -13,10 +14,16 @@ const parseLayoutCookie = (value: string | undefined): PersistedLayout | null =>
   try {
     const parsed = JSON.parse(decodeURIComponent(value)) as PersistedLayout;
     const leftSidePanelWidth = Number(parsed.leftSidePanelWidth);
+    const rightSidePanelWidth = Number(parsed.rightSidePanelWidth);
 
-    return Number.isFinite(leftSidePanelWidth) && leftSidePanelWidth >= 0
-      ? { leftSidePanelWidth }
-      : null;
+    if (!Number.isFinite(leftSidePanelWidth) || leftSidePanelWidth < 0) return null;
+
+    return {
+      leftSidePanelWidth,
+      ...(Number.isFinite(rightSidePanelWidth) && rightSidePanelWidth >= 0
+        ? { rightSidePanelWidth }
+        : {})
+    };
   } catch {
     return null;
   }

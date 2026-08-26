@@ -38,10 +38,10 @@ interface IconButtonProps extends ButtonProps {
 const baseClasses =
   ":base: transition-[background-position,opacity] relative ease-out duration-200 font-medium !ring-0 !outline-none !focus:ring-0 !focus:outline-none disabled:opacity-70";
 const sizeClasses: Record<ButtonSize, string> = {
-  xs: ":base: px-1 py-0.5 text-xs rounded-lg",
-  small: ":base: px-1.5 py-1 text-sm rounded-lg",
-  medium: ":base: px-2 py-1 text-base rounded-lg",
-  large: ":base: px-4 py-2 text-lg rounded-lg"
+  xs: ":base: px-1 py-0.5 text-xs",
+  small: ":base: px-1.5 py-1 text-sm",
+  medium: ":base: px-2 py-1 text-base",
+  large: ":base: px-4 py-2 text-lg"
 };
 const iconButtonSizes = {
   xs: { button: ":base: p-1", icon: ":base: w-4.5 h-4.5", label: ":base: pl-1" },
@@ -215,7 +215,8 @@ const Button: Component<ButtonProps> = (providedProps) => {
         getColorClasses(props.color, props.variant),
         getTextClasses(props.text),
         getHoverClasses(props.color, props.variant, props.hover),
-        disabledLink() && "opacity-70 pointer-events-none",
+        disabledLink() && ":base: opacity-70 pointer-events-none",
+        props.hover !== "underline" && ":base: rounded-lg",
         props.class
       )}
       disabled={component() === "button" ? disabled() : undefined}

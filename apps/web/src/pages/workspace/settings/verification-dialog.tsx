@@ -230,7 +230,7 @@ const VerificationDialog: Component = () => {
       size="small"
       portal
     >
-      <Tooltip content="Close" wrapperClass="absolute right-2 top-2" side="left">
+      <Tooltip content="Close" wrapperClass="absolute right-2 top-2" placement="left">
         <IconButton
           variant="text"
           text="soft"

@@ -193,7 +193,7 @@ const SlashMenu: Component<SlashMenuProps> = (props) => {
                   enabled: !blockHoverSelect() && props.state.visible,
                   content: <Shortcut shortcut={menuItem.shortcut || ""} />,
                   fixed: true,
-                  side: "right"
+                  placement: "right"
                 })}
               >
                 <Button

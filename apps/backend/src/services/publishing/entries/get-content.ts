@@ -1,6 +1,6 @@
 import { getContentBlocks, type ContentBlocks, type ContentNode } from "#backend/lib/content";
 import type { VersionSummary } from "#backend/lib/data";
-import { normalizePublishingChannelName } from "#backend/lib/publishing";
+import { normalizePublishingChannelCode } from "#backend/lib/publishing";
 import { getPublishedEntryVersion } from "./get-version";
 
 interface PublishedEntryContent {
@@ -17,7 +17,7 @@ const getPublishedEntryContent = async (input: {
   entryID: string;
   channel: string;
 }): Promise<PublishedEntryContent> => {
-  const channel = normalizePublishingChannelName(input.channel);
+  const channel = normalizePublishingChannelCode(input.channel);
   const { document, ...version } = await getPublishedEntryVersion({ ...input, channel });
   const { fragments, properties } = getContentBlocks(document);
 

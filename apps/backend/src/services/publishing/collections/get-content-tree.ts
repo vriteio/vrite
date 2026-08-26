@@ -10,7 +10,7 @@ import {
   getSubtreeCollectionIDs,
   isCollectionPublishingEnabled,
   loadPublishingTree,
-  normalizePublishingChannelName
+  normalizePublishingChannelCode
 } from "#backend/lib/publishing";
 import { toCollectionID, toEntryID, toUUID, toVersionID } from "#backend/lib/primitives";
 import { ORPCError } from "@orpc/server";
@@ -42,7 +42,7 @@ const getPublishedContentTree = async (input: {
 }): Promise<PublishedContentTree> => {
   const workspaceID = toUUID(input.workspaceID);
   const collectionID = toUUID(input.collectionID);
-  const channel = normalizePublishingChannelName(input.channel);
+  const channel = normalizePublishingChannelCode(input.channel);
 
   return db.transaction(async (tx) => {
     const tree = await loadPublishingTree(tx, workspaceID);
@@ -60,7 +60,7 @@ const getPublishedContentTree = async (input: {
       .select({ id: publishingChannels.id })
       .from(publishingChannels)
       .where(
-        and(eq(publishingChannels.workspaceID, workspaceID), eq(publishingChannels.name, channel))
+        and(eq(publishingChannels.workspaceID, workspaceID), eq(publishingChannels.code, channel))
       );
 
     if (!publishingChannel) {

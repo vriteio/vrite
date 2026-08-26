@@ -1,20 +1,20 @@
 import { publishingChannels } from "#backend/db";
 import { db } from "#backend/lib/adapters";
-import { normalizePublishingChannelName } from "#backend/lib/publishing";
+import { normalizePublishingChannelCode } from "#backend/lib/publishing";
 import { toUUID } from "#backend/lib/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, eq } from "drizzle-orm";
 
-const deleteChannel = async (input: { workspaceID: string; name: string }): Promise<void> => {
+const deleteChannel = async (input: { workspaceID: string; code: string }): Promise<void> => {
   const workspaceID = toUUID(input.workspaceID);
-  const name = normalizePublishingChannelName(input.name);
+  const code = normalizePublishingChannelCode(input.code);
 
   await db.transaction(async (tx) => {
     const [channel] = await tx
       .select({ id: publishingChannels.id, builtIn: publishingChannels.builtIn })
       .from(publishingChannels)
       .where(
-        and(eq(publishingChannels.workspaceID, workspaceID), eq(publishingChannels.name, name))
+        and(eq(publishingChannels.workspaceID, workspaceID), eq(publishingChannels.code, code))
       )
       .for("update");
 

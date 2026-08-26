@@ -35,6 +35,9 @@ interface DropdownContextValue {
   setMobileDropdownExpanded: Setter<boolean>;
   setMobileDropdownStack: Setter<Array<MobileDropdownStackEntry>>;
 }
+interface DropdownControls {
+  closeMobileDropdowns(): void;
+}
 
 const DropdownContext = createContext<DropdownContextValue | null>(null);
 const DropdownProvider: ParentComponent = (props) => {
@@ -97,5 +100,10 @@ const DropdownProvider: ParentComponent = (props) => {
   );
 };
 const useDropdownContext = () => useContext(DropdownContext)!;
+const useDropdown = (): DropdownControls => {
+  const { closeMobileDropdowns } = useDropdownContext();
 
-export { DropdownProvider, useDropdownContext };
+  return { closeMobileDropdowns };
+};
+
+export { DropdownProvider, useDropdown, useDropdownContext };

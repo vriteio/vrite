@@ -5,10 +5,12 @@ import { parseLayoutCookie } from "#web/lib/validation";
 
 interface Layout {
   leftSidePanelWidth: number;
+  rightSidePanelWidth: number;
 }
 
 const defaultLayout: Layout = {
-  leftSidePanelWidth: 0
+  leftSidePanelWidth: 0,
+  rightSidePanelWidth: 0
 };
 
 const readCookieValue = (cookieHeader: string, name: string) => {
@@ -55,11 +57,12 @@ const LayoutProvider: ParentComponent = (props) => {
 
   createEffect(
     on(
-      () => layout.leftSidePanelWidth,
-      (leftSidePanelWidth) => {
+      () => [layout.leftSidePanelWidth, layout.rightSidePanelWidth] as const,
+      ([leftSidePanelWidth, rightSidePanelWidth]) => {
         document.cookie = `layout=${encodeURIComponent(
           JSON.stringify({
-            leftSidePanelWidth
+            leftSidePanelWidth,
+            rightSidePanelWidth
           })
         )}; path=/; SameSite=Lax`;
       },

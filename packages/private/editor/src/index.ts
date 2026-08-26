@@ -26,8 +26,13 @@ const Editor: Component<EditorProps> = (props) => {
 
 export { Editor };
 export type {
+  EditorDiff,
+  EditorDiffChange,
   EditorProps,
   EditorProvider,
   EditorProviderSetup,
-  EditorProviderSetupResult
+  EditorProviderSetupResult,
+  MergedVersionDiff,
+  VersionComparison
 } from "./client-types";
+export { createVersionComparison } from "./extensions/version-diff";

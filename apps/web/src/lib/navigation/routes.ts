@@ -18,6 +18,7 @@ const HomePage = lazy(() => import("../../pages/workspace/entry/page"));
 const SettingsLayout = lazy(() => import("../../pages/workspace/settings/layout"));
 const PersonalSettingsPage = lazy(() => import("../../pages/workspace/settings/personal/page"));
 const WorkspaceSettingsPage = lazy(() => import("../../pages/workspace/settings/workspace/page"));
+const PublishingSettingsPage = lazy(() => import("../../pages/workspace/settings/publishing/page"));
 const PeopleSettingsPage = lazy(() => import("../../pages/workspace/settings/people/page"));
 const InviteSettingsPage = lazy(() => import("../../pages/workspace/settings/invite/page"));
 const RoleSettingsPage = lazy(() => import("../../pages/workspace/settings/role/page"));
@@ -41,6 +42,10 @@ const routesData: Record<string, (params: Params) => RouteData> = {
   "/:workspaceID/settings/workspace": () => ({
     title: "General",
     breadcrumbs: [{ label: "Settings" }, { label: "General", path: "/settings/workspace" }]
+  }),
+  "/:workspaceID/settings/publishing": () => ({
+    title: "Publishing",
+    breadcrumbs: [{ label: "Settings" }, { label: "Publishing", path: "/settings/publishing" }]
   }),
   "/:workspaceID/settings/people": () => ({
     title: "People",
@@ -118,6 +123,10 @@ const routes: RouteDefinition[] = [
           {
             path: "/workspace",
             component: WorkspaceSettingsPage
+          },
+          {
+            path: "/publishing",
+            component: PublishingSettingsPage
           },
           {
             path: "/people",

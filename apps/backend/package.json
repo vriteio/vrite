@@ -15,6 +15,7 @@
     "dev": "tsx watch ./src/index.ts"
   },
   "dependencies": {
+    "@andesine/editor": "workspace:*",
     "@andesine/templates": "workspace:*",
     "@better-auth/drizzle-adapter": "^1.6.25",
     "@better-auth/passkey": "^1.6.25",

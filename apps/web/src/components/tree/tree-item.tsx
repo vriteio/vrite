@@ -9,6 +9,7 @@ interface TreeItemProps {
   children?: JSX.Element;
   topLevel?: boolean;
   icon: JSX.Element;
+  iconClass?: string;
   selectable?: boolean;
   checkbox?: boolean;
   actions?: JSX.Element;
@@ -136,9 +137,16 @@ const TreeItem: Component<TreeItemProps> = (props) => {
       </Show>
       <Show
         when={props.selectable}
-        fallback={<div class="flex items-center justify-center h-6 w-6">{props.icon}</div>}
+        fallback={
+          <div class={clsx("flex h-6 w-6 items-center justify-center", props.iconClass)}>
+            {props.icon}
+          </div>
+        }
       >
-        <div data-tree-selectable class="flex items-center justify-center h-6 w-6">
+        <div
+          data-tree-selectable
+          class={clsx("flex h-6 w-6 items-center justify-center", props.iconClass)}
+        >
           <Show when={!props.checkbox || !isSelected(props.id)}>
             <div
               class={clsx(
@@ -163,6 +171,7 @@ const TreeItem: Component<TreeItemProps> = (props) => {
             when={!isRenaming(props.id)}
             fallback={
               <input
+                data-tree-rename
                 ref={(el) => {
                   setCurrentName(props.label);
                   queueMicrotask(() => {
@@ -174,6 +183,7 @@ const TreeItem: Component<TreeItemProps> = (props) => {
                 value={currentName()}
                 maxLength={props.labelMaxLength}
                 class="min-w-4 flex-1 cursor-text select-text overflow-hidden whitespace-nowrap bg-transparent outline-none"
+                style={{ "-webkit-touch-callout": "default" }}
                 onInput={(e) => {
                   setCurrentName(e.currentTarget.value);
                 }}

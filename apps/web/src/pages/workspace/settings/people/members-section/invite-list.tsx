@@ -6,7 +6,10 @@ import { useClipboard } from "#web/context/clipboard";
 import { useNotify } from "#web/context/notifications";
 import { settleBulkAction } from "#web/lib/primitives";
 import { client } from "#web/lib/api";
-import { ActionConfirmationDialog, type AffectedItem } from "../action-confirmation-dialog";
+import {
+  ActionConfirmationDialog,
+  type AffectedItem
+} from "#web/components/action-confirmation-dialog";
 import { InviteItem } from "./invite-item";
 import type { InviteDetails, InviteListProps } from "./types";
 
@@ -171,15 +174,17 @@ const InviteList: Component<InviteListProps> = (props) => {
         title={`Revoke ${affectedInvites().length === 1 ? "invitation" : `${affectedInvites().length} invitations`}?`}
         description="These invite links will stop working immediately."
         affected={affectedInvites()}
-        confirmLabel="Revoke"
-        confirmColor="danger"
-        onClose={() => setPendingRevokeIDs([])}
-        onConfirm={() => {
-          const ids = pendingRevokeIDs();
+        action={{
+          color: "danger",
+          label: "Revoke",
+          onClick: () => {
+            const ids = pendingRevokeIDs();
 
-          setPendingRevokeIDs([]);
-          revokeMutation.mutate({ ids });
+            setPendingRevokeIDs([]);
+            revokeMutation.mutate({ ids });
+          }
         }}
+        onClose={() => setPendingRevokeIDs([])}
       />
     </>
   );

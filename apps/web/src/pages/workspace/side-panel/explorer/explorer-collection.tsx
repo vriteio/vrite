@@ -1,13 +1,22 @@
-import { Card, DropdownArea, DropdownMenu, IconButton } from "@andesine/components";
+import {
+  type Card,
+  DropdownArea,
+  DropdownMenu,
+  IconButton,
+  Spinner,
+  Tooltip
+} from "@andesine/components";
 import { TreeItem, TreeLevel } from "#web/components/tree";
 import clsx from "clsx";
-import { type Component, ComponentProps, Show } from "solid-js";
+import { type Component, type ComponentProps, Show } from "solid-js";
 import { ExplorerEntry } from "./explorer-entry";
 import { MAX_CONTENT_NAME_LENGTH, normalizeCollectionName } from "#web/lib/validation";
 import { useExplorerCollection, type ExplorerCollectionProps } from "./use-explorer-collection";
 import { EXPLORER_GESTURE_PROPS } from "./explorer-dnd";
+import { usePublishing } from "#web/context/publishing";
 
 const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
+  const publishing = usePublishing();
   const {
     BoundaryDropTarget,
     closestEdge,
@@ -27,6 +36,29 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
     treeMap,
     swipe
   } = useExplorerCollection(props);
+  const publishingEnabled = () => content.isCollectionPublishingEnabled(props.collection.id);
+  const unpublishedCount = () => {
+    return publishing.getCollectionUnpublishedCount(props.collection.id);
+  };
+  const publishingLabel = () => {
+    const count = unpublishedCount();
+    const defaultChannel = publishing.channel() === "published";
+    const channelName = publishing.getChannelName();
+
+    if (publishing.statusLoading()) {
+      return defaultChannel ? "Loading publishing status" : `Loading ${channelName} status`;
+    }
+
+    if (publishing.statusError()) {
+      return defaultChannel ? "Publishing status unavailable" : `${channelName} status unavailable`;
+    }
+
+    if (count === 0) return defaultChannel ? "Published" : `Published to ${channelName}`;
+
+    const label = `${count} unpublished ${count === 1 ? "entry" : "entries"}`;
+
+    return defaultChannel ? label : `${label} in ${channelName}`;
+  };
   return (
     <DropdownArea {...EXPLORER_GESTURE_PROPS}>
       <div class="relative">
@@ -95,6 +127,34 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
                         : "i-material-symbols:folder-rounded"
                     )}
                   />
+                  <Show when={publishingEnabled()}>
+                    <Tooltip
+                      content={publishingLabel()}
+                      placement="right"
+                      wrapperClass="absolute -bottom-1 -right-1 h-3 w-3"
+                    >
+                      <div class="flex h-3 w-3 items-center justify-center">
+                        <Show
+                          when={!publishing.statusLoading()}
+                          fallback={<Spinner class="h-2 w-2" color="primary" />}
+                        >
+                          <div
+                            class={clsx(
+                              "flex justify-center items-center h-2 w-2 shadow-sm",
+                              publishing.statusError() &&
+                                "bg-red-500/90 rounded-full shadow-red-500/50",
+                              !publishing.statusError() &&
+                                unpublishedCount() === 0 &&
+                                "bg-green-500/90 rounded-full shadow-green-500/50",
+                              !publishing.statusError() &&
+                                unpublishedCount() > 0 &&
+                                "bg-amber-500/90 rounded-full shadow-amber-500/50"
+                            )}
+                          />
+                        </Show>
+                      </div>
+                    </Tooltip>
+                  </Show>
                 </div>
               }
               actions={
@@ -102,7 +162,7 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
                   title={props.collection.name}
                   cardProps={
                     {
-                      "class": "w-48",
+                      "class": "w-52",
                       "data-tree-interaction": ""
                     } as Partial<ComponentProps<typeof Card>>
                   }

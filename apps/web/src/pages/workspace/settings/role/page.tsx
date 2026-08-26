@@ -10,7 +10,7 @@ import { SettingsSection } from "../settings-section";
 import { rolesQuery, useRoleMutations } from "#web/lib/data";
 import { type AccessLevel, createPermissionAccessMapper } from "#web/lib/permissions";
 
-type Resource = "api_keys" | "billing" | "content" | "workspace";
+type Resource = "api_keys" | "billing" | "content" | "publishing" | "versions" | "workspace";
 type ResourceAccess = Record<Resource, AccessLevel>;
 
 const resources: Array<{
@@ -24,6 +24,16 @@ const resources: Array<{
     label: "Content",
     description: "Create, edit, and delete entries and collections",
     defaultView: true
+  },
+  {
+    id: "versions",
+    label: "Versions",
+    description: "View or manage document versions and version history"
+  },
+  {
+    id: "publishing",
+    label: "Publishing",
+    description: "View or manage published content and publishing channels"
   },
   {
     id: "api_keys",
@@ -50,6 +60,8 @@ const { accessToPermissions, emptyAccess, permissionsToAccess } = createPermissi
     { id: "api_keys", read: "read:api_keys", write: "api_keys" },
     { id: "billing", read: "read:billing", write: "billing" },
     { id: "content", write: "content" },
+    { id: "publishing", read: "read:publishing", write: "publishing" },
+    { id: "versions", read: "read:versions", write: "versions" },
     { id: "workspace", write: "workspace" }
   ]
 });
@@ -158,7 +170,7 @@ const RoleSettingsPage: Component = () => {
                 <Show when={roleNameError()}>
                   {(error) => (
                     <div class="absolute right-2">
-                      <Tooltip content={error()} side="top">
+                      <Tooltip content={error()} placement="top">
                         <div
                           class="i-lucide:triangle-alert h-4.5 w-4.5 text-red-500"
                           title={error()}

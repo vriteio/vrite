@@ -1,11 +1,20 @@
 import { type Entry, client } from "#web/lib/api";
 import { generateUUID, toEntryID } from "#web/lib/primitives";
 import { LexoRank } from "lexorank";
+import { createMemo } from "solid-js";
 import { type WorkspaceContentOperationsInput } from "./types";
 
 const createEntryOperations = (input: WorkspaceContentOperationsInput) => {
   const { entriesCollection } = input;
   const pendingCreates = new Map<string, Promise<unknown>>();
+  const entriesByID = createMemo(() => {
+    return new Map(
+      entriesCollection()
+        .find()
+        .fetch()
+        .map((entry) => [entry.id, entry])
+    );
+  });
   const sortEntries = (entries: Entry[]) => {
     return [...entries].sort((a, b) => b.order.localeCompare(a.order) || a.id.localeCompare(b.id));
   };
@@ -21,7 +30,7 @@ const createEntryOperations = (input: WorkspaceContentOperationsInput) => {
     );
   };
   const getEntry = (id: string) => {
-    return entriesCollection().findOne({ id });
+    return entriesByID().get(id);
   };
   const applyEntryCreate = (entry: Entry) => {
     const entries = entriesCollection();
@@ -103,7 +112,11 @@ const createEntryOperations = (input: WorkspaceContentOperationsInput) => {
 
     return entry;
   };
-  const updateEntry = (entryID: string, props: Partial<Entry>) => {
+  const updateEntry = (
+    entryID: string,
+    props: Partial<Entry>,
+    options: { publish?: boolean } = {}
+  ) => {
     const entries = entriesCollection();
     const original = entries.findOne({ id: entryID });
 
@@ -128,7 +141,8 @@ const createEntryOperations = (input: WorkspaceContentOperationsInput) => {
             .move({
               id: entryID,
               order: updated.order,
-              collectionID: updated.collectionID ?? null
+              collectionID: updated.collectionID ?? null,
+              publish: options.publish
             })
             .then(({ order }) => {
               const current = entries.findOne({ id: entryID });

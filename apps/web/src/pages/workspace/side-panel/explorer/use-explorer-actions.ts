@@ -44,16 +44,25 @@ const useExplorerActions = () => {
     if (!ensureWritable()) return true;
 
     const targetID = getCommandTargetID();
-    if (!targetID || !content.collections.get({ collectionID: targetID })) return false;
+    const targetCollection = targetID
+      ? content.collections.get({ collectionID: targetID })
+      : undefined;
+    const targetEntry = targetID ? content.entries.get({ entryID: targetID }) : undefined;
+    const parentID = targetCollection?.id ?? targetEntry?.collectionID;
 
     const created =
       type === "entry"
-        ? content.entries.create({ collectionID: targetID })
-        : content.collections.create({ parentID: targetID });
+        ? content.entries.create({ collectionID: parentID })
+        : content.collections.create({ parentID });
 
-    tree.setExpanded((expanded) =>
-      expanded.includes(targetID) ? expanded : [...expanded, targetID]
-    );
+    if (targetCollection) {
+      tree.setExpanded((expanded) => {
+        return expanded.includes(targetCollection.id)
+          ? expanded
+          : [...expanded, targetCollection.id];
+      });
+    }
+
     tree.setRenaming(created?.id ?? "");
     return true;
   };

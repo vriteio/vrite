@@ -1,5 +1,5 @@
 import { DropdownArea } from "@andesine/components";
-import type { Component } from "solid-js";
+import { type Component, Show } from "solid-js";
 import { createNodeViewRenderer, type NodeViewComponentProps } from "#editor/lib";
 import { FragmentMenu } from "./menu";
 
@@ -12,16 +12,27 @@ const FragmentView: Component<NodeViewComponentProps<FragmentAttrs>> = (props) =
 
   return (
     <>
-      <DropdownArea>
-        <FragmentMenu
-          editor={props.editor}
-          getPos={props.getPos}
-          name={attrs().name}
-          selected={props.selected()}
-          selectFragment={props.select}
-          updateName={updateName}
-        />
-      </DropdownArea>
+      <Show
+        when={props.editable()}
+        fallback={
+          <div class="flex h-9 w-full items-center gap-2 text-sm font-medium">
+            <span class="i-lucide:letter-text h-4.5 w-4.5 shrink-0 text-gray-300" />
+            <span class="min-w-0 truncate text-gray-500">{attrs().name || "Content"}</span>
+            <span class="h-px flex-1 rounded-full bg-gray-200" />
+          </div>
+        }
+      >
+        <DropdownArea>
+          <FragmentMenu
+            editor={props.editor}
+            getPos={props.getPos}
+            name={attrs().name}
+            selected={props.selected()}
+            selectFragment={props.select}
+            updateName={updateName}
+          />
+        </DropdownArea>
+      </Show>
       <div
         ref={(element) => {
           if (props.contentDOM) element.appendChild(props.contentDOM);

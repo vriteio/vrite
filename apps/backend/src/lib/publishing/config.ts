@@ -1,3 +1,3 @@
-const PUBLISHED_CHANNEL_NAME = "published";
+const PUBLISHED_CHANNEL_CODE = "published";
 
-export { PUBLISHED_CHANNEL_NAME };
+export { PUBLISHED_CHANNEL_CODE };

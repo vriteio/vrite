@@ -136,7 +136,7 @@ const FormatMenu: Component<{
                   </div>
                 }
                 enabled={props.opened}
-                side="bottom"
+                placement="bottom"
               >
                 <IconButton
                   class={clsx(active() && "group/menu-item @hover:bg-gradient-to-tr")}
@@ -177,7 +177,7 @@ const FormatMenu: Component<{
             <span>Close keyboard</span>
           </div>
         }
-        side="bottom"
+        placement="bottom"
         wrapperClass="snap-start shrink-0 md:hidden"
         enabled={props.opened}
       >
@@ -200,7 +200,7 @@ const FormatMenu: Component<{
             <span>More</span>
           </div>
         }
-        side="bottom"
+        placement="bottom"
         enabled={props.opened}
         wrapperClass="snap-start shrink-0"
       >

@@ -109,11 +109,13 @@ const createWorkspaceContentOperations = (input: WorkspaceContentOperationsInput
         entryOperations.createEntry(collectionID),
       update: ({
         entryID,
-        updates
+        updates,
+        publish
       }: {
         entryID: string;
         updates: Parameters<typeof entryOperations.updateEntry>[1];
-      }) => entryOperations.updateEntry(entryID, updates),
+        publish?: boolean;
+      }) => entryOperations.updateEntry(entryID, updates, { publish }),
       delete: ({ entryIDs }: { entryIDs: string[] }) => entryOperations.deleteEntries(entryIDs)
     },
     collections: {
@@ -135,12 +137,14 @@ const createWorkspaceContentOperations = (input: WorkspaceContentOperationsInput
       move: ({
         collectionID,
         parentID,
-        index
+        index,
+        publish
       }: {
         collectionID: string;
         parentID: string | null;
         index?: number;
-      }) => collectionOperations.moveCollection(collectionID, parentID, index),
+        publish?: boolean;
+      }) => collectionOperations.moveCollection(collectionID, parentID, index, publish),
       delete: ({ collectionIDs }: { collectionIDs: string[] }) =>
         collectionOperations.deleteCollections(collectionIDs)
     },

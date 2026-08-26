@@ -65,6 +65,18 @@ const MenuItems = <O extends MenuItem>(props: MenuItemsProps<O>) => (
       const option = optionOrSeparator as O & { value: string };
       const [loading, setLoading] = createSignal(false);
 
+      if (option.type === "header") {
+        return (
+          <CustomMenuContent>
+            <div class="flex min-h-10 flex-col justify-center px-1 py-1 md:min-h-0 md:py-0.5">
+              <span class="truncate text-sm leading-4 text-gray-500 md:text-xs md:leading-tight">
+                {option.label}
+              </span>
+            </div>
+          </CustomMenuContent>
+        );
+      }
+
       if (option.items) {
         const subOptions = createMemo(() => {
           return flattenWithSeparators(addIndices(option.items!, `${option.value}-`));
@@ -149,7 +161,7 @@ const MenuItems = <O extends MenuItem>(props: MenuItemsProps<O>) => (
         <Dynamic
           component={typeof option.disabled === "string" ? Tooltip : Fragment}
           content={typeof option.disabled === "string" ? option.disabled : undefined}
-          side="right"
+          placement="right"
           offset={{ mainAxis: 2 }}
         >
           <Menu.Item

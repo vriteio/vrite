@@ -4,7 +4,7 @@ import { collections, entries, entryPublications, workspaces } from "#backend/db
 import {
   isCollectionPublishingEnabled,
   loadPublishingTree,
-  PUBLISHED_CHANNEL_NAME,
+  PUBLISHED_CHANNEL_CODE,
   publishEntries,
   syncEntrySnapshots
 } from "#backend/lib/publishing";
@@ -227,8 +227,8 @@ const moveEntry = async (input: {
     if (!wasPublishingEnabled && willBePublishingEnabled && input.publish) {
       const result = await publishEntries(tx, {
         workspaceID,
-        entryIDs: [entryID],
-        channel: PUBLISHED_CHANNEL_NAME,
+        entries: [{ entryID }],
+        channel: PUBLISHED_CHANNEL_CODE,
         contributorIDs: input.contributorIDs
       });
 

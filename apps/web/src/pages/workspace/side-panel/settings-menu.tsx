@@ -124,6 +124,13 @@ const SettingsMenu: Component = () => {
                   ]
                 },
                 {
+                  icon: "i-lucide:radio",
+                  label: "Publishing",
+                  href: `${settingsPath()}/publishing`,
+                  active: isRoute("/publishing"),
+                  visible: hasPermission("read:publishing")
+                },
+                {
                   icon: "i-lucide:credit-card",
                   label: "Billing",
                   href: `${settingsPath()}/billing`,

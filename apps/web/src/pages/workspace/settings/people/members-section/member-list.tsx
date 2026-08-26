@@ -5,7 +5,10 @@ import { Tree, TREE_ROOT_ID, type TreeMap } from "#web/components/tree";
 import { useNotify } from "#web/context/notifications";
 import { settleBulkAction } from "#web/lib/primitives";
 import { client } from "#web/lib/api";
-import { ActionConfirmationDialog, type AffectedItem } from "../action-confirmation-dialog";
+import {
+  ActionConfirmationDialog,
+  type AffectedItem
+} from "#web/components/action-confirmation-dialog";
 import { MemberItem } from "./member-item";
 import type { WorkspaceMember, WorkspaceMemberListProps } from "./types";
 
@@ -198,10 +201,12 @@ const WorkspaceMemberList: Component<WorkspaceMemberListProps> = (props) => {
               : "This includes you. Your workspace access may change immediately."
             : undefined
         }
-        confirmLabel={pendingAction()?.type === "remove" ? "Remove" : "Assign role"}
-        confirmColor={pendingAction()?.type === "remove" ? "danger" : "primary"}
+        action={{
+          color: pendingAction()?.type === "remove" ? "danger" : "primary",
+          label: pendingAction()?.type === "remove" ? "Remove" : "Assign role",
+          onClick: confirmPendingAction
+        }}
         onClose={() => setPendingAction(null)}
-        onConfirm={confirmPendingAction}
       />
     </>
   );

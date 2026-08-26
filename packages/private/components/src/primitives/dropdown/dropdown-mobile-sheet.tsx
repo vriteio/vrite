@@ -3,6 +3,7 @@ import { type Component, type JSX, Show } from "solid-js";
 import { Portal } from "solid-js/web";
 import { Menu } from "@ark-ui/solid/menu";
 import { Card } from "../card";
+import { createRef } from "../../ref";
 import { useMobileDropdownDrag } from "./use-dropdown-mobile-drag";
 import { useDropdownContext } from "./dropdown-context";
 import styles from "./styles.module.scss";
@@ -18,6 +19,7 @@ interface DropdownMobileContentProps {
 }
 
 const DropdownMobileSheet: Component<DropdownMobileSheetProps> = (props) => {
+  const [backdropPressed, setBackdropPressed] = createRef(false);
   const {
     activeMobileDropdown,
     closeMobileDropdowns,
@@ -61,10 +63,22 @@ const DropdownMobileSheet: Component<DropdownMobileSheetProps> = (props) => {
               "bg-gradient-to-b from-transparent via-black via-opacity-10 to-black to-opacity-20",
               activeEntry()?.getClosing() && styles.closing
             )}
+            onPointerDown={(event) => {
+              setBackdropPressed(event.isPrimary && event.button === 0);
+              drag.backdropGestureProps.onPointerDown(event);
+            }}
+            onPointerCancel={() => {
+              setBackdropPressed(false);
+              drag.backdropGestureProps.onPointerCancel();
+            }}
             onClick={(event) => {
+              const shouldClose = backdropPressed();
+
+              setBackdropPressed(false);
               event.preventDefault();
               event.stopPropagation();
-              closeMobileDropdowns();
+
+              if (shouldClose) closeMobileDropdowns();
             }}
           />
           <Card

@@ -23,16 +23,17 @@ const publishingChannels = pgTable(
       .notNull()
       .references(() => workspaces.id, { onDelete: "cascade" }),
     name: varchar("name", { length: 50 }).notNull(),
+    code: varchar("code", { length: 50 }).notNull(),
     builtIn: boolean("built_in").notNull().default(false),
     ...timestamps
   },
   (table) => [
     unique("publishing_channels_workspace_id_id_unique").on(table.workspaceID, table.id),
-    unique("publishing_channels_workspace_name_unique").on(table.workspaceID, table.name),
-    check("publishing_channels_name_format", sql`${table.name} ~ '^[a-z0-9]+(-[a-z0-9]+)*$'`),
+    unique("publishing_channels_workspace_code_unique").on(table.workspaceID, table.code),
+    check("publishing_channels_code_not_empty", sql`length(${table.code}) > 0`),
     check(
-      "publishing_channels_built_in_name",
-      sql`not ${table.builtIn} or ${table.name} = 'published'`
+      "publishing_channels_built_in_code",
+      sql`not ${table.builtIn} or ${table.code} = 'published'`
     )
   ]
 );

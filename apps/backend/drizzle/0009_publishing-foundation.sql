@@ -20,13 +20,14 @@ CREATE TABLE "publishing_channels" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"workspace_id" uuid NOT NULL,
 	"name" varchar(50) NOT NULL,
+	"code" varchar(50) NOT NULL,
 	"built_in" boolean DEFAULT false NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "publishing_channels_workspace_id_id_unique" UNIQUE("workspace_id","id"),
-	CONSTRAINT "publishing_channels_workspace_name_unique" UNIQUE("workspace_id","name"),
-	CONSTRAINT "publishing_channels_name_format" CHECK ("publishing_channels"."name" ~ '^[a-z0-9]+(-[a-z0-9]+)*$'),
-	CONSTRAINT "publishing_channels_built_in_name" CHECK (not "publishing_channels"."built_in" or "publishing_channels"."name" = 'published')
+	CONSTRAINT "publishing_channels_workspace_code_unique" UNIQUE("workspace_id","code"),
+	CONSTRAINT "publishing_channels_code_not_empty" CHECK (length("publishing_channels"."code") > 0),
+	CONSTRAINT "publishing_channels_built_in_code" CHECK (not "publishing_channels"."built_in" or "publishing_channels"."code" = 'published')
 );
 --> statement-breakpoint
 ALTER TABLE "collections" ADD COLUMN "publishing_enabled" boolean DEFAULT false NOT NULL;--> statement-breakpoint
@@ -37,8 +38,8 @@ ALTER TABLE "entry_publications" ADD CONSTRAINT "entry_publications_workspace_en
 ALTER TABLE "publishing_channels" ADD CONSTRAINT "publishing_channels_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "entry_publications_workspace_channel_idx" ON "entry_publications" USING btree ("workspace_id","channel_id");--> statement-breakpoint
 CREATE INDEX "entry_publications_version_id_idx" ON "entry_publications" USING btree ("version_id");--> statement-breakpoint
-INSERT INTO "publishing_channels" ("workspace_id", "name", "built_in")
-SELECT "id", 'published', true FROM "workspaces";--> statement-breakpoint
+INSERT INTO "publishing_channels" ("workspace_id", "name", "code", "built_in")
+SELECT "id", 'Published', 'published', true FROM "workspaces";--> statement-breakpoint
 UPDATE "roles"
 SET "permissions" = array_append("permissions", 'publishing'::"public"."permission")
 WHERE 'content'::"public"."permission" = ANY("permissions")

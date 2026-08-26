@@ -205,11 +205,9 @@ const useExplorerKeyboard = (input: ExplorerKeyboardInput) => {
       return input.active() && !isEditingText() && !isExplorerMenuElement(document.activeElement);
     };
     const unregister = registerShortcuts({
-      "$mod+E": () => (canHandle() ? (actions.createEntry(), true) : false),
-      "$mod+shift+E": () => (canHandle() ? (actions.createCollection(), true) : false),
-      "$mod+n": () => (canHandle() ? actions.createForCommandTarget("entry") : false),
-      "$mod+shift+n": () => (canHandle() ? actions.createForCommandTarget("collection") : false),
-      "$mod+a": () => (canHandle() ? selectAll() : false),
+      "$mod+KeyE": () => (canHandle() ? actions.createForCommandTarget("entry") : false),
+      "$mod+Shift+KeyC": () => (canHandle() ? actions.createForCommandTarget("collection") : false),
+      "$mod+KeyA": () => (canHandle() ? selectAll() : false),
       "$mod+Alt+KeyC": () => (canHandle() ? actions.copyTargetID() : false),
       "$mod+backspace": () => (canHandle() ? actions.deleteTarget() : false),
       "delete": () => (canHandle() ? actions.deleteTarget() : false)

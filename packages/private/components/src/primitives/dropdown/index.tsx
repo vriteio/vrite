@@ -21,7 +21,7 @@ import { Menu } from "@ark-ui/solid/menu";
 import { createMediaQuery } from "@solid-primitives/media";
 import { Fragment } from "../fragment";
 import { DropdownDesktopMenu } from "./dropdown-desktop-menu";
-import { DropdownProvider, useDropdownContext } from "./dropdown-context";
+import { DropdownProvider, useDropdown, useDropdownContext } from "./dropdown-context";
 import { DropdownMobileContent, DropdownMobileSheet } from "./dropdown-mobile-sheet";
 import { useDropdownLongPress } from "./use-dropdown-long-press";
 
@@ -373,4 +373,4 @@ const Dropdown: Component<DropdownProps> = (props) => {
   );
 };
 
-export { Dropdown, DropdownArea, DropdownProvider };
+export { Dropdown, DropdownArea, DropdownProvider, useDropdown };

@@ -136,7 +136,6 @@ const useExplorerMarquee = (
       setContentOffsetTop(contentRect.top - rect.top + element.scrollTop);
     }
 
-    document.documentElement.style.userSelect = "none";
     setInitialSelection(selection());
     setMode(
       event.altKey ? "remove" : event.metaKey || event.ctrlKey || event.shiftKey ? "add" : "replace"
@@ -176,7 +175,6 @@ const useExplorerMarquee = (
     setContainerRect(null);
     setContentOffsetTop(0);
     stopAutoScroll();
-    document.documentElement.style.userSelect = "";
     setBoxSelection(emptyBox());
   };
 

@@ -12,11 +12,13 @@ import { useWorkspace } from "#web/context/workspace";
 import { apiKeyQuery, useKeyMutations } from "#web/lib/data";
 import { type AccessLevel, createPermissionAccessMapper } from "#web/lib/permissions";
 
-type Resource = "entries" | "collections" | "memberships" | "roles";
+type Resource = "collections" | "entries" | "memberships" | "publishing" | "roles" | "versions";
 type ResourceAccess = Record<Resource, AccessLevel>;
 
 const resources: Array<{ id: Resource; label: string; description: string }> = [
   { id: "entries", label: "Entries", description: "Content entries within collections" },
+  { id: "versions", label: "Versions", description: "Entry versions and version history" },
+  { id: "publishing", label: "Publishing", description: "Published content and channels" },
   { id: "collections", label: "Collections", description: "Collection structure and metadata" },
   { id: "memberships", label: "People", description: "Workspace members and invitations" },
   { id: "roles", label: "Roles", description: "Workspace roles and permissions" }
@@ -34,6 +36,8 @@ const { accessToPermissions, permissionsToAccess } = createPermissionAccessMappe
 >({
   resources: [
     { id: "entries", read: "read:entries", write: "entries" },
+    { id: "versions", read: "read:versions", write: "versions" },
+    { id: "publishing", read: "read:publishing", write: "publishing" },
     { id: "collections", read: "read:collections", write: "collections" },
     { id: "memberships", read: "read:memberships", write: "memberships" },
     { id: "roles", read: "read:roles", write: "roles" }

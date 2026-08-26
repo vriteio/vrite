@@ -13,11 +13,8 @@ import solidReactivityAdapter from "@signaldb/solid";
 import { useConnectivitySignal } from "@solid-primitives/connectivity";
 import { type Accessor, createEffect, createSignal, on } from "solid-js";
 import { isPersistedCollection, isPersistedEntry } from "#web/lib/validation";
+import { createWorkspacePublishingOperations, type PublishingState } from "../publishing";
 
-interface PublishingState {
-  enabledCollectionIDs: Set<string>;
-  unpublishedEntryIDs: Set<string>;
-}
 interface ExplorerTree {
   workspaceID: string;
   collections: Collection[];
@@ -99,6 +96,11 @@ const useWorkspaceContent = (workspaceID: Accessor<string>, canWrite: Accessor<b
   const contentOperations = createWorkspaceContentOperations({
     entriesCollection,
     collectionsCollection
+  });
+  const publishingOperations = createWorkspacePublishingOperations({
+    entriesCollection,
+    collectionsCollection,
+    publishing
   });
   const disposeWorkspaceContent = async (targetWorkspaceID: string) => {
     const currentCollections = contentCollections();
@@ -349,6 +351,7 @@ const useWorkspaceContent = (workspaceID: Accessor<string>, canWrite: Accessor<b
     publishing,
     readOnly,
     offline,
+    ...publishingOperations,
     ...contentOperations
   };
 };

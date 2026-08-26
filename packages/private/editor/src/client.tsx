@@ -52,7 +52,8 @@ import {
   BlockSelection,
   Gapcursor,
   Dropcursor,
-  NodeCharacterLimit
+  NodeCharacterLimit,
+  VersionDiff
 } from "./extensions";
 import { DragHandleMenu } from "./ui/drag-handle";
 
@@ -66,9 +67,11 @@ const ClientEditor: Component<EditorProps> = (props) => {
   const [menuContainerRef, setMenuContainerRef] = createRef<HTMLElement | null>(null);
   const [editorContentElement, setEditorContentElement] = createSignal<HTMLElement | null>(null);
   const owner = getOwner();
+  const collaborative = () => props.content === undefined;
   const provider = useEditorProvider({
     url: () => props.url,
     doc: () => props.doc,
+    enabled: collaborative,
     attempt: () => props.providerAttempt,
     beforeAttach: () => props.beforeProviderAttach,
     onProvider: () => props.onProvider,
@@ -82,12 +85,27 @@ const ClientEditor: Component<EditorProps> = (props) => {
   const editor = createMemo(() => {
     const contentElement = editorContentElement();
     const currentProvider = provider();
+    const content = props.content;
 
-    if (!contentElement || !currentProvider) {
+    if (!contentElement || (collaborative() && !currentProvider)) {
       return null;
     }
 
+    const collaborationExtensions = currentProvider
+      ? [
+          Collaboration.configure({
+            document: currentProvider.document
+          }),
+          CollaborationCaret.configure({
+            provider: currentProvider,
+            user: collaborationUser()
+          })
+        ]
+      : [];
+    const diffExtensions = props.diff ? [VersionDiff.configure({ ...props.diff, owner })] : [];
+
     return new Editor({
+      content,
       element: contentElement,
       editable: untrack(() => props.editable ?? true),
       extensions: [
@@ -99,12 +117,12 @@ const ClientEditor: Component<EditorProps> = (props) => {
         Title,
         Property.extend({
           addNodeView() {
-            return createPropertyViewRenderer(owner);
+            return createPropertyViewRenderer(owner, () => props.editable ?? true);
           }
         }),
         Fragment.extend({
           addNodeView() {
-            return createFragmentViewRenderer(owner);
+            return createFragmentViewRenderer(owner, () => props.editable ?? true);
           }
         }),
         NodeCharacterLimit.configure({ limits: { title: MAX_ENTRY_TITLE_LENGTH } }),
@@ -132,13 +150,8 @@ const ClientEditor: Component<EditorProps> = (props) => {
         Gapcursor,
         Dropcursor,
         BlockSelection,
-        Collaboration.configure({
-          document: currentProvider.document
-        }),
-        CollaborationCaret.configure({
-          provider: currentProvider,
-          user: collaborationUser()
-        }),
+        ...diffExtensions,
+        ...collaborationExtensions,
         TrailingNode,
         Placeholder,
         Separator
@@ -184,6 +197,18 @@ const ClientEditor: Component<EditorProps> = (props) => {
     });
   });
 
+  createEffect(() => {
+    const scrollContainer = scrollableContainerRef();
+
+    if (!scrollContainer) return;
+
+    props.onScrollContainer?.(scrollContainer);
+
+    onCleanup(() => {
+      props.onScrollContainer?.(null);
+    });
+  });
+
   const editableEditor = () => (props.editable === false ? null : editor());
 
   onCleanup(() => {
@@ -202,11 +227,15 @@ const ClientEditor: Component<EditorProps> = (props) => {
     const onUp = (event: PointerEvent) => {
       if (isInsideBubbleMenu(event)) return;
 
-      const ed = editor();
+      const currentEditor = editableEditor();
 
-      if (ed && !ed.state.selection.empty && isTextSelection(ed.state.selection)) {
+      if (
+        currentEditor &&
+        !currentEditor.state.selection.empty &&
+        isTextSelection(currentEditor.state.selection)
+      ) {
         setTimeout(() => {
-          ed.view.dispatch(ed.state.tr.setMeta("forceUpdate", true));
+          currentEditor.view.dispatch(currentEditor.state.tr.setMeta("forceUpdate", true));
         }, 10);
       }
     };
@@ -239,7 +268,7 @@ const ClientEditor: Component<EditorProps> = (props) => {
           <BlockMenuArea
             editor={editableEditor()}
             menuContainerRef={menuContainerRef}
-            notify={props.notify}
+            notify={(type, text) => props.notify?.(type, text)}
           >
             <div class="w-full flex flex-col items-center">
               <div

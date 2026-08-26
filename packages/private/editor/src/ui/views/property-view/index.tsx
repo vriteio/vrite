@@ -1,11 +1,11 @@
 import { DropdownArea } from "@andesine/components";
-import type { Component } from "solid-js";
+import { type Component, Show } from "solid-js";
 import {
   createNodeViewRenderer,
   type NodeViewComponentProps,
   type UpdateAttributesOptions
 } from "#editor/lib";
-import { PropertyMenu, type PropertyAttrs } from "./menu";
+import { PropertyMenu, propertyTypeDetails, type PropertyAttrs } from "./menu";
 import { PropertyValue } from "./value";
 import clsx from "clsx";
 
@@ -29,37 +29,60 @@ const PropertyView: Component<NodeViewComponentProps<PropertyAttrs>> = (props) =
 
     props.select();
   };
+  const readonlyValue = () => {
+    const value = attrs().value;
+
+    if (Array.isArray(value)) return value.join(", ") || "—";
+    if (typeof value === "boolean") return value ? "Yes" : "No";
+
+    return value || "—";
+  };
 
   return (
-    <div class="flex flex-col md:flex-row md:gap-4 items-start w-full min-h-9">
-      <div class="w-full md:w-auto">
-        <DropdownArea>
-          <PropertyMenu
+    <Show
+      when={props.editable()}
+      fallback={
+        <div class="flex min-h-9 w-full flex-col items-start md:flex-row md:gap-4">
+          <div class="flex h-9 w-full min-w-0 items-center gap-1 text-sm font-medium md:w-48">
+            <div class={`h-4.5 w-4.5 shrink-0 text-gray-300 ${propertyTypeDetails[type()].icon}`} />
+            <span class="min-w-0 truncate text-gray-500">{attrs().label || "Property"}</span>
+          </div>
+          <div class="flex min-h-9 min-w-0 flex-1 items-center text-sm text-gray-700">
+            {readonlyValue()}
+          </div>
+        </div>
+      }
+    >
+      <div class="flex min-h-9 w-full flex-col items-start md:flex-row md:gap-4">
+        <div class="w-full md:w-auto">
+          <DropdownArea>
+            <PropertyMenu
+              attrs={attrs()}
+              editor={props.editor}
+              getPos={props.getPos}
+              selected={props.selected()}
+              selectProperty={props.select}
+              updateAttributes={updateAttributes}
+              deleteProperty={props.deleteNode}
+            />
+          </DropdownArea>
+        </div>
+        <div
+          class={clsx("h-full flex items-center min-h-9 w-full min-w-0 flex-1", {
+            "py-1": isInput(),
+            "py-0.5": !isInput() && !isMultiSelect()
+          })}
+          onFocusIn={selectOnFocus}
+        >
+          <PropertyValue
             attrs={attrs()}
-            editor={props.editor}
-            getPos={props.getPos}
             selected={props.selected()}
             selectProperty={props.select}
             updateAttributes={updateAttributes}
-            deleteProperty={props.deleteNode}
           />
-        </DropdownArea>
+        </div>
       </div>
-      <div
-        class={clsx("h-full flex items-center min-h-9 w-full min-w-0 flex-1", {
-          "py-1": isInput(),
-          "py-0.5": !isInput() && !isMultiSelect()
-        })}
-        onFocusIn={selectOnFocus}
-      >
-        <PropertyValue
-          attrs={attrs()}
-          selected={props.selected()}
-          selectProperty={props.select}
-          updateAttributes={updateAttributes}
-        />
-      </div>
-    </div>
+    </Show>
   );
 };
 const createPropertyViewRenderer = createNodeViewRenderer(PropertyView, {

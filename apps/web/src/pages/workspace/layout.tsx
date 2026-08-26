@@ -16,8 +16,9 @@ import {
   Suspense
 } from "solid-js";
 import { useLayout } from "#web/context/layout";
+import { PublishingProvider } from "#web/context/publishing";
 import { WorkspaceProvider } from "#web/context/workspace";
-import { Breadcrumbs } from "./breadcrumbs";
+import { EditorToolbar } from "./editor-toolbar";
 import { Menu } from "./menu";
 import { ProfileMenu } from "./profile-menu";
 import { type PrimaryPanel, SidePanel, usePrimaryPanel } from "./side-panel";
@@ -26,9 +27,51 @@ import { SnapshotErrorDialog } from "./snapshot-error-dialog";
 import { useConnectivitySignal } from "@solid-primitives/connectivity";
 import { createMediaQuery } from "@solid-primitives/media";
 import { useNotify } from "#web/context/notifications";
+import { RightSidePanel, useRightSidePanelOptions } from "./right-side-panel";
+import clsx from "clsx";
+
+interface WorkspaceRightSidePanelProps {
+  hidden: boolean;
+}
 
 const DEFAULT_SIDE_PANEL_WIDTH = 248;
 const MAX_SIDE_PANEL_WIDTH = 640;
+
+const WorkspaceRightSidePanel: Component<WorkspaceRightSidePanelProps> = (props) => {
+  const { layout, setLayout } = useLayout();
+  const options = useRightSidePanelOptions();
+  const available = () => !props.hidden && options().length > 0;
+
+  return (
+    <Show when={available()} fallback={<div class="hidden w-3 md:block" />}>
+      <aside
+        class={clsx(
+          "hidden h-full shrink-0 py-3 md:flex",
+          layout.rightSidePanelWidth === 0 && "pr-3"
+        )}
+      >
+        <VerticalResizeHandle
+          side="right"
+          width={layout.rightSidePanelWidth}
+          resize={(size) => setLayout("rightSidePanelWidth", size)}
+        />
+        <div
+          class="relative flex flex-col items-start justify-center overflow-hidden"
+          style={{
+            "width": `${layout.rightSidePanelWidth || 0}px`,
+            "max-width": `${MAX_SIDE_PANEL_WIDTH}px`
+          }}
+        >
+          <div class="flex h-full w-full flex-col p-2">
+            <Suspense fallback={<div class="h-full w-full" />}>
+              <RightSidePanel />
+            </Suspense>
+          </div>
+        </div>
+      </aside>
+    </Show>
+  );
+};
 
 const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
   const params = useParams<{ workspaceID: string }>();
@@ -112,84 +155,87 @@ const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
 
   return (
     <WorkspaceProvider>
-      {/* Fixed element to tint Safari's top UI to use bg-gray-50 color */}
-      <div class="pointer-events-none fixed left-0 top-0 h-3 w-full bg-gray-50 md:hidden" />
-      <div class="flex h-full min-h-0 w-full">
-        <aside class="hidden h-full shrink-0 py-3 md:flex">
-          <Show when={layout.leftSidePanelWidth === 0}>
-            <Menu
-              class="p-3 py-2"
-              activePanel={activePanel()}
-              openPanel={openPanel}
-              direction="vertical"
-            />
-          </Show>
-          <div
-            class="relative flex flex-col items-start justify-center overflow-hidden"
-            style={{
-              "width": `${layout.leftSidePanelWidth || 0}px`,
-              "max-width": `${MAX_SIDE_PANEL_WIDTH}px`
-            }}
-          >
-            <div class="flex h-full w-full flex-col p-2">
-              <Menu activePanel={activePanel()} openPanel={openPanel} class="w-full px-1" />
-              <SidePanel />
-              <ProfileMenu class="p-1" />
-            </div>
-          </div>
-          <VerticalResizeHandle
-            width={layout.leftSidePanelWidth}
-            resize={(size) => setLayout("leftSidePanelWidth", size)}
-          />
-        </aside>
-        <div class="flex h-full min-h-0 min-w-0 flex-1 flex-col md:py-3 md:pr-3">
-          <Card
-            class="z-1 relative flex min-h-0 w-full flex-1 flex-col items-center justify-center overflow-hidden p-0 max-md:!border-0 max-md:!rounded-none max-md:!shadow-none"
-            shade
-          >
-            <Breadcrumbs />
-            <Suspense
-              fallback={
-                <div class="flex w-full flex-1 items-center justify-center text-gray-200">
-                  <Spinner />
-                </div>
-              }
+      <PublishingProvider>
+        {/* Fixed element to tint Safari's top UI to use bg-gray-50 color */}
+        <div class="pointer-events-none fixed left-0 top-0 h-3 w-full bg-gray-50 md:hidden" />
+        <div class="flex h-full min-h-0 w-full">
+          <aside class="hidden h-full shrink-0 py-3 md:flex">
+            <Show when={layout.leftSidePanelWidth === 0}>
+              <Menu
+                class="p-3 py-2"
+                activePanel={activePanel()}
+                openPanel={openPanel}
+                direction="vertical"
+              />
+            </Show>
+            <div
+              class="relative flex flex-col items-start justify-center overflow-hidden"
+              style={{
+                "width": `${layout.leftSidePanelWidth || 0}px`,
+                "max-width": `${MAX_SIDE_PANEL_WIDTH}px`
+              }}
             >
-              {props.children}
-            </Suspense>
-          </Card>
-          <nav
-            class="min-h-12 z-20 box-content grid shrink-0 grid-cols-4 items-center border-t border-gray-200 bg-gray-100 pb-[env(safe-area-inset-bottom,0px)] md:hidden"
-            aria-label="Workspace navigation"
-          >
-            <Menu activePanel={activePanel()} openPanel={openPanel} bottomNavigation />
-            <ProfileMenu class="h-full w-full p-0" compact />
-          </nav>
+              <div class="flex h-full w-full flex-col p-2">
+                <Menu activePanel={activePanel()} openPanel={openPanel} class="w-full px-1" />
+                <SidePanel />
+                <ProfileMenu class="p-1" />
+              </div>
+            </div>
+            <VerticalResizeHandle
+              width={layout.leftSidePanelWidth}
+              resize={(size) => setLayout("leftSidePanelWidth", size)}
+            />
+          </aside>
+          <div class="flex h-full min-h-0 min-w-0 flex-1 flex-col md:py-3">
+            <Card
+              class="z-1 @container/editor relative flex min-h-0 w-full flex-1 flex-col items-center justify-center overflow-hidden p-0 max-md:!border-0 max-md:!rounded-none max-md:!shadow-none"
+              shade
+            >
+              <EditorToolbar />
+              <Suspense
+                fallback={
+                  <div class="flex w-full flex-1 items-center justify-center text-gray-200">
+                    <Spinner />
+                  </div>
+                }
+              >
+                {props.children}
+              </Suspense>
+            </Card>
+            <nav
+              class="min-h-12 z-20 box-content grid shrink-0 grid-cols-4 items-center border-t border-gray-200 bg-gray-100 pb-[env(safe-area-inset-bottom,0px)] md:hidden"
+              aria-label="Workspace navigation"
+            >
+              <Menu activePanel={activePanel()} openPanel={openPanel} bottomNavigation />
+              <ProfileMenu class="h-full w-full p-0" compact />
+            </nav>
+          </div>
+          <WorkspaceRightSidePanel hidden={isSettingsRoute()} />
         </div>
-      </div>
-      <Dropdown
-        title={
-          mobilePanel() === "explorer"
-            ? "Explorer"
-            : mobilePanel() === "settings"
-              ? "Settings"
-              : "Help"
-        }
-        class="md:hidden"
-        anchorPoint={{ x: 0, y: 0 }}
-        mobileSheetDragFromContent={mobilePanel() !== "explorer"}
-        opened={mobilePanelOpened()}
-        setOpened={setMobilePanelOpened}
-        cardProps={{
-          style: { "min-height": mobilePanel() === "explorer" ? "50dvh" : undefined }
-        }}
-        portal
-      >
-        <div data-mobile-panel class="flex min-h-0 w-full flex-1 flex-col">
-          <SidePanel selectedPanel={mobilePanel()} />
-        </div>
-      </Dropdown>
-      <SnapshotErrorDialog />
+        <Dropdown
+          title={
+            mobilePanel() === "explorer"
+              ? "Explorer"
+              : mobilePanel() === "settings"
+                ? "Settings"
+                : "Help"
+          }
+          class="md:hidden"
+          anchorPoint={{ x: 0, y: 0 }}
+          mobileSheetDragFromContent={mobilePanel() !== "explorer"}
+          opened={mobilePanelOpened()}
+          setOpened={setMobilePanelOpened}
+          cardProps={{
+            style: { "min-height": mobilePanel() === "explorer" ? "50dvh" : undefined }
+          }}
+          portal
+        >
+          <div data-mobile-panel class="flex min-h-0 w-full flex-1 flex-col">
+            <SidePanel selectedPanel={mobilePanel()} />
+          </div>
+        </Dropdown>
+        <SnapshotErrorDialog />
+      </PublishingProvider>
     </WorkspaceProvider>
   );
 };

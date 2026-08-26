@@ -10,6 +10,7 @@ interface UpdateAttributesOptions {
 }
 interface NodeViewComponentProps<Attributes extends object = Record<string, unknown>> {
   contentDOM: HTMLElement | null;
+  editable: Accessor<boolean>;
   editor: Editor;
   getPos(): number | undefined;
   node: Accessor<ProseMirrorNode>;
@@ -39,7 +40,7 @@ const createNodeViewRenderer = <Attributes extends object = Record<string, unkno
   component: Component<NodeViewComponentProps<Attributes>>,
   config: NodeViewRendererConfig<Attributes> = {}
 ) => {
-  return (owner: unknown) => {
+  return (owner: unknown, editable?: Accessor<boolean>) => {
     return (props: NodeViewRendererProps): NodeView => {
       const dom = document.createElement("div");
       const contentDOM = config.content ? document.createElement("div") : null;
@@ -51,6 +52,8 @@ const createNodeViewRenderer = <Attributes extends object = Record<string, unkno
         return typeof pos === "number" ? pos : null;
       };
       const select = () => {
+        if (editable && !editable()) return;
+
         const pos = getPosition();
 
         if (pos === null) return;
@@ -61,6 +64,8 @@ const createNodeViewRenderer = <Attributes extends object = Record<string, unkno
         attributes: Partial<Attributes>,
         options?: UpdateAttributesOptions
       ) => {
+        if (editable && !editable()) return;
+
         props.editor.commands.command(({ tr }) => {
           const pos = getPosition();
 
@@ -77,6 +82,8 @@ const createNodeViewRenderer = <Attributes extends object = Record<string, unkno
         });
       };
       const deleteNode = () => {
+        if (editable && !editable()) return;
+
         props.editor.commands.command(({ tr }) => {
           const pos = getPosition();
 
@@ -89,6 +96,7 @@ const createNodeViewRenderer = <Attributes extends object = Record<string, unkno
       };
       const context: NodeViewComponentProps<Attributes> = {
         contentDOM,
+        editable: editable || (() => props.editor.isEditable),
         editor: props.editor,
         getPos: props.getPos,
         node,

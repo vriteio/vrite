@@ -7,7 +7,7 @@ import {
 } from "#backend/db";
 import { db } from "#backend/lib/adapters";
 import { mapVersion, type VersionDetails } from "#backend/lib/data";
-import { normalizePublishingChannelName } from "#backend/lib/publishing";
+import { normalizePublishingChannelCode } from "#backend/lib/publishing";
 import { toUUID } from "#backend/lib/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, eq, isNull } from "drizzle-orm";
@@ -19,7 +19,7 @@ const getPublishedEntryVersion = async (input: {
 }): Promise<VersionDetails> => {
   const workspaceID = toUUID(input.workspaceID);
   const entryID = toUUID(input.entryID);
-  const channelName = normalizePublishingChannelName(input.channel);
+  const channelCode = normalizePublishingChannelCode(input.channel);
   const [row] = await db
     .select({ version: entryVersions })
     .from(entryPublications)
@@ -28,7 +28,7 @@ const getPublishedEntryVersion = async (input: {
       and(
         eq(publishingChannels.id, entryPublications.channelID),
         eq(publishingChannels.workspaceID, workspaceID),
-        eq(publishingChannels.name, channelName)
+        eq(publishingChannels.code, channelCode)
       )
     )
     .innerJoin(entryVersions, eq(entryVersions.id, entryPublications.versionID))

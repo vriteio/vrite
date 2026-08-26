@@ -1,3 +1,5 @@
+import { normalizeResourceName } from "@andesine/editor/normalize-resource-name";
+import { normalizeSourceName } from "@andesine/editor/normalize-source-name";
 import type { ContentNode } from "./document";
 
 interface ContentFragment {
@@ -16,7 +18,6 @@ interface ContentBlocks {
 type PropertyType = "text" | "number" | "checkbox" | "date" | "url" | "select" | "multi-select";
 type PropertyValue = string | number | boolean | string[] | null;
 
-const MAX_BLOCK_NAME_LENGTH = 50;
 const PROPERTY_TYPES: PropertyType[] = [
   "text",
   "number",
@@ -26,34 +27,6 @@ const PROPERTY_TYPES: PropertyType[] = [
   "select",
   "multi-select"
 ];
-const normalizeSourceName = (name: unknown, fallback: string): string => {
-  const normalizedName = Array.from(
-    String(name || "")
-      .normalize("NFC")
-      .trim()
-  )
-    .slice(0, MAX_BLOCK_NAME_LENGTH)
-    .join("");
-
-  return normalizedName || fallback;
-};
-const normalizeBlockName = (name: string, fallback: string): string => {
-  const words = name
-    .normalize("NFKC")
-    .replace(/([\p{Ll}\p{N}])(\p{Lu})/gu, "$1 $2")
-    .match(/[\p{L}\p{N}\p{M}]+/gu);
-  const normalizedName = words
-    ?.map((word, index) => {
-      const [firstCharacter = "", ...remainingCharacters] = Array.from(word.toLowerCase());
-
-      if (index === 0) return `${firstCharacter}${remainingCharacters.join("")}`;
-
-      return `${firstCharacter.toUpperCase()}${remainingCharacters.join("")}`;
-    })
-    .join("");
-
-  return normalizedName || fallback;
-};
 const getUniqueBlockName = (record: Record<string, unknown>, name: string): string => {
   let uniqueName = name;
   let suffix = 1;
@@ -95,7 +68,7 @@ const getContentBlocks = (content: ContentNode): ContentBlocks => {
   for (const node of content.content || []) {
     if (node.type === "fragment") {
       const sourceName = normalizeSourceName(node.attrs?.name, "Content");
-      const normalizedName = normalizeBlockName(sourceName, "content");
+      const normalizedName = normalizeResourceName(sourceName, "content");
       const name = getUniqueBlockName(fragments, normalizedName);
 
       fragments[name] = {
@@ -107,7 +80,7 @@ const getContentBlocks = (content: ContentNode): ContentBlocks => {
     if (node.type === "property") {
       const sourceName = normalizeSourceName(node.attrs?.label, "Property");
       const type = normalizePropertyType(node.attrs?.type);
-      const normalizedName = normalizeBlockName(sourceName, "property");
+      const normalizedName = normalizeResourceName(sourceName, "property");
       const name = getUniqueBlockName(properties, normalizedName);
 
       properties[name] = {

@@ -4,22 +4,41 @@ import {
   isCollectionPublishingEnabled,
   loadPublishingTree,
   publishEntries,
+  type PublishEntryTarget,
   syncEntrySnapshots
 } from "#backend/lib/publishing";
 import { toUUID } from "#backend/lib/primitives";
 import { ORPCError } from "@orpc/server";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 
 const publishEntry = async (input: {
   workspaceID: string;
-  entryID: string;
+  entries: PublishEntryTarget[];
   channel: string;
   contributorIDs: string[];
 }) => {
   const workspaceID = toUUID(input.workspaceID);
-  const entryID = toUUID(input.entryID);
+  const entriesByID = new Map<string, PublishEntryTarget>();
 
-  await syncEntrySnapshots(workspaceID, [entryID]);
+  for (const entry of input.entries) {
+    const entryID = toUUID(entry.entryID);
+    const versionID = entry.versionID ? toUUID(entry.versionID) : undefined;
+    const existingEntry = entriesByID.get(entryID);
+
+    if (existingEntry && existingEntry.versionID !== versionID) {
+      throw new ORPCError("BAD_REQUEST", { message: "Conflicting entry publishing targets" });
+    }
+
+    entriesByID.set(entryID, { entryID, versionID });
+  }
+
+  const publishingEntries = [...entriesByID.values()];
+  const entryIDs = publishingEntries.map((entry) => entry.entryID);
+  const currentEntryIDs = publishingEntries.flatMap((entry) => {
+    return entry.versionID ? [] : [entry.entryID];
+  });
+
+  await syncEntrySnapshots(workspaceID, currentEntryIDs);
   return db.transaction(async (tx) => {
     const [workspace] = await tx
       .select({ id: workspaces.id })
@@ -29,28 +48,30 @@ const publishEntry = async (input: {
 
     if (!workspace) throw new ORPCError("NOT_FOUND", { message: "Workspace not found" });
 
-    const [entry] = await tx
-      .select({ collectionID: entries.collectionID })
+    const currentEntries = await tx
+      .select({ collectionID: entries.collectionID, id: entries.id })
       .from(entries)
       .where(
         and(
-          eq(entries.id, entryID),
+          inArray(entries.id, entryIDs),
           eq(entries.workspaceID, workspaceID),
           isNull(entries.deletedAt)
         )
       );
 
-    if (!entry) throw new ORPCError("NOT_FOUND", { message: "Entry not found" });
+    if (currentEntries.length !== entryIDs.length) {
+      throw new ORPCError("NOT_FOUND", { message: "Entry not found" });
+    }
 
     const tree = await loadPublishingTree(tx, workspaceID);
 
-    if (!isCollectionPublishingEnabled(tree, entry.collectionID)) {
+    if (currentEntries.some((entry) => !isCollectionPublishingEnabled(tree, entry.collectionID))) {
       throw new ORPCError("BAD_REQUEST", { message: "Publishing is not enabled for this entry" });
     }
 
     return publishEntries(tx, {
       workspaceID,
-      entryIDs: [entryID],
+      entries: publishingEntries,
       channel: input.channel,
       contributorIDs: input.contributorIDs
     });

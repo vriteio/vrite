@@ -7,7 +7,7 @@ import {
   getSubtreeEntryIDs,
   isCollectionPublishingEnabled,
   loadPublishingTree,
-  PUBLISHED_CHANNEL_NAME,
+  PUBLISHED_CHANNEL_CODE,
   publishEntries,
   syncEntrySnapshots
 } from "#backend/lib/publishing";
@@ -207,8 +207,8 @@ const moveCollection = async (input: {
 
       const result = await publishEntries(tx, {
         workspaceID,
-        entryIDs,
-        channel: PUBLISHED_CHANNEL_NAME,
+        entries: entryIDs.map((entryID) => ({ entryID })),
+        channel: PUBLISHED_CHANNEL_CODE,
         contributorIDs: input.contributorIDs
       });
 

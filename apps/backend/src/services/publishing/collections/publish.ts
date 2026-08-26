@@ -10,11 +10,11 @@ import {
 import { toUUID } from "#backend/lib/primitives";
 import { ORPCError } from "@orpc/server";
 import type { VersionSummary } from "#backend/lib/data";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 
 const publishCollection = async (input: {
   workspaceID: string;
-  collectionID: string;
+  collectionIDs: string[];
   channel: string;
   contributorIDs: string[];
 }): Promise<{
@@ -23,7 +23,7 @@ const publishCollection = async (input: {
   publishedEntries: number;
 }> => {
   const workspaceID = toUUID(input.workspaceID);
-  const collectionID = toUUID(input.collectionID);
+  const collectionIDs = [...new Set(input.collectionIDs.map(toUUID))];
 
   return db.transaction(async (tx) => {
     const [workspace] = await tx
@@ -34,34 +34,44 @@ const publishCollection = async (input: {
 
     if (!workspace) throw new ORPCError("NOT_FOUND", { message: "Workspace not found" });
 
-    const [collection] = await tx
+    const currentCollections = await tx
       .select({ id: collections.id })
       .from(collections)
       .where(
         and(
-          eq(collections.id, collectionID),
+          inArray(collections.id, collectionIDs),
           eq(collections.workspaceID, workspaceID),
           isNull(collections.deletedAt)
         )
       );
 
-    if (!collection) throw new ORPCError("NOT_FOUND", { message: "Collection not found" });
+    if (currentCollections.length !== collectionIDs.length) {
+      throw new ORPCError("NOT_FOUND", { message: "Collection not found" });
+    }
 
     const tree = await loadPublishingTree(tx, workspaceID);
 
-    if (!isCollectionPublishingEnabled(tree, collectionID)) {
+    if (collectionIDs.some((id) => !isCollectionPublishingEnabled(tree, id))) {
       throw new ORPCError("BAD_REQUEST", {
         message: "Publishing is not enabled for this collection"
       });
     }
 
-    const currentEntryIDs = await getSubtreeEntryIDs(tx, workspaceID, tree, collectionID);
+    const currentEntryIDs = [
+      ...new Set(
+        (
+          await Promise.all(
+            collectionIDs.map((id) => getSubtreeEntryIDs(tx, workspaceID, tree, id))
+          )
+        ).flat()
+      )
+    ];
 
     await syncEntrySnapshots(workspaceID, currentEntryIDs);
 
     const result = await publishEntries(tx, {
       workspaceID,
-      entryIDs: currentEntryIDs,
+      entries: currentEntryIDs.map((entryID) => ({ entryID })),
       channel: input.channel,
       contributorIDs: input.contributorIDs
     });

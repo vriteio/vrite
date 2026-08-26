@@ -2,6 +2,7 @@ import type { JSX } from "solid-js";
 
 interface MenuItem {
   label: string;
+  type?: "header";
   icon?: string | (() => JSX.Element);
   color?: "base" | "danger";
   disabled?: boolean | string;

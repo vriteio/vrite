@@ -3,24 +3,33 @@ import { type Accessor, createEffect, createSignal, onCleanup, untrack } from "s
 import type { EditorCleanup, EditorProvider, EditorProviderSetup } from "./client-types";
 
 interface ProviderLifecycleInput {
-  url: Accessor<string>;
-  doc: Accessor<string>;
+  url: Accessor<string | undefined>;
+  doc: Accessor<string | undefined>;
+  enabled: Accessor<boolean>;
   attempt: Accessor<number | undefined>;
   beforeAttach: Accessor<EditorProviderSetup | undefined>;
   onProvider: Accessor<((provider: EditorProvider) => EditorCleanup) | undefined>;
   onError: Accessor<((error: unknown, provider: EditorProvider) => void) | undefined>;
-  notify(type: "success" | "error", text: string): void;
+  notify?(type: "success" | "error", text: string): void;
 }
 
 const useEditorProvider = (input: ProviderLifecycleInput) => {
   const [provider, setProvider] = createSignal<EditorProvider | null>(null);
 
   createEffect(() => {
-    const socket = new HocuspocusProviderWebsocket({ url: input.url() });
+    const url = input.url();
+    const doc = input.doc();
+
+    if (!input.enabled() || !url || !doc) {
+      setProvider(null);
+      return;
+    }
+
+    const socket = new HocuspocusProviderWebsocket({ url });
     const next = new HocuspocusProvider({
       websocketProvider: socket,
-      name: input.doc(),
-      url: input.url()
+      name: doc,
+      url
     });
     void input.attempt();
     let disposed = false;
@@ -70,7 +79,7 @@ const useEditorProvider = (input: ProviderLifecycleInput) => {
       } catch (error) {
         const onError = input.onError();
         untrack(() => onError?.(error, next));
-        if (!onError) input.notify("error", "Failed to prepare editor data.");
+        if (!onError) input.notify?.("error", "Failed to prepare editor data.");
         destroy();
       }
       if (disposed) destroy();

@@ -3,7 +3,7 @@ import { db } from "#backend/lib/adapters";
 import {
   getSubtreeEntryIDs,
   loadPublishingTree,
-  normalizePublishingChannelName
+  normalizePublishingChannelCode
 } from "#backend/lib/publishing";
 import { toUUID } from "#backend/lib/primitives";
 import { ORPCError } from "@orpc/server";
@@ -11,12 +11,12 @@ import { and, eq, inArray, isNull } from "drizzle-orm";
 
 const unpublishCollection = async (input: {
   workspaceID: string;
-  collectionID: string;
+  collectionIDs: string[];
   channel: string;
 }): Promise<{ entryIDs: string[]; unpublishedEntries: number }> => {
   const workspaceID = toUUID(input.workspaceID);
-  const collectionID = toUUID(input.collectionID);
-  const channelName = normalizePublishingChannelName(input.channel);
+  const collectionIDs = [...new Set(input.collectionIDs.map(toUUID))];
+  const channelCode = normalizePublishingChannelCode(input.channel);
 
   return db.transaction(async (tx) => {
     const [workspace] = await tx
@@ -27,18 +27,20 @@ const unpublishCollection = async (input: {
 
     if (!workspace) throw new ORPCError("NOT_FOUND", { message: "Workspace not found" });
 
-    const [collection] = await tx
+    const currentCollections = await tx
       .select({ id: collections.id })
       .from(collections)
       .where(
         and(
-          eq(collections.id, collectionID),
+          inArray(collections.id, collectionIDs),
           eq(collections.workspaceID, workspaceID),
           isNull(collections.deletedAt)
         )
       );
 
-    if (!collection) throw new ORPCError("NOT_FOUND", { message: "Collection not found" });
+    if (currentCollections.length !== collectionIDs.length) {
+      throw new ORPCError("NOT_FOUND", { message: "Collection not found" });
+    }
 
     const [channel] = await tx
       .select({ id: publishingChannels.id })
@@ -46,14 +48,22 @@ const unpublishCollection = async (input: {
       .where(
         and(
           eq(publishingChannels.workspaceID, workspaceID),
-          eq(publishingChannels.name, channelName)
+          eq(publishingChannels.code, channelCode)
         )
       );
 
     if (!channel) throw new ORPCError("NOT_FOUND", { message: "Publishing channel not found" });
 
     const tree = await loadPublishingTree(tx, workspaceID);
-    const entryIDs = await getSubtreeEntryIDs(tx, workspaceID, tree, collectionID);
+    const entryIDs = [
+      ...new Set(
+        (
+          await Promise.all(
+            collectionIDs.map((id) => getSubtreeEntryIDs(tx, workspaceID, tree, id))
+          )
+        ).flat()
+      )
+    ];
 
     if (entryIDs.length === 0) return { entryIDs, unpublishedEntries: 0 };
 

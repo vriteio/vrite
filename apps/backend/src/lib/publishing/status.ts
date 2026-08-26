@@ -6,15 +6,16 @@ import {
   publishingChannels
 } from "#backend/db";
 import { db } from "#backend/lib/adapters/postgres";
-import { toCollectionID, toEntryID, toUUID } from "#backend/lib/primitives";
+import { toCollectionID, toEntryID, toUUID, toVersionID } from "#backend/lib/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, asc, eq, inArray, isNull } from "drizzle-orm";
-import { normalizePublishingChannelName } from "./channel";
+import { normalizePublishingChannelCode } from "./channel";
 import { isCollectionPublishingEnabled, loadPublishingTree } from "./tree";
 
 interface PublishingEntryStatus {
   entryID: string;
   hasUnpublishedChanges: boolean;
+  versionID: string | null;
 }
 interface PublishingStatusSnapshot {
   channel: string;
@@ -28,7 +29,7 @@ const getPublishingStatusSnapshot = async (input: {
   entryIDs?: string[];
 }): Promise<PublishingStatusSnapshot> => {
   const workspaceID = toUUID(input.workspaceID);
-  const channelName = normalizePublishingChannelName(input.channel);
+  const channelCode = normalizePublishingChannelCode(input.channel);
   const entryIDs = input.entryIDs?.map(toUUID);
 
   return db.transaction(async (tx) => {
@@ -38,7 +39,7 @@ const getPublishingStatusSnapshot = async (input: {
       .where(
         and(
           eq(publishingChannels.workspaceID, workspaceID),
-          eq(publishingChannels.name, channelName)
+          eq(publishingChannels.code, channelCode)
         )
       );
 
@@ -50,7 +51,7 @@ const getPublishingStatusSnapshot = async (input: {
       .map(({ id }) => toCollectionID(id));
 
     if (entryIDs?.length === 0) {
-      return { channel: channelName, enabledCollectionIDs, entries: [] };
+      return { channel: channelCode, enabledCollectionIDs, entries: [] };
     }
 
     const filters = [eq(entries.workspaceID, workspaceID), isNull(entries.deletedAt)];
@@ -76,10 +77,11 @@ const getPublishingStatusSnapshot = async (input: {
       .orderBy(asc(entries.id));
 
     return {
-      channel: channelName,
+      channel: channelCode,
       enabledCollectionIDs,
       entries: rows.map((row) => ({
         entryID: toEntryID(row.entryID),
+        versionID: row.versionID ? toVersionID(row.versionID) : null,
         hasUnpublishedChanges:
           isCollectionPublishingEnabled(tree, row.collectionID) &&
           (!row.versionID || row.draftHash !== row.assignedHash)

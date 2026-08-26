@@ -96,7 +96,7 @@ const Menu: Component<MenuProps> = (props) => {
                     )}
                   </div>
                 }
-                side={props.direction === "vertical" ? "right" : "bottom"}
+                placement={props.direction === "vertical" ? "right" : "bottom"}
                 fixed
                 wrapperClass={props.bottomNavigation ? "w-full h-full" : undefined}
               >
