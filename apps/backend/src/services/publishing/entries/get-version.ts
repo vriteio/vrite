@@ -21,7 +21,7 @@ const getPublishedEntryVersion = async (input: {
   channel: string;
 }): Promise<VersionDetails> => {
   if (input.auth) {
-    await authorizeEntrySources(input.auth, [input.entryID]);
+    await authorizeEntrySources(input.auth, [input.entryID], "read:publishing");
   }
 
   const workspaceID = toUUID(input.workspaceID);

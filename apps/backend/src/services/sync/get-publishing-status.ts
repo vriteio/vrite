@@ -1,6 +1,6 @@
 import { getPublishingStatusSnapshot } from "#backend/lib/publishing";
 import {
-  filterAccessibleEntryIDs,
+  filterPermittedEntryIDs,
   loadRestrictedCollectionAccess,
   type SessionData
 } from "#backend/lib/policy";
@@ -18,7 +18,12 @@ const getPublishingStatus = async (input: {
 
   return {
     channel: snapshot.channel,
-    unpublishedEntryIDs: await filterAccessibleEntryIDs(input.auth, access, unpublishedEntryIDs)
+    unpublishedEntryIDs: await filterPermittedEntryIDs(
+      input.auth,
+      access,
+      unpublishedEntryIDs,
+      "read:publishing"
+    )
   };
 };
 

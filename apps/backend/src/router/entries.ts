@@ -5,7 +5,7 @@ import { authorized, base } from "#backend/lib/transport";
 import { contentNodeType } from "#backend/lib/content";
 import { id } from "#backend/lib/primitives";
 import { entryName } from "#backend/lib/validation";
-import { canManagePublishing, emitPublishingStatusUpdates } from "#backend/lib/publishing";
+import { emitPublishingStatusUpdates } from "#backend/lib/publishing";
 import { Entries } from "#backend/services/entries";
 import { ORPCError } from "@orpc/server";
 import * as z from "zod";
@@ -44,7 +44,7 @@ const entriesRouter = base.prefix("/entries").router({
     .route({ method: "POST", path: "/" })
     .meta({
       required: {
-        session: ["content"],
+        session: true,
         key: ["entries"]
       }
     })
@@ -76,7 +76,7 @@ const entriesRouter = base.prefix("/entries").router({
     .route({ method: "POST", path: "/bulk/delete" })
     .meta({
       required: {
-        session: ["content"],
+        session: true,
         key: ["entries"]
       }
     })
@@ -104,6 +104,7 @@ const entriesRouter = base.prefix("/entries").router({
     .route({ method: "DELETE", path: "/:id" })
     .meta({
       required: {
+        session: true,
         key: ["entries"]
       }
     })
@@ -134,7 +135,7 @@ const entriesRouter = base.prefix("/entries").router({
     .route({ method: "PUT", path: "/:id" })
     .meta({
       required: {
-        session: ["content"],
+        session: true,
         key: ["entries"]
       }
     })
@@ -174,7 +175,7 @@ const entriesRouter = base.prefix("/entries").router({
   move: base
     .meta({
       required: {
-        session: ["content"]
+        session: true
       }
     })
     .input(
@@ -198,7 +199,6 @@ const entriesRouter = base.prefix("/entries").router({
         order: input.order,
         collectionID: input.collectionID,
         publish: input.publish,
-        canPublish: canManagePublishing(context.auth),
         contributorIDs: context.auth.session ? [context.auth.session.memberID] : []
       });
       emitEntryEvent(context.auth.workspaceID, {

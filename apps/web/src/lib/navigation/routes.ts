@@ -3,6 +3,7 @@ import {
   redirect,
   type RouteDefinition,
   useCurrentMatches,
+  useLocation,
   useParams
 } from "@solidjs/router";
 import { type Accessor, createMemo, lazy } from "solid-js";
@@ -14,7 +15,8 @@ const SignUpPage = lazy(() => import("../../pages/auth/sign-up/page"));
 const InvitePage = lazy(() => import("../../pages/invite/page"));
 const NewWorkspacePage = lazy(() => import("../../pages/new-workspace/page"));
 const WorkspaceLayout = lazy(() => import("../../pages/workspace/layout"));
-const HomePage = lazy(() => import("../../pages/workspace/entry/page"));
+const EntryPage = lazy(() => import("../../pages/workspace/entry/page"));
+const CollectionPage = lazy(() => import("../../pages/workspace/collection/page"));
 const SettingsLayout = lazy(() => import("../../pages/workspace/settings/layout"));
 const PersonalSettingsPage = lazy(() => import("../../pages/workspace/settings/personal/page"));
 const WorkspaceSettingsPage = lazy(() => import("../../pages/workspace/settings/workspace/page"));
@@ -22,6 +24,7 @@ const PublishingSettingsPage = lazy(() => import("../../pages/workspace/settings
 const PeopleSettingsPage = lazy(() => import("../../pages/workspace/settings/people/page"));
 const InviteSettingsPage = lazy(() => import("../../pages/workspace/settings/invite/page"));
 const RoleSettingsPage = lazy(() => import("../../pages/workspace/settings/role/page"));
+const GroupSettingsPage = lazy(() => import("../../pages/workspace/settings/group/page"));
 const BillingSettingsPage = lazy(() => import("../../pages/workspace/settings/billing/page"));
 const APISettingsPage = lazy(() => import("../../pages/workspace/settings/api/page"));
 const KeySettingsPage = lazy(() => import("../../pages/workspace/settings/key/page"));
@@ -67,6 +70,17 @@ const routesData: Record<string, (params: Params) => RouteData> = {
       {
         label: params.roleID ? "Edit role" : "Create role",
         path: `/settings/role/${params.roleID || ""}`
+      }
+    ]
+  }),
+  "/:workspaceID/settings/group/:groupID?": (params) => ({
+    title: params.groupID ? "Edit group" : "Create group",
+    breadcrumbs: [
+      { label: "Settings" },
+      { label: "People", path: "/settings/people" },
+      {
+        label: params.groupID ? "Edit group" : "Create group",
+        path: `/settings/group/${params.groupID || ""}`
       }
     ]
   }),
@@ -141,6 +155,10 @@ const routes: RouteDefinition[] = [
             component: RoleSettingsPage
           },
           {
+            path: "/group/:groupID?",
+            component: GroupSettingsPage
+          },
+          {
             path: "/billing",
             component: BillingSettingsPage
           },
@@ -154,14 +172,24 @@ const routes: RouteDefinition[] = [
           }
         ]
       },
-      { path: "/", component: HomePage },
-      { path: "/*slug", component: HomePage }
+      { path: "/", component: EntryPage },
+      {
+        path: "/:slug",
+        matchFilters: { slug: /^ent_/ },
+        component: EntryPage
+      },
+      {
+        path: "/:slug",
+        matchFilters: { slug: /^coll_/ },
+        component: CollectionPage
+      }
     ]
   }
 ];
 
 const useRouteData = (): Accessor<RouteData | null> => {
   const params = useParams();
+  const location = useLocation();
   const currentMatches = useCurrentMatches();
   const routeData = createMemo(() => {
     const matches = currentMatches();
@@ -173,6 +201,20 @@ const useRouteData = (): Accessor<RouteData | null> => {
         return routeData(params);
       }
     }
+
+    const segments = location.pathname.split("/").filter(Boolean);
+    const settingsIndex = segments.indexOf("settings");
+    const settingsRoute = segments[settingsIndex + 1];
+    const optionalRoutePatterns: Record<string, string> = {
+      group: "/:workspaceID/settings/group/:groupID?",
+      key: "/:workspaceID/settings/key/:keyID?",
+      role: "/:workspaceID/settings/role/:roleID?"
+    };
+    const optionalRouteData = settingsRoute
+      ? routesData[optionalRoutePatterns[settingsRoute]]
+      : null;
+
+    if (optionalRouteData) return optionalRouteData(params);
 
     return null;
   });

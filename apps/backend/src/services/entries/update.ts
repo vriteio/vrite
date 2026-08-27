@@ -5,7 +5,7 @@ import { and, eq, isNull } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 import { normalizeEntryName } from "#backend/lib/validation";
 import {
-  assertEntryAccess,
+  assertEntryPermission,
   loadRestrictedCollectionAccess,
   type SessionData
 } from "#backend/lib/policy";
@@ -15,7 +15,7 @@ const updateEntry = async (
 ) => {
   const access = await loadRestrictedCollectionAccess(input.auth);
 
-  await assertEntryAccess(input.auth, access, input.id);
+  await assertEntryPermission(input.auth, access, input.id, "content");
 
   if (input.name === undefined) return;
 

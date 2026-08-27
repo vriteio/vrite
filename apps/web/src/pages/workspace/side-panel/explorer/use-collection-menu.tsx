@@ -1,4 +1,5 @@
 import { type MenuItem } from "@andesine/components";
+import { useNavigate, useParams } from "@solidjs/router";
 import { createEffect, createMemo, createSignal, on } from "solid-js";
 import { useClipboard } from "#web/context/clipboard";
 import { useWorkspace } from "#web/context/workspace";
@@ -9,6 +10,8 @@ import { useRestrictedActions } from "./restricted-actions";
 const useCollectionMenu = (collectionID: string) => {
   const { copyText } = useClipboard();
   const { content, currentWorkspace, hasPermission } = useWorkspace();
+  const navigate = useNavigate();
+  const params = useParams<{ workspaceID?: string }>();
   const publishingActions = usePublishingActions();
   const restrictedActions = useRestrictedActions();
   const [{ selection }, { setExpanded, setRenaming, setSelection }] = useTree();
@@ -35,9 +38,6 @@ const useCollectionMenu = (collectionID: string) => {
     const publishingRoot = targetCollections.some((selectedCollection) => {
       return content.isCollectionPublishingRoot(selectedCollection.id);
     });
-    const restricted = targetCollections.some((selectedCollection) => {
-      return content.collections.isRestricted({ collectionID: selectedCollection.id });
-    });
     const containsRestrictionRoot = targetCollections.some((selectedCollection) => {
       return content.collections.containsRestrictionRoot({
         collectionID: selectedCollection.id
@@ -52,12 +52,18 @@ const useCollectionMenu = (collectionID: string) => {
       type: "collection" as const
     };
     const canManagePublishing =
-      hasPermission("publishing") &&
+      targetCollections.every((selectedCollection) => {
+        return content.hasCollectionPermission(selectedCollection.id, "publishing");
+      }) &&
       content.publishing() !== null &&
       !content.offline() &&
       !content.syncing();
 
     if (!isMulti) {
+      const canEditCollection = Boolean(
+        collection && content.hasCollectionPermission(collection.id, "content")
+      );
+
       opts.push([
         {
           label: "Copy ID",
@@ -73,8 +79,9 @@ const useCollectionMenu = (collectionID: string) => {
         {
           label: "Rename group",
           icon: "i-lucide:pencil",
+          disabled: !canEditCollection,
           onClick: () => {
-            if (content.readOnly()) return;
+            if (!collection || content.readOnly(collection.id)) return;
 
             startRenaming(collectionID);
           },
@@ -85,8 +92,9 @@ const useCollectionMenu = (collectionID: string) => {
         {
           label: "New entry",
           icon: "i-lucide:file-plus-2",
+          disabled: !canEditCollection,
           onClick: () => {
-            if (content.readOnly()) return;
+            if (!collection || content.readOnly(collection.id)) return;
 
             const entry = content.entries.create({ collectionID });
 
@@ -100,12 +108,13 @@ const useCollectionMenu = (collectionID: string) => {
         {
           label: "New collection",
           icon: "i-material-symbols:create-new-folder-outline-rounded",
+          disabled: !canEditCollection,
           onClick: () => {
-            if (content.readOnly()) return;
+            if (!collection || content.readOnly(collection.id)) return;
 
-            const collection = content.collections.create({ parentID: collectionID });
+            const newCollection = content.collections.create({ parentID: collectionID });
 
-            startRenaming(collection?.id || "");
+            startRenaming(newCollection?.id || "");
             setExpanded((prev) => {
               return prev.includes(collectionID) ? prev : [...prev, collectionID];
             });
@@ -117,21 +126,36 @@ const useCollectionMenu = (collectionID: string) => {
       if (hasPermission("restricted_collections") && collection) {
         const restrictionRoot = content.collections.isRestrictionRoot({ collectionID });
         const requiresPro = !restrictionRoot && currentWorkspace()?.subscriptionPlan !== "pro";
+        const canManageAssignments =
+          restrictionRoot &&
+          currentWorkspace()?.subscriptionPlan === "pro" &&
+          hasPermission("workspace");
 
         if (!requiresPro) {
-          opts.push([
-            {
-              label: restrictionRoot ? "Derestrict access" : "Restrict access",
-              icon: restrictionRoot ? "i-lucide:lock-open" : "i-lucide:lock",
+          const restrictedOptions: MenuItem[] = [];
+
+          if (canManageAssignments) {
+            restrictedOptions.push({
+              label: "Manage access",
+              icon: "i-lucide:shield",
               onClick: () => {
-                restrictedActions.open({
-                  id: collection.id,
-                  label: collection.name,
-                  restricted: restrictionRoot
-                });
+                navigate(`/${params.workspaceID || ""}/${encodeURIComponent(collection.id)}`);
               }
+            });
+          }
+
+          restrictedOptions.push({
+            label: restrictionRoot ? "Derestrict access" : "Restrict access",
+            icon: restrictionRoot ? "i-lucide:lock-open" : "i-lucide:lock",
+            onClick: () => {
+              restrictedActions.open({
+                id: collection.id,
+                label: collection.name,
+                restricted: restrictionRoot
+              });
             }
-          ]);
+          });
+          opts.push(restrictedOptions);
         }
       }
     }
@@ -139,7 +163,7 @@ const useCollectionMenu = (collectionID: string) => {
     if (collectionsOnly && canManagePublishing) {
       const publishingOptions: MenuItem[] = [];
 
-      if (!publishingEnabled && (!restricted || hasPermission("restricted_collections"))) {
+      if (!publishingEnabled) {
         publishingOptions.push({
           label: isMulti ? `Enable publishing for ${selectedCount} groups` : "Enable publishing",
           icon: "i-lucide:radio",
@@ -168,7 +192,6 @@ const useCollectionMenu = (collectionID: string) => {
         publishingOptions.push({
           label: isMulti ? `Disable publishing for ${selectedCount} groups` : "Disable publishing",
           icon: "i-lucide:radio-off",
-          color: "danger",
           onClick: () => {
             publishingActions.open("disable", publishingTarget);
           }
@@ -179,15 +202,29 @@ const useCollectionMenu = (collectionID: string) => {
     }
 
     if (!containsRestrictionRoot || hasPermission("restricted_collections")) {
+      const deletableIDs = content.tree.getDeletableIDs({
+        ids: isMulti ? selection() : [collectionID]
+      });
+      const canDelete =
+        deletableIDs.collections.every((id) => {
+          return content.hasCollectionPermission(id, "content");
+        }) &&
+        deletableIDs.entries.every((id) => {
+          const entry = content.entries.get({ entryID: id });
+
+          return content.hasCollectionPermission(entry?.collectionID || null, "content");
+        });
+
       opts.push([
         {
           label: isMulti ? `Delete ${selectedCount} items` : "Delete",
           icon: "i-lucide:trash",
           color: "danger",
+          disabled: !canDelete,
           onClick: () => {
             const selectedIDs = selection();
 
-            if (content.readOnly()) return;
+            if (!canDelete || content.offline() || content.syncing()) return;
 
             content.tree.delete({ ids: isMulti ? selectedIDs : [collectionID] });
             setSelection([]);

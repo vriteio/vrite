@@ -8,17 +8,25 @@ import {
   getWorkspaceDatabaseName
 } from "./indexeddb";
 import { createIndexedDBAdapter } from "./persistence";
-import { type Collection, type Entry, client, type WorkspaceEvent } from "#web/lib/api";
+import {
+  type Collection,
+  type Entry,
+  client,
+  type Permission,
+  type WorkspaceEvent
+} from "#web/lib/api";
 import solidReactivityAdapter from "@signaldb/solid";
 import { useConnectivitySignal } from "@solid-primitives/connectivity";
 import { type Accessor, createEffect, createSignal, on } from "solid-js";
 import { isPersistedCollection, isPersistedEntry } from "#web/lib/validation";
 import { createWorkspacePublishingOperations, type PublishingState } from "../publishing";
+import { hasPermission as hasGrantedPermission } from "#web/lib/policy";
 
 interface ExplorerTree {
   workspaceID: string;
   collections: Collection[];
   entries: Entry[];
+  permissionsByCollectionID: Record<string, Permission[]>;
   publishing: {
     enabledCollectionIDs: string[];
     unpublishedEntryIDs: string[];
@@ -83,13 +91,19 @@ const applyCollectionSnapshot = <T extends { id: IDBValidKey } & Record<string, 
     }
   });
 };
-const useWorkspaceContent = (workspaceID: Accessor<string>, canWrite: Accessor<boolean>) => {
+const useWorkspaceContent = (
+  workspaceID: Accessor<string>,
+  hasWorkspacePermission: (required: Permission) => boolean
+) => {
   const isOnline = useConnectivitySignal();
   const [contentCollections, setContentCollections] = createSignal(createWorkspaceCollections());
   const [loading, setLoading] = createSignal(Boolean(workspaceID()));
   const [syncing, setSyncing] = createSignal(false);
   const [snapshotError, setSnapshotError] = createSignal(false);
   const [publishing, setPublishing] = createSignal<PublishingState | null>(null);
+  const [permissionsByCollectionID, setPermissionsByCollectionID] = createSignal<
+    Record<string, Permission[]>
+  >({});
   const syncingWorkspaces = new Map<string, number>();
   const entriesCollection = () => contentCollections().entries;
   const collectionsCollection = () => contentCollections().collections;
@@ -116,8 +130,35 @@ const useWorkspaceContent = (workspaceID: Accessor<string>, canWrite: Accessor<b
     await clearWorkspaceData(targetWorkspaceID);
   };
 
-  const readOnly = () => {
-    return !isOnline() || syncing() || !contentCollections().workspaceID || !canWrite();
+  const hasCollectionPermission = (collectionID: string | null, required: Permission) => {
+    const collection = collectionID ? contentOperations.collections.get({ collectionID }) : null;
+    const boundaryID = collectionID
+      ? contentOperations.collections.getRestrictionBoundaryID({ collectionID })
+      : null;
+    const permissions = collectionID
+      ? permissionsByCollectionID()[collectionID] ||
+        (boundaryID ? permissionsByCollectionID()[boundaryID] : undefined)
+      : undefined;
+
+    if (permissions) return hasGrantedPermission(permissions, required);
+    if (collection && contentOperations.collections.isRestricted({ collectionID: collection.id })) {
+      return false;
+    }
+
+    return hasWorkspacePermission(required);
+  };
+  const hasPermissionInAnyCollection = (required: Permission) => {
+    return Object.values(permissionsByCollectionID()).some((permissions) => {
+      return hasGrantedPermission(permissions, required);
+    });
+  };
+  const readOnly = (collectionID: string | null = null) => {
+    return (
+      !isOnline() ||
+      syncing() ||
+      !contentCollections().workspaceID ||
+      !hasCollectionPermission(collectionID, "content")
+    );
   };
   const offline = () => !isOnline();
   const removePublishingEntries = (entryIDs: string[]) => {
@@ -162,6 +203,7 @@ const useWorkspaceContent = (workspaceID: Accessor<string>, canWrite: Accessor<b
 
     applyCollectionSnapshot(targetCollections.entries, tree.entries);
     applyCollectionSnapshot(targetCollections.collections, tree.collections);
+    setPermissionsByCollectionID(tree.permissionsByCollectionID);
     setPublishing(
       tree.publishing
         ? {
@@ -305,6 +347,7 @@ const useWorkspaceContent = (workspaceID: Accessor<string>, canWrite: Accessor<b
     setSyncing((syncingWorkspaces.get(currentWorkspaceID) ?? 0) > 0);
     setSnapshotError(false);
     setPublishing(null);
+    setPermissionsByCollectionID({});
 
     const previousCollections = contentCollections();
     const nextCollections = createWorkspaceCollections(currentWorkspaceID);
@@ -349,6 +392,8 @@ const useWorkspaceContent = (workspaceID: Accessor<string>, canWrite: Accessor<b
     syncing,
     snapshotError,
     publishing,
+    hasCollectionPermission,
+    hasPermissionInAnyCollection,
     readOnly,
     offline,
     ...publishingOperations,

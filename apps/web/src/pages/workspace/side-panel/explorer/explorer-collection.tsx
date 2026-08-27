@@ -14,9 +14,11 @@ import { MAX_CONTENT_NAME_LENGTH, normalizeCollectionName } from "#web/lib/valid
 import { useExplorerCollection, type ExplorerCollectionProps } from "./use-explorer-collection";
 import { EXPLORER_GESTURE_PROPS } from "./explorer-dnd";
 import { usePublishing } from "#web/context/publishing";
+import { useParams } from "@solidjs/router";
 
 const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
   const publishing = usePublishing();
+  const params = useParams<{ slug?: string }>();
   const {
     BoundaryDropTarget,
     closestEdge,
@@ -28,6 +30,7 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
     isSelected,
     menuOpened,
     renderBottomDropLineAfterSubtree,
+    selection,
     setElementRef,
     setIsChildOrderDraggedOver,
     setMenuOpened,
@@ -109,7 +112,7 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
                 toggleExpanded(props.collection.id);
               }}
               onRename={(name) => {
-                if (content.readOnly()) return;
+                if (content.readOnly(props.collection.id)) return;
 
                 const normalizedName = normalizeCollectionName(name);
 
@@ -137,28 +140,20 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
                     <Tooltip
                       content={publishingLabel()}
                       placement="right"
-                      wrapperClass="absolute -bottom-1 -right-1 h-3 w-3"
+                      wrapperClass="absolute -top-0.5 -left-1 h-3 w-3"
                       fixed
                     >
                       <div class="flex h-3 w-3 items-center justify-center">
-                        <Show
-                          when={!publishing.statusLoading()}
-                          fallback={<Spinner class="h-2 w-2" color="primary" />}
-                        >
-                          <div
-                            class={clsx(
-                              "flex justify-center items-center h-2 w-2 shadow-sm",
-                              publishing.statusError() &&
-                                "bg-red-500/90 rounded-full shadow-red-500/50",
-                              !publishing.statusError() &&
-                                unpublishedCount() === 0 &&
-                                "bg-green-500/90 rounded-full shadow-green-500/50",
-                              !publishing.statusError() &&
-                                unpublishedCount() > 0 &&
-                                "bg-amber-500/90 rounded-full shadow-amber-500/50"
-                            )}
-                          />
-                        </Show>
+                        <div
+                          class={clsx(
+                            "flex justify-center items-center h-2 w-2 shadow-sm",
+                            publishing.statusError() &&
+                              "bg-red-500/90 rounded-full shadow-red-500/50",
+                            !publishing.statusError() &&
+                              unpublishedCount() > 0 &&
+                              "bg-amber-500/90 rounded-full shadow-amber-500/50"
+                          )}
+                        />
                       </div>
                     </Tooltip>
                   </Show>
@@ -166,54 +161,78 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
                     <Tooltip
                       content={restrictionRoot() ? "Restricted access" : "Restricted by parent"}
                       placement="right"
-                      wrapperClass="absolute -top-0.5 -right-1 h-3 w-3"
+                      wrapperClass={clsx(
+                        "absolute h-3 w-3",
+                        isExpanded(props.collection.id) ? "-bottom-0.5 -right-0.5" : "top-1.5"
+                      )}
                       fixed
                     >
                       <div class="flex h-3 w-3 items-center justify-center rounded-full">
-                        <div class="i-material-symbols:lock h-3 w-3 bg-gradient-to-tr" />
+                        <div class="i-material-symbols:lock h-2.5 w-2.5 text-gray-700" />
                       </div>
                     </Tooltip>
                   </Show>
                 </div>
               }
               actions={
-                <DropdownMenu
-                  title={props.collection.name}
-                  cardProps={
-                    {
-                      "class": "w-52",
-                      "data-tree-interaction": ""
-                    } as Partial<ComponentProps<typeof Card>>
-                  }
-                  opened={menuOpened()}
-                  mobileSheetDragFromContent={false}
-                  portal={false}
-                  setOpened={setMenuOpened}
-                  trigger={() => (
+                <>
+                  <DropdownMenu
+                    title={props.collection.name}
+                    cardProps={
+                      {
+                        "class": "w-52",
+                        "data-tree-interaction": ""
+                      } as Partial<ComponentProps<typeof Card>>
+                    }
+                    opened={menuOpened()}
+                    mobileSheetDragFromContent={false}
+                    portal={false}
+                    setOpened={setMenuOpened}
+                    onClick={(event) => event.stopPropagation()}
+                    trigger={() => (
+                      <Show when={selection().length <= 1} fallback={<div />}>
+                        <div
+                          class={clsx(
+                            "shrink-0",
+                            swipe.swiping() && "flex",
+                            !swipe.swiping() &&
+                              (props.collection.id === params.slug
+                                ? !menuOpened() &&
+                                  "opacity-20 media-mouse:opacity-0 media-mouse:group-hover:opacity-100"
+                                : !menuOpened() &&
+                                  "opacity-20 media-mouse:hidden media-mouse:group-hover:flex media-mouse:group-hover:opacity-100"),
+                            !swipe.swiping() && "transition-transform"
+                          )}
+                          style={{
+                            opacity: swipe.swiping()
+                              ? `${0.2 + swipe.progress() * 0.8}`
+                              : undefined,
+                            transform: `translateX(${swipe.offset()}px)`
+                          }}
+                        >
+                          <IconButton
+                            data-collection-menu-trigger
+                            icon="i-lucide:ellipsis-vertical"
+                            size="small"
+                            variant="text"
+                            text="soft"
+                          />
+                        </div>
+                      </Show>
+                    )}
+                    items={dropdownOptions()}
+                  />
+                  <Show when={props.collection.id === params.slug && !menuOpened()}>
                     <div
                       class={clsx(
-                        "flex shrink-0",
-                        !menuOpened() &&
-                          !swipe.swiping() &&
-                          "opacity-20 media-mouse:opacity-0 media-mouse:group-hover:opacity-100",
-                        !swipe.swiping() && "transition-transform"
+                        "hidden media-mouse:flex justify-center items-center h-7 w-7 absolute right-0 top-0",
+                        selection().length <= 1 && "media-mouse:group-hover:hidden"
                       )}
-                      style={{
-                        opacity: swipe.swiping() ? `${0.2 + swipe.progress() * 0.8}` : undefined,
-                        transform: `translateX(${swipe.offset()}px)`
-                      }}
                     >
-                      <IconButton
-                        data-collection-menu-trigger
-                        icon="i-lucide:ellipsis-vertical"
-                        size="small"
-                        variant="text"
-                        text="soft"
-                      />
+                      <div class="i-lucide:pencil bg-gradient-to-tr h-4 w-4 from-secondary via-primary to-secondary" />
                     </div>
-                  )}
-                  items={dropdownOptions()}
-                />
+                  </Show>
+                </>
               }
             />
           </div>

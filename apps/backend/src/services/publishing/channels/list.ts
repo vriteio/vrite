@@ -3,7 +3,13 @@ import { db } from "#backend/lib/adapters";
 import { mapPublishingChannel, type PublishingChannel } from "#backend/lib/data";
 import { toUUID } from "#backend/lib/primitives";
 import { and, asc, count, desc, eq } from "drizzle-orm";
-import { canReadRestrictedCollections, type SessionData } from "#backend/lib/policy";
+import {
+  canReadRestrictedCollections,
+  hasCollectionPermission,
+  loadRestrictedCollectionAccess,
+  type SessionData
+} from "#backend/lib/policy";
+import { ORPCError } from "@orpc/server";
 
 interface PublishingChannelListItem extends PublishingChannel {
   assignmentCount?: number;
@@ -15,8 +21,16 @@ const listChannels = async (input: {
   includeAssignmentCount?: boolean;
 }): Promise<PublishingChannelListItem[]> => {
   const workspaceID = toUUID(input.workspaceID);
+  const access = await loadRestrictedCollectionAccess(input.auth);
   const includeAssignmentCount =
     input.includeAssignmentCount && canReadRestrictedCollections(input.auth);
+  const canReadPublishing = access.collections.some((collection) => {
+    return hasCollectionPermission(input.auth, access, collection.id, "read:publishing");
+  });
+
+  if (!canReadPublishing) {
+    throw new ORPCError("FORBIDDEN", { message: "Publishing permission is required" });
+  }
 
   if (includeAssignmentCount) {
     const channels = await db

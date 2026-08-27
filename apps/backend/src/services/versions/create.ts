@@ -14,7 +14,7 @@ import { toUUID } from "#backend/lib/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, eq, isNull } from "drizzle-orm";
 import {
-  assertEntryAccess,
+  assertEntryPermission,
   loadRestrictedCollectionAccess,
   type SessionData
 } from "#backend/lib/policy";
@@ -33,7 +33,7 @@ interface CreateVersionInput {
 const createVersion = async (input: CreateVersionInput): Promise<VersionDetails> => {
   const access = await loadRestrictedCollectionAccess(input.auth);
 
-  await assertEntryAccess(input.auth, access, input.entryID);
+  await assertEntryPermission(input.auth, access, input.entryID, "versions");
 
   const snapshot =
     input.snapshot || (await getCurrentDocumentContent(input.entryID, input.workspaceID));

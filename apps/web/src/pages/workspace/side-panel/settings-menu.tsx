@@ -3,6 +3,7 @@ import { A, useLocation, useParams } from "@solidjs/router";
 import { type Component, createMemo, For, Show } from "solid-js";
 
 import { useWorkspace } from "#web/context/workspace";
+import { useRouteData } from "#web/lib/navigation";
 
 interface SettingsMenuItem {
   icon: string;
@@ -59,8 +60,14 @@ const SettingsMenuItemRow: Component<SettingsMenuItemRowProps> = (props) => (
 
 const SettingsMenu: Component = () => {
   const location = useLocation();
-  const params = useParams<{ workspaceID?: string; keyID?: string; roleID?: string }>();
+  const params = useParams<{
+    groupID?: string;
+    keyID?: string;
+    roleID?: string;
+    workspaceID?: string;
+  }>();
   const { sessions, currentWorkspace, hasPermission } = useWorkspace();
+  const routeData = useRouteData();
   const settingsPath = () => `/${params.workspaceID || ""}/settings`;
   const isRoute = (route: string) => location.pathname === `${settingsPath()}${route}`;
   const userName = createMemo(() => {
@@ -70,8 +77,10 @@ const SettingsMenu: Component = () => {
   });
   const menu = createMemo<SettingsMenuGroup[]>(() => {
     const editingRole = Boolean(params.roleID);
+    const editingGroup = Boolean(params.groupID);
     const editingKey = Boolean(params.keyID);
     const roleActive = isRoute("/role") || editingRole;
+    const groupActive = isRoute("/group") || editingGroup;
     const keyActive = isRoute("/key") || editingKey;
     const isPro = currentWorkspace()?.subscriptionPlan === "pro";
 
@@ -113,12 +122,21 @@ const SettingsMenu: Component = () => {
                       visible: hasPermission("workspace") && isPro
                     },
                     {
-                      icon: "i-lucide:shield-plus",
+                      icon: editingRole ? "i-lucide:pencil" : "i-lucide:circle-plus",
                       label: editingRole ? "Edit role" : "Create role",
                       href: editingRole
                         ? `${settingsPath()}/role/${encodeURIComponent(params.roleID!)}`
                         : `${settingsPath()}/role`,
                       active: roleActive,
+                      visible: hasPermission("workspace") && isPro
+                    },
+                    {
+                      icon: editingGroup ? "i-lucide:pencil" : "i-lucide:circle-plus",
+                      label: editingGroup ? "Edit group" : "Create group",
+                      href: editingGroup
+                        ? `${settingsPath()}/group/${encodeURIComponent(params.groupID!)}`
+                        : `${settingsPath()}/group`,
+                      active: groupActive,
                       visible: hasPermission("workspace") && isPro
                     }
                   ]
@@ -164,7 +182,9 @@ const SettingsMenu: Component = () => {
 
   return (
     <div class="flex min-h-0 flex-col overflow-y-auto px-1 pb-1 scrollbar-sm md:flex-1">
-      <h2 class="my-0.5 text-2xl font-semibold">Settings</h2>
+      <h2 class="my-0.5 truncate text-2xl font-semibold">
+        {routeData()?.breadcrumbs.length === 3 ? routeData()?.title : "Settings"}
+      </h2>
       <div class="flex flex-col gap-3">
         <For each={menu()}>
           {(subMenu) => (

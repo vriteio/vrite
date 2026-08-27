@@ -2,13 +2,14 @@ import { collectionType } from "#backend/db";
 import {
   emitCollectionEvent,
   emitEntryEvent,
+  emitGroupEvent,
   emitPublishingEvent,
   emitVersionCreationEvents
 } from "#backend/events";
 import { authorized, base } from "#backend/lib/transport";
 import { id } from "#backend/lib/primitives";
 import { collectionName } from "#backend/lib/validation";
-import { canManagePublishing, emitPublishingStatusUpdates } from "#backend/lib/publishing";
+import { emitPublishingStatusUpdates } from "#backend/lib/publishing";
 import { Collections } from "#backend/services/collections";
 import * as z from "zod";
 
@@ -19,13 +20,64 @@ const collectionListType = z.object({
     hasMore: z.boolean()
   })
 });
+const restrictedGroupAssignmentType = z.object({
+  groupID: id(),
+  roleID: id()
+});
+const restrictedMemberAssignmentType = z.object({
+  memberID: id(),
+  roleID: id()
+});
+const restrictedAssignmentsType = z.object({
+  groups: z.array(restrictedGroupAssignmentType),
+  members: z.array(restrictedMemberAssignmentType)
+});
 
 const collectionsRouter = base.prefix("/collections").router({
+  listRestrictedAssignments: base
+    .route({ method: "GET", path: "/:id/restricted-assignments" })
+    .meta({
+      requireProPlan: true,
+      required: { session: ["workspace", "restricted_collections"] }
+    })
+    .use(authorized)
+    .input(z.object({ id: collectionType.shape.id }))
+    .output(restrictedAssignmentsType)
+    .handler(({ context, input }) => {
+      return Collections.listRestrictedAssignments({
+        collectionID: input.id,
+        workspaceID: context.auth.workspaceID
+      });
+    }),
+  setRestrictedAssignments: base
+    .route({ method: "PUT", path: "/:id/restricted-assignments" })
+    .meta({
+      requireProPlan: true,
+      required: { session: ["workspace", "restricted_collections"] }
+    })
+    .use(authorized)
+    .input(z.object({ id: collectionType.shape.id }).extend(restrictedAssignmentsType.shape))
+    .output(z.void())
+    .handler(async ({ context, input }) => {
+      const { affectedUserIDs } = await Collections.setRestrictedAssignments({
+        collectionID: input.id,
+        groups: input.groups,
+        members: input.members,
+        workspaceID: context.auth.workspaceID
+      });
+
+      emitGroupEvent(context.auth.workspaceID, {
+        action: "restricted-assignments:update",
+        affectedUserIDs,
+        memberID: context.auth.session?.memberID,
+        data: { collectionID: input.id }
+      });
+    }),
   create: base
     .route({ method: "POST", path: "/" })
     .meta({
       required: {
-        session: ["content"],
+        session: true,
         key: ["collections"]
       }
     })
@@ -59,7 +111,7 @@ const collectionsRouter = base.prefix("/collections").router({
     .route({ method: "POST", path: "/bulk/delete" })
     .meta({
       required: {
-        session: ["content"],
+        session: true,
         key: ["collections"]
       }
     })
@@ -103,7 +155,7 @@ const collectionsRouter = base.prefix("/collections").router({
     .route({ method: "DELETE", path: "/:id" })
     .meta({
       required: {
-        session: ["content"],
+        session: true,
         key: ["collections"]
       }
     })
@@ -147,7 +199,7 @@ const collectionsRouter = base.prefix("/collections").router({
     .route({ method: "PUT", path: "/:id" })
     .meta({
       required: {
-        session: ["content"],
+        session: true,
         key: ["collections"]
       }
     })
@@ -205,7 +257,7 @@ const collectionsRouter = base.prefix("/collections").router({
   move: base
     .meta({
       required: {
-        session: ["content"]
+        session: true
       }
     })
     .use(authorized)
@@ -238,7 +290,6 @@ const collectionsRouter = base.prefix("/collections").router({
         newParentID: input.newParentID,
         index: input.index,
         publish: input.publish,
-        canPublish: canManagePublishing(context.auth),
         contributorIDs: context.auth.session ? [context.auth.session.memberID] : []
       });
 

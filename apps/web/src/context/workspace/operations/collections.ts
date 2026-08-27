@@ -60,6 +60,7 @@ const createCollectionOperations = (input: WorkspaceContentOperationsInput) => {
     const collection: Collection = {
       id: fromUUID(generateUUID(), "coll"),
       name: "Untitled",
+      restricted: false,
       descendants: [],
       ancestors: collectionID ? [...(parent?.ancestors || []), collectionID] : []
     };

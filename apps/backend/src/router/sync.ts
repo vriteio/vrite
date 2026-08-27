@@ -1,10 +1,6 @@
-import { collectionType, entryType } from "#backend/db";
+import { collectionType, entryType, permissionType } from "#backend/db";
 import { id } from "#backend/lib/primitives";
-import {
-  canReadPublishing,
-  PUBLISHED_CHANNEL_CODE,
-  publishingChannelCodeType
-} from "#backend/lib/publishing";
+import { PUBLISHED_CHANNEL_CODE, publishingChannelCodeType } from "#backend/lib/publishing";
 import { authorized, base } from "#backend/lib/transport";
 import { Memberships } from "#backend/services/memberships";
 import { Sync } from "#backend/services/sync";
@@ -13,6 +9,7 @@ import * as z from "zod";
 const explorerTreeType = z.object({
   collections: z.array(collectionType),
   entries: z.array(entryType),
+  permissionsByCollectionID: z.record(id(), z.array(permissionType)),
   publishing: z
     .object({
       enabledCollectionIDs: z.array(id()),
@@ -55,13 +52,13 @@ const syncRouter = base.router({
       return Sync.getExplorerTree({
         auth: context.auth,
         workspaceID: context.auth.workspaceID,
-        includePublishing: canReadPublishing(context.auth)
+        includePublishing: true
       });
     }),
   getPublishingStatus: base
     .meta({
       required: {
-        session: ["read:publishing"]
+        session: true
       }
     })
     .use(authorized)

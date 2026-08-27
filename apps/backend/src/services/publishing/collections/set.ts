@@ -49,7 +49,7 @@ const getCollectionDepth = (
 const setCollectionsPublishing = async (
   input: SetCollectionsPublishingInput
 ): Promise<SetCollectionPublishingResult[]> => {
-  await authorizeCollectionSources(input.auth, input.collectionIDs, input.enabled);
+  await authorizeCollectionSources(input.auth, input.collectionIDs, "publishing");
 
   const workspaceID = toUUID(input.workspaceID);
   const collectionIDs = [...new Set(input.collectionIDs.map(toUUID))];

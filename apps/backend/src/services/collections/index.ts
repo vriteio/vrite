@@ -5,6 +5,12 @@ import { listCollections } from "./list";
 import { moveCollection } from "./move";
 import { updateCollection } from "./update";
 import { setCollectionRestricted } from "./set-restricted";
+import {
+  type RestrictedGroupAssignment,
+  type RestrictedMemberAssignment,
+  listRestrictedAssignments
+} from "./list-restricted-assignments";
+import { setRestrictedAssignments } from "./set-restricted-assignments";
 
 const Collections = {
   create: createCollection,
@@ -12,8 +18,11 @@ const Collections = {
   delete: deleteCollections,
   update: updateCollection,
   setRestricted: setCollectionRestricted,
+  listRestrictedAssignments,
+  setRestrictedAssignments,
   move: moveCollection,
   getRoot: getRootCollection
 };
 
 export { Collections };
+export type { RestrictedGroupAssignment, RestrictedMemberAssignment };

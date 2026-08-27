@@ -6,7 +6,11 @@ import { toUUID } from "#backend/lib/primitives";
 import { and, eq } from "drizzle-orm";
 import { createVersion } from "./create";
 import { getVersion } from "./get";
-import type { SessionData } from "#backend/lib/policy";
+import {
+  assertVersionPermission,
+  loadRestrictedCollectionAccess,
+  type SessionData
+} from "#backend/lib/policy";
 
 const revertVersion = async (input: {
   auth: SessionData;
@@ -14,6 +18,9 @@ const revertVersion = async (input: {
   versionID: string;
   contributorIDs: string[];
 }): Promise<{ createdVersions: VersionDetails[]; version: VersionDetails }> => {
+  const access = await loadRestrictedCollectionAccess(input.auth);
+
+  await assertVersionPermission(input.auth, access, input.versionID, "versions");
   const target = await getVersion(input);
   const previous = await replaceDocumentContent(target.entryID, target.document, input.workspaceID);
   const createdVersions: VersionDetails[] = [];

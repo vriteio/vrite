@@ -30,7 +30,7 @@ const versionsRouter = base.router({
     .route({ method: "POST", path: "/entries/:entryID/versions" })
     .meta({
       required: {
-        session: ["versions"],
+        session: true,
         key: ["versions"]
       }
     })
@@ -64,7 +64,7 @@ const versionsRouter = base.router({
     .route({ method: "GET", path: "/entries/:entryID/versions" })
     .meta({
       required: {
-        session: ["read:versions"],
+        session: true,
         key: ["read:versions"]
       }
     })
@@ -98,7 +98,7 @@ const versionsRouter = base.router({
     .route({ method: "GET", path: "/versions/:id" })
     .meta({
       required: {
-        session: ["read:versions"],
+        session: true,
         key: ["read:versions"]
       }
     })
@@ -116,7 +116,7 @@ const versionsRouter = base.router({
     .route({ method: "PATCH", path: "/versions/:id" })
     .meta({
       required: {
-        session: ["versions"],
+        session: true,
         key: ["versions"]
       }
     })
@@ -148,7 +148,7 @@ const versionsRouter = base.router({
     .route({ method: "POST", path: "/versions/:id/revert" })
     .meta({
       required: {
-        session: ["versions"],
+        session: true,
         key: ["versions"]
       }
     })

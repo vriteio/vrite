@@ -1,6 +1,7 @@
 import {
   subscribeToCollectionEvents,
   subscribeToEntryEvents,
+  subscribeToGroupEvents,
   subscribeToMembershipEvents,
   subscribeToRoleEvents,
   subscribeToWorkspaceStateEvents
@@ -48,14 +49,49 @@ const registerCollaborationEvents = (collab: Hocuspocus<CollaborationContext>): 
       socket.close(4205, "Reset Connection");
     }
   };
+  const resetUserConnections = (workspaceID: string, userIDs: string[]) => {
+    const affectedUserIDs = new Set(userIDs);
+    const affectedSockets = new Set<WebSocketLike>();
+
+    for (const document of collab.documents.values()) {
+      for (const connection of document.getConnections()) {
+        const auth = connection.context.auth;
+        const userID = auth?.session?.userID;
+
+        if (auth?.workspaceID === workspaceID && userID && affectedUserIDs.has(userID)) {
+          affectedSockets.add(connection.webSocket);
+        }
+      }
+    }
+
+    for (const socket of affectedSockets) {
+      socket.close(4205, "Reset Connection");
+    }
+  };
 
   subscribeToMembershipEvents("*", resetAffectedConnections);
-  subscribeToRoleEvents("*", resetAffectedConnections);
+  subscribeToRoleEvents("*", (event, channel) => {
+    const workspaceID = channel.split(":")[0];
+
+    if (event.action !== "role:create" && event.affectedUserIDs) {
+      resetUserConnections(workspaceID, event.affectedUserIDs);
+      return;
+    }
+
+    resetAffectedConnections(event);
+  });
+  subscribeToGroupEvents("*", (event, channel) => {
+    const workspaceID = channel.split(":")[0];
+
+    if ("affectedUserIDs" in event && event.affectedUserIDs) {
+      resetUserConnections(workspaceID, event.affectedUserIDs);
+    }
+  });
 
   subscribeToCollectionEvents("*", (event) => {
     const changesAccess =
       (event.action === "collection:move" && event.data.restrictedBoundaryChanged === true) ||
-      (event.action === "collection:update" && event.data.restricted === true);
+      (event.action === "collection:update" && event.data.restricted !== undefined);
 
     if (!changesAccess) return;
 

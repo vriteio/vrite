@@ -3,6 +3,13 @@ import { collections } from "./collections";
 import { contents } from "./contents";
 import { stripeWebhookEvents } from "./stripe-webhook-events";
 import { entries } from "./entries";
+import {
+  collectionGroupRoles,
+  collectionMemberRoles,
+  groupInvitations,
+  groupMembers,
+  groups
+} from "./groups";
 import { invitations } from "./invitations";
 import { apiKeys } from "./keys";
 import { memberships } from "./memberships";
@@ -29,6 +36,11 @@ const schema = {
   memberships,
   invitations,
   collections,
+  groups,
+  groupMembers,
+  groupInvitations,
+  collectionGroupRoles,
+  collectionMemberRoles,
   entries,
   contents,
   entryVersions,

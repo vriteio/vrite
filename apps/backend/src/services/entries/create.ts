@@ -5,7 +5,7 @@ import { and, desc, eq, isNull } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 import { normalizeEntryName } from "#backend/lib/validation";
 import {
-  assertCollectionAccess,
+  assertCollectionPermission,
   loadRestrictedCollectionAccess,
   type SessionData
 } from "#backend/lib/policy";
@@ -18,7 +18,7 @@ const createEntry = async (
   const entryID = input.id ? toUUID(input.id) : crypto.randomUUID();
   const collectionID = input.collectionID ? toUUID(input.collectionID) : null;
 
-  assertCollectionAccess(access, input.collectionID);
+  assertCollectionPermission(input.auth, access, input.collectionID, "content");
 
   const entry = await db.transaction(async (tx) => {
     if (collectionID) {

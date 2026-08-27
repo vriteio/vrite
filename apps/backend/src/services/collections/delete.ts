@@ -4,7 +4,7 @@ import { collections, entries, entryPublications, memberships, workspaces } from
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 import {
-  assertCollectionAccess,
+  assertCollectionSubtreePermission,
   assertRestrictedSubtreeManagement,
   loadRestrictedCollectionAccess,
   type SessionData
@@ -26,10 +26,7 @@ const deleteCollections = async (input: {
   const ids = input.ids.map(toUUID);
   const workspaceID = toUUID(input.workspaceID);
 
-  for (const collectionID of input.ids) {
-    assertCollectionAccess(access, collectionID);
-  }
-
+  assertCollectionSubtreePermission(input.auth, access, input.ids, "content");
   assertRestrictedSubtreeManagement(input.auth, access, input.ids);
 
   return db.transaction(async (tx) => {

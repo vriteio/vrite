@@ -15,9 +15,8 @@ import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 import type { VersionSummary } from "#backend/lib/data";
 import {
-  assertCollectionAccess,
-  assertRestrictedBoundaryChange,
-  assertRestrictedSubtreeManagement,
+  assertCollectionMovePermission,
+  hasCollectionPermission,
   loadRestrictedCollectionAccess,
   type SessionData
 } from "#backend/lib/policy";
@@ -29,7 +28,6 @@ const moveCollection = async (input: {
   newParentID?: string | null;
   index?: number;
   publish?: boolean;
-  canPublish: boolean;
   contributorIDs: string[];
 }): Promise<{
   affectedPublishingEntryIDs: string[];
@@ -43,20 +41,25 @@ const moveCollection = async (input: {
   const collectionID = toUUID(input.id);
   const requestedParentID = input.newParentID ? toUUID(input.newParentID) : null;
   const collection = access.allCollections.find(({ id }) => id === input.id);
-  const sourceBoundaryID = access.boundaryByCollectionID.get(input.id);
+  const sourceParentID = collection?.ancestors[collection.ancestors.length - 1];
+  const sourceBoundaryID = sourceParentID
+    ? access.boundaryByCollectionID.get(sourceParentID)
+    : undefined;
   const targetBoundaryID = input.newParentID
     ? access.boundaryByCollectionID.get(input.newParentID)
     : undefined;
-  const restrictedBoundaryChanged =
-    sourceBoundaryID !== (collection?.restricted ? input.id : targetBoundaryID);
+  const restrictedBoundaryChanged = sourceBoundaryID !== targetBoundaryID;
+  const affectedCollections = access.allCollections.filter((item) => {
+    return item.id === input.id || item.ancestors.includes(input.id);
+  });
+  const canPublish = [input.newParentID, ...affectedCollections.map(({ id }) => id)].every((id) => {
+    return hasCollectionPermission(input.auth, access, id, "publishing");
+  });
 
-  assertCollectionAccess(access, input.id);
-  assertCollectionAccess(access, input.newParentID);
-  assertRestrictedSubtreeManagement(input.auth, access, [input.id]);
-  assertRestrictedBoundaryChange(input.auth, access, input.id, input.newParentID);
+  assertCollectionMovePermission(input.auth, access, input.id, input.newParentID);
 
   if (input.publish) {
-    if (!input.canPublish) {
+    if (!canPublish) {
       throw new ORPCError("FORBIDDEN", {
         message: "Publishing permission is required to move this collection"
       });
@@ -179,7 +182,7 @@ const moveCollection = async (input: {
     const willBePublishingEnabled = collection.publishingEnabled || parentPublishingEnabled;
     const crossesPublishingBoundary = wasPublishingEnabled !== willBePublishingEnabled;
 
-    if (crossesPublishingBoundary && !input.canPublish) {
+    if (crossesPublishingBoundary && !canPublish) {
       throw new ORPCError("FORBIDDEN", {
         message: "Publishing permission is required to move this collection"
       });

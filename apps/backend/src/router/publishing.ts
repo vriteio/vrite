@@ -50,7 +50,7 @@ const publishingRouter = base.prefix("/publishing").router({
     .route({ method: "PUT", path: "/collections/:collectionID" })
     .meta({
       required: {
-        session: ["publishing"],
+        session: true,
         key: ["publishing"]
       }
     })
@@ -105,7 +105,7 @@ const publishingRouter = base.prefix("/publishing").router({
     .route({ method: "POST", path: "/collections/bulk/set" })
     .meta({
       required: {
-        session: ["publishing"],
+        session: true,
         key: ["publishing"]
       }
     })
@@ -165,7 +165,7 @@ const publishingRouter = base.prefix("/publishing").router({
     .route({ method: "POST", path: "/collections/:collectionID" })
     .meta({
       required: {
-        session: ["publishing"],
+        session: true,
         key: ["publishing"]
       }
     })
@@ -208,7 +208,7 @@ const publishingRouter = base.prefix("/publishing").router({
     .route({ method: "POST", path: "/collections/bulk/publish" })
     .meta({
       required: {
-        session: ["publishing"],
+        session: true,
         key: ["publishing"]
       }
     })
@@ -251,7 +251,7 @@ const publishingRouter = base.prefix("/publishing").router({
     .route({ method: "DELETE", path: "/collections/:collectionID" })
     .meta({
       required: {
-        session: ["publishing"],
+        session: true,
         key: ["publishing"]
       }
     })
@@ -287,7 +287,7 @@ const publishingRouter = base.prefix("/publishing").router({
     .route({ method: "POST", path: "/collections/bulk/unpublish" })
     .meta({
       required: {
-        session: ["publishing"],
+        session: true,
         key: ["publishing"]
       }
     })
@@ -323,7 +323,7 @@ const publishingRouter = base.prefix("/publishing").router({
     .route({ method: "POST", path: "/entries/:entryID" })
     .meta({
       required: {
-        session: ["publishing"],
+        session: true,
         key: ["publishing"]
       }
     })
@@ -361,7 +361,7 @@ const publishingRouter = base.prefix("/publishing").router({
     .route({ method: "POST", path: "/entries/bulk/publish" })
     .meta({
       required: {
-        session: ["publishing"],
+        session: true,
         key: ["publishing"]
       }
     })
@@ -399,7 +399,7 @@ const publishingRouter = base.prefix("/publishing").router({
     .route({ method: "DELETE", path: "/entries/:entryID" })
     .meta({
       required: {
-        session: ["publishing"],
+        session: true,
         key: ["publishing"]
       }
     })
@@ -435,7 +435,7 @@ const publishingRouter = base.prefix("/publishing").router({
     .route({ method: "POST", path: "/entries/bulk/unpublish" })
     .meta({
       required: {
-        session: ["publishing"],
+        session: true,
         key: ["publishing"]
       }
     })
@@ -465,7 +465,7 @@ const publishingRouter = base.prefix("/publishing").router({
     .route({ method: "GET", path: "/entries/:entryID/version" })
     .meta({
       required: {
-        session: ["read:publishing"],
+        session: true,
         key: ["read:publishing"]
       }
     })
@@ -488,7 +488,7 @@ const publishingRouter = base.prefix("/publishing").router({
     .route({ method: "GET", path: "/entries/:entryID/publications" })
     .meta({
       required: {
-        session: ["read:publishing"],
+        session: true,
         key: ["read:publishing"]
       }
     })
@@ -506,7 +506,7 @@ const publishingRouter = base.prefix("/publishing").router({
     .route({ method: "GET", path: "/channels" })
     .meta({
       required: {
-        session: ["read:publishing"],
+        session: true,
         key: ["read:publishing"]
       }
     })

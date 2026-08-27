@@ -7,6 +7,7 @@ import {
   pgTable,
   timestamp,
   uniqueIndex,
+  unique,
   uuid,
   varchar
 } from "drizzle-orm/pg-core";
@@ -44,6 +45,7 @@ const invitations = pgTable(
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull()
   },
   (table) => [
+    unique("invitations_workspace_id_id_unique").on(table.workspaceID, table.id),
     foreignKey({
       name: "invitations_workspace_role_fk",
       columns: [table.workspaceID, table.roleID],

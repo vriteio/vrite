@@ -2,7 +2,7 @@ import { entries, workspaces } from "#backend/db";
 import { db } from "#backend/lib/adapters";
 import {
   canAccessCollection,
-  hasPermission,
+  hasCollectionPermission,
   loadRestrictedCollectionAccess,
   type SessionData
 } from "#backend/lib/policy";
@@ -86,9 +86,7 @@ const authenticateCollaboration = async (input: {
     throw permissionError("Forbidden");
   }
 
-  const canWrite =
-    auth.session.admin === true ||
-    auth.session.permissions.some((permission) => hasPermission(permission, "content"));
+  const canWrite = hasCollectionPermission(auth, access, collectionID, "content");
 
   input.connectionConfig.readOnly = !canWrite;
 

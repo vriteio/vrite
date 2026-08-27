@@ -3,19 +3,29 @@ import { ROOT_COLLECTION_NAME, type WorkspaceContentOperationsInput } from "./ty
 
 const createCollectionQueries = (input: WorkspaceContentOperationsInput) => {
   const { collectionsCollection, entriesCollection } = input;
+
+  let collectionSource = collectionsCollection();
+  let collectionsCursor = collectionSource.find();
+
+  const getCollections = () => {
+    const nextCollectionSource = collectionsCollection();
+
+    if (nextCollectionSource !== collectionSource) {
+      collectionsCursor.cleanup();
+      collectionSource = nextCollectionSource;
+      collectionsCursor = collectionSource.find();
+    }
+
+    return collectionsCursor.fetch();
+  };
   const isRootCollection = (collection: Collection) =>
     collection.name === ROOT_COLLECTION_NAME && collection.ancestors.length === 0;
   const getRootCollection = () => {
-    return collectionsCollection().findOne({
-      name: ROOT_COLLECTION_NAME,
-      ancestors: { $size: 0 }
-    });
+    return getCollections().find(isRootCollection);
   };
-  const getVisibleCollections = () =>
-    collectionsCollection()
-      .find()
-      .fetch()
-      .filter((collection) => !isRootCollection(collection));
+  const getVisibleCollections = () => {
+    return getCollections().filter((collection) => !isRootCollection(collection));
+  };
   const sortCollections = (collections: Collection[], orderedIDs?: string[]) => {
     const fallback = (a: Collection, b: Collection) =>
       a.name.localeCompare(b.name) || a.id.localeCompare(b.id);
@@ -33,7 +43,7 @@ const createCollectionQueries = (input: WorkspaceContentOperationsInput) => {
   };
   const getCollectionParentID = (collection: Collection) => collection.ancestors.at(-1) ?? null;
   const getCollection = (id: string) => {
-    const collection = collectionsCollection().findOne({ id });
+    const collection = getCollections().find((item) => item.id === id);
 
     return collection && !isRootCollection(collection) ? collection : undefined;
   };
@@ -43,7 +53,7 @@ const createCollectionQueries = (input: WorkspaceContentOperationsInput) => {
     if (!collection) return false;
 
     return [collection.id, ...collection.ancestors].some((id) => {
-      return Boolean(collectionsCollection().findOne({ id })?.restricted);
+      return Boolean(getCollections().find((item) => item.id === id)?.restricted);
     });
   };
   const isCollectionRestrictionRoot = (collectionID: string) => {
@@ -56,7 +66,7 @@ const createCollectionQueries = (input: WorkspaceContentOperationsInput) => {
 
     return (
       [collection.id, ...[...collection.ancestors].reverse()].find((id) => {
-        return Boolean(collectionsCollection().findOne({ id })?.restricted);
+        return Boolean(getCollections().find((item) => item.id === id)?.restricted);
       }) ?? null
     );
   };

@@ -30,7 +30,7 @@ const VersionHistoryPanelFallback: Component = () => {
 
 const useRightSidePanelOptions = () => {
   const params = useParams<{ slug?: string }>();
-  const { currentWorkspace, hasPermission } = useWorkspace();
+  const { content, currentWorkspace } = useWorkspace();
   const options: RightSidePanelOption[] = [
     {
       id: "versions",
@@ -39,7 +39,13 @@ const useRightSidePanelOptions = () => {
       component: VersionHistoryPanel,
       fallback: VersionHistoryPanelFallback,
       available: () => {
-        return Boolean(params.slug && currentWorkspace() && hasPermission("read:versions"));
+        const entry = content.entries.get({ entryID: params.slug || "" });
+
+        return Boolean(
+          entry &&
+          currentWorkspace() &&
+          content.hasCollectionPermission(entry.collectionID || null, "read:versions")
+        );
       }
     }
   ];

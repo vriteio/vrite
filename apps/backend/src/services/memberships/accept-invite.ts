@@ -1,6 +1,20 @@
-import { toMembershipID, toRoleID, toUUID, toUserID, toWorkspaceID } from "#backend/lib/primitives";
+import {
+  toGroupID,
+  toMembershipID,
+  toRoleID,
+  toUUID,
+  toUserID,
+  toWorkspaceID
+} from "#backend/lib/primitives";
 import { db } from "#backend/lib/adapters";
-import { invitations, memberships, users, workspaces } from "#backend/db";
+import {
+  groupInvitations,
+  groupMembers,
+  invitations,
+  memberships,
+  users,
+  workspaces
+} from "#backend/db";
 import { verifyInviteLink } from "#backend/lib/messaging";
 import { and, eq } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
@@ -21,15 +35,15 @@ const acceptInvite = async (input: {
     throw new ORPCError("INVITE_INVALID", { status: 400, message: "Invalid invitation link" });
   }
 
+  const invitationID = toUUID(input.id);
   const userID = toUUID(input.userID);
   const result = await db.transaction(async (tx) => {
-    const [invite] = await tx
-      .select()
+    const [inviteWorkspace] = await tx
+      .select({ workspaceID: invitations.workspaceID })
       .from(invitations)
-      .where(eq(invitations.id, toUUID(input.id)))
-      .for("update");
+      .where(eq(invitations.id, invitationID));
 
-    if (!invite) {
+    if (!inviteWorkspace) {
       throw new ORPCError("INVITE_INVALID", { status: 400, message: "Invalid invitation link" });
     }
 
@@ -40,10 +54,20 @@ const acceptInvite = async (input: {
         subscriptionPlan: workspaces.subscriptionPlan
       })
       .from(workspaces)
-      .where(eq(workspaces.id, invite.workspaceID));
+      .where(eq(workspaces.id, inviteWorkspace.workspaceID))
+      .for("update");
+    const [invite] = await tx
+      .select()
+      .from(invitations)
+      .where(eq(invitations.id, invitationID))
+      .for("update");
     const [user] = await tx.select().from(users).where(eq(users.id, userID));
 
     if (!workspace) throw new ORPCError("NOT_FOUND", { message: "Workspace not found" });
+    if (!invite) {
+      throw new ORPCError("INVITE_INVALID", { status: 400, message: "Invalid invitation link" });
+    }
+
     if (!user) throw new ORPCError("UNAUTHORIZED", { message: "User not found" });
     if (workspace.subscriptionPlan !== "pro") {
       throw new ORPCError("FORBIDDEN", {
@@ -90,6 +114,36 @@ const acceptInvite = async (input: {
       .select()
       .from(memberships)
       .where(and(eq(memberships.userID, userID), eq(memberships.workspaceID, invite.workspaceID)));
+    const invitationGroups = await tx
+      .select({ groupID: groupInvitations.groupID })
+      .from(groupInvitations)
+      .where(
+        and(
+          eq(groupInvitations.workspaceID, invite.workspaceID),
+          eq(groupInvitations.invitationID, invite.id)
+        )
+      );
+
+    if (invitationGroups.length > 0) {
+      await tx
+        .insert(groupMembers)
+        .values(
+          invitationGroups.map(({ groupID }) => ({
+            groupID,
+            membershipID: membership.id,
+            workspaceID: invite.workspaceID
+          }))
+        )
+        .onConflictDoNothing();
+      await tx
+        .delete(groupInvitations)
+        .where(
+          and(
+            eq(groupInvitations.workspaceID, invite.workspaceID),
+            eq(groupInvitations.invitationID, invite.id)
+          )
+        );
+    }
 
     await tx.update(invitations).set({ status: "accepted" }).where(eq(invitations.id, invite.id));
     await tx
@@ -97,12 +151,13 @@ const acceptInvite = async (input: {
       .set({ currentWorkspaceID: invite.workspaceID, updatedAt: new Date() })
       .where(eq(users.id, userID));
 
-    return { workspace, membership };
+    return { workspace, membership, groupIDs: invitationGroups.map(({ groupID }) => groupID) };
   });
 
   return {
     workspaceID: toWorkspaceID(result.workspace.id),
     workspaceName: result.workspace.name,
+    groupIDs: result.groupIDs.map(toGroupID),
     membership: {
       id: toMembershipID(result.membership.id),
       userID: toUserID(result.membership.userID),

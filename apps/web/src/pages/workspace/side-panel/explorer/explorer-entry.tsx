@@ -8,7 +8,7 @@ import { usePublishing } from "#web/context/publishing";
 import { useExplorerEntry, type ExplorerEntryProps } from "./use-explorer-entry";
 
 const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
-  const { hasPermission } = useWorkspace();
+  const { content: workspaceContent } = useWorkspace();
   const publishing = usePublishing();
   const {
     closestEdge,
@@ -24,6 +24,9 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
     swipe
   } = useExplorerEntry(props);
   const publishingStatus = () => publishing.getEntryPublishingStatus(props.entry.id);
+  const canEdit = () => {
+    return workspaceContent.hasCollectionPermission(props.entry.collectionID || null, "content");
+  };
   const publishingLabel = () => {
     const status = publishingStatus();
     const defaultChannel = publishing.channel() === "published";
@@ -73,29 +76,29 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
                   isSelected(props.entry.id) && "bg-gradient-to-tr"
                 )}
               />
-              <Show when={publishingStatus() && publishingStatus() !== "outside"}>
+              <Show
+                when={
+                  publishingStatus() &&
+                  publishingStatus() !== "outside" &&
+                  publishingStatus() !== "loading" &&
+                  publishingStatus() !== "published"
+                }
+              >
                 <Tooltip
                   content={publishingLabel()}
                   placement="right"
-                  wrapperClass="absolute -bottom-1 -right-1 h-3 w-3"
+                  wrapperClass="absolute -top-1 -left-0.5 h-3 w-3"
                 >
                   <div class="flex h-3 w-3 items-center justify-center">
-                    <Show
-                      when={publishingStatus() !== "loading"}
-                      fallback={<Spinner class="h-2 w-2" color="primary" />}
-                    >
-                      <div
-                        class={clsx(
-                          "flex justify-center items-center h-2 w-2 shadow-sm",
-                          publishingStatus() === "error" &&
-                            "bg-red-500/90 rounded-full shadow-red-500/50",
-                          publishingStatus() === "published" &&
-                            "bg-green-500/90 rounded-full shadow-green-500/50",
-                          publishingStatus() === "unpublished" &&
-                            "bg-amber-500/90 rounded-full shadow-amber-500/50"
-                        )}
-                      />
-                    </Show>
+                    <div
+                      class={clsx(
+                        "flex justify-center items-center h-2 w-2 shadow-sm",
+                        publishingStatus() === "error" &&
+                          "bg-red-500/90 rounded-full shadow-red-500/50",
+                        publishingStatus() === "unpublished" &&
+                          "bg-amber-500/90 rounded-full shadow-amber-500/50"
+                      )}
+                    />
                   </div>
                 </Tooltip>
               </Show>
@@ -105,7 +108,7 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
           ref={setElementRef}
           onClick={handleClick}
           onRename={(name) => {
-            if (content.readOnly()) return;
+            if (content.readOnly(props.entry.collectionID || null)) return;
 
             content.entries.update({
               entryID: props.entry.id,
@@ -169,7 +172,7 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
                   <div
                     class={clsx(
                       "bg-gradient-to-tr h-4 w-4 from-secondary via-primary to-secondary",
-                      hasPermission("content") ? "i-lucide:pencil" : "i-lucide:eye"
+                      canEdit() ? "i-lucide:pencil" : "i-lucide:eye"
                     )}
                   />
                 </div>

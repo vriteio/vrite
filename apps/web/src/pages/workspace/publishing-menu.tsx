@@ -91,7 +91,7 @@ const PublishingStatusIcon: Component<PublishingStatusIconProps> = (props) => {
 };
 
 const PublishingMenu: Component<PublishingMenuProps> = (props) => {
-  const { content, hasPermission } = useWorkspace();
+  const { content } = useWorkspace();
   const publishing = usePublishing();
   const { closeMobileDropdowns } = useDropdown();
   const [, setSearchParams] = useSearchParams();
@@ -254,8 +254,9 @@ const PublishingMenu: Component<PublishingMenuProps> = (props) => {
   const options = createMemo<Array<PublishingMenuItem[]>>(() => {
     const groups: Array<PublishingMenuItem[]> = [];
     const currentStatus = displayStatus();
+    const collectionID = entry()?.collectionID || null;
     const canManage =
-      hasPermission("publishing") &&
+      content.hasCollectionPermission(collectionID, "publishing") &&
       publishingEnabled() &&
       currentStatus !== "error" &&
       currentStatus !== "loading" &&

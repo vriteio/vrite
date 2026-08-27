@@ -1,4 +1,13 @@
-import { entries, entryVersions, type Collection } from "#backend/db";
+import {
+  collectionGroupRoles,
+  collectionMemberRoles,
+  entries,
+  entryVersions,
+  groupMembers,
+  type Collection,
+  type Permission,
+  roles
+} from "#backend/db";
 import { db } from "#backend/lib/adapters";
 import { loadCollectionTree } from "#backend/lib/data";
 import { toCollectionID, toEntryID, toUUID } from "#backend/lib/primitives";
@@ -9,9 +18,11 @@ import type { SessionData } from "./session";
 
 interface RestrictedCollectionAccess {
   allCollections: Collection[];
+  boundaryIDsByCollectionID: Map<string, string[]>;
   boundaryByCollectionID: Map<string, string>;
   collectionIDs: Set<string>;
   collections: Collection[];
+  permissionsByBoundaryID: Map<string, Permission[]>;
   restrictedBoundaryIDs: Set<string>;
 }
 
@@ -35,50 +46,107 @@ const canManageRestrictedCollections = (auth: SessionData): boolean => {
     return hasPermission(permission, "restricted_collections");
   });
 };
+const loadAssignedBoundaryPermissions = async (
+  auth: SessionData
+): Promise<Map<string, Permission[]>> => {
+  const permissionsByBoundaryID = new Map<string, Permission[]>();
+
+  if (auth.type !== "session" || !auth.session || canReadRestrictedCollections(auth)) {
+    return permissionsByBoundaryID;
+  }
+
+  const workspaceID = toUUID(auth.workspaceID);
+  const membershipID = toUUID(auth.session.memberID);
+  const [directAssignments, groupAssignments] = await Promise.all([
+    db
+      .select({
+        collectionID: collectionMemberRoles.collectionID,
+        permissions: roles.permissions,
+        baseRole: roles.baseRole
+      })
+      .from(collectionMemberRoles)
+      .innerJoin(roles, eq(roles.id, collectionMemberRoles.roleID))
+      .where(
+        and(
+          eq(collectionMemberRoles.workspaceID, workspaceID),
+          eq(collectionMemberRoles.membershipID, membershipID)
+        )
+      ),
+    db
+      .select({
+        collectionID: collectionGroupRoles.collectionID,
+        permissions: roles.permissions,
+        baseRole: roles.baseRole
+      })
+      .from(groupMembers)
+      .innerJoin(
+        collectionGroupRoles,
+        and(
+          eq(collectionGroupRoles.workspaceID, groupMembers.workspaceID),
+          eq(collectionGroupRoles.groupID, groupMembers.groupID)
+        )
+      )
+      .innerJoin(roles, eq(roles.id, collectionGroupRoles.roleID))
+      .where(
+        and(eq(groupMembers.workspaceID, workspaceID), eq(groupMembers.membershipID, membershipID))
+      )
+  ]);
+
+  for (const assignment of [...directAssignments, ...groupAssignments]) {
+    if (assignment.baseRole === "admin") continue;
+
+    const boundaryID = toCollectionID(assignment.collectionID);
+    const permissions = permissionsByBoundaryID.get(boundaryID) || [];
+
+    permissionsByBoundaryID.set(boundaryID, [
+      ...new Set([...permissions, ...assignment.permissions])
+    ]);
+  }
+
+  return permissionsByBoundaryID;
+};
 const loadRestrictedCollectionAccess = async (
   auth: SessionData,
   includeDeleted = false
 ): Promise<RestrictedCollectionAccess> => {
   const canReadRestricted = canReadRestrictedCollections(auth);
-  const tree = await loadCollectionTree(auth.workspaceID, includeDeleted);
+  const [tree, permissionsByBoundaryID] = await Promise.all([
+    loadCollectionTree(auth.workspaceID, includeDeleted),
+    loadAssignedBoundaryPermissions(auth)
+  ]);
+  const boundaryIDsByCollectionID = new Map<string, string[]>();
   const boundaryByCollectionID = new Map<string, string>();
-  const collectionByID = new Map(tree.collections.map((collection) => [collection.id, collection]));
   const restrictedBoundaryIDs = new Set(
     tree.collections
       .filter((collection) => collection.restricted)
       .map((collection) => collection.id)
   );
-  const resolveBoundary = (collectionID: string): string | undefined => {
-    if (boundaryByCollectionID.has(collectionID)) {
-      return boundaryByCollectionID.get(collectionID);
-    }
-
-    const collection = collectionByID.get(collectionID);
-
-    if (!collection) return;
-
-    const parentID = collection.ancestors[collection.ancestors.length - 1];
-    const boundaryID = collection.restricted
-      ? collection.id
-      : parentID
-        ? resolveBoundary(parentID)
-        : undefined;
-
-    if (boundaryID) {
-      boundaryByCollectionID.set(collectionID, boundaryID);
-    }
-
-    return boundaryID;
-  };
 
   for (const collection of tree.collections) {
-    resolveBoundary(collection.id);
+    const boundaryIDs = [...collection.ancestors, collection.id].filter((collectionID) => {
+      return restrictedBoundaryIDs.has(collectionID);
+    });
+    const boundaryID = boundaryIDs[boundaryIDs.length - 1];
+
+    if (boundaryIDs.length > 0) {
+      boundaryIDsByCollectionID.set(collection.id, boundaryIDs);
+    }
+
+    if (boundaryID) {
+      boundaryByCollectionID.set(collection.id, boundaryID);
+    }
   }
 
   const collectionIDs = new Set(
     tree.collections
       .filter((collection) => {
-        return canReadRestricted || !boundaryByCollectionID.has(collection.id);
+        const boundaryIDs = boundaryIDsByCollectionID.get(collection.id) || [];
+
+        return (
+          canReadRestricted ||
+          boundaryIDs.length === 0 ||
+          boundaryIDs.every((boundaryID) => permissionsByBoundaryID.has(boundaryID))
+        );
       })
       .map((collection) => collection.id)
   );
@@ -91,9 +159,11 @@ const loadRestrictedCollectionAccess = async (
 
   return {
     allCollections: tree.collections,
+    boundaryIDsByCollectionID,
     boundaryByCollectionID,
     collectionIDs,
     collections,
+    permissionsByBoundaryID,
     restrictedBoundaryIDs
   };
 };
@@ -111,25 +181,72 @@ const assertCollectionAccess = (
 
   throw new ORPCError("NOT_FOUND");
 };
-const assertRestrictedBoundaryChange = (
+const hasCollectionPermission = (
+  auth: SessionData,
+  access: RestrictedCollectionAccess,
+  collectionID: string | null | undefined,
+  requiredPermission: Permission
+): boolean => {
+  const boundaryID = collectionID ? access.boundaryByCollectionID.get(collectionID) : undefined;
+
+  if (!boundaryID || canReadRestrictedCollections(auth)) {
+    if (auth.type === "key") return !boundaryID;
+    if (!auth.session) return false;
+    if (auth.session.admin) return true;
+
+    return auth.session.permissions.some((permission) => {
+      return hasPermission(permission, requiredPermission);
+    });
+  }
+
+  if (!canAccessCollection(access, collectionID)) return false;
+
+  return (access.permissionsByBoundaryID.get(boundaryID) || []).some((permission) => {
+    return hasPermission(permission, requiredPermission);
+  });
+};
+const assertCollectionPermission = (
+  auth: SessionData,
+  access: RestrictedCollectionAccess,
+  collectionID: string | null | undefined,
+  requiredPermission: Permission
+): void => {
+  assertCollectionAccess(access, collectionID);
+
+  if (hasCollectionPermission(auth, access, collectionID, requiredPermission)) return;
+
+  throw new ORPCError("FORBIDDEN", {
+    message: `Missing required permission: ${requiredPermission}`
+  });
+};
+const assertCollectionMovePermission = (
   auth: SessionData,
   access: RestrictedCollectionAccess,
   sourceCollectionID?: string | null,
   targetCollectionID?: string | null
 ): void => {
-  const sourceBoundaryID = sourceCollectionID
-    ? access.boundaryByCollectionID.get(sourceCollectionID)
-    : undefined;
-  const targetBoundaryID = targetCollectionID
-    ? access.boundaryByCollectionID.get(targetCollectionID)
-    : undefined;
+  assertCollectionPermission(auth, access, sourceCollectionID, "content");
+  assertCollectionPermission(auth, access, targetCollectionID, "content");
+};
+const assertCollectionSubtreePermission = (
+  auth: SessionData,
+  access: RestrictedCollectionAccess,
+  collectionIDs: string[],
+  requiredPermission: Permission
+): void => {
+  for (const collectionID of collectionIDs) {
+    assertCollectionAccess(access, collectionID);
+  }
 
-  if (sourceBoundaryID === targetBoundaryID) return;
-  if (canManageRestrictedCollections(auth)) return;
-
-  throw new ORPCError("FORBIDDEN", {
-    message: "Restricted collections permission is required to cross this access boundary"
+  const affectedCollections = access.allCollections.filter((collection) => {
+    return collectionIDs.some((collectionID) => {
+      return collection.id === collectionID || collection.ancestors.includes(collectionID);
+    });
   });
+
+  for (const collection of affectedCollections) {
+    assertCollectionPermission(auth, access, collection.id, requiredPermission);
+  }
 };
 const assertRestrictedSubtreeManagement = (
   auth: SessionData,
@@ -217,6 +334,16 @@ const assertEntryAccess = async (
 
   assertCollectionAccess(access, entry.collectionID);
 };
+const assertEntryPermission = async (
+  auth: SessionData,
+  access: RestrictedCollectionAccess,
+  entryID: string,
+  requiredPermission: Permission
+): Promise<void> => {
+  const entry = await getEntryCollection(auth, entryID);
+
+  assertCollectionPermission(auth, access, entry.collectionID, requiredPermission);
+};
 const assertVersionAccess = async (
   auth: SessionData,
   access: RestrictedCollectionAccess,
@@ -225,6 +352,16 @@ const assertVersionAccess = async (
   const version = await getVersionCollection(auth, versionID);
 
   assertCollectionAccess(access, version.collectionID);
+};
+const assertVersionPermission = async (
+  auth: SessionData,
+  access: RestrictedCollectionAccess,
+  versionID: string,
+  requiredPermission: Permission
+): Promise<void> => {
+  const version = await getVersionCollection(auth, versionID);
+
+  assertCollectionPermission(auth, access, version.collectionID, requiredPermission);
 };
 const filterAccessibleEntryIDs = async (
   auth: SessionData,
@@ -259,18 +396,58 @@ const filterAccessibleEntryIDs = async (
 
   return entryIDs.filter((entryID) => accessibleIDs.has(entryID));
 };
+const filterPermittedEntryIDs = async (
+  auth: SessionData,
+  access: RestrictedCollectionAccess,
+  entryIDs: string[],
+  requiredPermission: Permission,
+  includeDeleted = false
+): Promise<string[]> => {
+  if (entryIDs.length === 0) return [];
+
+  const filters = [
+    eq(entries.workspaceID, toUUID(auth.workspaceID)),
+    inArray(entries.id, entryIDs.map(toUUID))
+  ];
+
+  if (!includeDeleted) {
+    filters.push(isNull(entries.deletedAt));
+  }
+
+  const rows = await db
+    .select({ id: entries.id, collectionID: entries.collectionID })
+    .from(entries)
+    .where(and(...filters));
+  const permittedIDs = new Set(
+    rows
+      .filter((entry) => {
+        const collectionID = entry.collectionID ? toCollectionID(entry.collectionID) : null;
+
+        return hasCollectionPermission(auth, access, collectionID, requiredPermission);
+      })
+      .map((entry) => toEntryID(entry.id))
+  );
+
+  return entryIDs.filter((entryID) => permittedIDs.has(entryID));
+};
 
 export {
   assertCollectionAccess,
+  assertCollectionMovePermission,
+  assertCollectionPermission,
+  assertCollectionSubtreePermission,
   assertEntryAccess,
-  assertRestrictedBoundaryChange,
+  assertEntryPermission,
   assertRestrictedSubtreeManagement,
   assertVersionAccess,
+  assertVersionPermission,
   canAccessCollection,
   canManageRestrictedCollections,
   canReadRestrictedCollections,
   filterAccessibleEntryIDs,
+  filterPermittedEntryIDs,
   getEntryCollection,
+  hasCollectionPermission,
   loadRestrictedCollectionAccess
 };
 export type { RestrictedCollectionAccess };

@@ -5,7 +5,11 @@ import { ORPCError } from "@orpc/server";
 import { and, eq } from "drizzle-orm";
 import type { VersionDetails } from "#backend/lib/data";
 import { getVersion } from "./get";
-import type { SessionData } from "#backend/lib/policy";
+import {
+  assertVersionPermission,
+  loadRestrictedCollectionAccess,
+  type SessionData
+} from "#backend/lib/policy";
 
 const updateVersion = async (input: {
   auth: SessionData;
@@ -13,6 +17,9 @@ const updateVersion = async (input: {
   versionID: string;
   name: string | null;
 }): Promise<VersionDetails> => {
+  const access = await loadRestrictedCollectionAccess(input.auth);
+
+  await assertVersionPermission(input.auth, access, input.versionID, "versions");
   await getVersion(input);
 
   const [updated] = await db

@@ -1,6 +1,14 @@
 import { toUUID, toUserID } from "#backend/lib/primitives";
 import { db } from "#backend/lib/adapters";
-import { invitations, memberships, roles, workspaces } from "#backend/db";
+import {
+  collectionGroupRoles,
+  collectionMemberRoles,
+  groupMembers,
+  invitations,
+  memberships,
+  roles,
+  workspaces
+} from "#backend/db";
 import { and, eq } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 
@@ -36,10 +44,31 @@ const deleteRole = async (input: {
       throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Viewer role not found" });
     }
 
-    const affected = await tx
+    const baseAffected = await tx
       .select({ userID: memberships.userID })
       .from(memberships)
       .where(and(eq(memberships.roleID, roleID), eq(memberships.workspaceID, workspaceID)));
+    const directAffected = await tx
+      .select({ userID: memberships.userID })
+      .from(collectionMemberRoles)
+      .innerJoin(memberships, eq(memberships.id, collectionMemberRoles.membershipID))
+      .where(
+        and(
+          eq(collectionMemberRoles.workspaceID, workspaceID),
+          eq(collectionMemberRoles.roleID, roleID)
+        )
+      );
+    const groupAffected = await tx
+      .select({ userID: memberships.userID })
+      .from(collectionGroupRoles)
+      .innerJoin(groupMembers, eq(groupMembers.groupID, collectionGroupRoles.groupID))
+      .innerJoin(memberships, eq(memberships.id, groupMembers.membershipID))
+      .where(
+        and(
+          eq(collectionGroupRoles.workspaceID, workspaceID),
+          eq(collectionGroupRoles.roleID, roleID)
+        )
+      );
 
     await tx
       .update(memberships)
@@ -49,9 +78,29 @@ const deleteRole = async (input: {
       .update(invitations)
       .set({ roleID: viewerRole.id })
       .where(and(eq(invitations.roleID, roleID), eq(invitations.workspaceID, workspaceID)));
+    await tx
+      .update(collectionGroupRoles)
+      .set({ roleID: viewerRole.id, updatedAt: new Date() })
+      .where(
+        and(
+          eq(collectionGroupRoles.roleID, roleID),
+          eq(collectionGroupRoles.workspaceID, workspaceID)
+        )
+      );
+    await tx
+      .update(collectionMemberRoles)
+      .set({ roleID: viewerRole.id, updatedAt: new Date() })
+      .where(
+        and(
+          eq(collectionMemberRoles.roleID, roleID),
+          eq(collectionMemberRoles.workspaceID, workspaceID)
+        )
+      );
     await tx.delete(roles).where(and(eq(roles.id, roleID), eq(roles.workspaceID, workspaceID)));
 
-    return affected.map(({ userID }) => userID);
+    return [
+      ...new Set([...baseAffected, ...directAffected, ...groupAffected].map(({ userID }) => userID))
+    ];
   });
 
   return { affectedUserIDs: affectedUserIDs.map(toUserID) };

@@ -3,6 +3,7 @@ export * from "./collections";
 export * from "./contents";
 export * from "./stripe-webhook-events";
 export * from "./entries";
+export * from "./groups";
 export * from "./invitations";
 export * from "./keys";
 export * from "./memberships";

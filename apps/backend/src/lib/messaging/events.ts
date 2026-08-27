@@ -14,11 +14,13 @@ type SubscribeToEvent<Events extends Record<string, Record<string, any>>> = <
   E extends Extract<keyof Events, string>
 >(
   event: E,
-  callback: (payload: Events[E]) => void,
+  callback: (payload: Events[E], channel: string) => void,
   options?: { schema?: z.ZodType<unknown>; unsubscribeKey?: string }
 ) => () => void;
 
-const eventListeners: { [E in keyof Events]: Array<(payload: Events[E]) => void> } = {};
+const eventListeners: {
+  [E in keyof Events]: Array<(payload: Events[E], channel: string) => void>;
+} = {};
 const unsubscribeCallbacks: Record<string, () => void> = {};
 const emitEvent: EmitEvent<Events> = async (event, payload) => {
   try {
@@ -41,7 +43,7 @@ const subscribeToEvent: SubscribeToEvent<Events> = (
   } else {
     eventListeners[event] = [callback];
 
-    void subscriberRedis.pSubscribe(event, (payload) => {
+    void subscriberRedis.pSubscribe(event, (payload, channel) => {
       let parsedPayload: Events[typeof event];
 
       try {
@@ -72,7 +74,7 @@ const subscribeToEvent: SubscribeToEvent<Events> = (
 
       for (const listener of callbacks) {
         try {
-          listener(parsedPayload);
+          listener(parsedPayload, channel);
         } catch (error) {
           console.error("Event listener failed", {
             event,

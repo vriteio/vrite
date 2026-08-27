@@ -1,5 +1,6 @@
 import { type SubscribeToEvent, subscribeToEvent } from "#backend/lib/messaging";
 import { entryEventType } from "./entries";
+import { groupEventType } from "./groups";
 import { keyEventType } from "./keys";
 import { membershipEventType } from "./memberships";
 import { collectionEventType } from "./collections";
@@ -18,6 +19,7 @@ declare module "#backend/lib/messaging/events" {
 const workspaceEventType = z.union([
   entryEventType,
   collectionEventType,
+  groupEventType,
   membershipEventType,
   roleEventType,
   publishingEventType,
@@ -26,6 +28,7 @@ const workspaceEventType = z.union([
   workspaceStateEventType
 ]);
 const workspaceSettingsEventType = z.union([
+  groupEventType,
   membershipEventType,
   roleEventType,
   keyEventType,
@@ -47,6 +50,7 @@ const subscribeToWorkspaceEvents: SubscribeToEvent<{
 export { workspaceEventType, workspaceSettingsEventType, subscribeToWorkspaceEvents };
 export type { WorkspaceEvent, WorkspaceSettingsEvent };
 export * from "./entries";
+export * from "./groups";
 export * from "./collections";
 export * from "./memberships";
 export * from "./roles";

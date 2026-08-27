@@ -14,7 +14,7 @@ const unpublishEntry = async (input: {
   channel: string;
   versionID?: string;
 }): Promise<boolean> => {
-  await authorizeEntrySources(input.auth, input.entryIDs);
+  await authorizeEntrySources(input.auth, input.entryIDs, "publishing");
 
   const workspaceID = toUUID(input.workspaceID);
   const entryIDs = [...new Set(input.entryIDs.map(toUUID))];

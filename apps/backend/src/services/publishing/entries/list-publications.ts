@@ -29,7 +29,7 @@ const listEntryPublications = async (input: {
   workspaceID: string;
   entryID: string;
 }): Promise<EntryPublication[]> => {
-  await authorizeEntrySources(input.auth, [input.entryID]);
+  await authorizeEntrySources(input.auth, [input.entryID], "read:publishing");
 
   const workspaceID = toUUID(input.workspaceID);
   const entryID = toUUID(input.entryID);

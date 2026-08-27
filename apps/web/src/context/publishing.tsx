@@ -49,14 +49,14 @@ const PUBLISHED_CHANNEL = "published";
 const PublishingContext = createContext<PublishingContextValue>();
 
 const PublishingProvider: ParentComponent = (props) => {
-  const { content, hasPermission, subscribeToUpdates } = useWorkspace();
+  const { content, subscribeToUpdates } = useWorkspace();
   const [searchParams, setSearchParams] = useSearchParams();
   const channel = () => {
     const value = searchParams.channel;
 
     return typeof value === "string" ? value : PUBLISHED_CHANNEL;
   };
-  const canRead = () => hasPermission("read:publishing");
+  const canRead = () => content.hasPermissionInAnyCollection("read:publishing");
   const channelList = createAsync(async (): Promise<PublishingChannelsResult> => {
     if (!canRead()) return { result: [] };
 

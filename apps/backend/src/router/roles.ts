@@ -91,6 +91,7 @@ const rolesRouter = base.prefix("/roles").router({
 
       emitRoleEvent(context.auth.workspaceID, {
         action: "role:update",
+        affectedUserIDs,
         memberID: context.auth.session?.memberID,
         data: {
           id: input.id,
@@ -129,6 +130,7 @@ const rolesRouter = base.prefix("/roles").router({
 
       emitRoleEvent(context.auth.workspaceID, {
         action: "role:delete",
+        affectedUserIDs,
         memberID: context.auth.session?.memberID,
         data: {
           id: input.id

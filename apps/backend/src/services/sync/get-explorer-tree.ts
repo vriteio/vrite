@@ -1,8 +1,12 @@
 import { toCollectionID, toEntryID, toUUID } from "#backend/lib/primitives";
 import { db } from "#backend/lib/adapters";
-import { entries, type Collection, type Entry } from "#backend/db";
+import { entries, permissionType, type Collection, type Entry, type Permission } from "#backend/db";
 import { getPublishingStatusSnapshot, PUBLISHED_CHANNEL_CODE } from "#backend/lib/publishing";
-import { loadRestrictedCollectionAccess, type SessionData } from "#backend/lib/policy";
+import {
+  hasCollectionPermission,
+  loadRestrictedCollectionAccess,
+  type SessionData
+} from "#backend/lib/policy";
 import { and, desc, eq, isNull } from "drizzle-orm";
 
 const getExplorerTree = async (input: {
@@ -12,6 +16,7 @@ const getExplorerTree = async (input: {
 }): Promise<{
   collections: Collection[];
   entries: Entry[];
+  permissionsByCollectionID: Record<string, Permission[]>;
   publishing: { enabledCollectionIDs: string[]; unpublishedEntryIDs: string[] } | null;
 }> => {
   const workspaceID = toUUID(input.workspaceID);
@@ -30,9 +35,20 @@ const getExplorerTree = async (input: {
       : null
   ]);
   const entryRowsByID = new Map(entryRows.map((entry) => [toEntryID(entry.id), entry]));
+  const canReadPublishing = access.collections.some((collection) => {
+    return hasCollectionPermission(input.auth, access, collection.id, "read:publishing");
+  });
 
   return {
     collections: access.collections,
+    permissionsByCollectionID: Object.fromEntries(
+      access.collections.map((collection) => [
+        collection.id,
+        permissionType.options.filter((permission) => {
+          return hasCollectionPermission(input.auth, access, collection.id, permission);
+        })
+      ])
+    ),
     entries: entryRows
       .filter((entry) => {
         const collectionID = entry.collectionID ? toCollectionID(entry.collectionID) : null;
@@ -45,23 +61,27 @@ const getExplorerTree = async (input: {
         order: entry.rank,
         collectionID: entry.collectionID ? toCollectionID(entry.collectionID) : undefined
       })),
-    publishing: publishing
-      ? {
-          enabledCollectionIDs: publishing.enabledCollectionIDs.filter((collectionID) => {
-            return access.collectionIDs.has(collectionID);
-          }),
-          unpublishedEntryIDs: publishing.entries
-            .filter(({ entryID, hasUnpublishedChanges }) => {
-              const entry = entryRowsByID.get(entryID);
-              const collectionID = entry?.collectionID ? toCollectionID(entry.collectionID) : null;
+    publishing:
+      publishing && canReadPublishing
+        ? {
+            enabledCollectionIDs: publishing.enabledCollectionIDs.filter((collectionID) => {
+              return hasCollectionPermission(input.auth, access, collectionID, "read:publishing");
+            }),
+            unpublishedEntryIDs: publishing.entries
+              .filter(({ entryID, hasUnpublishedChanges }) => {
+                const entry = entryRowsByID.get(entryID);
+                const collectionID = entry?.collectionID
+                  ? toCollectionID(entry.collectionID)
+                  : null;
 
-              return (
-                hasUnpublishedChanges && (!collectionID || access.collectionIDs.has(collectionID))
-              );
-            })
-            .map(({ entryID }) => entryID)
-        }
-      : null
+                return (
+                  hasUnpublishedChanges &&
+                  hasCollectionPermission(input.auth, access, collectionID, "read:publishing")
+                );
+              })
+              .map(({ entryID }) => entryID)
+          }
+        : null
   };
 };
 

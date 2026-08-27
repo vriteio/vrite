@@ -76,6 +76,20 @@ const useExplorerEntry = (props: ExplorerEntryProps) => {
     setClosestEdge(null);
     props.onParentDragHighlightChange?.(false);
   };
+  const canEditEntry = (entryID: string) => {
+    const entry = content.entries.get({ entryID });
+
+    return content.hasCollectionPermission(entry?.collectionID || null, "content");
+  };
+  const canEditCollection = (collectionID: string) => {
+    return content.hasCollectionPermission(collectionID, "content");
+  };
+  const canEditSelection = () => {
+    const selectedIDs = selection().includes(props.entry.id) ? selection() : [props.entry.id];
+    const selected = content.tree.splitIDs({ ids: selectedIDs });
+
+    return selected.entries.every(canEditEntry) && selected.collections.every(canEditCollection);
+  };
   onMount(() => {
     const element = elementRef();
 
@@ -84,7 +98,12 @@ const useExplorerEntry = (props: ExplorerEntryProps) => {
     const cleanup = combine(
       draggable({
         element,
-        canDrag: () => !content.readOnly() && !menuOpened() && !swipe.swiping(),
+        canDrag: () =>
+          !content.offline() &&
+          !content.syncing() &&
+          canEditSelection() &&
+          !menuOpened() &&
+          !swipe.swiping(),
         getInitialData: () => {
           const sel = selection();
           const isDraggingSelected = sel.includes(props.entry.id);
@@ -138,7 +157,11 @@ const useExplorerEntry = (props: ExplorerEntryProps) => {
       }),
       dropTargetForElements({
         element,
-        canDrop: ({ source }) => !content.readOnly() && canOrderEntries(source.data),
+        canDrop: ({ source }) => {
+          return (
+            !content.readOnly(props.entry.collectionID || null) && canOrderEntries(source.data)
+          );
+        },
         getData: ({ input }) => {
           return attachClosestEdge(
             {

@@ -23,6 +23,7 @@ const roleEventType = z.union([
   z.object({
     action: z.literal("role:update"),
     memberID: id().optional(),
+    affectedUserIDs: z.array(id()).optional(),
     data: z.object({
       ...roleType.pick({ id: true }).shape,
       ...roleType.omit({ id: true }).partial().shape
@@ -31,6 +32,7 @@ const roleEventType = z.union([
   z.object({
     action: z.literal("role:delete"),
     memberID: id().optional(),
+    affectedUserIDs: z.array(id()).optional(),
     data: z.object({ id: roleType.shape.id })
   })
 ]);

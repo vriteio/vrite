@@ -33,7 +33,7 @@ const SettingsLayout: Component<RouteSectionProps> = (props) => {
     if (!route || route === "personal") return true;
     if (!currentWorkspace()) return false;
     if (route === "workspace") return true;
-    if (route === "invite" || route === "role") {
+    if (route === "group" || route === "invite" || route === "role") {
       return currentWorkspace()?.subscriptionPlan === "pro" && hasPermission("workspace");
     }
     if (route === "people") {
@@ -67,9 +67,26 @@ const SettingsLayout: Component<RouteSectionProps> = (props) => {
         queryKeys.add("roles");
         queryKeys.add("memberships");
       }
+
+      if (event.action.startsWith("group:")) {
+        queryKeys.add("groups");
+      }
     }
 
     if (route === "invite" && event.action.startsWith("role:")) {
+      queryKeys.add("roles");
+    }
+
+    if (
+      route === "group" &&
+      (event.action.startsWith("group:") ||
+        event.action.startsWith("invite:") ||
+        event.action.startsWith("membership:") ||
+        event.action.startsWith("role:"))
+    ) {
+      queryKeys.add("groups");
+      queryKeys.add("invites");
+      queryKeys.add("memberships");
       queryKeys.add("roles");
     }
 
@@ -124,7 +141,7 @@ const SettingsLayout: Component<RouteSectionProps> = (props) => {
     }
 
     if (
-      (route === "invite" || route === "role") &&
+      (route === "group" || route === "invite" || route === "role") &&
       (currentWorkspace()?.subscriptionPlan !== "pro" || !hasPermission("workspace"))
     ) {
       const fallbackRoute = hasPermission("workspace") ? "people" : "personal";

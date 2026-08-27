@@ -12,6 +12,7 @@ import { db } from "#backend/lib/adapters";
 import { config } from "#backend/lib/config";
 import { emitVersionDeletionEvents, emitVersionEvent } from "#backend/events/versions";
 import { mapVersionSummary, type VersionSummary } from "#backend/lib/data/entry-version";
+import { toEntryID, toVersionID, toWorkspaceID } from "#backend/lib/primitives";
 import { and, desc, eq, isNull, lte, sql } from "drizzle-orm";
 import { AUTOMATIC_VERSION_QUEUE_INTERVAL_MS } from "./config";
 
@@ -132,7 +133,7 @@ const processActivity = async (candidate: ActivityCandidate): Promise<void> => {
 const deleteExpiredAutomaticVersions = async (): Promise<void> => {
   const billingConfigured = Boolean(config.STRIPE_SECRET_KEY);
 
-  const deleted = await db.execute<{ id: string; workspaceID: string }>(sql`
+  const deleted = await db.execute<{ entryID: string; id: string; workspaceID: string }>(sql`
     delete from ${entryVersions}
     using ${workspaces}
     where ${entryVersions.workspaceID} = ${workspaces.id}
@@ -149,19 +150,22 @@ const deleteExpiredAutomaticVersions = async (): Promise<void> => {
           else ${config.VERSION_RETENTION_DAYS}::integer
         end * interval '1 day'
       )
-    returning ${entryVersions.id} as id, ${entryVersions.workspaceID} as "workspaceID"
+    returning
+      ${entryVersions.id} as id,
+      ${entryVersions.entryID} as "entryID",
+      ${entryVersions.workspaceID} as "workspaceID"
   `);
-  const idsByWorkspace = new Map<string, string[]>();
+  const versionsByWorkspace = new Map<string, Array<{ entryID: string; id: string }>>();
 
   for (const version of deleted.rows) {
-    const ids = idsByWorkspace.get(version.workspaceID) || [];
+    const versions = versionsByWorkspace.get(version.workspaceID) || [];
 
-    ids.push(version.id);
-    idsByWorkspace.set(version.workspaceID, ids);
+    versions.push({ entryID: toEntryID(version.entryID), id: toVersionID(version.id) });
+    versionsByWorkspace.set(version.workspaceID, versions);
   }
 
-  for (const [workspaceID, ids] of idsByWorkspace) {
-    emitVersionDeletionEvents(workspaceID, ids);
+  for (const [workspaceID, versions] of versionsByWorkspace) {
+    emitVersionDeletionEvents(toWorkspaceID(workspaceID), versions);
   }
 };
 const runAutomaticVersionQueue = async (): Promise<void> => {

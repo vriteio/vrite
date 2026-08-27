@@ -20,13 +20,18 @@ const EditorToolbar: Component = () => {
   const comparisonLayoutLabel = () => (inlineComparison() ? "Show side by side" : "Show inline");
   const versionResponse = createVersionDetailsResponse(versionID);
   const version = () => versionResponse()?.result;
+  const collection = createMemo(() => {
+    if (!params.slug?.startsWith("coll_") || routeData()) return null;
+
+    return content.collections.get({ collectionID: params.slug });
+  });
   const entry = createMemo(() => {
-    if (!params.slug || routeData()) return null;
+    if (!params.slug?.startsWith("ent_") || routeData()) return null;
 
     return content.entriesCollection().findOne({ id: params.slug });
   });
-  const isEntryTitleLoading = () => {
-    return Boolean(params.slug && !routeData() && !entry() && content.loading());
+  const isContentTitleLoading = () => {
+    return Boolean(params.slug && !routeData() && !collection() && !entry() && content.loading());
   };
   const items = createMemo(() => {
     const data = routeData();
@@ -37,12 +42,16 @@ const EditorToolbar: Component = () => {
 
     if (!params.slug) return [];
 
+    const currentCollection = collection();
     const currentEntry = entry();
 
+    if (currentCollection) return [{ label: currentCollection.name }];
     if (currentEntry) return [{ label: currentEntry.name }];
     if (content.loading()) return [];
 
-    return [{ label: "Entry not found" }];
+    return [
+      { label: params.slug.startsWith("coll_") ? "Collection not found" : "Entry not found" }
+    ];
   });
   const returnToCurrent = () => {
     setSearchParams({
@@ -54,7 +63,7 @@ const EditorToolbar: Component = () => {
 
   return (
     <div class="relative z-20 h-11 w-full shrink-0 items-center justify-center gap-1 p-2 flex">
-      <Show when={items().length > 0 || isEntryTitleLoading()}>
+      <Show when={items().length > 0 || isContentTitleLoading()}>
         <span class="flex-1 inline-flex items-center justify-center text-base font-medium leading-[1] bg-gray-50/2.5 backdrop-blur-sm rounded-lg overflow-hidden mr-4">
           <IconButton
             icon="i-lucide:hexagon"
@@ -97,7 +106,7 @@ const EditorToolbar: Component = () => {
               );
             }}
           </For>
-          <Show when={isEntryTitleLoading()}>
+          <Show when={isContentTitleLoading()}>
             <span class="h-4 text-gray-200 flex justify-center items-center w-2">/</span>
             <Skeleton class="m-0.5 h-4 w-20 rounded" />
           </Show>

@@ -2,6 +2,7 @@ import { billingRouter } from "./billing";
 import { collectionsRouter } from "./collections";
 import { contentRouter } from "./content";
 import { entriesRouter } from "./entries";
+import { groupsRouter } from "./groups";
 import { syncRouter } from "./sync";
 import { keysRouter } from "./keys";
 import { rolesRouter } from "./roles";
@@ -23,6 +24,7 @@ import { config } from "#backend/lib/config";
 const router = {
   auth: authRouter,
   entries: entriesRouter,
+  groups: groupsRouter,
   collections: collectionsRouter,
   content: contentRouter,
   billing: billingRouter,

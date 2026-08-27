@@ -78,6 +78,13 @@
       "when": 1787778140909,
       "tag": "0010_restricted_collections",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1787831841329,
+      "tag": "0011_groups-and-restricted-access",
+      "breakpoints": true
     }
   ]
 }

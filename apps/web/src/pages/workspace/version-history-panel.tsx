@@ -40,7 +40,7 @@ const VersionHistoryPanel: Component<VersionHistoryPanelProps> = (props) => {
   const params = useParams<{ slug?: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const { layout } = useLayout();
-  const { hasPermission, subscribeToUpdates } = useWorkspace();
+  const { content, subscribeToUpdates } = useWorkspace();
   const notify = useNotify();
   const [additionalPages, setAdditionalPages] = createSignal<VersionListPage[]>([]);
   const [loadingMore, setLoadingMore] = createSignal(false);
@@ -51,7 +51,11 @@ const VersionHistoryPanel: Component<VersionHistoryPanelProps> = (props) => {
   const opened = createMemo(() => props.opened ?? layout.rightSidePanelWidth > 0);
   const activeVersionID = () =>
     typeof searchParams.version === "string" ? searchParams.version : "";
-  const canManage = () => hasPermission("versions");
+  const canManage = () => {
+    const entry = content.entries.get({ entryID: entryID() });
+
+    return content.hasCollectionPermission(entry?.collectionID || null, "versions");
+  };
   const historyInput = () => ({ entryID: entryID(), limit: 50 });
   const versionHistory = createAsync(
     async () => {

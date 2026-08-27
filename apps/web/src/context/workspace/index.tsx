@@ -127,7 +127,7 @@ const WorkspaceProvider: ParentComponent = (props) => {
       workspace?.admin || hasGrantedPermission(workspace?.permissions || [], required)
     );
   };
-  const content = useWorkspaceContent(workspaceID, () => hasPermission("content"));
+  const content = useWorkspaceContent(workspaceID, hasPermission);
   const subscribeToUpdates = (listener: (event: WorkspaceEvent) => void) => {
     updateListeners.add(listener);
 

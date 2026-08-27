@@ -1,9 +1,10 @@
-import { emitMembershipEvent } from "#backend/events";
+import { emitGroupEvent, emitMembershipEvent } from "#backend/events";
 import { inviteType, membershipType, userProfileType } from "#backend/db";
 import { authorized, base } from "#backend/lib/transport";
 import { id } from "#backend/lib/primitives";
 import { Billing } from "#backend/services/billing";
 import { Memberships } from "#backend/services/memberships";
+import { Groups } from "#backend/services/groups";
 import { Auth } from "#backend/services/auth";
 import { ORPCError } from "@orpc/server";
 import * as z from "zod";
@@ -33,6 +34,30 @@ const acceptedInviteType = z.object({
   workspaceID: id().describe("ID of the workspace that was joined"),
   workspaceName: z.string().describe("Name of the workspace that was joined")
 });
+const emitUpdatedGroups = async (input: {
+  groupIDs: string[];
+  memberID?: string;
+  workspaceID: string;
+}) => {
+  if (input.groupIDs.length === 0) return;
+
+  const targetIDs = new Set(input.groupIDs);
+  const { groups } = await Groups.list({ workspaceID: input.workspaceID });
+
+  for (const group of groups) {
+    if (!targetIDs.has(group.id)) continue;
+
+    emitGroupEvent(input.workspaceID, {
+      action: "group:members-update",
+      memberID: input.memberID,
+      data: {
+        id: group.id,
+        invitationIDs: group.invitationIDs,
+        memberIDs: group.memberIDs
+      }
+    });
+  }
+};
 
 const membershipsRouter = base.prefix("/memberships").router({
   list: base
@@ -218,7 +243,7 @@ const membershipsRouter = base.prefix("/memberships").router({
     .use(authorized)
     .output(z.void())
     .handler(async ({ context, input }) => {
-      await Memberships.revokeInvite({
+      const { groupIDs } = await Memberships.revokeInvite({
         id: input.id,
         workspaceID: context.auth.workspaceID
       });
@@ -229,6 +254,11 @@ const membershipsRouter = base.prefix("/memberships").router({
         data: {
           id: input.id
         }
+      });
+      await emitUpdatedGroups({
+        groupIDs,
+        memberID: context.auth.session?.memberID,
+        workspaceID: context.auth.workspaceID
       });
     }),
   acceptInvite: base
@@ -274,6 +304,10 @@ const membershipsRouter = base.prefix("/memberships").router({
       emitMembershipEvent(result.workspaceID, {
         action: "membership:add",
         data: result.membership
+      });
+      await emitUpdatedGroups({
+        groupIDs: result.groupIDs,
+        workspaceID: result.workspaceID
       });
 
       return {

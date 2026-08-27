@@ -13,7 +13,7 @@ import { createLocalEditorSnapshotLifecycle, LocalSnapshotError } from "./local-
 import clsx from "clsx";
 
 const EditorPane: Component = () => {
-  const { currentWorkspace, currentSession, content, hasPermission } = useWorkspace();
+  const { currentWorkspace, currentSession, content } = useWorkspace();
   const isContentLoading = () => content.loading();
   const params = useParams();
   const navigate = useNavigate();
@@ -27,7 +27,11 @@ const EditorPane: Component = () => {
     return content.entriesCollection().findOne({ id: entryID })?.id ?? null;
   });
   const editableEntryID = createMemo(() => {
-    return hasPermission("content") ? availableEntryID() : null;
+    const entry = content.entries.get({ entryID: availableEntryID() || "" });
+
+    return content.hasCollectionPermission(entry?.collectionID || null, "content")
+      ? availableEntryID()
+      : null;
   });
   const workspaceID = () => params.workspaceID || currentWorkspace()?.id || "unknown";
   const [openedEntryID, setOpenedEntryID] = createRef<string | null>(null);

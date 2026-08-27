@@ -74,7 +74,7 @@ const WorkspaceRightSidePanel: Component<WorkspaceRightSidePanelProps> = (props)
 };
 
 const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
-  const params = useParams<{ workspaceID: string }>();
+  const params = useParams<{ slug?: string; workspaceID: string }>();
   const location = useLocation();
   const { layout, setLayout } = useLayout();
   const registerShortcuts = useShortcuts();
@@ -88,6 +88,7 @@ const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
   const [mobilePanelOpened, setMobilePanelOpened] = createSignal(false);
   const workspacePath = () => `/${params.workspaceID || ""}`;
   const isSettingsRoute = () => location.pathname.startsWith(`${workspacePath()}/settings`);
+  const isCollectionAccessRoute = () => Boolean(params.slug?.startsWith("coll_"));
   const activePanel = () => (md() || !mobilePanelOpened() ? panel() : mobilePanel());
   const openPanel = (nextPanel: PrimaryPanel, currentEntryID?: string) => {
     if (nextPanel === "settings") {
@@ -210,7 +211,7 @@ const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
               <ProfileMenu class="h-full w-full p-0" compact />
             </nav>
           </div>
-          <WorkspaceRightSidePanel hidden={isSettingsRoute()} />
+          <WorkspaceRightSidePanel hidden={isSettingsRoute() || isCollectionAccessRoute()} />
         </div>
         <Dropdown
           title={

@@ -41,7 +41,7 @@ const publishEntry = async (input: {
     return entry.versionID ? [] : [entry.entryID];
   });
 
-  await authorizeEntrySources(input.auth, entryIDs);
+  await authorizeEntrySources(input.auth, entryIDs, "publishing");
 
   await syncEntrySnapshots(workspaceID, currentEntryIDs);
   return db.transaction(async (tx) => {

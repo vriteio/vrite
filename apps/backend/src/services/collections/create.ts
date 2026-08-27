@@ -5,7 +5,7 @@ import { and, desc, eq, isNull } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 import { loadCollectionTree } from "#backend/lib/data";
 import {
-  assertCollectionAccess,
+  assertCollectionPermission,
   canManageRestrictedCollections,
   loadRestrictedCollectionAccess,
   type SessionData
@@ -22,7 +22,7 @@ const createCollection = async (
   const name = normalizeCollectionName(input.name ?? "Untitled");
   const access = await loadRestrictedCollectionAccess(input.auth);
 
-  assertCollectionAccess(access, input.parentID);
+  assertCollectionPermission(input.auth, access, input.parentID, "content");
 
   if (input.restricted) {
     if (input.auth.subscriptionPlan !== "pro") {

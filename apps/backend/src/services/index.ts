@@ -1,6 +1,7 @@
 export * from "./auth";
 export * from "./collections";
 export * from "./entries";
+export * from "./groups";
 export * from "./sync";
 export * from "./billing";
 export * from "./keys";

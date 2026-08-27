@@ -3,7 +3,7 @@ import { db } from "#backend/lib/adapters";
 import { entries, entryPublications, memberships } from "#backend/db";
 import { and, eq, inArray, isNull } from "drizzle-orm";
 import {
-  assertEntryAccess,
+  assertEntryPermission,
   loadRestrictedCollectionAccess,
   type SessionData
 } from "#backend/lib/policy";
@@ -17,7 +17,9 @@ const deleteEntries = async (input: {
 
   const access = await loadRestrictedCollectionAccess(input.auth);
 
-  await Promise.all(input.ids.map((entryID) => assertEntryAccess(input.auth, access, entryID)));
+  await Promise.all(
+    input.ids.map((entryID) => assertEntryPermission(input.auth, access, entryID, "content"))
+  );
 
   const deleted = await db.transaction(async (tx) => {
     const rows = await tx

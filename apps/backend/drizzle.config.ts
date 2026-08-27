@@ -8,6 +8,7 @@ export default defineConfig({
     "./src/db/contents.ts",
     "./src/db/stripe-webhook-events.ts",
     "./src/db/entries.ts",
+    "./src/db/groups.ts",
     "./src/db/invitations.ts",
     "./src/db/keys.ts",
     "./src/db/memberships.ts",

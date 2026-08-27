@@ -1,6 +1,13 @@
 import { toUUID, toUserID } from "#backend/lib/primitives";
 import { db } from "#backend/lib/adapters";
-import { memberships, type Permission, roles } from "#backend/db";
+import {
+  collectionGroupRoles,
+  collectionMemberRoles,
+  groupMembers,
+  memberships,
+  type Permission,
+  roles
+} from "#backend/db";
 import { and, eq } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 import {
@@ -52,12 +59,40 @@ const updateRole = async (input: {
   }
 
   if (input.permissions !== undefined) {
-    const affected = await db
-      .select({ userID: memberships.userID })
-      .from(memberships)
-      .where(and(eq(memberships.roleID, roleID), eq(memberships.workspaceID, workspaceID)));
+    const [baseAffected, directAffected, groupAffected] = await Promise.all([
+      db
+        .select({ userID: memberships.userID })
+        .from(memberships)
+        .where(and(eq(memberships.roleID, roleID), eq(memberships.workspaceID, workspaceID))),
+      db
+        .select({ userID: memberships.userID })
+        .from(collectionMemberRoles)
+        .innerJoin(memberships, eq(memberships.id, collectionMemberRoles.membershipID))
+        .where(
+          and(
+            eq(collectionMemberRoles.workspaceID, workspaceID),
+            eq(collectionMemberRoles.roleID, roleID)
+          )
+        ),
+      db
+        .select({ userID: memberships.userID })
+        .from(collectionGroupRoles)
+        .innerJoin(groupMembers, eq(groupMembers.groupID, collectionGroupRoles.groupID))
+        .innerJoin(memberships, eq(memberships.id, groupMembers.membershipID))
+        .where(
+          and(
+            eq(collectionGroupRoles.workspaceID, workspaceID),
+            eq(collectionGroupRoles.roleID, roleID)
+          )
+        )
+    ]);
+    const affectedUserIDs = [
+      ...new Set(
+        [...baseAffected, ...directAffected, ...groupAffected].map(({ userID }) => toUserID(userID))
+      )
+    ];
 
-    return { affectedUserIDs: affected.map(({ userID }) => toUserID(userID)) };
+    return { affectedUserIDs };
   }
 
   return { affectedUserIDs: [] };

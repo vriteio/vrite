@@ -72,9 +72,25 @@ const useExplorerCollection = (props: ExplorerCollectionProps) => {
       .map((collection) => collection.id);
   };
   const canDropIntoCollection = (source: { data: Record<string | symbol, unknown> }) => {
-    if (content.readOnly()) return false;
+    if (content.readOnly(props.collection.id)) return false;
 
     return canTargetCollection(source.data, props.collection.id, getCollectionAncestors);
+  };
+  const canEditEntry = (entryID: string) => {
+    const entry = content.entries.get({ entryID });
+
+    return content.hasCollectionPermission(entry?.collectionID || null, "content");
+  };
+  const canEditCollection = (collectionID: string) => {
+    return content.hasCollectionPermission(collectionID, "content");
+  };
+  const canEditSelection = () => {
+    const selectedIDs = selection().includes(props.collection.id)
+      ? selection()
+      : [props.collection.id];
+    const selected = content.tree.splitIDs({ ids: selectedIDs });
+
+    return selected.entries.every(canEditEntry) && selected.collections.every(canEditCollection);
   };
   const changesParent = (
     source: { data: Record<string | symbol, unknown> },
@@ -189,7 +205,12 @@ const useExplorerCollection = (props: ExplorerCollectionProps) => {
     const cleanup = combine(
       draggable({
         element,
-        canDrag: () => !content.readOnly() && !menuOpened() && !swipe.swiping(),
+        canDrag: () =>
+          !content.offline() &&
+          !content.syncing() &&
+          canEditSelection() &&
+          !menuOpened() &&
+          !swipe.swiping(),
         getInitialData: () => {
           const sel = selection();
           const isDraggingSelected = sel.includes(props.collection.id);
@@ -321,6 +342,7 @@ const useExplorerCollection = (props: ExplorerCollectionProps) => {
     isSelected,
     menuOpened,
     renderBottomDropLineAfterSubtree,
+    selection,
     setElementRef,
     setIsChildOrderDraggedOver,
     setMenuOpened,

@@ -12,9 +12,9 @@ import { and, desc, eq, gt, isNull, lt, ne } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 import type { VersionSummary } from "#backend/lib/data";
 import {
-  assertCollectionAccess,
-  assertRestrictedBoundaryChange,
+  assertCollectionMovePermission,
   getEntryCollection,
+  hasCollectionPermission,
   loadRestrictedCollectionAccess,
   type SessionData
 } from "#backend/lib/policy";
@@ -80,7 +80,6 @@ const moveEntry = async (input: {
   order: string;
   collectionID?: string | null;
   publish?: boolean;
-  canPublish: boolean;
   contributorIDs: string[];
 }): Promise<{
   affectedPublishingEntryIDs: string[];
@@ -103,13 +102,14 @@ const moveEntry = async (input: {
   const restrictedBoundaryChanged =
     access.boundaryByCollectionID.get(entry.collectionID || "") !==
     access.boundaryByCollectionID.get(destinationCollectionID || "");
+  const canPublish = [entry.collectionID, destinationCollectionID].every((id) => {
+    return hasCollectionPermission(input.auth, access, id, "publishing");
+  });
 
-  assertCollectionAccess(access, entry.collectionID);
-  assertCollectionAccess(access, destinationCollectionID);
-  assertRestrictedBoundaryChange(input.auth, access, entry.collectionID, destinationCollectionID);
+  assertCollectionMovePermission(input.auth, access, entry.collectionID, destinationCollectionID);
 
   if (input.publish) {
-    if (!input.canPublish) {
+    if (!canPublish) {
       throw new ORPCError("FORBIDDEN", {
         message: "Publishing permission is required to move this entry"
       });
@@ -173,7 +173,7 @@ const moveEntry = async (input: {
     );
     const crossesPublishingBoundary = wasPublishingEnabled !== willBePublishingEnabled;
 
-    if (crossesPublishingBoundary && !input.canPublish) {
+    if (crossesPublishingBoundary && !canPublish) {
       throw new ORPCError("FORBIDDEN", {
         message: "Publishing permission is required to move this entry"
       });

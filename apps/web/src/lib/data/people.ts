@@ -1,7 +1,16 @@
 import { createMutation } from "@tanstack/solid-query";
 import { query, revalidate } from "@solidjs/router";
-import { client, type Permission } from "#web/lib/api";
+import { client, type Group, type Permission } from "#web/lib/api";
 import { useNotify } from "#web/context/notifications";
+
+interface GroupDetails extends Group {
+  invitationIDs: string[];
+  memberIDs: string[];
+}
+
+interface RestrictedAssignmentsQueryInput {
+  collectionID: string;
+}
 
 interface RoleMutationsInput {
   navigateToPeople(): void;
@@ -11,6 +20,10 @@ interface RoleMutationsInput {
 const membershipsQuery = query(() => client.memberships.list(), "memberships");
 const invitesQuery = query(() => client.memberships.listInvites(), "invites");
 const rolesQuery = query(() => client.roles.list(), "roles");
+const groupsQuery = query(() => client.groups.list(), "groups");
+const restrictedAssignmentsQuery = query((input: RestrictedAssignmentsQueryInput) => {
+  return client.collections.listRestrictedAssignments({ id: input.collectionID });
+}, "restricted-assignments");
 
 const isDuplicateRoleNameError = (error: unknown) => {
   return (
@@ -56,4 +69,12 @@ const useRoleMutations = (input: RoleMutationsInput) => {
   return { createRoleMutation, updateRoleMutation };
 };
 
-export { invitesQuery, membershipsQuery, rolesQuery, useRoleMutations };
+export {
+  groupsQuery,
+  invitesQuery,
+  membershipsQuery,
+  restrictedAssignmentsQuery,
+  rolesQuery,
+  useRoleMutations
+};
+export type { GroupDetails, RestrictedAssignmentsQueryInput };

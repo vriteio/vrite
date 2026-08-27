@@ -17,7 +17,7 @@ const unpublishCollection = async (input: {
   collectionIDs: string[];
   channel: string;
 }): Promise<{ entryIDs: string[]; unpublishedEntries: number }> => {
-  await authorizeCollectionSources(input.auth, input.collectionIDs);
+  await authorizeCollectionSources(input.auth, input.collectionIDs, "publishing");
 
   const workspaceID = toUUID(input.workspaceID);
   const collectionIDs = [...new Set(input.collectionIDs.map(toUUID))];

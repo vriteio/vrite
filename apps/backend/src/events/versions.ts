@@ -14,6 +14,11 @@ declare module "#backend/lib/messaging/events" {
   }
 }
 
+interface VersionDeletion {
+  entryID: string;
+  id: string;
+}
+
 const versionEventType = z.union([
   z.object({
     action: z.literal("version:create"),
@@ -28,7 +33,10 @@ const versionEventType = z.union([
   z.object({
     action: z.literal("version:delete"),
     memberID: id().optional(),
-    data: z.object({ ids: z.array(id()) })
+    data: z.object({
+      entryIDsByVersionID: z.record(id(), id()),
+      ids: z.array(id())
+    })
   })
 ]);
 
@@ -40,11 +48,22 @@ const emitVersionEvent: EmitEvent<{
 }> = (workspaceID, event) => {
   emitEvent(`${workspaceID}:versions`, event);
 };
-const emitVersionDeletionEvents = (workspaceID: string, ids: string[], memberID?: string): void => {
-  for (let index = 0; index < ids.length; index += VERSION_EVENT_BATCH_SIZE) {
+const emitVersionDeletionEvents = (
+  workspaceID: string,
+  versions: VersionDeletion[],
+  memberID?: string
+): void => {
+  for (let index = 0; index < versions.length; index += VERSION_EVENT_BATCH_SIZE) {
+    const batch = versions.slice(index, index + VERSION_EVENT_BATCH_SIZE);
+
     emitVersionEvent(workspaceID, {
       action: "version:delete",
-      data: { ids: ids.slice(index, index + VERSION_EVENT_BATCH_SIZE) },
+      data: {
+        entryIDsByVersionID: Object.fromEntries(
+          batch.map((version) => [version.id, version.entryID])
+        ),
+        ids: batch.map((version) => version.id)
+      },
       memberID
     });
   }
@@ -78,4 +97,4 @@ export {
   subscribeToVersionEvents,
   versionEventType
 };
-export type { VersionEvent };
+export type { VersionDeletion, VersionEvent };

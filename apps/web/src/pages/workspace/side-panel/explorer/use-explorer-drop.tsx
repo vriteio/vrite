@@ -26,7 +26,7 @@ interface ExplorerMoveInput {
 
 const useExplorerDrop = (element: () => HTMLElement | null) => {
   const [{ flattenedOrder }, { setSelection }] = useTree();
-  const { content, hasPermission } = useWorkspace();
+  const { content } = useWorkspace();
   const notify = useNotify();
   const [isDraggedOver, setIsDraggedOver] = createSignal(false);
   const [pendingPublishingMove, setPendingPublishingMove] =
@@ -121,23 +121,19 @@ const useExplorerDrop = (element: () => HTMLElement | null) => {
 
     return [...collections, ...entries];
   };
-  const crossesRestrictionBoundary = (input: ExplorerMoveInput) => {
-    const targetBoundaryID = content.collections.getRestrictionBoundaryID({
-      collectionID: input.parentID
+  const hasMovePermission = (input: ExplorerMoveInput, permission: "content" | "publishing") => {
+    const sourceCollectionIDs = input.entryIDs.map((entryID) => {
+      return content.entries.get({ entryID })?.collectionID ?? null;
     });
-    const entryCrossesBoundary = input.entryIDs.some((entryID) => {
-      const collectionID = content.entries.get({ entryID })?.collectionID ?? null;
+    const affectedCollectionIDs = input.collectionIDs.flatMap((collectionID) => {
+      if (permission === "content") return [collectionID];
 
-      return content.collections.getRestrictionBoundaryID({ collectionID }) !== targetBoundaryID;
-    });
-    const collectionCrossesBoundary = input.collectionIDs.some((collectionID) => {
-      return (
-        content.collections.containsRestrictionRoot({ collectionID }) ||
-        content.collections.getRestrictionBoundaryID({ collectionID }) !== targetBoundaryID
-      );
+      return content.tree.getDeletableIDs({ ids: [collectionID] }).collections;
     });
 
-    return entryCrossesBoundary || collectionCrossesBoundary;
+    return [input.parentID, ...sourceCollectionIDs, ...affectedCollectionIDs].every(
+      (collectionID) => content.hasCollectionPermission(collectionID, permission)
+    );
   };
   const submitMove = (input: ExplorerMoveInput) => {
     const direction = getPublishingMoveDirection(input);
@@ -146,10 +142,10 @@ const useExplorerDrop = (element: () => HTMLElement | null) => {
       setSelection([]);
     };
 
-    if (crossesRestrictionBoundary(input) && !hasPermission("restricted_collections")) {
+    if (!hasMovePermission(input, "content")) {
       notify({
         type: "error",
-        text: "Permission to manage restricted collections is required for this move"
+        text: "Content permission is required in the source and destination collections"
       });
       return;
     }
@@ -159,7 +155,7 @@ const useExplorerDrop = (element: () => HTMLElement | null) => {
       return;
     }
 
-    if (!hasPermission("publishing")) {
+    if (!hasMovePermission(input, "publishing")) {
       notify({ type: "error", text: "Publishing permission is required for this move" });
       return;
     }
@@ -190,7 +186,7 @@ const useExplorerDrop = (element: () => HTMLElement | null) => {
   onMount(() => {
     const unregisterMonitor = monitorForElements({
       onDrop({ source, location }) {
-        if (content.readOnly()) return;
+        if (content.offline() || content.syncing()) return;
         const target = location.current.dropTargets[0];
         if (!target) return;
 
@@ -328,7 +324,7 @@ const useExplorerDrop = (element: () => HTMLElement | null) => {
       ? dropTargetForElements({
           element: dropElement,
           getData: () => ({ type: "explorer", id: "" }),
-          canDrop: ({ source }) => !content.readOnly() && canChangeParent(source.data),
+          canDrop: ({ source }) => !content.readOnly(null) && canChangeParent(source.data),
           onDragEnter: ({ source }) => setIsDraggedOver(changesRootParent(source.data)),
           onDrag: ({ source }) => setIsDraggedOver(changesRootParent(source.data)),
           onDragLeave: () => setIsDraggedOver(false),

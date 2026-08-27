@@ -36,12 +36,16 @@ interface VersionPublishingMutationInput extends VersionPublishingAction {
 }
 
 const useVersionPublishing = (input: UseVersionPublishingInput) => {
-  const { content, hasPermission } = useWorkspace();
+  const { content } = useWorkspace();
   const publishing = usePublishing();
   const notify = useNotify();
   const [action, setAction] = createSignal<VersionPublishingAction | null>(null);
   const [publicationsRefreshing, startPublicationsRefresh] = useTransition();
-  const canRead = () => hasPermission("read:publishing");
+  const canRead = () => {
+    const entry = content.entries.get({ entryID: input.entryID() });
+
+    return content.hasCollectionPermission(entry?.collectionID || null, "read:publishing");
+  };
   const publishingEnabled = () => {
     const status = content.getEntryPublishingStatus(input.entryID());
 
@@ -49,7 +53,14 @@ const useVersionPublishing = (input: UseVersionPublishingInput) => {
   };
   const canManage = () => {
     return (
-      hasPermission("publishing") && publishingEnabled() && !content.offline() && !content.syncing()
+      (() => {
+        const entry = content.entries.get({ entryID: input.entryID() });
+
+        return content.hasCollectionPermission(entry?.collectionID || null, "publishing");
+      })() &&
+      publishingEnabled() &&
+      !content.offline() &&
+      !content.syncing()
     );
   };
   const publications = createAsync(

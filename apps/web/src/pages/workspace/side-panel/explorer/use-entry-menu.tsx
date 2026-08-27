@@ -39,8 +39,29 @@ const useEntryMenu = (entryID: string) => {
       })),
       type: "entry" as const
     };
+    const canEdit = targetEntries.every((selectedEntry) => {
+      return content.hasCollectionPermission(selectedEntry.collectionID || null, "content");
+    });
+    const deletableIDs = content.tree.getDeletableIDs({
+      ids: isMulti ? selection() : [entryID]
+    });
+    const canDelete =
+      deletableIDs.collections.every((id) => {
+        return content.hasCollectionPermission(id, "content");
+      }) &&
+      deletableIDs.entries.every((id) => {
+        const targetEntry = content.entries.get({ entryID: id });
+
+        return content.hasCollectionPermission(targetEntry?.collectionID || null, "content");
+      }) &&
+      (hasPermission("restricted_collections") ||
+        !deletableIDs.collections.some((id) => {
+          return content.collections.isRestrictionRoot({ collectionID: id });
+        }));
     const canManagePublishing =
-      hasPermission("publishing") &&
+      targetEntries.every((selectedEntry) => {
+        return content.hasCollectionPermission(selectedEntry.collectionID || null, "publishing");
+      }) &&
       content.publishing() !== null &&
       !content.offline() &&
       !content.syncing();
@@ -62,8 +83,9 @@ const useEntryMenu = (entryID: string) => {
           label: "Rename entry",
           icon: "i-lucide:pencil",
           shortcut: "f2",
+          disabled: !canEdit,
           onClick: () => {
-            if (!content.readOnly()) startRenaming();
+            if (canEdit && !content.readOnly(entry?.collectionID || null)) startRenaming();
           }
         }
       ]);
@@ -89,9 +111,10 @@ const useEntryMenu = (entryID: string) => {
         label: isMulti ? `Delete ${selectedCount} items` : "Delete",
         icon: "i-lucide:trash",
         color: "danger",
+        disabled: !canDelete,
         shortcut: "$mod+backspace",
         onClick: () => {
-          if (content.readOnly()) return;
+          if (!canDelete || content.offline() || content.syncing()) return;
           content.tree.delete({ ids: isMulti ? selection() : [entryID] });
           setSelection([]);
         }

@@ -39,15 +39,22 @@ const isWorkspaceEventVisible = (
   }
 
   if (event.action.startsWith("publishing:")) {
+    if (event.action.startsWith("publishing:channel-")) {
+      return canAccess(auth, {
+        session: ["read:publishing"],
+        key: ["read:publishing"]
+      });
+    }
+
     return canAccess(auth, {
-      session: ["read:publishing"],
+      session: true,
       key: ["read:publishing"]
     });
   }
 
   if (event.action.startsWith("version:")) {
     return canAccess(auth, {
-      session: ["read:versions"],
+      session: true,
       key: ["read:versions"]
     });
   }
@@ -62,6 +69,16 @@ const isWorkspaceEventVisible = (
 
   if (event.action.startsWith("role:")) {
     return canAccess(auth, { session: ["workspace"], key: ["read:roles"] });
+  }
+
+  if (event.action.startsWith("group:")) {
+    return canAccess(auth, { session: ["workspace"] });
+  }
+
+  if (event.action === "restricted-assignments:update") {
+    return canAccess(auth, {
+      session: ["workspace", "read:restricted_collections"]
+    });
   }
 
   if (event.action.startsWith("key:")) {

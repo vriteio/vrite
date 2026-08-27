@@ -5,7 +5,7 @@ import { toUUID, toVersionID } from "#backend/lib/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, desc, eq, inArray, isNull, lt, or } from "drizzle-orm";
 import {
-  assertEntryAccess,
+  assertEntryPermission,
   loadRestrictedCollectionAccess,
   type SessionData
 } from "#backend/lib/policy";
@@ -23,7 +23,7 @@ const listVersions = async (input: {
   const entryID = toUUID(input.entryID);
   const filters = [eq(entryVersions.workspaceID, workspaceID), eq(entryVersions.entryID, entryID)];
 
-  await assertEntryAccess(input.auth, access, input.entryID);
+  await assertEntryPermission(input.auth, access, input.entryID, "read:versions");
 
   const [entry] = await db
     .select({ id: entries.id })

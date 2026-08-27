@@ -5,7 +5,7 @@ import { toUUID } from "#backend/lib/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, eq, isNull } from "drizzle-orm";
 import {
-  assertVersionAccess,
+  assertVersionPermission,
   loadRestrictedCollectionAccess,
   type SessionData
 } from "#backend/lib/policy";
@@ -19,7 +19,7 @@ const getVersion = async (input: {
   const workspaceID = toUUID(input.workspaceID);
   const versionID = toUUID(input.versionID);
 
-  await assertVersionAccess(input.auth, access, input.versionID);
+  await assertVersionPermission(input.auth, access, input.versionID, "read:versions");
 
   const [row] = await db
     .select({ version: entryVersions })

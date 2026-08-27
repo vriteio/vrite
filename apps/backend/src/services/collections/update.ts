@@ -5,7 +5,7 @@ import { and, eq, isNull, sql } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 import { normalizeCollectionName, ROOT_COLLECTION_NAME } from "#backend/lib/validation";
 import {
-  assertCollectionAccess,
+  assertCollectionPermission,
   loadRestrictedCollectionAccess,
   type SessionData
 } from "#backend/lib/policy";
@@ -15,7 +15,7 @@ const updateCollection = async (
 ) => {
   const access = await loadRestrictedCollectionAccess(input.auth);
 
-  assertCollectionAccess(access, input.id);
+  assertCollectionPermission(input.auth, access, input.id, "content");
 
   if (input.name === undefined) return;
 
