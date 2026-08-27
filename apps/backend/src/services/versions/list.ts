@@ -4,17 +4,27 @@ import { mapVersionSummary, type VersionSummary } from "#backend/lib/data";
 import { toUUID, toVersionID } from "#backend/lib/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, desc, eq, inArray, isNull, lt, or } from "drizzle-orm";
+import {
+  assertEntryAccess,
+  loadRestrictedCollectionAccess,
+  type SessionData
+} from "#backend/lib/policy";
 
 const listVersions = async (input: {
+  auth: SessionData;
   workspaceID: string;
   entryID: string;
   cursor?: string;
   limit?: number;
 }): Promise<{ versions: VersionSummary[]; nextCursor: string | null }> => {
   const limit = input.limit || 50;
+  const access = await loadRestrictedCollectionAccess(input.auth);
   const workspaceID = toUUID(input.workspaceID);
   const entryID = toUUID(input.entryID);
   const filters = [eq(entryVersions.workspaceID, workspaceID), eq(entryVersions.entryID, entryID)];
+
+  await assertEntryAccess(input.auth, access, input.entryID);
+
   const [entry] = await db
     .select({ id: entries.id })
     .from(entries)

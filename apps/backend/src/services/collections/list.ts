@@ -3,8 +3,14 @@ import { type Collection } from "#backend/db";
 import { loadCollectionTree } from "#backend/lib/data";
 import { ROOT_COLLECTION_NAME } from "#backend/lib/validation";
 import { ORPCError } from "@orpc/server";
+import {
+  assertCollectionAccess,
+  loadRestrictedCollectionAccess,
+  type SessionData
+} from "#backend/lib/policy";
 
 const listCollections = async (input: {
+  auth: SessionData;
   workspaceID: string;
   ancestorID?: string;
   cursor?: string;
@@ -12,14 +18,20 @@ const listCollections = async (input: {
 }): Promise<{ collections: Collection[]; nextCursor: string | null }> => {
   const limit = input.limit || 50;
   const workspaceID = toUUID(input.workspaceID);
+  const access = await loadRestrictedCollectionAccess(input.auth);
   const tree = await loadCollectionTree(workspaceID);
   const root = tree.rows.find((row) => row.parentID === null && row.name === ROOT_COLLECTION_NAME);
   const parentID = input.ancestorID ? toUUID(input.ancestorID) : root?.id;
 
+  assertCollectionAccess(access, input.ancestorID);
+  assertCollectionAccess(access, input.cursor);
+
   if (!parentID) return { collections: [], nextCursor: null };
 
   const siblings = tree.rows.filter((row) => {
-    return row.parentID === parentID && row.name !== ROOT_COLLECTION_NAME;
+    const accessible = access.collectionIDs.has(toCollectionID(row.id));
+
+    return accessible && row.parentID === parentID && row.name !== ROOT_COLLECTION_NAME;
   });
 
   let startIndex = 0;

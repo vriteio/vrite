@@ -1,7 +1,12 @@
 import { entries, workspaces } from "#backend/db";
 import { db } from "#backend/lib/adapters";
-import { hasPermission, type SessionData } from "#backend/lib/policy";
-import { toEntryID, toUUID, toWorkspaceID } from "#backend/lib/primitives";
+import {
+  canAccessCollection,
+  hasPermission,
+  loadRestrictedCollectionAccess,
+  type SessionData
+} from "#backend/lib/policy";
+import { toCollectionID, toEntryID, toUUID, toWorkspaceID } from "#backend/lib/primitives";
 import { Auth } from "#backend/services/auth";
 import { and, eq, isNull } from "drizzle-orm";
 import type { CollaborationContext } from "./types";
@@ -46,6 +51,7 @@ const authenticateCollaboration = async (input: {
   const [entry] = await db
     .select({
       id: entries.id,
+      collectionID: entries.collectionID,
       workspaceID: entries.workspaceID,
       workspaceDeletingAt: workspaces.deletingAt
     })
@@ -69,6 +75,14 @@ const authenticateCollaboration = async (input: {
   }
 
   if (auth.type !== "session" || !auth.session || auth.workspaceID !== workspaceID) {
+    throw permissionError("Forbidden");
+  }
+
+  const access = await loadRestrictedCollectionAccess(auth);
+
+  const collectionID = entry.collectionID ? toCollectionID(entry.collectionID) : null;
+
+  if (!canAccessCollection(access, collectionID)) {
     throw permissionError("Forbidden");
   }
 

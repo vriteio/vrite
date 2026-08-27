@@ -8,7 +8,23 @@ interface SubscriptionData {
   subscriptionID: string;
   seatItemID?: string;
   apiUsageItemID?: string;
+  billingCycleAnchor: number;
+  cancelAt: number | null;
   cancelAtPeriodEnd?: boolean;
+  canceledAt: number | null;
+  cancellationDetails: {
+    comment: string | null;
+    feedback: string | null;
+    reason: string | null;
+  } | null;
+  collectionMethod: string;
+  createdAt: number;
+  currentPeriodEnd: number | null;
+  currentPeriodStart: number | null;
+  endedAt: number | null;
+  startedAt: number;
+  trialEnd: number | null;
+  trialStart: number | null;
 }
 
 const workspaceType = z.object({

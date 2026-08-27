@@ -27,6 +27,7 @@ import { useExplorerMarquee } from "./use-explorer-marquee";
 import clsx from "clsx";
 import { PublishingMoveDialog } from "./publishing-move-dialog";
 import { PublishingActionsProvider } from "./publishing-actions";
+import { RestrictedActionsProvider } from "./restricted-actions";
 import { usePublishing } from "#web/context/publishing";
 
 const Explorer = () => {
@@ -307,7 +308,9 @@ const ExplorerSkeleton = (props: { itemHeight: string }) => (
 const ExplorerPanel = () => (
   <ExplorerProvider>
     <PublishingActionsProvider>
-      <Explorer />
+      <RestrictedActionsProvider>
+        <Explorer />
+      </RestrictedActionsProvider>
     </PublishingActionsProvider>
   </ExplorerProvider>
 );

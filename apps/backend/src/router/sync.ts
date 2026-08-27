@@ -37,6 +37,7 @@ const syncRouter = base.router({
     .output(z.void())
     .handler(({ context, input }) => {
       return Memberships.setCurrentEntry({
+        auth: context.auth,
         entryID: input.entryID,
         memberID: context.auth.session!.memberID,
         workspaceID: context.auth.workspaceID
@@ -52,6 +53,7 @@ const syncRouter = base.router({
     .output(explorerTreeType)
     .handler(async ({ context }) => {
       return Sync.getExplorerTree({
+        auth: context.auth,
         workspaceID: context.auth.workspaceID,
         includePublishing: canReadPublishing(context.auth)
       });
@@ -74,8 +76,9 @@ const syncRouter = base.router({
         unpublishedEntryIDs: z.array(id())
       })
     )
-    .handler(({ context, input }) => {
+    .handler(async ({ context, input }) => {
       return Sync.getPublishingStatus({
+        auth: context.auth,
         workspaceID: context.auth.workspaceID,
         channel: input.channel
       });

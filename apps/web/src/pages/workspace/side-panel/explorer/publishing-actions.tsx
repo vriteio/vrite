@@ -10,6 +10,7 @@ import { publishingPublicationsQuery, publishingStatusQuery } from "#web/lib/dat
 interface PublishingTargetItem {
   id: string;
   label: string;
+  restricted?: boolean;
 }
 interface PublishingTarget {
   items: PublishingTargetItem[];

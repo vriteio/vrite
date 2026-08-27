@@ -20,20 +20,31 @@ const subscriptionValues = (
   });
   const isTerminal = isTerminalSubscription(subscription.status);
   const isPro = Boolean(seatItem && apiUsageItem) && !isTerminal;
+  const currentPeriodStart = seatItem?.current_period_start ?? apiUsageItem?.current_period_start;
   const currentPeriodEnd = seatItem?.current_period_end ?? apiUsageItem?.current_period_end;
   const terminalEnd = subscription.ended_at ?? subscription.canceled_at;
 
   return {
     subscriptionPlan: isPro ? "pro" : "free",
     subscriptionStatus: subscription.status,
-    subscriptionData: isTerminal
-      ? null
-      : {
-          subscriptionID: subscription.id,
-          seatItemID: seatItem?.id,
-          apiUsageItemID: apiUsageItem?.id,
-          cancelAtPeriodEnd: subscription.cancel_at_period_end
-        },
+    subscriptionData: {
+      subscriptionID: subscription.id,
+      seatItemID: isTerminal ? undefined : seatItem?.id,
+      apiUsageItemID: isTerminal ? undefined : apiUsageItem?.id,
+      billingCycleAnchor: subscription.billing_cycle_anchor,
+      cancelAt: subscription.cancel_at,
+      cancelAtPeriodEnd: subscription.cancel_at_period_end,
+      canceledAt: subscription.canceled_at,
+      cancellationDetails: subscription.cancellation_details,
+      collectionMethod: subscription.collection_method,
+      createdAt: subscription.created,
+      currentPeriodEnd: currentPeriodEnd ?? null,
+      currentPeriodStart: currentPeriodStart ?? null,
+      endedAt: subscription.ended_at,
+      startedAt: subscription.start_date,
+      trialEnd: subscription.trial_end,
+      trialStart: subscription.trial_start
+    },
     subscriptionExpiresAt:
       isTerminal && terminalEnd
         ? new Date(terminalEnd * 1000)

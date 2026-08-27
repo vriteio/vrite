@@ -17,7 +17,10 @@ interface SubscriptionInfo {
   seats: number;
   expiresAt: string | null;
   customerID: string | null;
+  cancelAt: string | null;
   cancelAtPeriodEnd: boolean;
+  canceledAt: string | null;
+  endedAt: string | null;
 }
 interface SubscriptionInfoProps {
   subscription: SubscriptionInfo;
@@ -26,25 +29,37 @@ interface SubscriptionInfoProps {
 }
 
 const SubscriptionInfo: Component<SubscriptionInfoProps> = (props) => {
-  const periodDate = createMemo(() => {
-    const expiresAt = props.subscription.expiresAt;
-
-    if (!expiresAt) return null;
+  const formatDate = (date: string | null): string | null => {
+    if (!date) return null;
 
     return new Intl.DateTimeFormat("en-US", {
       day: "numeric",
       month: "short",
       timeZone: "UTC",
       year: "numeric"
-    }).format(new Date(expiresAt));
+    }).format(new Date(date));
+  };
+  const periodDate = createMemo(() => formatDate(props.subscription.expiresAt));
+  const cancellationDate = createMemo(() => {
+    const hasCancellation =
+      props.subscription.cancelAt ||
+      props.subscription.canceledAt ||
+      props.subscription.cancelAtPeriodEnd;
+
+    if (!hasCancellation) return null;
+
+    return props.subscription.cancelAt || props.subscription.expiresAt;
+  });
+  const formattedCancellationDate = createMemo(() => formatDate(cancellationDate()));
+  const endedDate = createMemo(() => {
+    return formatDate(props.subscription.endedAt || props.subscription.expiresAt);
   });
   const billingStatus = createMemo(() => {
     const status = props.subscription?.status;
-    const expiresAt = props.subscription.expiresAt;
-    const hasRemainingPaidPeriod =
-      (status === "active" || status === "canceled") &&
-      expiresAt &&
-      new Date(expiresAt).getTime() > Date.now();
+    const cancellationAt = cancellationDate();
+    const hasScheduledCancellation = Boolean(
+      status !== "canceled" && cancellationAt && new Date(cancellationAt).getTime() > Date.now()
+    );
 
     if (status === "past_due" || status === "unpaid") {
       return {
@@ -53,18 +68,18 @@ const SubscriptionInfo: Component<SubscriptionInfoProps> = (props) => {
       } as const;
     }
 
-    if (hasRemainingPaidPeriod && periodDate()) {
+    if (hasScheduledCancellation && formattedCancellationDate()) {
       return {
         icon: "i-lucide:calendar-x",
-        text: `Your Pro subscription was canceled. You can use Andesine Pro until ${periodDate()} (UTC).`
+        text: `Your Pro subscription was canceled. You can use Andesine Pro until ${formattedCancellationDate()} (UTC).`
       } as const;
     }
 
     if (status === "canceled" || status === "inactive") {
       return {
         icon: "i-lucide:arrow-big-down-dash",
-        text: periodDate()
-          ? `The subscription ended on ${periodDate()} (UTC). This workspace is now on the Free plan.`
+        text: endedDate()
+          ? `The subscription ended on ${endedDate()} (UTC). This workspace is now on the Free plan.`
           : "This workspace is on the Free plan. You can upgrade again at any time."
       } as const;
     }
@@ -80,13 +95,6 @@ const SubscriptionInfo: Component<SubscriptionInfoProps> = (props) => {
       return {
         icon: "i-lucide:clock-arrow-right",
         text: "The previous Checkout expired. Start a new Checkout to activate Pro."
-      } as const;
-    }
-
-    if (props.isPro && props.subscription.cancelAtPeriodEnd && periodDate()) {
-      return {
-        icon: "i-lucide:calendar-x",
-        text: `Your Pro subscription is scheduled to cancel on ${periodDate()} (UTC).`
       } as const;
     }
 

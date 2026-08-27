@@ -3,18 +3,22 @@ import { db } from "#backend/lib/adapters";
 import { mapPublishingChannel, type PublishingChannel } from "#backend/lib/data";
 import { toUUID } from "#backend/lib/primitives";
 import { and, asc, count, desc, eq } from "drizzle-orm";
+import { canReadRestrictedCollections, type SessionData } from "#backend/lib/policy";
 
 interface PublishingChannelListItem extends PublishingChannel {
   assignmentCount?: number;
 }
 
 const listChannels = async (input: {
+  auth: SessionData;
   workspaceID: string;
   includeAssignmentCount?: boolean;
 }): Promise<PublishingChannelListItem[]> => {
   const workspaceID = toUUID(input.workspaceID);
+  const includeAssignmentCount =
+    input.includeAssignmentCount && canReadRestrictedCollections(input.auth);
 
-  if (input.includeAssignmentCount) {
+  if (includeAssignmentCount) {
     const channels = await db
       .select({
         assignmentCount: count(entryPublications.entryID),

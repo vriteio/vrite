@@ -6,8 +6,16 @@ import {
   type Workspace,
   workspaces
 } from "#backend/db";
-import { toEntryID, toUserID, toUUID, toWorkspaceID } from "#backend/lib/primitives";
+import {
+  toCollectionID,
+  toEntryID,
+  toUserID,
+  toUUID,
+  toWorkspaceID
+} from "#backend/lib/primitives";
 import { db } from "#backend/lib/adapters";
+import { loadCollectionTree } from "#backend/lib/data";
+import { hasPermission } from "#backend/lib/policy";
 import { and, eq, inArray, isNull } from "drizzle-orm";
 
 interface WorkspaceListItem extends Pick<Workspace, "id" | "name"> {
@@ -23,6 +31,7 @@ const listWorkspaces = async (input: {
   userIDs: string[];
 }): Promise<{ workspaces: WorkspaceListItem[] }> => {
   const userIDs = input.userIDs.map(toUUID);
+  const treeByWorkspaceID = new Map<string, ReturnType<typeof loadCollectionTree>>();
 
   if (userIDs.length === 0) return { workspaces: [] };
 
@@ -32,6 +41,7 @@ const listWorkspaces = async (input: {
       name: workspaces.name,
       userID: memberships.userID,
       currentEntryID: entries.id,
+      currentEntryCollectionID: entries.collectionID,
       permissions: roles.permissions,
       baseRole: roles.baseRole,
       subscriptionPlan: workspaces.subscriptionPlan
@@ -49,22 +59,61 @@ const listWorkspaces = async (input: {
     )
     .where(inArray(memberships.userID, userIDs));
 
-  return {
-    workspaces: rows
-      .filter((row) => row.baseRole === "admin" || row.subscriptionPlan === "pro")
-      .map((row): WorkspaceListItem => ({
+  const availableRows = rows.filter((row) => {
+    return row.baseRole === "admin" || row.subscriptionPlan === "pro";
+  });
+  const items = await Promise.all(
+    availableRows.map(async (row): Promise<WorkspaceListItem> => {
+      const canReadRestricted =
+        row.baseRole === "admin" ||
+        row.permissions.some((permission) => {
+          return hasPermission(permission, "read:restricted_collections");
+        });
+      let currentEntryID = row.currentEntryID;
+
+      if (currentEntryID && row.currentEntryCollectionID && !canReadRestricted) {
+        let treePromise = treeByWorkspaceID.get(row.id);
+
+        if (!treePromise) {
+          treePromise = loadCollectionTree(row.id);
+          treeByWorkspaceID.set(row.id, treePromise);
+        }
+
+        const tree = await treePromise;
+        const currentEntryCollectionID = toCollectionID(row.currentEntryCollectionID);
+        const collection = tree.collections.find(({ id }) => {
+          return id === currentEntryCollectionID;
+        });
+        const restricted =
+          collection?.restricted ||
+          collection?.ancestors.some((ancestorID) => {
+            return tree.collections.some((item) => {
+              return item.id === ancestorID && item.restricted;
+            });
+          });
+
+        if (restricted) {
+          currentEntryID = null;
+        }
+      }
+
+      return {
         id: toWorkspaceID(row.id),
         name: row.name,
         userID: toUserID(row.userID),
-        currentEntryID: row.currentEntryID ? toEntryID(row.currentEntryID) : undefined,
+        currentEntryID: currentEntryID ? toEntryID(currentEntryID) : undefined,
         permissions: row.permissions,
         admin: row.baseRole === "admin",
         subscriptionPlan: row.subscriptionPlan
-      }))
-      .sort(
-        (a, b) => Number(b.userID === input.activeUserID) - Number(a.userID === input.activeUserID)
-      )
-  };
+      };
+    })
+  );
+
+  items.sort(
+    (a, b) => Number(b.userID === input.activeUserID) - Number(a.userID === input.activeUserID)
+  );
+
+  return { workspaces: items };
 };
 
 export { listWorkspaces };

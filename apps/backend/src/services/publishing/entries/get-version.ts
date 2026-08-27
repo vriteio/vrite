@@ -11,12 +11,19 @@ import { normalizePublishingChannelCode } from "#backend/lib/publishing";
 import { toUUID } from "#backend/lib/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, eq, isNull } from "drizzle-orm";
+import type { SessionData } from "#backend/lib/policy";
+import { authorizeEntrySources } from "../access";
 
 const getPublishedEntryVersion = async (input: {
+  auth?: SessionData;
   workspaceID: string;
   entryID: string;
   channel: string;
 }): Promise<VersionDetails> => {
+  if (input.auth) {
+    await authorizeEntrySources(input.auth, [input.entryID]);
+  }
+
   const workspaceID = toUUID(input.workspaceID);
   const entryID = toUUID(input.entryID);
   const channelCode = normalizePublishingChannelCode(input.channel);

@@ -125,6 +125,14 @@ const createWorkspaceContentOperations = (input: WorkspaceContentOperationsInput
       getInParent: ({ parentID }: { parentID: string | null }) =>
         collectionOperations.getCollectionsInParent(parentID),
       getDropIndex: collectionOperations.getCollectionDropIndex,
+      getRestrictionBoundaryID: ({ collectionID }: { collectionID: string | null }) =>
+        collectionOperations.getCollectionRestrictionBoundaryID(collectionID),
+      containsRestrictionRoot: ({ collectionID }: { collectionID: string }) =>
+        collectionOperations.collectionContainsRestrictionRoot(collectionID),
+      isRestricted: ({ collectionID }: { collectionID: string }) =>
+        collectionOperations.isCollectionRestricted(collectionID),
+      isRestrictionRoot: ({ collectionID }: { collectionID: string }) =>
+        collectionOperations.isCollectionRestrictionRoot(collectionID),
       create: ({ parentID }: { parentID?: string } = {}) =>
         collectionOperations.createCollection(parentID),
       update: ({
@@ -134,6 +142,13 @@ const createWorkspaceContentOperations = (input: WorkspaceContentOperationsInput
         collectionID: string;
         updates: Parameters<typeof collectionOperations.updateCollection>[1];
       }) => collectionOperations.updateCollection(collectionID, updates),
+      setRestricted: ({
+        collectionID,
+        restricted
+      }: {
+        collectionID: string;
+        restricted: boolean;
+      }) => collectionOperations.setCollectionRestricted(collectionID, restricted),
       move: ({
         collectionID,
         parentID,

@@ -1,21 +1,33 @@
 import { toCollectionID, toEntryID, toUUID } from "#backend/lib/primitives";
 import { db } from "#backend/lib/adapters";
 import { entries, type Entry } from "#backend/db";
-import { and, desc, eq, isNull, lt, or } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, lt, or } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
+import {
+  assertCollectionAccess,
+  assertEntryAccess,
+  loadRestrictedCollectionAccess,
+  type SessionData
+} from "#backend/lib/policy";
 
 const listEntries = async (input: {
+  auth: SessionData;
   workspaceID: string;
   collectionID?: string;
   cursor?: string;
   limit?: number;
 }): Promise<{ entries: Entry[]; nextCursor: string | null }> => {
   const limit = input.limit || 50;
+  const access = await loadRestrictedCollectionAccess(input.auth);
   const workspaceID = toUUID(input.workspaceID);
   const collectionID = input.collectionID !== undefined ? toUUID(input.collectionID) : undefined;
   const filters = [eq(entries.workspaceID, workspaceID), isNull(entries.deletedAt)];
 
+  assertCollectionAccess(access, input.collectionID);
+
   if (input.cursor) {
+    await assertEntryAccess(input.auth, access, input.cursor);
+
     const cursorID = toUUID(input.cursor);
     const cursorFilters = [
       eq(entries.id, cursorID),
@@ -43,7 +55,17 @@ const listEntries = async (input: {
       )!
     );
   }
-  if (collectionID) filters.push(eq(entries.collectionID, collectionID));
+  if (collectionID) {
+    filters.push(eq(entries.collectionID, collectionID));
+  } else {
+    const accessibleCollectionIDs = Array.from(access.collectionIDs).map(toUUID);
+
+    filters.push(
+      accessibleCollectionIDs.length > 0
+        ? or(isNull(entries.collectionID), inArray(entries.collectionID, accessibleCollectionIDs))!
+        : isNull(entries.collectionID)
+    );
+  }
 
   const rows = await db
     .select()

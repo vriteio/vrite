@@ -6,8 +6,10 @@ import { toUUID } from "#backend/lib/primitives";
 import { and, eq } from "drizzle-orm";
 import { createVersion } from "./create";
 import { getVersion } from "./get";
+import type { SessionData } from "#backend/lib/policy";
 
 const revertVersion = async (input: {
+  auth: SessionData;
   workspaceID: string;
   versionID: string;
   contributorIDs: string[];
@@ -31,6 +33,7 @@ const revertVersion = async (input: {
 
     if (!existing) {
       const safetyVersion = await createVersion({
+        auth: input.auth,
         workspaceID: input.workspaceID,
         entryID: target.entryID,
         reason: "auto",
@@ -42,6 +45,7 @@ const revertVersion = async (input: {
     }
 
     const version = await createVersion({
+      auth: input.auth,
       workspaceID: input.workspaceID,
       entryID: target.entryID,
       reason: "revert",

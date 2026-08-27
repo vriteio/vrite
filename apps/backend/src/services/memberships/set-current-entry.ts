@@ -3,12 +3,22 @@ import { db } from "#backend/lib/adapters";
 import { toUUID } from "#backend/lib/primitives";
 import { and, eq, isNull } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
+import {
+  assertEntryAccess,
+  loadRestrictedCollectionAccess,
+  type SessionData
+} from "#backend/lib/policy";
 
 const setCurrentEntry = async (input: {
+  auth: SessionData;
   entryID: string;
   memberID: string;
   workspaceID: string;
 }): Promise<void> => {
+  const access = await loadRestrictedCollectionAccess(input.auth);
+
+  await assertEntryAccess(input.auth, access, input.entryID);
+
   const entryID = toUUID(input.entryID);
   const memberID = toUUID(input.memberID);
   const workspaceID = toUUID(input.workspaceID);

@@ -4,11 +4,13 @@ import { useClipboard } from "#web/context/clipboard";
 import { useWorkspace } from "#web/context/workspace";
 import { useTree } from "#web/components/tree";
 import { usePublishingActions } from "./publishing-actions";
+import { useRestrictedActions } from "./restricted-actions";
 
 const useCollectionMenu = (collectionID: string) => {
   const { copyText } = useClipboard();
-  const { content, hasPermission } = useWorkspace();
+  const { content, currentWorkspace, hasPermission } = useWorkspace();
   const publishingActions = usePublishingActions();
+  const restrictedActions = useRestrictedActions();
   const [{ selection }, { setExpanded, setRenaming, setSelection }] = useTree();
   const [menuOpened, setMenuOpened] = createSignal(false);
   const startRenaming = (id: string) => {
@@ -33,10 +35,19 @@ const useCollectionMenu = (collectionID: string) => {
     const publishingRoot = targetCollections.some((selectedCollection) => {
       return content.isCollectionPublishingRoot(selectedCollection.id);
     });
+    const restricted = targetCollections.some((selectedCollection) => {
+      return content.collections.isRestricted({ collectionID: selectedCollection.id });
+    });
+    const containsRestrictionRoot = targetCollections.some((selectedCollection) => {
+      return content.collections.containsRestrictionRoot({
+        collectionID: selectedCollection.id
+      });
+    });
     const publishingTarget = {
       items: targetCollections.map((selectedCollection) => ({
         id: selectedCollection.id,
-        label: selectedCollection.name
+        label: selectedCollection.name,
+        restricted: content.collections.isRestricted({ collectionID: selectedCollection.id })
       })),
       type: "collection" as const
     };
@@ -102,12 +113,33 @@ const useCollectionMenu = (collectionID: string) => {
           shortcut: "$mod+shift+c"
         }
       ]);
+
+      if (hasPermission("restricted_collections") && collection) {
+        const restrictionRoot = content.collections.isRestrictionRoot({ collectionID });
+        const requiresPro = !restrictionRoot && currentWorkspace()?.subscriptionPlan !== "pro";
+
+        if (!requiresPro) {
+          opts.push([
+            {
+              label: restrictionRoot ? "Derestrict access" : "Restrict access",
+              icon: restrictionRoot ? "i-lucide:lock-open" : "i-lucide:lock",
+              onClick: () => {
+                restrictedActions.open({
+                  id: collection.id,
+                  label: collection.name,
+                  restricted: restrictionRoot
+                });
+              }
+            }
+          ]);
+        }
+      }
     }
 
     if (collectionsOnly && canManagePublishing) {
       const publishingOptions: MenuItem[] = [];
 
-      if (!publishingEnabled) {
+      if (!publishingEnabled && (!restricted || hasPermission("restricted_collections"))) {
         publishingOptions.push({
           label: isMulti ? `Enable publishing for ${selectedCount} groups` : "Enable publishing",
           icon: "i-lucide:radio",
@@ -146,22 +178,24 @@ const useCollectionMenu = (collectionID: string) => {
       opts.push(publishingOptions);
     }
 
-    opts.push([
-      {
-        label: isMulti ? `Delete ${selectedCount} items` : "Delete",
-        icon: "i-lucide:trash",
-        color: "danger",
-        onClick: () => {
-          const selectedIDs = selection();
+    if (!containsRestrictionRoot || hasPermission("restricted_collections")) {
+      opts.push([
+        {
+          label: isMulti ? `Delete ${selectedCount} items` : "Delete",
+          icon: "i-lucide:trash",
+          color: "danger",
+          onClick: () => {
+            const selectedIDs = selection();
 
-          if (content.readOnly()) return;
+            if (content.readOnly()) return;
 
-          content.tree.delete({ ids: isMulti ? selectedIDs : [collectionID] });
-          setSelection([]);
-        },
-        shortcut: "$mod+backspace"
-      }
-    ]);
+            content.tree.delete({ ids: isMulti ? selectedIDs : [collectionID] });
+            setSelection([]);
+          },
+          shortcut: "$mod+backspace"
+        }
+      ]);
+    }
 
     return opts;
   });

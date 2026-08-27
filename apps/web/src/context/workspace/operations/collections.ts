@@ -128,6 +128,20 @@ const createCollectionOperations = (input: WorkspaceContentOperationsInput) => {
       collections.replaceOne({ id: collectionID }, original, { upsert: true });
     });
   };
+  const setCollectionRestricted = async (collectionID: string, restricted: boolean) => {
+    const collection = getCollection(collectionID);
+
+    if (!collection) return;
+
+    applyCollectionUpdate(collectionID, { restricted });
+
+    try {
+      await client.collections.setRestricted({ id: collectionID, restricted });
+    } catch (error) {
+      applyCollectionUpdate(collectionID, { restricted: collection.restricted });
+      throw error;
+    }
+  };
   const applyCollectionMove = (
     collectionID: string,
     newParentID: string | null,
@@ -296,6 +310,7 @@ const createCollectionOperations = (input: WorkspaceContentOperationsInput) => {
     applyCollectionDelete,
     createCollection,
     updateCollection,
+    setCollectionRestricted,
     applyCollectionMove,
     moveCollection,
     deleteCollections

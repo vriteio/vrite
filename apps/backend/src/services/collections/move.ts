@@ -14,8 +14,16 @@ import {
 import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 import type { VersionSummary } from "#backend/lib/data";
+import {
+  assertCollectionAccess,
+  assertRestrictedBoundaryChange,
+  assertRestrictedSubtreeManagement,
+  loadRestrictedCollectionAccess,
+  type SessionData
+} from "#backend/lib/policy";
 
 const moveCollection = async (input: {
+  auth: SessionData;
   id: string;
   workspaceID: string;
   newParentID?: string | null;
@@ -28,10 +36,24 @@ const moveCollection = async (input: {
   createdVersions: VersionSummary[];
   index: number;
   newParentID: string | null;
+  restrictedBoundaryChanged: boolean;
 }> => {
+  const access = await loadRestrictedCollectionAccess(input.auth);
   const workspaceID = toUUID(input.workspaceID);
   const collectionID = toUUID(input.id);
   const requestedParentID = input.newParentID ? toUUID(input.newParentID) : null;
+  const collection = access.allCollections.find(({ id }) => id === input.id);
+  const sourceBoundaryID = access.boundaryByCollectionID.get(input.id);
+  const targetBoundaryID = input.newParentID
+    ? access.boundaryByCollectionID.get(input.newParentID)
+    : undefined;
+  const restrictedBoundaryChanged =
+    sourceBoundaryID !== (collection?.restricted ? input.id : targetBoundaryID);
+
+  assertCollectionAccess(access, input.id);
+  assertCollectionAccess(access, input.newParentID);
+  assertRestrictedSubtreeManagement(input.auth, access, [input.id]);
+  assertRestrictedBoundaryChange(input.auth, access, input.id, input.newParentID);
 
   if (input.publish) {
     if (!input.canPublish) {
@@ -238,7 +260,8 @@ const moveCollection = async (input: {
       index,
       newParentID: requestedParentID ? toCollectionID(requestedParentID) : null,
       affectedPublishingEntryIDs,
-      createdVersions
+      createdVersions,
+      restrictedBoundaryChanged
     };
   });
 };

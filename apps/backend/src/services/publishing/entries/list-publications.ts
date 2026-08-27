@@ -10,6 +10,8 @@ import { mapVersionSummary, type VersionSummary } from "#backend/lib/data";
 import { toUUID } from "#backend/lib/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
+import type { SessionData } from "#backend/lib/policy";
+import { authorizeEntrySources } from "../access";
 
 interface EntryPublicationChannel {
   builtIn: boolean;
@@ -23,9 +25,12 @@ interface EntryPublication {
 }
 
 const listEntryPublications = async (input: {
+  auth: SessionData;
   workspaceID: string;
   entryID: string;
 }): Promise<EntryPublication[]> => {
+  await authorizeEntrySources(input.auth, [input.entryID]);
+
   const workspaceID = toUUID(input.workspaceID);
   const entryID = toUUID(input.entryID);
   const [entry] = await db

@@ -4,13 +4,18 @@ import { normalizePublishingChannelCode } from "#backend/lib/publishing";
 import { toUUID } from "#backend/lib/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, eq, inArray, isNull } from "drizzle-orm";
+import type { SessionData } from "#backend/lib/policy";
+import { authorizeEntrySources } from "../access";
 
 const unpublishEntry = async (input: {
+  auth: SessionData;
   workspaceID: string;
   entryIDs: string[];
   channel: string;
   versionID?: string;
 }): Promise<boolean> => {
+  await authorizeEntrySources(input.auth, input.entryIDs);
+
   const workspaceID = toUUID(input.workspaceID);
   const entryIDs = [...new Set(input.entryIDs.map(toUUID))];
   const versionID = input.versionID ? toUUID(input.versionID) : null;

@@ -13,6 +13,8 @@ import { toUUID } from "#backend/lib/primitives";
 import type { VersionSummary } from "#backend/lib/data";
 import { ORPCError } from "@orpc/server";
 import { and, eq, inArray, isNull } from "drizzle-orm";
+import type { SessionData } from "#backend/lib/policy";
+import { authorizeCollectionSources } from "../access";
 
 interface SetCollectionPublishingResult {
   affectedEntryIDs: string[];
@@ -22,6 +24,7 @@ interface SetCollectionPublishingResult {
   publishedEntries: number;
 }
 interface SetCollectionsPublishingInput {
+  auth: SessionData;
   workspaceID: string;
   collectionIDs: string[];
   enabled: boolean;
@@ -46,6 +49,8 @@ const getCollectionDepth = (
 const setCollectionsPublishing = async (
   input: SetCollectionsPublishingInput
 ): Promise<SetCollectionPublishingResult[]> => {
+  await authorizeCollectionSources(input.auth, input.collectionIDs, input.enabled);
+
   const workspaceID = toUUID(input.workspaceID);
   const collectionIDs = [...new Set(input.collectionIDs.map(toUUID))];
 

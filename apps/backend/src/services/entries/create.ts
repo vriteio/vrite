@@ -4,11 +4,22 @@ import { collections, contents, entries, type Entry, workspaces } from "#backend
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 import { normalizeEntryName } from "#backend/lib/validation";
+import {
+  assertCollectionAccess,
+  loadRestrictedCollectionAccess,
+  type SessionData
+} from "#backend/lib/policy";
 
-const createEntry = async (input: Partial<Entry> & { workspaceID: string }): Promise<Entry> => {
+const createEntry = async (
+  input: Partial<Entry> & { auth: SessionData; workspaceID: string }
+): Promise<Entry> => {
+  const access = await loadRestrictedCollectionAccess(input.auth);
   const workspaceID = toUUID(input.workspaceID);
   const entryID = input.id ? toUUID(input.id) : crypto.randomUUID();
   const collectionID = input.collectionID ? toUUID(input.collectionID) : null;
+
+  assertCollectionAccess(access, input.collectionID);
+
   const entry = await db.transaction(async (tx) => {
     if (collectionID) {
       const [parent] = await tx

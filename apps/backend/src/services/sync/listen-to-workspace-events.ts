@@ -2,7 +2,9 @@ import { subscribeToWorkspaceEvents, workspaceEventType } from "#backend/events"
 import { viaIterator } from "#backend/lib/messaging";
 import {
   type SessionData,
+  filterRestrictedWorkspaceEvent,
   isSessionAuthorizationEvent,
+  isRestrictedAuthorizationEvent,
   isWorkspaceEventVisible
 } from "#backend/lib/policy";
 
@@ -27,9 +29,15 @@ const createWorkspaceEventStream = async function* (input: {
       return;
     }
 
+    if (isRestrictedAuthorizationEvent(input.auth, parsedEvent.data)) return;
+
     if (!isWorkspaceEventVisible(input.auth, parsedEvent.data)) continue;
 
-    yield parsedEvent.data;
+    const visibleEvent = await filterRestrictedWorkspaceEvent(input.auth, parsedEvent.data);
+
+    if (visibleEvent) {
+      yield visibleEvent;
+    }
   }
 };
 const listenToWorkspaceEvents = (input: {

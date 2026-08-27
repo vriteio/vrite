@@ -37,6 +37,37 @@ const createCollectionQueries = (input: WorkspaceContentOperationsInput) => {
 
     return collection && !isRootCollection(collection) ? collection : undefined;
   };
+  const isCollectionRestricted = (collectionID: string) => {
+    const collection = getCollection(collectionID);
+
+    if (!collection) return false;
+
+    return [collection.id, ...collection.ancestors].some((id) => {
+      return Boolean(collectionsCollection().findOne({ id })?.restricted);
+    });
+  };
+  const isCollectionRestrictionRoot = (collectionID: string) => {
+    return Boolean(getCollection(collectionID)?.restricted);
+  };
+  const getCollectionRestrictionBoundaryID = (collectionID: string | null) => {
+    const collection = collectionID ? getCollection(collectionID) : undefined;
+
+    if (!collection) return null;
+
+    return (
+      [collection.id, ...[...collection.ancestors].reverse()].find((id) => {
+        return Boolean(collectionsCollection().findOne({ id })?.restricted);
+      }) ?? null
+    );
+  };
+  const collectionContainsRestrictionRoot = (collectionID: string) => {
+    return getVisibleCollections().some((collection) => {
+      return (
+        Boolean(collection.restricted) &&
+        (collection.id === collectionID || collection.ancestors.includes(collectionID))
+      );
+    });
+  };
   const getCollectionsInParent = (parentID: string | null) => {
     const children = getVisibleCollections().filter(
       (collection) => getCollectionParentID(collection) === parentID
@@ -85,6 +116,7 @@ const createCollectionQueries = (input: WorkspaceContentOperationsInput) => {
 
   return {
     getCollection,
+    getCollectionRestrictionBoundaryID,
     getCollectionDescendantIDs,
     getCollectionDropIndex,
     getCollectionIDs,
@@ -93,6 +125,9 @@ const createCollectionQueries = (input: WorkspaceContentOperationsInput) => {
     getEntryIDsInCollections,
     getRootCollection,
     getVisibleCollections,
+    collectionContainsRestrictionRoot,
+    isCollectionRestricted,
+    isCollectionRestrictionRoot,
     isRootCollection,
     sortCollections
   };

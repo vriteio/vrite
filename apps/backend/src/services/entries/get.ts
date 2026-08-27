@@ -10,6 +10,11 @@ import { toCollectionID, toEntryID, toUUID } from "#backend/lib/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, eq, isNull } from "drizzle-orm";
 import { applyUpdate, Doc } from "yjs";
+import {
+  assertEntryAccess,
+  loadRestrictedCollectionAccess,
+  type SessionData
+} from "#backend/lib/policy";
 
 interface EntryDetails extends Entry {
   updatedAt: string;
@@ -17,7 +22,15 @@ interface EntryDetails extends Entry {
   fragments: ContentBlocks["fragments"];
   properties: ContentBlocks["properties"];
 }
-const getEntry = async (input: { id: string; workspaceID: string }): Promise<EntryDetails> => {
+const getEntry = async (input: {
+  auth: SessionData;
+  id: string;
+  workspaceID: string;
+}): Promise<EntryDetails> => {
+  const access = await loadRestrictedCollectionAccess(input.auth);
+
+  await assertEntryAccess(input.auth, access, input.id);
+
   const [row] = await db
     .select({
       id: entries.id,

@@ -121,12 +121,38 @@ const useExplorerDrop = (element: () => HTMLElement | null) => {
 
     return [...collections, ...entries];
   };
+  const crossesRestrictionBoundary = (input: ExplorerMoveInput) => {
+    const targetBoundaryID = content.collections.getRestrictionBoundaryID({
+      collectionID: input.parentID
+    });
+    const entryCrossesBoundary = input.entryIDs.some((entryID) => {
+      const collectionID = content.entries.get({ entryID })?.collectionID ?? null;
+
+      return content.collections.getRestrictionBoundaryID({ collectionID }) !== targetBoundaryID;
+    });
+    const collectionCrossesBoundary = input.collectionIDs.some((collectionID) => {
+      return (
+        content.collections.containsRestrictionRoot({ collectionID }) ||
+        content.collections.getRestrictionBoundaryID({ collectionID }) !== targetBoundaryID
+      );
+    });
+
+    return entryCrossesBoundary || collectionCrossesBoundary;
+  };
   const submitMove = (input: ExplorerMoveInput) => {
     const direction = getPublishingMoveDirection(input);
     const execute = (publish?: boolean) => {
       input.execute(publish);
       setSelection([]);
     };
+
+    if (crossesRestrictionBoundary(input) && !hasPermission("restricted_collections")) {
+      notify({
+        type: "error",
+        text: "Permission to manage restricted collections is required for this move"
+      });
+      return;
+    }
 
     if (!direction) {
       execute();

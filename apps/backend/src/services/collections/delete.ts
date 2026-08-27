@@ -3,6 +3,12 @@ import { db } from "#backend/lib/adapters";
 import { collections, entries, entryPublications, memberships, workspaces } from "#backend/db";
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
+import {
+  assertCollectionAccess,
+  assertRestrictedSubtreeManagement,
+  loadRestrictedCollectionAccess,
+  type SessionData
+} from "#backend/lib/policy";
 
 interface DeletedContent {
   collectionIDs: string[];
@@ -10,13 +16,22 @@ interface DeletedContent {
 }
 
 const deleteCollections = async (input: {
+  auth: SessionData;
   ids: string[];
   workspaceID: string;
 }): Promise<DeletedContent> => {
   if (input.ids.length === 0) return { collectionIDs: [], entryIDs: [] };
 
+  const access = await loadRestrictedCollectionAccess(input.auth);
   const ids = input.ids.map(toUUID);
   const workspaceID = toUUID(input.workspaceID);
+
+  for (const collectionID of input.ids) {
+    assertCollectionAccess(access, collectionID);
+  }
+
+  assertRestrictedSubtreeManagement(input.auth, access, input.ids);
+
   return db.transaction(async (tx) => {
     await tx
       .select({ id: workspaces.id })

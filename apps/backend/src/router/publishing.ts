@@ -72,6 +72,7 @@ const publishingRouter = base.prefix("/publishing").router({
     )
     .handler(async ({ context, input }) => {
       const [result] = await Publishing.Collections.set({
+        auth: context.auth,
         workspaceID: context.auth.workspaceID,
         collectionIDs: [input.collectionID],
         enabled: input.enabled,
@@ -126,6 +127,7 @@ const publishingRouter = base.prefix("/publishing").router({
     )
     .handler(async ({ context, input }) => {
       const results = await Publishing.Collections.set({
+        auth: context.auth,
         workspaceID: context.auth.workspaceID,
         collectionIDs: input.ids,
         enabled: input.enabled,
@@ -180,6 +182,7 @@ const publishingRouter = base.prefix("/publishing").router({
     )
     .handler(async ({ context, input }) => {
       const result = await Publishing.Collections.publish({
+        auth: context.auth,
         workspaceID: context.auth.workspaceID,
         collectionIDs: [input.collectionID],
         channel: input.channel,
@@ -222,6 +225,7 @@ const publishingRouter = base.prefix("/publishing").router({
     )
     .handler(async ({ context, input }) => {
       const result = await Publishing.Collections.publish({
+        auth: context.auth,
         workspaceID: context.auth.workspaceID,
         collectionIDs: input.ids,
         channel: input.channel,
@@ -264,6 +268,7 @@ const publishingRouter = base.prefix("/publishing").router({
     )
     .handler(async ({ context, input }) => {
       const result = await Publishing.Collections.unpublish({
+        auth: context.auth,
         workspaceID: context.auth.workspaceID,
         collectionIDs: [input.collectionID],
         channel: input.channel
@@ -299,6 +304,7 @@ const publishingRouter = base.prefix("/publishing").router({
     )
     .handler(async ({ context, input }) => {
       const result = await Publishing.Collections.unpublish({
+        auth: context.auth,
         workspaceID: context.auth.workspaceID,
         collectionIDs: input.ids,
         channel: input.channel
@@ -331,6 +337,7 @@ const publishingRouter = base.prefix("/publishing").router({
     .output(z.void())
     .handler(async ({ context, input }) => {
       const result = await Publishing.Entries.publish({
+        auth: context.auth,
         workspaceID: context.auth.workspaceID,
         entries: [{ entryID: input.entryID, versionID: input.versionID }],
         channel: input.channel,
@@ -368,6 +375,7 @@ const publishingRouter = base.prefix("/publishing").router({
     .handler(async ({ context, input }) => {
       const entryIDs = [...new Set(input.entries.map((entry) => entry.entryID))];
       const result = await Publishing.Entries.publish({
+        auth: context.auth,
         workspaceID: context.auth.workspaceID,
         entries: input.entries,
         channel: input.channel,
@@ -405,6 +413,7 @@ const publishingRouter = base.prefix("/publishing").router({
     .output(z.void())
     .handler(async ({ context, input }) => {
       const removed = await Publishing.Entries.unpublish({
+        auth: context.auth,
         workspaceID: context.auth.workspaceID,
         entryIDs: [input.entryID],
         versionID: input.versionID,
@@ -439,6 +448,7 @@ const publishingRouter = base.prefix("/publishing").router({
     .output(z.void())
     .handler(async ({ context, input }) => {
       await Publishing.Entries.unpublish({
+        auth: context.auth,
         workspaceID: context.auth.workspaceID,
         entryIDs: input.ids,
         channel: input.channel
@@ -468,6 +478,7 @@ const publishingRouter = base.prefix("/publishing").router({
     .output(versionDetailsType)
     .handler(({ context, input }) => {
       return Publishing.Entries.getVersion({
+        auth: context.auth,
         workspaceID: context.auth.workspaceID,
         entryID: input.entryID,
         channel: input.channel
@@ -486,6 +497,7 @@ const publishingRouter = base.prefix("/publishing").router({
     .output(z.array(entryPublicationType))
     .handler(({ context, input }) => {
       return Publishing.Entries.listPublications({
+        auth: context.auth,
         workspaceID: context.auth.workspaceID,
         entryID: input.entryID
       });
@@ -510,6 +522,7 @@ const publishingRouter = base.prefix("/publishing").router({
     .output(z.array(publishingChannelListItemType))
     .handler(({ context, input }) => {
       return Publishing.Channels.list({
+        auth: context.auth,
         workspaceID: context.auth.workspaceID,
         includeAssignmentCount: input.includeAssignmentCount
       });

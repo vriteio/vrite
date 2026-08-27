@@ -54,6 +54,7 @@ const entriesRouter = base.prefix("/entries").router({
     .handler(async ({ context, input }) => {
       const newEntry = await Entries.create({
         ...input,
+        auth: context.auth,
         workspaceID: context.auth.workspaceID
       });
 
@@ -88,6 +89,7 @@ const entriesRouter = base.prefix("/entries").router({
     .output(z.void())
     .handler(async ({ context, input }) => {
       const { entryIDs } = await Entries.delete({
+        auth: context.auth,
         workspaceID: context.auth.workspaceID,
         ids: input.ids
       });
@@ -114,6 +116,7 @@ const entriesRouter = base.prefix("/entries").router({
     .output(z.void())
     .handler(async ({ context, input }) => {
       const { entryIDs } = await Entries.delete({
+        auth: context.auth,
         workspaceID: context.auth.workspaceID,
         ids: [input.id]
       });
@@ -147,6 +150,7 @@ const entriesRouter = base.prefix("/entries").router({
       const name = input.name;
 
       await Entries.update({
+        auth: context.auth,
         id: input.id,
         workspaceID: context.auth.workspaceID,
         name
@@ -188,6 +192,7 @@ const entriesRouter = base.prefix("/entries").router({
     .output(z.object({ order: z.string() }))
     .handler(async ({ context, input }) => {
       const result = await Entries.move({
+        auth: context.auth,
         id: input.id,
         workspaceID: context.auth.workspaceID,
         order: input.order,
@@ -201,7 +206,8 @@ const entriesRouter = base.prefix("/entries").router({
         data: {
           id: input.id,
           order: result.order,
-          collectionID: input.collectionID
+          collectionID: input.collectionID,
+          restrictedBoundaryChanged: result.restrictedBoundaryChanged
         },
         memberID: context.auth.session?.memberID
       });
@@ -239,6 +245,7 @@ const entriesRouter = base.prefix("/entries").router({
     .output(entryDetailsType)
     .handler(async ({ context, input }) => {
       return Entries.get({
+        auth: context.auth,
         id: input.id,
         workspaceID: context.auth.workspaceID
       });
@@ -262,6 +269,7 @@ const entriesRouter = base.prefix("/entries").router({
     .output(entryListType)
     .handler(async ({ context, input }) => {
       const { entries, nextCursor } = await Entries.list({
+        auth: context.auth,
         workspaceID: context.auth.workspaceID,
         collectionID: input.collectionID,
         cursor: input.cursor,

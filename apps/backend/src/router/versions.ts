@@ -44,6 +44,7 @@ const versionsRouter = base.router({
     .output(versionDetailsType)
     .handler(async ({ context, input }) => {
       const version = await Versions.create({
+        auth: context.auth,
         workspaceID: context.auth.workspaceID,
         entryID: input.entryID,
         reason: "manual",
@@ -78,6 +79,7 @@ const versionsRouter = base.router({
     .output(versionListType)
     .handler(async ({ context, input }) => {
       const { versions, nextCursor } = await Versions.list({
+        auth: context.auth,
         workspaceID: context.auth.workspaceID,
         entryID: input.entryID,
         cursor: input.cursor,
@@ -105,6 +107,7 @@ const versionsRouter = base.router({
     .output(versionDetailsType)
     .handler(({ context, input }) => {
       return Versions.get({
+        auth: context.auth,
         workspaceID: context.auth.workspaceID,
         versionID: input.id
       });
@@ -129,6 +132,7 @@ const versionsRouter = base.router({
     .output(z.void())
     .handler(async ({ context, input }) => {
       const version = await Versions.update({
+        auth: context.auth,
         workspaceID: context.auth.workspaceID,
         versionID: input.id,
         name: input.name
@@ -153,6 +157,7 @@ const versionsRouter = base.router({
     .output(versionDetailsType)
     .handler(async ({ context, input }) => {
       const result = await Versions.revert({
+        auth: context.auth,
         workspaceID: context.auth.workspaceID,
         versionID: input.id,
         contributorIDs: getContributorIDs(context.auth)

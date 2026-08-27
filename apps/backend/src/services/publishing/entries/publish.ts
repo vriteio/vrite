@@ -10,8 +10,11 @@ import {
 import { toUUID } from "#backend/lib/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, eq, inArray, isNull } from "drizzle-orm";
+import type { SessionData } from "#backend/lib/policy";
+import { authorizeEntrySources } from "../access";
 
 const publishEntry = async (input: {
+  auth: SessionData;
   workspaceID: string;
   entries: PublishEntryTarget[];
   channel: string;
@@ -37,6 +40,8 @@ const publishEntry = async (input: {
   const currentEntryIDs = publishingEntries.flatMap((entry) => {
     return entry.versionID ? [] : [entry.entryID];
   });
+
+  await authorizeEntrySources(input.auth, entryIDs);
 
   await syncEntrySnapshots(workspaceID, currentEntryIDs);
   return db.transaction(async (tx) => {

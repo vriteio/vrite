@@ -11,8 +11,11 @@ import { toUUID } from "#backend/lib/primitives";
 import { ORPCError } from "@orpc/server";
 import type { VersionSummary } from "#backend/lib/data";
 import { and, eq, inArray, isNull } from "drizzle-orm";
+import type { SessionData } from "#backend/lib/policy";
+import { authorizeCollectionSources } from "../access";
 
 const publishCollection = async (input: {
+  auth: SessionData;
   workspaceID: string;
   collectionIDs: string[];
   channel: string;
@@ -22,6 +25,8 @@ const publishCollection = async (input: {
   entryIDs: string[];
   publishedEntries: number;
 }> => {
+  await authorizeCollectionSources(input.auth, input.collectionIDs);
+
   const workspaceID = toUUID(input.workspaceID);
   const collectionIDs = [...new Set(input.collectionIDs.map(toUUID))];
 

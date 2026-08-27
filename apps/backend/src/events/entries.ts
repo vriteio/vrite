@@ -39,7 +39,8 @@ const entryEventType = z.union([
     data: z.object({
       id: id(),
       collectionID: id().nullable().optional(),
-      order: z.string().optional()
+      order: z.string().optional(),
+      restrictedBoundaryChanged: z.boolean()
     })
   })
 ]);

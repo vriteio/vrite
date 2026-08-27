@@ -10,7 +10,14 @@ import { SettingsSection } from "../settings-section";
 import { rolesQuery, useRoleMutations } from "#web/lib/data";
 import { type AccessLevel, createPermissionAccessMapper } from "#web/lib/permissions";
 
-type Resource = "api_keys" | "billing" | "content" | "publishing" | "versions" | "workspace";
+type Resource =
+  | "api_keys"
+  | "billing"
+  | "content"
+  | "publishing"
+  | "restricted_collections"
+  | "versions"
+  | "workspace";
 type ResourceAccess = Record<Resource, AccessLevel>;
 
 const resources: Array<{
@@ -34,6 +41,11 @@ const resources: Array<{
     id: "publishing",
     label: "Publishing",
     description: "View or manage published content and publishing channels"
+  },
+  {
+    id: "restricted_collections",
+    label: "Restricted collections",
+    description: "View restricted content and manage restriction boundaries"
   },
   {
     id: "api_keys",
@@ -61,6 +73,11 @@ const { accessToPermissions, emptyAccess, permissionsToAccess } = createPermissi
     { id: "billing", read: "read:billing", write: "billing" },
     { id: "content", write: "content" },
     { id: "publishing", read: "read:publishing", write: "publishing" },
+    {
+      id: "restricted_collections",
+      read: "read:restricted_collections",
+      write: "restricted_collections"
+    },
     { id: "versions", read: "read:versions", write: "versions" },
     { id: "workspace", write: "workspace" }
   ]

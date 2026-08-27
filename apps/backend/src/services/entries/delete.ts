@@ -2,12 +2,22 @@ import { toEntryID, toUUID } from "#backend/lib/primitives";
 import { db } from "#backend/lib/adapters";
 import { entries, entryPublications, memberships } from "#backend/db";
 import { and, eq, inArray, isNull } from "drizzle-orm";
+import {
+  assertEntryAccess,
+  loadRestrictedCollectionAccess,
+  type SessionData
+} from "#backend/lib/policy";
 
 const deleteEntries = async (input: {
+  auth: SessionData;
   ids: string[];
   workspaceID: string;
 }): Promise<{ entryIDs: string[] }> => {
   if (input.ids.length === 0) return { entryIDs: [] };
+
+  const access = await loadRestrictedCollectionAccess(input.auth);
+
+  await Promise.all(input.ids.map((entryID) => assertEntryAccess(input.auth, access, entryID)));
 
   const deleted = await db.transaction(async (tx) => {
     const rows = await tx

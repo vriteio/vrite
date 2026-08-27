@@ -5,8 +5,10 @@ import { ORPCError } from "@orpc/server";
 import { and, eq } from "drizzle-orm";
 import type { VersionDetails } from "#backend/lib/data";
 import { getVersion } from "./get";
+import type { SessionData } from "#backend/lib/policy";
 
 const updateVersion = async (input: {
+  auth: SessionData;
   workspaceID: string;
   versionID: string;
   name: string | null;

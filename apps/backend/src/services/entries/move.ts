@@ -11,6 +11,13 @@ import {
 import { and, desc, eq, gt, isNull, lt, ne } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 import type { VersionSummary } from "#backend/lib/data";
+import {
+  assertCollectionAccess,
+  assertRestrictedBoundaryChange,
+  getEntryCollection,
+  loadRestrictedCollectionAccess,
+  type SessionData
+} from "#backend/lib/policy";
 
 const shouldSyncPublishingSnapshot = async (input: {
   workspaceID: string;
@@ -67,6 +74,7 @@ const shouldSyncPublishingSnapshot = async (input: {
   });
 };
 const moveEntry = async (input: {
+  auth: SessionData;
   id: string;
   workspaceID: string;
   order: string;
@@ -78,7 +86,10 @@ const moveEntry = async (input: {
   affectedPublishingEntryIDs: string[];
   createdVersions: VersionSummary[];
   order: string;
+  restrictedBoundaryChanged: boolean;
 }> => {
+  const access = await loadRestrictedCollectionAccess(input.auth);
+  const entry = await getEntryCollection(input.auth, input.id);
   const workspaceID = toUUID(input.workspaceID);
   const entryID = toUUID(input.id);
   const collectionID =
@@ -87,6 +98,15 @@ const moveEntry = async (input: {
       : input.collectionID === null
         ? null
         : toUUID(input.collectionID);
+  const destinationCollectionID =
+    input.collectionID === undefined ? entry.collectionID : input.collectionID;
+  const restrictedBoundaryChanged =
+    access.boundaryByCollectionID.get(entry.collectionID || "") !==
+    access.boundaryByCollectionID.get(destinationCollectionID || "");
+
+  assertCollectionAccess(access, entry.collectionID);
+  assertCollectionAccess(access, destinationCollectionID);
+  assertRestrictedBoundaryChange(input.auth, access, entry.collectionID, destinationCollectionID);
 
   if (input.publish) {
     if (!input.canPublish) {
@@ -242,7 +262,8 @@ const moveEntry = async (input: {
     return {
       order: rank,
       affectedPublishingEntryIDs: crossesPublishingBoundary ? [input.id] : [],
-      createdVersions
+      createdVersions,
+      restrictedBoundaryChanged
     };
   });
 };

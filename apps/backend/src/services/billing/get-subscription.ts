@@ -10,8 +10,15 @@ interface SubscriptionInfo {
   seats: number;
   expiresAt: string | null;
   customerID: string | null;
+  cancelAt: string | null;
   cancelAtPeriodEnd: boolean;
+  canceledAt: string | null;
+  endedAt: string | null;
 }
+
+const stripeTimestampToISOString = (timestamp?: number | null): string | null => {
+  return timestamp ? new Date(timestamp * 1000).toISOString() : null;
+};
 
 const getSubscription = async (input: { workspaceID: string }): Promise<SubscriptionInfo> => {
   const workspaceID = toUUID(input.workspaceID);
@@ -36,7 +43,10 @@ const getSubscription = async (input: { workspaceID: string }): Promise<Subscrip
       ? new Date(workspace.subscriptionExpiresAt).toISOString()
       : null,
     customerID: workspace.customerID || null,
-    cancelAtPeriodEnd: workspace.subscriptionData?.cancelAtPeriodEnd || false
+    cancelAt: stripeTimestampToISOString(workspace.subscriptionData?.cancelAt),
+    cancelAtPeriodEnd: workspace.subscriptionData?.cancelAtPeriodEnd || false,
+    canceledAt: stripeTimestampToISOString(workspace.subscriptionData?.canceledAt),
+    endedAt: stripeTimestampToISOString(workspace.subscriptionData?.endedAt)
   };
 };
 

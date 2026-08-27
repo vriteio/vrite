@@ -34,7 +34,8 @@ const collectionsRouter = base.prefix("/collections").router({
       collectionType
         .pick({ id: true, name: true })
         .extend({
-          parentID: id().describe("ID of the parent collection,")
+          parentID: id().describe("ID of the parent collection,"),
+          restricted: z.boolean().describe("Whether to restrict access to the collection tree")
         })
         .partial()
     )
@@ -42,6 +43,7 @@ const collectionsRouter = base.prefix("/collections").router({
     .handler(async ({ context, input }) => {
       const newCollection = await Collections.create({
         ...input,
+        auth: context.auth,
         workspaceID: context.auth.workspaceID
       });
 
@@ -70,6 +72,7 @@ const collectionsRouter = base.prefix("/collections").router({
     .output(z.void())
     .handler(async ({ context, input }) => {
       const deleted = await Collections.delete({
+        auth: context.auth,
         workspaceID: context.auth.workspaceID,
         ids: input.ids
       });
@@ -113,6 +116,7 @@ const collectionsRouter = base.prefix("/collections").router({
     .output(z.void())
     .handler(async ({ context, input }) => {
       const deleted = await Collections.delete({
+        auth: context.auth,
         workspaceID: context.auth.workspaceID,
         ids: [input.id]
       });
@@ -157,6 +161,7 @@ const collectionsRouter = base.prefix("/collections").router({
     .output(z.void())
     .handler(async ({ context, input }) => {
       await Collections.update({
+        auth: context.auth,
         id: input.id,
         workspaceID: context.auth.workspaceID,
         name: input.name
@@ -165,6 +170,35 @@ const collectionsRouter = base.prefix("/collections").router({
       emitCollectionEvent(context.auth.workspaceID, {
         action: "collection:update",
         data: { id: input.id, name: input.name },
+        memberID: context.auth.session?.memberID
+      });
+    }),
+  setRestricted: base
+    .route({ method: "PUT", path: "/:id/restricted" })
+    .meta({
+      required: {
+        session: ["restricted_collections"]
+      }
+    })
+    .use(authorized)
+    .input(
+      z.object({
+        id: id().describe("ID of the collection to configure"),
+        restricted: z.boolean().describe("Whether to restrict access to the collection tree")
+      })
+    )
+    .output(z.void())
+    .handler(async ({ context, input }) => {
+      await Collections.setRestricted({
+        auth: context.auth,
+        id: input.id,
+        restricted: input.restricted,
+        workspaceID: context.auth.workspaceID
+      });
+
+      emitCollectionEvent(context.auth.workspaceID, {
+        action: "collection:update",
+        data: { id: input.id, restricted: input.restricted },
         memberID: context.auth.session?.memberID
       });
     }),
@@ -198,6 +232,7 @@ const collectionsRouter = base.prefix("/collections").router({
 
     .handler(async ({ context, input }) => {
       const result = await Collections.move({
+        auth: context.auth,
         id: input.id,
         workspaceID: context.auth.workspaceID,
         newParentID: input.newParentID,
@@ -212,7 +247,8 @@ const collectionsRouter = base.prefix("/collections").router({
         data: {
           id: input.id,
           newParentID: result.newParentID,
-          index: result.index
+          index: result.index,
+          restrictedBoundaryChanged: result.restrictedBoundaryChanged
         },
         memberID: context.auth.session?.memberID
       });
@@ -250,6 +286,7 @@ const collectionsRouter = base.prefix("/collections").router({
     .output(collectionListType)
     .handler(async ({ context, input }) => {
       const { collections, nextCursor } = await Collections.list({
+        auth: context.auth,
         workspaceID: context.auth.workspaceID,
         ancestorID: input.ancestorID,
         cursor: input.cursor,

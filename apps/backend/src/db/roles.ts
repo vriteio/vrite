@@ -15,6 +15,8 @@ const permissionEnum = pgEnum("permission", [
   "read:api_keys",
   "billing",
   "read:billing",
+  "restricted_collections",
+  "read:restricted_collections",
   "workspace"
 ]);
 const baseRoleEnum = pgEnum("base_role", ["admin", "viewer"]);
@@ -28,6 +30,8 @@ const permissionType = z.enum([
   "read:api_keys",
   "billing",
   "read:billing",
+  "restricted_collections",
+  "read:restricted_collections",
   "workspace"
 ]);
 const baseRoleType = z.enum(["admin", "viewer"]);

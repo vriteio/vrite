@@ -4,12 +4,39 @@ import { collections, type Collection, workspaces } from "#backend/db";
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 import { loadCollectionTree } from "#backend/lib/data";
+import {
+  assertCollectionAccess,
+  canManageRestrictedCollections,
+  loadRestrictedCollectionAccess,
+  type SessionData
+} from "#backend/lib/policy";
 import { normalizeCollectionName, ROOT_COLLECTION_NAME } from "#backend/lib/validation";
 
 const createCollection = async (
-  input: Partial<Pick<Collection, "id" | "name">> & { parentID?: string; workspaceID: string }
+  input: Partial<Pick<Collection, "id" | "name" | "restricted">> & {
+    auth: SessionData;
+    parentID?: string;
+    workspaceID: string;
+  }
 ): Promise<Collection> => {
   const name = normalizeCollectionName(input.name ?? "Untitled");
+  const access = await loadRestrictedCollectionAccess(input.auth);
+
+  assertCollectionAccess(access, input.parentID);
+
+  if (input.restricted) {
+    if (input.auth.subscriptionPlan !== "pro") {
+      throw new ORPCError("FORBIDDEN", {
+        message: "This action requires an Andesine Pro subscription"
+      });
+    }
+
+    if (!canManageRestrictedCollections(input.auth)) {
+      throw new ORPCError("FORBIDDEN", {
+        message: "Restricted collections permission is required"
+      });
+    }
+  }
 
   if (name === ROOT_COLLECTION_NAME) {
     throw new ORPCError("BAD_REQUEST", { message: "Reserved collection name" });
@@ -71,7 +98,8 @@ const createCollection = async (
         workspaceID,
         parentID,
         name,
-        rank
+        rank,
+        restricted: input.restricted
       })
       .onConflictDoNothing({ target: collections.id });
   });

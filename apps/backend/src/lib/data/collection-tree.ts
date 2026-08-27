@@ -1,5 +1,5 @@
 import { collections, type Collection } from "#backend/db";
-import { toCollectionID } from "#backend/lib/primitives";
+import { toCollectionID, toUUID } from "#backend/lib/primitives";
 import { db } from "#backend/lib/adapters";
 import { and, asc, eq, isNull } from "drizzle-orm";
 
@@ -29,16 +29,23 @@ const mapCollectionTree = (rows: CollectionRow[]): Collection[] => {
     return {
       id: toCollectionID(row.id),
       name: row.name,
+      restricted: row.restricted,
       ancestors,
       descendants: (children.get(row.id) || []).map((child) => toCollectionID(child.id))
     };
   });
 };
-const loadCollectionTree = async (workspaceID: string) => {
+const loadCollectionTree = async (workspaceID: string, includeDeleted = false) => {
+  const filters = [eq(collections.workspaceID, toUUID(workspaceID))];
+
+  if (!includeDeleted) {
+    filters.push(isNull(collections.deletedAt));
+  }
+
   const rows = await db
     .select()
     .from(collections)
-    .where(and(eq(collections.workspaceID, workspaceID), isNull(collections.deletedAt)))
+    .where(and(...filters))
     .orderBy(asc(collections.rank), asc(collections.id));
 
   return { rows, collections: mapCollectionTree(rows) };

@@ -21,6 +21,7 @@ import { workspaces } from "./workspaces";
 const collectionType = z.object({
   id: id().describe("ID of the collection"),
   name: collectionName().describe("Name of the collection"),
+  restricted: z.boolean().describe("Whether the collection starts a restricted-access boundary"),
   ancestors: z.array(id().describe("IDs of ancestor collections")),
   descendants: z.array(id().describe("IDs of directly-descendant collections"))
 });
@@ -35,6 +36,7 @@ const collections = pgTable(
     parentID: uuid("parent_id"),
     name: text("name").notNull(),
     rank: varchar("rank", { length: 255 }).notNull(),
+    restricted: boolean("restricted").notNull().default(false),
     publishingEnabled: boolean("publishing_enabled").notNull().default(false),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
     ...timestamps
@@ -54,6 +56,10 @@ const collections = pgTable(
     }).onDelete("cascade"),
     check("collections_not_own_parent", sql`${table.id} <> ${table.parentID}`),
     check("collections_root_name", sql`${table.parentID} is not null or ${table.name} = '~'`),
+    check(
+      "collections_root_not_restricted",
+      sql`${table.parentID} is not null or not ${table.restricted}`
+    ),
     index("collections_workspace_parent_rank_idx").on(table.workspaceID, table.parentID, table.rank)
   ]
 );

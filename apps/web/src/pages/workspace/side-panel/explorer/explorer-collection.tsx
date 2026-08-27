@@ -37,6 +37,12 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
     swipe
   } = useExplorerCollection(props);
   const publishingEnabled = () => content.isCollectionPublishingEnabled(props.collection.id);
+  const restricted = () => {
+    return content.collections.isRestricted({ collectionID: props.collection.id });
+  };
+  const restrictionRoot = () => {
+    return content.collections.isRestrictionRoot({ collectionID: props.collection.id });
+  };
   const unpublishedCount = () => {
     return publishing.getCollectionUnpublishedCount(props.collection.id);
   };
@@ -132,6 +138,7 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
                       content={publishingLabel()}
                       placement="right"
                       wrapperClass="absolute -bottom-1 -right-1 h-3 w-3"
+                      fixed
                     >
                       <div class="flex h-3 w-3 items-center justify-center">
                         <Show
@@ -152,6 +159,18 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
                             )}
                           />
                         </Show>
+                      </div>
+                    </Tooltip>
+                  </Show>
+                  <Show when={restricted()}>
+                    <Tooltip
+                      content={restrictionRoot() ? "Restricted access" : "Restricted by parent"}
+                      placement="right"
+                      wrapperClass="absolute -top-0.5 -right-1 h-3 w-3"
+                      fixed
+                    >
+                      <div class="flex h-3 w-3 items-center justify-center rounded-full">
+                        <div class="i-material-symbols:lock h-3 w-3 bg-gradient-to-tr" />
                       </div>
                     </Tooltip>
                   </Show>

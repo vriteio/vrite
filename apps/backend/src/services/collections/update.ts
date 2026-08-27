@@ -4,10 +4,19 @@ import { collections, type Collection } from "#backend/db";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 import { normalizeCollectionName, ROOT_COLLECTION_NAME } from "#backend/lib/validation";
+import {
+  assertCollectionAccess,
+  loadRestrictedCollectionAccess,
+  type SessionData
+} from "#backend/lib/policy";
 
 const updateCollection = async (
-  input: { id: string; workspaceID: string } & Partial<Pick<Collection, "name">>
+  input: { auth: SessionData; id: string; workspaceID: string } & Partial<Pick<Collection, "name">>
 ) => {
+  const access = await loadRestrictedCollectionAccess(input.auth);
+
+  assertCollectionAccess(access, input.id);
+
   if (input.name === undefined) return;
 
   const name = normalizeCollectionName(input.name);

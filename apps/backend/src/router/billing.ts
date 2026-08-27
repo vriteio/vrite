@@ -12,7 +12,10 @@ const subscriptionInfoType = z.object({
   seats: z.number().int().min(0).describe("Number of billable seats in the workspace"),
   expiresAt: z.iso.datetime().nullable().describe("End of the current billing period"),
   customerID: z.string().nullable().describe("Stripe customer ID for the workspace"),
-  cancelAtPeriodEnd: z.boolean().describe("Whether the subscription ends after this period")
+  cancelAt: z.iso.datetime().nullable().describe("Time at which the subscription will be canceled"),
+  cancelAtPeriodEnd: z.boolean().describe("Whether the subscription ends after this period"),
+  canceledAt: z.iso.datetime().nullable().describe("Time at which cancellation was requested"),
+  endedAt: z.iso.datetime().nullable().describe("Time at which the subscription ended")
 });
 const billingUsageType = z.object({
   dailyUsage: z.array(
