@@ -44,10 +44,10 @@ const sizeClasses: Record<ButtonSize, string> = {
   large: ":base: px-4 py-2 text-lg"
 };
 const iconButtonSizes = {
-  xs: { button: ":base: p-1", icon: ":base: w-4.5 h-4.5", label: ":base: pl-1" },
-  small: { button: ":base: p-1", icon: ":base: w-5 h-5", label: ":base: pl-1" },
-  medium: { button: ":base: p-1", icon: ":base: w-6 h-6", label: ":base: pl-1" },
-  large: { button: ":base: p-2", icon: ":base: w-8 h-8", label: ":base: pl-2" }
+  xs: { button: ":base-2: p-1", icon: ":base: w-4.5 h-4.5", label: ":base: pl-1" },
+  small: { button: ":base-2: p-1", icon: ":base: w-5 h-5", label: ":base: pl-1" },
+  medium: { button: ":base-2: p-1", icon: ":base: w-6 h-6", label: ":base: pl-1" },
+  large: { button: ":base-2: p-2", icon: ":base: w-8 h-8", label: ":base: pl-2" }
 };
 const getCursorClasses = (badge?: boolean) => (!badge ? ":base: cursor-pointer" : "");
 const getColorClasses = (color: ButtonColor, variant: ButtonVariant) => {
@@ -273,7 +273,7 @@ const IconButton: Component<IconButtonProps> = (providedProps) => {
     <Button
       {...passedProps}
       class={clsx(
-        ":base: flex items-center justify-center",
+        ":base-2: flex items-center justify-center",
         iconButtonSizes[props.size].button,
         props.class
       )}
