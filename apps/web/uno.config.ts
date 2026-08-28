@@ -32,11 +32,13 @@ const config = defineConfig({
   transformers: [
     transformerDirectives(),
     transformerCompileClass({
+      classPrefix: "uno-b1-",
       layer: "b1",
       trigger: ":base:"
     }),
     {
       ...transformerCompileClass({
+        classPrefix: "uno-b2-",
         layer: "b2",
         trigger: ":base-2:"
       }),
