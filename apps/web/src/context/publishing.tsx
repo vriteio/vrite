@@ -56,7 +56,7 @@ const PublishingProvider: ParentComponent = (props) => {
 
     return typeof value === "string" ? value : PUBLISHED_CHANNEL;
   };
-  const canRead = () => content.hasPermissionInAnyCollection("read:publishing");
+  const canRead = () => content.hasEntryActionInAnyCollection("entry:read");
   const channelList = createAsync(async (): Promise<PublishingChannelsResult> => {
     if (!canRead()) return { result: [] };
 
@@ -170,6 +170,14 @@ const PublishingProvider: ParentComponent = (props) => {
       return;
     }
 
+    if (event.action === "publishing:entries-content-update") {
+      if (event.data.entries.length > 0 && channel() !== PUBLISHED_CHANNEL) {
+        void revalidate(publishingStatusQuery.keyFor({ channel: channel() }));
+      }
+
+      return;
+    }
+
     if (event.action === "publishing:entries-update" && event.data.entries.length > 0) {
       void revalidate(
         event.data.entries.map((entry) => {
@@ -177,7 +185,7 @@ const PublishingProvider: ParentComponent = (props) => {
         })
       );
 
-      if (channel() !== PUBLISHED_CHANNEL && event.data.channel === channel()) {
+      if (channel() !== PUBLISHED_CHANNEL) {
         void revalidate(publishingStatusQuery.keyFor({ channel: channel() }));
       }
     }
@@ -264,9 +272,6 @@ const createWorkspacePublishingOperations = (input: WorkspacePublishingOperation
       return publishing.enabledCollectionIDs.has(ancestorID);
     });
   };
-  const isCollectionPublishingExplicitlyEnabled = (collectionID: string) => {
-    return input.publishing()?.enabledCollectionIDs.has(collectionID) ?? false;
-  };
   const getCollectionUnpublishedCount = (collectionID: string) => {
     return collectionUnpublishedCounts().get(collectionID) ?? 0;
   };
@@ -285,7 +290,6 @@ const createWorkspacePublishingOperations = (input: WorkspacePublishingOperation
     getCollectionUnpublishedCount,
     getEntryPublishingStatus,
     isCollectionPublishingEnabled,
-    isCollectionPublishingExplicitlyEnabled,
     isCollectionPublishingRoot
   };
 };

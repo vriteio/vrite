@@ -1,7 +1,7 @@
 import { permissionType, workspaceType } from "#backend/db";
 import { emitWorkspaceStateEvent } from "#backend/events";
 import { auth } from "#backend/lib/adapters";
-import { authorized, base } from "#backend/lib/transport";
+import { base, sessionRoute } from "#backend/lib/transport";
 import { id, toUserID, toUUID } from "#backend/lib/primitives";
 import { Billing } from "#backend/services/billing";
 import { Workspaces } from "#backend/services/workspaces";
@@ -21,14 +21,10 @@ const workspaceListItemType = workspaceSummaryType.extend({
 });
 
 const workspacesRouter = base.router({
-  list: base
+  list: sessionRoute
     .meta({
-      requireWorkspace: false,
-      required: {
-        session: true
-      }
+      requireWorkspace: false
     })
-    .use(authorized)
     .output(z.array(workspaceListItemType))
     .handler(async ({ context }) => {
       const sessions = await auth.api.listDeviceSessions({
@@ -42,14 +38,10 @@ const workspacesRouter = base.router({
 
       return workspaces;
     }),
-  create: base
+  create: sessionRoute
     .meta({
-      requireWorkspace: false,
-      required: {
-        session: true
-      }
+      requireWorkspace: false
     })
-    .use(authorized)
     .input(
       z.object({
         name: z.string().min(1).max(50).describe("Name of the workspace")
@@ -75,13 +67,7 @@ const workspacesRouter = base.router({
 
       return newWorkspace;
     }),
-  update: base
-    .meta({
-      required: {
-        session: ["workspace"]
-      }
-    })
-    .use(authorized)
+  update: sessionRoute
     .input(
       z.object({
         name: z.string().min(1).max(50).optional().describe("New name of the workspace")
@@ -92,7 +78,7 @@ const workspacesRouter = base.router({
       if (input.name === undefined) return;
 
       await Workspaces.update({
-        workspaceID: context.auth.workspaceID,
+        auth: context.auth,
         name: input.name
       });
 
@@ -105,25 +91,19 @@ const workspacesRouter = base.router({
         }
       });
     }),
-  delete: base
-    .meta({
-      required: {
-        session: "admin"
-      }
-    })
-    .use(authorized)
+  delete: sessionRoute
     .output(
       z.object({
         workspaceID: id().nullable().describe("The user's fallback workspace after deletion")
       })
     )
     .handler(async ({ context }) => {
-      await Auth.invalidateSessionData({ workspaceID: context.auth.workspaceID });
       const { deletingAt } = await Workspaces.beginDeletion({
-        workspaceID: context.auth.workspaceID
+        auth: context.auth
       });
 
       try {
+        await Auth.invalidateSessionData({ workspaceID: context.auth.workspaceID });
         await Billing.settle({
           workspaceID: context.auth.workspaceID
         });
@@ -136,8 +116,7 @@ const workspacesRouter = base.router({
       }
 
       const { entryIDs, ...result } = await Workspaces.delete({
-        workspaceID: context.auth.workspaceID,
-        userID: context.auth.session!.userID
+        auth: context.auth
       });
 
       emitWorkspaceStateEvent(context.auth.workspaceID, {
@@ -151,14 +130,10 @@ const workspacesRouter = base.router({
 
       return result;
     }),
-  switch: base
+  switch: sessionRoute
     .meta({
-      requireWorkspace: false,
-      required: {
-        session: true
-      }
+      requireWorkspace: false
     })
-    .use(authorized)
     .input(
       z.object({
         workspaceID: id().describe("ID of the workspace to switch to")

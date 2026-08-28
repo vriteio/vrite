@@ -1,11 +1,16 @@
 import { toUUID } from "#backend/lib/primitives";
 import { db } from "#backend/lib/adapters";
 import { apiKeys, type Key } from "#backend/db";
+import { withAuthorization } from "#backend/lib/policy";
 import { and, eq } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 import { mapAPIKey } from "#backend/lib/data";
 
-const getKey = async (input: { workspaceID: string; keyID: string }): Promise<Key> => {
+interface GetKeyInput {
+  keyID: string;
+}
+
+const getKeyOperation = async (input: GetKeyInput & { workspaceID: string }): Promise<Key> => {
   const [key] = await db
     .select()
     .from(apiKeys)
@@ -17,5 +22,9 @@ const getKey = async (input: { workspaceID: string; keyID: string }): Promise<Ke
 
   return mapAPIKey(key);
 };
+const getKey = withAuthorization<GetKeyInput, undefined, Key>(
+  { permissions: { session: ["read:api_keys"] } },
+  async ({ input, workspaceID }) => getKeyOperation({ ...input, workspaceID })
+);
 
 export { getKey };

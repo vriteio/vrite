@@ -1,14 +1,17 @@
 import {
   contents,
   entries,
+  entryPublications,
   entryVersionActivity,
   entryVersionActivityContributors,
+  entryVersions,
+  publishingChannels,
   memberships
 } from "#backend/db";
-import { emitEntryEvent } from "#backend/events";
+import { emitEntryEvent, emitPublishingEntryContentUpdates } from "#backend/events";
 import { db } from "#backend/lib/adapters";
 import { hashContentDocument, serializeContentDocument } from "#backend/lib/content";
-import { emitPublishingStatusUpdates } from "#backend/lib/publishing/status-events";
+import { PUBLISHED_CHANNEL_CODE } from "#backend/lib/publishing";
 import { toEntryID, toUUID, toWorkspaceID } from "#backend/lib/primitives";
 import {
   AUTOMATIC_VERSION_MAX_PERIOD_MS,
@@ -79,8 +82,28 @@ const collaborationDatabase = new Database({
       if (!entry) return null;
 
       const [content] = await tx
-        .select({ state: contents.state, hash: contents.hash })
+        .select({
+          state: contents.state,
+          hash: contents.hash,
+          publishedHash: entryVersions.hash,
+          publishedVersionID: entryPublications.versionID
+        })
         .from(contents)
+        .leftJoin(
+          publishingChannels,
+          and(
+            eq(publishingChannels.workspaceID, workspaceID),
+            eq(publishingChannels.code, PUBLISHED_CHANNEL_CODE)
+          )
+        )
+        .leftJoin(
+          entryPublications,
+          and(
+            eq(entryPublications.entryID, entryID),
+            eq(entryPublications.channelID, publishingChannels.id)
+          )
+        )
+        .leftJoin(entryVersions, eq(entryVersions.id, entryPublications.versionID))
         .where(eq(contents.entryID, entryID));
       const persistedDocument = new Doc();
 
@@ -93,6 +116,12 @@ const collaborationDatabase = new Database({
       const hash = hashContentDocument(document);
       const title = getDocumentTitle(persistedDocument);
       const contentChanged = content?.hash !== hash;
+      const publishingEntry = {
+        entryID: toEntryID(entry.id),
+        matchesPublishedVersion: Boolean(
+          content?.publishedVersionID && hash === content.publishedHash
+        )
+      };
 
       await tx
         .insert(contents)
@@ -177,10 +206,10 @@ const collaborationDatabase = new Database({
           .set({ name: title, updatedAt: new Date() })
           .where(and(eq(entries.id, entryID), isNull(entries.deletedAt)));
 
-        return { contentChanged, entry, title };
+        return { contentChanged, entry, publishingEntry, title };
       }
 
-      return { contentChanged, entry, title: null };
+      return { contentChanged, entry, publishingEntry, title: null };
     });
 
     clearPendingContributors(documentName, pendingContributorIDs);
@@ -196,9 +225,9 @@ const collaborationDatabase = new Database({
     }
 
     if (stored?.contentChanged) {
-      await emitPublishingStatusUpdates({
-        workspaceID: stored.entry.workspaceID,
-        entryIDs: [stored.entry.id]
+      emitPublishingEntryContentUpdates({
+        workspaceID: toWorkspaceID(stored.entry.workspaceID),
+        entries: [stored.publishingEntry]
       });
     }
   }

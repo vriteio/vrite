@@ -1,40 +1,25 @@
 import { permissionType } from "#backend/db";
 import { roleType } from "#backend/db";
 import { emitRoleEvent } from "#backend/events";
-import { authorized, base } from "#backend/lib/transport";
+import { authenticatedRoute, base } from "#backend/lib/transport";
 import { id } from "#backend/lib/primitives";
 import { Roles } from "#backend/services/roles";
 import { Auth } from "#backend/services/auth";
 import * as z from "zod";
 
 const rolesRouter = base.prefix("/roles").router({
-  list: base
+  list: authenticatedRoute
     .route({ method: "GET", path: "/" })
-    .meta({
-      required: {
-        session: ["workspace"],
-        key: ["read:roles"]
-      }
-    })
-    .use(authorized)
     .output(z.array(roleType))
     .handler(async ({ context }) => {
       const { roles } = await Roles.list({
-        workspaceID: context.auth.workspaceID
+        auth: context.auth
       });
 
       return roles;
     }),
-  create: base
+  create: authenticatedRoute
     .route({ method: "POST", path: "/" })
-    .meta({
-      requireProPlan: true,
-      required: {
-        session: ["workspace"],
-        key: ["roles"]
-      }
-    })
-    .use(authorized)
     .input(
       z.object({
         name: z.string().trim().min(1).max(50).describe("Name of the role"),
@@ -44,7 +29,7 @@ const rolesRouter = base.prefix("/roles").router({
     .output(roleType)
     .handler(async ({ context, input }) => {
       const newRole = await Roles.create({
-        workspaceID: context.auth.workspaceID,
+        auth: context.auth,
         name: input.name,
         permissions: input.permissions
       });
@@ -57,16 +42,8 @@ const rolesRouter = base.prefix("/roles").router({
 
       return newRole;
     }),
-  update: base
+  update: authenticatedRoute
     .route({ method: "PUT", path: "/:id" })
-    .meta({
-      requireProPlan: true,
-      required: {
-        session: ["workspace"],
-        key: ["roles"]
-      }
-    })
-    .use(authorized)
     .input(
       z.object({
         id: id().describe("ID of the role to update"),
@@ -78,7 +55,7 @@ const rolesRouter = base.prefix("/roles").router({
     .handler(async ({ context, input }) => {
       const { affectedUserIDs } = await Roles.update({
         id: input.id,
-        workspaceID: context.auth.workspaceID,
+        auth: context.auth,
         name: input.name,
         permissions: input.permissions
       });
@@ -100,16 +77,8 @@ const rolesRouter = base.prefix("/roles").router({
         }
       });
     }),
-  delete: base
+  delete: authenticatedRoute
     .route({ method: "DELETE", path: "/:id" })
-    .meta({
-      requireProPlan: true,
-      required: {
-        session: ["workspace"],
-        key: ["roles"]
-      }
-    })
-    .use(authorized)
     .input(
       z.object({
         id: id().describe("ID of the role to delete")
@@ -119,7 +88,7 @@ const rolesRouter = base.prefix("/roles").router({
     .handler(async ({ context, input }) => {
       const { affectedUserIDs } = await Roles.delete({
         id: input.id,
-        workspaceID: context.auth.workspaceID
+        auth: context.auth
       });
 
       await Promise.all(

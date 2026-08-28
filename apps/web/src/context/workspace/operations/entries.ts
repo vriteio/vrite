@@ -112,11 +112,7 @@ const createEntryOperations = (input: WorkspaceContentOperationsInput) => {
 
     return entry;
   };
-  const updateEntry = (
-    entryID: string,
-    props: Partial<Entry>,
-    options: { publish?: boolean } = {}
-  ) => {
+  const updateEntry = (entryID: string, props: Partial<Entry>) => {
     const entries = entriesCollection();
     const original = entries.findOne({ id: entryID });
 
@@ -141,8 +137,7 @@ const createEntryOperations = (input: WorkspaceContentOperationsInput) => {
             .move({
               id: entryID,
               order: updated.order,
-              collectionID: updated.collectionID ?? null,
-              publish: options.publish
+              collectionID: updated.collectionID ?? null
             })
             .then(({ order }) => {
               const current = entries.findOne({ id: entryID });

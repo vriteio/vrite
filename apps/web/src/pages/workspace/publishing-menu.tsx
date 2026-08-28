@@ -11,7 +11,6 @@ import { createMutation } from "@tanstack/solid-query";
 import clsx from "clsx";
 import { format, formatDistanceToNow } from "date-fns";
 import { type Component, createMemo, createSignal, type JSX, Show } from "solid-js";
-import { ActionConfirmationDialog } from "#web/components/action-confirmation-dialog";
 import { useNotify } from "#web/context/notifications";
 import { useWorkspace } from "#web/context/workspace";
 import { usePublishing } from "#web/context/publishing";
@@ -97,7 +96,6 @@ const PublishingMenu: Component<PublishingMenuProps> = (props) => {
   const [, setSearchParams] = useSearchParams();
   const notify = useNotify();
   const [menuOpened, setMenuOpened] = createSignal(false);
-  const [action, setAction] = createSignal<PublishingAction | null>(null);
   const selectedChannel = publishing.channel;
   const baseStatus = () => content.getEntryPublishingStatus(props.entryID);
   const publishingEnabled = () => baseStatus() !== null && baseStatus() !== "outside";
@@ -177,15 +175,7 @@ const PublishingMenu: Component<PublishingMenuProps> = (props) => {
       }
     },
     onSuccess: (_data, input) => {
-      setAction(null);
       revalidateChannel(input.channel);
-      notify({
-        type: "success",
-        text:
-          input.action === "publish"
-            ? `Current document published to ${publishing.getChannelName(input.channel)}`
-            : `Content unpublished from ${publishing.getChannelName(input.channel)}`
-      });
     },
     onError: (error, input) => {
       console.error(error);
@@ -198,6 +188,11 @@ const PublishingMenu: Component<PublishingMenuProps> = (props) => {
       });
     }
   }));
+  const runAction = (action: PublishingAction) => {
+    if (actionMutation.isPending) return;
+
+    actionMutation.mutate({ action, channel: selectedChannel() });
+  };
   const openAssignedVersion = () => {
     const currentVersion = version();
 
@@ -256,7 +251,7 @@ const PublishingMenu: Component<PublishingMenuProps> = (props) => {
     const currentStatus = displayStatus();
     const collectionID = entry()?.collectionID || null;
     const canManage =
-      content.hasCollectionPermission(collectionID, "publishing") &&
+      content.canEntry(collectionID, "publishing:publish") &&
       publishingEnabled() &&
       currentStatus !== "error" &&
       currentStatus !== "loading" &&
@@ -272,7 +267,7 @@ const PublishingMenu: Component<PublishingMenuProps> = (props) => {
         {
           label: "Publish current",
           icon: "i-material-symbols:publish-rounded",
-          onClick: () => setAction("publish")
+          onClick: () => runAction("publish")
         }
       ]);
     }
@@ -311,7 +306,7 @@ const PublishingMenu: Component<PublishingMenuProps> = (props) => {
         {
           label: "Unpublish",
           icon: "i-material-symbols:unpublished-outline-rounded",
-          onClick: () => setAction("unpublish")
+          onClick: () => runAction("unpublish")
         }
       ]);
     }
@@ -322,89 +317,49 @@ const PublishingMenu: Component<PublishingMenuProps> = (props) => {
   return (
     <Show when={displayStatus()}>
       {(currentStatus) => (
-        <>
-          <DropdownMenu
-            title="Publishing"
-            cardProps={{ class: "w-52" }}
-            items={options()}
-            opened={menuOpened()}
-            setOpened={(opened) => {
-              setMenuOpened(opened);
+        <DropdownMenu
+          title="Publishing"
+          cardProps={{ class: "w-52" }}
+          items={options()}
+          opened={menuOpened()}
+          setOpened={(opened) => {
+            setMenuOpened(opened);
 
-              if (opened && publishingEnabled()) {
-                revalidateChannel();
-              }
-            }}
-            mobileSheetDragFromContent={false}
-            trigger={() => (
-              <Show
-                when={props.triggerVariant === "menu"}
-                fallback={
-                  <Button
-                    class="flex w-full min-w-0 items-center justify-start"
-                    size="small"
-                    variant="outlined"
-                    color="contrast"
-                    aria-label="Publishing status"
-                  >
-                    <PublishingStatusIcon status={currentStatus()} />
-                    <span class="min-w-0 flex-1 truncate px-1 text-start">
-                      {STATUS_LABELS[currentStatus()]}
-                    </span>
-                    <div class="i-lucide:chevrons-up-down ml-auto shrink-0 text-gray-400" />
-                  </Button>
-                }
-              >
-                <button
-                  type="button"
-                  class="group relative flex min-h-7 w-full flex-1 select-none items-center gap-1 overflow-hidden rounded-lg pl-0.5 text-left font-medium outline-none @hover:bg-gradient-to-r @hover:from-gray-500/10 @hover:to-transparent"
-                  aria-label="Open publishing menu"
-                >
-                  <PublishingStatusIcon status={currentStatus()} size="large" />
-                  <span class="min-w-0 flex-1 truncate">Publishing</span>
-                </button>
-              </Show>
-            )}
-          />
-          <ActionConfirmationDialog
-            opened={Boolean(action())}
-            title={action() === "publish" ? "Publish current document?" : "Unpublish content?"}
-            description={
-              action() === "publish"
-                ? `Save and assign the current document to the ${publishing.getChannelName()} channel.`
-                : `Remove this entry from the ${publishing.getChannelName()} channel. Its versions are kept.`
+            if (opened && publishingEnabled()) {
+              revalidateChannel();
             }
-            affected={[
-              {
-                id: props.entryID,
-                icon: "i-lucide:file-text",
-                label: entry()?.name || "Current entry"
+          }}
+          mobileSheetDragFromContent={false}
+          trigger={() => (
+            <Show
+              when={props.triggerVariant === "menu"}
+              fallback={
+                <Button
+                  class="flex w-full min-w-0 items-center justify-start"
+                  size="small"
+                  variant="outlined"
+                  color="contrast"
+                  aria-label="Publishing status"
+                >
+                  <PublishingStatusIcon status={currentStatus()} />
+                  <span class="min-w-0 flex-1 truncate px-1 text-start">
+                    {STATUS_LABELS[currentStatus()]}
+                  </span>
+                  <div class="i-lucide:chevrons-up-down ml-auto shrink-0 text-gray-400" />
+                </Button>
               }
-            ]}
-            action={{
-              color: action() === "publish" ? "primary" : "danger",
-              icon:
-                action() === "publish"
-                  ? "i-material-symbols:publish-rounded"
-                  : "i-material-symbols:unpublished-outline-rounded",
-              label: action() === "publish" ? "Publish" : "Unpublish",
-              loading: actionMutation.isPending,
-              onClick: () => {
-                const currentAction = action();
-
-                if (currentAction) {
-                  actionMutation.mutate({
-                    action: currentAction,
-                    channel: selectedChannel()
-                  });
-                }
-              }
-            }}
-            onClose={() => {
-              if (!actionMutation.isPending) setAction(null);
-            }}
-          />
-        </>
+            >
+              <button
+                type="button"
+                class="group relative flex min-h-7 w-full flex-1 select-none items-center gap-1 overflow-hidden rounded-lg pl-0.5 text-left font-medium outline-none @hover:bg-gradient-to-r @hover:from-gray-500/10 @hover:to-transparent"
+                aria-label="Open publishing menu"
+              >
+                <PublishingStatusIcon status={currentStatus()} size="large" />
+                <span class="min-w-0 flex-1 truncate">Publishing</span>
+              </button>
+            </Show>
+          )}
+        />
       )}
     </Show>
   );

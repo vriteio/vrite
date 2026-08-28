@@ -1,5 +1,3 @@
-import { entries, workspaces } from "#backend/db";
-import { db } from "#backend/lib/adapters";
 import {
   isCollectionPublishingEnabled,
   loadPublishingTree,
@@ -7,23 +5,30 @@ import {
   type PublishEntryTarget,
   syncEntrySnapshots
 } from "#backend/lib/publishing";
+import {
+  type EntryAuthorizationSource,
+  loadEntryAuthorizationSources,
+  withAuthorization
+} from "#backend/lib/policy";
 import { toUUID } from "#backend/lib/primitives";
 import { ORPCError } from "@orpc/server";
-import { and, eq, inArray, isNull } from "drizzle-orm";
-import type { SessionData } from "#backend/lib/policy";
-import { authorizeEntrySources } from "../access";
 
-const publishEntry = async (input: {
-  auth: SessionData;
-  workspaceID: string;
+interface PublishEntryInput {
   entries: PublishEntryTarget[];
   channel: string;
   contributorIDs: string[];
-}) => {
-  const workspaceID = toUUID(input.workspaceID);
+}
+interface ResolvedPublishEntry {
+  entrySources: EntryAuthorizationSource[];
+  publishingEntries: PublishEntryTarget[];
+}
+
+type PublishEntryResult = Awaited<ReturnType<typeof publishEntries>>;
+
+const normalizePublishingEntries = (entries: PublishEntryTarget[]): PublishEntryTarget[] => {
   const entriesByID = new Map<string, PublishEntryTarget>();
 
-  for (const entry of input.entries) {
+  for (const entry of entries) {
     const entryID = toUUID(entry.entryID);
     const versionID = entry.versionID ? toUUID(entry.versionID) : undefined;
     const existingEntry = entriesByID.get(entryID);
@@ -35,52 +40,85 @@ const publishEntry = async (input: {
     entriesByID.set(entryID, { entryID, versionID });
   }
 
-  const publishingEntries = [...entriesByID.values()];
-  const entryIDs = publishingEntries.map((entry) => entry.entryID);
-  const currentEntryIDs = publishingEntries.flatMap((entry) => {
-    return entry.versionID ? [] : [entry.entryID];
-  });
+  return [...entriesByID.values()];
+};
+const commitPublishEntry = withAuthorization<
+  PublishEntryInput,
+  ResolvedPublishEntry,
+  PublishEntryResult
+>(
+  {
+    actions: ({ resolved }) => ({
+      entries: resolved.entrySources.map(({ collectionID }) => ({
+        action: "publishing:publish",
+        collectionID
+      }))
+    }),
+    resolve: async ({ database, input, workspaceID }) => {
+      const publishingEntries = normalizePublishingEntries(input.entries);
+      const entrySources = await loadEntryAuthorizationSources({
+        database,
+        entryIDs: publishingEntries.map((entry) => entry.entryID),
+        workspaceID
+      });
 
-  await authorizeEntrySources(input.auth, entryIDs, "publishing");
+      return { entrySources, publishingEntries };
+    },
+    transaction: "locked-workspace"
+  },
+  async ({ database, input, resolved, workspaceID }) => {
+    const { entrySources, publishingEntries } = resolved;
 
-  await syncEntrySnapshots(workspaceID, currentEntryIDs);
-  return db.transaction(async (tx) => {
-    const [workspace] = await tx
-      .select({ id: workspaces.id })
-      .from(workspaces)
-      .where(eq(workspaces.id, workspaceID))
-      .for("update");
+    const tree = await loadPublishingTree(database, workspaceID);
 
-    if (!workspace) throw new ORPCError("NOT_FOUND", { message: "Workspace not found" });
-
-    const currentEntries = await tx
-      .select({ collectionID: entries.collectionID, id: entries.id })
-      .from(entries)
-      .where(
-        and(
-          inArray(entries.id, entryIDs),
-          eq(entries.workspaceID, workspaceID),
-          isNull(entries.deletedAt)
-        )
-      );
-
-    if (currentEntries.length !== entryIDs.length) {
-      throw new ORPCError("NOT_FOUND", { message: "Entry not found" });
-    }
-
-    const tree = await loadPublishingTree(tx, workspaceID);
-
-    if (currentEntries.some((entry) => !isCollectionPublishingEnabled(tree, entry.collectionID))) {
+    if (
+      entrySources.some((entry) => !isCollectionPublishingEnabled(tree, entry.collectionID || null))
+    ) {
       throw new ORPCError("BAD_REQUEST", { message: "Publishing is not enabled for this entry" });
     }
 
-    return publishEntries(tx, {
+    return publishEntries(database, {
       workspaceID,
       entries: publishingEntries,
       channel: input.channel,
       contributorIDs: input.contributorIDs
     });
-  });
-};
+  }
+);
+const publishEntry = withAuthorization<PublishEntryInput, ResolvedPublishEntry, PublishEntryResult>(
+  {
+    actions: ({ resolved }) => ({
+      entries: resolved.entrySources.map(({ collectionID }) => ({
+        action: "publishing:publish",
+        collectionID
+      }))
+    }),
+    resolve: async ({ database, input, workspaceID }) => {
+      const publishingEntries = normalizePublishingEntries(input.entries);
+      const entrySources = await loadEntryAuthorizationSources({
+        database,
+        entryIDs: publishingEntries.map((entry) => entry.entryID),
+        workspaceID
+      });
+
+      return { entrySources, publishingEntries };
+    },
+    transaction: "locked-workspace"
+  },
+  async ({ auth, authorizationScope, input, resolved, workspaceID }) => {
+    const { publishingEntries } = resolved;
+    const currentEntryIDs = publishingEntries.flatMap((entry) => {
+      return entry.versionID ? [] : [entry.entryID];
+    });
+
+    await syncEntrySnapshots(workspaceID, currentEntryIDs);
+
+    return commitPublishEntry({
+      ...input,
+      auth,
+      skipAuthorization: authorizationScope
+    });
+  }
+);
 
 export { publishEntry };

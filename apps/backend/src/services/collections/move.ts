@@ -1,114 +1,45 @@
-import { rankBetweenNeighbors, toCollectionID, toUUID } from "#backend/lib/primitives";
-import { db } from "#backend/lib/adapters";
-import { collections, entryPublications, workspaces } from "#backend/db";
+import { rankBetweenNeighbors, toCollectionID, toEntryID, toUUID } from "#backend/lib/primitives";
+import { collections, entryPublications } from "#backend/db";
 import {
   getDisabledEntryIDs,
-  getSubtreeCollectionIDs,
   getSubtreeEntryIDs,
   isCollectionPublishingEnabled,
-  loadPublishingTree,
-  PUBLISHED_CHANNEL_CODE,
-  publishEntries,
-  syncEntrySnapshots
+  lockPublishingEntries,
+  loadPublishingTree
 } from "#backend/lib/publishing";
 import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
-import type { VersionSummary } from "#backend/lib/data";
-import {
-  assertCollectionMovePermission,
-  hasCollectionPermission,
-  loadRestrictedCollectionAccess,
-  type SessionData
-} from "#backend/lib/policy";
+import { filterAuthorizedEntryIDs, withAuthorization } from "#backend/lib/policy";
+import type { PublishingEntryStatus } from "#backend/lib/publishing";
 
-const moveCollection = async (input: {
-  auth: SessionData;
+interface MoveCollectionInput {
   id: string;
-  workspaceID: string;
   newParentID?: string | null;
   index?: number;
-  publish?: boolean;
-  contributorIDs: string[];
-}): Promise<{
-  affectedPublishingEntryIDs: string[];
-  createdVersions: VersionSummary[];
+}
+interface MoveCollectionResult {
   index: number;
   newParentID: string | null;
+  publishingEntries: PublishingEntryStatus[];
   restrictedBoundaryChanged: boolean;
-}> => {
-  const access = await loadRestrictedCollectionAccess(input.auth);
-  const workspaceID = toUUID(input.workspaceID);
-  const collectionID = toUUID(input.id);
-  const requestedParentID = input.newParentID ? toUUID(input.newParentID) : null;
-  const collection = access.allCollections.find(({ id }) => id === input.id);
-  const sourceParentID = collection?.ancestors[collection.ancestors.length - 1];
-  const sourceBoundaryID = sourceParentID
-    ? access.boundaryByCollectionID.get(sourceParentID)
-    : undefined;
-  const targetBoundaryID = input.newParentID
-    ? access.boundaryByCollectionID.get(input.newParentID)
-    : undefined;
-  const restrictedBoundaryChanged = sourceBoundaryID !== targetBoundaryID;
-  const affectedCollections = access.allCollections.filter((item) => {
-    return item.id === input.id || item.ancestors.includes(input.id);
-  });
-  const canPublish = [input.newParentID, ...affectedCollections.map(({ id }) => id)].every((id) => {
-    return hasCollectionPermission(input.auth, access, id, "publishing");
-  });
+}
 
-  assertCollectionMovePermission(input.auth, access, input.id, input.newParentID);
+const moveCollection = withAuthorization<MoveCollectionInput, undefined, MoveCollectionResult>(
+  {
+    actions: ({ input }) => ({
+      collections: [
+        { action: "collection:move", collectionID: input.id },
+        { action: "collection:create-child", collectionID: input.newParentID }
+      ]
+    }),
+    tree: true,
+    transaction: "locked-workspace"
+  },
+  async ({ authorization, database, input, workspaceID }) => {
+    const collectionID = toUUID(input.id);
+    const requestedParentID = input.newParentID ? toUUID(input.newParentID) : null;
 
-  if (input.publish) {
-    if (!canPublish) {
-      throw new ORPCError("FORBIDDEN", {
-        message: "Publishing permission is required to move this collection"
-      });
-    }
-
-    const entryIDs = await db.transaction(async (tx) => {
-      const tree = await loadPublishingTree(tx, workspaceID);
-      const collection = tree.collections.find(({ id }) => id === collectionID);
-      const parentID = requestedParentID || tree.rootID;
-      const parent = tree.collections.find(({ id }) => id === parentID);
-
-      if (!collection) throw new ORPCError("NOT_FOUND");
-      if (!collection.parentID) {
-        throw new ORPCError("BAD_REQUEST", { message: "Cannot move the root collection" });
-      }
-
-      if (parentID === collectionID) {
-        throw new ORPCError("BAD_REQUEST", { message: "Cannot move a collection into itself" });
-      }
-
-      if (!parent) throw new ORPCError("NOT_FOUND", { message: "Parent collection not found" });
-
-      const subtreeCollectionIDs = getSubtreeCollectionIDs(tree, collectionID);
-
-      if (subtreeCollectionIDs.includes(parentID)) {
-        throw new ORPCError("BAD_REQUEST", {
-          message: "Cannot move a collection into one of its descendants"
-        });
-      }
-
-      const wasPublishingEnabled = isCollectionPublishingEnabled(tree, collectionID);
-      const parentPublishingEnabled = isCollectionPublishingEnabled(tree, parentID);
-      const willBePublishingEnabled = collection.publishingEnabled || parentPublishingEnabled;
-
-      if (wasPublishingEnabled || !willBePublishingEnabled) return [];
-
-      return getSubtreeEntryIDs(tx, workspaceID, tree, collectionID);
-    });
-
-    await syncEntrySnapshots(workspaceID, entryIDs);
-  }
-
-  return db.transaction(async (tx) => {
-    await tx
-      .select({ id: workspaces.id })
-      .from(workspaces)
-      .where(eq(workspaces.id, workspaceID))
-      .for("update");
-    const [collection] = await tx
+    const [collection] = await database
       .select()
       .from(collections)
       .where(
@@ -125,7 +56,7 @@ const moveCollection = async (input: {
       throw new ORPCError("BAD_REQUEST", { message: "Cannot move the root collection" });
     }
 
-    const [root] = await tx
+    const [root] = await database
       .select({ id: collections.id })
       .from(collections)
       .where(
@@ -141,7 +72,7 @@ const moveCollection = async (input: {
       throw new ORPCError("BAD_REQUEST", { message: "Cannot move a collection into itself" });
     }
 
-    const [parent] = await tx
+    const [parent] = await database
       .select({ id: collections.id })
       .from(collections)
       .where(
@@ -154,7 +85,7 @@ const moveCollection = async (input: {
 
     if (!parent) throw new ORPCError("NOT_FOUND", { message: "Parent collection not found" });
 
-    const cycle = await tx.execute<{ id: string }>(sql`
+    const cycle = await database.execute<{ id: string }>(sql`
       with recursive subtree as (
         select id from ${collections}
         where workspace_id = ${workspaceID}::uuid
@@ -176,25 +107,19 @@ const moveCollection = async (input: {
       });
     }
 
-    const publishingTree = await loadPublishingTree(tx, workspaceID);
+    const publishingTree = await loadPublishingTree(database, workspaceID);
     const wasPublishingEnabled = isCollectionPublishingEnabled(publishingTree, collectionID);
     const parentPublishingEnabled = isCollectionPublishingEnabled(publishingTree, parentID);
     const willBePublishingEnabled = collection.publishingEnabled || parentPublishingEnabled;
-    const crossesPublishingBoundary = wasPublishingEnabled !== willBePublishingEnabled;
+    const restrictedBoundaryChanged =
+      authorization.getRestrictedBoundaryID(collection.parentID) !==
+      authorization.getRestrictedBoundaryID(parentID);
 
-    if (crossesPublishingBoundary && !canPublish) {
-      throw new ORPCError("FORBIDDEN", {
-        message: "Publishing permission is required to move this collection"
-      });
+    if (wasPublishingEnabled && !willBePublishingEnabled) {
+      authorization.assertFullyVisibleSubtree(input.id);
     }
 
-    if (!wasPublishingEnabled && willBePublishingEnabled && input.publish === undefined) {
-      throw new ORPCError("BAD_REQUEST", {
-        message: "Choose whether to publish the latest entry versions"
-      });
-    }
-
-    const siblings = await tx
+    const siblings = await database
       .select({ id: collections.id, rank: collections.rank })
       .from(collections)
       .where(
@@ -211,7 +136,7 @@ const moveCollection = async (input: {
     const index = Math.min(Math.max(requestedIndex, 0), destination.length);
     const rank = rankBetweenNeighbors(destination[index - 1]?.rank, destination[index]?.rank);
 
-    await tx
+    await database
       .update(collections)
       .set({ parentID, rank, updatedAt: new Date() })
       .where(
@@ -223,50 +148,54 @@ const moveCollection = async (input: {
       );
 
     const treeCollection = publishingTree.collections.find((item) => item.id === collectionID);
-    let createdVersions: VersionSummary[] = [];
+    let publishingEntryIDs: string[] = [];
 
     if (treeCollection) treeCollection.parentID = parentID;
 
-    if (!wasPublishingEnabled && willBePublishingEnabled && input.publish) {
-      const entryIDs = await getSubtreeEntryIDs(tx, workspaceID, publishingTree, collectionID);
-
-      const result = await publishEntries(tx, {
-        workspaceID,
-        entries: entryIDs.map((entryID) => ({ entryID })),
-        channel: PUBLISHED_CHANNEL_CODE,
-        contributorIDs: input.contributorIDs
-      });
-
-      createdVersions = result.createdVersions;
-    }
-
     if (wasPublishingEnabled && !willBePublishingEnabled) {
       const disabledEntryIDs = await getDisabledEntryIDs(
-        tx,
+        database,
         workspaceID,
         publishingTree,
         collectionID
       );
 
       if (disabledEntryIDs.length > 0) {
-        await tx
+        await lockPublishingEntries(database, workspaceID, disabledEntryIDs);
+        await database
           .delete(entryPublications)
           .where(inArray(entryPublications.entryID, disabledEntryIDs));
       }
+
+      publishingEntryIDs = disabledEntryIDs;
+    } else if (!wasPublishingEnabled && willBePublishingEnabled) {
+      publishingEntryIDs = await getSubtreeEntryIDs(
+        database,
+        workspaceID,
+        publishingTree,
+        collectionID
+      );
     }
 
-    const affectedPublishingEntryIDs = crossesPublishingBoundary
-      ? await getSubtreeEntryIDs(tx, workspaceID, publishingTree, collectionID)
-      : [];
+    const affectedPublishingEntryIDs = await filterAuthorizedEntryIDs({
+      action: "publishing:publish",
+      authorization,
+      database,
+      entryIDs: publishingEntryIDs,
+      workspaceID
+    });
 
     return {
       index,
       newParentID: requestedParentID ? toCollectionID(requestedParentID) : null,
-      affectedPublishingEntryIDs,
-      createdVersions,
+      publishingEntries: affectedPublishingEntryIDs.map((entryID) => ({
+        entryID: toEntryID(entryID),
+        hasUnpublishedChanges: willBePublishingEnabled,
+        versionID: null
+      })),
       restrictedBoundaryChanged
     };
-  });
-};
+  }
+);
 
 export { moveCollection };

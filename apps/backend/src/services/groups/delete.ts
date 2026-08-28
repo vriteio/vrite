@@ -1,13 +1,17 @@
 import { groupMembers, groups, memberships } from "#backend/db";
 import { db } from "#backend/lib/adapters";
+import { withAuthorization } from "#backend/lib/policy";
 import { toUserID, toUUID } from "#backend/lib/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, eq } from "drizzle-orm";
 
-const deleteGroup = async (input: {
+interface DeleteGroupInput {
   id: string;
-  workspaceID: string;
-}): Promise<{ affectedUserIDs: string[] }> => {
+}
+
+const deleteGroupOperation = async (
+  input: DeleteGroupInput & { workspaceID: string }
+): Promise<{ affectedUserIDs: string[] }> => {
   const groupID = toUUID(input.id);
   const workspaceID = toUUID(input.workspaceID);
   const affectedUserIDs = await db.transaction(async (tx) => {
@@ -32,5 +36,9 @@ const deleteGroup = async (input: {
 
   return { affectedUserIDs };
 };
+const deleteGroup = withAuthorization<DeleteGroupInput, undefined, { affectedUserIDs: string[] }>(
+  { permissions: { session: ["workspace"] }, plan: "pro" },
+  async ({ input, workspaceID }) => deleteGroupOperation({ ...input, workspaceID })
+);
 
 export { deleteGroup };

@@ -3,13 +3,12 @@ import {
   emitCollectionEvent,
   emitEntryEvent,
   emitGroupEvent,
-  emitPublishingEvent,
-  emitVersionCreationEvents
+  emitPublishingEntryUpdates,
+  emitPublishingEvent
 } from "#backend/events";
-import { authorized, base } from "#backend/lib/transport";
+import { authenticatedRoute, base, sessionRoute } from "#backend/lib/transport";
 import { id } from "#backend/lib/primitives";
 import { collectionName } from "#backend/lib/validation";
-import { emitPublishingStatusUpdates } from "#backend/lib/publishing";
 import { Collections } from "#backend/services/collections";
 import * as z from "zod";
 
@@ -34,36 +33,26 @@ const restrictedAssignmentsType = z.object({
 });
 
 const collectionsRouter = base.prefix("/collections").router({
-  listRestrictedAssignments: base
+  listRestrictedAssignments: sessionRoute
     .route({ method: "GET", path: "/:id/restricted-assignments" })
-    .meta({
-      requireProPlan: true,
-      required: { session: ["workspace", "restricted_collections"] }
-    })
-    .use(authorized)
     .input(z.object({ id: collectionType.shape.id }))
     .output(restrictedAssignmentsType)
     .handler(({ context, input }) => {
       return Collections.listRestrictedAssignments({
-        collectionID: input.id,
-        workspaceID: context.auth.workspaceID
+        auth: context.auth,
+        collectionID: input.id
       });
     }),
-  setRestrictedAssignments: base
+  setRestrictedAssignments: sessionRoute
     .route({ method: "PUT", path: "/:id/restricted-assignments" })
-    .meta({
-      requireProPlan: true,
-      required: { session: ["workspace", "restricted_collections"] }
-    })
-    .use(authorized)
     .input(z.object({ id: collectionType.shape.id }).extend(restrictedAssignmentsType.shape))
     .output(z.void())
     .handler(async ({ context, input }) => {
       const { affectedUserIDs } = await Collections.setRestrictedAssignments({
+        auth: context.auth,
         collectionID: input.id,
         groups: input.groups,
-        members: input.members,
-        workspaceID: context.auth.workspaceID
+        members: input.members
       });
 
       emitGroupEvent(context.auth.workspaceID, {
@@ -73,15 +62,8 @@ const collectionsRouter = base.prefix("/collections").router({
         data: { collectionID: input.id }
       });
     }),
-  create: base
+  create: authenticatedRoute
     .route({ method: "POST", path: "/" })
-    .meta({
-      required: {
-        session: true,
-        key: ["collections"]
-      }
-    })
-    .use(authorized)
     .input(
       collectionType
         .pick({ id: true, name: true })
@@ -95,8 +77,7 @@ const collectionsRouter = base.prefix("/collections").router({
     .handler(async ({ context, input }) => {
       const newCollection = await Collections.create({
         ...input,
-        auth: context.auth,
-        workspaceID: context.auth.workspaceID
+        auth: context.auth
       });
 
       emitCollectionEvent(context.auth.workspaceID, {
@@ -107,15 +88,8 @@ const collectionsRouter = base.prefix("/collections").router({
 
       return newCollection;
     }),
-  bulkDelete: base
+  bulkDelete: authenticatedRoute
     .route({ method: "POST", path: "/bulk/delete" })
-    .meta({
-      required: {
-        session: true,
-        key: ["collections"]
-      }
-    })
-    .use(authorized)
     .input(
       z.object({
         ids: z.array(id()).describe("IDs of the collections to delete")
@@ -125,7 +99,6 @@ const collectionsRouter = base.prefix("/collections").router({
     .handler(async ({ context, input }) => {
       const deleted = await Collections.delete({
         auth: context.auth,
-        workspaceID: context.auth.workspaceID,
         ids: input.ids
       });
 
@@ -151,15 +124,8 @@ const collectionsRouter = base.prefix("/collections").router({
         });
       }
     }),
-  delete: base
+  delete: authenticatedRoute
     .route({ method: "DELETE", path: "/:id" })
-    .meta({
-      required: {
-        session: true,
-        key: ["collections"]
-      }
-    })
-    .use(authorized)
     .input(
       z.object({
         id: id().describe("ID of the collection to delete")
@@ -169,7 +135,6 @@ const collectionsRouter = base.prefix("/collections").router({
     .handler(async ({ context, input }) => {
       const deleted = await Collections.delete({
         auth: context.auth,
-        workspaceID: context.auth.workspaceID,
         ids: [input.id]
       });
 
@@ -195,15 +160,8 @@ const collectionsRouter = base.prefix("/collections").router({
         });
       }
     }),
-  update: base
+  update: authenticatedRoute
     .route({ method: "PUT", path: "/:id" })
-    .meta({
-      required: {
-        session: true,
-        key: ["collections"]
-      }
-    })
-    .use(authorized)
     .input(
       z.object({
         id: id().describe("ID of the collection to be updated"),
@@ -215,7 +173,6 @@ const collectionsRouter = base.prefix("/collections").router({
       await Collections.update({
         auth: context.auth,
         id: input.id,
-        workspaceID: context.auth.workspaceID,
         name: input.name
       });
 
@@ -225,14 +182,8 @@ const collectionsRouter = base.prefix("/collections").router({
         memberID: context.auth.session?.memberID
       });
     }),
-  setRestricted: base
+  setRestricted: sessionRoute
     .route({ method: "PUT", path: "/:id/restricted" })
-    .meta({
-      required: {
-        session: ["restricted_collections"]
-      }
-    })
-    .use(authorized)
     .input(
       z.object({
         id: id().describe("ID of the collection to configure"),
@@ -244,8 +195,7 @@ const collectionsRouter = base.prefix("/collections").router({
       await Collections.setRestricted({
         auth: context.auth,
         id: input.id,
-        restricted: input.restricted,
-        workspaceID: context.auth.workspaceID
+        restricted: input.restricted
       });
 
       emitCollectionEvent(context.auth.workspaceID, {
@@ -254,13 +204,7 @@ const collectionsRouter = base.prefix("/collections").router({
         memberID: context.auth.session?.memberID
       });
     }),
-  move: base
-    .meta({
-      required: {
-        session: true
-      }
-    })
-    .use(authorized)
+  move: sessionRoute
     .input(
       z.object({
         id: id().describe("ID of the collection to be moved"),
@@ -273,11 +217,7 @@ const collectionsRouter = base.prefix("/collections").router({
           .int()
           .min(0)
           .optional()
-          .describe("New zero-based index in the parent collection's descendants array"),
-        publish: z
-          .boolean()
-          .optional()
-          .describe("Whether to publish latest versions when entering an enabled tree")
+          .describe("New zero-based index in the parent collection's descendants array")
       })
     )
     .output(z.void())
@@ -286,11 +226,8 @@ const collectionsRouter = base.prefix("/collections").router({
       const result = await Collections.move({
         auth: context.auth,
         id: input.id,
-        workspaceID: context.auth.workspaceID,
         newParentID: input.newParentID,
-        index: input.index,
-        publish: input.publish,
-        contributorIDs: context.auth.session ? [context.auth.session.memberID] : []
+        index: input.index
       });
 
       emitCollectionEvent(context.auth.workspaceID, {
@@ -304,28 +241,16 @@ const collectionsRouter = base.prefix("/collections").router({
         memberID: context.auth.session?.memberID
       });
 
-      if (result.affectedPublishingEntryIDs.length > 0) {
-        await emitPublishingStatusUpdates({
+      if (result.publishingEntries.length > 0) {
+        emitPublishingEntryUpdates({
           workspaceID: context.auth.workspaceID,
-          entryIDs: result.affectedPublishingEntryIDs,
+          entries: result.publishingEntries,
           memberID: context.auth.session?.memberID
         });
       }
-
-      emitVersionCreationEvents(
-        context.auth.workspaceID,
-        result.createdVersions,
-        context.auth.session?.memberID
-      );
     }),
-  list: base
+  list: authenticatedRoute
     .route({ method: "GET", path: "/list" })
-    .meta({
-      required: {
-        key: ["read:collections"],
-        session: true
-      }
-    })
     .input(
       z.object({
         ancestorID: id().optional().describe("ID of the parent collection"),
@@ -333,12 +258,10 @@ const collectionsRouter = base.prefix("/collections").router({
         limit: z.number().int().min(1).max(100).optional().describe("Maximum collections to return")
       })
     )
-    .use(authorized)
     .output(collectionListType)
     .handler(async ({ context, input }) => {
       const { collections, nextCursor } = await Collections.list({
         auth: context.auth,
-        workspaceID: context.auth.workspaceID,
         ancestorID: input.ancestorID,
         cursor: input.cursor,
         limit: input.limit

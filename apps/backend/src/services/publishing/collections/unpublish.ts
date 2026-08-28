@@ -1,38 +1,46 @@
-import { collections, entryPublications, publishingChannels, workspaces } from "#backend/db";
-import { db } from "#backend/lib/adapters";
+import { collections, entryPublications, publishingChannels } from "#backend/db";
 import {
   getSubtreeEntryIDs,
+  isCollectionPublishingEnabled,
+  lockPublishingEntries,
   loadPublishingTree,
   normalizePublishingChannelCode
 } from "#backend/lib/publishing";
-import { toUUID } from "#backend/lib/primitives";
+import type { PublishingEntryStatus } from "#backend/lib/publishing";
+import { toEntryID, toUUID } from "#backend/lib/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, eq, inArray, isNull } from "drizzle-orm";
-import type { SessionData } from "#backend/lib/policy";
-import { authorizeCollectionSources } from "../access";
+import { loadEntryAuthorizationSources, withAuthorization } from "#backend/lib/policy";
 
-const unpublishCollection = async (input: {
-  auth: SessionData;
-  workspaceID: string;
+interface UnpublishCollectionInput {
   collectionIDs: string[];
   channel: string;
-}): Promise<{ entryIDs: string[]; unpublishedEntries: number }> => {
-  await authorizeCollectionSources(input.auth, input.collectionIDs, "publishing");
+}
+interface UnpublishCollectionResult {
+  publishingEntries: PublishingEntryStatus[];
+  unpublishedEntries: number;
+}
 
-  const workspaceID = toUUID(input.workspaceID);
-  const collectionIDs = [...new Set(input.collectionIDs.map(toUUID))];
-  const channelCode = normalizePublishingChannelCode(input.channel);
+const unpublishCollection = withAuthorization<
+  UnpublishCollectionInput,
+  undefined,
+  UnpublishCollectionResult
+>(
+  {
+    actions: ({ input }) => ({
+      collections: input.collectionIDs.map((collectionID) => ({
+        action: "publishing:unpublish-tree",
+        collectionID
+      }))
+    }),
+    tree: true,
+    transaction: "locked-workspace"
+  },
+  async ({ authorization, database, input, workspaceID }) => {
+    const collectionIDs = [...new Set(input.collectionIDs.map(toUUID))];
+    const channelCode = normalizePublishingChannelCode(input.channel);
 
-  return db.transaction(async (tx) => {
-    const [workspace] = await tx
-      .select({ id: workspaces.id })
-      .from(workspaces)
-      .where(eq(workspaces.id, workspaceID))
-      .for("update");
-
-    if (!workspace) throw new ORPCError("NOT_FOUND", { message: "Workspace not found" });
-
-    const currentCollections = await tx
+    const currentCollections = await database
       .select({ id: collections.id })
       .from(collections)
       .where(
@@ -47,7 +55,7 @@ const unpublishCollection = async (input: {
       throw new ORPCError("NOT_FOUND", { message: "Collection not found" });
     }
 
-    const [channel] = await tx
+    const [channel] = await database
       .select({ id: publishingChannels.id })
       .from(publishingChannels)
       .where(
@@ -59,20 +67,33 @@ const unpublishCollection = async (input: {
 
     if (!channel) throw new ORPCError("NOT_FOUND", { message: "Publishing channel not found" });
 
-    const tree = await loadPublishingTree(tx, workspaceID);
-    const entryIDs = [
+    const tree = await loadPublishingTree(database, workspaceID);
+    const subtreeEntryIDs = [
       ...new Set(
         (
           await Promise.all(
-            collectionIDs.map((id) => getSubtreeEntryIDs(tx, workspaceID, tree, id))
+            collectionIDs.map((id) => getSubtreeEntryIDs(database, workspaceID, tree, id))
           )
         ).flat()
       )
     ];
+    const entrySources = await loadEntryAuthorizationSources({
+      database,
+      entryIDs: subtreeEntryIDs,
+      workspaceID
+    });
+    const authorizedSources = entrySources.filter(({ collectionID }) => {
+      return authorization.canEntry(collectionID, "publishing:unpublish");
+    });
+    const entryIDs = authorizedSources.map(({ id }) => id);
 
-    if (entryIDs.length === 0) return { entryIDs, unpublishedEntries: 0 };
+    if (entryIDs.length === 0) {
+      return { publishingEntries: [], unpublishedEntries: 0 };
+    }
 
-    const removed = await tx
+    await lockPublishingEntries(database, workspaceID, entryIDs);
+
+    const removed = await database
       .delete(entryPublications)
       .where(
         and(
@@ -83,8 +104,22 @@ const unpublishCollection = async (input: {
       )
       .returning({ entryID: entryPublications.entryID });
 
-    return { entryIDs, unpublishedEntries: removed.length };
-  });
-};
+    const collectionIDByEntryID = new Map(
+      authorizedSources.map((entry) => [entry.id, entry.collectionID || null])
+    );
+
+    return {
+      publishingEntries: entryIDs.map((entryID) => ({
+        entryID: toEntryID(entryID),
+        hasUnpublishedChanges: isCollectionPublishingEnabled(
+          tree,
+          collectionIDByEntryID.get(entryID) || null
+        ),
+        versionID: null
+      })),
+      unpublishedEntries: removed.length
+    };
+  }
+);
 
 export { unpublishCollection };

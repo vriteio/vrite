@@ -1,13 +1,17 @@
 import { toUUID, toUserID } from "#backend/lib/primitives";
 import { db } from "#backend/lib/adapters";
 import { memberships, roles, users, workspaces } from "#backend/db";
+import { withAuthorization } from "#backend/lib/policy";
 import { and, eq, sql } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 
-const removeMember = async (input: {
+interface RemoveMemberInput {
   id: string;
-  workspaceID: string;
-}): Promise<{ userID: string }> => {
+}
+
+const removeMemberOperation = async (
+  input: RemoveMemberInput & { workspaceID: string }
+): Promise<{ userID: string }> => {
   const workspaceID = toUUID(input.workspaceID);
   const memberID = toUUID(input.id);
   const userID = await db.transaction(async (tx) => {
@@ -65,5 +69,9 @@ const removeMember = async (input: {
 
   return { userID: toUserID(userID) };
 };
+const removeMember = withAuthorization<RemoveMemberInput, undefined, { userID: string }>(
+  { permissions: { session: ["workspace"], key: ["memberships"] } },
+  async ({ input, workspaceID }) => removeMemberOperation({ ...input, workspaceID })
+);
 
 export { removeMember };

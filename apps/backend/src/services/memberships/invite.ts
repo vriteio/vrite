@@ -1,16 +1,18 @@
-import { toInviteID, toUUID } from "#backend/lib/primitives";
+import { toInviteID, toMembershipID, toRoleID, toUUID } from "#backend/lib/primitives";
 import { db } from "#backend/lib/adapters";
 import { invitations, memberships, roles, users, workspaces } from "#backend/db";
 import { deliverInvite } from "#backend/lib/messaging";
+import { withAuthorization } from "#backend/lib/policy";
 import { and, eq, lt } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 
-const inviteMember = async (input: {
-  workspaceID: string;
+interface InviteMemberInput {
   email: string;
   roleID: string;
   inviterID?: string;
-}) => {
+}
+
+const inviteMemberOperation = async (input: InviteMemberInput & { workspaceID: string }) => {
   const workspaceID = toUUID(input.workspaceID);
   const roleID = toUUID(input.roleID);
   const normalizedEmail = input.email.trim().toLowerCase();
@@ -102,13 +104,23 @@ const inviteMember = async (input: {
     invite: {
       id: toInviteID(result.invite.id),
       email: result.invite.email,
-      roleID: input.roleID,
-      invitedBy: input.inviterID,
+      roleID: toRoleID(result.invite.roleID),
+      invitedBy: result.invite.invitedBy ? toMembershipID(result.invite.invitedBy) : undefined,
       status: result.invite.status,
       createdAt: result.invite.createdAt.toISOString(),
       expiresAt: result.invite.expiresAt.toISOString()
     }
   };
 };
+const inviteMember = withAuthorization<
+  Omit<InviteMemberInput, "inviterID">,
+  undefined,
+  Awaited<ReturnType<typeof inviteMemberOperation>>
+>(
+  { permissions: { session: ["workspace"], key: ["memberships"] }, plan: "pro" },
+  async ({ auth, input, workspaceID }) => {
+    return inviteMemberOperation({ ...input, inviterID: auth.session?.memberID, workspaceID });
+  }
+);
 
 export { inviteMember };

@@ -8,7 +8,7 @@ import {
 } from "#backend/events";
 import { collections, entries } from "#backend/db";
 import { db } from "#backend/lib/adapters";
-import { canReadRestrictedCollections, isSessionAuthorizationEvent } from "#backend/lib/policy";
+import { hasAuthPermission, isSessionAuthorizationEvent } from "#backend/lib/policy";
 import { toUUID } from "#backend/lib/primitives";
 import { type Hocuspocus, type WebSocketLike } from "@hocuspocus/server";
 import { eq } from "drizzle-orm";
@@ -22,7 +22,10 @@ const registerCollaborationEvents = (collab: Hocuspocus<CollaborationContext>): 
       for (const connection of document.getConnections()) {
         const auth = connection.context.auth;
 
-        if (auth?.workspaceID === workspaceID && !canReadRestrictedCollections(auth)) {
+        if (
+          auth?.workspaceID === workspaceID &&
+          !hasAuthPermission(auth, "read:restricted_collections")
+        ) {
           affectedSockets.add(connection.webSocket);
         }
       }

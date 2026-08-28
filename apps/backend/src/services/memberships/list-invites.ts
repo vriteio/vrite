@@ -1,7 +1,14 @@
-import { toInviteID, toMembershipID, toRoleID, toUUID } from "#backend/lib/primitives";
+import {
+  toInviteID,
+  toMembershipID,
+  toRoleID,
+  toUUID,
+  toWorkspaceID
+} from "#backend/lib/primitives";
 import { db } from "#backend/lib/adapters";
 import { type Invite, invitations } from "#backend/db";
 import { createInviteLink } from "#backend/lib/messaging";
+import { withAuthorization } from "#backend/lib/policy";
 import { and, eq, gt, lt } from "drizzle-orm";
 
 interface InviteDetails extends Invite {
@@ -10,7 +17,7 @@ interface InviteDetails extends Invite {
   invitedBy?: string;
 }
 
-const listInvites = async (input: {
+const listInvitesOperation = async (input: {
   workspaceID: string;
 }): Promise<{ invites: InviteDetails[] }> => {
   const workspaceID = toUUID(input.workspaceID);
@@ -43,7 +50,7 @@ const listInvites = async (input: {
         id,
         email: invite.email,
         inviteLink: createInviteLink({ id, expiresAt: invite.expiresAt }),
-        workspaceID: input.workspaceID,
+        workspaceID: toWorkspaceID(workspaceID),
         roleID: toRoleID(invite.roleID),
         invitedBy: invite.invitedBy ? toMembershipID(invite.invitedBy) : undefined,
         status: invite.status,
@@ -53,6 +60,14 @@ const listInvites = async (input: {
     })
   };
 };
+const listInvites = withAuthorization<
+  Record<never, never>,
+  undefined,
+  { invites: InviteDetails[] }
+>(
+  { permissions: { session: ["workspace"], key: ["memberships"] }, plan: "pro" },
+  async ({ workspaceID }) => listInvitesOperation({ workspaceID })
+);
 
 export { listInvites };
 export type { InviteDetails };

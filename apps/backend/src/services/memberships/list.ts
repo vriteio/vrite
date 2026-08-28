@@ -1,6 +1,7 @@
 import { toMembershipID, toRoleID, toUUID, toUserID } from "#backend/lib/primitives";
 import { db } from "#backend/lib/adapters";
 import { type Membership, memberships, roles, type UserProfile, users } from "#backend/db";
+import { withAuthorization } from "#backend/lib/policy";
 import { eq } from "drizzle-orm";
 
 interface MemberDetails extends Membership {
@@ -9,7 +10,7 @@ interface MemberDetails extends Membership {
   profile: UserProfile;
 }
 
-const listMembers = async (input: {
+const listMembersOperation = async (input: {
   workspaceID: string;
 }): Promise<{ members: MemberDetails[] }> => {
   const rows = await db
@@ -44,6 +45,13 @@ const listMembers = async (input: {
     }))
   };
 };
+const listMembers = withAuthorization<
+  Record<never, never>,
+  undefined,
+  { members: MemberDetails[] }
+>({ permissions: { session: ["workspace"], key: ["read:memberships"] } }, async ({ workspaceID }) =>
+  listMembersOperation({ workspaceID })
+);
 
 export { listMembers };
 export type { MemberDetails };

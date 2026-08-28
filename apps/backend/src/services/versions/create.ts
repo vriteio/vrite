@@ -7,21 +7,14 @@ import {
   entryVersionContributors,
   entryVersions
 } from "#backend/db";
-import { db } from "#backend/lib/adapters";
 import { getContentTitle } from "#backend/lib/content";
 import { mapVersion, type VersionDetails, type VersionReason } from "#backend/lib/data";
 import { toUUID } from "#backend/lib/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, eq, isNull } from "drizzle-orm";
-import {
-  assertEntryPermission,
-  loadRestrictedCollectionAccess,
-  type SessionData
-} from "#backend/lib/policy";
+import { withAuthorization } from "#backend/lib/policy";
 
 interface CreateVersionInput {
-  auth: SessionData;
-  workspaceID: string;
   entryID: string;
   reason: VersionReason;
   contributorIDs: string[];
@@ -29,37 +22,43 @@ interface CreateVersionInput {
   sourceVersionID?: string;
   snapshot?: ContentSnapshot;
 }
+interface ResolvedCreateVersion {
+  collectionID: string | null;
+}
 
-const createVersion = async (input: CreateVersionInput): Promise<VersionDetails> => {
-  const access = await loadRestrictedCollectionAccess(input.auth);
-
-  await assertEntryPermission(input.auth, access, input.entryID, "versions");
-
-  const snapshot =
-    input.snapshot || (await getCurrentDocumentContent(input.entryID, input.workspaceID));
-  const workspaceID = toUUID(input.workspaceID);
-  const entryID = toUUID(input.entryID);
-  const inputContributorIDs = input.contributorIDs.map(toUUID);
-
-  const result = await db.transaction(async (tx) => {
-    const [entry] = await tx
-      .select({ id: entries.id })
-      .from(entries)
-      .where(
-        and(
-          eq(entries.id, entryID),
-          eq(entries.workspaceID, workspaceID),
-          isNull(entries.deletedAt)
+const createVersion = withAuthorization<CreateVersionInput, ResolvedCreateVersion, VersionDetails>(
+  {
+    actions: ({ resolved }) => ({
+      entries: [{ action: "version:create", collectionID: resolved.collectionID }]
+    }),
+    resolve: async ({ database, input, workspaceID }) => {
+      const [entry] = await database
+        .select({ collectionID: entries.collectionID })
+        .from(entries)
+        .where(
+          and(
+            eq(entries.id, toUUID(input.entryID)),
+            eq(entries.workspaceID, workspaceID),
+            isNull(entries.deletedAt)
+          )
         )
-      )
-      .for("update");
+        .for("update");
 
-    if (!entry) throw new ORPCError("NOT_FOUND", { message: "Entry not found" });
+      if (!entry) throw new ORPCError("NOT_FOUND", { message: "Entry not found" });
 
+      return entry;
+    },
+    transaction: "locked-workspace"
+  },
+  async ({ database, input, workspaceID }) => {
+    const entryID = toUUID(input.entryID);
+    const inputContributorIDs = input.contributorIDs.map(toUUID);
+    const snapshot =
+      input.snapshot || (await getCurrentDocumentContent(input.entryID, workspaceID));
     const activityContributors =
       input.reason === "revert"
         ? []
-        : await tx
+        : await database
             .select({ membershipID: entryVersionActivityContributors.membershipID })
             .from(entryVersionActivityContributors)
             .where(eq(entryVersionActivityContributors.entryID, entryID));
@@ -71,7 +70,7 @@ const createVersion = async (input: CreateVersionInput): Promise<VersionDetails>
     ];
 
     if (input.sourceVersionID) {
-      const [source] = await tx
+      const [source] = await database
         .select({ id: entryVersions.id })
         .from(entryVersions)
         .where(
@@ -85,7 +84,7 @@ const createVersion = async (input: CreateVersionInput): Promise<VersionDetails>
       if (!source) throw new ORPCError("NOT_FOUND", { message: "Source version not found" });
     }
 
-    const [created] = await tx
+    const [created] = await database
       .insert(entryVersions)
       .values({
         workspaceID,
@@ -100,7 +99,7 @@ const createVersion = async (input: CreateVersionInput): Promise<VersionDetails>
       .returning();
 
     if (contributorIDs.length > 0) {
-      await tx.insert(entryVersionContributors).values(
+      await database.insert(entryVersionContributors).values(
         contributorIDs.map((membershipID) => ({
           workspaceID,
           versionID: created.id,
@@ -109,19 +108,17 @@ const createVersion = async (input: CreateVersionInput): Promise<VersionDetails>
       );
     }
 
-    const [content] = await tx
+    const [content] = await database
       .select({ hash: contents.hash })
       .from(contents)
       .where(eq(contents.entryID, entryID));
 
     if (content?.hash === snapshot.hash) {
-      await tx.delete(entryVersionActivity).where(eq(entryVersionActivity.entryID, entryID));
+      await database.delete(entryVersionActivity).where(eq(entryVersionActivity.entryID, entryID));
     }
 
-    return { contributorIDs, version: created };
-  });
-
-  return mapVersion(result.version, result.contributorIDs);
-};
+    return mapVersion(created, contributorIDs);
+  }
+);
 
 export { createVersion };

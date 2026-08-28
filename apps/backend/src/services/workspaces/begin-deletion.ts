@@ -1,10 +1,11 @@
 import { workspaces } from "#backend/db";
 import { db } from "#backend/lib/adapters";
+import { withAuthorization } from "#backend/lib/policy";
 import { toUUID } from "#backend/lib/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, eq, sql } from "drizzle-orm";
 
-const beginWorkspaceDeletion = async (input: {
+const beginWorkspaceDeletionOperation = async (input: {
   workspaceID: string;
 }): Promise<{ deletingAt: Date }> => {
   const workspaceID = toUUID(input.workspaceID);
@@ -31,5 +32,15 @@ const beginWorkspaceDeletion = async (input: {
 
   return { deletingAt };
 };
+const beginWorkspaceDeletion = withAuthorization<
+  Record<never, never>,
+  undefined,
+  { deletingAt: Date }
+>({ permissions: { session: true } }, async ({ auth, workspaceID }) => {
+  // Workspace deletion is a special case that only admins can perform.
+  if (!auth.session?.admin) throw new ORPCError("FORBIDDEN");
+
+  return beginWorkspaceDeletionOperation({ workspaceID });
+});
 
 export { beginWorkspaceDeletion };

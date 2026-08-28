@@ -44,7 +44,7 @@ const useRightSidePanelOptions = () => {
         return Boolean(
           entry &&
           currentWorkspace() &&
-          content.hasCollectionPermission(entry.collectionID || null, "read:versions")
+          content.canEntry(entry.collectionID || null, "version:read")
         );
       }
     }

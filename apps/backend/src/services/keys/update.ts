@@ -1,14 +1,18 @@
 import { toUUID } from "#backend/lib/primitives";
 import { db } from "#backend/lib/adapters";
 import { apiKeys, type KeyPermission } from "#backend/db";
+import { withAuthorization } from "#backend/lib/policy";
 import { and, eq } from "drizzle-orm";
 
-const updateKey = async (input: {
+interface UpdateKeyInput {
   id: string;
-  workspaceID: string;
   name?: string;
   permissions?: KeyPermission[];
-}): Promise<void> => {
+}
+
+const updateKeyOperation = async (
+  input: UpdateKeyInput & { workspaceID: string }
+): Promise<void> => {
   if (input.name === undefined && input.permissions === undefined) return;
 
   await db
@@ -22,5 +26,9 @@ const updateKey = async (input: {
       and(eq(apiKeys.id, toUUID(input.id)), eq(apiKeys.workspaceID, toUUID(input.workspaceID)))
     );
 };
+const updateKey = withAuthorization<UpdateKeyInput>(
+  { permissions: { session: ["api_keys"] } },
+  async ({ input, workspaceID }) => updateKeyOperation({ ...input, workspaceID })
+);
 
 export { updateKey };

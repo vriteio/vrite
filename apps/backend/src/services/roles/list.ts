@@ -1,9 +1,10 @@
 import { toRoleID, toUUID } from "#backend/lib/primitives";
 import { db } from "#backend/lib/adapters";
 import { roles, type Role } from "#backend/db";
+import { withAuthorization } from "#backend/lib/policy";
 import { eq } from "drizzle-orm";
 
-const listRoles = async (input: { workspaceID: string }): Promise<{ roles: Role[] }> => {
+const listRolesOperation = async (input: { workspaceID: string }): Promise<{ roles: Role[] }> => {
   const rows = await db
     .select()
     .from(roles)
@@ -18,5 +19,9 @@ const listRoles = async (input: { workspaceID: string }): Promise<{ roles: Role[
     }))
   };
 };
+const listRoles = withAuthorization<Record<never, never>, undefined, { roles: Role[] }>(
+  { permissions: { session: ["workspace"], key: ["read:roles"] } },
+  async ({ workspaceID }) => listRolesOperation({ workspaceID })
+);
 
 export { listRoles };

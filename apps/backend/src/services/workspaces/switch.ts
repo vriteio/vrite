@@ -1,4 +1,4 @@
-import { toUUID } from "#backend/lib/primitives";
+import { toUUID, toWorkspaceID } from "#backend/lib/primitives";
 import { auth, db } from "#backend/lib/adapters";
 import { memberships, roles, workspaces } from "#backend/db";
 import { and, eq } from "drizzle-orm";
@@ -31,7 +31,7 @@ const switchWorkspace = async (input: {
   await auth.api.updateUser({
     headers: input.headers,
     body: {
-      currentWorkspaceID: input.workspaceID
+      currentWorkspaceID: toWorkspaceID(workspaceID)
     }
   });
 };

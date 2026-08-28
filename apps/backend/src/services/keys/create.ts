@@ -1,9 +1,12 @@
 import { toKeyID, toMembershipID, toUUID } from "#backend/lib/primitives";
 import { db } from "#backend/lib/adapters";
 import { apiKeys, type Key } from "#backend/db";
+import { withAuthorization } from "#backend/lib/policy";
 import { generateKeyValue, generateSalt, hashKey } from "#backend/lib/security";
 
-const createKey = async (
+type CreateKeyInput = Pick<Key, "name" | "permissions">;
+
+const createKeyOperation = async (
   input: Pick<Key, "name" | "permissions"> & { workspaceID: string; memberID: string }
 ): Promise<Key & { rawKey: string }> => {
   const { raw, prefix } = generateKeyValue();
@@ -36,5 +39,11 @@ const createKey = async (
     rawKey: raw
   };
 };
+const createKey = withAuthorization<CreateKeyInput, undefined, Key & { rawKey: string }>(
+  { permissions: { session: ["api_keys"] } },
+  async ({ auth, input, workspaceID }) => {
+    return createKeyOperation({ ...input, memberID: auth.session!.memberID, workspaceID });
+  }
+);
 
 export { createKey };

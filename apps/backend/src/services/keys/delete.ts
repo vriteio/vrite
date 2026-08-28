@@ -1,9 +1,16 @@
 import { toUUID } from "#backend/lib/primitives";
 import { db } from "#backend/lib/adapters";
 import { apiKeys } from "#backend/db";
+import { withAuthorization } from "#backend/lib/policy";
 import { and, eq, inArray } from "drizzle-orm";
 
-const deleteKeys = async (input: { ids: string[]; workspaceID: string }): Promise<void> => {
+interface DeleteKeysInput {
+  ids: string[];
+}
+
+const deleteKeysOperation = async (
+  input: DeleteKeysInput & { workspaceID: string }
+): Promise<void> => {
   if (input.ids.length === 0) return;
 
   await db
@@ -15,5 +22,9 @@ const deleteKeys = async (input: { ids: string[]; workspaceID: string }): Promis
       )
     );
 };
+const deleteKeys = withAuthorization<DeleteKeysInput>(
+  { permissions: { session: ["api_keys"] } },
+  async ({ input, workspaceID }) => deleteKeysOperation({ ...input, workspaceID })
+);
 
 export { deleteKeys };

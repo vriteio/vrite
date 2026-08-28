@@ -1,16 +1,21 @@
-import { toGroupID, toUUID } from "#backend/lib/primitives";
+import { toUUID } from "#backend/lib/primitives";
 import { db } from "#backend/lib/adapters";
 import { groupInvitations, invitations } from "#backend/db";
+import { withAuthorization } from "#backend/lib/policy";
+import { loadGroupMembersUpdates, type GroupMembersUpdate } from "#backend/lib/data";
 import { and, eq } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 
-const revokeInvite = async (input: {
+interface RevokeInviteInput {
   id: string;
-  workspaceID: string;
-}): Promise<{ groupIDs: string[] }> => {
+}
+
+const revokeInviteOperation = async (
+  input: RevokeInviteInput & { workspaceID: string }
+): Promise<{ updatedGroups: GroupMembersUpdate[] }> => {
   const invitationID = toUUID(input.id);
   const workspaceID = toUUID(input.workspaceID);
-  const groupIDs = await db.transaction(async (tx) => {
+  const updatedGroups = await db.transaction(async (tx) => {
     const invitationGroups = await tx
       .select({ groupID: groupInvitations.groupID })
       .from(groupInvitations)
@@ -35,10 +40,22 @@ const revokeInvite = async (input: {
       throw new ORPCError("BAD_REQUEST", { message: "Invite not found or already accepted" });
     }
 
-    return invitationGroups.map(({ groupID }) => toGroupID(groupID));
+    return loadGroupMembersUpdates(
+      tx,
+      workspaceID,
+      invitationGroups.map(({ groupID }) => groupID)
+    );
   });
 
-  return { groupIDs };
+  return { updatedGroups };
 };
+const revokeInvite = withAuthorization<
+  RevokeInviteInput,
+  undefined,
+  { updatedGroups: GroupMembersUpdate[] }
+>(
+  { permissions: { session: ["workspace"], key: ["memberships"] }, plan: "pro" },
+  async ({ input, workspaceID }) => revokeInviteOperation({ ...input, workspaceID })
+);
 
 export { revokeInvite };

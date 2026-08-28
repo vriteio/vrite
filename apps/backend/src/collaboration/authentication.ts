@@ -1,11 +1,6 @@
 import { entries, workspaces } from "#backend/db";
 import { db } from "#backend/lib/adapters";
-import {
-  canAccessCollection,
-  hasCollectionPermission,
-  loadRestrictedCollectionAccess,
-  type SessionData
-} from "#backend/lib/policy";
+import { loadAuthorizedCollectionTree, type SessionData } from "#backend/lib/policy";
 import { toCollectionID, toEntryID, toUUID, toWorkspaceID } from "#backend/lib/primitives";
 import { Auth } from "#backend/services/auth";
 import { and, eq, isNull } from "drizzle-orm";
@@ -78,15 +73,14 @@ const authenticateCollaboration = async (input: {
     throw permissionError("Forbidden");
   }
 
-  const access = await loadRestrictedCollectionAccess(auth);
-
   const collectionID = entry.collectionID ? toCollectionID(entry.collectionID) : null;
+  const authorization = await loadAuthorizedCollectionTree({ auth });
 
-  if (!canAccessCollection(access, collectionID)) {
+  if (!authorization.canEntry(collectionID, "entry:read")) {
     throw permissionError("Forbidden");
   }
 
-  const canWrite = hasCollectionPermission(auth, access, collectionID, "content");
+  const canWrite = authorization.canEntry(collectionID, "entry:update");
 
   input.connectionConfig.readOnly = !canWrite;
 

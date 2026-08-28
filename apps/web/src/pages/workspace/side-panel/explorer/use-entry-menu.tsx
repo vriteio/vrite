@@ -7,7 +7,7 @@ import { usePublishingActions } from "./publishing-actions";
 
 const useEntryMenu = (entryID: string) => {
   const { copyText } = useClipboard();
-  const { content, hasPermission } = useWorkspace();
+  const { content } = useWorkspace();
   const publishingActions = usePublishingActions();
   const [{ selection }, { setRenaming, setSelection }] = useTree();
   const [menuOpened, setMenuOpened] = createSignal(false);
@@ -33,41 +33,33 @@ const useEntryMenu = (entryID: string) => {
       return status === "published" || status === "unpublished";
     });
     const publishingTarget = {
-      items: targetEntries.map((selectedEntry) => ({
-        id: selectedEntry.id,
-        label: selectedEntry.name
-      })),
+      ids: targetEntries.map((selectedEntry) => selectedEntry.id),
       type: "entry" as const
     };
     const canEdit = targetEntries.every((selectedEntry) => {
-      return content.hasCollectionPermission(selectedEntry.collectionID || null, "content");
+      return content.canEntry(selectedEntry.collectionID || null, "entry:update");
     });
-    const deletableIDs = content.tree.getDeletableIDs({
-      ids: isMulti ? selection() : [entryID]
-    });
+    const selectedIDs = isMulti ? selection() : [entryID];
+    const selected = content.tree.splitIDs({ ids: selectedIDs });
     const canDelete =
-      deletableIDs.collections.every((id) => {
-        return content.hasCollectionPermission(id, "content");
+      selected.collections.every((id) => {
+        return content.canCollection(id, "collection:delete");
       }) &&
-      deletableIDs.entries.every((id) => {
+      selected.entries.every((id) => {
         const targetEntry = content.entries.get({ entryID: id });
 
-        return content.hasCollectionPermission(targetEntry?.collectionID || null, "content");
-      }) &&
-      (hasPermission("restricted_collections") ||
-        !deletableIDs.collections.some((id) => {
-          return content.collections.isRestrictionRoot({ collectionID: id });
-        }));
+        return content.canEntry(targetEntry?.collectionID || null, "entry:delete");
+      });
     const canManagePublishing =
       targetEntries.every((selectedEntry) => {
-        return content.hasCollectionPermission(selectedEntry.collectionID || null, "publishing");
+        return content.canEntry(selectedEntry.collectionID || null, "publishing:publish");
       }) &&
       content.publishing() !== null &&
       !content.offline() &&
       !content.syncing();
 
     if (!isMulti) {
-      options.push([
+      const entryOptions: MenuItem[] = [
         {
           label: "Copy ID",
           icon: "i-lucide:copy",
@@ -78,17 +70,21 @@ const useEntryMenu = (entryID: string) => {
               fallback: { title: "Copy ID manually" }
             });
           }
-        },
-        {
+        }
+      ];
+
+      if (canEdit) {
+        entryOptions.push({
           label: "Rename entry",
           icon: "i-lucide:pencil",
           shortcut: "f2",
-          disabled: !canEdit,
           onClick: () => {
             if (canEdit && !content.readOnly(entry?.collectionID || null)) startRenaming();
           }
-        }
-      ]);
+        });
+      }
+
+      options.push(entryOptions);
     }
 
     if (entriesOnly && publishingEnabled && canManagePublishing) {
@@ -106,20 +102,21 @@ const useEntryMenu = (entryID: string) => {
       ]);
     }
 
-    options.push([
-      {
-        label: isMulti ? `Delete ${selectedCount} items` : "Delete",
-        icon: "i-lucide:trash",
-        color: "danger",
-        disabled: !canDelete,
-        shortcut: "$mod+backspace",
-        onClick: () => {
-          if (!canDelete || content.offline() || content.syncing()) return;
-          content.tree.delete({ ids: isMulti ? selection() : [entryID] });
-          setSelection([]);
+    if (canDelete) {
+      options.push([
+        {
+          label: isMulti ? `Delete ${selectedCount} items` : "Delete",
+          icon: "i-lucide:trash",
+          color: "danger",
+          shortcut: "$mod+backspace",
+          onClick: () => {
+            if (!canDelete || content.offline() || content.syncing()) return;
+            content.tree.delete({ ids: isMulti ? selection() : [entryID] });
+            setSelection([]);
+          }
         }
-      }
-    ]);
+      ]);
+    }
     return options;
   });
 

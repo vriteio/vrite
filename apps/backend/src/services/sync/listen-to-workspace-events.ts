@@ -5,15 +5,15 @@ import {
   filterRestrictedWorkspaceEvent,
   isSessionAuthorizationEvent,
   isRestrictedAuthorizationEvent,
-  isWorkspaceEventVisible
+  isWorkspaceEventVisible,
+  withAuthorization
 } from "#backend/lib/policy";
 
 const createWorkspaceEventStream = async function* (input: {
   auth: SessionData;
   signal?: AbortSignal;
-  workspaceID: string;
 }) {
-  const events = viaIterator(subscribeToWorkspaceEvents, input.workspaceID, {
+  const events = viaIterator(subscribeToWorkspaceEvents, input.auth.workspaceID, {
     signal: input.signal
   });
 
@@ -40,12 +40,12 @@ const createWorkspaceEventStream = async function* (input: {
     }
   }
 };
-const listenToWorkspaceEvents = (input: {
-  auth: SessionData;
-  signal?: AbortSignal;
-  workspaceID: string;
-}) => ({
-  events: createWorkspaceEventStream(input)
-});
+const listenToWorkspaceEvents = withAuthorization<
+  { signal?: AbortSignal },
+  undefined,
+  { events: AsyncGenerator }
+>({}, async ({ auth, input }) => ({
+  events: createWorkspaceEventStream({ auth, signal: input.signal })
+}));
 
 export { listenToWorkspaceEvents };

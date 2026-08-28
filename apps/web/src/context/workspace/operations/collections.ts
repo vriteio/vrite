@@ -227,12 +227,7 @@ const createCollectionOperations = (input: WorkspaceContentOperationsInput) => {
 
     return originals;
   };
-  const moveCollection = (
-    collectionID: string,
-    newParentID: string | null,
-    index?: number,
-    publish?: boolean
-  ) => {
+  const moveCollection = (collectionID: string, newParentID: string | null, index?: number) => {
     const collections = collectionsCollection();
     const originals = applyCollectionMove(collectionID, newParentID, index);
 
@@ -242,8 +237,7 @@ const createCollectionOperations = (input: WorkspaceContentOperationsInput) => {
       .move({
         id: collectionID,
         newParentID,
-        index,
-        publish
+        index
       })
       .catch(() => {
         collections.batch(() => {

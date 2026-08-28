@@ -1,40 +1,47 @@
 import { entries, memberships } from "#backend/db";
-import { db } from "#backend/lib/adapters";
 import { toUUID } from "#backend/lib/primitives";
 import { and, eq, isNull } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
-import {
-  assertEntryAccess,
-  loadRestrictedCollectionAccess,
-  type SessionData
-} from "#backend/lib/policy";
+import { withAuthorization } from "#backend/lib/policy";
 
-const setCurrentEntry = async (input: {
-  auth: SessionData;
+interface SetCurrentEntryInput {
   entryID: string;
-  memberID: string;
-  workspaceID: string;
-}): Promise<void> => {
-  const access = await loadRestrictedCollectionAccess(input.auth);
+}
+interface ResolvedCurrentEntry {
+  entry: { collectionID: string | null };
+}
 
-  await assertEntryAccess(input.auth, access, input.entryID);
+const setCurrentEntry = withAuthorization<SetCurrentEntryInput, ResolvedCurrentEntry>(
+  {
+    actions: ({ resolved }) => ({
+      entries: [{ action: "entry:read", collectionID: resolved.entry.collectionID }]
+    }),
+    permissions: { session: true },
+    resolve: async ({ database, input, workspaceID }) => {
+      const [entry] = await database
+        .select({ collectionID: entries.collectionID })
+        .from(entries)
+        .where(
+          and(
+            eq(entries.id, toUUID(input.entryID)),
+            eq(entries.workspaceID, workspaceID),
+            isNull(entries.deletedAt)
+          )
+        );
 
-  const entryID = toUUID(input.entryID);
-  const memberID = toUUID(input.memberID);
-  const workspaceID = toUUID(input.workspaceID);
-  const [entry] = await db
-    .select({ id: entries.id })
-    .from(entries)
-    .where(
-      and(eq(entries.id, entryID), eq(entries.workspaceID, workspaceID), isNull(entries.deletedAt))
-    );
+      if (!entry) throw new ORPCError("NOT_FOUND", { message: "Entry not found" });
 
-  if (!entry) throw new ORPCError("NOT_FOUND", { message: "Entry not found" });
-
-  await db
-    .update(memberships)
-    .set({ currentEntryID: entryID, updatedAt: new Date() })
-    .where(and(eq(memberships.id, memberID), eq(memberships.workspaceID, workspaceID)));
-};
+      return { entry };
+    }
+  },
+  async ({ auth, database, input, workspaceID }) => {
+    const entryID = toUUID(input.entryID);
+    const memberID = toUUID(auth.session!.memberID);
+    await database
+      .update(memberships)
+      .set({ currentEntryID: entryID, updatedAt: new Date() })
+      .where(and(eq(memberships.id, memberID), eq(memberships.workspaceID, workspaceID)));
+  }
+);
 
 export { setCurrentEntry };

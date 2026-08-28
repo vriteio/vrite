@@ -52,7 +52,7 @@ const AccessPageSpinner: Component = () => (
 const CollectionPage: Component = () => {
   const params = useParams<{ slug?: string }>();
   const notify = useNotify();
-  const { content, currentWorkspace, hasPermission, subscribeToUpdates } = useWorkspace();
+  const { content, currentWorkspace, subscribeToUpdates } = useWorkspace();
   const [scrollableContainerRef, setScrollableContainerRef] = createRef<HTMLElement | null>(null);
   const [groupRoleIDs, setGroupRoleIDs] = createSignal<RoleAssignments>({});
   const [memberRoleIDs, setMemberRoleIDs] = createSignal<RoleAssignments>({});
@@ -65,8 +65,7 @@ const CollectionPage: Component = () => {
   const canManage = () => {
     return (
       currentWorkspace()?.subscriptionPlan === "pro" &&
-      hasPermission("workspace") &&
-      hasPermission("restricted_collections")
+      content.canCollection(collectionID(), "collection:manage-restricted-access")
     );
   };
   const accessStatus = createMemo<AccessStatus>(() => {

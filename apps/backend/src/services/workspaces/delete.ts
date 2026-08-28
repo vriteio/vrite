@@ -1,12 +1,19 @@
 import { entries, users, workspaces } from "#backend/db";
 import { toEntryID, toUUID, toWorkspaceID } from "#backend/lib/primitives";
 import { db } from "#backend/lib/adapters";
+import { withAuthorization } from "#backend/lib/policy";
+import { ORPCError } from "@orpc/server";
 import { eq, sql } from "drizzle-orm";
 
-const deleteWorkspace = async (input: {
+interface DeleteWorkspaceResult {
+  entryIDs: string[];
+  workspaceID: string | null;
+}
+
+const deleteWorkspaceOperation = async (input: {
   workspaceID: string;
   userID: string;
-}): Promise<{ entryIDs: string[]; workspaceID: string | null }> => {
+}): Promise<DeleteWorkspaceResult> => {
   const workspaceID = toUUID(input.workspaceID);
   const userID = toUUID(input.userID);
 
@@ -61,5 +68,13 @@ const deleteWorkspace = async (input: {
     };
   });
 };
+const deleteWorkspace = withAuthorization<Record<never, never>, undefined, DeleteWorkspaceResult>(
+  { permissions: { session: true } },
+  async ({ auth, workspaceID }) => {
+    if (!auth.session?.admin) throw new ORPCError("FORBIDDEN");
+
+    return deleteWorkspaceOperation({ userID: auth.session!.userID, workspaceID });
+  }
+);
 
 export { deleteWorkspace };

@@ -4,6 +4,8 @@ import { db } from "#backend/lib/adapters";
 import { and, asc, eq, isNull } from "drizzle-orm";
 
 type CollectionRow = typeof collections.$inferSelect;
+type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+type Database = DatabaseTransaction | typeof db;
 
 const mapCollectionTree = (rows: CollectionRow[]): Collection[] => {
   const byID = new Map(rows.map((row) => [row.id, row]));
@@ -35,14 +37,18 @@ const mapCollectionTree = (rows: CollectionRow[]): Collection[] => {
     };
   });
 };
-const loadCollectionTree = async (workspaceID: string, includeDeleted = false) => {
+const loadCollectionTree = async (
+  workspaceID: string,
+  includeDeleted = false,
+  database: Database = db
+) => {
   const filters = [eq(collections.workspaceID, toUUID(workspaceID))];
 
   if (!includeDeleted) {
     filters.push(isNull(collections.deletedAt));
   }
 
-  const rows = await db
+  const rows = await database
     .select()
     .from(collections)
     .where(and(...filters))

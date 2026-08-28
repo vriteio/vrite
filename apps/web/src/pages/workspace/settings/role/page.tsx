@@ -11,13 +11,7 @@ import { rolesQuery, useRoleMutations } from "#web/lib/data";
 import { type AccessLevel, createPermissionAccessMapper } from "#web/lib/permissions";
 
 type Resource =
-  | "api_keys"
-  | "billing"
-  | "content"
-  | "publishing"
-  | "restricted_collections"
-  | "versions"
-  | "workspace";
+  "api_keys" | "billing" | "content" | "publishing" | "restricted_collections" | "workspace";
 type ResourceAccess = Record<Resource, AccessLevel>;
 
 const resources: Array<{
@@ -33,14 +27,10 @@ const resources: Array<{
     defaultView: true
   },
   {
-    id: "versions",
-    label: "Versions",
-    description: "View or manage document versions and version history"
-  },
-  {
     id: "publishing",
     label: "Publishing",
-    description: "View or manage published content and publishing channels"
+    description: "Enable publishing and manage publishing channels",
+    defaultView: true
   },
   {
     id: "restricted_collections",
@@ -72,13 +62,12 @@ const { accessToPermissions, emptyAccess, permissionsToAccess } = createPermissi
     { id: "api_keys", read: "read:api_keys", write: "api_keys" },
     { id: "billing", read: "read:billing", write: "billing" },
     { id: "content", write: "content" },
-    { id: "publishing", read: "read:publishing", write: "publishing" },
+    { id: "publishing", write: "publishing" },
     {
       id: "restricted_collections",
       read: "read:restricted_collections",
       write: "restricted_collections"
     },
-    { id: "versions", read: "read:versions", write: "versions" },
     { id: "workspace", write: "workspace" }
   ]
 });

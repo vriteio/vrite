@@ -7,6 +7,7 @@ import {
   createMemo,
   createSignal,
   Match,
+  Show,
   Switch
 } from "solid-js";
 import { TreeItem, useTree } from "#web/components/tree";
@@ -14,7 +15,7 @@ import { type PublishingChannel } from "#web/lib/data";
 import { useClipboard } from "#web/context/clipboard";
 
 interface ChannelItemProps {
-  assignmentCount: number;
+  assignmentCount?: number;
   canManage: boolean;
   channel: PublishingChannel;
   loading?: boolean;
@@ -85,10 +86,12 @@ const ChannelItem: Component<ChannelItemProps> = (props) => {
               </span>
               <div class="flex-1" />
             </div>
-            <span class="shrink-0 text-xs text-gray-400">
-              {props.assignmentCount}{" "}
-              {props.assignmentCount === 1 ? "entry assignment" : "entry assignments"}
-            </span>
+            <Show when={props.assignmentCount !== undefined}>
+              <span class="shrink-0 text-xs text-gray-400">
+                {props.assignmentCount}{" "}
+                {props.assignmentCount === 1 ? "entry assignment" : "entry assignments"}
+              </span>
+            </Show>
           </div>
         )}
         actions={

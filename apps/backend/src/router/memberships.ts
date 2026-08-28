@@ -1,10 +1,9 @@
 import { emitGroupEvent, emitMembershipEvent } from "#backend/events";
 import { inviteType, membershipType, userProfileType } from "#backend/db";
-import { authorized, base } from "#backend/lib/transport";
+import { authenticatedRoute, base, sessionRoute } from "#backend/lib/transport";
 import { id } from "#backend/lib/primitives";
 import { Billing } from "#backend/services/billing";
 import { Memberships } from "#backend/services/memberships";
-import { Groups } from "#backend/services/groups";
 import { Auth } from "#backend/services/auth";
 import { ORPCError } from "@orpc/server";
 import * as z from "zod";
@@ -34,19 +33,12 @@ const acceptedInviteType = z.object({
   workspaceID: id().describe("ID of the workspace that was joined"),
   workspaceName: z.string().describe("Name of the workspace that was joined")
 });
-const emitUpdatedGroups = async (input: {
-  groupIDs: string[];
+const emitUpdatedGroups = (input: {
+  groups: Array<{ id: string; invitationIDs: string[]; memberIDs: string[] }>;
   memberID?: string;
   workspaceID: string;
-}) => {
-  if (input.groupIDs.length === 0) return;
-
-  const targetIDs = new Set(input.groupIDs);
-  const { groups } = await Groups.list({ workspaceID: input.workspaceID });
-
-  for (const group of groups) {
-    if (!targetIDs.has(group.id)) continue;
-
+}): void => {
+  for (const group of input.groups) {
     emitGroupEvent(input.workspaceID, {
       action: "group:members-update",
       memberID: input.memberID,
@@ -60,33 +52,18 @@ const emitUpdatedGroups = async (input: {
 };
 
 const membershipsRouter = base.prefix("/memberships").router({
-  list: base
+  list: authenticatedRoute
     .route({ method: "GET", path: "/" })
-    .meta({
-      required: {
-        session: ["workspace"],
-        key: ["read:memberships"]
-      }
-    })
-    .use(authorized)
     .output(z.array(memberDetailsType))
     .handler(async ({ context }) => {
       const { members } = await Memberships.list({
-        workspaceID: context.auth.workspaceID
+        auth: context.auth
       });
 
       return members;
     }),
-  update: base
+  update: authenticatedRoute
     .route({ method: "PATCH", path: "/:id" })
-    .meta({
-      requireProPlan: true,
-      required: {
-        session: ["workspace"],
-        key: ["memberships"]
-      }
-    })
-    .use(authorized)
     .input(
       z.object({
         id: id().describe("ID of the membership to update"),
@@ -97,7 +74,7 @@ const membershipsRouter = base.prefix("/memberships").router({
     .handler(async ({ context, input }) => {
       const { userID } = await Memberships.update({
         id: input.id,
-        workspaceID: context.auth.workspaceID,
+        auth: context.auth,
         roleID: input.roleID
       });
 
@@ -115,15 +92,8 @@ const membershipsRouter = base.prefix("/memberships").router({
         }
       });
     }),
-  remove: base
+  remove: authenticatedRoute
     .route({ method: "DELETE", path: "/:id" })
-    .meta({
-      required: {
-        session: ["workspace"],
-        key: ["memberships"]
-      }
-    })
-    .use(authorized)
     .input(
       z.object({
         id: id().describe("ID of the membership to remove")
@@ -133,7 +103,7 @@ const membershipsRouter = base.prefix("/memberships").router({
     .handler(async ({ context, input }) => {
       const { userID } = await Memberships.remove({
         id: input.id,
-        workspaceID: context.auth.workspaceID
+        auth: context.auth
       });
 
       await Auth.invalidateSessionData({
@@ -151,16 +121,8 @@ const membershipsRouter = base.prefix("/memberships").router({
 
       await Billing.updateSeats({ workspaceID: context.auth.workspaceID });
     }),
-  invite: base
+  invite: authenticatedRoute
     .route({ method: "POST", path: "/" })
-    .meta({
-      requireProPlan: true,
-      required: {
-        session: ["workspace"],
-        key: ["memberships"]
-      }
-    })
-    .use(authorized)
     .input(
       z.object({
         email: z.email().describe("Email address of the user to invite"),
@@ -170,10 +132,9 @@ const membershipsRouter = base.prefix("/memberships").router({
     .output(membershipInviteResultType)
     .handler(async ({ context, input }) => {
       const newInviteDetails = await Memberships.invite({
-        workspaceID: context.auth.workspaceID,
+        auth: context.auth,
         email: input.email,
-        roleID: input.roleID,
-        inviterID: context.auth.session?.memberID
+        roleID: input.roleID
       });
 
       emitMembershipEvent(context.auth.workspaceID, {
@@ -184,34 +145,18 @@ const membershipsRouter = base.prefix("/memberships").router({
 
       return newInviteDetails;
     }),
-  listInvites: base
+  listInvites: authenticatedRoute
     .route({ method: "GET", path: "/invites" })
-    .meta({
-      requireProPlan: true,
-      required: {
-        session: ["workspace"],
-        key: ["memberships"]
-      }
-    })
-    .use(authorized)
     .output(z.array(inviteDetailsType))
     .handler(async ({ context }) => {
       const { invites } = await Memberships.listInvites({
-        workspaceID: context.auth.workspaceID
+        auth: context.auth
       });
 
       return invites;
     }),
-  resendInvite: base
+  resendInvite: authenticatedRoute
     .route({ method: "POST", path: "/invites/:id/resend" })
-    .meta({
-      requireProPlan: true,
-      required: {
-        session: ["workspace"],
-        key: ["memberships"]
-      }
-    })
-    .use(authorized)
     .input(
       z.object({
         id: id().describe("ID of the pending invitation")
@@ -221,31 +166,23 @@ const membershipsRouter = base.prefix("/memberships").router({
     .handler(async ({ context, input }) => {
       const { emailDelivery } = await Memberships.resendInvite({
         id: input.id,
-        workspaceID: context.auth.workspaceID
+        auth: context.auth
       });
 
       return { emailDelivery };
     }),
-  revokeInvite: base
+  revokeInvite: authenticatedRoute
     .route({ method: "DELETE", path: "/invites/:id" })
-    .meta({
-      requireProPlan: true,
-      required: {
-        session: ["workspace"],
-        key: ["memberships"]
-      }
-    })
     .input(
       z.object({
         id: id().describe("ID of the invite to revoke")
       })
     )
-    .use(authorized)
     .output(z.void())
     .handler(async ({ context, input }) => {
-      const { groupIDs } = await Memberships.revokeInvite({
+      const { updatedGroups } = await Memberships.revokeInvite({
         id: input.id,
-        workspaceID: context.auth.workspaceID
+        auth: context.auth
       });
 
       emitMembershipEvent(context.auth.workspaceID, {
@@ -255,24 +192,18 @@ const membershipsRouter = base.prefix("/memberships").router({
           id: input.id
         }
       });
-      await emitUpdatedGroups({
-        groupIDs,
+      emitUpdatedGroups({
+        groups: updatedGroups,
         memberID: context.auth.session?.memberID,
         workspaceID: context.auth.workspaceID
       });
     }),
-  acceptInvite: base
+  acceptInvite: sessionRoute
     .route({
       method: "POST",
       path: "/accept"
     })
-    .meta({
-      requireWorkspace: false,
-      required: {
-        session: true
-      }
-    })
-    .use(authorized)
+    .meta({ requireWorkspace: false })
     .input(
       z.object({
         id: id().describe("ID of the invitation"),
@@ -305,8 +236,8 @@ const membershipsRouter = base.prefix("/memberships").router({
         action: "membership:add",
         data: result.membership
       });
-      await emitUpdatedGroups({
-        groupIDs: result.groupIDs,
+      emitUpdatedGroups({
+        groups: result.updatedGroups,
         workspaceID: result.workspaceID
       });
 

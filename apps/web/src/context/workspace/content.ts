@@ -10,9 +10,11 @@ import {
 import { createIndexedDBAdapter } from "./persistence";
 import {
   type Collection,
+  type CollectionAccess,
+  type CollectionAction,
   type Entry,
+  type EntryAction,
   client,
-  type Permission,
   type WorkspaceEvent
 } from "#web/lib/api";
 import solidReactivityAdapter from "@signaldb/solid";
@@ -20,17 +22,17 @@ import { useConnectivitySignal } from "@solid-primitives/connectivity";
 import { type Accessor, createEffect, createSignal, on } from "solid-js";
 import { isPersistedCollection, isPersistedEntry } from "#web/lib/validation";
 import { createWorkspacePublishingOperations, type PublishingState } from "../publishing";
-import { hasPermission as hasGrantedPermission } from "#web/lib/policy";
 
 interface ExplorerTree {
   workspaceID: string;
   collections: Collection[];
   entries: Entry[];
-  permissionsByCollectionID: Record<string, Permission[]>;
+  accessByCollectionID: Record<string, CollectionAccess>;
   publishing: {
     enabledCollectionIDs: string[];
     unpublishedEntryIDs: string[];
   } | null;
+  rootID: string;
 }
 const getWorkspaceContentDatabaseName = (workspaceID?: string) => {
   return getWorkspaceDatabaseName(workspaceID || "ephemeral");
@@ -91,19 +93,17 @@ const applyCollectionSnapshot = <T extends { id: IDBValidKey } & Record<string, 
     }
   });
 };
-const useWorkspaceContent = (
-  workspaceID: Accessor<string>,
-  hasWorkspacePermission: (required: Permission) => boolean
-) => {
+const useWorkspaceContent = (workspaceID: Accessor<string>) => {
   const isOnline = useConnectivitySignal();
   const [contentCollections, setContentCollections] = createSignal(createWorkspaceCollections());
   const [loading, setLoading] = createSignal(Boolean(workspaceID()));
   const [syncing, setSyncing] = createSignal(false);
   const [snapshotError, setSnapshotError] = createSignal(false);
   const [publishing, setPublishing] = createSignal<PublishingState | null>(null);
-  const [permissionsByCollectionID, setPermissionsByCollectionID] = createSignal<
-    Record<string, Permission[]>
+  const [accessByCollectionID, setAccessByCollectionID] = createSignal<
+    Record<string, CollectionAccess>
   >({});
+  const [rootID, setRootID] = createSignal("");
   const syncingWorkspaces = new Map<string, number>();
   const entriesCollection = () => contentCollections().entries;
   const collectionsCollection = () => contentCollections().collections;
@@ -130,34 +130,73 @@ const useWorkspaceContent = (
     await clearWorkspaceData(targetWorkspaceID);
   };
 
-  const hasCollectionPermission = (collectionID: string | null, required: Permission) => {
-    const collection = collectionID ? contentOperations.collections.get({ collectionID }) : null;
-    const boundaryID = collectionID
-      ? contentOperations.collections.getRestrictionBoundaryID({ collectionID })
-      : null;
-    const permissions = collectionID
-      ? permissionsByCollectionID()[collectionID] ||
-        (boundaryID ? permissionsByCollectionID()[boundaryID] : undefined)
-      : undefined;
+  const getCollectionAccess = (collectionID: string | null = null) => {
+    const resolvedCollectionID = collectionID || rootID();
 
-    if (permissions) return hasGrantedPermission(permissions, required);
-    if (collection && contentOperations.collections.isRestricted({ collectionID: collection.id })) {
-      return false;
+    return accessByCollectionID()[resolvedCollectionID] || null;
+  };
+  const canCollection = (collectionID: string | null, action: CollectionAction) => {
+    return getCollectionAccess(collectionID)?.collectionActions.includes(action) ?? false;
+  };
+  const canEntry = (collectionID: string | null, action: EntryAction) => {
+    return getCollectionAccess(collectionID)?.entryActions.includes(action) ?? false;
+  };
+  const hasCollectionActionInAnyCollection = (action: CollectionAction) => {
+    return Object.values(accessByCollectionID()).some((access) => {
+      return access.collectionActions.includes(action);
+    });
+  };
+  const hasEntryActionInAnyCollection = (action: EntryAction) => {
+    return Object.values(accessByCollectionID()).some((access) => {
+      return access.entryActions.includes(action);
+    });
+  };
+  const createCollection = ({ parentID }: { parentID?: string } = {}) => {
+    const collection = contentOperations.collections.create({ parentID });
+    const parentAccess = getCollectionAccess(parentID || null);
+
+    if (!collection || !parentAccess) return collection;
+
+    const collectionActions: CollectionAction[] = parentAccess.collectionActions.filter(
+      (action) => {
+        return (
+          action === "collection:create-child" ||
+          action === "collection:update" ||
+          action === "collection:move" ||
+          action === "collection:set-restricted" ||
+          action === "collection:set-publishing"
+        );
+      }
+    );
+
+    if (collectionActions.includes("collection:update")) {
+      collectionActions.push("collection:delete");
     }
 
-    return hasWorkspacePermission(required);
-  };
-  const hasPermissionInAnyCollection = (required: Permission) => {
-    return Object.values(permissionsByCollectionID()).some((permissions) => {
-      return hasGrantedPermission(permissions, required);
-    });
+    if (parentAccess.entryActions.includes("publishing:publish")) {
+      collectionActions.push("publishing:publish-tree");
+    }
+
+    if (parentAccess.entryActions.includes("publishing:unpublish")) {
+      collectionActions.push("publishing:unpublish-tree");
+    }
+
+    setAccessByCollectionID((current) => ({
+      ...current,
+      [collection.id]: {
+        collectionActions,
+        entryActions: parentAccess.entryActions
+      }
+    }));
+
+    return collection;
   };
   const readOnly = (collectionID: string | null = null) => {
     return (
       !isOnline() ||
       syncing() ||
       !contentCollections().workspaceID ||
-      !hasCollectionPermission(collectionID, "content")
+      !canEntry(collectionID, "entry:update")
     );
   };
   const offline = () => !isOnline();
@@ -203,7 +242,8 @@ const useWorkspaceContent = (
 
     applyCollectionSnapshot(targetCollections.entries, tree.entries);
     applyCollectionSnapshot(targetCollections.collections, tree.collections);
-    setPermissionsByCollectionID(tree.permissionsByCollectionID);
+    setAccessByCollectionID(tree.accessByCollectionID);
+    setRootID(tree.rootID);
     setPublishing(
       tree.publishing
         ? {
@@ -286,9 +326,19 @@ const useWorkspaceContent = (
         contentOperations.sync.entries.applyDelete({ entryIDs: event.data.ids });
         removePublishingEntries(event.data.ids);
         break;
-      case "collection:create":
+      case "collection:create": {
+        const access = event.access;
+
         contentOperations.sync.collections.applyCreate({ collection: event.data });
+
+        if (access) {
+          setAccessByCollectionID((current) => ({
+            ...current,
+            [event.data.id]: access
+          }));
+        }
         break;
+      }
       case "collection:update": {
         const { id, ...updates } = event.data;
 
@@ -305,6 +355,15 @@ const useWorkspaceContent = (
       case "collection:delete":
         contentOperations.sync.collections.applyDelete({ collectionIDs: event.data.ids });
         removePublishingCollections(event.data.ids);
+        setAccessByCollectionID((current) => {
+          const next = { ...current };
+
+          for (const collectionID of event.data.ids) {
+            delete next[collectionID];
+          }
+
+          return next;
+        });
         break;
       case "publishing:collection-update":
         setPublishing((current) => {
@@ -340,6 +399,33 @@ const useWorkspaceContent = (
           return { ...current, unpublishedEntryIDs };
         });
         break;
+      case "publishing:entries-content-update":
+        setPublishing((current) => {
+          if (!current) return current;
+
+          const unpublishedEntryIDs = new Set(current.unpublishedEntryIDs);
+
+          for (const contentUpdate of event.data.entries) {
+            const entry = entriesCollection().findOne({ id: contentUpdate.entryID });
+            const collection = entry?.collectionID
+              ? collectionsCollection().findOne({ id: entry.collectionID })
+              : undefined;
+            const publishingEnabled = collection
+              ? [collection.id, ...collection.ancestors].some((collectionID) => {
+                  return current.enabledCollectionIDs.has(collectionID);
+                })
+              : false;
+
+            if (publishingEnabled && !contentUpdate.matchesPublishedVersion) {
+              unpublishedEntryIDs.add(contentUpdate.entryID);
+            } else {
+              unpublishedEntryIDs.delete(contentUpdate.entryID);
+            }
+          }
+
+          return { ...current, unpublishedEntryIDs };
+        });
+        break;
     }
   };
   const switchWorkspace = async (currentWorkspaceID: string, previousWorkspaceID?: string) => {
@@ -347,7 +433,8 @@ const useWorkspaceContent = (
     setSyncing((syncingWorkspaces.get(currentWorkspaceID) ?? 0) > 0);
     setSnapshotError(false);
     setPublishing(null);
-    setPermissionsByCollectionID({});
+    setAccessByCollectionID({});
+    setRootID("");
 
     const previousCollections = contentCollections();
     const nextCollections = createWorkspaceCollections(currentWorkspaceID);
@@ -392,12 +479,19 @@ const useWorkspaceContent = (
     syncing,
     snapshotError,
     publishing,
-    hasCollectionPermission,
-    hasPermissionInAnyCollection,
+    canCollection,
+    canEntry,
+    getCollectionAccess,
+    hasCollectionActionInAnyCollection,
+    hasEntryActionInAnyCollection,
     readOnly,
     offline,
     ...publishingOperations,
-    ...contentOperations
+    ...contentOperations,
+    collections: {
+      ...contentOperations.collections,
+      create: createCollection
+    }
   };
 };
 

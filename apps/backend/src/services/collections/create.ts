@@ -1,56 +1,34 @@
 import { rankBetweenNeighbors, toCollectionID, toUUID } from "#backend/lib/primitives";
-import { db } from "#backend/lib/adapters";
-import { collections, type Collection, workspaces } from "#backend/db";
+import { collections, type Collection } from "#backend/db";
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 import { loadCollectionTree } from "#backend/lib/data";
-import {
-  assertCollectionPermission,
-  canManageRestrictedCollections,
-  loadRestrictedCollectionAccess,
-  type SessionData
-} from "#backend/lib/policy";
+import { withAuthorization } from "#backend/lib/policy";
 import { normalizeCollectionName, ROOT_COLLECTION_NAME } from "#backend/lib/validation";
 
-const createCollection = async (
-  input: Partial<Pick<Collection, "id" | "name" | "restricted">> & {
-    auth: SessionData;
-    parentID?: string;
-    workspaceID: string;
-  }
-): Promise<Collection> => {
-  const name = normalizeCollectionName(input.name ?? "Untitled");
-  const access = await loadRestrictedCollectionAccess(input.auth);
+interface CreateCollectionInput extends Partial<Pick<Collection, "id" | "name" | "restricted">> {
+  parentID?: string;
+}
 
-  assertCollectionPermission(input.auth, access, input.parentID, "content");
+const createCollection = withAuthorization<CreateCollectionInput, undefined, Collection>(
+  {
+    actions: ({ input }) => ({
+      collections: [{ action: "collection:create-child", collectionID: input.parentID }]
+    }),
+    permissions: (input) =>
+      input.restricted ? { session: ["restricted_collections"] } : undefined,
+    plan: (input) => (input.restricted ? "pro" : undefined),
+    transaction: "locked-workspace"
+  },
+  async ({ database, input, workspaceID }) => {
+    const name = normalizeCollectionName(input.name ?? "Untitled");
 
-  if (input.restricted) {
-    if (input.auth.subscriptionPlan !== "pro") {
-      throw new ORPCError("FORBIDDEN", {
-        message: "This action requires an Andesine Pro subscription"
-      });
+    if (name === ROOT_COLLECTION_NAME) {
+      throw new ORPCError("BAD_REQUEST", { message: "Reserved collection name" });
     }
 
-    if (!canManageRestrictedCollections(input.auth)) {
-      throw new ORPCError("FORBIDDEN", {
-        message: "Restricted collections permission is required"
-      });
-    }
-  }
-
-  if (name === ROOT_COLLECTION_NAME) {
-    throw new ORPCError("BAD_REQUEST", { message: "Reserved collection name" });
-  }
-
-  const workspaceID = toUUID(input.workspaceID);
-  const collectionID = input.id ? toUUID(input.id) : crypto.randomUUID();
-  await db.transaction(async (tx) => {
-    await tx
-      .select({ id: workspaces.id })
-      .from(workspaces)
-      .where(eq(workspaces.id, workspaceID))
-      .for("update");
-    const [root] = await tx
+    const collectionID = input.id ? toUUID(input.id) : crypto.randomUUID();
+    const [root] = await database
       .select({ id: collections.id })
       .from(collections)
       .where(
@@ -64,7 +42,7 @@ const createCollection = async (
     if (!root) throw new ORPCError("NOT_FOUND", { message: "Root collection not found" });
 
     const parentID = input.parentID ? toUUID(input.parentID) : root.id;
-    const [parent] = await tx
+    const [parent] = await database
       .select({ id: collections.id })
       .from(collections)
       .where(
@@ -77,7 +55,7 @@ const createCollection = async (
 
     if (!parent) throw new ORPCError("BAD_REQUEST", { message: "Parent collection not found" });
 
-    const [lastSibling] = await tx
+    const [lastSibling] = await database
       .select({ rank: collections.rank })
       .from(collections)
       .where(
@@ -91,7 +69,7 @@ const createCollection = async (
       .limit(1);
     const rank = rankBetweenNeighbors(lastSibling?.rank);
 
-    await tx
+    await database
       .insert(collections)
       .values({
         id: collectionID,
@@ -102,17 +80,17 @@ const createCollection = async (
         restricted: input.restricted
       })
       .onConflictDoNothing({ target: collections.id });
-  });
 
-  const tree = await loadCollectionTree(workspaceID);
-  const result = tree.collections.find(
-    (collection) => collection.id === toCollectionID(collectionID)
-  );
+    const tree = await loadCollectionTree(workspaceID, false, database);
+    const result = tree.collections.find(
+      (collection) => collection.id === toCollectionID(collectionID)
+    );
 
-  if (!result)
-    throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to create collection" });
+    if (!result)
+      throw new ORPCError("INTERNAL_SERVER_ERROR", { message: "Failed to create collection" });
 
-  return result;
-};
+    return result;
+  }
+);
 
 export { createCollection };

@@ -59,27 +59,30 @@ const VersionHistoryItem: Component<VersionHistoryItemProps> = (props) => {
     closeMobileDropdowns();
   };
   const options = (): Array<MenuItem[]> => {
-    const groups: Array<MenuItem[]> = [
-      [
-        {
-          label: "Compare with current",
-          icon: "i-lucide:git-compare-arrows",
-          onClick: () => navigate(props.onCompare)
-        },
+    const itemOptions: MenuItem[] = [
+      {
+        label: "Compare with current",
+        icon: "i-lucide:git-compare-arrows",
+        onClick: () => navigate(props.onCompare)
+      }
+    ];
+
+    if (props.canManage) {
+      itemOptions.push(
         {
           label: "Rename version",
           icon: "i-lucide:pencil",
-          disabled: !props.canManage,
           onClick: startRenaming
         },
         {
           label: "Revert to version",
           icon: "i-lucide:history",
-          disabled: !props.canManage,
           onClick: props.onRevert
         }
-      ]
-    ];
+      );
+    }
+
+    const groups: Array<MenuItem[]> = [itemOptions];
 
     if (props.canManagePublishing) {
       const channel = publishing.channel();

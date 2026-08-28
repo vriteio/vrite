@@ -8,6 +8,7 @@ import {
   type Permission,
   roles
 } from "#backend/db";
+import { withAuthorization } from "#backend/lib/policy";
 import { and, eq } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 import {
@@ -16,12 +17,15 @@ import {
   validateRoleName
 } from "#backend/lib/data";
 
-const updateRole = async (input: {
+interface UpdateRoleInput {
   id: string;
-  workspaceID: string;
   name?: string;
   permissions?: Permission[];
-}): Promise<{ affectedUserIDs: string[] }> => {
+}
+
+const updateRoleOperation = async (
+  input: UpdateRoleInput & { workspaceID: string }
+): Promise<{ affectedUserIDs: string[] }> => {
   const roleID = toUUID(input.id);
   const workspaceID = toUUID(input.workspaceID);
   const role = await db.query.roles.findFirst({
@@ -97,5 +101,9 @@ const updateRole = async (input: {
 
   return { affectedUserIDs: [] };
 };
+const updateRole = withAuthorization<UpdateRoleInput, undefined, { affectedUserIDs: string[] }>(
+  { permissions: { session: ["workspace"], key: ["roles"] }, plan: "pro" },
+  async ({ input, workspaceID }) => updateRoleOperation({ ...input, workspaceID })
+);
 
 export { updateRole };

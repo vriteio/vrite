@@ -1,64 +1,73 @@
 import { toEntryID, toUUID } from "#backend/lib/primitives";
-import { db } from "#backend/lib/adapters";
 import { entries, entryPublications, memberships } from "#backend/db";
 import { and, eq, inArray, isNull } from "drizzle-orm";
 import {
-  assertEntryPermission,
-  loadRestrictedCollectionAccess,
-  type SessionData
+  type EntryAuthorizationSource,
+  loadEntryAuthorizationSources,
+  withAuthorization
 } from "#backend/lib/policy";
 
-const deleteEntries = async (input: {
-  auth: SessionData;
+interface DeleteEntriesInput {
   ids: string[];
-  workspaceID: string;
-}): Promise<{ entryIDs: string[] }> => {
-  if (input.ids.length === 0) return { entryIDs: [] };
+}
 
-  const access = await loadRestrictedCollectionAccess(input.auth);
+const deleteEntries = withAuthorization<
+  DeleteEntriesInput,
+  EntryAuthorizationSource[],
+  { entryIDs: string[] }
+>(
+  {
+    actions: ({ resolved }) => ({
+      entries: resolved.map(({ collectionID }) => ({ action: "entry:delete", collectionID }))
+    }),
+    resolve: ({ database, input, workspaceID }) => {
+      return loadEntryAuthorizationSources({ database, entryIDs: input.ids, workspaceID });
+    },
+    transaction: "locked-workspace"
+  },
+  async ({ database, input, workspaceID }) => {
+    if (input.ids.length === 0) return { entryIDs: [] };
 
-  await Promise.all(
-    input.ids.map((entryID) => assertEntryPermission(input.auth, access, entryID, "content"))
-  );
-
-  const deleted = await db.transaction(async (tx) => {
-    const rows = await tx
-      .update(entries)
-      .set({ deletedAt: new Date(), updatedAt: new Date() })
-      .where(
-        and(
-          inArray(entries.id, input.ids.map(toUUID)),
-          eq(entries.workspaceID, toUUID(input.workspaceID)),
-          isNull(entries.deletedAt)
-        )
-      )
-      .returning({ id: entries.id });
-
-    if (rows.length > 0) {
-      await tx.delete(entryPublications).where(
-        inArray(
-          entryPublications.entryID,
-          rows.map(({ id }) => id)
-        )
-      );
-      await tx
-        .update(memberships)
-        .set({ currentEntryID: null, updatedAt: new Date() })
+    const entryIDs = [...new Set(input.ids)].map(toUUID);
+    const deleted = await (async () => {
+      const rows = await database
+        .update(entries)
+        .set({ deletedAt: new Date(), updatedAt: new Date() })
         .where(
           and(
-            eq(memberships.workspaceID, toUUID(input.workspaceID)),
-            inArray(
-              memberships.currentEntryID,
-              rows.map(({ id }) => id)
-            )
+            inArray(entries.id, entryIDs),
+            eq(entries.workspaceID, workspaceID),
+            isNull(entries.deletedAt)
+          )
+        )
+        .returning({ id: entries.id });
+
+      if (rows.length > 0) {
+        await database.delete(entryPublications).where(
+          inArray(
+            entryPublications.entryID,
+            rows.map(({ id }) => id)
           )
         );
-    }
+        await database
+          .update(memberships)
+          .set({ currentEntryID: null, updatedAt: new Date() })
+          .where(
+            and(
+              eq(memberships.workspaceID, workspaceID),
+              inArray(
+                memberships.currentEntryID,
+                rows.map(({ id }) => id)
+              )
+            )
+          );
+      }
 
-    return rows;
-  });
+      return rows;
+    })();
 
-  return { entryIDs: deleted.map(({ id }) => toEntryID(id)) };
-};
+    return { entryIDs: deleted.map(({ id }) => toEntryID(id)) };
+  }
+);
 
 export { deleteEntries };

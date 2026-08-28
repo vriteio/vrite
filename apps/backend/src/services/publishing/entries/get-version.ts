@@ -5,30 +5,31 @@ import {
   entryVersions,
   publishingChannels
 } from "#backend/db";
-import { db } from "#backend/lib/adapters";
 import { mapVersion, type VersionDetails } from "#backend/lib/data";
 import { normalizePublishingChannelCode } from "#backend/lib/publishing";
+import { type Database, withAuthorization, withPublicWorkspace } from "#backend/lib/policy";
 import { toUUID } from "#backend/lib/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, eq, isNull } from "drizzle-orm";
-import type { SessionData } from "#backend/lib/policy";
-import { authorizeEntrySources } from "../access";
 
-const getPublishedEntryVersion = async (input: {
-  auth?: SessionData;
-  workspaceID: string;
+interface PublishedEntryVersionInput {
   entryID: string;
   channel: string;
-}): Promise<VersionDetails> => {
-  if (input.auth) {
-    await authorizeEntrySources(input.auth, [input.entryID], "read:publishing");
-  }
+}
+interface PublishedEntryVersionSource {
+  collectionID: string | null;
+  version: VersionDetails;
+}
 
-  const workspaceID = toUUID(input.workspaceID);
+const loadPublishedEntryVersion = async (
+  database: Database,
+  workspaceID: string,
+  input: PublishedEntryVersionInput
+): Promise<PublishedEntryVersionSource> => {
   const entryID = toUUID(input.entryID);
   const channelCode = normalizePublishingChannelCode(input.channel);
-  const [row] = await db
-    .select({ version: entryVersions })
+  const [row] = await database
+    .select({ collectionID: entries.collectionID, version: entryVersions })
     .from(entryPublications)
     .innerJoin(
       publishingChannels,
@@ -53,7 +54,7 @@ const getPublishedEntryVersion = async (input: {
     throw new ORPCError("NOT_FOUND", { message: "Published entry version not found" });
   }
 
-  const contributors = await db
+  const contributors = await database
     .select({ membershipID: entryVersionContributors.membershipID })
     .from(entryVersionContributors)
     .where(
@@ -63,10 +64,36 @@ const getPublishedEntryVersion = async (input: {
       )
     );
 
-  return mapVersion(
-    row.version,
-    contributors.map(({ membershipID }) => membershipID)
-  );
+  return {
+    collectionID: row.collectionID,
+    version: mapVersion(
+      row.version,
+      contributors.map(({ membershipID }) => membershipID)
+    )
+  };
 };
+const getPublishedEntryVersion = withAuthorization<
+  PublishedEntryVersionInput,
+  PublishedEntryVersionSource,
+  VersionDetails
+>(
+  {
+    actions: ({ resolved }) => ({
+      entries: [{ action: "publishing:read", collectionID: resolved.collectionID }]
+    }),
+    resolve: ({ database, input, workspaceID }) => {
+      return loadPublishedEntryVersion(database, workspaceID, input);
+    }
+  },
+  async ({ resolved }) => resolved.version
+);
+const getPublicPublishedEntryVersion = withPublicWorkspace<
+  PublishedEntryVersionInput,
+  VersionDetails
+>({}, async ({ database, input, workspaceID }) => {
+  const source = await loadPublishedEntryVersion(database, workspaceID, input);
 
-export { getPublishedEntryVersion };
+  return source.version;
+});
+
+export { getPublicPublishedEntryVersion, getPublishedEntryVersion };

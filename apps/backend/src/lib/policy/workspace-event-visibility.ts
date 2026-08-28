@@ -1,29 +1,6 @@
-import type { KeyPermission, Permission } from "#backend/db";
-import { hasPermission } from "./permissions";
+import { hasAuthorizationRequirements } from "./permissions";
 import type { SessionData } from "./session";
 
-const canAccess = (
-  auth: SessionData,
-  required: {
-    session?: Permission[] | true;
-    key?: KeyPermission[] | true;
-  }
-): boolean => {
-  if (auth.type === "session" && auth.session?.admin) return true;
-
-  const requiredPermissions = required[auth.type];
-
-  if (!requiredPermissions) return false;
-  if (requiredPermissions === true) return true;
-
-  const grantedPermissions = (auth[auth.type]?.permissions || []) as string[];
-
-  return requiredPermissions.every((permission) => {
-    return grantedPermissions.some((grantedPermission) => {
-      return hasPermission(grantedPermission, permission);
-    });
-  });
-};
 const isWorkspaceEventVisible = (
   auth: SessionData,
   event: {
@@ -31,62 +8,64 @@ const isWorkspaceEventVisible = (
   }
 ) => {
   if (event.action.startsWith("entry:")) {
-    return canAccess(auth, { session: true, key: ["read:entries"] });
+    return hasAuthorizationRequirements(auth, { session: true, key: ["read:entries"] });
   }
 
   if (event.action.startsWith("collection:")) {
-    return canAccess(auth, { session: true, key: ["read:collections"] });
+    return hasAuthorizationRequirements(auth, { session: true, key: ["read:collections"] });
   }
 
   if (event.action.startsWith("publishing:")) {
-    if (event.action.startsWith("publishing:channel-")) {
-      return canAccess(auth, {
-        session: ["read:publishing"],
-        key: ["read:publishing"]
-      });
-    }
-
-    return canAccess(auth, {
+    return hasAuthorizationRequirements(auth, {
       session: true,
       key: ["read:publishing"]
     });
   }
 
   if (event.action.startsWith("version:")) {
-    return canAccess(auth, {
+    return hasAuthorizationRequirements(auth, {
       session: true,
       key: ["read:versions"]
     });
   }
 
   if (event.action.startsWith("membership:")) {
-    return canAccess(auth, { session: ["workspace"], key: ["read:memberships"] });
+    return hasAuthorizationRequirements(auth, {
+      session: ["workspace"],
+      key: ["read:memberships"]
+    });
   }
 
   if (event.action.startsWith("invite:")) {
-    return canAccess(auth, { session: ["workspace"], key: ["memberships"] });
+    return hasAuthorizationRequirements(auth, {
+      session: ["workspace"],
+      key: ["memberships"]
+    });
   }
 
   if (event.action.startsWith("role:")) {
-    return canAccess(auth, { session: ["workspace"], key: ["read:roles"] });
+    return hasAuthorizationRequirements(auth, {
+      session: ["workspace"],
+      key: ["read:roles"]
+    });
   }
 
   if (event.action.startsWith("group:")) {
-    return canAccess(auth, { session: ["workspace"] });
+    return hasAuthorizationRequirements(auth, { session: ["workspace"] });
   }
 
   if (event.action === "restricted-assignments:update") {
-    return canAccess(auth, {
-      session: ["workspace", "read:restricted_collections"]
+    return hasAuthorizationRequirements(auth, {
+      session: ["restricted_collections"]
     });
   }
 
   if (event.action.startsWith("key:")) {
-    return canAccess(auth, { session: ["read:api_keys"] });
+    return hasAuthorizationRequirements(auth, { session: ["read:api_keys"] });
   }
 
   if (event.action.startsWith("workspace:")) {
-    return canAccess(auth, { session: true });
+    return hasAuthorizationRequirements(auth, { session: true });
   }
 
   return false;

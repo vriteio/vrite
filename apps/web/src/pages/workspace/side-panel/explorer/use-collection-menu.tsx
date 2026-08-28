@@ -2,18 +2,18 @@ import { type MenuItem } from "@andesine/components";
 import { useNavigate, useParams } from "@solidjs/router";
 import { createEffect, createMemo, createSignal, on } from "solid-js";
 import { useClipboard } from "#web/context/clipboard";
+import { useNotify } from "#web/context/notifications";
 import { useWorkspace } from "#web/context/workspace";
 import { useTree } from "#web/components/tree";
 import { usePublishingActions } from "./publishing-actions";
-import { useRestrictedActions } from "./restricted-actions";
 
 const useCollectionMenu = (collectionID: string) => {
   const { copyText } = useClipboard();
-  const { content, currentWorkspace, hasPermission } = useWorkspace();
+  const notify = useNotify();
+  const { content, currentWorkspace } = useWorkspace();
   const navigate = useNavigate();
   const params = useParams<{ workspaceID?: string }>();
   const publishingActions = usePublishingActions();
-  const restrictedActions = useRestrictedActions();
   const [{ selection }, { setExpanded, setRenaming, setSelection }] = useTree();
   const [menuOpened, setMenuOpened] = createSignal(false);
   const startRenaming = (id: string) => {
@@ -38,33 +38,34 @@ const useCollectionMenu = (collectionID: string) => {
     const publishingRoot = targetCollections.some((selectedCollection) => {
       return content.isCollectionPublishingRoot(selectedCollection.id);
     });
-    const containsRestrictionRoot = targetCollections.some((selectedCollection) => {
-      return content.collections.containsRestrictionRoot({
-        collectionID: selectedCollection.id
-      });
-    });
     const publishingTarget = {
-      items: targetCollections.map((selectedCollection) => ({
-        id: selectedCollection.id,
-        label: selectedCollection.name,
-        restricted: content.collections.isRestricted({ collectionID: selectedCollection.id })
-      })),
+      ids: targetCollections.map((selectedCollection) => selectedCollection.id),
       type: "collection" as const
     };
-    const canManagePublishing =
+    const canConfigurePublishing =
       targetCollections.every((selectedCollection) => {
-        return content.hasCollectionPermission(selectedCollection.id, "publishing");
+        return content.canCollection(selectedCollection.id, "collection:set-publishing");
       }) &&
       content.publishing() !== null &&
       !content.offline() &&
       !content.syncing();
+    const canPublish = targetCollections.every((selectedCollection) => {
+      return content.canCollection(selectedCollection.id, "publishing:publish-tree");
+    });
+    const canUnpublish = targetCollections.every((selectedCollection) => {
+      return content.canCollection(selectedCollection.id, "publishing:unpublish-tree");
+    });
 
     if (!isMulti) {
       const canEditCollection = Boolean(
-        collection && content.hasCollectionPermission(collection.id, "content")
+        collection && content.canCollection(collection.id, "collection:update")
       );
+      const canCreateCollection = Boolean(
+        collection && content.canCollection(collection.id, "collection:create-child")
+      );
+      const canCreateEntry = Boolean(collection && content.canEntry(collection.id, "entry:create"));
 
-      opts.push([
+      const collectionOptions: MenuItem[] = [
         {
           label: "Copy ID",
           icon: "i-lucide:copy",
@@ -75,24 +76,30 @@ const useCollectionMenu = (collectionID: string) => {
               fallback: { title: "Copy ID manually" }
             });
           }
-        },
-        {
+        }
+      ];
+
+      if (canEditCollection) {
+        collectionOptions.push({
           label: "Rename group",
           icon: "i-lucide:pencil",
-          disabled: !canEditCollection,
           onClick: () => {
             if (!collection || content.readOnly(collection.id)) return;
 
             startRenaming(collectionID);
           },
           shortcut: "f2"
-        }
-      ]);
-      opts.push([
-        {
+        });
+      }
+
+      opts.push(collectionOptions);
+
+      const createOptions: MenuItem[] = [];
+
+      if (canCreateEntry) {
+        createOptions.push({
           label: "New entry",
           icon: "i-lucide:file-plus-2",
-          disabled: !canEditCollection,
           onClick: () => {
             if (!collection || content.readOnly(collection.id)) return;
 
@@ -104,11 +111,13 @@ const useCollectionMenu = (collectionID: string) => {
             });
           },
           shortcut: "$mod+e"
-        },
-        {
+        });
+      }
+
+      if (canCreateCollection) {
+        createOptions.push({
           label: "New collection",
           icon: "i-material-symbols:create-new-folder-outline-rounded",
-          disabled: !canEditCollection,
           onClick: () => {
             if (!collection || content.readOnly(collection.id)) return;
 
@@ -120,16 +129,22 @@ const useCollectionMenu = (collectionID: string) => {
             });
           },
           shortcut: "$mod+shift+c"
-        }
-      ]);
+        });
+      }
 
-      if (hasPermission("restricted_collections") && collection) {
+      if (createOptions.length > 0) opts.push(createOptions);
+
+      if (
+        collection &&
+        (content.canCollection(collection.id, "collection:set-restricted") ||
+          content.canCollection(collection.id, "collection:manage-restricted-access"))
+      ) {
         const restrictionRoot = content.collections.isRestrictionRoot({ collectionID });
         const requiresPro = !restrictionRoot && currentWorkspace()?.subscriptionPlan !== "pro";
         const canManageAssignments =
           restrictionRoot &&
           currentWorkspace()?.subscriptionPlan === "pro" &&
-          hasPermission("workspace");
+          content.canCollection(collection.id, "collection:manage-restricted-access");
 
         if (!requiresPro) {
           const restrictedOptions: MenuItem[] = [];
@@ -144,26 +159,40 @@ const useCollectionMenu = (collectionID: string) => {
             });
           }
 
-          restrictedOptions.push({
-            label: restrictionRoot ? "Derestrict access" : "Restrict access",
-            icon: restrictionRoot ? "i-lucide:lock-open" : "i-lucide:lock",
-            onClick: () => {
-              restrictedActions.open({
-                id: collection.id,
-                label: collection.name,
-                restricted: restrictionRoot
-              });
-            }
-          });
-          opts.push(restrictedOptions);
+          if (content.canCollection(collection.id, "collection:set-restricted")) {
+            restrictedOptions.push({
+              label: restrictionRoot ? "Derestrict access" : "Restrict access",
+              icon: restrictionRoot ? "i-lucide:lock-open" : "i-lucide:lock",
+              onClick: () => {
+                void content.collections
+                  .setRestricted({
+                    collectionID: collection.id,
+                    restricted: !restrictionRoot
+                  })
+                  .catch((error) => {
+                    console.error(error);
+                    notify({
+                      type: "error",
+                      text: restrictionRoot
+                        ? "Failed to remove access restriction"
+                        : "Failed to restrict collection"
+                    });
+                  });
+              }
+            });
+          }
+
+          if (restrictedOptions.length > 0) {
+            opts.push(restrictedOptions);
+          }
         }
       }
     }
 
-    if (collectionsOnly && canManagePublishing) {
+    if (collectionsOnly && content.publishing() !== null) {
       const publishingOptions: MenuItem[] = [];
 
-      if (!publishingEnabled) {
+      if (!publishingEnabled && canConfigurePublishing) {
         publishingOptions.push({
           label: isMulti ? `Enable publishing for ${selectedCount} groups` : "Enable publishing",
           icon: "i-lucide:radio",
@@ -173,22 +202,23 @@ const useCollectionMenu = (collectionID: string) => {
         });
       }
 
-      if (publishingEnabled) {
-        publishingOptions.push(
-          {
-            label: isMulti ? `Publish ${selectedCount} groups` : "Publish group",
-            icon: "i-material-symbols:publish-rounded",
-            onClick: () => publishingActions.open("publish", publishingTarget)
-          },
-          {
-            label: isMulti ? `Unpublish ${selectedCount} groups` : "Unpublish group",
-            icon: "i-material-symbols:unpublished-outline-rounded",
-            onClick: () => publishingActions.open("unpublish", publishingTarget)
-          }
-        );
+      if (publishingEnabled && canPublish) {
+        publishingOptions.push({
+          label: isMulti ? `Publish ${selectedCount} groups` : "Publish group",
+          icon: "i-material-symbols:publish-rounded",
+          onClick: () => publishingActions.open("publish", publishingTarget)
+        });
       }
 
-      if (publishingRoot) {
+      if (publishingEnabled && canUnpublish) {
+        publishingOptions.push({
+          label: isMulti ? `Unpublish ${selectedCount} groups` : "Unpublish group",
+          icon: "i-material-symbols:unpublished-outline-rounded",
+          onClick: () => publishingActions.open("unpublish", publishingTarget)
+        });
+      }
+
+      if (publishingRoot && canConfigurePublishing) {
         publishingOptions.push({
           label: isMulti ? `Disable publishing for ${selectedCount} groups` : "Disable publishing",
           icon: "i-lucide:radio-off",
@@ -198,29 +228,29 @@ const useCollectionMenu = (collectionID: string) => {
         });
       }
 
-      opts.push(publishingOptions);
+      if (publishingOptions.length > 0) {
+        opts.push(publishingOptions);
+      }
     }
 
-    if (!containsRestrictionRoot || hasPermission("restricted_collections")) {
-      const deletableIDs = content.tree.getDeletableIDs({
-        ids: isMulti ? selection() : [collectionID]
+    const selectedIDs = isMulti ? selection() : [collectionID];
+    const selected = content.tree.splitIDs({ ids: selectedIDs });
+    const canDelete =
+      selected.collections.every((id) => {
+        return content.canCollection(id, "collection:delete");
+      }) &&
+      selected.entries.every((id) => {
+        const entry = content.entries.get({ entryID: id });
+
+        return content.canEntry(entry?.collectionID || null, "entry:delete");
       });
-      const canDelete =
-        deletableIDs.collections.every((id) => {
-          return content.hasCollectionPermission(id, "content");
-        }) &&
-        deletableIDs.entries.every((id) => {
-          const entry = content.entries.get({ entryID: id });
 
-          return content.hasCollectionPermission(entry?.collectionID || null, "content");
-        });
-
+    if (canDelete) {
       opts.push([
         {
           label: isMulti ? `Delete ${selectedCount} items` : "Delete",
           icon: "i-lucide:trash",
           color: "danger",
-          disabled: !canDelete,
           onClick: () => {
             const selectedIDs = selection();
 

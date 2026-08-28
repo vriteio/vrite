@@ -79,10 +79,10 @@ const useExplorerEntry = (props: ExplorerEntryProps) => {
   const canEditEntry = (entryID: string) => {
     const entry = content.entries.get({ entryID });
 
-    return content.hasCollectionPermission(entry?.collectionID || null, "content");
+    return content.canEntry(entry?.collectionID || null, "entry:move");
   };
   const canEditCollection = (collectionID: string) => {
-    return content.hasCollectionPermission(collectionID, "content");
+    return content.canCollection(collectionID, "collection:move");
   };
   const canEditSelection = () => {
     const selectedIDs = selection().includes(props.entry.id) ? selection() : [props.entry.id];

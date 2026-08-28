@@ -1,5 +1,5 @@
 import { memberships, workspaces } from "#backend/db";
-import { toUUID } from "#backend/lib/primitives";
+import { toUUID, toWorkspaceID } from "#backend/lib/primitives";
 import { db, stripe } from "#backend/lib/adapters";
 import { config } from "#backend/lib/config";
 import { ORPCError } from "@orpc/server";
@@ -22,6 +22,7 @@ const createCheckout = async (input: {
   }
 
   const workspaceUUID = toUUID(input.workspaceID);
+  const workspaceID = toWorkspaceID(workspaceUUID);
   const stripeClient = stripe;
 
   return db.transaction(async (tx) => {
@@ -46,7 +47,7 @@ const createCheckout = async (input: {
       const customer = await stripeClient.customers.create(
         {
           name: workspace.name,
-          metadata: { workspaceID: input.workspaceID }
+          metadata: { workspaceID }
         },
         { idempotencyKey: `workspace-customer:${workspaceUUID}` }
       );
@@ -94,7 +95,7 @@ const createCheckout = async (input: {
       limit: 10
     });
     const existingSession = openSessions.data.find((session) => {
-      return session.mode === "subscription" && session.metadata?.workspaceID === input.workspaceID;
+      return session.mode === "subscription" && session.metadata?.workspaceID === workspaceID;
     });
 
     if (existingSession?.url) return { url: existingSession.url };
@@ -114,10 +115,10 @@ const createCheckout = async (input: {
       ],
       success_url: input.successURL,
       cancel_url: input.cancelURL,
-      metadata: { workspaceID: input.workspaceID },
+      metadata: { workspaceID },
       subscription_data: {
         billing_cycle_anchor: billingCycleAnchor,
-        metadata: { workspaceID: input.workspaceID },
+        metadata: { workspaceID },
         proration_behavior: "create_prorations"
       }
     });

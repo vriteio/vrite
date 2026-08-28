@@ -1,13 +1,16 @@
 import { versionDetailsType, versionSummaryType } from "#backend/lib/data";
-import { emitPublishingEvent, emitVersionCreationEvents } from "#backend/events";
 import {
-  emitPublishingStatusUpdates,
+  emitPublishingEntryUpdates,
+  emitPublishingEvent,
+  emitVersionCreationEvents
+} from "#backend/events";
+import {
   PUBLISHED_CHANNEL_CODE,
   publishingChannelCodeType,
   publishingChannelNameType
 } from "#backend/lib/publishing";
 import { id } from "#backend/lib/primitives";
-import { authorized, base } from "#backend/lib/transport";
+import { authenticatedRoute, base } from "#backend/lib/transport";
 import { Publishing } from "#backend/services/publishing";
 import { ORPCError } from "@orpc/server";
 import * as z from "zod";
@@ -46,15 +49,8 @@ const getContributorIDs = (auth: { session?: { memberID: string } }): string[] =
   return auth.session ? [auth.session.memberID] : [];
 };
 const publishingRouter = base.prefix("/publishing").router({
-  setCollection: base
+  setCollection: authenticatedRoute
     .route({ method: "PUT", path: "/collections/:collectionID" })
-    .meta({
-      required: {
-        session: true,
-        key: ["publishing"]
-      }
-    })
-    .use(authorized)
     .input(
       z.object({
         collectionID: id().describe("Collection to configure"),
@@ -73,7 +69,6 @@ const publishingRouter = base.prefix("/publishing").router({
     .handler(async ({ context, input }) => {
       const [result] = await Publishing.Collections.set({
         auth: context.auth,
-        workspaceID: context.auth.workspaceID,
         collectionIDs: [input.collectionID],
         enabled: input.enabled,
         publish: input.publish,
@@ -86,9 +81,9 @@ const publishingRouter = base.prefix("/publishing").router({
           data: { id: input.collectionID, enabled: input.enabled },
           memberID: context.auth.session?.memberID
         });
-        await emitPublishingStatusUpdates({
+        emitPublishingEntryUpdates({
           workspaceID: context.auth.workspaceID,
-          entryIDs: result.affectedEntryIDs,
+          entries: result.publishingEntries,
           memberID: context.auth.session?.memberID
         });
       }
@@ -101,15 +96,8 @@ const publishingRouter = base.prefix("/publishing").router({
 
       return { publishedEntries: result.publishedEntries };
     }),
-  bulkSetCollections: base
+  bulkSetCollections: authenticatedRoute
     .route({ method: "POST", path: "/collections/bulk/set" })
-    .meta({
-      required: {
-        session: true,
-        key: ["publishing"]
-      }
-    })
-    .use(authorized)
     .input(
       z.object({
         ids: z.array(id()).min(1).describe("IDs of the collections to configure"),
@@ -128,7 +116,6 @@ const publishingRouter = base.prefix("/publishing").router({
     .handler(async ({ context, input }) => {
       const results = await Publishing.Collections.set({
         auth: context.auth,
-        workspaceID: context.auth.workspaceID,
         collectionIDs: input.ids,
         enabled: input.enabled,
         publish: input.publish,
@@ -145,9 +132,9 @@ const publishingRouter = base.prefix("/publishing").router({
             data: { id: result.collectionID, enabled: input.enabled },
             memberID: context.auth.session?.memberID
           });
-          await emitPublishingStatusUpdates({
+          emitPublishingEntryUpdates({
             workspaceID: context.auth.workspaceID,
-            entryIDs: result.affectedEntryIDs,
+            entries: result.publishingEntries,
             memberID: context.auth.session?.memberID
           });
         }
@@ -161,15 +148,8 @@ const publishingRouter = base.prefix("/publishing").router({
 
       return { publishedEntries };
     }),
-  publishCollection: base
+  publishCollection: authenticatedRoute
     .route({ method: "POST", path: "/collections/:collectionID" })
-    .meta({
-      required: {
-        session: true,
-        key: ["publishing"]
-      }
-    })
-    .use(authorized)
     .input(
       channelInput.extend({
         collectionID: id().describe("Collection tree to publish")
@@ -183,15 +163,14 @@ const publishingRouter = base.prefix("/publishing").router({
     .handler(async ({ context, input }) => {
       const result = await Publishing.Collections.publish({
         auth: context.auth,
-        workspaceID: context.auth.workspaceID,
         collectionIDs: [input.collectionID],
         channel: input.channel,
         contributorIDs: getContributorIDs(context.auth)
       });
 
-      await emitPublishingStatusUpdates({
+      emitPublishingEntryUpdates({
         workspaceID: context.auth.workspaceID,
-        entryIDs: result.entryIDs,
+        entries: result.publishingEntries,
         channel: input.channel,
         memberID: context.auth.session?.memberID
       });
@@ -204,15 +183,8 @@ const publishingRouter = base.prefix("/publishing").router({
 
       return { publishedEntries: result.publishedEntries };
     }),
-  bulkPublishCollections: base
+  bulkPublishCollections: authenticatedRoute
     .route({ method: "POST", path: "/collections/bulk/publish" })
-    .meta({
-      required: {
-        session: true,
-        key: ["publishing"]
-      }
-    })
-    .use(authorized)
     .input(
       channelInput.extend({
         ids: z.array(id()).min(1).describe("IDs of the collection trees to publish")
@@ -226,15 +198,14 @@ const publishingRouter = base.prefix("/publishing").router({
     .handler(async ({ context, input }) => {
       const result = await Publishing.Collections.publish({
         auth: context.auth,
-        workspaceID: context.auth.workspaceID,
         collectionIDs: input.ids,
         channel: input.channel,
         contributorIDs: getContributorIDs(context.auth)
       });
 
-      await emitPublishingStatusUpdates({
+      emitPublishingEntryUpdates({
         workspaceID: context.auth.workspaceID,
-        entryIDs: result.entryIDs,
+        entries: result.publishingEntries,
         channel: input.channel,
         memberID: context.auth.session?.memberID
       });
@@ -247,15 +218,8 @@ const publishingRouter = base.prefix("/publishing").router({
 
       return { publishedEntries: result.publishedEntries };
     }),
-  unpublishCollection: base
+  unpublishCollection: authenticatedRoute
     .route({ method: "DELETE", path: "/collections/:collectionID" })
-    .meta({
-      required: {
-        session: true,
-        key: ["publishing"]
-      }
-    })
-    .use(authorized)
     .input(
       channelInput.extend({
         collectionID: id().describe("Collection tree to unpublish")
@@ -269,29 +233,21 @@ const publishingRouter = base.prefix("/publishing").router({
     .handler(async ({ context, input }) => {
       const result = await Publishing.Collections.unpublish({
         auth: context.auth,
-        workspaceID: context.auth.workspaceID,
         collectionIDs: [input.collectionID],
         channel: input.channel
       });
 
-      await emitPublishingStatusUpdates({
+      emitPublishingEntryUpdates({
         workspaceID: context.auth.workspaceID,
-        entryIDs: result.entryIDs,
+        entries: result.publishingEntries,
         channel: input.channel,
         memberID: context.auth.session?.memberID
       });
 
       return { unpublishedEntries: result.unpublishedEntries };
     }),
-  bulkUnpublishCollections: base
+  bulkUnpublishCollections: authenticatedRoute
     .route({ method: "POST", path: "/collections/bulk/unpublish" })
-    .meta({
-      required: {
-        session: true,
-        key: ["publishing"]
-      }
-    })
-    .use(authorized)
     .input(
       channelInput.extend({
         ids: z.array(id()).min(1).describe("IDs of the collection trees to unpublish")
@@ -305,29 +261,21 @@ const publishingRouter = base.prefix("/publishing").router({
     .handler(async ({ context, input }) => {
       const result = await Publishing.Collections.unpublish({
         auth: context.auth,
-        workspaceID: context.auth.workspaceID,
         collectionIDs: input.ids,
         channel: input.channel
       });
 
-      await emitPublishingStatusUpdates({
+      emitPublishingEntryUpdates({
         workspaceID: context.auth.workspaceID,
-        entryIDs: result.entryIDs,
+        entries: result.publishingEntries,
         channel: input.channel,
         memberID: context.auth.session?.memberID
       });
 
       return { unpublishedEntries: result.unpublishedEntries };
     }),
-  publishEntry: base
+  publishEntry: authenticatedRoute
     .route({ method: "POST", path: "/entries/:entryID" })
-    .meta({
-      required: {
-        session: true,
-        key: ["publishing"]
-      }
-    })
-    .use(authorized)
     .input(
       channelInput.extend({
         entryID: id().describe("Entry to publish"),
@@ -338,15 +286,14 @@ const publishingRouter = base.prefix("/publishing").router({
     .handler(async ({ context, input }) => {
       const result = await Publishing.Entries.publish({
         auth: context.auth,
-        workspaceID: context.auth.workspaceID,
         entries: [{ entryID: input.entryID, versionID: input.versionID }],
         channel: input.channel,
         contributorIDs: getContributorIDs(context.auth)
       });
 
-      await emitPublishingStatusUpdates({
+      emitPublishingEntryUpdates({
         workspaceID: context.auth.workspaceID,
-        entryIDs: [input.entryID],
+        entries: result.publishingEntries,
         channel: input.channel,
         memberID: context.auth.session?.memberID
       });
@@ -357,15 +304,8 @@ const publishingRouter = base.prefix("/publishing").router({
         context.auth.session?.memberID
       );
     }),
-  bulkPublishEntries: base
+  bulkPublishEntries: authenticatedRoute
     .route({ method: "POST", path: "/entries/bulk/publish" })
-    .meta({
-      required: {
-        session: true,
-        key: ["publishing"]
-      }
-    })
-    .use(authorized)
     .input(
       channelInput.extend({
         entries: z.array(publishEntryTargetType).min(1).describe("Entries and versions to publish")
@@ -373,18 +313,16 @@ const publishingRouter = base.prefix("/publishing").router({
     )
     .output(z.void())
     .handler(async ({ context, input }) => {
-      const entryIDs = [...new Set(input.entries.map((entry) => entry.entryID))];
       const result = await Publishing.Entries.publish({
         auth: context.auth,
-        workspaceID: context.auth.workspaceID,
         entries: input.entries,
         channel: input.channel,
         contributorIDs: getContributorIDs(context.auth)
       });
 
-      await emitPublishingStatusUpdates({
+      emitPublishingEntryUpdates({
         workspaceID: context.auth.workspaceID,
-        entryIDs,
+        entries: result.publishingEntries,
         channel: input.channel,
         memberID: context.auth.session?.memberID
       });
@@ -395,15 +333,8 @@ const publishingRouter = base.prefix("/publishing").router({
         context.auth.session?.memberID
       );
     }),
-  unpublishEntry: base
+  unpublishEntry: authenticatedRoute
     .route({ method: "DELETE", path: "/entries/:entryID" })
-    .meta({
-      required: {
-        session: true,
-        key: ["publishing"]
-      }
-    })
-    .use(authorized)
     .input(
       channelInput.extend({
         entryID: id().describe("Entry to unpublish"),
@@ -412,34 +343,26 @@ const publishingRouter = base.prefix("/publishing").router({
     )
     .output(z.void())
     .handler(async ({ context, input }) => {
-      const removed = await Publishing.Entries.unpublish({
+      const result = await Publishing.Entries.unpublish({
         auth: context.auth,
-        workspaceID: context.auth.workspaceID,
         entryIDs: [input.entryID],
         versionID: input.versionID,
         channel: input.channel
       });
 
-      if (input.versionID && !removed) {
+      if (input.versionID && !result.removed) {
         throw new ORPCError("CONFLICT", { message: "Publishing assignment changed" });
       }
 
-      await emitPublishingStatusUpdates({
+      emitPublishingEntryUpdates({
         workspaceID: context.auth.workspaceID,
-        entryIDs: [input.entryID],
+        entries: result.publishingEntries,
         channel: input.channel,
         memberID: context.auth.session?.memberID
       });
     }),
-  bulkUnpublishEntries: base
+  bulkUnpublishEntries: authenticatedRoute
     .route({ method: "POST", path: "/entries/bulk/unpublish" })
-    .meta({
-      required: {
-        session: true,
-        key: ["publishing"]
-      }
-    })
-    .use(authorized)
     .input(
       channelInput.extend({
         ids: z.array(id()).min(1).describe("IDs of the entries to unpublish")
@@ -447,29 +370,21 @@ const publishingRouter = base.prefix("/publishing").router({
     )
     .output(z.void())
     .handler(async ({ context, input }) => {
-      await Publishing.Entries.unpublish({
+      const result = await Publishing.Entries.unpublish({
         auth: context.auth,
-        workspaceID: context.auth.workspaceID,
         entryIDs: input.ids,
         channel: input.channel
       });
 
-      await emitPublishingStatusUpdates({
+      emitPublishingEntryUpdates({
         workspaceID: context.auth.workspaceID,
-        entryIDs: input.ids,
+        entries: result.publishingEntries,
         channel: input.channel,
         memberID: context.auth.session?.memberID
       });
     }),
-  getEntryVersion: base
+  getEntryVersion: authenticatedRoute
     .route({ method: "GET", path: "/entries/:entryID/version" })
-    .meta({
-      required: {
-        session: true,
-        key: ["read:publishing"]
-      }
-    })
-    .use(authorized)
     .input(
       channelInput.extend({
         entryID: id().describe("Entry whose published version to get")
@@ -479,38 +394,22 @@ const publishingRouter = base.prefix("/publishing").router({
     .handler(({ context, input }) => {
       return Publishing.Entries.getVersion({
         auth: context.auth,
-        workspaceID: context.auth.workspaceID,
         entryID: input.entryID,
         channel: input.channel
       });
     }),
-  listEntryPublications: base
+  listEntryPublications: authenticatedRoute
     .route({ method: "GET", path: "/entries/:entryID/publications" })
-    .meta({
-      required: {
-        session: true,
-        key: ["read:publishing"]
-      }
-    })
-    .use(authorized)
     .input(z.object({ entryID: id().describe("Entry whose publications to list") }))
     .output(z.array(entryPublicationType))
     .handler(({ context, input }) => {
       return Publishing.Entries.listPublications({
         auth: context.auth,
-        workspaceID: context.auth.workspaceID,
         entryID: input.entryID
       });
     }),
-  listChannels: base
+  listChannels: authenticatedRoute
     .route({ method: "GET", path: "/channels" })
-    .meta({
-      required: {
-        session: true,
-        key: ["read:publishing"]
-      }
-    })
-    .use(authorized)
     .input(
       z.object({
         includeAssignmentCount: z
@@ -523,24 +422,16 @@ const publishingRouter = base.prefix("/publishing").router({
     .handler(({ context, input }) => {
       return Publishing.Channels.list({
         auth: context.auth,
-        workspaceID: context.auth.workspaceID,
         includeAssignmentCount: input.includeAssignmentCount
       });
     }),
-  createChannel: base
+  createChannel: authenticatedRoute
     .route({ method: "POST", path: "/channels" })
-    .meta({
-      required: {
-        session: ["publishing"],
-        key: ["publishing"]
-      }
-    })
-    .use(authorized)
     .input(z.object({ name: publishingChannelNameType.describe("Publishing channel label") }))
     .output(publishingChannelType)
     .handler(async ({ context, input }) => {
       const channel = await Publishing.Channels.create({
-        workspaceID: context.auth.workspaceID,
+        auth: context.auth,
         name: input.name
       });
 
@@ -552,20 +443,13 @@ const publishingRouter = base.prefix("/publishing").router({
 
       return channel;
     }),
-  deleteChannel: base
+  deleteChannel: authenticatedRoute
     .route({ method: "DELETE", path: "/channels/:code" })
-    .meta({
-      required: {
-        session: ["publishing"],
-        key: ["publishing"]
-      }
-    })
-    .use(authorized)
     .input(z.object({ code: publishingChannelCodeType.describe("Publishing channel identifier") }))
     .output(z.void())
     .handler(async ({ context, input }) => {
       await Publishing.Channels.delete({
-        workspaceID: context.auth.workspaceID,
+        auth: context.auth,
         code: input.code
       });
 

@@ -72,17 +72,24 @@ const useExplorerCollection = (props: ExplorerCollectionProps) => {
       .map((collection) => collection.id);
   };
   const canDropIntoCollection = (source: { data: Record<string | symbol, unknown> }) => {
-    if (content.readOnly(props.collection.id)) return false;
+    if (content.offline() || content.syncing()) return false;
+
+    if (
+      !content.canEntry(props.collection.id, "entry:create") &&
+      !content.canCollection(props.collection.id, "collection:create-child")
+    ) {
+      return false;
+    }
 
     return canTargetCollection(source.data, props.collection.id, getCollectionAncestors);
   };
   const canEditEntry = (entryID: string) => {
     const entry = content.entries.get({ entryID });
 
-    return content.hasCollectionPermission(entry?.collectionID || null, "content");
+    return content.canEntry(entry?.collectionID || null, "entry:move");
   };
   const canEditCollection = (collectionID: string) => {
-    return content.hasCollectionPermission(collectionID, "content");
+    return content.canCollection(collectionID, "collection:move");
   };
   const canEditSelection = () => {
     const selectedIDs = selection().includes(props.collection.id)

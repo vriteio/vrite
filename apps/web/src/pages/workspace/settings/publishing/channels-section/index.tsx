@@ -297,7 +297,7 @@ const ChannelsSection: Component = () => {
                     return (
                       <ChannelItem
                         channel={channel()}
-                        assignmentCount={channel().assignmentCount || 0}
+                        assignmentCount={channel().assignmentCount}
                         canManage={hasPermission("publishing")}
                         loading={mutationPending() || refreshing()}
                         onDelete={(ids) => {

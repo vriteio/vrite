@@ -1,16 +1,22 @@
 import { publishingChannels } from "#backend/db";
-import { db } from "#backend/lib/adapters";
+import { withAuthorization } from "#backend/lib/policy";
 import { normalizePublishingChannelCode } from "#backend/lib/publishing";
-import { toUUID } from "#backend/lib/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, eq } from "drizzle-orm";
 
-const deleteChannel = async (input: { workspaceID: string; code: string }): Promise<void> => {
-  const workspaceID = toUUID(input.workspaceID);
-  const code = normalizePublishingChannelCode(input.code);
+interface DeleteChannelInput {
+  code: string;
+}
 
-  await db.transaction(async (tx) => {
-    const [channel] = await tx
+const deleteChannel = withAuthorization<DeleteChannelInput>(
+  {
+    permissions: { session: ["publishing"], key: ["publishing"] },
+    transaction: "atomic"
+  },
+  async ({ database, input, workspaceID }) => {
+    const code = normalizePublishingChannelCode(input.code);
+
+    const [channel] = await database
       .select({ id: publishingChannels.id, builtIn: publishingChannels.builtIn })
       .from(publishingChannels)
       .where(
@@ -25,8 +31,8 @@ const deleteChannel = async (input: { workspaceID: string; code: string }): Prom
       });
     }
 
-    await tx.delete(publishingChannels).where(eq(publishingChannels.id, channel.id));
-  });
-};
+    await database.delete(publishingChannels).where(eq(publishingChannels.id, channel.id));
+  }
+);
 
 export { deleteChannel };

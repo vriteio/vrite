@@ -1,45 +1,47 @@
-import { collections, workspaces } from "#backend/db";
-import { db } from "#backend/lib/adapters";
+import { collections } from "#backend/db";
 import {
   getSubtreeEntryIDs,
   isCollectionPublishingEnabled,
   loadPublishingTree,
   publishEntries,
+  type PublishingEntryStatus,
   syncEntrySnapshots
 } from "#backend/lib/publishing";
 import { toUUID } from "#backend/lib/primitives";
 import { ORPCError } from "@orpc/server";
 import type { VersionSummary } from "#backend/lib/data";
 import { and, eq, inArray, isNull } from "drizzle-orm";
-import type { SessionData } from "#backend/lib/policy";
-import { authorizeCollectionSources } from "../access";
+import { filterAuthorizedEntryIDs, withAuthorization } from "#backend/lib/policy";
 
-const publishCollection = async (input: {
-  auth: SessionData;
-  workspaceID: string;
+interface PublishCollectionInput {
   collectionIDs: string[];
   channel: string;
   contributorIDs: string[];
-}): Promise<{
+}
+interface PublishCollectionResult {
   createdVersions: VersionSummary[];
-  entryIDs: string[];
+  publishingEntries: PublishingEntryStatus[];
   publishedEntries: number;
-}> => {
-  await authorizeCollectionSources(input.auth, input.collectionIDs, "publishing");
+}
 
-  const workspaceID = toUUID(input.workspaceID);
-  const collectionIDs = [...new Set(input.collectionIDs.map(toUUID))];
-
-  return db.transaction(async (tx) => {
-    const [workspace] = await tx
-      .select({ id: workspaces.id })
-      .from(workspaces)
-      .where(eq(workspaces.id, workspaceID))
-      .for("update");
-
-    if (!workspace) throw new ORPCError("NOT_FOUND", { message: "Workspace not found" });
-
-    const currentCollections = await tx
+const publishCollection = withAuthorization<
+  PublishCollectionInput,
+  undefined,
+  PublishCollectionResult
+>(
+  {
+    actions: ({ input }) => ({
+      collections: input.collectionIDs.map((collectionID) => ({
+        action: "publishing:publish-tree",
+        collectionID
+      }))
+    }),
+    tree: true,
+    transaction: "locked-workspace"
+  },
+  async ({ authorization, database, input, workspaceID }) => {
+    const collectionIDs = [...new Set(input.collectionIDs.map(toUUID))];
+    const currentCollections = await database
       .select({ id: collections.id })
       .from(collections)
       .where(
@@ -54,7 +56,7 @@ const publishCollection = async (input: {
       throw new ORPCError("NOT_FOUND", { message: "Collection not found" });
     }
 
-    const tree = await loadPublishingTree(tx, workspaceID);
+    const tree = await loadPublishingTree(database, workspaceID);
 
     if (collectionIDs.some((id) => !isCollectionPublishingEnabled(tree, id))) {
       throw new ORPCError("BAD_REQUEST", {
@@ -62,27 +64,34 @@ const publishCollection = async (input: {
       });
     }
 
-    const currentEntryIDs = [
+    const subtreeEntryIDs = [
       ...new Set(
         (
           await Promise.all(
-            collectionIDs.map((id) => getSubtreeEntryIDs(tx, workspaceID, tree, id))
+            collectionIDs.map((id) => getSubtreeEntryIDs(database, workspaceID, tree, id))
           )
         ).flat()
       )
     ];
+    const currentEntryIDs = await filterAuthorizedEntryIDs({
+      action: "publishing:publish",
+      authorization,
+      database,
+      entryIDs: subtreeEntryIDs,
+      workspaceID
+    });
 
     await syncEntrySnapshots(workspaceID, currentEntryIDs);
 
-    const result = await publishEntries(tx, {
+    const result = await publishEntries(database, {
       workspaceID,
       entries: currentEntryIDs.map((entryID) => ({ entryID })),
       channel: input.channel,
       contributorIDs: input.contributorIDs
     });
 
-    return { ...result, entryIDs: currentEntryIDs };
-  });
-};
+    return result;
+  }
+);
 
 export { publishCollection };

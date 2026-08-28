@@ -11,10 +11,11 @@ import {
 import type { db } from "#backend/lib/adapters";
 import { hashContentDocument, type ContentNode } from "#backend/lib/content";
 import { mapVersionSummary, type VersionSummary } from "#backend/lib/data/entry-version";
-import { toUUID } from "#backend/lib/primitives";
+import { toEntryID, toUUID, toVersionID } from "#backend/lib/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { normalizePublishingChannelCode } from "./channel";
+import type { PublishingEntryStatus } from "./status";
 
 interface PublishEntryTarget {
   entryID: string;
@@ -28,6 +29,7 @@ interface PublishEntriesInput {
 }
 interface PublishEntriesResult {
   createdVersions: VersionSummary[];
+  publishingEntries: PublishingEntryStatus[];
   publishedEntries: number;
 }
 interface PublishingAssignment {
@@ -40,6 +42,26 @@ interface PublishingAssignment {
 type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 const EMPTY_DOCUMENT: ContentNode = { type: "doc", content: [] };
+const lockPublishingEntries = async (
+  tx: DatabaseTransaction,
+  workspaceID: string,
+  entryIDs: string[]
+): Promise<void> => {
+  if (entryIDs.length === 0) return;
+
+  await tx
+    .select({ id: entries.id })
+    .from(entries)
+    .where(
+      and(
+        eq(entries.workspaceID, workspaceID),
+        inArray(entries.id, entryIDs),
+        isNull(entries.deletedAt)
+      )
+    )
+    .orderBy(asc(entries.id))
+    .for("update");
+};
 const publishEntries = async (
   tx: DatabaseTransaction,
   input: PublishEntriesInput
@@ -54,7 +76,9 @@ const publishEntries = async (
     return entry.versionID ? [entry.versionID] : [];
   });
 
-  if (input.entries.length === 0) return { createdVersions: [], publishedEntries: 0 };
+  if (input.entries.length === 0) {
+    return { createdVersions: [], publishingEntries: [], publishedEntries: 0 };
+  }
 
   const [channel] = await tx
     .select({ id: publishingChannels.id })
@@ -89,7 +113,11 @@ const publishEntries = async (
   const providedVersions =
     providedVersionIDs.length > 0
       ? await tx
-          .select({ id: entryVersions.id, entryID: entryVersions.entryID })
+          .select({
+            id: entryVersions.id,
+            entryID: entryVersions.entryID,
+            hash: entryVersions.hash
+          })
           .from(entryVersions)
           .where(
             and(
@@ -111,13 +139,10 @@ const publishEntries = async (
     }
   }
 
-  const contentRows =
-    currentEntryIDs.length > 0
-      ? await tx
-          .select({ entryID: contents.entryID, document: contents.document, hash: contents.hash })
-          .from(contents)
-          .where(inArray(contents.entryID, currentEntryIDs))
-      : [];
+  const contentRows = await tx
+    .select({ entryID: contents.entryID, document: contents.document, hash: contents.hash })
+    .from(contents)
+    .where(inArray(contents.entryID, entryIDs));
   const latestVersions =
     currentEntryIDs.length > 0
       ? await tx
@@ -153,6 +178,7 @@ const publishEntries = async (
   const activityContributorsByEntryID = new Map<string, string[]>();
   const createdVersions: VersionSummary[] = [];
   const assignments: PublishingAssignment[] = [];
+  const publishingEntries: PublishingEntryStatus[] = [];
 
   for (const contributor of activityContributors) {
     const entryContributors = activityContributorsByEntryID.get(contributor.entryID) || [];
@@ -163,18 +189,26 @@ const publishEntries = async (
 
   for (const entry of entryRows) {
     const target = targetsByEntryID.get(entry.id)!;
+    const content = contentByEntryID.get(entry.id);
 
     if (target.versionID) {
+      const assignedVersion = providedVersionsByID.get(target.versionID)!;
+      const draftHash = content?.hash || hashContentDocument(content?.document || EMPTY_DOCUMENT);
+
       assignments.push({
         workspaceID: input.workspaceID,
         entryID: entry.id,
         channelID: channel.id,
         versionID: target.versionID
       });
+      publishingEntries.push({
+        entryID: toEntryID(entry.id),
+        hasUnpublishedChanges: draftHash !== assignedVersion.hash,
+        versionID: toVersionID(target.versionID)
+      });
       continue;
     }
 
-    const content = contentByEntryID.get(entry.id);
     const document = content?.document || EMPTY_DOCUMENT;
     const hash = content?.hash || hashContentDocument(document);
     const latestVersion = latestVersionByEntryID.get(entry.id);
@@ -234,6 +268,11 @@ const publishEntries = async (
       channelID: channel.id,
       versionID
     });
+    publishingEntries.push({
+      entryID: toEntryID(entry.id),
+      hasUnpublishedChanges: false,
+      versionID: toVersionID(versionID)
+    });
   }
 
   await tx
@@ -250,8 +289,8 @@ const publishEntries = async (
       .where(inArray(entryVersionActivity.entryID, currentEntryIDs));
   }
 
-  return { createdVersions, publishedEntries: entryRows.length };
+  return { createdVersions, publishingEntries, publishedEntries: entryRows.length };
 };
 
-export { publishEntries };
+export { lockPublishingEntries, publishEntries };
 export type { PublishEntryTarget };

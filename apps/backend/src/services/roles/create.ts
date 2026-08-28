@@ -1,17 +1,23 @@
 import { toRoleID, toUUID } from "#backend/lib/primitives";
 import { db } from "#backend/lib/adapters";
 import { type Permission, roles, type Role } from "#backend/db";
+import { withAuthorization } from "#backend/lib/policy";
 import {
   duplicateRoleNameError,
   isRoleNameUniqueViolation,
   validateRoleName
 } from "#backend/lib/data";
 
-const createRole = async (input: {
-  workspaceID: string;
+interface CreateRoleInput {
   name: string;
   permissions: Permission[];
-}): Promise<Role> => {
+}
+
+const createRoleOperation = async (
+  input: CreateRoleInput & {
+    workspaceID: string;
+  }
+): Promise<Role> => {
   const name = await validateRoleName(input);
 
   try {
@@ -31,5 +37,9 @@ const createRole = async (input: {
     throw error;
   }
 };
+const createRole = withAuthorization<CreateRoleInput, undefined, Role>(
+  { permissions: { session: ["workspace"], key: ["roles"] }, plan: "pro" },
+  async ({ input, workspaceID }) => createRoleOperation({ ...input, workspaceID })
+);
 
 export { createRole };

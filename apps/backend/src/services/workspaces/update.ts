@@ -1,10 +1,16 @@
 import { toUUID } from "#backend/lib/primitives";
 import { db } from "#backend/lib/adapters";
 import { workspaces } from "#backend/db";
+import { withAuthorization } from "#backend/lib/policy";
 import { eq } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 
-const updateWorkspace = async (input: { workspaceID: string; name?: string; logo?: string }) => {
+interface UpdateWorkspaceInput {
+  logo?: string;
+  name?: string;
+}
+
+const updateWorkspaceOperation = async (input: UpdateWorkspaceInput & { workspaceID: string }) => {
   if (input.name === undefined) return;
 
   const [updated] = await db
@@ -15,5 +21,9 @@ const updateWorkspace = async (input: { workspaceID: string; name?: string; logo
 
   if (!updated) throw new ORPCError("NOT_FOUND", { message: "Workspace not found" });
 };
+const updateWorkspace = withAuthorization<UpdateWorkspaceInput>(
+  { permissions: { session: ["workspace"] } },
+  async ({ input, workspaceID }) => updateWorkspaceOperation({ ...input, workspaceID })
+);
 
 export { updateWorkspace };

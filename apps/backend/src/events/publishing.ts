@@ -22,6 +22,10 @@ const publishingEntryStatusType = z.object({
   hasUnpublishedChanges: z.boolean(),
   versionID: id().nullable()
 });
+const publishingEntryContentUpdateType = z.object({
+  entryID: id(),
+  matchesPublishedVersion: z.boolean()
+});
 const publishingEventType = z.union([
   z.object({
     action: z.literal("publishing:collection-update"),
@@ -38,6 +42,10 @@ const publishingEventType = z.union([
       channel: publishingChannelCodeType,
       entries: z.array(publishingEntryStatusType)
     })
+  }),
+  z.object({
+    action: z.literal("publishing:entries-content-update"),
+    data: z.object({ entries: z.array(publishingEntryContentUpdateType) })
   }),
   z.object({
     action: z.literal("publishing:channel-create"),
@@ -65,20 +73,33 @@ const emitPublishingEvent: EmitEvent<{
 }> = (workspaceID, event) => {
   emitEvent(`${workspaceID}:publishing`, event);
 };
-const emitPublishingEntryUpdates = (
-  workspaceID: string,
-  entries: Array<z.infer<typeof publishingEntryStatusType>>,
-  memberID?: string,
-  channel = "published"
-): void => {
-  for (let index = 0; index < entries.length; index += PUBLISHING_EVENT_BATCH_SIZE) {
-    emitPublishingEvent(workspaceID, {
+const emitPublishingEntryUpdates = (input: {
+  workspaceID: string;
+  entries: Array<z.infer<typeof publishingEntryStatusType>>;
+  memberID?: string;
+  channel?: string;
+}): void => {
+  const channel = input.channel || "published";
+
+  for (let index = 0; index < input.entries.length; index += PUBLISHING_EVENT_BATCH_SIZE) {
+    emitPublishingEvent(input.workspaceID, {
       action: "publishing:entries-update",
-      memberID,
+      memberID: input.memberID,
       data: {
         channel,
-        entries: entries.slice(index, index + PUBLISHING_EVENT_BATCH_SIZE)
+        entries: input.entries.slice(index, index + PUBLISHING_EVENT_BATCH_SIZE)
       }
+    });
+  }
+};
+const emitPublishingEntryContentUpdates = (input: {
+  workspaceID: string;
+  entries: Array<z.infer<typeof publishingEntryContentUpdateType>>;
+}): void => {
+  for (let index = 0; index < input.entries.length; index += PUBLISHING_EVENT_BATCH_SIZE) {
+    emitPublishingEvent(input.workspaceID, {
+      action: "publishing:entries-content-update",
+      data: { entries: input.entries.slice(index, index + PUBLISHING_EVENT_BATCH_SIZE) }
     });
   }
 };
@@ -92,6 +113,7 @@ const subscribeToPublishingEvents: SubscribeToEvent<{
 };
 
 export {
+  emitPublishingEntryContentUpdates,
   emitPublishingEntryUpdates,
   emitPublishingEvent,
   publishingEventType,

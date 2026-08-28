@@ -1,6 +1,5 @@
 import { useTree } from "#web/components/tree";
 import { useWorkspace } from "#web/context/workspace";
-import { useNotify } from "#web/context/notifications";
 import {
   dropTargetForElements,
   monitorForElements
@@ -14,23 +13,18 @@ import {
   getDraggedCollectionIDs,
   getDraggedEntryIDs
 } from "./explorer-dnd";
-import { type AffectedItem } from "#web/components/action-confirmation-dialog";
-import { type PendingPublishingMove } from "./publishing-move-dialog";
 
 interface ExplorerMoveInput {
   collectionIDs: string[];
   entryIDs: string[];
   parentID: string | null;
-  execute(publish?: boolean): void;
+  execute(): void;
 }
 
 const useExplorerDrop = (element: () => HTMLElement | null) => {
   const [{ flattenedOrder }, { setSelection }] = useTree();
   const { content } = useWorkspace();
-  const notify = useNotify();
   const [isDraggedOver, setIsDraggedOver] = createSignal(false);
-  const [pendingPublishingMove, setPendingPublishingMove] =
-    createSignal<PendingPublishingMove | null>(null);
   const ordered = (ids: string[]) => {
     const idSet = new Set(ids);
     const visible = flattenedOrder().filter((id) => idSet.has(id));
@@ -42,7 +36,6 @@ const useExplorerDrop = (element: () => HTMLElement | null) => {
     collectionID: string | null;
     targetEntryID?: string;
     edge?: "top" | "bottom" | null;
-    publish?: boolean;
   }) => {
     const entryIDs = ordered(input.entryIDs);
     const orders = content.entries.getDropOrders({ ...input, entryIDs });
@@ -52,8 +45,7 @@ const useExplorerDrop = (element: () => HTMLElement | null) => {
         updates: {
           collectionID: input.collectionID ?? undefined,
           order: orders[index]
-        },
-        publish: input.publish
+        }
       })
     );
   };
@@ -62,7 +54,6 @@ const useExplorerDrop = (element: () => HTMLElement | null) => {
     parentID: string | null;
     targetCollectionID?: string;
     edge?: "top" | "bottom" | null;
-    publish?: boolean;
   }) => {
     const collectionIDs = ordered(input.collectionIDs);
     const start = content.collections.getDropIndex({ ...input, collectionIDs });
@@ -70,110 +61,32 @@ const useExplorerDrop = (element: () => HTMLElement | null) => {
       content.collections.move({
         collectionID: id,
         parentID: input.parentID,
-        index: start === undefined ? undefined : start + offset,
-        publish: input.publish
+        index: start === undefined ? undefined : start + offset
       })
     );
   };
-  const isEntryPublishingEnabled = (entryID: string) => {
-    const status = content.getEntryPublishingStatus(entryID);
+  const hasMoveAccess = (input: ExplorerMoveInput) => {
+    const canMoveEntries = input.entryIDs.every((entryID) => {
+      const collectionID = content.entries.get({ entryID })?.collectionID ?? null;
 
-    return status === "published" || status === "unpublished";
-  };
-  const getPublishingMoveDirection = (input: ExplorerMoveInput) => {
-    const targetEnabled = input.parentID
-      ? content.isCollectionPublishingEnabled(input.parentID)
-      : false;
-    const entryStates = input.entryIDs.map((entryID) => ({
-      current: isEntryPublishingEnabled(entryID),
-      next: targetEnabled
-    }));
-    const collectionStates = input.collectionIDs.map((collectionID) => ({
-      current: content.isCollectionPublishingEnabled(collectionID),
-      next: content.isCollectionPublishingExplicitlyEnabled(collectionID) || targetEnabled
-    }));
-    const states = [...entryStates, ...collectionStates];
-
-    if (states.some((state) => !state.current && state.next)) return "enter";
-    if (states.some((state) => state.current && !state.next)) return "leave";
-
-    return null;
-  };
-  const getAffectedItems = (input: ExplorerMoveInput): AffectedItem[] => {
-    const collections = input.collectionIDs.flatMap((collectionID) => {
-      const collection = content.collections.get({ collectionID });
-
-      return collection
-        ? [
-            {
-              id: collection.id,
-              icon: "i-material-symbols:folder-outline-rounded",
-              label: collection.name
-            }
-          ]
-        : [];
+      return content.canEntry(collectionID, "entry:move");
     });
-    const entries = input.entryIDs.flatMap((entryID) => {
-      const entry = content.entries.get({ entryID });
-
-      return entry ? [{ id: entry.id, icon: "i-lucide:file-text", label: entry.name }] : [];
+    const canMoveCollections = input.collectionIDs.every((collectionID) => {
+      return content.canCollection(collectionID, "collection:move");
     });
+    const canAcceptEntries =
+      input.entryIDs.length === 0 || content.canEntry(input.parentID, "entry:create");
+    const canAcceptCollections =
+      input.collectionIDs.length === 0 ||
+      content.canCollection(input.parentID, "collection:create-child");
 
-    return [...collections, ...entries];
-  };
-  const hasMovePermission = (input: ExplorerMoveInput, permission: "content" | "publishing") => {
-    const sourceCollectionIDs = input.entryIDs.map((entryID) => {
-      return content.entries.get({ entryID })?.collectionID ?? null;
-    });
-    const affectedCollectionIDs = input.collectionIDs.flatMap((collectionID) => {
-      if (permission === "content") return [collectionID];
-
-      return content.tree.getDeletableIDs({ ids: [collectionID] }).collections;
-    });
-
-    return [input.parentID, ...sourceCollectionIDs, ...affectedCollectionIDs].every(
-      (collectionID) => content.hasCollectionPermission(collectionID, permission)
-    );
+    return canMoveEntries && canMoveCollections && canAcceptEntries && canAcceptCollections;
   };
   const submitMove = (input: ExplorerMoveInput) => {
-    const direction = getPublishingMoveDirection(input);
-    const execute = (publish?: boolean) => {
-      input.execute(publish);
-      setSelection([]);
-    };
+    if (!hasMoveAccess(input)) return;
 
-    if (!hasMovePermission(input, "content")) {
-      notify({
-        type: "error",
-        text: "Content permission is required in the source and destination collections"
-      });
-      return;
-    }
-
-    if (!direction) {
-      execute();
-      return;
-    }
-
-    if (!hasMovePermission(input, "publishing")) {
-      notify({ type: "error", text: "Publishing permission is required for this move" });
-      return;
-    }
-
-    setPendingPublishingMove({
-      affected: getAffectedItems(input),
-      direction,
-      execute
-    });
-  };
-  const closePublishingMove = () => setPendingPublishingMove(null);
-  const confirmPublishingMove = (publish?: boolean) => {
-    const move = pendingPublishingMove();
-
-    if (!move) return;
-
-    setPendingPublishingMove(null);
-    move.execute(publish);
+    input.execute();
+    setSelection([]);
   };
   const changesRootParent = (data: Record<string | symbol, unknown>) =>
     getDraggedEntryIDs(data).some(
@@ -209,13 +122,12 @@ const useExplorerDrop = (element: () => HTMLElement | null) => {
             entryIDs: entries,
             collectionIDs: [],
             parentID: collectionID,
-            execute: (publish) => {
+            execute: () => {
               moveEntries({
                 entryIDs: entries,
                 collectionID,
                 targetEntryID,
-                edge: extractClosestEdge(data) as "top" | "bottom" | null,
-                publish
+                edge: extractClosestEdge(data) as "top" | "bottom" | null
               });
             }
           });
@@ -241,17 +153,16 @@ const useExplorerDrop = (element: () => HTMLElement | null) => {
               entryIDs: canOrderCollections(source.data) ? [] : entries,
               collectionIDs: collections,
               parentID,
-              execute: (publish) => {
+              execute: () => {
                 moveCollections({
                   collectionIDs: collections,
                   parentID,
-                  publish,
                   ...(canOrderCollections(source.data)
                     ? { targetCollectionID: targetID, edge }
                     : {})
                 });
                 if (!canOrderCollections(source.data) && entries.length) {
-                  moveEntries({ entryIDs: entries, collectionID: parentID, publish });
+                  moveEntries({ entryIDs: entries, collectionID: parentID });
                 }
               }
             });
@@ -282,22 +193,20 @@ const useExplorerDrop = (element: () => HTMLElement | null) => {
               entryIDs: movingEntries,
               collectionIDs: movingCollections,
               parentID: targetID,
-              execute: (publish) => {
+              execute: () => {
                 if (movingEntries.length) {
                   moveEntries({
                     entryIDs: movingEntries,
                     collectionID: targetID,
                     targetEntryID: last,
-                    edge: last ? "bottom" : null,
-                    publish
+                    edge: last ? "bottom" : null
                   });
                 }
 
                 if (movingCollections.length) {
                   moveCollections({
                     collectionIDs: movingCollections,
-                    parentID: targetID,
-                    publish
+                    parentID: targetID
                   });
                 }
               }
@@ -309,10 +218,10 @@ const useExplorerDrop = (element: () => HTMLElement | null) => {
             entryIDs: entries,
             collectionIDs: collections,
             parentID: null,
-            execute: (publish) => {
-              if (entries.length) moveEntries({ entryIDs: entries, collectionID: null, publish });
+            execute: () => {
+              if (entries.length) moveEntries({ entryIDs: entries, collectionID: null });
               if (collections.length) {
-                moveCollections({ collectionIDs: collections, parentID: null, publish });
+                moveCollections({ collectionIDs: collections, parentID: null });
               }
             }
           });
@@ -324,7 +233,12 @@ const useExplorerDrop = (element: () => HTMLElement | null) => {
       ? dropTargetForElements({
           element: dropElement,
           getData: () => ({ type: "explorer", id: "" }),
-          canDrop: ({ source }) => !content.readOnly(null) && canChangeParent(source.data),
+          canDrop: ({ source }) =>
+            !content.offline() &&
+            !content.syncing() &&
+            (content.canEntry(null, "entry:create") ||
+              content.canCollection(null, "collection:create-child")) &&
+            canChangeParent(source.data),
           onDragEnter: ({ source }) => setIsDraggedOver(changesRootParent(source.data)),
           onDrag: ({ source }) => setIsDraggedOver(changesRootParent(source.data)),
           onDragLeave: () => setIsDraggedOver(false),
@@ -339,10 +253,7 @@ const useExplorerDrop = (element: () => HTMLElement | null) => {
   });
 
   return {
-    closePublishingMove,
-    confirmPublishingMove,
-    isDraggedOver,
-    pendingPublishingMove
+    isDraggedOver
   };
 };
 

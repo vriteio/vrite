@@ -25,9 +25,7 @@ import { useExplorerDrop } from "./use-explorer-drop";
 import { isExplorerMenuElement, useExplorerKeyboard } from "./use-explorer-keyboard";
 import { useExplorerMarquee } from "./use-explorer-marquee";
 import clsx from "clsx";
-import { PublishingMoveDialog } from "./publishing-move-dialog";
 import { PublishingActionsProvider } from "./publishing-actions";
-import { RestrictedActionsProvider } from "./restricted-actions";
 import { usePublishing } from "#web/context/publishing";
 
 const Explorer = () => {
@@ -43,8 +41,7 @@ const Explorer = () => {
   const [focusInside, setFocusInside] = createSignal(false);
   const [menuOpened, setMenuOpened] = createSignal(false);
   const loading = createDebounced(content.loading, 100);
-  const { closePublishingMove, confirmPublishingMove, isDraggedOver, pendingPublishingMove } =
-    useExplorerDrop(dropRef);
+  const { isDraggedOver } = useExplorerDrop(dropRef);
   const marquee = useExplorerMarquee(scrollableContainerRef, contentContainerRef);
   const scrollItemIntoView = (id: string) => {
     const container = scrollableContainerRef();
@@ -74,20 +71,6 @@ const Explorer = () => {
   const isRenameInteraction = (target: EventTarget | null) => {
     return target instanceof Element && Boolean(target.closest("[data-tree-rename]"));
   };
-  const options = [
-    {
-      label: "New entry",
-      icon: "i-lucide:file-plus-2",
-      shortcut: "$mod+E",
-      onClick: async () => actions.createEntry()
-    },
-    {
-      label: "New collection",
-      icon: "i-material-symbols:create-new-folder-outline-rounded",
-      shortcut: "$mod+shift+c",
-      onClick: async () => actions.createCollection()
-    }
-  ];
   const channelCodes = () => {
     const codes = new Set(["published", publishing.channel()]);
 
@@ -95,9 +78,36 @@ const Explorer = () => {
 
     return [...codes];
   };
-  const headerOptions = (): MenuItem[][] => [
-    options,
-    [
+  const hasVisiblePublishing = () => {
+    return (content.publishing()?.enabledCollectionIDs.size ?? 0) > 0;
+  };
+  const createOptions = (): MenuItem[] => {
+    const createOptions: MenuItem[] = [];
+
+    if (content.canEntry(null, "entry:create")) {
+      createOptions.push({
+        label: "New entry",
+        icon: "i-lucide:file-plus-2",
+        shortcut: "$mod+E",
+        onClick: () => actions.createEntry()
+      });
+    }
+
+    if (content.canCollection(null, "collection:create-child")) {
+      createOptions.push({
+        label: "New collection",
+        icon: "i-material-symbols:create-new-folder-outline-rounded",
+        shortcut: "$mod+shift+c",
+        onClick: () => actions.createCollection()
+      });
+    }
+
+    return createOptions;
+  };
+  const headerOptions = (): MenuItem[][] => {
+    if (!hasVisiblePublishing()) return [createOptions()].filter((group) => group.length > 0);
+
+    const publishingOptions: MenuItem[] = [
       ...(channelCodes().length > 1
         ? [
             {
@@ -123,17 +133,15 @@ const Explorer = () => {
             }
           ]
         : [])
-    ]
-  ];
+    ];
+
+    return [createOptions(), publishingOptions].filter((group) => group.length > 0);
+  };
+  const hasHeaderOptions = () => headerOptions().length > 0;
   const { collections, entries } = content.tree.getLevel({ parentID: null });
 
   return (
     <DropdownArea {...EXPLORER_GESTURE_PROPS}>
-      <PublishingMoveDialog
-        move={pendingPublishingMove()}
-        onClose={closePublishingMove}
-        onConfirm={confirmPublishingMove}
-      />
       <TreeRoot>
         <div
           data-explorer-panel
@@ -181,49 +189,53 @@ const Explorer = () => {
                 <h2 class="text-2xl font-semibold flex-1">Explorer</h2>
                 <div
                   class={clsx(
-                    "media-mouse:group-hover/explorer-header:opacity-0",
+                    hasHeaderOptions() && "media-mouse:group-hover/explorer-header:opacity-0",
                     menuOpened() && "opacity-0"
                   )}
                 >
                   <ExplorerSyncStatusIndicator
                     channel={
-                      publishing.channel() === "published" ? undefined : publishing.getChannelName()
+                      hasVisiblePublishing() && publishing.channel() !== "published"
+                        ? publishing.getChannelName()
+                        : undefined
                     }
                     offline={content.offline()}
                     syncing={content.syncing()}
                   />
                 </div>
-                <div class="md:absolute right-1">
-                  <DropdownMenu
-                    title="Explorer"
-                    cardProps={
-                      {
-                        "class": "w-52",
-                        "data-tree-interaction": ""
-                      } as Partial<ComponentProps<typeof Card>>
-                    }
-                    items={headerOptions()}
-                    mobileSheetDragFromContent={false}
-                    opened={menuOpened()}
-                    portal={false}
-                    setOpened={setMenuOpened}
-                    trigger={() => (
-                      <div
-                        class={clsx(
-                          !menuOpened() &&
-                            "opacity-20 media-mouse:opacity-0 media-mouse:group-hover/explorer-header:opacity-100 md:relative"
-                        )}
-                      >
-                        <IconButton
-                          icon="i-lucide:ellipsis-vertical"
-                          size="small"
-                          text="soft"
-                          variant="text"
-                        />
-                      </div>
-                    )}
-                  />
-                </div>
+                <Show when={hasHeaderOptions()}>
+                  <div class="md:absolute right-1">
+                    <DropdownMenu
+                      title="Explorer"
+                      cardProps={
+                        {
+                          "class": "w-52",
+                          "data-tree-interaction": ""
+                        } as Partial<ComponentProps<typeof Card>>
+                      }
+                      items={headerOptions()}
+                      mobileSheetDragFromContent={false}
+                      opened={menuOpened()}
+                      portal={false}
+                      setOpened={setMenuOpened}
+                      trigger={() => (
+                        <div
+                          class={clsx(
+                            !menuOpened() &&
+                              "opacity-20 media-mouse:opacity-0 media-mouse:group-hover/explorer-header:opacity-100 md:relative"
+                          )}
+                        >
+                          <IconButton
+                            icon="i-lucide:ellipsis-vertical"
+                            size="small"
+                            text="soft"
+                            variant="text"
+                          />
+                        </div>
+                      )}
+                    />
+                  </div>
+                </Show>
               </div>
               <div
                 ref={setContentContainerRef}
@@ -248,9 +260,10 @@ const Explorer = () => {
                   </For>
                   <Show when={!collections().length && !entries().length}>
                     <div>
-                      <For each={options}>
+                      <For each={createOptions()}>
                         {(option) => (
                           <Button
+                            onClick={option.onClick}
                             class="flex justify-start items-center w-full group/button gap-1 pl-0.5 py-0.5"
                             variant="text"
                           >
@@ -258,10 +271,14 @@ const Explorer = () => {
                               <div class={clsx(option.icon, "h-5 w-5 text-gray-400")} />
                             </div>
                             <span class="text-left flex-1 line-clamp-1">{option.label}</span>
-                            <Shortcut
-                              class="opacity-0 media-mouse:group-hover/button:opacity-50 font-mono text-[90%]"
-                              shortcut={option.shortcut}
-                            />
+                            <Show when={option.shortcut}>
+                              {(shortcut) => (
+                                <Shortcut
+                                  class="opacity-0 media-mouse:group-hover/button:opacity-50 font-mono text-[90%]"
+                                  shortcut={shortcut()}
+                                />
+                              )}
+                            </Show>
                           </Button>
                         )}
                       </For>
@@ -308,9 +325,7 @@ const ExplorerSkeleton = (props: { itemHeight: string }) => (
 const ExplorerPanel = () => (
   <ExplorerProvider>
     <PublishingActionsProvider>
-      <RestrictedActionsProvider>
-        <Explorer />
-      </RestrictedActionsProvider>
+      <Explorer />
     </PublishingActionsProvider>
   </ExplorerProvider>
 );

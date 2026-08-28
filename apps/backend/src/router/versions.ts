@@ -1,13 +1,12 @@
-import { emitVersionEvent } from "#backend/events";
+import { emitPublishingEntryUpdates, emitVersionEvent } from "#backend/events";
 import {
   type VersionDetails,
   type VersionSummary,
   versionDetailsType,
   versionSummaryType
 } from "#backend/lib/data";
-import { emitPublishingStatusUpdates } from "#backend/lib/publishing";
 import { id } from "#backend/lib/primitives";
-import { authorized, base } from "#backend/lib/transport";
+import { authenticatedRoute, base } from "#backend/lib/transport";
 import { Versions } from "#backend/services/versions";
 import * as z from "zod";
 
@@ -26,15 +25,8 @@ const toVersionSummary = ({ document: _document, ...version }: VersionDetails): 
 };
 
 const versionsRouter = base.router({
-  create: base
+  create: authenticatedRoute
     .route({ method: "POST", path: "/entries/:entryID/versions" })
-    .meta({
-      required: {
-        session: true,
-        key: ["versions"]
-      }
-    })
-    .use(authorized)
     .input(
       z.object({
         entryID: id().describe("ID of the entry to version"),
@@ -45,7 +37,6 @@ const versionsRouter = base.router({
     .handler(async ({ context, input }) => {
       const version = await Versions.create({
         auth: context.auth,
-        workspaceID: context.auth.workspaceID,
         entryID: input.entryID,
         reason: "manual",
         contributorIDs: getContributorIDs(context.auth),
@@ -60,15 +51,8 @@ const versionsRouter = base.router({
 
       return version;
     }),
-  list: base
+  list: authenticatedRoute
     .route({ method: "GET", path: "/entries/:entryID/versions" })
-    .meta({
-      required: {
-        session: true,
-        key: ["read:versions"]
-      }
-    })
-    .use(authorized)
     .input(
       z.object({
         entryID: id().describe("ID of the entry whose versions to list"),
@@ -80,7 +64,6 @@ const versionsRouter = base.router({
     .handler(async ({ context, input }) => {
       const { versions, nextCursor } = await Versions.list({
         auth: context.auth,
-        workspaceID: context.auth.workspaceID,
         entryID: input.entryID,
         cursor: input.cursor,
         limit: input.limit
@@ -94,33 +77,18 @@ const versionsRouter = base.router({
         }
       };
     }),
-  get: base
+  get: authenticatedRoute
     .route({ method: "GET", path: "/versions/:id" })
-    .meta({
-      required: {
-        session: true,
-        key: ["read:versions"]
-      }
-    })
-    .use(authorized)
     .input(z.object({ id: id().describe("ID of the version to get") }))
     .output(versionDetailsType)
     .handler(({ context, input }) => {
       return Versions.get({
         auth: context.auth,
-        workspaceID: context.auth.workspaceID,
         versionID: input.id
       });
     }),
-  update: base
+  update: authenticatedRoute
     .route({ method: "PATCH", path: "/versions/:id" })
-    .meta({
-      required: {
-        session: true,
-        key: ["versions"]
-      }
-    })
-    .use(authorized)
     .input(
       z.object({
         id: id().describe("ID of the version to update"),
@@ -133,7 +101,6 @@ const versionsRouter = base.router({
     .handler(async ({ context, input }) => {
       const version = await Versions.update({
         auth: context.auth,
-        workspaceID: context.auth.workspaceID,
         versionID: input.id,
         name: input.name
       });
@@ -144,21 +111,13 @@ const versionsRouter = base.router({
         memberID: context.auth.session?.memberID
       });
     }),
-  revert: base
+  revert: authenticatedRoute
     .route({ method: "POST", path: "/versions/:id/revert" })
-    .meta({
-      required: {
-        session: true,
-        key: ["versions"]
-      }
-    })
-    .use(authorized)
     .input(z.object({ id: id().describe("ID of the version to restore") }))
     .output(versionDetailsType)
     .handler(async ({ context, input }) => {
       const result = await Versions.revert({
         auth: context.auth,
-        workspaceID: context.auth.workspaceID,
         versionID: input.id,
         contributorIDs: getContributorIDs(context.auth)
       });
@@ -171,9 +130,9 @@ const versionsRouter = base.router({
         });
       }
 
-      await emitPublishingStatusUpdates({
+      emitPublishingEntryUpdates({
         workspaceID: context.auth.workspaceID,
-        entryIDs: [result.version.entryID],
+        entries: result.publishingEntries,
         memberID: context.auth.session?.memberID
       });
 

@@ -1,7 +1,8 @@
 import { getContentBlocks, type ContentBlocks, type ContentNode } from "#backend/lib/content";
 import type { VersionSummary } from "#backend/lib/data";
 import { normalizePublishingChannelCode } from "#backend/lib/publishing";
-import { getPublishedEntryVersion } from "./get-version";
+import { withPublicWorkspace } from "#backend/lib/policy";
+import { getPublicPublishedEntryVersion } from "./get-version";
 
 interface PublishedEntryContent {
   channel: string;
@@ -12,13 +13,21 @@ interface PublishedEntryContent {
   version: VersionSummary;
 }
 
-const getPublishedEntryContent = async (input: {
-  workspaceID: string;
+interface PublishedEntryContentInput {
   entryID: string;
   channel: string;
-}): Promise<PublishedEntryContent> => {
+}
+
+const getPublishedEntryContent = withPublicWorkspace<
+  PublishedEntryContentInput,
+  PublishedEntryContent
+>({}, async ({ input, workspaceID }) => {
   const channel = normalizePublishingChannelCode(input.channel);
-  const { document, ...version } = await getPublishedEntryVersion({ ...input, channel });
+  const { document, ...version } = await getPublicPublishedEntryVersion({
+    ...input,
+    channel,
+    workspaceID
+  });
   const { fragments, properties } = getContentBlocks(document);
 
   return {
@@ -29,7 +38,7 @@ const getPublishedEntryContent = async (input: {
     properties,
     version
   };
-};
+});
 
 export { getPublishedEntryContent };
 export type { PublishedEntryContent };

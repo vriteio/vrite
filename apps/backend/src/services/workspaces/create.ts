@@ -20,9 +20,9 @@ const DEFAULT_ROLES: Array<{
   baseRole?: "admin" | "viewer";
 }> = [
   { name: "Admin", permissions: [], baseRole: "admin" },
-  { name: "Developer", permissions: ["content", "versions", "publishing", "api_keys"] },
-  { name: "Editor", permissions: ["content", "versions", "publishing"] },
-  { name: "Viewer", permissions: ["read:publishing"], baseRole: "viewer" }
+  { name: "Developer", permissions: ["content", "publishing", "api_keys"] },
+  { name: "Editor", permissions: ["content", "publishing"] },
+  { name: "Viewer", permissions: [], baseRole: "viewer" }
 ];
 
 const createWorkspace = async (input: { name: string; userID: string }) => {

@@ -3,8 +3,7 @@ import {
   type ResponseHeadersPluginContext
 } from "@orpc/server/plugins";
 import { os } from "@orpc/server";
-import type { SessionData } from "#backend/lib/policy";
-import { type KeyPermission, type Permission } from "#backend/db";
+import type { AuthorizationRequirements, SessionData } from "#backend/lib/policy";
 
 interface ORPCContext extends RequestHeadersPluginContext, ResponseHeadersPluginContext {}
 interface WSORPCContext {
@@ -14,10 +13,7 @@ interface ORPCMeta {
   requireWorkspace?: boolean;
   requireProPlan?: boolean;
   trackUsage?: boolean;
-  required?: {
-    key?: KeyPermission[] | true;
-    session?: Permission[] | "admin" | true;
-  };
+  required?: AuthorizationRequirements;
 }
 
 const base = os.$context<ORPCContext>().$meta<ORPCMeta>({});

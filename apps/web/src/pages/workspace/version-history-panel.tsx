@@ -14,7 +14,6 @@ import {
   useTransition
 } from "solid-js";
 import { TREE_ROOT_ID, Tree, type TreeMap } from "#web/components/tree";
-import { ActionConfirmationDialog } from "#web/components/action-confirmation-dialog";
 import { useLayout } from "#web/context/layout";
 import { useNotify } from "#web/context/notifications";
 import { useWorkspace } from "#web/context/workspace";
@@ -54,7 +53,7 @@ const VersionHistoryPanel: Component<VersionHistoryPanelProps> = (props) => {
   const canManage = () => {
     const entry = content.entries.get({ entryID: entryID() });
 
-    return content.hasCollectionPermission(entry?.collectionID || null, "versions");
+    return content.canEntry(entry?.collectionID || null, "version:create");
   };
   const historyInput = () => ({ entryID: entryID(), limit: 50 });
   const versionHistory = createAsync(
@@ -78,14 +77,17 @@ const VersionHistoryPanel: Component<VersionHistoryPanelProps> = (props) => {
     return versionHistory()?.response;
   };
   const historyResult = () => historyResponse()?.result;
-  const options = () => [
-    {
-      label: "Create version",
-      icon: "i-lucide:plus",
-      disabled: !canManage(),
-      onClick: () => setCreateDialogOpened(true)
-    }
-  ];
+  const options = () => {
+    if (!canManage()) return [];
+
+    return [
+      {
+        label: "Create version",
+        icon: "i-lucide:plus",
+        onClick: () => setCreateDialogOpened(true)
+      }
+    ];
+  };
   const storedVersions = createMemo(() => {
     return [...(historyResult()?.data ?? []), ...additionalPages().flatMap((page) => page.data)];
   });
@@ -170,7 +172,7 @@ const VersionHistoryPanel: Component<VersionHistoryPanelProps> = (props) => {
 
     return storedVersions();
   });
-  const publishing = useVersionPublishing({ entryID, opened, versions });
+  const publishing = useVersionPublishing({ entryID, opened });
   const versionsByID = createMemo(() => {
     return new Map(versions().map((version) => [version.id, version]));
   });
@@ -252,44 +254,29 @@ const VersionHistoryPanel: Component<VersionHistoryPanelProps> = (props) => {
           if (version) revertVersionMutation.mutate(version.id);
         }}
       />
-      <ActionConfirmationDialog
-        opened={Boolean(publishing.action())}
-        title={publishing.dialogTitle()}
-        description={publishing.dialogDescription()}
-        affected={publishing.affected()}
-        action={{
-          color: publishing.action()?.action === "assign" ? "primary" : "danger",
-          icon:
-            publishing.action()?.action === "assign"
-              ? "i-material-symbols:publish-rounded"
-              : "i-material-symbols:unpublished-outline-rounded",
-          label: publishing.action()?.action === "assign" ? "Publish" : "Unpublish",
-          loading: publishing.loading(),
-          onClick: publishing.confirm
-        }}
-        onClose={publishing.close}
-      />
       <DropdownArea>
         <div class="flex min-h-0 w-full flex-1 flex-col overflow-y-auto px-1 scrollbar-contrast">
           <div class="group/version-header sticky top-0 z-20 -mx-1 flex h-9 shrink-0 items-center gap-2 bg-white px-1 md:bg-gray-100">
             <h2 class="flex-1 text-2xl font-semibold">Versions</h2>
-            <DropdownMenu
-              title="Versions"
-              cardProps={{ class: "w-48" }}
-              items={options()}
-              mobileSheetDragFromContent={false}
-              portal={false}
-              trigger={() => (
-                <div class="opacity-20 media-mouse:opacity-0 media-mouse:group-hover/version-header:opacity-100">
-                  <IconButton
-                    icon="i-lucide:ellipsis-vertical"
-                    size="small"
-                    text="soft"
-                    variant="text"
-                  />
-                </div>
-              )}
-            />
+            <Show when={options().length > 0}>
+              <DropdownMenu
+                title="Versions"
+                cardProps={{ class: "w-48" }}
+                items={options()}
+                mobileSheetDragFromContent={false}
+                portal={false}
+                trigger={() => (
+                  <div class="opacity-20 media-mouse:opacity-0 media-mouse:group-hover/version-header:opacity-100">
+                    <IconButton
+                      icon="i-lucide:ellipsis-vertical"
+                      size="small"
+                      text="soft"
+                      variant="text"
+                    />
+                  </div>
+                )}
+              />
+            </Show>
           </div>
           <Suspense fallback={<VersionHistorySkeleton />}>
             <Show
@@ -324,7 +311,6 @@ const VersionHistoryPanel: Component<VersionHistoryPanelProps> = (props) => {
                       <For each={options()}>
                         {(option) => (
                           <Button
-                            disabled={option.disabled}
                             onClick={option.onClick}
                             class="flex justify-start items-center w-full group/button gap-1 pl-0.5 py-0.5"
                             variant="text"

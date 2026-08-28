@@ -1,5 +1,6 @@
 import { groupInvitations, groupMembers, groups, type Group, invitations } from "#backend/db";
 import { db } from "#backend/lib/adapters";
+import { withAuthorization } from "#backend/lib/policy";
 import { toGroupID, toInviteID, toMembershipID, toUUID } from "#backend/lib/primitives";
 import { and, asc, eq, gt } from "drizzle-orm";
 
@@ -8,7 +9,9 @@ interface GroupDetails extends Group {
   memberIDs: string[];
 }
 
-const listGroups = async (input: { workspaceID: string }): Promise<{ groups: GroupDetails[] }> => {
+const listGroupsOperation = async (input: {
+  workspaceID: string;
+}): Promise<{ groups: GroupDetails[] }> => {
   const workspaceID = toUUID(input.workspaceID);
   const [groupRows, memberRows, invitationRows] = await Promise.all([
     db.select().from(groups).where(eq(groups.workspaceID, workspaceID)).orderBy(asc(groups.name)),
@@ -54,6 +57,9 @@ const listGroups = async (input: { workspaceID: string }): Promise<{ groups: Gro
     }))
   };
 };
-
+const listGroups = withAuthorization<Record<never, never>, undefined, { groups: GroupDetails[] }>(
+  { permissions: { session: ["workspace"] }, plan: "pro" },
+  async ({ workspaceID }) => listGroupsOperation({ workspaceID })
+);
 export { listGroups };
 export type { GroupDetails };

@@ -146,7 +146,7 @@ const SettingsMenu: Component = () => {
                   label: "Publishing",
                   href: `${settingsPath()}/publishing`,
                   active: isRoute("/publishing"),
-                  visible: hasPermission("read:publishing")
+                  visible: true
                 },
                 {
                   icon: "i-lucide:credit-card",

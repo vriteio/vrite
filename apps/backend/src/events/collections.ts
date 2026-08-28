@@ -6,6 +6,7 @@ import {
   type SubscribeToEvent
 } from "#backend/lib/messaging";
 import { id } from "#backend/lib/primitives";
+import { collectionAccessType } from "#backend/lib/policy/actions";
 import * as z from "zod";
 
 declare module "#backend/lib/messaging/events" {
@@ -18,6 +19,7 @@ const collectionEventType = z.union([
   z.object({
     action: z.literal("collection:create"),
     memberID: id().optional(),
+    access: collectionAccessType.optional(),
     data: collectionType
   }),
   z.object({

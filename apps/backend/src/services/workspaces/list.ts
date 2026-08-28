@@ -9,13 +9,14 @@ import {
 import {
   toCollectionID,
   toEntryID,
+  toMembershipID,
+  toRoleID,
   toUserID,
   toUUID,
   toWorkspaceID
 } from "#backend/lib/primitives";
 import { db } from "#backend/lib/adapters";
-import { loadCollectionTree } from "#backend/lib/data";
-import { hasPermission } from "#backend/lib/policy";
+import { loadAuthorizedCollectionTree, type SessionData } from "#backend/lib/policy";
 import { and, eq, inArray, isNull } from "drizzle-orm";
 
 interface WorkspaceListItem extends Pick<Workspace, "id" | "name"> {
@@ -31,7 +32,6 @@ const listWorkspaces = async (input: {
   userIDs: string[];
 }): Promise<{ workspaces: WorkspaceListItem[] }> => {
   const userIDs = input.userIDs.map(toUUID);
-  const treeByWorkspaceID = new Map<string, ReturnType<typeof loadCollectionTree>>();
 
   if (userIDs.length === 0) return { workspaces: [] };
 
@@ -40,9 +40,11 @@ const listWorkspaces = async (input: {
       id: workspaces.id,
       name: workspaces.name,
       userID: memberships.userID,
+      membershipID: memberships.id,
       currentEntryID: entries.id,
       currentEntryCollectionID: entries.collectionID,
       permissions: roles.permissions,
+      roleID: roles.id,
       baseRole: roles.baseRole,
       subscriptionPlan: workspaces.subscriptionPlan
     })
@@ -64,36 +66,29 @@ const listWorkspaces = async (input: {
   });
   const items = await Promise.all(
     availableRows.map(async (row): Promise<WorkspaceListItem> => {
-      const canReadRestricted =
-        row.baseRole === "admin" ||
-        row.permissions.some((permission) => {
-          return hasPermission(permission, "read:restricted_collections");
-        });
-      let currentEntryID = row.currentEntryID;
-
-      if (currentEntryID && row.currentEntryCollectionID && !canReadRestricted) {
-        let treePromise = treeByWorkspaceID.get(row.id);
-
-        if (!treePromise) {
-          treePromise = loadCollectionTree(row.id);
-          treeByWorkspaceID.set(row.id, treePromise);
+      const auth: SessionData = {
+        id: `workspace-list:${row.membershipID}`,
+        type: "session",
+        workspaceID: toWorkspaceID(row.id),
+        subscriptionPlan: row.subscriptionPlan,
+        session: {
+          admin: row.baseRole === "admin",
+          memberID: toMembershipID(row.membershipID),
+          permissions: row.permissions,
+          roleID: toRoleID(row.roleID),
+          userID: toUserID(row.userID)
         }
+      };
+      let currentEntryID: string | undefined;
 
-        const tree = await treePromise;
-        const currentEntryCollectionID = toCollectionID(row.currentEntryCollectionID);
-        const collection = tree.collections.find(({ id }) => {
-          return id === currentEntryCollectionID;
-        });
-        const restricted =
-          collection?.restricted ||
-          collection?.ancestors.some((ancestorID) => {
-            return tree.collections.some((item) => {
-              return item.id === ancestorID && item.restricted;
-            });
-          });
+      if (row.currentEntryID) {
+        const authorization = await loadAuthorizedCollectionTree({ auth });
+        const collectionID = row.currentEntryCollectionID
+          ? toCollectionID(row.currentEntryCollectionID)
+          : null;
 
-        if (restricted) {
-          currentEntryID = null;
+        if (authorization.canEntry(collectionID, "entry:read")) {
+          currentEntryID = toEntryID(row.currentEntryID);
         }
       }
 
@@ -101,7 +96,7 @@ const listWorkspaces = async (input: {
         id: toWorkspaceID(row.id),
         name: row.name,
         userID: toUserID(row.userID),
-        currentEntryID: currentEntryID ? toEntryID(currentEntryID) : undefined,
+        currentEntryID,
         permissions: row.permissions,
         admin: row.baseRole === "admin",
         subscriptionPlan: row.subscriptionPlan

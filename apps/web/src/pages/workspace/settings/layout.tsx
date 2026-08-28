@@ -39,7 +39,7 @@ const SettingsLayout: Component<RouteSectionProps> = (props) => {
     if (route === "people") {
       return hasPermission("workspace");
     }
-    if (route === "publishing") return hasPermission("read:publishing");
+    if (route === "publishing") return true;
     if (route === "billing") return hasPermission("read:billing");
     if (route === "api") return hasPermission("read:api_keys");
     if (route === "key") {

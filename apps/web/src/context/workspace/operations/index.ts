@@ -26,16 +26,6 @@ const createWorkspaceContentOperations = (input: WorkspaceContentOperationsInput
       { entries: [] as string[], collections: [] as string[] }
     );
   };
-  const getDeletableContentIDs = (ids: string[]) => {
-    const { entries, collections } = splitContentIDs(ids);
-    const expandedCollectionIDs = collectionOperations.getCollectionDescendantIDs(collections);
-    const nestedEntryIDs = collectionOperations.getEntryIDsInCollections(expandedCollectionIDs);
-
-    return {
-      entries: Array.from(new Set([...entries, ...nestedEntryIDs])),
-      collections: expandedCollectionIDs
-    };
-  };
   const deleteContent = (ids: string[]) => {
     const { entries, collections } = splitContentIDs(ids);
     const expandedCollectionIDs = collectionOperations.getCollectionDescendantIDs(collections);
@@ -97,7 +87,6 @@ const createWorkspaceContentOperations = (input: WorkspaceContentOperationsInput
       getLevel: ({ parentID }: { parentID: string | null }) => getContentTreeLevel(parentID),
       getMap: getContentTree,
       splitIDs: ({ ids }: { ids: string[] }) => splitContentIDs(ids),
-      getDeletableIDs: ({ ids }: { ids: string[] }) => getDeletableContentIDs(ids),
       delete: ({ ids }: { ids: string[] }) => deleteContent(ids)
     },
     entries: {
@@ -109,13 +98,11 @@ const createWorkspaceContentOperations = (input: WorkspaceContentOperationsInput
         entryOperations.createEntry(collectionID),
       update: ({
         entryID,
-        updates,
-        publish
+        updates
       }: {
         entryID: string;
         updates: Parameters<typeof entryOperations.updateEntry>[1];
-        publish?: boolean;
-      }) => entryOperations.updateEntry(entryID, updates, { publish }),
+      }) => entryOperations.updateEntry(entryID, updates),
       delete: ({ entryIDs }: { entryIDs: string[] }) => entryOperations.deleteEntries(entryIDs)
     },
     collections: {
@@ -152,14 +139,12 @@ const createWorkspaceContentOperations = (input: WorkspaceContentOperationsInput
       move: ({
         collectionID,
         parentID,
-        index,
-        publish
+        index
       }: {
         collectionID: string;
         parentID: string | null;
         index?: number;
-        publish?: boolean;
-      }) => collectionOperations.moveCollection(collectionID, parentID, index, publish),
+      }) => collectionOperations.moveCollection(collectionID, parentID, index),
       delete: ({ collectionIDs }: { collectionIDs: string[] }) =>
         collectionOperations.deleteCollections(collectionIDs)
     },

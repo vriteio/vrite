@@ -1,4 +1,4 @@
-import { type Card, DropdownMenu, IconButton, Spinner, Tooltip } from "@andesine/components";
+import { type Card, DropdownMenu, IconButton, Tooltip } from "@andesine/components";
 import { TreeItem } from "#web/components/tree";
 import clsx from "clsx";
 import { type Component, type ComponentProps, Show } from "solid-js";
@@ -25,7 +25,7 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
   } = useExplorerEntry(props);
   const publishingStatus = () => publishing.getEntryPublishingStatus(props.entry.id);
   const canEdit = () => {
-    return workspaceContent.hasCollectionPermission(props.entry.collectionID || null, "content");
+    return workspaceContent.canEntry(props.entry.collectionID || null, "entry:update");
   };
   const publishingLabel = () => {
     const status = publishingStatus();

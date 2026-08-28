@@ -1,14 +1,18 @@
 import { toUUID, toUserID } from "#backend/lib/primitives";
 import { db } from "#backend/lib/adapters";
 import { memberships, roles, workspaces } from "#backend/db";
+import { withAuthorization } from "#backend/lib/policy";
 import { and, eq, sql } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 
-const updateMember = async (input: {
+interface UpdateMemberInput {
   id: string;
-  workspaceID: string;
   roleID: string;
-}): Promise<{ userID: string }> => {
+}
+
+const updateMemberOperation = async (
+  input: UpdateMemberInput & { workspaceID: string }
+): Promise<{ userID: string }> => {
   const workspaceID = toUUID(input.workspaceID);
   const memberID = toUUID(input.id);
   const newRoleID = toUUID(input.roleID);
@@ -71,5 +75,9 @@ const updateMember = async (input: {
 
   return { userID: toUserID(userID) };
 };
+const updateMember = withAuthorization<UpdateMemberInput, undefined, { userID: string }>(
+  { permissions: { session: ["workspace"], key: ["memberships"] }, plan: "pro" },
+  async ({ input, workspaceID }) => updateMemberOperation({ ...input, workspaceID })
+);
 
 export { updateMember };

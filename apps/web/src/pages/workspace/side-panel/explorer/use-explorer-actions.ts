@@ -1,15 +1,13 @@
 import { useClipboard } from "#web/context/clipboard";
-import { useNotify } from "#web/context/notifications";
 import { useWorkspace } from "#web/context/workspace";
 import { useTree } from "#web/components/tree";
 import { useNavigate } from "@solidjs/router";
 
 const useExplorerActions = () => {
-  const notify = useNotify();
   const { copyText } = useClipboard();
   const navigate = useNavigate();
   const [{ focusedID, selection, flattenedOrder }, tree] = useTree();
-  const { workspaceID, content, hasPermission } = useWorkspace();
+  const { workspaceID, content } = useWorkspace();
 
   const getFocusedVisibleID = () => {
     const focused = focusedID();
@@ -21,25 +19,33 @@ const useExplorerActions = () => {
 
     return selected.length ? (selected.length === 1 ? selected[0] : null) : getFocusedVisibleID();
   };
-  const notifyReadOnly = () => {
-    return notify({
-      type: "error",
-      text: content.offline() || content.syncing() ? "Explorer is read-only" : "Permission denied"
-    });
-  };
-  const ensureWritable = (collectionID: string | null = null) => {
-    if (!content.readOnly(collectionID)) return true;
+  const ensureCollectionAction = (
+    collectionID: string | null,
+    action: "collection:create-child" | "collection:update"
+  ) => {
+    if (!content.offline() && !content.syncing() && content.canCollection(collectionID, action)) {
+      return true;
+    }
 
-    notifyReadOnly();
+    return false;
+  };
+  const ensureEntryAction = (
+    collectionID: string | null,
+    action: "entry:create" | "entry:update"
+  ) => {
+    if (!content.offline() && !content.syncing() && content.canEntry(collectionID, action)) {
+      return true;
+    }
+
     return false;
   };
   const createEntry = (collectionID?: string) => {
-    if (!ensureWritable(collectionID || null)) return;
+    if (!ensureEntryAction(collectionID || null, "entry:create")) return;
 
     tree.setRenaming(content.entries.create({ collectionID })?.id ?? "");
   };
   const createCollection = (collectionID?: string) => {
-    if (!ensureWritable(collectionID || null)) return;
+    if (!ensureCollectionAction(collectionID || null, "collection:create-child")) return;
 
     tree.setRenaming(content.collections.create({ parentID: collectionID })?.id ?? "");
   };
@@ -50,8 +56,12 @@ const useExplorerActions = () => {
       : undefined;
     const targetEntry = targetID ? content.entries.get({ entryID: targetID }) : undefined;
     const parentID = targetCollection?.id ?? targetEntry?.collectionID;
+    const canCreate =
+      type === "entry"
+        ? ensureEntryAction(parentID || null, "entry:create")
+        : ensureCollectionAction(parentID || null, "collection:create-child");
 
-    if (!ensureWritable(parentID || null)) return true;
+    if (!canCreate) return true;
 
     const created =
       type === "entry"
@@ -76,23 +86,18 @@ const useExplorerActions = () => {
 
     if (!ids.length) return false;
 
-    const deletable = content.tree.getDeletableIDs({ ids });
+    const selectedContent = content.tree.splitIDs({ ids });
     const canDelete =
-      deletable.collections.every((collectionID) => {
-        return content.hasCollectionPermission(collectionID, "content");
+      selectedContent.collections.every((collectionID) => {
+        return content.canCollection(collectionID, "collection:delete");
       }) &&
-      deletable.entries.every((entryID) => {
+      selectedContent.entries.every((entryID) => {
         const entry = content.entries.get({ entryID });
 
-        return content.hasCollectionPermission(entry?.collectionID || null, "content");
-      }) &&
-      (hasPermission("restricted_collections") ||
-        !deletable.collections.some((collectionID) => {
-          return content.collections.isRestrictionRoot({ collectionID });
-        }));
+        return content.canEntry(entry?.collectionID || null, "entry:delete");
+      });
 
     if (!canDelete || content.offline() || content.syncing()) {
-      notifyReadOnly();
       return true;
     }
 
@@ -105,9 +110,11 @@ const useExplorerActions = () => {
     const targetID = getCommandTargetID();
     const collection = targetID ? content.collections.get({ collectionID: targetID }) : undefined;
     const entry = targetID ? content.entries.get({ entryID: targetID }) : undefined;
-    const collectionID = collection?.id ?? entry?.collectionID ?? null;
+    const canRename = collection
+      ? content.canCollection(collection.id, "collection:update")
+      : content.canEntry(entry?.collectionID || null, "entry:update");
 
-    if (!targetID || content.readOnly(collectionID)) return false;
+    if (!targetID || !canRename || content.offline() || content.syncing()) return false;
     tree.setRenaming(targetID);
     return true;
   };
@@ -144,7 +151,6 @@ const useExplorerActions = () => {
     createForCommandTarget,
     deleteTarget,
     getFocusedVisibleID,
-    notifyReadOnly,
     renameTarget
   };
 };

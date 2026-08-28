@@ -12,7 +12,15 @@ import {
   isGroupNameUniqueViolation,
   validateGroupName
 } from "#backend/lib/data";
-import { toGroupID, toInviteID, toMembershipID, toUserID, toUUID } from "#backend/lib/primitives";
+import { withAuthorization } from "#backend/lib/policy";
+import {
+  toGroupID,
+  toInviteID,
+  toMembershipID,
+  toUserID,
+  toUUID,
+  toWorkspaceID
+} from "#backend/lib/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, eq, gt, inArray } from "drizzle-orm";
 
@@ -31,6 +39,8 @@ interface SaveGroupResult {
   memberIDs: string[];
   name: string;
 }
+
+type UpdateGroupInput = Omit<SaveGroupInput, "workspaceID"> & { id: string };
 
 const saveGroup = async (input: SaveGroupInput): Promise<SaveGroupResult> => {
   const invitationIDs = [...new Set(input.invitationIDs)].map(toUUID);
@@ -154,9 +164,17 @@ const saveGroup = async (input: SaveGroupInput): Promise<SaveGroupResult> => {
   }
 };
 
-const updateGroup = async (input: SaveGroupInput & { id: string }): Promise<SaveGroupResult> => {
+const updateGroupOperation = async (
+  input: SaveGroupInput & { id: string }
+): Promise<SaveGroupResult> => {
   return saveGroup(input);
 };
+const updateGroup = withAuthorization<UpdateGroupInput, undefined, SaveGroupResult>(
+  { permissions: { session: ["workspace"] }, plan: "pro" },
+  async ({ input, workspaceID }) => {
+    return updateGroupOperation({ ...input, workspaceID: toWorkspaceID(workspaceID) });
+  }
+);
 
 export { saveGroup, updateGroup };
 export type { SaveGroupInput, SaveGroupResult };

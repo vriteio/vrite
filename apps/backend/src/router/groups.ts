@@ -1,7 +1,7 @@
 import { groupType } from "#backend/db";
 import { emitGroupEvent } from "#backend/events";
 import { id } from "#backend/lib/primitives";
-import { authorized, base } from "#backend/lib/transport";
+import { base, sessionRoute } from "#backend/lib/transport";
 import { Groups } from "#backend/services/groups";
 import * as z from "zod";
 
@@ -11,34 +11,24 @@ const groupDetailsType = groupType.extend({
 });
 
 const groupsRouter = base.prefix("/groups").router({
-  list: base
+  list: sessionRoute
     .route({ method: "GET", path: "/" })
-    .meta({
-      requireProPlan: true,
-      required: { session: ["workspace"] }
-    })
-    .use(authorized)
     .output(z.array(groupDetailsType))
     .handler(async ({ context }) => {
-      const { groups } = await Groups.list({ workspaceID: context.auth.workspaceID });
+      const { groups } = await Groups.list({ auth: context.auth });
 
       return groups;
     }),
-  create: base
+  create: sessionRoute
     .route({ method: "POST", path: "/" })
-    .meta({
-      requireProPlan: true,
-      required: { session: ["workspace"] }
-    })
-    .use(authorized)
     .input(groupDetailsType.omit({ id: true }))
     .output(groupDetailsType)
     .handler(async ({ context, input }) => {
       const { affectedUserIDs: _, ...group } = await Groups.create({
         invitationIDs: input.invitationIDs,
+        auth: context.auth,
         memberIDs: input.memberIDs,
-        name: input.name,
-        workspaceID: context.auth.workspaceID
+        name: input.name
       });
 
       emitGroupEvent(context.auth.workspaceID, {
@@ -49,22 +39,17 @@ const groupsRouter = base.prefix("/groups").router({
 
       return group;
     }),
-  update: base
+  update: sessionRoute
     .route({ method: "PATCH", path: "/:id" })
-    .meta({
-      requireProPlan: true,
-      required: { session: ["workspace"] }
-    })
-    .use(authorized)
     .input(groupDetailsType)
     .output(z.void())
     .handler(async ({ context, input }) => {
       const { affectedUserIDs, invitationIDs, memberIDs, name } = await Groups.update({
         id: input.id,
+        auth: context.auth,
         invitationIDs: input.invitationIDs,
         memberIDs: input.memberIDs,
-        name: input.name,
-        workspaceID: context.auth.workspaceID
+        name: input.name
       });
 
       emitGroupEvent(context.auth.workspaceID, {
@@ -74,19 +59,14 @@ const groupsRouter = base.prefix("/groups").router({
         data: { id: input.id, invitationIDs, memberIDs, name }
       });
     }),
-  delete: base
+  delete: sessionRoute
     .route({ method: "DELETE", path: "/:id" })
-    .meta({
-      requireProPlan: true,
-      required: { session: ["workspace"] }
-    })
-    .use(authorized)
     .input(z.object({ id: groupType.shape.id }))
     .output(z.void())
     .handler(async ({ context, input }) => {
       const { affectedUserIDs } = await Groups.delete({
         id: input.id,
-        workspaceID: context.auth.workspaceID
+        auth: context.auth
       });
 
       emitGroupEvent(context.auth.workspaceID, {

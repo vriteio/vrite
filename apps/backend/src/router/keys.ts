@@ -1,6 +1,6 @@
 import { keyPermissionType, keyType } from "#backend/db";
 import { emitKeyEvent } from "#backend/events";
-import { authorized, base } from "#backend/lib/transport";
+import { base, sessionRoute } from "#backend/lib/transport";
 import { id } from "#backend/lib/primitives";
 import { Keys } from "#backend/services/keys";
 import { Auth } from "#backend/services/auth";
@@ -12,13 +12,7 @@ const keyWithRawKeyType = keyType.extend({
 });
 
 const keysRouter = base.prefix("/keys").router({
-  create: base
-    .meta({
-      required: {
-        session: ["api_keys"]
-      }
-    })
-    .use(authorized)
+  create: sessionRoute
     .input(
       z.object({
         name: z.string().min(1).max(100).describe("Name for the API key"),
@@ -34,10 +28,9 @@ const keysRouter = base.prefix("/keys").router({
       }
 
       const key = await Keys.create({
+        auth: context.auth,
         name: input.name,
-        permissions: input.permissions,
-        workspaceID: context.auth.workspaceID,
-        memberID: context.auth.session.memberID
+        permissions: input.permissions
       });
 
       const { rawKey: _rawKey, ...safeKey } = key;
@@ -50,13 +43,7 @@ const keysRouter = base.prefix("/keys").router({
 
       return key;
     }),
-  get: base
-    .meta({
-      required: {
-        session: ["read:api_keys"]
-      }
-    })
-    .use(authorized)
+  get: sessionRoute
     .input(
       z.object({
         id: id().describe("ID of the API key to retrieve")
@@ -66,31 +53,17 @@ const keysRouter = base.prefix("/keys").router({
     .handler(({ context, input }) => {
       return Keys.get({
         keyID: input.id,
-        workspaceID: context.auth.workspaceID
+        auth: context.auth
       });
     }),
-  list: base
-    .meta({
-      required: {
-        session: ["read:api_keys"]
-      }
-    })
-    .use(authorized)
-    .output(z.array(keyType))
-    .handler(async ({ context }) => {
-      const { keys } = await Keys.list({
-        workspaceID: context.auth.workspaceID
-      });
+  list: sessionRoute.output(z.array(keyType)).handler(async ({ context }) => {
+    const { keys } = await Keys.list({
+      auth: context.auth
+    });
 
-      return keys;
-    }),
-  delete: base
-    .meta({
-      required: {
-        session: ["api_keys"]
-      }
-    })
-    .use(authorized)
+    return keys;
+  }),
+  delete: sessionRoute
     .input(
       z.object({
         ids: z.array(id()).describe("IDs of the API keys to delete")
@@ -100,7 +73,7 @@ const keysRouter = base.prefix("/keys").router({
     .handler(async ({ context, input }) => {
       await Keys.delete({
         ids: input.ids,
-        workspaceID: context.auth.workspaceID
+        auth: context.auth
       });
       await Promise.all(input.ids.map((keyID) => Auth.invalidateSessionData({ keyID })));
 
@@ -112,13 +85,7 @@ const keysRouter = base.prefix("/keys").router({
         }
       });
     }),
-  update: base
-    .meta({
-      required: {
-        session: ["api_keys"]
-      }
-    })
-    .use(authorized)
+  update: sessionRoute
     .input(
       z.object({
         id: id().describe("ID of the API key to update"),
@@ -133,7 +100,7 @@ const keysRouter = base.prefix("/keys").router({
     .handler(async ({ context, input }) => {
       await Keys.update({
         id: input.id,
-        workspaceID: context.auth.workspaceID,
+        auth: context.auth,
         name: input.name,
         permissions: input.permissions
       });
@@ -152,13 +119,7 @@ const keysRouter = base.prefix("/keys").router({
         }
       });
     }),
-  rotate: base
-    .meta({
-      required: {
-        session: ["api_keys"]
-      }
-    })
-    .use(authorized)
+  rotate: sessionRoute
     .input(
       z.object({
         id: id().describe("ID of the API key to rotate"),
@@ -175,8 +136,7 @@ const keysRouter = base.prefix("/keys").router({
 
       const key = await Keys.rotate({
         id: input.id,
-        workspaceID: context.auth.workspaceID,
-        memberID: context.auth.session.memberID,
+        auth: context.auth,
         expiresIn: input.expiresIn
       });
 

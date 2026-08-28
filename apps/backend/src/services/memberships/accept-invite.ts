@@ -1,11 +1,4 @@
-import {
-  toGroupID,
-  toMembershipID,
-  toRoleID,
-  toUUID,
-  toUserID,
-  toWorkspaceID
-} from "#backend/lib/primitives";
+import { toMembershipID, toRoleID, toUUID, toUserID, toWorkspaceID } from "#backend/lib/primitives";
 import { db } from "#backend/lib/adapters";
 import {
   groupInvitations,
@@ -16,6 +9,7 @@ import {
   workspaces
 } from "#backend/db";
 import { verifyInviteLink } from "#backend/lib/messaging";
+import { loadGroupMembersUpdates } from "#backend/lib/data";
 import { and, eq } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 
@@ -151,13 +145,19 @@ const acceptInvite = async (input: {
       .set({ currentWorkspaceID: invite.workspaceID, updatedAt: new Date() })
       .where(eq(users.id, userID));
 
-    return { workspace, membership, groupIDs: invitationGroups.map(({ groupID }) => groupID) };
+    const updatedGroups = await loadGroupMembersUpdates(
+      tx,
+      invite.workspaceID,
+      invitationGroups.map(({ groupID }) => groupID)
+    );
+
+    return { workspace, membership, updatedGroups };
   });
 
   return {
     workspaceID: toWorkspaceID(result.workspace.id),
     workspaceName: result.workspace.name,
-    groupIDs: result.groupIDs.map(toGroupID),
+    updatedGroups: result.updatedGroups,
     membership: {
       id: toMembershipID(result.membership.id),
       userID: toUserID(result.membership.userID),

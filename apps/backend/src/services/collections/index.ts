@@ -1,4 +1,3 @@
-import { getRootCollection } from "./root";
 import { createCollection } from "./create";
 import { deleteCollections } from "./delete";
 import { listCollections } from "./list";
@@ -20,8 +19,7 @@ const Collections = {
   setRestricted: setCollectionRestricted,
   listRestrictedAssignments,
   setRestrictedAssignments,
-  move: moveCollection,
-  getRoot: getRootCollection
+  move: moveCollection
 };
 
 export { Collections };

@@ -1,41 +1,32 @@
 import { toCollectionID, toEntryID, toUUID } from "#backend/lib/primitives";
-import { db } from "#backend/lib/adapters";
-import { collections, entries, entryPublications, memberships, workspaces } from "#backend/db";
+import { collections, entries, entryPublications, memberships } from "#backend/db";
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
-import {
-  assertCollectionSubtreePermission,
-  assertRestrictedSubtreeManagement,
-  loadRestrictedCollectionAccess,
-  type SessionData
-} from "#backend/lib/policy";
+import { withAuthorization } from "#backend/lib/policy";
 
 interface DeletedContent {
   collectionIDs: string[];
   entryIDs: string[];
 }
 
-const deleteCollections = async (input: {
-  auth: SessionData;
+interface DeleteCollectionsInput {
   ids: string[];
-  workspaceID: string;
-}): Promise<DeletedContent> => {
-  if (input.ids.length === 0) return { collectionIDs: [], entryIDs: [] };
+}
 
-  const access = await loadRestrictedCollectionAccess(input.auth);
-  const ids = input.ids.map(toUUID);
-  const workspaceID = toUUID(input.workspaceID);
-
-  assertCollectionSubtreePermission(input.auth, access, input.ids, "content");
-  assertRestrictedSubtreeManagement(input.auth, access, input.ids);
-
-  return db.transaction(async (tx) => {
-    await tx
-      .select({ id: workspaces.id })
-      .from(workspaces)
-      .where(eq(workspaces.id, workspaceID))
-      .for("update");
-    const [root] = await tx
+const deleteCollections = withAuthorization<DeleteCollectionsInput, undefined, DeletedContent>(
+  {
+    actions: ({ input }) => ({
+      collections: input.ids.map((collectionID) => ({
+        action: "collection:delete",
+        collectionID
+      }))
+    }),
+    transaction: "locked-workspace"
+  },
+  async ({ database, input, workspaceID }) => {
+    if (input.ids.length === 0) return { collectionIDs: [], entryIDs: [] };
+    const ids = input.ids.map(toUUID);
+    const [root] = await database
       .select({ id: collections.id })
       .from(collections)
       .where(
@@ -55,7 +46,7 @@ const deleteCollections = async (input: {
       sql`, `
     );
 
-    const deletedCollections = await tx.execute<{ id: string }>(sql`
+    const deletedCollections = await database.execute<{ id: string }>(sql`
       with recursive subtree as (
         select id
         from ${collections}
@@ -80,7 +71,7 @@ const deleteCollections = async (input: {
 
     if (collectionIDs.length === 0) return { collectionIDs: [], entryIDs: [] };
 
-    const deletedEntries = await tx
+    const deletedEntries = await database
       .update(entries)
       .set({ deletedAt: new Date(), updatedAt: new Date() })
       .where(
@@ -93,13 +84,13 @@ const deleteCollections = async (input: {
       .returning({ id: entries.id });
 
     if (deletedEntries.length > 0) {
-      await tx.delete(entryPublications).where(
+      await database.delete(entryPublications).where(
         inArray(
           entryPublications.entryID,
           deletedEntries.map(({ id }) => id)
         )
       );
-      await tx
+      await database
         .update(memberships)
         .set({ currentEntryID: null, updatedAt: new Date() })
         .where(
@@ -117,7 +108,7 @@ const deleteCollections = async (input: {
       collectionIDs: collectionIDs.map(toCollectionID),
       entryIDs: deletedEntries.map(({ id }) => toEntryID(id))
     };
-  });
-};
+  }
+);
 
 export { deleteCollections };

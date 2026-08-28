@@ -1,11 +1,10 @@
 import { entryType, lexoRank } from "#backend/db";
 import { updateDocumentTitle } from "#backend/collaboration";
-import { emitEntryEvent, emitVersionCreationEvents } from "#backend/events";
-import { authorized, base } from "#backend/lib/transport";
+import { emitEntryEvent, emitPublishingEntryUpdates } from "#backend/events";
+import { authenticatedRoute, base, sessionRoute } from "#backend/lib/transport";
 import { contentNodeType } from "#backend/lib/content";
 import { id } from "#backend/lib/primitives";
 import { entryName } from "#backend/lib/validation";
-import { emitPublishingStatusUpdates } from "#backend/lib/publishing";
 import { Entries } from "#backend/services/entries";
 import { ORPCError } from "@orpc/server";
 import * as z from "zod";
@@ -40,22 +39,14 @@ const entryListType = z.object({
 });
 
 const entriesRouter = base.prefix("/entries").router({
-  create: base
+  create: authenticatedRoute
     .route({ method: "POST", path: "/" })
-    .meta({
-      required: {
-        session: true,
-        key: ["entries"]
-      }
-    })
-    .use(authorized)
     .input(entryType.omit({ order: true }).partial())
     .output(entryType)
     .handler(async ({ context, input }) => {
-      const newEntry = await Entries.create({
+      const { entry: newEntry, publishingEntries } = await Entries.create({
         ...input,
-        auth: context.auth,
-        workspaceID: context.auth.workspaceID
+        auth: context.auth
       });
 
       emitEntryEvent(context.auth.workspaceID, {
@@ -64,23 +55,16 @@ const entriesRouter = base.prefix("/entries").router({
         data: newEntry
       });
 
-      await emitPublishingStatusUpdates({
+      emitPublishingEntryUpdates({
         workspaceID: context.auth.workspaceID,
-        entryIDs: [newEntry.id],
+        entries: publishingEntries,
         memberID: context.auth.session?.memberID
       });
 
       return newEntry;
     }),
-  bulkDelete: base
+  bulkDelete: authenticatedRoute
     .route({ method: "POST", path: "/bulk/delete" })
-    .meta({
-      required: {
-        session: true,
-        key: ["entries"]
-      }
-    })
-    .use(authorized)
     .input(
       z.object({
         ids: z.array(id()).describe("IDs of the entries to delete")
@@ -90,7 +74,6 @@ const entriesRouter = base.prefix("/entries").router({
     .handler(async ({ context, input }) => {
       const { entryIDs } = await Entries.delete({
         auth: context.auth,
-        workspaceID: context.auth.workspaceID,
         ids: input.ids
       });
 
@@ -100,15 +83,8 @@ const entriesRouter = base.prefix("/entries").router({
         memberID: context.auth.session?.memberID
       });
     }),
-  delete: base
+  delete: authenticatedRoute
     .route({ method: "DELETE", path: "/:id" })
-    .meta({
-      required: {
-        session: true,
-        key: ["entries"]
-      }
-    })
-    .use(authorized)
     .input(
       z.object({
         id: id().describe("ID of the entry to delete")
@@ -118,7 +94,6 @@ const entriesRouter = base.prefix("/entries").router({
     .handler(async ({ context, input }) => {
       const { entryIDs } = await Entries.delete({
         auth: context.auth,
-        workspaceID: context.auth.workspaceID,
         ids: [input.id]
       });
 
@@ -131,15 +106,8 @@ const entriesRouter = base.prefix("/entries").router({
         data: { ids: entryIDs }
       });
     }),
-  update: base
+  update: authenticatedRoute
     .route({ method: "PUT", path: "/:id" })
-    .meta({
-      required: {
-        session: true,
-        key: ["entries"]
-      }
-    })
-    .use(authorized)
     .input(
       z.object({
         id: id().describe("ID of the entry to be updated"),
@@ -153,7 +121,6 @@ const entriesRouter = base.prefix("/entries").router({
       await Entries.update({
         auth: context.auth,
         id: input.id,
-        workspaceID: context.auth.workspaceID,
         name
       });
 
@@ -172,34 +139,21 @@ const entriesRouter = base.prefix("/entries").router({
         memberID: context.auth.session?.memberID
       });
     }),
-  move: base
-    .meta({
-      required: {
-        session: true
-      }
-    })
+  move: sessionRoute
     .input(
       z.object({
         id: id().describe("ID of the entry to be moved"),
         order: lexoRank().describe("New LexoRank order of the entry"),
-        collectionID: id().optional().nullable().describe("ID of the new parent collection"),
-        publish: z
-          .boolean()
-          .optional()
-          .describe("Whether to publish the latest version when entering an enabled tree")
+        collectionID: id().optional().nullable().describe("ID of the new parent collection")
       })
     )
-    .use(authorized)
     .output(z.object({ order: z.string() }))
     .handler(async ({ context, input }) => {
       const result = await Entries.move({
         auth: context.auth,
         id: input.id,
-        workspaceID: context.auth.workspaceID,
         order: input.order,
-        collectionID: input.collectionID,
-        publish: input.publish,
-        contributorIDs: context.auth.session ? [context.auth.session.memberID] : []
+        collectionID: input.collectionID
       });
       emitEntryEvent(context.auth.workspaceID, {
         action: "entry:move",
@@ -212,31 +166,18 @@ const entriesRouter = base.prefix("/entries").router({
         memberID: context.auth.session?.memberID
       });
 
-      if (result.affectedPublishingEntryIDs.length > 0) {
-        await emitPublishingStatusUpdates({
+      if (result.publishingEntries.length > 0) {
+        emitPublishingEntryUpdates({
           workspaceID: context.auth.workspaceID,
-          entryIDs: result.affectedPublishingEntryIDs,
+          entries: result.publishingEntries,
           memberID: context.auth.session?.memberID
         });
       }
 
-      emitVersionCreationEvents(
-        context.auth.workspaceID,
-        result.createdVersions,
-        context.auth.session?.memberID
-      );
-
       return { order: result.order };
     }),
-  get: base
+  get: authenticatedRoute
     .route({ method: "GET", path: "/:id" })
-    .meta({
-      required: {
-        key: ["read:entries"],
-        session: true
-      }
-    })
-    .use(authorized)
     .input(
       z.object({
         id: id().describe("ID of the entry to get")
@@ -246,19 +187,11 @@ const entriesRouter = base.prefix("/entries").router({
     .handler(async ({ context, input }) => {
       return Entries.get({
         auth: context.auth,
-        id: input.id,
-        workspaceID: context.auth.workspaceID
+        id: input.id
       });
     }),
-  list: base
+  list: authenticatedRoute
     .route({ method: "GET", path: "/list" })
-    .meta({
-      required: {
-        key: ["read:entries"],
-        session: true
-      }
-    })
-    .use(authorized)
     .input(
       z.object({
         collectionID: id().optional().describe("ID of the collection to get entries from"),
@@ -270,7 +203,6 @@ const entriesRouter = base.prefix("/entries").router({
     .handler(async ({ context, input }) => {
       const { entries, nextCursor } = await Entries.list({
         auth: context.auth,
-        workspaceID: context.auth.workspaceID,
         collectionID: input.collectionID,
         cursor: input.cursor,
         limit: input.limit

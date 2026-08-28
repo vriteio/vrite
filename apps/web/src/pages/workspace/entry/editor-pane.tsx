@@ -29,7 +29,7 @@ const EditorPane: Component = () => {
   const editableEntryID = createMemo(() => {
     const entry = content.entries.get({ entryID: availableEntryID() || "" });
 
-    return content.hasCollectionPermission(entry?.collectionID || null, "content")
+    return content.canEntry(entry?.collectionID || null, "entry:update")
       ? availableEntryID()
       : null;
   });

@@ -1,44 +1,9 @@
 import { Auth } from "#backend/services/auth";
-import type { SessionData } from "#backend/lib/policy";
+import { assertAuthorizationRequirements, type SessionData } from "#backend/lib/policy";
 import { ORPCError } from "@orpc/server";
 import { base } from "../orpc";
 import { config } from "#backend/lib/config";
 import { Billing } from "#backend/services/billing";
-import { hasPermission } from "#backend/lib/policy";
-import type { KeyPermission, Permission } from "#backend/db";
-
-interface AuthorizationRequirements {
-  key?: KeyPermission[] | true;
-  session?: Permission[] | "admin" | true;
-}
-
-const authorizeSession = (sessionData: SessionData, required?: AuthorizationRequirements): void => {
-  if (!required) return;
-  if (sessionData.type === "session" && sessionData.session?.admin) return;
-
-  const requiredPermissions = required[sessionData.type];
-
-  if (!requiredPermissions || requiredPermissions === "admin") {
-    throw new ORPCError("FORBIDDEN");
-  }
-  if (requiredPermissions === true) return;
-
-  const permissions =
-    sessionData.type === "session"
-      ? sessionData.session?.permissions || []
-      : sessionData.key?.permissions || [];
-  const missingPermissions = requiredPermissions.filter((requiredPermission) => {
-    return !permissions.some((grantedPermission) => {
-      return hasPermission(grantedPermission, requiredPermission);
-    });
-  });
-
-  if (missingPermissions.length > 0) {
-    throw new ORPCError("FORBIDDEN", {
-      message: `Missing required permissions: ${missingPermissions.join(", ")}`
-    });
-  }
-};
 const shouldTrackUsage = (sessionData: SessionData, trackUsage?: boolean): boolean => {
   return (sessionData.type === "key" && trackUsage !== false) || trackUsage === true;
 };
@@ -101,7 +66,7 @@ const authorized = base.middleware(async ({ procedure, context, next }) => {
     requireWorkspace: meta.requireWorkspace !== false
   });
 
-  authorizeSession(sessionData, meta.required);
+  assertAuthorizationRequirements(sessionData, meta.required);
   checkPlanAccess(sessionData, meta.requireProPlan);
 
   let usage: Awaited<ReturnType<typeof getUsageAllowance>> | undefined;
@@ -134,6 +99,8 @@ const authorized = base.middleware(async ({ procedure, context, next }) => {
 
   return result;
 });
+const authenticatedRoute = base.meta({ required: true }).use(authorized);
+const sessionRoute = base.meta({ required: { session: true } }).use(authorized);
 
-export { authorized };
+export { authenticatedRoute, authorized, sessionRoute };
 export type { SessionData };

@@ -9,13 +9,17 @@ import {
   roles,
   workspaces
 } from "#backend/db";
+import { withAuthorization } from "#backend/lib/policy";
 import { and, eq } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 
-const deleteRole = async (input: {
+interface DeleteRoleInput {
   id: string;
-  workspaceID: string;
-}): Promise<{ affectedUserIDs: string[] }> => {
+}
+
+const deleteRoleOperation = async (
+  input: DeleteRoleInput & { workspaceID: string }
+): Promise<{ affectedUserIDs: string[] }> => {
   const roleID = toUUID(input.id);
   const workspaceID = toUUID(input.workspaceID);
   const affectedUserIDs = await db.transaction(async (tx) => {
@@ -105,5 +109,9 @@ const deleteRole = async (input: {
 
   return { affectedUserIDs: affectedUserIDs.map(toUserID) };
 };
+const deleteRole = withAuthorization<DeleteRoleInput, undefined, { affectedUserIDs: string[] }>(
+  { permissions: { session: ["workspace"], key: ["roles"] }, plan: "pro" },
+  async ({ input, workspaceID }) => deleteRoleOperation({ ...input, workspaceID })
+);
 
 export { deleteRole };

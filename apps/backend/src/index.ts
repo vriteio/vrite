@@ -236,3 +236,4 @@ process.on("SIGINT", shutdown);
 export type Router = typeof router;
 export type * from "#backend/db";
 export type * from "#backend/events";
+export type * from "#backend/lib/policy/actions";

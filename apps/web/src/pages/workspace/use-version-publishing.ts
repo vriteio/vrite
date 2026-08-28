@@ -1,6 +1,6 @@
 import { createAsync, revalidate } from "@solidjs/router";
 import { createMutation } from "@tanstack/solid-query";
-import { type Accessor, createEffect, createMemo, createSignal, on, useTransition } from "solid-js";
+import { type Accessor, createMemo, useTransition } from "solid-js";
 import { useNotify } from "#web/context/notifications";
 import { useWorkspace } from "#web/context/workspace";
 import { usePublishing } from "#web/context/publishing";
@@ -15,7 +15,6 @@ import {
 interface UseVersionPublishingInput {
   entryID: Accessor<string>;
   opened: Accessor<boolean>;
-  versions: Accessor<VersionSummary[]>;
 }
 interface PublishingPublicationsResult {
   entryID: string;
@@ -39,12 +38,11 @@ const useVersionPublishing = (input: UseVersionPublishingInput) => {
   const { content } = useWorkspace();
   const publishing = usePublishing();
   const notify = useNotify();
-  const [action, setAction] = createSignal<VersionPublishingAction | null>(null);
   const [publicationsRefreshing, startPublicationsRefresh] = useTransition();
   const canRead = () => {
     const entry = content.entries.get({ entryID: input.entryID() });
 
-    return content.hasCollectionPermission(entry?.collectionID || null, "read:publishing");
+    return content.canEntry(entry?.collectionID || null, "entry:read");
   };
   const publishingEnabled = () => {
     const status = content.getEntryPublishingStatus(input.entryID());
@@ -56,7 +54,7 @@ const useVersionPublishing = (input: UseVersionPublishingInput) => {
       (() => {
         const entry = content.entries.get({ entryID: input.entryID() });
 
-        return content.hasCollectionPermission(entry?.collectionID || null, "publishing");
+        return content.canEntry(entry?.collectionID || null, "publishing:publish");
       })() &&
       publishingEnabled() &&
       !content.offline() &&
@@ -133,16 +131,8 @@ const useVersionPublishing = (input: UseVersionPublishingInput) => {
       });
     },
     onSuccess: (_data, mutationInput) => {
-      setAction(null);
       refresh(() => mutation.reset());
       void revalidate(publishingStatusQuery.keyFor({ channel: mutationInput.channel }));
-      notify({
-        type: "success",
-        text:
-          mutationInput.action === "assign"
-            ? `Version assigned to ${publishing.getChannelName(mutationInput.channel)}`
-            : `Version unpublished from ${publishing.getChannelName(mutationInput.channel)}`
-      });
     },
     onError: (error, mutationInput) => {
       console.error(error);
@@ -193,76 +183,21 @@ const useVersionPublishing = (input: UseVersionPublishingInput) => {
 
     return channels;
   });
-  const dialogTitle = () => {
-    return action()?.action === "assign"
-      ? "Publish version to channel?"
-      : "Unpublish version from channel?";
-  };
-  const dialogDescription = () => {
-    const currentAction = action();
-
-    if (!currentAction) return "";
-
-    if (currentAction.action === "assign") {
-      const assignedVersionID = publicationResult().find((publication) => {
-        return publication.channel.code === currentAction.channel;
-      })?.version.id;
-      const assignedVersion = input.versions().find((version) => version.id === assignedVersionID);
-      const replacement = assignedVersion
-        ? ` This replaces ${assignedVersion.name || assignedVersion.entryName}.`
-        : assignedVersionID
-          ? " This replaces the existing publication."
-          : "";
-
-      return `Assign this version to the "${publishing.getChannelName(currentAction.channel)}" channel, replacing assigned ${replacement} version.`;
-    }
-
-    return `Remove this entry from the ${publishing.getChannelName(currentAction.channel)} channel.`;
-  };
-  const affected = () => {
-    const currentAction = action();
-
-    if (!currentAction) return [];
-
-    return [
-      {
-        id: currentAction.version.id,
-        icon: "i-lucide:history",
-        label: currentAction.version.name || currentAction.version.entryName,
-        detail: `Channel: ${publishing.getChannelName(currentAction.channel)}`
-      }
-    ];
-  };
   const assign = (version: VersionSummary, channel: string) => {
-    setAction({ action: "assign", channel, version });
+    if (!mutation.isPending) {
+      mutation.mutate({ action: "assign", channel, version, entryID: input.entryID() });
+    }
   };
   const unpublish = (version: VersionSummary, channel: string) => {
-    setAction({ action: "unpublish", channel, version });
-  };
-  const close = () => {
-    if (!mutation.isPending) setAction(null);
-  };
-  const confirm = () => {
-    const currentAction = action();
-
-    if (currentAction) {
-      mutation.mutate({ ...currentAction, entryID: input.entryID() });
+    if (!mutation.isPending) {
+      mutation.mutate({ action: "unpublish", channel, version, entryID: input.entryID() });
     }
   };
 
-  createEffect(on(input.entryID, () => setAction(null)));
-
   return {
-    action,
-    affected,
     assignedChannels: (versionID: string) => channelsByVersionID().get(versionID) || [],
     assign,
     canManage: canManagePublications,
-    close,
-    confirm,
-    dialogDescription,
-    dialogTitle,
-    loading: () => mutation.isPending,
     queryError,
     queryLoading,
     retry: () => {

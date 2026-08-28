@@ -3,7 +3,7 @@ import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { emailOTP, multiSession } from "better-auth/plugins";
 import { passkey } from "@better-auth/passkey";
 import { schema } from "#backend/db";
-import { toUUID, toWorkspaceID } from "#backend/lib/primitives";
+import { toUserID, toUUID, toWorkspaceID } from "#backend/lib/primitives";
 import { db } from "./postgres";
 import { config } from "#backend/lib/config";
 import { sendEmail } from "./email";
@@ -147,7 +147,7 @@ const auth = betterAuth({
               defaultWorkspaceName.length > 50 ? "Personal Workspace" : defaultWorkspaceName;
             const workspace = await Workspaces.create({
               name: workspaceName,
-              userID: user.id
+              userID: toUserID(user.id)
             });
 
             // Update the user's currentWorkspaceID to the newly created workspace before returning the user object

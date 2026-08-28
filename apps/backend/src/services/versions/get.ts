@@ -1,28 +1,25 @@
 import { entries, entryVersionContributors, entryVersions } from "#backend/db";
-import { db } from "#backend/lib/adapters";
 import { mapVersion, type VersionDetails } from "#backend/lib/data";
+import { type ServiceResolveContext, withAuthorization } from "#backend/lib/policy";
 import { toUUID } from "#backend/lib/primitives";
 import { ORPCError } from "@orpc/server";
 import { and, eq, isNull } from "drizzle-orm";
-import {
-  assertVersionPermission,
-  loadRestrictedCollectionAccess,
-  type SessionData
-} from "#backend/lib/policy";
 
-const getVersion = async (input: {
-  auth: SessionData;
-  workspaceID: string;
+interface GetVersionInput {
   versionID: string;
-}): Promise<VersionDetails> => {
-  const access = await loadRestrictedCollectionAccess(input.auth);
-  const workspaceID = toUUID(input.workspaceID);
+  action?: "version:read" | "version:revert";
+}
+
+type ResolvedGetVersion = Awaited<ReturnType<typeof resolveGetVersion>>;
+
+async function resolveGetVersion({
+  database,
+  input,
+  workspaceID
+}: ServiceResolveContext<GetVersionInput>) {
   const versionID = toUUID(input.versionID);
-
-  await assertVersionPermission(input.auth, access, input.versionID, "read:versions");
-
-  const [row] = await db
-    .select({ version: entryVersions })
+  const [row] = await database
+    .select({ collectionID: entries.collectionID, version: entryVersions })
     .from(entryVersions)
     .innerJoin(
       entries,
@@ -36,20 +33,38 @@ const getVersion = async (input: {
 
   if (!row) throw new ORPCError("NOT_FOUND", { message: "Version not found" });
 
-  const contributors = await db
-    .select({ membershipID: entryVersionContributors.membershipID })
-    .from(entryVersionContributors)
-    .where(
-      and(
-        eq(entryVersionContributors.workspaceID, workspaceID),
-        eq(entryVersionContributors.versionID, versionID)
-      )
-    );
+  return row;
+}
 
-  return mapVersion(
-    row.version,
-    contributors.map(({ membershipID }) => membershipID)
-  );
-};
+const getVersion = withAuthorization<GetVersionInput, ResolvedGetVersion, VersionDetails>(
+  {
+    actions: ({ input, resolved }) => ({
+      entries: [
+        {
+          action: input.action || "version:read",
+          collectionID: resolved.collectionID
+        }
+      ]
+    }),
+    resolve: resolveGetVersion
+  },
+  async ({ database, input, resolved, workspaceID }) => {
+    const versionID = toUUID(input.versionID);
+    const contributors = await database
+      .select({ membershipID: entryVersionContributors.membershipID })
+      .from(entryVersionContributors)
+      .where(
+        and(
+          eq(entryVersionContributors.workspaceID, workspaceID),
+          eq(entryVersionContributors.versionID, versionID)
+        )
+      );
+
+    return mapVersion(
+      resolved.version,
+      contributors.map(({ membershipID }) => membershipID)
+    );
+  }
+);
 
 export { getVersion };
