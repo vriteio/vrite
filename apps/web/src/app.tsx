@@ -1,4 +1,4 @@
-import { Router, createAsync, query, redirect, revalidate, useLocation } from "@solidjs/router";
+import { Router, createAsync, query, redirect, revalidate } from "@solidjs/router";
 import { MetaProvider, Title } from "@solidjs/meta";
 import {
   DropdownProvider,
@@ -17,7 +17,7 @@ import { appendRedirectTo, normalizeRedirectTo, routes } from "./lib/navigation"
 import { validateWorkspaceID } from "./lib/validation";
 import { DotsBackground } from "./components/dots-background";
 
-const rootRedirectQuery = query(async (path: string) => {
+const rootRedirectQuery = query(async () => {
   const event = getRequestEvent();
 
   if (!event && typeof window === "undefined") {
@@ -25,7 +25,7 @@ const rootRedirectQuery = query(async (path: string) => {
   }
 
   const { data } = await authClient.getSession();
-  const url = event ? new URL(event.request.url) : new URL(path, window.location.origin);
+  const url = new URL(event ? event.request.url : window.location.href);
   const isAuthRoute = url.pathname.startsWith("/auth");
   const isInviteRoute = url.pathname === "/invite";
   const isNewWorkspaceRoute = url.pathname === "/new-workspace";
@@ -132,10 +132,8 @@ const AppError = (props: AppErrorProps) => {
 };
 const RootLayout: ParentComponent = (props) => {
   const queryClient = new QueryClient();
-  const location = useLocation();
-  const path = () => `${location.pathname}${location.search}`;
 
-  createAsync(() => rootRedirectQuery(path()), { deferStream: true });
+  createAsync(() => rootRedirectQuery(), { deferStream: true });
 
   return (
     <MetaProvider>
