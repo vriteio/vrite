@@ -77,7 +77,7 @@ const useVersionPublishing = (input: UseVersionPublishingInput) => {
         return { entryID, error: true };
       }
     },
-    { deferStream: true }
+    { deferStream: true, initialValue: null }
   );
   const publicationResult = () => {
     const latest = publications.latest;

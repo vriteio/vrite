@@ -226,6 +226,10 @@ const WorkspaceProvider: ParentComponent = (props) => {
         } catch (error) {
           if (!abortController.signal.aborted) {
             console.error("Workspace update stream disconnected", error);
+
+            if (content.accessLoading()) {
+              await content.syncWorkspaceContent(currentWorkspaceID).catch(() => {});
+            }
           }
         }
 

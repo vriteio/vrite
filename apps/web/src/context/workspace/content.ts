@@ -97,6 +97,7 @@ const useWorkspaceContent = (workspaceID: Accessor<string>) => {
   const isOnline = useConnectivitySignal();
   const [contentCollections, setContentCollections] = createSignal(createWorkspaceCollections());
   const [loading, setLoading] = createSignal(Boolean(workspaceID()));
+  const [accessLoading, setAccessLoading] = createSignal(Boolean(workspaceID()));
   const [syncing, setSyncing] = createSignal(false);
   const [snapshotError, setSnapshotError] = createSignal(false);
   const [publishing, setPublishing] = createSignal<PublishingState | null>(null);
@@ -252,6 +253,7 @@ const useWorkspaceContent = (workspaceID: Accessor<string>) => {
           }
         : null
     );
+    setAccessLoading(false);
     setSnapshotError(false);
     setLoading(false);
   };
@@ -261,6 +263,8 @@ const useWorkspaceContent = (workspaceID: Accessor<string>) => {
     syncingWorkspaces.set(targetWorkspaceID, (syncingWorkspaces.get(targetWorkspaceID) ?? 0) + 1);
 
     if (contentCollections().workspaceID === targetWorkspaceID) {
+      if (!rootID()) setAccessLoading(true);
+
       setSyncing(true);
     }
 
@@ -274,6 +278,7 @@ const useWorkspaceContent = (workspaceID: Accessor<string>) => {
       );
     } catch (error) {
       if (contentCollections().workspaceID === targetWorkspaceID) {
+        setAccessLoading(false);
         setSnapshotError(true);
         setLoading(false);
       }
@@ -430,6 +435,7 @@ const useWorkspaceContent = (workspaceID: Accessor<string>) => {
   };
   const switchWorkspace = async (currentWorkspaceID: string, previousWorkspaceID?: string) => {
     setLoading(Boolean(currentWorkspaceID));
+    setAccessLoading(Boolean(currentWorkspaceID));
     setSyncing((syncingWorkspaces.get(currentWorkspaceID) ?? 0) > 0);
     setSnapshotError(false);
     setPublishing(null);
@@ -449,6 +455,7 @@ const useWorkspaceContent = (workspaceID: Accessor<string>) => {
 
     if (!currentWorkspaceID) {
       setLoading(false);
+      setAccessLoading(false);
       return;
     }
 
@@ -470,6 +477,7 @@ const useWorkspaceContent = (workspaceID: Accessor<string>) => {
   );
 
   return {
+    accessLoading,
     entriesCollection,
     collectionsCollection,
     disposeWorkspaceContent,

@@ -67,14 +67,12 @@ const VersionHistoryPanel: Component<VersionHistoryPanelProps> = (props) => {
         response: await versionHistoryQuery({ entryID: currentEntryID, limit: 50 })
       };
     },
-    { deferStream: true }
+    { deferStream: true, initialValue: null }
   );
   const historyResponse = () => {
     const latest = versionHistory.latest;
 
-    if (latest?.entryID === entryID()) return latest.response;
-
-    return versionHistory()?.response;
+    return latest?.entryID === entryID() ? latest.response : undefined;
   };
   const historyResult = () => historyResponse()?.result;
   const options = () => {
@@ -280,27 +278,29 @@ const VersionHistoryPanel: Component<VersionHistoryPanelProps> = (props) => {
           </div>
           <Suspense fallback={<VersionHistorySkeleton />}>
             <Show
-              when={!historyResponse()?.error}
+              when={historyResponse() && !historyResponse()?.error}
               fallback={
-                <div class="flex flex-1 flex-col">
-                  <div>
-                    <Button
-                      onClick={() => {
-                        refreshHistory();
-                      }}
-                      class="flex justify-start items-center w-full group/button gap-1 pl-0.5 py-0.5"
-                      variant="text"
-                    >
-                      <div class="flex h-6 w-6 items-center justify-center">
-                        <div class="i-lucide:refresh-cw h-4.5 w-4.5 text-gray-400" />
-                      </div>
-                      <span class="text-left flex-1 line-clamp-1">Try again</span>
-                    </Button>
+                <Show when={historyResponse() !== undefined} fallback={<VersionHistorySkeleton />}>
+                  <div class="flex flex-1 flex-col">
+                    <div>
+                      <Button
+                        onClick={() => {
+                          refreshHistory();
+                        }}
+                        class="flex justify-start items-center w-full group/button gap-1 pl-0.5 py-0.5"
+                        variant="text"
+                      >
+                        <div class="flex h-6 w-6 items-center justify-center">
+                          <div class="i-lucide:refresh-cw h-4.5 w-4.5 text-gray-400" />
+                        </div>
+                        <span class="text-left flex-1 line-clamp-1">Try again</span>
+                      </Button>
+                    </div>
+                    <p class="mt-1 mx-1 text-left text-xs text-gray-400">
+                      Versions could not be loaded. Check your connection and try again.
+                    </p>
                   </div>
-                  <p class="mt-1 mx-1 text-left text-xs text-gray-400">
-                    Versions could not be loaded. Check your connection and try again.
-                  </p>
-                </div>
+                </Show>
               }
             >
               <Show

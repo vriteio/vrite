@@ -1,4 +1,4 @@
-import { IconButton, Tooltip } from "@andesine/components";
+import { IconButton, Skeleton, Tooltip } from "@andesine/components";
 import { useParams } from "@solidjs/router";
 import { type Component, createMemo, createSignal, For, Show, Suspense } from "solid-js";
 import { Dynamic } from "solid-js/web";
@@ -55,6 +55,7 @@ const useRightSidePanelOptions = () => {
 
 const RightSidePanel: Component = () => {
   const { layout } = useLayout();
+  const { content } = useWorkspace();
   const options = useRightSidePanelOptions();
   const [selectedOptionID, setSelectedOptionID] = createSignal<string>();
   const selectedOption = createMemo(() => {
@@ -64,6 +65,9 @@ const RightSidePanel: Component = () => {
   return (
     <div class="flex min-h-0 w-full flex-1 flex-col">
       <div class="flex w-full gap-1 px-1">
+        <Show when={options().length === 0 && content.accessLoading()}>
+          <Skeleton class="h-7 w-7 rounded-lg" />
+        </Show>
         <For each={options()}>
           {(option) => {
             const selected = () => selectedOption()?.id === option.id;
@@ -91,7 +95,15 @@ const RightSidePanel: Component = () => {
         </For>
       </div>
       <div class="relative flex min-h-0 w-full flex-1">
-        <Show when={layout.rightSidePanelWidth > 0 && selectedOption()} keyed>
+        <Show
+          when={layout.rightSidePanelWidth > 0 && selectedOption()}
+          fallback={
+            <Show when={layout.rightSidePanelWidth > 0 && content.accessLoading()}>
+              <VersionHistoryPanelFallback />
+            </Show>
+          }
+          keyed
+        >
           {(option) => (
             <Suspense fallback={<Dynamic component={option.fallback} />}>
               <Dynamic component={option.component} />

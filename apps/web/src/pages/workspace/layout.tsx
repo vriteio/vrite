@@ -17,7 +17,7 @@ import {
 } from "solid-js";
 import { useLayout } from "#web/context/layout";
 import { PublishingProvider } from "#web/context/publishing";
-import { WorkspaceProvider } from "#web/context/workspace";
+import { useWorkspace, WorkspaceProvider } from "#web/context/workspace";
 import { EditorToolbar } from "./editor-toolbar";
 import { Menu } from "./menu";
 import { ProfileMenu } from "./profile-menu";
@@ -38,9 +38,18 @@ const DEFAULT_SIDE_PANEL_WIDTH = 248;
 const MAX_SIDE_PANEL_WIDTH = 640;
 
 const WorkspaceRightSidePanel: Component<WorkspaceRightSidePanelProps> = (props) => {
+  const params = useParams<{ slug?: string }>();
   const { layout, setLayout } = useLayout();
+  const { content } = useWorkspace();
   const options = useRightSidePanelOptions();
-  const available = () => !props.hidden && options().length > 0;
+  const isEntryRoute = () => Boolean(params.slug?.startsWith("ent_"));
+  const available = () => {
+    return (
+      !props.hidden &&
+      (options().length > 0 ||
+        (isEntryRoute() && layout.rightSidePanelWidth > 0 && content.accessLoading()))
+    );
+  };
 
   return (
     <Show when={available()} fallback={<div class="hidden w-3 md:block" />}>

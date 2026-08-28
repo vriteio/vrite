@@ -1,5 +1,5 @@
 import { Title } from "@solidjs/meta";
-import { revalidate, useNavigate, useParams, useSearchParams } from "@solidjs/router";
+import { useNavigate, useParams, useSearchParams } from "@solidjs/router";
 import { type Component, createEffect, Show } from "solid-js";
 import { useWorkspace } from "#web/context/workspace";
 import { client } from "#web/lib/api";
@@ -20,7 +20,7 @@ const EntryPage: Component = () => {
   };
 
   createEffect(() => {
-    const currentEntryID = currentWorkspace()?.currentEntryID;
+    const currentEntryID = persistedEntryID() || currentWorkspace()?.currentEntryID;
 
     if (!params.slug && currentEntryID) {
       navigate(`/${params.workspaceID}/${currentEntryID}`, { replace: true });
@@ -36,10 +36,7 @@ const EntryPage: Component = () => {
     if (!entry) return;
 
     setPersistedEntryID(entryID);
-    void client.sync
-      .setCurrentEntry({ entryID })
-      .then(() => revalidate("workspaces"))
-      .catch(() => {});
+    void client.sync.setCurrentEntry({ entryID }).catch(() => {});
   });
 
   return (
