@@ -25,9 +25,9 @@ interface SearchCollectionDefinition {
 }
 
 const CURRENT_SEARCH_COLLECTION_ALIAS = "andesine_search_current";
-const CURRENT_SEARCH_COLLECTION_NAME = "andesine_search_current";
+const CURRENT_SEARCH_COLLECTION_NAME = "andesine_search_current_v1";
 const PUBLISHED_SEARCH_COLLECTION_ALIAS = "andesine_search_published";
-const PUBLISHED_SEARCH_COLLECTION_NAME = "andesine_search_published";
+const PUBLISHED_SEARCH_COLLECTION_NAME = "andesine_search_published_v1";
 const commonFields: TypesenseFieldSchema[] = [
   { name: "scope", type: "string" },
   { name: "workspaceID", type: "string" },
