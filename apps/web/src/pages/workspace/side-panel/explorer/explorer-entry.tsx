@@ -87,16 +87,18 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
                 <Tooltip
                   content={publishingLabel()}
                   placement="right"
-                  wrapperClass="absolute -top-1 -left-0.5 h-3 w-3"
+                  wrapperClass="absolute -top-0.5 -left-0.5 h-3 w-3"
                 >
-                  <div class="flex h-3 w-3 items-center justify-center">
+                  <div
+                    class={clsx(
+                      "flex h-3 w-3 items-center justify-center rounded-lg bg-gray-100/80"
+                    )}
+                  >
                     <div
                       class={clsx(
-                        "flex justify-center items-center h-2 w-2 shadow-sm",
-                        publishingStatus() === "error" &&
-                          "bg-red-500/90 rounded-full shadow-red-500/50",
-                        publishingStatus() === "unpublished" &&
-                          "bg-amber-500/90 rounded-full shadow-amber-500/50"
+                        "flex justify-center items-center h-2.5 w-2.5 i-lucide:radio",
+                        publishingStatus() === "error" && "text-red-500",
+                        publishingStatus() === "unpublished" && "text-amber-500"
                       )}
                     />
                   </div>

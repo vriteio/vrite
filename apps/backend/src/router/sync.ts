@@ -11,13 +11,14 @@ const explorerTreeType = z.object({
   collections: z.array(collectionType),
   entries: z.array(entryType),
   accessByCollectionID: z.record(id(), collectionAccessType),
+  workspaceContentAccess: collectionAccessType,
+  topLevelCollectionIDs: z.array(id()),
   publishing: z
     .object({
       enabledCollectionIDs: z.array(id()),
       unpublishedEntryIDs: z.array(id())
     })
-    .nullable(),
-  rootID: id()
+    .nullable()
 });
 
 const syncRouter = base.router({

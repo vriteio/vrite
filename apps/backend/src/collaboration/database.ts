@@ -12,6 +12,7 @@ import { emitEntryEvent, emitPublishingEntryContentUpdates } from "#backend/even
 import { db } from "#backend/lib/adapters";
 import { hashContentDocument, serializeContentDocument } from "#backend/lib/content";
 import { PUBLISHED_CHANNEL_CODE } from "#backend/lib/publishing";
+import { enqueueCurrentEntrySync } from "#backend/lib/queue";
 import { toEntryID, toUUID, toWorkspaceID } from "#backend/lib/primitives";
 import {
   AUTOMATIC_VERSION_MAX_PERIOD_MS,
@@ -228,6 +229,13 @@ const collaborationDatabase = new Database({
       emitPublishingEntryContentUpdates({
         workspaceID: toWorkspaceID(stored.entry.workspaceID),
         entries: [stored.publishingEntry]
+      });
+    }
+
+    if (stored && (stored.contentChanged || stored.title !== null)) {
+      void enqueueCurrentEntrySync({
+        workspaceID: toWorkspaceID(stored.entry.workspaceID),
+        entryIDs: [toEntryID(stored.entry.id)]
       });
     }
   }

@@ -38,7 +38,7 @@ const deleteCollections = withAuthorization<DeleteCollectionsInput, undefined, D
       );
 
     if (root && ids.includes(root.id)) {
-      throw new ORPCError("BAD_REQUEST", { message: "Cannot delete the root collection" });
+      throw new ORPCError("NOT_FOUND");
     }
 
     const idList = sql.join(

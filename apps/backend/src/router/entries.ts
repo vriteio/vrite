@@ -3,6 +3,7 @@ import { updateDocumentTitle } from "#backend/collaboration";
 import { emitEntryEvent, emitPublishingEntryUpdates } from "#backend/events";
 import { authenticatedRoute, base, sessionRoute } from "#backend/lib/transport";
 import { contentNodeType } from "#backend/lib/content";
+import { enqueueCurrentEntrySync, enqueuePublishedEntrySync } from "#backend/lib/queue";
 import { id } from "#backend/lib/primitives";
 import { entryName } from "#backend/lib/validation";
 import { Entries } from "#backend/services/entries";
@@ -60,6 +61,10 @@ const entriesRouter = base.prefix("/entries").router({
         entries: publishingEntries,
         memberID: context.auth.session?.memberID
       });
+      await enqueueCurrentEntrySync({
+        workspaceID: context.auth.workspaceID,
+        entryIDs: [newEntry.id]
+      });
 
       return newEntry;
     }),
@@ -82,6 +87,16 @@ const entriesRouter = base.prefix("/entries").router({
         data: { ids: entryIDs },
         memberID: context.auth.session?.memberID
       });
+      await Promise.all([
+        enqueueCurrentEntrySync({
+          workspaceID: context.auth.workspaceID,
+          entryIDs
+        }),
+        enqueuePublishedEntrySync({
+          workspaceID: context.auth.workspaceID,
+          entryIDs
+        })
+      ]);
     }),
   delete: authenticatedRoute
     .route({ method: "DELETE", path: "/:id" })
@@ -105,6 +120,16 @@ const entriesRouter = base.prefix("/entries").router({
         action: "entry:delete",
         data: { ids: entryIDs }
       });
+      await Promise.all([
+        enqueueCurrentEntrySync({
+          workspaceID: context.auth.workspaceID,
+          entryIDs
+        }),
+        enqueuePublishedEntrySync({
+          workspaceID: context.auth.workspaceID,
+          entryIDs
+        })
+      ]);
     }),
   update: authenticatedRoute
     .route({ method: "PUT", path: "/:id" })
@@ -138,6 +163,13 @@ const entriesRouter = base.prefix("/entries").router({
         data: { id: input.id, name },
         memberID: context.auth.session?.memberID
       });
+
+      if (name !== undefined) {
+        await enqueueCurrentEntrySync({
+          workspaceID: context.auth.workspaceID,
+          entryIDs: [input.id]
+        });
+      }
     }),
   move: sessionRoute
     .input(
@@ -165,6 +197,19 @@ const entriesRouter = base.prefix("/entries").router({
         },
         memberID: context.auth.session?.memberID
       });
+
+      if (input.collectionID !== undefined) {
+        await Promise.all([
+          enqueueCurrentEntrySync({
+            workspaceID: context.auth.workspaceID,
+            entryIDs: [input.id]
+          }),
+          enqueuePublishedEntrySync({
+            workspaceID: context.auth.workspaceID,
+            entryIDs: [input.id]
+          })
+        ]);
+      }
 
       if (result.publishingEntries.length > 0) {
         emitPublishingEntryUpdates({

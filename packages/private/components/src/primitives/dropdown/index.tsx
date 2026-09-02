@@ -13,6 +13,7 @@ import {
   onCleanup,
   type ParentComponent,
   Show,
+  splitProps,
   useContext
 } from "solid-js";
 import { type Placement } from "@floating-ui/dom";
@@ -338,15 +339,22 @@ const Dropdown: Component<DropdownProps> = (props) => {
               event.stopPropagation();
               if (!md() && opened()) closeMobileDropdowns();
             }}
-            asChild={(triggerProps) => (
-              <div ref={setActivatorRef} class="contents" {...triggerProps()}>
-                <Dynamic
-                  component={props.trigger}
-                  contextMenu={contextAnchorPoint() !== null}
-                  opened={opened()}
-                />
-              </div>
-            )}
+            asChild={(triggerProps) => {
+              const [, clickTriggerProps] = splitProps(triggerProps(), [
+                "onPointerMove",
+                "onPointerLeave"
+              ]);
+
+              return (
+                <div ref={setActivatorRef} class="contents" {...clickTriggerProps}>
+                  <Dynamic
+                    component={props.trigger}
+                    contextMenu={contextAnchorPoint() !== null}
+                    opened={opened()}
+                  />
+                </div>
+              );
+            }}
           />
         </Show>
         <Show

@@ -22,6 +22,7 @@ interface MenuProps {
   class?: string;
   direction?: "horizontal" | "vertical";
   bottomNavigation?: boolean;
+  openSearch(): void;
   openPanel(panel: PrimaryPanel, currentEntryID?: string): void;
 }
 
@@ -39,6 +40,12 @@ const Menu: Component<MenuProps> = (props) => {
       onClick() {
         props.openPanel("explorer", currentWorkspace()?.currentEntryID);
       }
+    },
+    {
+      label: "Search",
+      shortcut: "$mod+k",
+      icon: "i-material-symbols:search-rounded",
+      onClick: props.openSearch
     },
     { separator: true },
     {

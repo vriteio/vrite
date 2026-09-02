@@ -6,6 +6,7 @@ import { groupsRouter } from "./groups";
 import { syncRouter } from "./sync";
 import { keysRouter } from "./keys";
 import { rolesRouter } from "./roles";
+import { searchRouter } from "./search";
 import { membershipsRouter } from "./memberships";
 import { publishingRouter } from "./publishing";
 import { workspacesRouter } from "./workspaces";
@@ -30,6 +31,7 @@ const router = {
   billing: billingRouter,
   keys: keysRouter,
   roles: rolesRouter,
+  search: searchRouter,
   memberships: membershipsRouter,
   publishing: publishingRouter,
   workspaces: workspacesRouter,

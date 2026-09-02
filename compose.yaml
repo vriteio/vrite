@@ -25,6 +25,41 @@ services:
     ports:
       - "6379:6379"
 
+  queue-redis:
+    image: redis:7-alpine
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+      - --appendfsync
+      - everysec
+      - --maxmemory-policy
+      - noeviction
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "${QUEUE_REDIS_PORT:-6380}:6379"
+    volumes:
+      - queue-redis-data:/data
+
+  typesense:
+    image: typesense/typesense:30.2
+    environment:
+      TYPESENSE_API_KEY: ${TYPESENSE_API_KEY:-typesense-dev-key}
+      TYPESENSE_DATA_DIR: /data
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8108/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "${TYPESENSE_PORT:-8108}:8108"
+    volumes:
+      - typesense-data:/data
+
   migrate:
     build:
       context: .
@@ -45,13 +80,39 @@ services:
         condition: service_completed_successfully
       redis:
         condition: service_healthy
+      queue-redis:
+        condition: service_healthy
+      typesense:
+        condition: service_healthy
     environment:
       DATABASE_URL: postgresql://andesine:andesine@postgres:5432/andesine
+      QUEUE_REDIS_URL: redis://queue-redis:6379
       REDIS_URL: redis://redis:6379
+      TYPESENSE_API_KEY: ${TYPESENSE_API_KEY:-typesense-dev-key}
+      TYPESENSE_URL: http://typesense:8108
     env_file:
       - .env
     ports:
       - "3333:3333"
+
+  worker:
+    build:
+      context: .
+      dockerfile: apps/worker/Dockerfile
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      queue-redis:
+        condition: service_healthy
+      typesense:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://andesine:andesine@postgres:5432/andesine
+      QUEUE_REDIS_URL: redis://queue-redis:6379
+      TYPESENSE_API_KEY: ${TYPESENSE_API_KEY:-typesense-dev-key}
+      TYPESENSE_URL: http://typesense:8108
+    env_file:
+      - .env
 
   web:
     build:
@@ -71,3 +132,5 @@ services:
 
 volumes:
   postgres-data:
+  queue-redis-data:
+  typesense-data:

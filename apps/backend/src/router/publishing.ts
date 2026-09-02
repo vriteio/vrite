@@ -10,10 +10,15 @@ import {
   publishingChannelNameType
 } from "#backend/lib/publishing";
 import { id } from "#backend/lib/primitives";
+import { enqueuePublishedChannelPurge, enqueuePublishedEntrySync } from "#backend/lib/queue";
 import { authenticatedRoute, base } from "#backend/lib/transport";
 import { Publishing } from "#backend/services/publishing";
 import { ORPCError } from "@orpc/server";
 import * as z from "zod";
+
+interface PublishingEntryReference {
+  entryID: string;
+}
 
 const publishingChannelType = z.object({
   code: publishingChannelCodeType.describe("Publishing channel API identifier"),
@@ -47,6 +52,15 @@ const publishEntryTargetType = z.object({
 });
 const getContributorIDs = (auth: { session?: { memberID: string } }): string[] => {
   return auth.session ? [auth.session.memberID] : [];
+};
+const syncPublishedEntries = async (
+  workspaceID: string,
+  entries: PublishingEntryReference[]
+): Promise<void> => {
+  await enqueuePublishedEntrySync({
+    workspaceID,
+    entryIDs: entries.map(({ entryID }) => entryID)
+  });
 };
 const publishingRouter = base.prefix("/publishing").router({
   setCollection: authenticatedRoute
@@ -93,6 +107,7 @@ const publishingRouter = base.prefix("/publishing").router({
         result.createdVersions,
         context.auth.session?.memberID
       );
+      await syncPublishedEntries(context.auth.workspaceID, result.publishingEntries);
 
       return { publishedEntries: result.publishedEntries };
     }),
@@ -145,6 +160,10 @@ const publishingRouter = base.prefix("/publishing").router({
           context.auth.session?.memberID
         );
       }
+      await syncPublishedEntries(
+        context.auth.workspaceID,
+        results.flatMap(({ publishingEntries }) => publishingEntries)
+      );
 
       return { publishedEntries };
     }),
@@ -180,6 +199,7 @@ const publishingRouter = base.prefix("/publishing").router({
         result.createdVersions,
         context.auth.session?.memberID
       );
+      await syncPublishedEntries(context.auth.workspaceID, result.publishingEntries);
 
       return { publishedEntries: result.publishedEntries };
     }),
@@ -215,6 +235,7 @@ const publishingRouter = base.prefix("/publishing").router({
         result.createdVersions,
         context.auth.session?.memberID
       );
+      await syncPublishedEntries(context.auth.workspaceID, result.publishingEntries);
 
       return { publishedEntries: result.publishedEntries };
     }),
@@ -243,6 +264,7 @@ const publishingRouter = base.prefix("/publishing").router({
         channel: input.channel,
         memberID: context.auth.session?.memberID
       });
+      await syncPublishedEntries(context.auth.workspaceID, result.publishingEntries);
 
       return { unpublishedEntries: result.unpublishedEntries };
     }),
@@ -271,6 +293,7 @@ const publishingRouter = base.prefix("/publishing").router({
         channel: input.channel,
         memberID: context.auth.session?.memberID
       });
+      await syncPublishedEntries(context.auth.workspaceID, result.publishingEntries);
 
       return { unpublishedEntries: result.unpublishedEntries };
     }),
@@ -303,6 +326,7 @@ const publishingRouter = base.prefix("/publishing").router({
         result.createdVersions,
         context.auth.session?.memberID
       );
+      await syncPublishedEntries(context.auth.workspaceID, result.publishingEntries);
     }),
   bulkPublishEntries: authenticatedRoute
     .route({ method: "POST", path: "/entries/bulk/publish" })
@@ -332,6 +356,7 @@ const publishingRouter = base.prefix("/publishing").router({
         result.createdVersions,
         context.auth.session?.memberID
       );
+      await syncPublishedEntries(context.auth.workspaceID, result.publishingEntries);
     }),
   unpublishEntry: authenticatedRoute
     .route({ method: "DELETE", path: "/entries/:entryID" })
@@ -360,6 +385,7 @@ const publishingRouter = base.prefix("/publishing").router({
         channel: input.channel,
         memberID: context.auth.session?.memberID
       });
+      await syncPublishedEntries(context.auth.workspaceID, result.publishingEntries);
     }),
   bulkUnpublishEntries: authenticatedRoute
     .route({ method: "POST", path: "/entries/bulk/unpublish" })
@@ -382,6 +408,7 @@ const publishingRouter = base.prefix("/publishing").router({
         channel: input.channel,
         memberID: context.auth.session?.memberID
       });
+      await syncPublishedEntries(context.auth.workspaceID, result.publishingEntries);
     }),
   getEntryVersion: authenticatedRoute
     .route({ method: "GET", path: "/entries/:entryID/version" })
@@ -448,9 +475,13 @@ const publishingRouter = base.prefix("/publishing").router({
     .input(z.object({ code: publishingChannelCodeType.describe("Publishing channel identifier") }))
     .output(z.void())
     .handler(async ({ context, input }) => {
-      await Publishing.Channels.delete({
+      const { channelID } = await Publishing.Channels.delete({
         auth: context.auth,
         code: input.code
+      });
+      await enqueuePublishedChannelPurge({
+        workspaceID: context.auth.workspaceID,
+        channelID
       });
 
       emitPublishingEvent(context.auth.workspaceID, {

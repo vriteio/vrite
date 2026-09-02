@@ -140,18 +140,19 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
                     <Tooltip
                       content={publishingLabel()}
                       placement="right"
-                      wrapperClass="absolute -top-0.5 -left-1 h-3 w-3"
+                      wrapperClass="absolute -top-0.5 -left-0.5 h-3 w-3"
                       fixed
                     >
-                      <div class="flex h-3 w-3 items-center justify-center">
+                      <div
+                        class={clsx(
+                          "flex h-3 w-3 items-center justify-center rounded-lg bg-gray-100/80"
+                        )}
+                      >
                         <div
                           class={clsx(
-                            "flex justify-center items-center h-2 w-2 shadow-sm",
-                            publishing.statusError() &&
-                              "bg-red-500/90 rounded-full shadow-red-500/50",
-                            !publishing.statusError() &&
-                              unpublishedCount() > 0 &&
-                              "bg-amber-500/90 rounded-full shadow-amber-500/50"
+                            "flex justify-center items-center h-2.5 w-2.5 i-lucide:radio",
+                            publishing.statusError() && "text-red-500",
+                            !publishing.statusError() && unpublishedCount() > 0 && "text-amber-500"
                           )}
                         />
                       </div>
@@ -161,14 +162,11 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
                     <Tooltip
                       content={restrictionRoot() ? "Restricted access" : "Restricted by parent"}
                       placement="right"
-                      wrapperClass={clsx(
-                        "absolute h-3 w-3",
-                        isExpanded(props.collection.id) ? "-bottom-0.5 -right-0.5" : "top-1.5"
-                      )}
+                      wrapperClass="absolute h-3 w-3 bg-gray-100/80 rounded-full -bottom-0.5 -right-0.5"
                       fixed
                     >
                       <div class="flex h-3 w-3 items-center justify-center rounded-full">
-                        <div class="i-material-symbols:lock h-2.5 w-2.5 text-gray-700" />
+                        <div class="i-material-symbols:lock h-2 w-2 text-gray-500" />
                       </div>
                     </Tooltip>
                   </Show>

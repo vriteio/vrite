@@ -25,6 +25,7 @@ interface MobileMenuNavigation {
 
 interface MobileMenuOptionProps<O extends MenuItem> {
   option: O & { value: string };
+  onBack(): void;
   onClose(): void;
   onNavigate(option: O & { value: string }): void;
 }
@@ -49,7 +50,9 @@ const MobileMenuIcon: Component<MobileMenuIconProps> = (props) => (
           "h-5 w-5",
           typeof props.option.icon === "string" && props.option.icon,
           props.option.selected
-            ? "bg-gradient-to-tr media-mouse:group-data-[highlighted]/menu-item:text-white media-mouse:group-data-[highlighted]/menu-item:from-white media-mouse:group-data-[highlighted]/menu-item:to-white"
+            ? typeof props.option.icon === "function"
+              ? "bg-gradient-to-tr bg-clip-text text-transparent from-secondary via-primary to-secondary media-mouse:group-data-[highlighted]/menu-item:text-white media-mouse:group-data-[highlighted]/menu-item:from-white media-mouse:group-data-[highlighted]/menu-item:via-white media-mouse:group-data-[highlighted]/menu-item:to-white"
+              : "bg-gradient-to-tr media-mouse:group-data-[highlighted]/menu-item:text-white media-mouse:group-data-[highlighted]/menu-item:from-white media-mouse:group-data-[highlighted]/menu-item:to-white"
             : props.option.color === "danger"
               ? "text-red-500"
               : "text-gray-500"
@@ -63,6 +66,13 @@ const MobileMenuIcon: Component<MobileMenuIconProps> = (props) => (
 
 const MobileMenuOption = <O extends MenuItem>(props: MobileMenuOptionProps<O>) => {
   const [loading, setLoading] = createSignal(false);
+  const finishSelect = () => {
+    if (props.option.closeOnSelect === false) {
+      props.onBack();
+    } else {
+      props.onClose();
+    }
+  };
   const itemClass = () => {
     return clsx(
       "relative flex min-h-7 w-full cursor-pointer items-center justify-start gap-1 rounded-md pr-1.5 outline-none",
@@ -83,10 +93,10 @@ const MobileMenuOption = <O extends MenuItem>(props: MobileMenuOptionProps<O>) =
       void result.finally(() => {
         setLoading(false);
 
-        if (props.option.closeOnSelect !== false) props.onClose();
+        finishSelect();
       });
-    } else if (props.option.closeOnSelect !== false) {
-      props.onClose();
+    } else {
+      finishSelect();
     }
   };
 
@@ -213,6 +223,13 @@ const MobileMenuItems = <O extends MenuItem>(props: MobileMenuItemsProps<O>) => 
                 {(menuOption) => (
                   <MobileMenuOption
                     option={menuOption}
+                    onBack={() => {
+                      setPages((current) => {
+                        if (current.length <= 2) return [rootPage()];
+
+                        return current.slice(0, -1);
+                      });
+                    }}
                     onClose={props.onClose}
                     onNavigate={(nestedOption) => {
                       const items = flattenWithSeparators(

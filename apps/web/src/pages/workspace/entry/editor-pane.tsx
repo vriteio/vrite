@@ -1,10 +1,15 @@
 import { createRef } from "@andesine/components";
 import { type Component, createEffect, createMemo, Show } from "solid-js";
-import { Editor } from "@andesine/editor";
-import { useNavigate, useParams } from "@solidjs/router";
+import { Editor, type EditorInstance } from "@andesine/editor";
+import { useLocation, useNavigate, useParams } from "@solidjs/router";
 import { useNotify } from "#web/context/notifications";
 import { config } from "#web/lib/api";
 import { useWorkspace } from "#web/context/workspace";
+import {
+  getSearchNavigationTarget,
+  scrollToSearchTarget,
+  type SearchNavigationTarget
+} from "#web/lib/search-navigation";
 import { CollaborationStatusIndicator } from "./collaboration-status-indicator";
 import { useEntryLoadState } from "./entry-load-state";
 import { getCollaborationStatus, getCollaborationUser } from "./editor-collaboration";
@@ -16,8 +21,13 @@ const EditorPane: Component = () => {
   const { currentWorkspace, currentSession, content } = useWorkspace();
   const isContentLoading = () => content.loading();
   const params = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const notify = useNotify();
+  const [editorInstance, setEditorInstance] = createRef<EditorInstance | null>(null);
+  const [handledSearchTarget, setHandledSearchTarget] = createRef<SearchNavigationTarget | null>(
+    null
+  );
   const selectedEntryID = () => params.slug;
   const availableEntryID = createMemo(() => {
     const entryID = selectedEntryID();
@@ -81,6 +91,28 @@ const EditorPane: Component = () => {
       setOpenedEntryID(null);
       navigate(`/${workspaceID()}`, { replace: true });
     }
+  });
+  createEffect(() => {
+    const editor = editorInstance();
+    const loadState = entryLoadState();
+    const target = getSearchNavigationTarget(location.state);
+    const contentReady =
+      loadState.editorReady && (loadState.initialSyncComplete || loadState.hasLocalSnapshot);
+
+    if (
+      !editor ||
+      !target ||
+      target === handledSearchTarget() ||
+      target.entryID !== selectedEntryID() ||
+      !contentReady
+    ) {
+      return;
+    }
+
+    queueMicrotask(() => {
+      if (editorInstance() !== editor) return;
+      if (scrollToSearchTarget(editor, target)) setHandledSearchTarget(target);
+    });
   });
 
   return (
@@ -154,7 +186,16 @@ const EditorPane: Component = () => {
                       setLocalSnapshotFailure(entryID);
                     }
                   }}
-                  onEditor={() => markEditorReady(entryID)}
+                  onEditor={(editor) => {
+                    const markEditorNotReady = markEditorReady(entryID);
+
+                    setEditorInstance(editor);
+
+                    return () => {
+                      if (editorInstance() === editor) setEditorInstance(null);
+                      markEditorNotReady();
+                    };
+                  }}
                   onTitleChange={(title) => {
                     const entries = content.entriesCollection();
                     const entry = entries.findOne({ id: entryID }, { reactive: false });

@@ -39,7 +39,11 @@ const createCollection = withAuthorization<CreateCollectionInput, undefined, Col
         )
       );
 
-    if (!root) throw new ORPCError("NOT_FOUND", { message: "Root collection not found" });
+    if (!root) {
+      throw new ORPCError("INTERNAL_SERVER_ERROR", {
+        message: "Workspace content tree is unavailable"
+      });
+    }
 
     const parentID = input.parentID ? toUUID(input.parentID) : root.id;
     const [parent] = await database

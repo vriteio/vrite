@@ -29,6 +29,7 @@
     "@orpc/zod": "^1.14.14",
     "base-x": "^5.0.1",
     "better-auth": "^1.6.25",
+    "bullmq": "^6.3.1",
     "date-fns": "^4.4.0",
     "drizzle-orm": "^0.45.2",
     "fastify": "^5.11.2",

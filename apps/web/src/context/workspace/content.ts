@@ -22,17 +22,19 @@ import { useConnectivitySignal } from "@solid-primitives/connectivity";
 import { type Accessor, createEffect, createSignal, on } from "solid-js";
 import { isPersistedCollection, isPersistedEntry } from "#web/lib/validation";
 import { createWorkspacePublishingOperations, type PublishingState } from "../publishing";
+import { TREE_ROOT_ID } from "#web/components/tree";
 
 interface ExplorerTree {
   workspaceID: string;
   collections: Collection[];
   entries: Entry[];
   accessByCollectionID: Record<string, CollectionAccess>;
+  workspaceContentAccess: CollectionAccess;
+  topLevelCollectionIDs: string[];
   publishing: {
     enabledCollectionIDs: string[];
     unpublishedEntryIDs: string[];
   } | null;
-  rootID: string;
 }
 const getWorkspaceContentDatabaseName = (workspaceID?: string) => {
   return getWorkspaceDatabaseName(workspaceID || "ephemeral");
@@ -104,7 +106,6 @@ const useWorkspaceContent = (workspaceID: Accessor<string>) => {
   const [accessByCollectionID, setAccessByCollectionID] = createSignal<
     Record<string, CollectionAccess>
   >({});
-  const [rootID, setRootID] = createSignal("");
   const syncingWorkspaces = new Map<string, number>();
   const entriesCollection = () => contentCollections().entries;
   const collectionsCollection = () => contentCollections().collections;
@@ -132,7 +133,7 @@ const useWorkspaceContent = (workspaceID: Accessor<string>) => {
   };
 
   const getCollectionAccess = (collectionID: string | null = null) => {
-    const resolvedCollectionID = collectionID || rootID();
+    const resolvedCollectionID = collectionID || TREE_ROOT_ID;
 
     return accessByCollectionID()[resolvedCollectionID] || null;
   };
@@ -242,9 +243,20 @@ const useWorkspaceContent = (workspaceID: Accessor<string>) => {
     }
 
     applyCollectionSnapshot(targetCollections.entries, tree.entries);
-    applyCollectionSnapshot(targetCollections.collections, tree.collections);
-    setAccessByCollectionID(tree.accessByCollectionID);
-    setRootID(tree.rootID);
+    applyCollectionSnapshot(targetCollections.collections, [
+      ...tree.collections,
+      {
+        id: TREE_ROOT_ID,
+        name: TREE_ROOT_ID,
+        restricted: false,
+        ancestors: [],
+        descendants: tree.topLevelCollectionIDs
+      }
+    ]);
+    setAccessByCollectionID({
+      ...tree.accessByCollectionID,
+      [TREE_ROOT_ID]: tree.workspaceContentAccess
+    });
     setPublishing(
       tree.publishing
         ? {
@@ -263,7 +275,7 @@ const useWorkspaceContent = (workspaceID: Accessor<string>) => {
     syncingWorkspaces.set(targetWorkspaceID, (syncingWorkspaces.get(targetWorkspaceID) ?? 0) + 1);
 
     if (contentCollections().workspaceID === targetWorkspaceID) {
-      if (!rootID()) setAccessLoading(true);
+      if (!accessByCollectionID()[TREE_ROOT_ID]) setAccessLoading(true);
 
       setSyncing(true);
     }
@@ -440,7 +452,6 @@ const useWorkspaceContent = (workspaceID: Accessor<string>) => {
     setSnapshotError(false);
     setPublishing(null);
     setAccessByCollectionID({});
-    setRootID("");
 
     const previousCollections = contentCollections();
     const nextCollections = createWorkspaceCollections(currentWorkspaceID);

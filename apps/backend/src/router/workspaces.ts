@@ -3,6 +3,11 @@ import { emitWorkspaceStateEvent } from "#backend/events";
 import { auth } from "#backend/lib/adapters";
 import { base, sessionRoute } from "#backend/lib/transport";
 import { id, toUserID, toUUID } from "#backend/lib/primitives";
+import {
+  enqueueCurrentEntrySync,
+  enqueueCurrentWorkspacePurge,
+  enqueuePublishedWorkspacePurge
+} from "#backend/lib/queue";
 import { Billing } from "#backend/services/billing";
 import { Workspaces } from "#backend/services/workspaces";
 import * as z from "zod";
@@ -127,6 +132,14 @@ const workspacesRouter = base.router({
           entryIDs
         }
       });
+      await Promise.all([
+        enqueueCurrentEntrySync({
+          workspaceID: context.auth.workspaceID,
+          entryIDs
+        }),
+        enqueueCurrentWorkspacePurge({ workspaceID: context.auth.workspaceID }),
+        enqueuePublishedWorkspacePurge({ workspaceID: context.auth.workspaceID })
+      ]);
 
       return result;
     }),

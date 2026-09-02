@@ -21,7 +21,7 @@ const ShortcutsHandler = () => {
           }
         ])
       ),
-      { ignore: () => false }
+      { capture: true, ignore: () => false }
     );
 
     onCleanup(() => {

@@ -1,5 +1,5 @@
 import { id } from "#backend/lib/primitives";
-import { collectionName } from "#backend/lib/validation";
+import { collectionName } from "#backend/lib/validation/content-name";
 import { sql } from "drizzle-orm";
 import {
   boolean,

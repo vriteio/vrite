@@ -6,6 +6,7 @@ export * from "./sync";
 export * from "./billing";
 export * from "./keys";
 export * from "./roles";
+export * from "./search";
 export * from "./memberships";
 export * from "./publishing";
 export * from "./workspaces";

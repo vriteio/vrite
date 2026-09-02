@@ -53,7 +53,7 @@ const moveCollection = withAuthorization<MoveCollectionInput, undefined, MoveCol
 
     if (!collection) throw new ORPCError("NOT_FOUND");
     if (!collection.parentID) {
-      throw new ORPCError("BAD_REQUEST", { message: "Cannot move the root collection" });
+      throw new ORPCError("NOT_FOUND");
     }
 
     const [root] = await database

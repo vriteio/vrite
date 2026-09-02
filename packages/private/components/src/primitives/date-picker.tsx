@@ -1,6 +1,14 @@
 import clsx from "clsx";
 import { format, isValid, parseISO } from "date-fns";
-import { type Component, createEffect, createMemo, createSignal, For, Show } from "solid-js";
+import {
+  type Component,
+  type ComponentProps,
+  createEffect,
+  createMemo,
+  createSignal,
+  For,
+  Show
+} from "solid-js";
 import { Button, IconButton } from "./button";
 import { Dropdown } from "./dropdown";
 import { Input } from "./input";
@@ -9,7 +17,10 @@ interface DatePickerProps {
   value?: string;
   class?: string;
   disabled?: boolean;
+  placement?: ComponentProps<typeof Dropdown>["placement"];
   placeholder?: string;
+  portal?: boolean;
+  positioningStrategy?: ComponentProps<typeof Dropdown>["positioningStrategy"];
   showCalendarIcon?: boolean;
   triggerClass?: string;
   setValue?(value: string): void;
@@ -23,11 +34,14 @@ const parseISODate = (value?: string): Date => {
 
   return isValid(date) ? date : new Date();
 };
+const formatDatePickerValue = (value: string): string => {
+  return formatPrimaryDate(parseISODate(value));
+};
 const DatePicker: Component<DatePickerProps> = (props) => {
   const initialDate = parseISODate(props.value);
   const [opened, setOpened] = createSignal(false);
   const [inputValue, setInputValue] = createSignal(
-    props.value ? formatPrimaryDate(initialDate) : ""
+    props.value ? formatDatePickerValue(props.value) : ""
   );
   const [year, setYear] = createSignal(initialDate.getFullYear());
   const [month, setMonth] = createSignal(initialDate.getMonth());
@@ -51,9 +65,7 @@ const DatePicker: Component<DatePickerProps> = (props) => {
     setMonth(date.getMonth());
   };
   const resetInputValue = () => {
-    const currentDate = parseISODate(props.value);
-
-    setInputValue(props.value ? formatPrimaryDate(currentDate) : "");
+    setInputValue(props.value ? formatDatePickerValue(props.value) : "");
   };
   const selectDay = (date: Date) => {
     const value = formatISODate(date);
@@ -94,7 +106,7 @@ const DatePicker: Component<DatePickerProps> = (props) => {
   createEffect(() => {
     const value = props.value || "";
 
-    setInputValue(value ? formatPrimaryDate(parseISODate(value)) : "");
+    setInputValue(value ? formatDatePickerValue(value) : "");
   });
 
   return (
@@ -103,7 +115,9 @@ const DatePicker: Component<DatePickerProps> = (props) => {
       opened={opened()}
       setOpened={handleOpenedChange}
       disabled={props.disabled}
-      placement="bottom-start"
+      placement={props.placement || "bottom-start"}
+      portal={props.portal}
+      positioningStrategy={props.positioningStrategy}
       cardProps={{ class: ":base-2: p-0" }}
       trigger={() => (
         <Button
@@ -129,9 +143,7 @@ const DatePicker: Component<DatePickerProps> = (props) => {
               !props.value && ":base: text-gray-400"
             )}
           >
-            {props.value
-              ? formatPrimaryDate(parseISODate(props.value))
-              : props.placeholder || "Select date"}
+            {props.value ? formatDatePickerValue(props.value) : props.placeholder || "Select date"}
           </span>
           <span class=":base: i-lucide:chevrons-up-down ml-auto shrink-0 text-gray-400" />
         </Button>
@@ -139,6 +151,14 @@ const DatePicker: Component<DatePickerProps> = (props) => {
     >
       <div class=":base: flex w-full flex-col gap-2 p-2">
         <Input
+          ref={(input) => {
+            requestAnimationFrame(() => {
+              if (!opened()) return;
+
+              input.focus();
+              input.select();
+            });
+          }}
           class=":base-2: w-full min-w-0 bg-gray-50 rounded-md"
           color="contrast"
           variant="outlined"
@@ -158,6 +178,8 @@ const DatePicker: Component<DatePickerProps> = (props) => {
             text="softer"
             icon="i-lucide:chevron-left"
             aria-label="Previous month"
+            class="focus-visible:!outline-none"
+            onPointerDown={(event) => event.preventDefault()}
             onClick={() => changeMonth(-1)}
           />
           <span class=":base: text-sm font-medium text-gray-700">{monthLabel()}</span>
@@ -168,6 +190,8 @@ const DatePicker: Component<DatePickerProps> = (props) => {
             text="softer"
             icon="i-lucide:chevron-right"
             aria-label="Next month"
+            class="focus-visible:!outline-none"
+            onPointerDown={(event) => event.preventDefault()}
             onClick={() => changeMonth(1)}
           />
         </div>
@@ -183,26 +207,23 @@ const DatePicker: Component<DatePickerProps> = (props) => {
               const today = () => formatISODate(new Date()) === value();
 
               return (
-                <button
-                  class="aspect-square flex justify-center items-center"
+                <Button
+                  type="button"
+                  color={selected() ? "primary" : "contrast"}
+                  variant={selected() || today() ? "outlined" : "text"}
+                  text={adjacentMonth() ? "soft" : undefined}
+                  class={clsx(
+                    ":base-2: aspect-square p-1 flex justify-center items-center",
+                    (selected() || today()) && ":base-2: focus-visible:!outline-none"
+                  )}
+                  size="xs"
+                  onPointerDown={(event) => event.preventDefault()}
                   onClick={() => selectDay(day)}
                 >
-                  <Button
-                    badge
-                    color={selected() ? "primary" : "contrast"}
-                    variant={selected() || today() ? "outlined" : "text"}
-                    text={adjacentMonth() ? "soft" : undefined}
-                    class={clsx(
-                      ":base-2: aspect-square p-1 flex justify-center items-center",
-                      !selected() && !today() && ":base-2: border !border-transparent"
-                    )}
-                    size="xs"
-                  >
-                    <div class=":base: h-5 w-5 flex justify-center items-center font-mono">
-                      {day.getDate()}
-                    </div>
-                  </Button>
-                </button>
+                  <div class=":base: h-5 w-5 flex justify-center items-center font-mono">
+                    {day.getDate()}
+                  </div>
+                </Button>
               );
             }}
           </For>
@@ -212,4 +233,4 @@ const DatePicker: Component<DatePickerProps> = (props) => {
   );
 };
 
-export { DatePicker };
+export { DatePicker, formatDatePickerValue };

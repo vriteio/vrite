@@ -36,7 +36,7 @@ interface IconButtonProps extends ButtonProps {
 }
 
 const baseClasses =
-  ":base: transition-[background-position,opacity] relative ease-out duration-200 font-medium !ring-0 !outline-none !focus:ring-0 !focus:outline-none disabled:opacity-70";
+  ":base: transition-[background-position,opacity] relative ease-out duration-200 font-medium !ring-0 !focus:ring-0 disabled:opacity-70";
 const sizeClasses: Record<ButtonSize, string> = {
   xs: ":base: px-1 py-0.5 text-xs",
   small: ":base: px-1.5 py-1 text-sm",
@@ -54,17 +54,17 @@ const getColorClasses = (color: ButtonColor, variant: ButtonVariant) => {
   const isText = variant === "text";
 
   const solids: Record<ButtonColor, string> = {
-    base: ":base: bg-gray-200 border-gray-200",
-    contrast: ":base: bg-white border-gray-200 shadow-gray-200",
-    danger: ":base: bg-red-500 border-red-600 text-white",
-    success: ":base: bg-green-500 border-green-600 text-white",
+    base: ":base: bg-gray-200 outline-gray-200",
+    contrast: ":base: bg-white outline-gray-200 shadow-gray-200",
+    danger: ":base: bg-red-500 outline-red-600 text-white",
+    success: ":base: bg-green-500 outline-green-600 text-white",
     primary:
-      ":base: bg-gradient-to-tr from-secondary via-primary to-secondary bg-[length:125%_auto] text-white border-tertiary"
+      ":base: bg-gradient-to-tr from-secondary via-primary to-secondary bg-[length:125%_auto] text-white outline-tertiary"
   };
   const variants: Record<ButtonVariant, string> = {
-    solid: "",
-    text: ":base: bg-transparent",
-    outlined: ":base: border shadow-md"
+    solid: ":base: !focus:outline-none",
+    text: ":base: bg-transparent !focus:outline-none",
+    outlined: ":base: outline outline-1 shadow-md"
   };
 
   if (!isText) {
@@ -74,7 +74,7 @@ const getColorClasses = (color: ButtonColor, variant: ButtonVariant) => {
   if (color === "primary")
     return clsx(
       variants.text,
-      ":base: text-transparent bg-clip-text bg-gradient-to-tr from-secondary via-primary to-secondary border-tertiary"
+      ":base: text-transparent bg-clip-text bg-gradient-to-tr from-secondary via-primary to-secondary"
     );
   if (color === "danger") {
     return clsx(variants.text, ":base: text-red-500");
@@ -118,22 +118,22 @@ const getHoverClasses = (
     return ":base: @hover:text-white focus-visible:text-white @hover:bg-green-600 focus-visible:bg-green-600";
   }
   if (color === "danger") {
-    return ":base: @hover:bg-red-600 focus-visible:bg-red-600 @hover:border-red-700 focus-visible:border-red-700";
+    return ":base: @hover:bg-red-600 focus-visible:bg-red-600 @hover:outline-red-700 focus-visible:outline-red-700";
   }
   if (color === "success") {
-    return ":base: @hover:bg-green-600 focus-visible:bg-green-600 @hover:border-green-700 focus-visible:border-green-700";
+    return ":base: @hover:bg-green-600 focus-visible:bg-green-600 @hover:outline-green-700 focus-visible:outline-green-700";
   }
   if (color === "primary") {
-    return ":base: @hover:bg-right focus-visible:bg-right @hover:border-tertiary focus-visible:border-tertiary";
+    return ":base: @hover:bg-right focus-visible:bg-right @hover:outline-tertiary focus-visible:outline-tertiary";
   }
   if (color === "contrast") {
-    return ":base: @hover:bg-gray-100 focus-visible:bg-gray-100 @hover:border-gray-200 focus-visible:border-gray-200";
+    return ":base: @hover:bg-gray-100 focus-visible:bg-gray-100 @hover:outline-gray-200 focus-visible:outline-gray-200";
   }
   if (variant === "text") {
-    return ":base: @hover:bg-gray-200 focus-visible:bg-gray-200 @hover:border-gray-300 focus-visible:border-gray-300";
+    return ":base: @hover:bg-gray-200 focus-visible:bg-gray-200";
   }
 
-  return ":base: @hover:shadow-inner focus-visible:shadow-inner @hover:border-gray-300 focus-visible:border-gray-300";
+  return ":base: @hover:shadow-inner focus-visible:shadow-inner @hover:outline-gray-300 focus-visible:outline-gray-300";
 };
 const getUnderlineClasses = (
   color: ButtonColor,

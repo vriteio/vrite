@@ -45,7 +45,7 @@ const CustomMenuContent: ParentComponent = (props) => {
   const menu = useMenuContext();
 
   return (
-    <div class="contents" onPointerMove={() => menu().setHighlightedValue("")}>
+    <div class="contents" onPointerEnter={() => menu().setHighlightedValue("")}>
       {props.children}
     </div>
   );
@@ -205,7 +205,9 @@ const MenuItems = <O extends MenuItem>(props: MenuItemsProps<O>) => (
                     "h-4.5 w-4.5",
                     typeof option.icon === "string" && option.icon,
                     option.selected
-                      ? "bg-gradient-to-tr media-mouse:group-data-[highlighted]/menu-item:text-white media-mouse:group-data-[highlighted]/menu-item:from-white media-mouse:group-data-[highlighted]/menu-item:to-white"
+                      ? typeof option.icon === "function"
+                        ? "bg-gradient-to-tr bg-clip-text text-transparent from-secondary via-primary to-secondary media-mouse:group-data-[highlighted]/menu-item:text-white media-mouse:group-data-[highlighted]/menu-item:from-white media-mouse:group-data-[highlighted]/menu-item:via-white media-mouse:group-data-[highlighted]/menu-item:to-white"
+                        : "bg-gradient-to-tr media-mouse:group-data-[highlighted]/menu-item:text-white media-mouse:group-data-[highlighted]/menu-item:from-white media-mouse:group-data-[highlighted]/menu-item:to-white"
                       : option.color === "danger"
                         ? "text-red-500"
                         : "text-gray-500"

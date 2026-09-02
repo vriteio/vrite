@@ -77,9 +77,7 @@ const setCollectionsPublishing = withAuthorization<
         }
 
         if (selectedCollections.some((collection) => collection?.parentID === null)) {
-          throw new ORPCError("BAD_REQUEST", {
-            message: "Publishing cannot be enabled on the workspace root collection"
-          });
+          throw new ORPCError("NOT_FOUND", { message: "Collection not found" });
         }
 
         const subtreeEntryIDs = await Promise.all(
@@ -121,9 +119,7 @@ const setCollectionsPublishing = withAuthorization<
     }
 
     if (input.enabled && currentCollections.some((collection) => collection.parentID === null)) {
-      throw new ORPCError("BAD_REQUEST", {
-        message: "Publishing cannot be enabled on the workspace root collection"
-      });
+      throw new ORPCError("NOT_FOUND", { message: "Collection not found" });
     }
 
     const tree = await loadPublishingTree(database, workspaceID);

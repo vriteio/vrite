@@ -7,8 +7,11 @@ import { and, eq } from "drizzle-orm";
 interface DeleteChannelInput {
   code: string;
 }
+interface DeleteChannelResult {
+  channelID: string;
+}
 
-const deleteChannel = withAuthorization<DeleteChannelInput>(
+const deleteChannel = withAuthorization<DeleteChannelInput, undefined, DeleteChannelResult>(
   {
     permissions: { session: ["publishing"], key: ["publishing"] },
     transaction: "atomic"
@@ -32,6 +35,8 @@ const deleteChannel = withAuthorization<DeleteChannelInput>(
     }
 
     await database.delete(publishingChannels).where(eq(publishingChannels.id, channel.id));
+
+    return { channelID: channel.id };
   }
 );
 

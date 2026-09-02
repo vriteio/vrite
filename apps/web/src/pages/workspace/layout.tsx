@@ -24,6 +24,7 @@ import { ProfileMenu } from "./profile-menu";
 import { type PrimaryPanel, SidePanel, usePrimaryPanel } from "./side-panel";
 import { VerticalResizeHandle } from "./vertical-resize-handle";
 import { SnapshotErrorDialog } from "./snapshot-error-dialog";
+import { SearchDialog } from "./search-dialog";
 import { useConnectivitySignal } from "@solid-primitives/connectivity";
 import { createMediaQuery } from "@solid-primitives/media";
 import { useNotify } from "#web/context/notifications";
@@ -93,6 +94,7 @@ const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
   const isOnline = useConnectivitySignal();
   const [, setSearchParams] = useSearchParams();
   const panel = usePrimaryPanel();
+  const [searchOpened, setSearchOpened] = createSignal(false);
   const [mobilePanel, setMobilePanel] = createSignal<PrimaryPanel>(panel());
   const [mobilePanelOpened, setMobilePanelOpened] = createSignal(false);
   const workspacePath = () => `/${params.workspaceID || ""}`;
@@ -130,6 +132,15 @@ const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
     }
   };
   createEffect(() => {
+    const unregisterSearch = registerShortcuts(
+      {
+        "$mod+k": () => {
+          setSearchOpened(true);
+          return true;
+        }
+      },
+      { ignore: () => false }
+    );
     const unregister = registerShortcuts({
       "$mod+,": () => {
         openPanel("settings");
@@ -137,7 +148,10 @@ const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
       }
     });
 
-    onCleanup(unregister);
+    onCleanup(() => {
+      unregisterSearch();
+      unregister();
+    });
   });
 
   createEffect(() => {
@@ -174,6 +188,7 @@ const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
               <Menu
                 class="p-3 py-2"
                 activePanel={activePanel()}
+                openSearch={() => setSearchOpened(true)}
                 openPanel={openPanel}
                 direction="vertical"
               />
@@ -186,7 +201,12 @@ const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
               }}
             >
               <div class="flex h-full w-full flex-col p-2">
-                <Menu activePanel={activePanel()} openPanel={openPanel} class="w-full px-1" />
+                <Menu
+                  activePanel={activePanel()}
+                  openSearch={() => setSearchOpened(true)}
+                  openPanel={openPanel}
+                  class="w-full px-1"
+                />
                 <SidePanel />
                 <ProfileMenu class="p-1" />
               </div>
@@ -213,10 +233,15 @@ const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
               </Suspense>
             </Card>
             <nav
-              class="min-h-12 z-20 box-content grid shrink-0 grid-cols-4 items-center border-t border-gray-200 bg-gray-100 pb-[env(safe-area-inset-bottom,0px)] md:hidden"
+              class="min-h-12 z-20 box-content grid shrink-0 grid-cols-5 items-center border-t border-gray-200 bg-gray-100 pb-[env(safe-area-inset-bottom,0px)] md:hidden"
               aria-label="Workspace navigation"
             >
-              <Menu activePanel={activePanel()} openPanel={openPanel} bottomNavigation />
+              <Menu
+                activePanel={activePanel()}
+                openSearch={() => setSearchOpened(true)}
+                openPanel={openPanel}
+                bottomNavigation
+              />
               <ProfileMenu class="h-full w-full p-0" compact />
             </nav>
           </div>
@@ -244,6 +269,7 @@ const WorkspaceLayout: Component<RouteSectionProps> = (props) => {
             <SidePanel selectedPanel={mobilePanel()} />
           </div>
         </Dropdown>
+        <SearchDialog opened={searchOpened()} onClose={() => setSearchOpened(false)} />
         <SnapshotErrorDialog />
       </PublishingProvider>
     </WorkspaceProvider>

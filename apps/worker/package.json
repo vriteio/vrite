@@ -1,0 +1,30 @@
+{
+  "name": "@andesine/worker",
+  "type": "module",
+  "private": true,
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "rolldown -c rolldown.config.mjs",
+    "typecheck": "tsc --noEmit",
+    "start": "node ./dist/index.js",
+    "dev": "tsx watch ./src/index.ts"
+  },
+  "dependencies": {
+    "@andesine/backend": "workspace:*",
+    "@orpc/server": "^1.14.14",
+    "base-x": "^5.0.1",
+    "bullmq": "^6.3.1",
+    "drizzle-orm": "^0.45.2",
+    "lexorank": "^1.0.5",
+    "pg": "^8.22.0",
+    "redis": "^6.2.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.2",
+    "@types/pg": "^8.20.3",
+    "rolldown": "^1.2.2",
+    "tsx": "^4.23.5",
+    "typescript": "6.0.3"
+  }
+}

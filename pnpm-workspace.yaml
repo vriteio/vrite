@@ -4,6 +4,7 @@ packages:
 allowBuilds:
   "@parcel/watcher": false
   esbuild: true
+  msgpackr-extract: false
   sharp: true
   sqlite3: false
 minimumReleaseAge: 1440

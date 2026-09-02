@@ -28,6 +28,7 @@ export { Editor };
 export type {
   EditorDiff,
   EditorDiffChange,
+  EditorInstance,
   EditorProps,
   EditorProvider,
   EditorProviderSetup,

@@ -25,7 +25,7 @@ interface PropertyValueProps {
 const RESTING_INPUT_OVERRIDES =
   "!bg-transparent !outline-transparent !shadow-none media-mouse:hover:!bg-white media-mouse:hover:!outline-gray-200 media-mouse:hover:!shadow-md focus:!bg-gray-100 focus:!outline-gray-200 focus:!shadow-md";
 const RESTING_CONTROL_OVERRIDES =
-  "!border-transparent !bg-transparent !shadow-none media-mouse:hover:!border-gray-200 media-mouse:hover:!bg-gray-100 media-mouse:hover:!shadow-md focus-visible:!border-gray-200 focus-visible:!bg-gray-100 focus-visible:!shadow-md data-[state=open]:!border-gray-200 data-[state=open]:!bg-gray-100 data-[state=open]:!shadow-md";
+  "!outline-transparent !bg-transparent !shadow-none media-mouse:hover:!outline-gray-200 media-mouse:hover:!bg-gray-100 media-mouse:hover:!shadow-md focus-visible:!outline-gray-200 focus-visible:!bg-gray-100 focus-visible:!shadow-md data-[state=open]:!outline-gray-200 data-[state=open]:!bg-gray-100 data-[state=open]:!shadow-md";
 
 const PropertyValue = (props: PropertyValueProps): JSX.Element => {
   const [inputValue, setInputValue] = createSignal("");

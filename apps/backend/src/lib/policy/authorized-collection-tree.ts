@@ -465,7 +465,10 @@ class AuthorizedCollectionTree {
   }
 
   private assertCollectionAccess(collectionID?: string | null): void {
-    if (this.canAccessCollection(collectionID)) return;
+    const resolvedCollectionID = this.resolveCollectionID(collectionID);
+    const isExplicitRootID = Boolean(collectionID) && resolvedCollectionID === this.rootID;
+
+    if (!isExplicitRootID && this.canAccessCollection(resolvedCollectionID)) return;
 
     throw new ORPCError("NOT_FOUND");
   }
@@ -518,13 +521,15 @@ class AuthorizedCollectionTree {
 
   toAccessRecord(): Record<string, CollectionAccess> {
     return Object.fromEntries(
-      [...this.nodesByCollectionID].map(([collectionID, node]) => [
-        collectionID,
-        {
-          collectionActions: [...node.collectionActions],
-          entryActions: [...node.entryActions]
-        }
-      ])
+      [...this.nodesByCollectionID]
+        .filter(([collectionID]) => collectionID !== this.rootID)
+        .map(([collectionID, node]) => [
+          collectionID,
+          {
+            collectionActions: [...node.collectionActions],
+            entryActions: [...node.entryActions]
+          }
+        ])
     );
   }
 }

@@ -1,5 +1,5 @@
 import type { HocuspocusProvider } from "@hocuspocus/provider";
-import type { Editor, JSONContent } from "@tiptap/core";
+import type { Editor as EditorInstance, JSONContent } from "@tiptap/core";
 
 interface EditorProviderSetupResult {
   cleanup?(): void;
@@ -35,7 +35,7 @@ interface EditorProps {
   beforeProviderAttach?: EditorProviderSetup;
   onProvider?(provider: EditorProvider): EditorCleanup;
   onProviderSetupError?(error: unknown, provider: EditorProvider): void;
-  onEditor?(editor: Editor): EditorCleanup;
+  onEditor?(editor: EditorInstance): EditorCleanup;
   onScrollContainer?(container: HTMLElement | null): void;
   onTitleChange?(title: string): void;
 }
@@ -50,6 +50,7 @@ export type {
   EditorCleanup,
   EditorDiff,
   EditorDiffChange,
+  EditorInstance,
   EditorProps,
   EditorProvider,
   EditorProviderSetup,

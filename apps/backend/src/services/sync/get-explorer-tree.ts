@@ -2,6 +2,7 @@ import { entries, type Collection, type Entry } from "#backend/db";
 import { type CollectionAccess, withAuthorization } from "#backend/lib/policy";
 import { toCollectionID, toEntryID } from "#backend/lib/primitives";
 import { getPublishingStatusSnapshot, PUBLISHED_CHANNEL_CODE } from "#backend/lib/publishing";
+import { ORPCError } from "@orpc/server";
 import { and, desc, eq, isNull } from "drizzle-orm";
 
 interface GetExplorerTreeInput {
@@ -11,8 +12,9 @@ interface ExplorerTree {
   collections: Collection[];
   entries: Entry[];
   accessByCollectionID: Record<string, CollectionAccess>;
+  workspaceContentAccess: CollectionAccess;
+  topLevelCollectionIDs: string[];
   publishing: { enabledCollectionIDs: string[]; unpublishedEntryIDs: string[] } | null;
-  rootID: string;
 }
 
 const getExplorerTree = withAuthorization<GetExplorerTreeInput, undefined, ExplorerTree>(
@@ -32,10 +34,22 @@ const getExplorerTree = withAuthorization<GetExplorerTreeInput, undefined, Explo
         : null
     ]);
     const entryRowsByID = new Map(entryRows.map((entry) => [toEntryID(entry.id), entry]));
+    const rootCollection = authorization.collections.find(({ id }) => {
+      return id === authorization.rootID;
+    });
+    const workspaceContentAccess = authorization.getAccess();
+
+    if (!rootCollection || !workspaceContentAccess) {
+      throw new ORPCError("INTERNAL_SERVER_ERROR", {
+        message: "Workspace content tree is unavailable"
+      });
+    }
 
     return {
-      collections: authorization.collections,
+      collections: authorization.collections.filter(({ id }) => id !== authorization.rootID),
       accessByCollectionID: authorization.toAccessRecord(),
+      workspaceContentAccess,
+      topLevelCollectionIDs: rootCollection.descendants,
       entries: entryRows
         .filter((entry) => {
           const collectionID = entry.collectionID ? toCollectionID(entry.collectionID) : null;
@@ -51,7 +65,10 @@ const getExplorerTree = withAuthorization<GetExplorerTreeInput, undefined, Explo
       publishing: publishing
         ? {
             enabledCollectionIDs: publishing.enabledCollectionIDs.filter((collectionID) => {
-              return authorization.canAccessCollection(collectionID);
+              return (
+                collectionID !== authorization.rootID &&
+                authorization.canAccessCollection(collectionID)
+              );
             }),
             unpublishedEntryIDs: publishing.entries
               .filter(({ entryID, hasUnpublishedChanges }) => {
@@ -64,8 +81,7 @@ const getExplorerTree = withAuthorization<GetExplorerTreeInput, undefined, Explo
               })
               .map(({ entryID }) => entryID)
           }
-        : null,
-      rootID: authorization.rootID
+        : null
     };
   }
 );

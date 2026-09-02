@@ -8,6 +8,12 @@ import {
 } from "#backend/events";
 import { authenticatedRoute, base, sessionRoute } from "#backend/lib/transport";
 import { id } from "#backend/lib/primitives";
+import {
+  enqueueCurrentCollectionSync,
+  enqueueCurrentEntrySync,
+  enqueuePublishedCollectionSync,
+  enqueuePublishedEntrySync
+} from "#backend/lib/queue";
 import { collectionName } from "#backend/lib/validation";
 import { Collections } from "#backend/services/collections";
 import * as z from "zod";
@@ -122,6 +128,16 @@ const collectionsRouter = base.prefix("/collections").router({
           data: { ids: deleted.entryIDs },
           memberID: context.auth.session?.memberID
         });
+        await Promise.all([
+          enqueueCurrentEntrySync({
+            workspaceID: context.auth.workspaceID,
+            entryIDs: deleted.entryIDs
+          }),
+          enqueuePublishedEntrySync({
+            workspaceID: context.auth.workspaceID,
+            entryIDs: deleted.entryIDs
+          })
+        ]);
       }
     }),
   delete: authenticatedRoute
@@ -158,6 +174,16 @@ const collectionsRouter = base.prefix("/collections").router({
           data: { ids: deleted.entryIDs },
           memberID: context.auth.session?.memberID
         });
+        await Promise.all([
+          enqueueCurrentEntrySync({
+            workspaceID: context.auth.workspaceID,
+            entryIDs: deleted.entryIDs
+          }),
+          enqueuePublishedEntrySync({
+            workspaceID: context.auth.workspaceID,
+            entryIDs: deleted.entryIDs
+          })
+        ]);
       }
     }),
   update: authenticatedRoute
@@ -181,6 +207,19 @@ const collectionsRouter = base.prefix("/collections").router({
         data: { id: input.id, name: input.name },
         memberID: context.auth.session?.memberID
       });
+
+      if (input.name !== undefined) {
+        await Promise.all([
+          enqueueCurrentCollectionSync({
+            workspaceID: context.auth.workspaceID,
+            collectionID: input.id
+          }),
+          enqueuePublishedCollectionSync({
+            workspaceID: context.auth.workspaceID,
+            collectionID: input.id
+          })
+        ]);
+      }
     }),
   setRestricted: sessionRoute
     .route({ method: "PUT", path: "/:id/restricted" })
@@ -203,6 +242,10 @@ const collectionsRouter = base.prefix("/collections").router({
         data: { id: input.id, restricted: input.restricted },
         memberID: context.auth.session?.memberID
       });
+      await enqueueCurrentCollectionSync({
+        workspaceID: context.auth.workspaceID,
+        collectionID: input.id
+      });
     }),
   move: sessionRoute
     .input(
@@ -211,7 +254,7 @@ const collectionsRouter = base.prefix("/collections").router({
         newParentID: id()
           .nullable()
           .optional()
-          .describe("ID of the new parent collection, or null for root"),
+          .describe("ID of the new parent collection, or null for the top level"),
         index: z
           .number()
           .int()
@@ -240,6 +283,19 @@ const collectionsRouter = base.prefix("/collections").router({
         },
         memberID: context.auth.session?.memberID
       });
+
+      if (input.newParentID !== undefined) {
+        await Promise.all([
+          enqueueCurrentCollectionSync({
+            workspaceID: context.auth.workspaceID,
+            collectionID: input.id
+          }),
+          enqueuePublishedCollectionSync({
+            workspaceID: context.auth.workspaceID,
+            collectionID: input.id
+          })
+        ]);
+      }
 
       if (result.publishingEntries.length > 0) {
         emitPublishingEntryUpdates({
