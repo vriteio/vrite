@@ -4,7 +4,7 @@ import { emitEntryEvent, emitPublishingEntryUpdates } from "#backend/events";
 import { authenticatedRoute, base, sessionRoute } from "#backend/lib/transport";
 import { contentNodeType } from "#backend/lib/content";
 import { enqueueCurrentEntrySync, enqueuePublishedEntrySync } from "#backend/lib/queue";
-import { id } from "#backend/lib/primitives";
+import { id, toSchemaMigrationID } from "#backend/lib/primitives";
 import { entryName } from "#backend/lib/validation";
 import { Entries } from "#backend/services/entries";
 import { ORPCError } from "@orpc/server";
@@ -176,16 +176,27 @@ const entriesRouter = base.prefix("/entries").router({
       z.object({
         id: id().describe("ID of the entry to be moved"),
         order: lexoRank().describe("New LexoRank order of the entry"),
-        collectionID: id().optional().nullable().describe("ID of the new parent collection")
+        collectionID: id().optional().nullable().describe("ID of the new parent collection"),
+        confirmedDataLoss: z
+          .boolean()
+          .default(false)
+          .describe("Confirmation that a schema migration caused by the move can remove content")
       })
     )
-    .output(z.object({ order: z.string() }))
+    .output(
+      z.object({
+        order: z.string(),
+        migrationID: id().nullable(),
+        totalEntries: z.number().int().nonnegative()
+      })
+    )
     .handler(async ({ context, input }) => {
       const result = await Entries.move({
         auth: context.auth,
         id: input.id,
         order: input.order,
-        collectionID: input.collectionID
+        collectionID: input.collectionID,
+        confirmedDataLoss: input.confirmedDataLoss
       });
       emitEntryEvent(context.auth.workspaceID, {
         action: "entry:move",
@@ -219,7 +230,13 @@ const entriesRouter = base.prefix("/entries").router({
         });
       }
 
-      return { order: result.order };
+      return {
+        order: result.order,
+        migrationID: result.schemaMigration.migrationID
+          ? toSchemaMigrationID(result.schemaMigration.migrationID)
+          : null,
+        totalEntries: result.schemaMigration.totalEntries
+      };
     }),
   get: authenticatedRoute
     .route({ method: "GET", path: "/:id" })

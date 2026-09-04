@@ -26,7 +26,9 @@ import { isExplorerMenuElement, useExplorerKeyboard } from "./use-explorer-keybo
 import { useExplorerMarquee } from "./use-explorer-marquee";
 import clsx from "clsx";
 import { PublishingActionsProvider } from "./publishing-actions";
+import { SchemaActionsProvider } from "./schema-actions";
 import { usePublishing } from "#web/context/publishing";
+import { SchemaMigrationFailureDialog } from "../../schema-migration-failure-dialog";
 
 const Explorer = () => {
   const [{ gap, itemHeight }, { setFocusedID }] = useTree();
@@ -41,7 +43,7 @@ const Explorer = () => {
   const [focusInside, setFocusInside] = createSignal(false);
   const [menuOpened, setMenuOpened] = createSignal(false);
   const loading = createDebounced(content.loading, 100);
-  const { isDraggedOver } = useExplorerDrop(dropRef);
+  const { dialogs: moveDialogs, isDraggedOver } = useExplorerDrop(dropRef);
   const marquee = useExplorerMarquee(scrollableContainerRef, contentContainerRef);
   const scrollItemIntoView = (id: string) => {
     const container = scrollableContainerRef();
@@ -142,6 +144,8 @@ const Explorer = () => {
 
   return (
     <DropdownArea {...EXPLORER_GESTURE_PROPS}>
+      {moveDialogs()}
+      <SchemaMigrationFailureDialog />
       <TreeRoot>
         <div
           data-explorer-panel
@@ -325,7 +329,9 @@ const ExplorerSkeleton = (props: { itemHeight: string }) => (
 const ExplorerPanel = () => (
   <ExplorerProvider>
     <PublishingActionsProvider>
-      <Explorer />
+      <SchemaActionsProvider>
+        <Explorer />
+      </SchemaActionsProvider>
     </PublishingActionsProvider>
   </ExplorerProvider>
 );

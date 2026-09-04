@@ -1,4 +1,3 @@
-import { Button, DropdownArea, DropdownMenu, IconButton } from "@andesine/components";
 import { createAsync, revalidate, useParams, useSearchParams } from "@solidjs/router";
 import { createMutation } from "@tanstack/solid-query";
 import {
@@ -6,14 +5,10 @@ import {
   createEffect,
   createMemo,
   createSignal,
-  For,
   on,
   onCleanup,
-  Show,
-  Suspense,
   useTransition
 } from "solid-js";
-import { TREE_ROOT_ID, Tree, type TreeMap } from "#web/components/tree";
 import { useLayout } from "#web/context/layout";
 import { useNotify } from "#web/context/notifications";
 import { useWorkspace } from "#web/context/workspace";
@@ -26,10 +21,8 @@ import {
   type VersionSummary
 } from "#web/lib/data";
 import { CreateVersionDialog, RevertVersionDialog } from "./version-dialogs";
-import { VersionHistoryItem } from "./version-history-item";
-import { VERSION_ITEM_HEIGHT, VersionHistorySkeleton } from "./version-history-skeleton";
+import { VersionHistoryList } from "./version-history/list";
 import { useVersionPublishing } from "./use-version-publishing";
-import clsx from "clsx";
 
 interface VersionHistoryPanelProps {
   opened?: boolean;
@@ -54,6 +47,11 @@ const VersionHistoryPanel: Component<VersionHistoryPanelProps> = (props) => {
     const entry = content.entries.get({ entryID: entryID() });
 
     return content.canEntry(entry?.collectionID || null, "version:create");
+  };
+  const migrationActive = () => {
+    const entry = content.entries.get({ entryID: entryID() });
+
+    return content.hasActiveSchemaMigration(entry?.collectionID || null);
   };
   const historyInput = () => ({ entryID: entryID(), limit: 50 });
   const versionHistory = createAsync(
@@ -171,15 +169,6 @@ const VersionHistoryPanel: Component<VersionHistoryPanelProps> = (props) => {
     return storedVersions();
   });
   const publishing = useVersionPublishing({ entryID, opened });
-  const versionsByID = createMemo(() => {
-    return new Map(versions().map((version) => [version.id, version]));
-  });
-  const tree = createMemo<TreeMap>(() => ({
-    [TREE_ROOT_ID]: {
-      items: versions().map((version) => version.id),
-      levels: []
-    }
-  }));
   const loadMore = async () => {
     const cursor = nextCursor();
 
@@ -249,138 +238,50 @@ const VersionHistoryPanel: Component<VersionHistoryPanelProps> = (props) => {
         onConfirm={() => {
           const version = revertVersion();
 
-          if (version) revertVersionMutation.mutate(version.id);
+          if (version && !migrationActive()) revertVersionMutation.mutate(version.id);
         }}
       />
-      <DropdownArea>
-        <div class="flex min-h-0 w-full flex-1 flex-col overflow-y-auto px-1 scrollbar-contrast">
-          <div class="group/version-header sticky top-0 z-20 -mx-1 flex h-9 shrink-0 items-center gap-2 bg-white px-1 md:bg-gray-100">
-            <h2 class="flex-1 text-2xl font-semibold">Versions</h2>
-            <Show when={options().length > 0}>
-              <DropdownMenu
-                title="Versions"
-                cardProps={{ class: "w-48" }}
-                items={options()}
-                mobileSheetDragFromContent={false}
-                portal={false}
-                trigger={() => (
-                  <div class="opacity-20 media-mouse:opacity-0 media-mouse:group-hover/version-header:opacity-100">
-                    <IconButton
-                      icon="i-lucide:ellipsis-vertical"
-                      size="small"
-                      text="soft"
-                      variant="text"
-                    />
-                  </div>
-                )}
-              />
-            </Show>
-          </div>
-          <Suspense fallback={<VersionHistorySkeleton />}>
-            <Show
-              when={historyResponse() && !historyResponse()?.error}
-              fallback={
-                <Show when={historyResponse() !== undefined} fallback={<VersionHistorySkeleton />}>
-                  <div class="flex flex-1 flex-col">
-                    <div>
-                      <Button
-                        onClick={() => {
-                          refreshHistory();
-                        }}
-                        class="flex justify-start items-center w-full group/button gap-1 pl-0.5 py-0.5"
-                        variant="text"
-                      >
-                        <div class="flex h-6 w-6 items-center justify-center">
-                          <div class="i-lucide:refresh-cw h-4.5 w-4.5 text-gray-400" />
-                        </div>
-                        <span class="text-left flex-1 line-clamp-1">Try again</span>
-                      </Button>
-                    </div>
-                    <p class="mt-1 mx-1 text-left text-xs text-gray-400">
-                      Versions could not be loaded. Check your connection and try again.
-                    </p>
-                  </div>
-                </Show>
-              }
-            >
-              <Show
-                when={versions().length > 0}
-                fallback={
-                  <div class="flex flex-1 flex-col">
-                    <div>
-                      <For each={options()}>
-                        {(option) => (
-                          <Button
-                            onClick={option.onClick}
-                            class="flex justify-start items-center w-full group/button gap-1 pl-0.5 py-0.5"
-                            variant="text"
-                          >
-                            <div class="flex h-6 w-6 items-center justify-center">
-                              <div class={clsx(option.icon, "h-5 w-5 text-gray-400")} />
-                            </div>
-                            <span class="text-left flex-1 line-clamp-1">{option.label}</span>
-                          </Button>
-                        )}
-                      </For>
-                    </div>
-                    <p class="mt-1 mx-1 text-left text-xs text-gray-400">
-                      New versions will automatically be created as you make changes
-                    </p>
-                  </div>
-                }
-              >
-                <Tree
-                  tree={tree}
-                  itemHeight={VERSION_ITEM_HEIGHT}
-                  renderItem={(versionID) => {
-                    const version = versionsByID().get(versionID);
+      <VersionHistoryList
+        activeVersionID={activeVersionID()}
+        assignedChannels={(version) => publishing.assignedChannels(version.id)}
+        canManage={canManage()}
+        canRevert={() => !migrationActive()}
+        canManagePublishing={publishing.canManage()}
+        emptyMessage="New versions will automatically be created as you make changes"
+        failed={Boolean(historyResponse()?.error)}
+        loading={historyResponse() === undefined}
+        loadingMore={loadingMore()}
+        nextCursor={nextCursor()}
+        options={options()}
+        versions={versions()}
+        onAssign={(version, channel) => {
+          const entryVersion = versions().find(({ id }) => id === version.id);
 
-                    return version ? (
-                      <VersionHistoryItem
-                        version={version}
-                        active={activeVersionID() === version.id}
-                        assignedChannels={publishing.assignedChannels(version.id)}
-                        canManage={canManage()}
-                        canManagePublishing={publishing.canManage()}
-                        onAssign={(channel) => {
-                          publishing.assign(version, channel);
-                        }}
-                        onCompare={() => {
-                          void revalidate(entryDraftQuery.keyFor({ id: entryID() }));
-                          openVersion(version.id, true);
-                        }}
-                        onOpen={() => openVersion(version.id)}
-                        onRename={(name) => {
-                          renameVersionMutation.mutate({
-                            id: version.id,
-                            name: name.trim() || null
-                          });
-                        }}
-                        onRevert={() => setRevertVersion(version)}
-                        onUnpublish={(channel) => {
-                          publishing.unpublish(version, channel);
-                        }}
-                      />
-                    ) : null;
-                  }}
-                />
-                <Show when={nextCursor()}>
-                  <Button
-                    class="mt-1 w-full"
-                    size="small"
-                    text="softer"
-                    variant="text"
-                    loading={loadingMore()}
-                    onClick={loadMore}
-                  >
-                    Load more
-                  </Button>
-                </Show>
-              </Show>
-            </Show>
-          </Suspense>
-        </div>
-      </DropdownArea>
+          if (entryVersion) publishing.assign(entryVersion, channel);
+        }}
+        onCompare={(version) => {
+          void revalidate(entryDraftQuery.keyFor({ id: entryID() }));
+          openVersion(version.id, true);
+        }}
+        onLoadMore={loadMore}
+        onOpen={(version) => openVersion(version.id)}
+        onRefresh={refreshHistory}
+        onRename={(version, name) => {
+          renameVersionMutation.mutate({ id: version.id, name: name.trim() || null });
+        }}
+        onRevert={(version) => {
+          if (migrationActive()) return;
+
+          const entryVersion = versions().find(({ id }) => id === version.id);
+
+          if (entryVersion) setRevertVersion(entryVersion);
+        }}
+        onUnpublish={(version, channel) => {
+          const entryVersion = versions().find(({ id }) => id === version.id);
+
+          if (entryVersion) publishing.unpublish(entryVersion, channel);
+        }}
+      />
     </>
   );
 };

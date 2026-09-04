@@ -59,9 +59,10 @@ const STATUS_LABELS: Record<PublishingDisplayStatus, string> = {
   "unpublished": "Unpublished"
 };
 const VERSION_REASON_DETAILS: Record<VersionReason, VersionReasonDetails> = {
-  auto: { icon: "i-lucide:circle-dot-dashed", label: "Automatic" },
-  manual: { icon: "i-lucide:circle-dot", label: "Manual" },
-  revert: { icon: "i-lucide:refresh-ccw-dot", label: "Revert" }
+  "auto": { icon: "i-lucide:circle-dot-dashed", label: "Automatic" },
+  "manual": { icon: "i-lucide:circle-dot", label: "Manual" },
+  "revert": { icon: "i-lucide:refresh-ccw-dot", label: "Revert" },
+  "schema-migration": { icon: "i-lucide:database-backup", label: "Schema migration" }
 };
 const PublishingStatusIcon: Component<PublishingStatusIconProps> = (props) => {
   const large = () => props.size === "large";

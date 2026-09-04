@@ -1,9 +1,16 @@
-import { entries, workspaces } from "#backend/db";
+import {
+  collectionSchemas,
+  collections,
+  entries,
+  schemaMigrationCollections,
+  schemaMigrations,
+  workspaces
+} from "#backend/db";
 import { db } from "#backend/lib/adapters";
 import { loadAuthorizedCollectionTree, type SessionData } from "#backend/lib/policy";
 import { toCollectionID, toEntryID, toUUID, toWorkspaceID } from "#backend/lib/primitives";
 import { Auth } from "#backend/services/auth";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, isNull } from "drizzle-orm";
 import type { CollaborationContext } from "./types";
 
 const permissionError = (reason: "Unauthorized" | "Forbidden") => {
@@ -35,29 +42,51 @@ const authenticateCollaboration = async (input: {
     throw permissionError("Unauthorized");
   }
 
-  let entryID;
+  const schemaDocument = input.documentName.startsWith("sch_");
+  let documentID;
 
   try {
-    entryID = toUUID(input.documentName);
+    documentID = toUUID(input.documentName);
   } catch {
     throw permissionError("Forbidden");
   }
 
-  const [entry] = await db
-    .select({
-      id: entries.id,
-      collectionID: entries.collectionID,
-      workspaceID: entries.workspaceID,
-      workspaceDeletingAt: workspaces.deletingAt
-    })
-    .from(entries)
-    .innerJoin(workspaces, eq(workspaces.id, entries.workspaceID))
-    .where(and(eq(entries.id, entryID), isNull(entries.deletedAt)))
-    .limit(1);
+  const [target] = schemaDocument
+    ? await db
+        .select({
+          id: collectionSchemas.id,
+          collectionID: collectionSchemas.collectionID,
+          workspaceID: collectionSchemas.workspaceID,
+          workspaceDeletingAt: workspaces.deletingAt
+        })
+        .from(collectionSchemas)
+        .innerJoin(
+          collections,
+          and(
+            eq(collections.workspaceID, collectionSchemas.workspaceID),
+            eq(collections.id, collectionSchemas.collectionID),
+            isNotNull(collections.parentID),
+            isNull(collections.deletedAt)
+          )
+        )
+        .innerJoin(workspaces, eq(workspaces.id, collectionSchemas.workspaceID))
+        .where(and(eq(collectionSchemas.id, documentID), eq(collectionSchemas.enabled, true)))
+        .limit(1)
+    : await db
+        .select({
+          id: entries.id,
+          collectionID: entries.collectionID,
+          workspaceID: entries.workspaceID,
+          workspaceDeletingAt: workspaces.deletingAt
+        })
+        .from(entries)
+        .innerJoin(workspaces, eq(workspaces.id, entries.workspaceID))
+        .where(and(eq(entries.id, documentID), isNull(entries.deletedAt)))
+        .limit(1);
 
-  if (!entry || entry.workspaceDeletingAt) throw permissionError("Forbidden");
+  if (!target || target.workspaceDeletingAt) throw permissionError("Forbidden");
 
-  const workspaceID = toWorkspaceID(entry.workspaceID);
+  const workspaceID = toWorkspaceID(target.workspaceID);
 
   requestHeaders.set("x-workspace-id", workspaceID);
 
@@ -73,20 +102,52 @@ const authenticateCollaboration = async (input: {
     throw permissionError("Forbidden");
   }
 
-  const collectionID = entry.collectionID ? toCollectionID(entry.collectionID) : null;
+  const collectionID = target.collectionID ? toCollectionID(target.collectionID) : null;
   const authorization = await loadAuthorizedCollectionTree({ auth });
 
-  if (!authorization.canEntry(collectionID, "entry:read")) {
+  const canRead = schemaDocument
+    ? authorization.canCollection(collectionID, "collection:read")
+    : authorization.canEntry(collectionID, "entry:read");
+
+  if (!canRead) {
     throw permissionError("Forbidden");
   }
 
-  const canWrite = authorization.canEntry(collectionID, "entry:update");
+  const canWrite = schemaDocument
+    ? authorization.canCollection(collectionID, "collection:update")
+    : authorization.canEntry(collectionID, "entry:update");
+  const [activeMigration] = target.collectionID
+    ? await db
+        .select({ id: schemaMigrations.id })
+        .from(schemaMigrationCollections)
+        .innerJoin(
+          schemaMigrations,
+          and(
+            eq(schemaMigrations.workspaceID, schemaMigrationCollections.workspaceID),
+            eq(schemaMigrations.id, schemaMigrationCollections.migrationID)
+          )
+        )
+        .where(
+          and(
+            eq(schemaMigrationCollections.workspaceID, target.workspaceID),
+            eq(schemaMigrationCollections.collectionID, target.collectionID),
+            inArray(schemaMigrations.status, ["queued", "running", "rolling_back"])
+          )
+        )
+        .limit(1)
+    : [];
 
-  input.connectionConfig.readOnly = !canWrite;
+  const schemaMigrationReadOnly = canWrite && Boolean(activeMigration);
+
+  input.connectionConfig.readOnly = !canWrite || schemaMigrationReadOnly;
 
   return {
     auth,
-    entryID: toEntryID(entry.id),
+    collectionID: collectionID || undefined,
+    schemaMigrationReadOnly,
+    ...(schemaDocument
+      ? { resource: "schema" as const, schemaID: input.documentName }
+      : { resource: "entry" as const, entryID: toEntryID(target.id) }),
     workspaceID
   };
 };

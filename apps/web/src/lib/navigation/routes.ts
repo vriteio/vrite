@@ -17,6 +17,7 @@ const NewWorkspacePage = lazy(() => import("../../pages/new-workspace/page"));
 const WorkspaceLayout = lazy(() => import("../../pages/workspace/layout"));
 const EntryPage = lazy(() => import("../../pages/workspace/entry/page"));
 const CollectionPage = lazy(() => import("../../pages/workspace/collection/page"));
+const SchemaPage = lazy(() => import("../../pages/workspace/schema/page"));
 const SettingsLayout = lazy(() => import("../../pages/workspace/settings/layout"));
 const PersonalSettingsPage = lazy(() => import("../../pages/workspace/settings/personal/page"));
 const WorkspaceSettingsPage = lazy(() => import("../../pages/workspace/settings/workspace/page"));
@@ -182,6 +183,11 @@ const routes: RouteDefinition[] = [
         path: "/:slug",
         matchFilters: { slug: /^coll_/ },
         component: CollectionPage
+      },
+      {
+        path: "/:slug",
+        matchFilters: { slug: /^sch_/ },
+        component: SchemaPage
       }
     ]
   }

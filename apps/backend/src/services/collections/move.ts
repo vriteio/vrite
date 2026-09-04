@@ -1,5 +1,11 @@
 import { rankBetweenNeighbors, toCollectionID, toEntryID, toUUID } from "#backend/lib/primitives";
-import { collections, entryPublications } from "#backend/db";
+import {
+  collections,
+  entryPublications,
+  effectiveSchemaRevisions,
+  schemaMigrationCollections,
+  schemaMigrations
+} from "#backend/db";
 import {
   getDisabledEntryIDs,
   getSubtreeEntryIDs,
@@ -9,10 +15,21 @@ import {
 } from "#backend/lib/publishing";
 import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
-import { filterAuthorizedEntryIDs, withAuthorization } from "#backend/lib/policy";
+import {
+  filterAuthorizedEntryIDs,
+  withAuthorization,
+  type AuthorizedServiceInput
+} from "#backend/lib/policy";
 import type { PublishingEntryStatus } from "#backend/lib/publishing";
+import { prepareSchemaMigrationConnections } from "#backend/collaboration";
+import { submitSchemaMigration } from "#backend/lib/queue";
+import {
+  createEffectiveSchemaChange,
+  type EffectiveSchemaChangePlan
+} from "#backend/lib/schema/migration/effective-change";
 
 interface MoveCollectionInput {
+  confirmedDataLoss?: boolean;
   id: string;
   newParentID?: string | null;
   index?: number;
@@ -22,9 +39,10 @@ interface MoveCollectionResult {
   newParentID: string | null;
   publishingEntries: PublishingEntryStatus[];
   restrictedBoundaryChanged: boolean;
+  schemaMigration: EffectiveSchemaChangePlan;
 }
 
-const moveCollection = withAuthorization<MoveCollectionInput, undefined, MoveCollectionResult>(
+const planCollectionMove = withAuthorization<MoveCollectionInput, undefined, MoveCollectionResult>(
   {
     actions: ({ input }) => ({
       collections: [
@@ -35,7 +53,7 @@ const moveCollection = withAuthorization<MoveCollectionInput, undefined, MoveCol
     tree: true,
     transaction: "locked-workspace"
   },
-  async ({ authorization, database, input, workspaceID }) => {
+  async ({ auth, authorization, database, input, workspaceID }) => {
     const collectionID = toUUID(input.id);
     const requestedParentID = input.newParentID ? toUUID(input.newParentID) : null;
 
@@ -162,9 +180,6 @@ const moveCollection = withAuthorization<MoveCollectionInput, undefined, MoveCol
 
       if (disabledEntryIDs.length > 0) {
         await lockPublishingEntries(database, workspaceID, disabledEntryIDs);
-        await database
-          .delete(entryPublications)
-          .where(inArray(entryPublications.entryID, disabledEntryIDs));
       }
 
       publishingEntryIDs = disabledEntryIDs;
@@ -184,6 +199,72 @@ const moveCollection = withAuthorization<MoveCollectionInput, undefined, MoveCol
       entryIDs: publishingEntryIDs,
       workspaceID
     });
+    const schemaMigration = await createEffectiveSchemaChange({
+      database,
+      initiatedBy: auth.session?.memberID ? toUUID(auth.session.memberID) : null,
+      rootCollectionIDs: [collectionID],
+      schemaID: null,
+      schemaVersionID: null,
+      workspaceID
+    });
+
+    if (schemaMigration.migrationID && !input.confirmedDataLoss) {
+      throw new ORPCError("PRECONDITION_FAILED", {
+        message: "Schema migrations require explicit data-loss confirmation"
+      });
+    }
+
+    const unpublishEntryIDs =
+      wasPublishingEnabled && !willBePublishingEnabled ? publishingEntryIDs : [];
+
+    if (schemaMigration.migrationID) {
+      const entryIDs = await getSubtreeEntryIDs(
+        database,
+        workspaceID,
+        publishingTree,
+        collectionID
+      );
+      const [sourceParentRevision] = await database
+        .select({ id: effectiveSchemaRevisions.id })
+        .from(effectiveSchemaRevisions)
+        .where(
+          and(
+            eq(effectiveSchemaRevisions.collectionID, collection.parentID),
+            eq(effectiveSchemaRevisions.active, true)
+          )
+        );
+
+      await database
+        .update(schemaMigrations)
+        .set({
+          collectionMove: {
+            collectionID,
+            sourceParentID: collection.parentID,
+            sourceOrder: collection.rank,
+            entryIDs,
+            unpublishEntryIDs
+          }
+        })
+        .where(eq(schemaMigrations.id, schemaMigration.migrationID));
+      // Keep the original parent available and unchanged until recovery is no longer needed.
+      await database
+        .insert(schemaMigrationCollections)
+        .values({
+          workspaceID,
+          migrationID: schemaMigration.migrationID,
+          collectionID: collection.parentID,
+          sourceRevisionID: sourceParentRevision?.id || null,
+          targetRevisionID: sourceParentRevision?.id || null
+        })
+        .onConflictDoNothing();
+      schemaMigration.affectedCollectionIDs = [
+        ...new Set([...schemaMigration.affectedCollectionIDs, collection.parentID])
+      ];
+    } else if (unpublishEntryIDs.length > 0) {
+      await database
+        .delete(entryPublications)
+        .where(inArray(entryPublications.entryID, unpublishEntryIDs));
+    }
 
     return {
       index,
@@ -193,9 +274,25 @@ const moveCollection = withAuthorization<MoveCollectionInput, undefined, MoveCol
         hasUnpublishedChanges: willBePublishingEnabled,
         versionID: null
       })),
-      restrictedBoundaryChanged
+      restrictedBoundaryChanged,
+      schemaMigration
     };
   }
 );
+const moveCollection = async (
+  input: MoveCollectionInput & AuthorizedServiceInput
+): Promise<MoveCollectionResult> => {
+  const result = await planCollectionMove(input);
+
+  await submitSchemaMigration({
+    ...result.schemaMigration,
+    prepareAffectedContent: () => {
+      return prepareSchemaMigrationConnections(result.schemaMigration.affectedCollectionIDs);
+    },
+    workspaceID: input.auth.workspaceID
+  });
+
+  return result;
+};
 
 export { moveCollection };

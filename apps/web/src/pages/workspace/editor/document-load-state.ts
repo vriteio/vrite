@@ -1,71 +1,80 @@
 import type { EditorProvider } from "@andesine/editor";
 import { type Accessor, createEffect, createSignal } from "solid-js";
 
-type CollaborationConnection = "connecting" | "connected" | "disconnected";
-type CollaborationProblem = "unauthorized" | "failed" | "local-timeout" | null;
-
-type EntryLoadState = {
-  entryID: string | null;
+interface DocumentLoadState {
+  documentID: string | null;
   isCheckingLocal: boolean;
   hasLocalSnapshot: boolean;
   localTimeoutCount: number;
   connection: CollaborationConnection;
   authenticated: boolean;
+  collaborationReadOnly: boolean;
   problem: CollaborationProblem;
   synced: boolean;
   initialSyncComplete: boolean;
   editorReady: boolean;
   unsyncedChanges: number;
-};
+  resettingSchemaContent: boolean;
+}
 
-const createEntryLoadState = (entryID: string | null, localTimeoutCount = 0): EntryLoadState => ({
-  entryID,
-  isCheckingLocal: Boolean(entryID),
+type CollaborationConnection = "connecting" | "connected" | "disconnected";
+type CollaborationProblem = "unauthorized" | "failed" | "local-timeout" | null;
+type CollaborationScope = "read-write" | "readonly";
+
+const SCHEMA_CONTENT_RESET_CLOSE_CODE = 4210;
+
+const createDocumentLoadState = (
+  documentID: string | null,
+  localTimeoutCount = 0
+): DocumentLoadState => ({
+  documentID,
+  isCheckingLocal: Boolean(documentID),
   hasLocalSnapshot: false,
   localTimeoutCount,
   connection: "connecting",
   authenticated: false,
+  collaborationReadOnly: false,
   problem: null,
   synced: false,
   initialSyncComplete: false,
   editorReady: false,
-  unsyncedChanges: 0
+  unsyncedChanges: 0,
+  resettingSchemaContent: false
 });
-
 const isPermissionFailure = (reason: string) => {
   return reason === "Unauthorized" || reason === "Forbidden";
 };
-
-const useEntryLoadState = (selectedEntryID: Accessor<string | undefined>) => {
-  const [entryLoadState, setEntryLoadState] = createSignal<EntryLoadState>(
-    createEntryLoadState(null)
+const useDocumentLoadState = (selectedDocumentID: Accessor<string | undefined>) => {
+  const [documentLoadState, setDocumentLoadState] = createSignal<DocumentLoadState>(
+    createDocumentLoadState(null)
   );
   const [providerAttempt, setProviderAttempt] = createSignal(0);
   const [discardLocalSnapshot, setDiscardLocalSnapshot] = createSignal(false);
 
   createEffect(() => {
     setDiscardLocalSnapshot(false);
-    setEntryLoadState(createEntryLoadState(selectedEntryID() || null));
+    setDocumentLoadState(createDocumentLoadState(selectedDocumentID() || null));
   });
 
-  const updateEntryState = (entryID: string, update: (state: EntryLoadState) => EntryLoadState) => {
-    setEntryLoadState((currentState) => {
-      if (currentState.entryID !== entryID) return currentState;
+  const updateDocumentState = (
+    documentID: string,
+    update: (state: DocumentLoadState) => DocumentLoadState
+  ) => {
+    setDocumentLoadState((currentState) => {
+      if (currentState.documentID !== documentID) return currentState;
 
       return update(currentState);
     });
   };
-
-  const setLocalSnapshot = (entryID: string, hasLocalSnapshot: boolean) => {
-    updateEntryState(entryID, (currentState) => ({
+  const setLocalSnapshot = (documentID: string, hasLocalSnapshot: boolean) => {
+    updateDocumentState(documentID, (currentState) => ({
       ...currentState,
       isCheckingLocal: false,
       hasLocalSnapshot
     }));
   };
-
-  const setLocalSnapshotTimeout = (entryID: string) => {
-    updateEntryState(entryID, (currentState) => ({
+  const setLocalSnapshotTimeout = (documentID: string) => {
+    updateDocumentState(documentID, (currentState) => ({
       ...currentState,
       isCheckingLocal: false,
       localTimeoutCount: currentState.localTimeoutCount + 1,
@@ -73,80 +82,96 @@ const useEntryLoadState = (selectedEntryID: Accessor<string | undefined>) => {
       problem: "local-timeout"
     }));
   };
-
-  const setLocalSnapshotFailure = (entryID: string) => {
-    updateEntryState(entryID, (currentState) => ({
+  const setLocalSnapshotFailure = (documentID: string) => {
+    updateDocumentState(documentID, (currentState) => ({
       ...currentState,
       isCheckingLocal: false,
       connection: "disconnected",
       problem: "failed"
     }));
   };
-
   const retryCollaboration = () => {
-    const currentState = entryLoadState();
+    const currentState = documentLoadState();
+    const collaborationReadOnly = currentState.collaborationReadOnly;
+    const resettingSchemaContent = currentState.resettingSchemaContent;
 
-    if (!currentState.entryID) return;
+    if (!currentState.documentID) return;
 
     setDiscardLocalSnapshot(
-      currentState.problem === "local-timeout" && currentState.localTimeoutCount >= 2
+      resettingSchemaContent ||
+        (currentState.problem === "local-timeout" && currentState.localTimeoutCount >= 2)
     );
-    setEntryLoadState(createEntryLoadState(currentState.entryID, currentState.localTimeoutCount));
+    setDocumentLoadState({
+      ...createDocumentLoadState(currentState.documentID, currentState.localTimeoutCount),
+      collaborationReadOnly,
+      resettingSchemaContent
+    });
     setProviderAttempt((attempt) => attempt + 1);
   };
-
-  const markEditorReady = (entryID: string) => {
-    updateEntryState(entryID, (currentState) => ({
+  const markEditorReady = (documentID: string) => {
+    updateDocumentState(documentID, (currentState) => ({
       ...currentState,
       editorReady: true
     }));
 
     return () => {
-      updateEntryState(entryID, (currentState) => ({
+      updateDocumentState(documentID, (currentState) => ({
         ...currentState,
         editorReady: false
       }));
     };
   };
-
   const handleProvider = (provider: EditorProvider) => {
-    const entryID = provider.configuration.name;
+    const documentID = provider.configuration.name;
     const websocketProvider = provider.configuration.websocketProvider;
-    const handleAuthenticated = () => {
-      updateEntryState(entryID, (currentState) => ({
+    const handleAuthenticated = (event: { scope: CollaborationScope }) => {
+      updateDocumentState(documentID, (currentState) => ({
         ...currentState,
         authenticated: true,
+        collaborationReadOnly: event.scope === "readonly",
         problem: null
       }));
     };
     const handleSynced = (event: { state: boolean }) => {
-      updateEntryState(entryID, (currentState) => ({
+      updateDocumentState(documentID, (currentState) => ({
         ...currentState,
         synced: event.state,
-        initialSyncComplete: currentState.initialSyncComplete || event.state
+        initialSyncComplete: currentState.initialSyncComplete || event.state,
+        resettingSchemaContent: event.state ? false : currentState.resettingSchemaContent
       }));
     };
     const handleStatus = (event: { status: CollaborationConnection }) => {
-      updateEntryState(entryID, (currentState) => ({
+      updateDocumentState(documentID, (currentState) => ({
         ...currentState,
-        connection: event.status
+        connection: event.status,
+        authenticated: event.status === "connected" ? currentState.authenticated : false
       }));
     };
     const handleUnsyncedChanges = (event: { number: number }) => {
-      updateEntryState(entryID, (currentState) => ({
+      updateDocumentState(documentID, (currentState) => ({
         ...currentState,
         unsyncedChanges: event.number
       }));
     };
     const handleAuthenticationFailed = (event: { reason: string }) => {
-      updateEntryState(entryID, (currentState) => ({
+      updateDocumentState(documentID, (currentState) => ({
         ...currentState,
         connection: "disconnected",
         problem: isPermissionFailure(event.reason) ? "unauthorized" : "failed"
       }));
     };
     const handleClose = (event: { event: { code: number } }) => {
-      updateEntryState(entryID, (currentState) => {
+      if (event.event.code === SCHEMA_CONTENT_RESET_CLOSE_CODE) {
+        setDiscardLocalSnapshot(true);
+        updateDocumentState(documentID, (currentState) => ({
+          ...createDocumentLoadState(documentID, currentState.localTimeoutCount),
+          resettingSchemaContent: true
+        }));
+        setProviderAttempt((attempt) => attempt + 1);
+        return;
+      }
+
+      updateDocumentState(documentID, (currentState) => {
         let problem = currentState.problem;
 
         if (event.event.code === 4401 || event.event.code === 4403) {
@@ -158,6 +183,7 @@ const useEntryLoadState = (selectedEntryID: Accessor<string | undefined>) => {
         return {
           ...currentState,
           connection: "disconnected",
+          authenticated: false,
           problem
         };
       });
@@ -188,7 +214,7 @@ const useEntryLoadState = (selectedEntryID: Accessor<string | undefined>) => {
   };
 
   return {
-    entryLoadState,
+    documentLoadState,
     providerAttempt,
     discardLocalSnapshot,
     setLocalSnapshot,
@@ -200,5 +226,5 @@ const useEntryLoadState = (selectedEntryID: Accessor<string | undefined>) => {
   };
 };
 
-export { useEntryLoadState };
-export type { CollaborationConnection, CollaborationProblem, EntryLoadState };
+export { useDocumentLoadState };
+export type { CollaborationConnection, CollaborationProblem, DocumentLoadState };

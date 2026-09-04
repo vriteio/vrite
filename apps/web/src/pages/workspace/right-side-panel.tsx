@@ -5,7 +5,8 @@ import { Dynamic } from "solid-js/web";
 import { useLayout } from "#web/context/layout";
 import { useWorkspace } from "#web/context/workspace";
 import { VersionHistoryPanel } from "./version-history-panel";
-import { VersionHistorySkeleton } from "./version-history-skeleton";
+import { VersionHistorySkeleton } from "./version-history/skeleton";
+import { SchemaVersionHistoryPanel } from "./schema/version-history-panel";
 
 interface RightSidePanelOption {
   id: string;
@@ -45,6 +46,22 @@ const useRightSidePanelOptions = () => {
           entry &&
           currentWorkspace() &&
           content.canEntry(entry.collectionID || null, "version:read")
+        );
+      }
+    },
+    {
+      id: "schema-versions",
+      label: "Versions",
+      icon: "i-lucide:history",
+      component: SchemaVersionHistoryPanel,
+      fallback: VersionHistoryPanelFallback,
+      available: () => {
+        const schema = content.schemasCollection().findOne({ id: params.slug || "" });
+
+        return Boolean(
+          schema &&
+          currentWorkspace() &&
+          content.canCollection(schema.collectionID, "collection:read")
         );
       }
     }

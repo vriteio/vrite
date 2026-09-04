@@ -13,6 +13,24 @@ const explorerTreeType = z.object({
   accessByCollectionID: z.record(id(), collectionAccessType),
   workspaceContentAccess: collectionAccessType,
   topLevelCollectionIDs: z.array(id()),
+  activeSchemaMigrations: z.array(
+    z.object({
+      id: id(),
+      collectionIDs: z.array(id()),
+      processedEntries: z.number().int().nonnegative(),
+      status: z.enum(["queued", "running", "rolling_back"]),
+      totalEntries: z.number().int().nonnegative()
+    })
+  ),
+  schemas: z.array(
+    z.object({
+      id: id(),
+      collectionID: id(),
+      enabled: z.boolean(),
+      hasActiveVersion: z.boolean(),
+      hasUnappliedChanges: z.boolean()
+    })
+  ),
   publishing: z
     .object({
       enabledCollectionIDs: z.array(id()),

@@ -1,4 +1,4 @@
-import type { EntryLoadState } from "./entry-load-state";
+import type { DocumentLoadState } from "./document-load-state";
 import type { CollaborationStatus } from "./collaboration-status-indicator";
 
 const collaborationColors = ["#0ea5e9", "#f97316", "#22c55e", "#eab308", "#ec4899", "#8b5cf6"];
@@ -21,8 +21,9 @@ const getCollaborationUser = (user?: { id?: string; name?: string | null; email?
   return { name, color: getCollaborationColor(user?.id || name) };
 };
 
-const getCollaborationStatus = (state: EntryLoadState): CollaborationStatus => {
+const getCollaborationStatus = (state: DocumentLoadState): CollaborationStatus => {
   if (state.problem === "unauthorized" || state.problem === "failed") return state.problem;
+  if (state.resettingSchemaContent) return "schema-reset";
   if (state.hasLocalSnapshot && !state.initialSyncComplete && state.connection !== "disconnected") {
     return "syncing";
   }

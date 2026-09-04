@@ -1,0 +1,1 @@
+ALTER TABLE "schema_migrations" ADD COLUMN "entry_move" jsonb;

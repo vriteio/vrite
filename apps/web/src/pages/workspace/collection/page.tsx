@@ -62,6 +62,9 @@ const CollectionPage: Component = () => {
   const collection = createMemo(() => {
     return content.collections.get({ collectionID: collectionID() });
   });
+  const migrationActive = () => {
+    return content.hasActiveSchemaMigration(collectionID(), true);
+  };
   const canManage = () => {
     return (
       currentWorkspace()?.subscriptionPlan === "pro" &&
@@ -91,6 +94,9 @@ const CollectionPage: Component = () => {
     },
     { deferStream: true }
   );
+  const title = () => {
+    return collection()?.name ? `${collection()?.name} (Restricted access)` : "Restricted access";
+  };
   const pageReady = () => {
     if (accessStatus() === "loading") return false;
     if (accessStatus() === "denied") return true;
@@ -175,6 +181,8 @@ const CollectionPage: Component = () => {
     const nextPendingGroupIDs = pending.groupIDs || [];
     const nextPendingMemberIDs = pending.memberIDs || [];
 
+    if (migrationActive()) return;
+
     setGroupRoleIDs(nextGroupRoleIDs);
     setMemberRoleIDs(nextMemberRoleIDs);
     setPendingGroupIDs((current) => [...new Set([...current, ...nextPendingGroupIDs])]);
@@ -244,7 +252,7 @@ const CollectionPage: Component = () => {
 
   return (
     <>
-      <Title>{`${collection()?.name || "Restricted access"} | Andesine`}</Title>
+      <Title>{`${title()} | Andesine`}</Title>
       <div class="flex w-full flex-1 overflow-hidden px-1">
         <div class="relative flex h-full w-full overflow-hidden">
           <ScrollShadow scrollableContainerRef={scrollableContainerRef} />
@@ -253,9 +261,7 @@ const CollectionPage: Component = () => {
               <Show when={pageReady()} fallback={<AccessPageSpinner />}>
                 <div class="flex w-full flex-col items-center px-2.5 pb-5 pt-5 md:px-10 md:pb-10 md:pt-9">
                   <div class="relative flex w-full max-w-[44rem] flex-col">
-                    <h1 class="mb-3 truncate text-4xl font-semibold md:text-5xl">
-                      {collection()?.name || "Restricted access"}
-                    </h1>
+                    <h1 class="mb-3 text-4xl font-semibold md:text-5xl">{title()}</h1>
                     <Show
                       when={accessStatus() === "allowed"}
                       fallback={
@@ -268,6 +274,15 @@ const CollectionPage: Component = () => {
                         </Card>
                       }
                     >
+                      <Show when={migrationActive()}>
+                        <Card
+                          class="mb-4 flex h-16 items-center justify-center gap-1 rounded-lg bg-gray-50 px-2 text-sm text-gray-400"
+                          shade
+                        >
+                          <div class="i-tabler:pyramid h-5.5 w-5.5 text-gray-300" />
+                          Schema migration in progress. Access settings are read only.
+                        </Card>
+                      </Show>
                       <SettingsSection label="Groups">
                         <Setting
                           label="Group access"
@@ -276,7 +291,7 @@ const CollectionPage: Component = () => {
                         >
                           <AddAccessMenu
                             label="Groups"
-                            loading={mutation.isPending}
+                            loading={mutation.isPending || migrationActive()}
                             principals={unassignedGroups()}
                             roles={roles()}
                             onAdd={(id, roleID) => updateGroupRoles([id], roleID)}
@@ -311,7 +326,7 @@ const CollectionPage: Component = () => {
                                     detail={`${group().memberIDs.length} ${group().memberIDs.length === 1 ? "member" : "members"}`}
                                     roleID={groupRoleIDs()[group().id]}
                                     roles={roles()}
-                                    disabled={mutation.isPending}
+                                    disabled={mutation.isPending || migrationActive()}
                                     loading={pendingGroupIDs().includes(group().id)}
                                     onSetRole={updateGroupRoles}
                                     onRemove={(ids) => updateGroupRoles(ids)}
@@ -330,7 +345,7 @@ const CollectionPage: Component = () => {
                         >
                           <AddAccessMenu
                             label="Members"
-                            loading={mutation.isPending}
+                            loading={mutation.isPending || migrationActive()}
                             principals={unassignedMembers()}
                             roles={roles()}
                             onAdd={(id, roleID) => updateMemberRoles([id], roleID)}
@@ -367,7 +382,7 @@ const CollectionPage: Component = () => {
                                     detail={member().profile.email}
                                     roleID={memberRoleIDs()[member().id]}
                                     roles={roles()}
-                                    disabled={mutation.isPending}
+                                    disabled={mutation.isPending || migrationActive()}
                                     loading={pendingMemberIDs().includes(member().id)}
                                     onSetRole={updateMemberRoles}
                                     onRemove={(ids) => updateMemberRoles(ids)}

@@ -10,6 +10,7 @@ import {
 } from "./authorized-collection-tree";
 import { assertAuthorizationRequirements, type AuthorizationRequirements } from "./permissions";
 import type { SessionData } from "./session";
+import { assertNoActiveSchemaMigration } from "./schema-migration";
 
 interface AuthorizedServiceInput {
   auth: SessionData;
@@ -213,6 +214,8 @@ function withAuthorization<Input, Resolved = undefined, Result = void>(
         authorization?.assertEntryAction(requirement.collectionID, requirement.action);
       }
 
+      await assertNoActiveSchemaMigration(databaseClient, workspaceID, actions);
+
       if (ownsAuthorizationScope) {
         activeAuthorizationScopes.add(authorizationScope);
       }
@@ -276,6 +279,7 @@ export type {
   AuthorizedTreeServiceContext,
   AuthorizationScope,
   Database,
+  DatabaseClient,
   ServiceAuthorizationActions,
   ServiceResolveContext,
   WorkspaceServiceContext

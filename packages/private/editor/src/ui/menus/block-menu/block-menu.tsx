@@ -20,6 +20,7 @@ import {
   BLOCK_CONTROL_SIZE,
   EDITOR_MENU_Z_INDEX
 } from "#editor/ui/constants";
+import { isPositionInInheritedField } from "#editor/ui/block-utils";
 
 interface BlockMenuProps {
   editor: Editor | null;
@@ -61,7 +62,14 @@ const BlockMenu: ParentComponent<BlockMenuProps> = (props) => {
     const target = getCurrentTarget();
 
     // Hide the trigger when the menu was opened via 'right click' or when there's a text menu opened within the block area
-    if (!triggerAvailable() || !props.editor || !target) return false;
+    if (
+      !triggerAvailable() ||
+      !props.editor ||
+      !target ||
+      isPositionInInheritedField(props.editor.state.doc, target.pos)
+    ) {
+      return false;
+    }
     if (contextMenuMode() && isTargetInBlockSelection(props.editor, target)) return false;
     if (props.textMenuSelectionRange && rangesOverlap(target, props.textMenuSelectionRange)) {
       return false;

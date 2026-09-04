@@ -9,6 +9,7 @@ type WorkspaceDatabaseUpgradeTransaction = IDBPTransaction<unknown, string[], "v
 const WORKSPACE_DATA_PREFIX = "andesine:";
 const WORKSPACE_ENTRIES_STORE_NAME = "entries";
 const WORKSPACE_COLLECTIONS_STORE_NAME = "collections";
+const WORKSPACE_SCHEMAS_STORE_NAME = "schemas";
 const WORKSPACE_UPDATES_STORE_NAME = "entry-updates";
 const WORKSPACE_ENTRY_ID_INDEX_NAME = "entryID";
 const workspaceDatabaseSetupPromises = new Map<string, Promise<void>>();
@@ -19,9 +20,11 @@ const isIndexedDBAvailable = () => {
 const hasWorkspaceDatabaseSchema = (database: IDBPDatabase): boolean => {
   const hasEntriesStore = database.objectStoreNames.contains(WORKSPACE_ENTRIES_STORE_NAME);
   const hasCollectionsStore = database.objectStoreNames.contains(WORKSPACE_COLLECTIONS_STORE_NAME);
+  const hasSchemasStore = database.objectStoreNames.contains(WORKSPACE_SCHEMAS_STORE_NAME);
   const hasUpdatesStore = database.objectStoreNames.contains(WORKSPACE_UPDATES_STORE_NAME);
 
-  if (!hasEntriesStore || !hasCollectionsStore || !hasUpdatesStore) return false;
+  if (!hasEntriesStore || !hasCollectionsStore || !hasSchemasStore || !hasUpdatesStore)
+    return false;
 
   const transaction = database.transaction(WORKSPACE_UPDATES_STORE_NAME, "readonly");
 
@@ -37,6 +40,10 @@ const createMissingWorkspaceDatabaseSchema = (
 
   if (!database.objectStoreNames.contains(WORKSPACE_COLLECTIONS_STORE_NAME)) {
     database.createObjectStore(WORKSPACE_COLLECTIONS_STORE_NAME, { keyPath: "id" });
+  }
+
+  if (!database.objectStoreNames.contains(WORKSPACE_SCHEMAS_STORE_NAME)) {
+    database.createObjectStore(WORKSPACE_SCHEMAS_STORE_NAME, { keyPath: "id" });
   }
 
   const updatesStore = database.objectStoreNames.contains(WORKSPACE_UPDATES_STORE_NAME)
@@ -160,6 +167,7 @@ const clearPersistenceData = async (options: ClearPersistenceDataOptions = {}): 
 export {
   WORKSPACE_COLLECTIONS_STORE_NAME,
   WORKSPACE_ENTRIES_STORE_NAME,
+  WORKSPACE_SCHEMAS_STORE_NAME,
   WORKSPACE_ENTRY_ID_INDEX_NAME,
   WORKSPACE_UPDATES_STORE_NAME,
   clearPersistenceData,

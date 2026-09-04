@@ -23,7 +23,17 @@ const useExplorerActions = () => {
     collectionID: string | null,
     action: "collection:create-child" | "collection:update"
   ) => {
-    if (!content.offline() && !content.syncing() && content.canCollection(collectionID, action)) {
+    const migrationBlocked = content.hasActiveSchemaMigration(
+      collectionID,
+      action === "collection:update"
+    );
+
+    if (
+      !content.offline() &&
+      !content.syncing() &&
+      !migrationBlocked &&
+      content.canCollection(collectionID, action)
+    ) {
       return true;
     }
 
@@ -33,7 +43,12 @@ const useExplorerActions = () => {
     collectionID: string | null,
     action: "entry:create" | "entry:update"
   ) => {
-    if (!content.offline() && !content.syncing() && content.canEntry(collectionID, action)) {
+    if (
+      !content.offline() &&
+      !content.syncing() &&
+      !content.hasActiveSchemaMigration(collectionID) &&
+      content.canEntry(collectionID, action)
+    ) {
       return true;
     }
 
@@ -89,12 +104,18 @@ const useExplorerActions = () => {
     const selectedContent = content.tree.splitIDs({ ids });
     const canDelete =
       selectedContent.collections.every((collectionID) => {
-        return content.canCollection(collectionID, "collection:delete");
+        return (
+          content.canCollection(collectionID, "collection:delete") &&
+          !content.hasActiveSchemaMigration(collectionID, true)
+        );
       }) &&
       selectedContent.entries.every((entryID) => {
         const entry = content.entries.get({ entryID });
 
-        return content.canEntry(entry?.collectionID || null, "entry:delete");
+        return (
+          content.canEntry(entry?.collectionID || null, "entry:delete") &&
+          !content.hasActiveSchemaMigration(entry?.collectionID || null)
+        );
       });
 
     if (!canDelete || content.offline() || content.syncing()) {
@@ -111,8 +132,10 @@ const useExplorerActions = () => {
     const collection = targetID ? content.collections.get({ collectionID: targetID }) : undefined;
     const entry = targetID ? content.entries.get({ entryID: targetID }) : undefined;
     const canRename = collection
-      ? content.canCollection(collection.id, "collection:update")
-      : content.canEntry(entry?.collectionID || null, "entry:update");
+      ? content.canCollection(collection.id, "collection:update") &&
+        !content.hasActiveSchemaMigration(collection.id, true)
+      : content.canEntry(entry?.collectionID || null, "entry:update") &&
+        !content.hasActiveSchemaMigration(entry?.collectionID || null);
 
     if (!targetID || !canRename || content.offline() || content.syncing()) return false;
     tree.setRenaming(targetID);

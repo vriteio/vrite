@@ -240,9 +240,20 @@ header[data-type="title"] {
 header:only-of-type.is-empty:first-child::before,
 #editor-container:not([data-mobile-slash-menu-trigger])
   header:only-of-type
-  + p:only-of-type.is-empty::before {
+  + p:only-of-type.is-empty::before,
+.ProseMirror[data-editor-mode="schema"] > p.is-empty::before,
+.ProseMirror [data-fragment-node-view] p.is-empty::before {
   @apply float-left h-0 pointer-events-none text-gray-300;
   content: attr(data-placeholder);
+}
+
+@screen lt-md {
+  header:only-of-type.is-empty:first-child::before,
+  #editor-container header:only-of-type + p:only-of-type.is-empty::before,
+  .ProseMirror[data-editor-mode="schema"] > p.is-empty::before,
+  .ProseMirror [data-fragment-node-view] p.is-empty::before {
+    @apply hidden;
+  }
 }
 
 // Core editor layout

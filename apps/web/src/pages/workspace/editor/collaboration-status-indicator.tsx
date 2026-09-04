@@ -1,5 +1,5 @@
-import { Spinner } from "@andesine/components";
 import clsx from "clsx";
+import { Spinner } from "@andesine/components";
 import { type Component, createEffect, createSignal, onCleanup, Show } from "solid-js";
 
 type CollaborationStatus =
@@ -8,6 +8,7 @@ type CollaborationStatus =
   | "saved-locally"
   | "synced"
   | "offline-changes"
+  | "schema-reset"
   | "unauthorized"
   | "failed";
 
@@ -17,6 +18,7 @@ const OFFLINE_INDICATOR_DELAY = 2000;
 interface CollaborationStatusIndicatorProps {
   status: CollaborationStatus;
   hasLocalSnapshot: boolean;
+  resourceLabel: string;
   onRetry(): void;
   onBack(): void;
 }
@@ -26,6 +28,7 @@ const CollaborationStatusIndicator: Component<CollaborationStatusIndicatorProps>
   const isVisible = () => {
     return (
       props.status === "syncing" ||
+      props.status === "schema-reset" ||
       props.status === "unauthorized" ||
       props.status === "failed" ||
       ((props.status === "connecting" || props.status === "offline-changes") && showDelayedStatus())
@@ -51,7 +54,11 @@ const CollaborationStatusIndicator: Component<CollaborationStatusIndicatorProps>
     <Show when={isVisible()}>
       <div class="absolute bottom-4 right-4 z-20 inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 drop-shadow-[0_1px_1px_rgb(255_255_255)]">
         <Show
-          when={props.status !== "connecting" && props.status !== "syncing"}
+          when={
+            props.status !== "connecting" &&
+            props.status !== "syncing" &&
+            props.status !== "schema-reset"
+          }
           fallback={<Spinner class="h-3.5 w-3.5" color="primary" />}
         >
           <div
@@ -65,6 +72,7 @@ const CollaborationStatusIndicator: Component<CollaborationStatusIndicatorProps>
         <span>
           {props.status === "connecting" && (props.hasLocalSnapshot ? "Connecting" : "Connecting")}
           {props.status === "syncing" && "Syncing"}
+          {props.status === "schema-reset" && `Applying schema changes`}
           {props.status === "offline-changes" && "Offline changes saved locally"}
           {props.status === "unauthorized" && "Access lost"}
           {props.status === "failed" && "Sync failed"}

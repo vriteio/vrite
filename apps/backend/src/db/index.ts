@@ -1,5 +1,6 @@
 export * from "./auth";
 export * from "./collections";
+export * from "./content-schemas";
 export * from "./contents";
 export * from "./stripe-webhook-events";
 export * from "./entries";

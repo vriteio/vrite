@@ -1,7 +1,7 @@
 import { IconButton, Skeleton } from "@andesine/components";
 import { type Component, type JSX, Show } from "solid-js";
 import clsx from "clsx";
-import type { EntryLoadState } from "./entry-load-state";
+import type { DocumentLoadState } from "./document-load-state";
 import { DotsBackground } from "#web/components/dots-background";
 
 interface EditorLoadErrorViewProps {
@@ -13,14 +13,15 @@ interface EditorLoadErrorViewProps {
   title: string;
 }
 
-interface EntryLoadErrorProps {
-  problem: Exclude<EntryLoadState["problem"], null>;
+interface DocumentLoadErrorProps {
+  problem: Exclude<DocumentLoadState["problem"], null>;
   localTimeoutCount: number;
   onRetry(): void;
   onBack(): void;
+  resourceLabel?: string;
 }
 
-interface EntryContentSkeletonProps {
+interface EditorContentSkeletonProps {
   class?: string;
 }
 
@@ -53,7 +54,7 @@ const EditorLoadErrorView: Component<EditorLoadErrorViewProps> = (props) => {
   );
 };
 
-const EntryLoadError: Component<EntryLoadErrorProps> = (props) => {
+const DocumentLoadError: Component<DocumentLoadErrorProps> = (props) => {
   const isUnauthorized = () => props.problem === "unauthorized";
   const isLocalTimeout = () => props.problem === "local-timeout";
 
@@ -68,7 +69,7 @@ const EntryLoadError: Component<EntryLoadErrorProps> = (props) => {
       }
       description={
         isUnauthorized()
-          ? "You no longer have access to this entry."
+          ? `You no longer have access to this ${props.resourceLabel || "entry"}.`
           : isLocalTimeout()
             ? "The editor could not finish loading the local copy of this document."
             : "The editor could not initialize collaboration for this document."
@@ -87,7 +88,7 @@ const EntryLoadError: Component<EntryLoadErrorProps> = (props) => {
   );
 };
 
-const EntryContentSkeleton: Component<EntryContentSkeletonProps> = (props) => (
+const EditorContentSkeleton: Component<EditorContentSkeletonProps> = (props) => (
   <div class={clsx("absolute inset-0 z-10 bg-gray-50", props.class)}>
     <div class="relative mx-auto flex w-full max-w-[44rem] flex-col gap-2">
       <Skeleton class={["h-12 w-4/5", "h-32 w-full", "h-24 w-full", "h-8 w-3/5", "h-40 w-full"]} />
@@ -99,4 +100,4 @@ const EntryContentSkeleton: Component<EntryContentSkeletonProps> = (props) => (
   </div>
 );
 
-export { EDITOR_CONTENT_PADDING, EditorLoadErrorView, EntryContentSkeleton, EntryLoadError };
+export { DocumentLoadError, EDITOR_CONTENT_PADDING, EditorContentSkeleton, EditorLoadErrorView };

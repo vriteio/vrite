@@ -199,6 +199,8 @@ const WorkspaceProvider: ParentComponent = (props) => {
               if (
                 event.action.startsWith("entry:") ||
                 event.action.startsWith("collection:") ||
+                event.action.startsWith("schema:") ||
+                event.action.startsWith("schema-migration:") ||
                 event.action.startsWith("publishing:")
               ) {
                 content.applyWorkspaceEvent(currentWorkspaceID, event);

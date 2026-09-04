@@ -32,33 +32,33 @@ const isAbortError = (error: unknown): boolean => {
 interface LocalEditorSnapshotInput {
   workspaceID(): string;
   discardLocalSnapshot(): boolean;
-  setLocalSnapshot(entryID: string, available: boolean): void;
-  setLocalSnapshotTimeout(entryID: string): void;
-  setLocalSnapshotFailure(entryID: string): void;
+  setLocalSnapshot(documentID: string, available: boolean): void;
+  setLocalSnapshotTimeout(documentID: string): void;
+  setLocalSnapshotFailure(documentID: string): void;
   notifyError(text: string): void;
 }
 
 const createLocalEditorSnapshotLifecycle = (input: LocalEditorSnapshotInput) => {
   const beforeProviderAttach = async (provider: EditorProvider) => {
-    const entryID = provider.configuration.name;
+    const documentID = provider.configuration.name;
     const databaseName = getWorkspaceDatabaseName(input.workspaceID());
 
     let persistence: WorkspaceIndexedDBPersistence | null = null;
 
     try {
       if (input.discardLocalSnapshot()) {
-        await withTimeout(clearDocument(databaseName, entryID), LOCAL_SNAPSHOT_TIMEOUT);
+        await withTimeout(clearDocument(databaseName, documentID), LOCAL_SNAPSHOT_TIMEOUT);
       }
-      persistence = new WorkspaceIndexedDBPersistence(databaseName, entryID, provider.document, {
+      persistence = new WorkspaceIndexedDBPersistence(databaseName, documentID, provider.document, {
         onError() {
-          input.setLocalSnapshotFailure(entryID);
+          input.setLocalSnapshotFailure(documentID);
           input.notifyError("Failed to save local editor data.");
         }
       });
       await withTimeout(persistence.whenSynced, LOCAL_SNAPSHOT_TIMEOUT);
 
       const available = provider.document.store.clients.size > 0;
-      input.setLocalSnapshot(entryID, available);
+      input.setLocalSnapshot(documentID, available);
       return {
         renderImmediately: available,
         cleanup() {
@@ -73,9 +73,9 @@ const createLocalEditorSnapshotLifecycle = (input: LocalEditorSnapshotInput) => 
           cause: error
         });
       } else if (error instanceof LocalSnapshotTimeoutError) {
-        input.setLocalSnapshotTimeout(entryID);
+        input.setLocalSnapshotTimeout(documentID);
       } else {
-        input.setLocalSnapshotFailure(entryID);
+        input.setLocalSnapshotFailure(documentID);
         input.notifyError("Failed to load local editor data.");
       }
       throw error instanceof LocalSnapshotError

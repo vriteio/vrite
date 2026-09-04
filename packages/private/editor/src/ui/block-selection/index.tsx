@@ -251,6 +251,7 @@ const BlockSelection: ParentComponent<BlockSelectionProps> = (props) => {
     };
 
     editor.state.doc.forEach((node, pos) => {
+      if (node.attrs.inherited) return;
       if (node.type.name !== "title" && !isEditorBlock(node)) return;
 
       if (node.type.name === "fragment") {

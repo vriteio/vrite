@@ -1,6 +1,7 @@
 import type { ContentNode } from "#backend/lib/content";
 import { foreignKey, index, jsonb, pgTable, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
 import { entries } from "./entries";
+import { effectiveSchemaRevisions } from "./content-schemas";
 import { bytea } from "./shared";
 
 const contents = pgTable(
@@ -11,6 +12,9 @@ const contents = pgTable(
     state: bytea("state"),
     document: jsonb("document").$type<ContentNode>(),
     hash: varchar("hash", { length: 64 }),
+    schemaRevisionID: uuid("schema_revision_id").references(() => effectiveSchemaRevisions.id, {
+      onDelete: "set null"
+    }),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
   },
   (table) => [

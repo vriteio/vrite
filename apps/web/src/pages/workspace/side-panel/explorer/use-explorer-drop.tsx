@@ -1,5 +1,7 @@
 import { useTree } from "#web/components/tree";
+import { useNotify } from "#web/context/notifications";
 import { useWorkspace } from "#web/context/workspace";
+import { client } from "#web/lib/api";
 import {
   dropTargetForElements,
   monitorForElements
@@ -13,80 +15,149 @@ import {
   getDraggedCollectionIDs,
   getDraggedEntryIDs
 } from "./explorer-dnd";
-
-interface ExplorerMoveInput {
-  collectionIDs: string[];
-  entryIDs: string[];
-  parentID: string | null;
-  execute(): void;
-}
-
+import { ExplorerMoveDialogs } from "./explorer-move-dialogs";
+import {
+  type ExplorerMoveInput,
+  isSchemaMoveConfirmationRequired,
+  requiresSchemaMoveConfirmation
+} from "./explorer-schema-move";
 const useExplorerDrop = (element: () => HTMLElement | null) => {
   const [{ flattenedOrder }, { setSelection }] = useTree();
   const { content } = useWorkspace();
+  const notify = useNotify();
   const [isDraggedOver, setIsDraggedOver] = createSignal(false);
+  const [pendingMove, setPendingMove] = createSignal<ExplorerMoveInput | null>(null);
+  const [confirmingMove, setConfirmingMove] = createSignal(false);
   const ordered = (ids: string[]) => {
     const idSet = new Set(ids);
     const visible = flattenedOrder().filter((id) => idSet.has(id));
 
     return [...visible, ...ids.filter((id) => !visible.includes(id))];
   };
-  const moveEntries = (input: {
+  const trackMigration = async (migrationID: string) => {
+    while (true) {
+      const details = await client.schemaMigrations.get({ id: migrationID });
+
+      if (details.status === "completed") return;
+
+      if (details.status === "failed") {
+        throw new Error(details.error || "Schema migration failed");
+      }
+
+      await new Promise((resolve) => window.setTimeout(resolve, 750));
+    }
+  };
+  const moveEntries = async (input: {
     entryIDs: string[];
     collectionID: string | null;
     targetEntryID?: string;
     edge?: "top" | "bottom" | null;
+    confirmedDataLoss: boolean;
   }) => {
     const entryIDs = ordered(input.entryIDs);
     const orders = content.entries.getDropOrders({ ...input, entryIDs });
-    entryIDs.forEach((id, index) =>
-      content.entries.update({
+    for (const [index, id] of entryIDs.entries()) {
+      const result = await content.entries.update({
         entryID: id,
         updates: {
           collectionID: input.collectionID ?? undefined,
           order: orders[index]
-        }
-      })
-    );
+        },
+        confirmedDataLoss: input.confirmedDataLoss
+      });
+
+      if (result?.migrationID) {
+        await trackMigration(result.migrationID);
+      }
+    }
   };
-  const moveCollections = (input: {
+  const moveCollections = async (input: {
     collectionIDs: string[];
     parentID: string | null;
     targetCollectionID?: string;
     edge?: "top" | "bottom" | null;
+    confirmedDataLoss: boolean;
   }) => {
     const collectionIDs = ordered(input.collectionIDs);
     const start = content.collections.getDropIndex({ ...input, collectionIDs });
-    collectionIDs.forEach((id, offset) =>
-      content.collections.move({
+    for (const [offset, id] of collectionIDs.entries()) {
+      const result = await content.collections.move({
         collectionID: id,
         parentID: input.parentID,
-        index: start === undefined ? undefined : start + offset
-      })
-    );
+        index: start === undefined ? undefined : start + offset,
+        confirmedDataLoss: input.confirmedDataLoss
+      });
+
+      if (result?.migrationID) {
+        await trackMigration(result.migrationID);
+      }
+    }
   };
   const hasMoveAccess = (input: ExplorerMoveInput) => {
     const canMoveEntries = input.entryIDs.every((entryID) => {
       const collectionID = content.entries.get({ entryID })?.collectionID ?? null;
 
-      return content.canEntry(collectionID, "entry:move");
+      return (
+        content.canEntry(collectionID, "entry:move") &&
+        !content.hasActiveSchemaMigration(collectionID)
+      );
     });
     const canMoveCollections = input.collectionIDs.every((collectionID) => {
-      return content.canCollection(collectionID, "collection:move");
+      return (
+        content.canCollection(collectionID, "collection:move") &&
+        !content.hasActiveSchemaMigration(collectionID, true)
+      );
     });
     const canAcceptEntries =
-      input.entryIDs.length === 0 || content.canEntry(input.parentID, "entry:create");
+      input.entryIDs.length === 0 ||
+      (content.canEntry(input.parentID, "entry:create") &&
+        !content.hasActiveSchemaMigration(input.parentID));
     const canAcceptCollections =
       input.collectionIDs.length === 0 ||
-      content.canCollection(input.parentID, "collection:create-child");
+      (content.canCollection(input.parentID, "collection:create-child") &&
+        !content.hasActiveSchemaMigration(input.parentID));
 
     return canMoveEntries && canMoveCollections && canAcceptEntries && canAcceptCollections;
+  };
+  const finishMove = () => {
+    setSelection([]);
   };
   const submitMove = (input: ExplorerMoveInput) => {
     if (!hasMoveAccess(input)) return;
 
-    input.execute();
-    setSelection([]);
+    if (requiresSchemaMoveConfirmation(content, input)) {
+      setPendingMove(input);
+      return;
+    }
+
+    void input
+      .execute(false)
+      .then(finishMove)
+      .catch((error) => {
+        if (isSchemaMoveConfirmationRequired(error)) {
+          setPendingMove(input);
+          return;
+        }
+
+        console.error(error);
+        notify({ type: "error", text: "Failed to move content" });
+      });
+  };
+  const confirmMove = () => {
+    const move = pendingMove();
+
+    if (!move || confirmingMove()) return;
+
+    setConfirmingMove(true);
+    setPendingMove(null);
+    void move
+      .execute(true)
+      .then(finishMove)
+      .catch((error) => {
+        console.error(error);
+        notify({ type: "error", text: "Failed to move content" });
+      })
+      .finally(() => setConfirmingMove(false));
   };
   const changesRootParent = (data: Record<string | symbol, unknown>) =>
     getDraggedEntryIDs(data).some(
@@ -122,12 +193,13 @@ const useExplorerDrop = (element: () => HTMLElement | null) => {
             entryIDs: entries,
             collectionIDs: [],
             parentID: collectionID,
-            execute: () => {
-              moveEntries({
+            execute: async (confirmedDataLoss) => {
+              await moveEntries({
                 entryIDs: entries,
                 collectionID,
                 targetEntryID,
-                edge: extractClosestEdge(data) as "top" | "bottom" | null
+                edge: extractClosestEdge(data) as "top" | "bottom" | null,
+                confirmedDataLoss
               });
             }
           });
@@ -153,16 +225,21 @@ const useExplorerDrop = (element: () => HTMLElement | null) => {
               entryIDs: canOrderCollections(source.data) ? [] : entries,
               collectionIDs: collections,
               parentID,
-              execute: () => {
-                moveCollections({
+              execute: async (confirmedDataLoss) => {
+                await moveCollections({
                   collectionIDs: collections,
                   parentID,
+                  confirmedDataLoss,
                   ...(canOrderCollections(source.data)
                     ? { targetCollectionID: targetID, edge }
                     : {})
                 });
                 if (!canOrderCollections(source.data) && entries.length) {
-                  moveEntries({ entryIDs: entries, collectionID: parentID });
+                  await moveEntries({
+                    entryIDs: entries,
+                    collectionID: parentID,
+                    confirmedDataLoss
+                  });
                 }
               }
             });
@@ -193,20 +270,22 @@ const useExplorerDrop = (element: () => HTMLElement | null) => {
               entryIDs: movingEntries,
               collectionIDs: movingCollections,
               parentID: targetID,
-              execute: () => {
+              execute: async (confirmedDataLoss) => {
                 if (movingEntries.length) {
-                  moveEntries({
+                  await moveEntries({
                     entryIDs: movingEntries,
                     collectionID: targetID,
                     targetEntryID: last,
-                    edge: last ? "bottom" : null
+                    edge: last ? "bottom" : null,
+                    confirmedDataLoss
                   });
                 }
 
                 if (movingCollections.length) {
-                  moveCollections({
+                  await moveCollections({
                     collectionIDs: movingCollections,
-                    parentID: targetID
+                    parentID: targetID,
+                    confirmedDataLoss
                   });
                 }
               }
@@ -218,10 +297,20 @@ const useExplorerDrop = (element: () => HTMLElement | null) => {
             entryIDs: entries,
             collectionIDs: collections,
             parentID: null,
-            execute: () => {
-              if (entries.length) moveEntries({ entryIDs: entries, collectionID: null });
+            execute: async (confirmedDataLoss) => {
+              if (entries.length) {
+                await moveEntries({
+                  entryIDs: entries,
+                  collectionID: null,
+                  confirmedDataLoss
+                });
+              }
               if (collections.length) {
-                moveCollections({ collectionIDs: collections, parentID: null });
+                await moveCollections({
+                  collectionIDs: collections,
+                  parentID: null,
+                  confirmedDataLoss
+                });
               }
             }
           });
@@ -253,7 +342,15 @@ const useExplorerDrop = (element: () => HTMLElement | null) => {
   });
 
   return {
-    isDraggedOver
+    isDraggedOver,
+    dialogs: () => (
+      <ExplorerMoveDialogs
+        confirming={confirmingMove()}
+        move={pendingMove()}
+        onCancel={() => setPendingMove(null)}
+        onConfirm={confirmMove}
+      />
+    )
   };
 };
 

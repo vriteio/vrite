@@ -1,15 +1,28 @@
 import { rankBetweenNeighbors, toCollectionID, toEntryID, toUUID } from "#backend/lib/primitives";
-import { collections, contents, entries, type Entry } from "#backend/db";
+import { collections, contents, effectiveSchemaRevisions, entries, type Entry } from "#backend/db";
+import type { ContentNode } from "#backend/lib/content";
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 import { normalizeEntryName } from "#backend/lib/validation";
 import { withAuthorization } from "#backend/lib/policy";
 import type { PublishingEntryStatus } from "#backend/lib/publishing";
+import { getResolvedSchemaDefinition, migrateSchemaContentState } from "#backend/lib/schema";
 
 interface CreateEntryResult {
   entry: Entry;
   publishingEntries: PublishingEntryStatus[];
 }
+
+const createInitialDocument = (name: string): ContentNode => ({
+  type: "doc",
+  content: [
+    {
+      type: "title",
+      ...(name ? { content: [{ type: "text", text: name }] } : {})
+    },
+    { type: "paragraph" }
+  ]
+});
 
 const createEntry = withAuthorization<Partial<Entry>, undefined, CreateEntryResult>(
   {
@@ -22,6 +35,7 @@ const createEntry = withAuthorization<Partial<Entry>, undefined, CreateEntryResu
   async ({ authorization, database, input, workspaceID }) => {
     const entryID = input.id ? toUUID(input.id) : crypto.randomUUID();
     const collectionID = input.collectionID ? toUUID(input.collectionID) : null;
+    const name = normalizeEntryName(input.name ?? "Untitled");
 
     const entry = await (async () => {
       if (collectionID) {
@@ -65,7 +79,7 @@ const createEntry = withAuthorization<Partial<Entry>, undefined, CreateEntryResu
           id: entryID,
           workspaceID,
           collectionID,
-          name: normalizeEntryName(input.name ?? "Untitled"),
+          name,
           rank
         })
         .onConflictDoNothing({ target: entries.id });
@@ -84,9 +98,43 @@ const createEntry = withAuthorization<Partial<Entry>, undefined, CreateEntryResu
         throw new ORPCError("BAD_REQUEST", { message: "Entry ID belongs to another workspace" });
       }
 
+      const [activeRevision] = created.collectionID
+        ? await database
+            .select({
+              definition: effectiveSchemaRevisions.definition,
+              id: effectiveSchemaRevisions.id
+            })
+            .from(effectiveSchemaRevisions)
+            .where(
+              and(
+                eq(effectiveSchemaRevisions.workspaceID, workspaceID),
+                eq(effectiveSchemaRevisions.collectionID, created.collectionID),
+                eq(effectiveSchemaRevisions.active, true)
+              )
+            )
+            .limit(1)
+        : [];
+      const initialContent = activeRevision
+        ? migrateSchemaContentState({
+            defaultMode: "new-entry",
+            document: createInitialDocument(created.name),
+            schema: getResolvedSchemaDefinition(activeRevision.definition),
+            state: null
+          })
+        : null;
+
       await database
         .insert(contents)
-        .values({ entryID: created.id, workspaceID: created.workspaceID })
+        .values({
+          entryID: created.id,
+          workspaceID: created.workspaceID,
+          ...(initialContent && {
+            document: initialContent.document,
+            hash: initialContent.hash,
+            schemaRevisionID: activeRevision!.id,
+            state: initialContent.state
+          })
+        })
         .onConflictDoNothing({ target: contents.entryID });
 
       return created;

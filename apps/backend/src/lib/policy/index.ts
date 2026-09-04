@@ -5,5 +5,6 @@ export * from "./permissions";
 export * from "./restricted-workspace-event";
 export * from "./session";
 export * from "./service";
+export * from "./schema-migration";
 export * from "./subscription";
 export * from "./workspace-event-visibility";

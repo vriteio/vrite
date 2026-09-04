@@ -29,6 +29,27 @@ const isWorkspaceEventVisible = (
     });
   }
 
+  if (event.action.startsWith("schema-version:")) {
+    return hasAuthorizationRequirements(auth, {
+      session: true,
+      key: ["read:collections"]
+    });
+  }
+
+  if (event.action.startsWith("schema-migration:")) {
+    return hasAuthorizationRequirements(auth, {
+      session: true,
+      key: ["read:collections"]
+    });
+  }
+
+  if (event.action.startsWith("schema:")) {
+    return hasAuthorizationRequirements(auth, {
+      session: true,
+      key: ["read:collections"]
+    });
+  }
+
   if (event.action.startsWith("membership:")) {
     return hasAuthorizationRequirements(auth, {
       session: ["workspace"],

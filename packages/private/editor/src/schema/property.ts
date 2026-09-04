@@ -56,6 +56,23 @@ const Property = Node.create({
         renderHTML: (attributes) => {
           return { "data-options": JSON.stringify(attributes.options) };
         }
+      },
+      schemaFieldID: {
+        default: null,
+        parseHTML: (element) => element.getAttribute("data-schema-field-id"),
+        renderHTML: (attributes) => ({ "data-schema-field-id": attributes.schemaFieldID })
+      },
+      inherited: {
+        default: false,
+        parseHTML: (element) => element.getAttribute("data-inherited") === "true",
+        renderHTML: (attributes) => ({ "data-inherited": String(attributes.inherited) })
+      },
+      sourceCollectionID: {
+        default: null,
+        parseHTML: (element) => element.getAttribute("data-source-collection-id"),
+        renderHTML: (attributes) => ({
+          "data-source-collection-id": attributes.sourceCollectionID
+        })
       }
     };
   },

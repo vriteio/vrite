@@ -5,6 +5,7 @@ const configSchema = backendConfigSchema
   .pick({
     DATABASE_URL: true,
     QUEUE_REDIS_URL: true,
+    REDIS_URL: true,
     TYPESENSE_URL: true,
     TYPESENSE_API_KEY: true,
     OPENAI_API_KEY: true,

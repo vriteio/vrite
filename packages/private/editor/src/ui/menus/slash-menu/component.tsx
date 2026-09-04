@@ -1,14 +1,5 @@
 import { type SuggestionKeyDownProps, type SuggestionProps } from "@tiptap/suggestion";
-import {
-  type Component,
-  createEffect,
-  createSignal,
-  For,
-  on,
-  onCleanup,
-  onMount,
-  Show
-} from "solid-js";
+import { type Component, createEffect, createSignal, For, on, onMount, Show } from "solid-js";
 import { type Editor, type Range } from "@tiptap/core";
 import clsx from "clsx";
 import {
@@ -19,8 +10,7 @@ import {
   type Ref,
   ScrollShadow,
   Shortcut,
-  Tooltip,
-  useTooltipContext
+  Tooltip
 } from "@andesine/components";
 import { Dynamic } from "solid-js/web";
 
@@ -30,6 +20,8 @@ interface SlashMenuItem {
   group: string;
   markdown?: string;
   shortcut?: string;
+  schemaBlockType?: string;
+  schemaKind?: "block" | "structure";
   ref: Ref<HTMLElement | null>;
   command(params: { editor: Editor; range: Range }): boolean | Promise<boolean>;
 }

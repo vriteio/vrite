@@ -137,7 +137,7 @@ const deleteExpiredAutomaticVersions = async (): Promise<void> => {
     delete from ${entryVersions}
     using ${workspaces}
     where ${entryVersions.workspaceID} = ${workspaces.id}
-      and ${entryVersions.reason} = 'auto'
+      and ${entryVersions.reason} in ('auto', 'schema-migration')
       and not exists (
         select 1
         from ${entryPublications}

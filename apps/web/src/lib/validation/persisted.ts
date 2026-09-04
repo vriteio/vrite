@@ -4,10 +4,29 @@ interface PersistedLayout {
   leftSidePanelWidth: number;
   rightSidePanelWidth?: number;
 }
+interface PersistedCollectionSchemaSummary {
+  id: string;
+  collectionID: string;
+  enabled: boolean;
+  hasActiveVersion: boolean;
+  hasUnappliedChanges: boolean;
+}
 
 const isPersistedEntry = (value: unknown): value is Entry => Boolean((value as Entry | null)?.id);
 const isPersistedCollection = (value: unknown): value is Collection =>
   Boolean((value as Collection | null)?.id);
+const isPersistedCollectionSchemaSummary = (
+  value: unknown
+): value is PersistedCollectionSchemaSummary => {
+  const schema = value as PersistedCollectionSchemaSummary | null;
+
+  return Boolean(
+    schema?.id &&
+    schema.collectionID &&
+    schema.enabled &&
+    typeof schema.hasActiveVersion === "boolean"
+  );
+};
 const parseLayoutCookie = (value: string | undefined): PersistedLayout | null => {
   if (!value) return null;
 
@@ -34,4 +53,10 @@ const isWorkspaceEvent = (value: unknown): value is WorkspaceEvent => {
   return typeof event?.action === "string" && Boolean(event.data);
 };
 
-export { isPersistedCollection, isPersistedEntry, isWorkspaceEvent, parseLayoutCookie };
+export {
+  isPersistedCollection,
+  isPersistedCollectionSchemaSummary,
+  isPersistedEntry,
+  isWorkspaceEvent,
+  parseLayoutCookie
+};

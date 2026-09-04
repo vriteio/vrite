@@ -43,12 +43,14 @@ const WorkspaceRightSidePanel: Component<WorkspaceRightSidePanelProps> = (props)
   const { layout, setLayout } = useLayout();
   const { content } = useWorkspace();
   const options = useRightSidePanelOptions();
-  const isEntryRoute = () => Boolean(params.slug?.startsWith("ent_"));
+  const isDocumentRoute = () => {
+    return Boolean(params.slug?.startsWith("ent_") || params.slug?.startsWith("sch_"));
+  };
   const available = () => {
     return (
       !props.hidden &&
       (options().length > 0 ||
-        (isEntryRoute() && layout.rightSidePanelWidth > 0 && content.accessLoading()))
+        (isDocumentRoute() && layout.rightSidePanelWidth > 0 && content.accessLoading()))
     );
   };
 

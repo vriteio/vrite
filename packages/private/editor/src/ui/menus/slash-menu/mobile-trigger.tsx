@@ -5,6 +5,8 @@ import { Portal } from "solid-js/web";
 import { EDITOR_MENU_Z_INDEX } from "#editor/ui/constants";
 import { SlashMenuDropdown } from "./dropdown";
 import { createSlashMenuItems } from "./items";
+import { getAvailableSlashMenuItems } from "./items";
+import type { EditorMode } from "#editor/client-types";
 
 interface Position {
   left: number;
@@ -16,12 +18,14 @@ const PLACEHOLDER_HIDDEN_ATTRIBUTE = "data-mobile-slash-menu-trigger";
 const MobileSlashMenuTrigger: Component<{
   editor: Editor;
   menuContainerRef: Accessor<HTMLElement | null>;
+  mode: EditorMode;
 }> = (props) => {
   const [positionFrame, setPositionFrame] = createRef<number | null>(null);
   const [activeParagraphElement, setActiveParagraphElementRef] = createRef<HTMLElement | null>(
     null
   );
   const items = createSlashMenuItems();
+  const availableItems = () => getAvailableSlashMenuItems(items, props.editor, props.mode);
   const [focused, setFocused] = createSignal(props.editor.isFocused);
   const [opened, setOpened] = createSignal(false);
   const [position, setPosition] = createSignal<Position | null>(null, {
@@ -146,7 +150,7 @@ const MobileSlashMenuTrigger: Component<{
             {(currentPosition) => (
               <SlashMenuDropdown
                 class="absolute pointer-events-auto -translate-y-1/2 md:hidden"
-                items={items}
+                items={availableItems()}
                 opened={opened()}
                 setOpened={(nextOpened) => {
                   const wasOpened = opened();

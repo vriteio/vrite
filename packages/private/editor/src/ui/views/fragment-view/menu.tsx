@@ -1,22 +1,42 @@
-import { DropdownMenu, Input, Tooltip } from "@andesine/components";
+import { DropdownMenu, Input, Tooltip, type MenuItem } from "@andesine/components";
 import type { Editor } from "@tiptap/core";
 import clsx from "clsx";
 import { createEffect, createSignal, onCleanup, onMount, Show, type JSX } from "solid-js";
 import { getResourceNameDetails } from "#editor/extensions/resource-name-tracker";
 import { MAX_FRAGMENT_NAME_LENGTH } from "#editor/schema";
+import { FRAGMENT_BLOCK_TYPES, type FragmentBlockType } from "#editor/schema/fragment";
+
+interface FragmentAttrs {
+  name: string;
+  allowedBlocks: FragmentBlockType[];
+  inherited?: boolean;
+  schemaFieldID?: string | null;
+  sourceCollectionID?: string | null;
+}
 
 interface FragmentMenuProps {
+  attrs: FragmentAttrs;
   editor: Editor;
   getPos(): number | undefined;
-  name: string;
+  schemaMode: boolean;
   selected: boolean;
   selectFragment(): void;
-  updateName(name: string): void;
+  updateAttributes(attributes: Partial<FragmentAttrs>): void;
 }
+
+const blockTypeDetails: Record<FragmentBlockType, { icon: string; label: string }> = {
+  paragraph: { icon: "i-lucide:pilcrow", label: "Paragraph" },
+  heading: { icon: "i-lucide:heading", label: "Heading" },
+  blockquote: { icon: "i-lucide:text-quote", label: "Blockquote" },
+  bulletList: { icon: "i-lucide:list", label: "Bullet list" },
+  orderedList: { icon: "i-lucide:list-ordered", label: "Ordered list" },
+  taskList: { icon: "i-lucide:list-checks", label: "Task list" },
+  horizontalRule: { icon: "i-lucide:minus", label: "Horizontal rule" }
+};
 
 const FragmentMenu = (props: FragmentMenuProps): JSX.Element => {
   const [opened, setOpened] = createSignal(false);
-  const [name, setName] = createSignal(props.name);
+  const [name, setName] = createSignal(props.attrs.name);
   const [nameInputTabIndex, setNameInputTabIndex] = createSignal(0);
   const fragmentNameDetails = () => {
     return getResourceNameDetails(props.editor.state, "fragment", props.getPos(), name());
@@ -32,34 +52,33 @@ const FragmentMenu = (props: FragmentMenuProps): JSX.Element => {
     event.stopImmediatePropagation();
     target.blur();
   };
-  const commitName = () => props.updateName(name());
+  const commitName = () => props.updateAttributes({ name: name() });
+  const toggleBlockType = (blockType: FragmentBlockType) => {
+    const allowedBlocks = props.attrs.allowedBlocks || [...FRAGMENT_BLOCK_TYPES];
+    const enabled = allowedBlocks.includes(blockType);
 
-  createEffect(() => {
-    if (!opened()) setName(props.name);
-  });
-  onMount(() => {
-    document.addEventListener("keydown", blurInputOnEscape, true);
-  });
-  onCleanup(() => {
-    document.removeEventListener("keydown", blurInputOnEscape, true);
-  });
+    if (enabled && allowedBlocks.length === 1) return;
 
-  return (
-    <DropdownMenu
-      title="Fragment settings"
-      opened={opened()}
-      setOpened={(nextOpened) => {
-        if (!opened() && nextOpened) setNameInputTabIndex(0);
+    props.updateAttributes({
+      allowedBlocks: enabled
+        ? allowedBlocks.filter((currentBlockType) => currentBlockType !== blockType)
+        : FRAGMENT_BLOCK_TYPES.filter((currentBlockType) => {
+            return currentBlockType === blockType || allowedBlocks.includes(currentBlockType);
+          })
+    });
+  };
+  const usedBlockTypes = () => {
+    const position = props.getPos();
+    const fragment = typeof position === "number" ? props.editor.state.doc.nodeAt(position) : null;
+    const blockTypes = new Set<string>();
 
-        if (opened() && !nextOpened) commitName();
+    fragment?.forEach((node) => blockTypes.add(node.type.name));
 
-        setOpened(nextOpened);
-      }}
-      placement="bottom-start"
-      portal={false}
-      positioningStrategy="absolute"
-      cardProps={{ class: "w-full max-w-none not-prose md:max-w-64" }}
-      items={[
+    return blockTypes;
+  };
+  const menuItems = (): Array<Array<MenuItem | (() => JSX.Element)>> => {
+    const items: Array<Array<MenuItem | (() => JSX.Element)>> = [
+      [
         () => (
           <div class="flex w-full min-w-0 flex-col gap-1 p-1 md:min-w-60" data-fragment-menu-input>
             <Input
@@ -102,7 +121,57 @@ const FragmentMenu = (props: FragmentMenuProps): JSX.Element => {
             </p>
           </div>
         )
-      ]}
+      ]
+    ];
+
+    if (props.schemaMode) {
+      items.push([
+        {
+          label: "Allowed blocks",
+          icon: "i-lucide:blocks",
+          items: FRAGMENT_BLOCK_TYPES.map((blockType) => ({
+            ...blockTypeDetails[blockType],
+            selected: props.attrs.allowedBlocks?.includes(blockType) ?? true,
+            disabled:
+              props.attrs.allowedBlocks?.includes(blockType) && usedBlockTypes().has(blockType)
+                ? "Remove the default content that uses this block type first"
+                : false,
+            closeOnSelect: false,
+            onClick: () => toggleBlockType(blockType)
+          }))
+        }
+      ]);
+    }
+
+    return items;
+  };
+
+  createEffect(() => {
+    if (!opened()) setName(props.attrs.name);
+  });
+  onMount(() => {
+    document.addEventListener("keydown", blurInputOnEscape, true);
+  });
+  onCleanup(() => {
+    document.removeEventListener("keydown", blurInputOnEscape, true);
+  });
+
+  return (
+    <DropdownMenu
+      title="Fragment settings"
+      opened={opened()}
+      setOpened={(nextOpened) => {
+        if (!opened() && nextOpened) setNameInputTabIndex(0);
+
+        if (opened() && !nextOpened) commitName();
+
+        setOpened(nextOpened);
+      }}
+      placement="bottom-start"
+      portal={false}
+      positioningStrategy="absolute"
+      cardProps={{ class: "w-full max-w-none not-prose md:max-w-64" }}
+      items={menuItems()}
       trigger={() => (
         <button
           type="button"
@@ -131,7 +200,7 @@ const FragmentMenu = (props: FragmentMenuProps): JSX.Element => {
                 props.selected ? "bg-gradient-to-tr bg-clip-text text-transparent" : "text-gray-500"
               )}
             >
-              {props.name || "Content"}
+              {props.attrs.name || "Content"}
             </span>
           </span>
           <span
@@ -150,3 +219,4 @@ const FragmentMenu = (props: FragmentMenuProps): JSX.Element => {
 };
 
 export { FragmentMenu };
+export type { FragmentAttrs };

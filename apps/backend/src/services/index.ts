@@ -7,6 +7,7 @@ export * from "./billing";
 export * from "./keys";
 export * from "./roles";
 export * from "./search";
+export * from "./schemas";
 export * from "./memberships";
 export * from "./publishing";
 export * from "./workspaces";

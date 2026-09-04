@@ -72,7 +72,13 @@ const useExplorerCollection = (props: ExplorerCollectionProps) => {
       .map((collection) => collection.id);
   };
   const canDropIntoCollection = (source: { data: Record<string | symbol, unknown> }) => {
-    if (content.offline() || content.syncing()) return false;
+    if (
+      content.offline() ||
+      content.syncing() ||
+      content.hasActiveSchemaMigration(props.collection.id)
+    ) {
+      return false;
+    }
 
     if (
       !content.canEntry(props.collection.id, "entry:create") &&
@@ -85,11 +91,18 @@ const useExplorerCollection = (props: ExplorerCollectionProps) => {
   };
   const canEditEntry = (entryID: string) => {
     const entry = content.entries.get({ entryID });
+    const collectionID = entry?.collectionID || null;
 
-    return content.canEntry(entry?.collectionID || null, "entry:move");
+    return (
+      content.canEntry(collectionID, "entry:move") &&
+      !content.hasActiveSchemaMigration(collectionID)
+    );
   };
   const canEditCollection = (collectionID: string) => {
-    return content.canCollection(collectionID, "collection:move");
+    return (
+      content.canCollection(collectionID, "collection:move") &&
+      !content.hasActiveSchemaMigration(collectionID, true)
+    );
   };
   const canEditSelection = () => {
     const selectedIDs = selection().includes(props.collection.id)

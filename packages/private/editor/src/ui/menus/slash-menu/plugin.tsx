@@ -1,11 +1,13 @@
 import { SlashMenu, type SlashMenuItem, type SlashMenuState } from "./component";
 import Suggestion, { type SuggestionKeyDownProps, type SuggestionProps } from "@tiptap/suggestion";
 import tippy, { type Instance } from "tippy.js";
-import { type Accessor, runWithOwner, getOwner, createSignal } from "solid-js";
+import { type Accessor, getOwner, createSignal } from "solid-js";
 import { PluginKey } from "@tiptap/pm/state";
 import { type Editor } from "@tiptap/core";
 import { render } from "solid-js/web";
 import { EDITOR_MENU_Z_INDEX } from "#editor/ui/constants";
+import type { EditorMode } from "#editor/client-types";
+import { getAvailableSlashMenuItems } from "./items";
 
 const stringToRegex = (str: string): RegExp => {
   return new RegExp(str.replace(/[|\\{}()[\]^$+*?.]/g, "\\$&"), "i");
@@ -13,6 +15,7 @@ const stringToRegex = (str: string): RegExp => {
 const slashMenuPluginKey = new PluginKey("slashMenu");
 const createSlashMenuPlugin = (options: {
   menuItems: SlashMenuItem[];
+  mode: EditorMode;
   editor: Editor;
   menuContainerRef: Accessor<HTMLElement | null>;
 }) => {
@@ -56,14 +59,16 @@ const createSlashMenuPlugin = (options: {
       ];
       const filteredItems: SlashMenuItem[] = [];
 
-      options.menuItems.forEach((item) => {
-        for (const condition of conditions) {
-          if (condition(item) && !filteredItems.includes(item)) {
-            filteredItems.push(item);
-            break;
+      getAvailableSlashMenuItems(options.menuItems, options.editor, options.mode).forEach(
+        (item) => {
+          for (const condition of conditions) {
+            if (condition(item) && !filteredItems.includes(item)) {
+              filteredItems.push(item);
+              break;
+            }
           }
         }
-      });
+      );
 
       return filteredItems;
     },

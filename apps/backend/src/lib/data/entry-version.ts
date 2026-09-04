@@ -18,10 +18,10 @@ interface VersionSummary {
 interface VersionDetails extends VersionSummary {
   document: ContentNode;
 }
-type VersionReason = "auto" | "manual" | "revert";
+type VersionReason = "auto" | "manual" | "revert" | "schema-migration";
 type EntryVersionRow = typeof entryVersions.$inferSelect;
 
-const versionReasonType = z.enum(["auto", "manual", "revert"]);
+const versionReasonType = z.enum(["auto", "manual", "revert", "schema-migration"]);
 const versionSummaryType = z.object({
   id: id().describe("ID of the version"),
   entryID: id().describe("ID of the versioned entry"),

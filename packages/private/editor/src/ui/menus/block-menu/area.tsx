@@ -13,6 +13,7 @@ import { Portal } from "solid-js/web";
 import { BlockMenu } from "./block-menu";
 import { BlockMenuContextProvider } from "./context";
 import type { BlockControlRange } from "#editor/ui/block-control-targeting";
+import { rangeContainsInheritedField } from "#editor/ui/block-utils";
 
 interface BlockMenuAreaProps {
   editor: Editor | null;
@@ -56,6 +57,10 @@ const BlockMenuArea: ParentComponent<BlockMenuAreaProps> = (props) => {
     const editor = props.editor;
 
     if (!editor || editor.isDestroyed) return false;
+
+    const { from, to } = editor.state.selection;
+
+    if (rangeContainsInheritedField(editor.state.doc, from, to)) return false;
 
     editor.chain().focus().deleteSelection().run();
 

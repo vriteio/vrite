@@ -1,5 +1,15 @@
 import { accounts, passkeys, sessions, verifications } from "./auth";
 import { collections } from "./collections";
+import {
+  collectionSchemas,
+  effectiveSchemaRevisions,
+  schemaDraftContributors,
+  schemaMigrationCollections,
+  schemaMigrationEntries,
+  schemaMigrations,
+  schemaVersionContributors,
+  schemaVersions
+} from "./content-schemas";
 import { contents } from "./contents";
 import { stripeWebhookEvents } from "./stripe-webhook-events";
 import { entries } from "./entries";
@@ -36,6 +46,14 @@ const schema = {
   memberships,
   invitations,
   collections,
+  collectionSchemas,
+  schemaDraftContributors,
+  schemaVersions,
+  schemaVersionContributors,
+  effectiveSchemaRevisions,
+  schemaMigrations,
+  schemaMigrationCollections,
+  schemaMigrationEntries,
   groups,
   groupMembers,
   groupInvitations,

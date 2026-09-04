@@ -1,33 +1,27 @@
 import { createRef } from "@andesine/components";
-import { type Component, createEffect, createMemo, Show } from "solid-js";
-import { Editor, type EditorInstance } from "@andesine/editor";
+import type { EditorInstance } from "@andesine/editor";
 import { useLocation, useNavigate, useParams } from "@solidjs/router";
-import { useNotify } from "#web/context/notifications";
-import { config } from "#web/lib/api";
+import { type Component, createEffect, createMemo } from "solid-js";
 import { useWorkspace } from "#web/context/workspace";
 import {
   getSearchNavigationTarget,
   scrollToSearchTarget,
   type SearchNavigationTarget
 } from "#web/lib/search-navigation";
-import { CollaborationStatusIndicator } from "./collaboration-status-indicator";
-import { useEntryLoadState } from "./entry-load-state";
-import { getCollaborationStatus, getCollaborationUser } from "./editor-collaboration";
-import { EDITOR_CONTENT_PADDING, EntryContentSkeleton, EntryLoadError } from "./editor-pane-states";
-import { createLocalEditorSnapshotLifecycle, LocalSnapshotError } from "./local-editor-snapshot";
-import clsx from "clsx";
+import { CollaborativeEditorPane } from "../editor/collaborative-editor-pane";
+import type { DocumentLoadState } from "../editor/document-load-state";
 
 const EditorPane: Component = () => {
   const { currentWorkspace, currentSession, content } = useWorkspace();
-  const isContentLoading = () => content.loading();
   const params = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const notify = useNotify();
   const [editorInstance, setEditorInstance] = createRef<EditorInstance | null>(null);
+  const [documentLoadState, setDocumentLoadState] = createRef<DocumentLoadState | null>(null);
   const [handledSearchTarget, setHandledSearchTarget] = createRef<SearchNavigationTarget | null>(
     null
   );
+  const [openedEntryID, setOpenedEntryID] = createRef<string | null>(null);
   const selectedEntryID = () => params.slug;
   const availableEntryID = createMemo(() => {
     const entryID = selectedEntryID();
@@ -36,50 +30,13 @@ const EditorPane: Component = () => {
 
     return content.entriesCollection().findOne({ id: entryID })?.id ?? null;
   });
-  const editableEntryID = createMemo(() => {
+  const editable = createMemo(() => {
     const entry = content.entries.get({ entryID: availableEntryID() || "" });
+    const collectionID = entry?.collectionID || null;
 
-    return content.canEntry(entry?.collectionID || null, "entry:update")
-      ? availableEntryID()
-      : null;
+    return !content.readOnly(collectionID);
   });
   const workspaceID = () => params.workspaceID || currentWorkspace()?.id || "unknown";
-  const [openedEntryID, setOpenedEntryID] = createRef<string | null>(null);
-  const {
-    entryLoadState,
-    providerAttempt,
-    discardLocalSnapshot,
-    setLocalSnapshot,
-    setLocalSnapshotTimeout,
-    setLocalSnapshotFailure,
-    retryCollaboration,
-    markEditorReady,
-    handleProvider
-  } = useEntryLoadState(selectedEntryID);
-  const collaborationStatus = () => getCollaborationStatus(entryLoadState());
-  const isShowingContentSkeleton = () => {
-    const entryID = selectedEntryID();
-    const currentState = entryLoadState();
-
-    return Boolean(
-      entryID &&
-      currentState.entryID === entryID &&
-      !currentState.isCheckingLocal &&
-      !currentState.hasLocalSnapshot &&
-      !currentState.editorReady &&
-      !currentState.problem
-    );
-  };
-  const { beforeProviderAttach } = createLocalEditorSnapshotLifecycle({
-    workspaceID,
-    discardLocalSnapshot,
-    setLocalSnapshot,
-    setLocalSnapshotTimeout,
-    setLocalSnapshotFailure,
-    notifyError: (text) => notify({ type: "error", text })
-  });
-
-  const collaborationUser = () => getCollaborationUser(currentSession()?.user);
 
   createEffect(() => {
     const selectedID = selectedEntryID();
@@ -87,17 +44,18 @@ const EditorPane: Component = () => {
 
     if (availableID) {
       setOpenedEntryID(availableID);
-    } else if (selectedID && openedEntryID() === selectedID && !isContentLoading()) {
+    } else if (selectedID && openedEntryID() === selectedID && !content.loading()) {
       setOpenedEntryID(null);
       navigate(`/${workspaceID()}`, { replace: true });
     }
   });
   createEffect(() => {
     const editor = editorInstance();
-    const loadState = entryLoadState();
+    const loadState = documentLoadState();
     const target = getSearchNavigationTarget(location.state);
-    const contentReady =
-      loadState.editorReady && (loadState.initialSyncComplete || loadState.hasLocalSnapshot);
+    const contentReady = Boolean(
+      loadState?.editorReady && (loadState.initialSyncComplete || loadState.hasLocalSnapshot)
+    );
 
     if (
       !editor ||
@@ -116,101 +74,36 @@ const EditorPane: Component = () => {
   });
 
   return (
-    <div class="flex flex-1 overflow-hidden w-full">
-      <Show
-        when={selectedEntryID()}
-        fallback={
-          <div class="flex flex-col items-center justify-center gap-2 h-full w-full">
-            <div class="i-lucide:file-pen text-gray-200 h-12 w-12" />
-            <span class="text-xs text-gray-300">Select an entry to start editing</span>
-          </div>
+    <CollaborativeEditorPane
+      documentID={selectedEntryID()}
+      availableDocumentID={availableEntryID()}
+      editable={editable()}
+      loading={content.loading()}
+      workspaceID={workspaceID()}
+      user={currentSession()?.user}
+      resourceLabel="entry"
+      emptyIcon="i-lucide:file-pen"
+      emptyMessage="Select an entry to start editing"
+      notFoundIcon="i-lucide:file-x"
+      notFoundMessage="Entry not found"
+      onBack={() => navigate(`/${workspaceID()}`)}
+      onLoadStateChange={setDocumentLoadState}
+      onEditor={(editor) => {
+        setEditorInstance(editor);
+
+        return () => {
+          if (editorInstance() === editor) setEditorInstance(null);
+        };
+      }}
+      onTitleChange={(title, entryID) => {
+        const entries = content.entriesCollection();
+        const entry = entries.findOne({ id: entryID }, { reactive: false });
+
+        if (entry && entry.name !== title) {
+          entries.updateOne({ id: entry.id }, { $set: { name: title } });
         }
-      >
-        <Show
-          when={availableEntryID()}
-          keyed
-          fallback={
-            <Show
-              when={isContentLoading()}
-              fallback={
-                <div class="flex flex-col items-center justify-center gap-2 h-full w-full">
-                  <div class="i-lucide:file-x text-gray-200 h-12 w-12" />
-                  <span class="text-xs text-gray-300">Entry not found</span>
-                </div>
-              }
-            >
-              <div class="relative h-full w-full overflow-hidden">
-                <EntryContentSkeleton class={EDITOR_CONTENT_PADDING} />
-              </div>
-            </Show>
-          }
-        >
-          {(entryID) => (
-            <div class="relative flex h-full w-full overflow-hidden">
-              <Show when={isShowingContentSkeleton()}>
-                <EntryContentSkeleton class={EDITOR_CONTENT_PADDING} />
-              </Show>
-              <Show when={entryLoadState().problem} keyed>
-                {(problem) => (
-                  <EntryLoadError
-                    problem={problem}
-                    localTimeoutCount={entryLoadState().localTimeoutCount}
-                    onRetry={retryCollaboration}
-                    onBack={() => navigate(`/${workspaceID()}`)}
-                  />
-                )}
-              </Show>
-              <Show when={!entryLoadState().isCheckingLocal && !entryLoadState().problem}>
-                <CollaborationStatusIndicator
-                  status={collaborationStatus()}
-                  hasLocalSnapshot={entryLoadState().hasLocalSnapshot}
-                  onRetry={retryCollaboration}
-                  onBack={() => navigate(`/${workspaceID()}`)}
-                />
-              </Show>
-              <div
-                class={clsx("h-full w-full md:px-1", !entryLoadState().editorReady && "invisible")}
-              >
-                <Editor
-                  class={EDITOR_CONTENT_PADDING}
-                  doc={entryID}
-                  url={`${config.PUBLIC_WS_API_URL}/collab`}
-                  providerAttempt={providerAttempt()}
-                  editable={editableEntryID() === entryID}
-                  notify={(type, text) => notify({ type, text })}
-                  collaborationUser={collaborationUser()}
-                  beforeProviderAttach={beforeProviderAttach}
-                  onProvider={handleProvider}
-                  onProviderSetupError={(error) => {
-                    if (!(error instanceof LocalSnapshotError)) {
-                      setLocalSnapshotFailure(entryID);
-                    }
-                  }}
-                  onEditor={(editor) => {
-                    const markEditorNotReady = markEditorReady(entryID);
-
-                    setEditorInstance(editor);
-
-                    return () => {
-                      if (editorInstance() === editor) setEditorInstance(null);
-                      markEditorNotReady();
-                    };
-                  }}
-                  onTitleChange={(title) => {
-                    const entries = content.entriesCollection();
-                    const entry = entries.findOne({ id: entryID }, { reactive: false });
-
-                    if (entry && entry.name !== title) {
-                      entries.updateOne({ id: entryID }, { $set: { name: title } });
-                    }
-                  }}
-                />
-              </div>
-            </div>
-          )}
-        </Show>
-      </Show>
-    </div>
+      }}
+    />
   );
 };
 

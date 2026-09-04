@@ -4,4 +4,6 @@ export * from "./passkeys";
 export * from "./people";
 export * from "./publishing";
 export * from "./search";
+export * from "./schema-versions";
+export * from "./schema-migrations";
 export * from "./versions";

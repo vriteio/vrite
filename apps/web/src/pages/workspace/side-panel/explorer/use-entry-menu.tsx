@@ -57,6 +57,14 @@ const useEntryMenu = (entryID: string) => {
       content.publishing() !== null &&
       !content.offline() &&
       !content.syncing();
+    const migrationBlocked =
+      selected.collections.some((id) => content.hasActiveSchemaMigration(id, true)) ||
+      selected.entries.some((id) => {
+        const selectedEntry = content.entries.get({ entryID: id });
+
+        return content.hasActiveSchemaMigration(selectedEntry?.collectionID || null);
+      });
+    const migrationDisabled = migrationBlocked ? "Schema migration in progress" : false;
 
     if (!isMulti) {
       const entryOptions: MenuItem[] = [
@@ -77,6 +85,7 @@ const useEntryMenu = (entryID: string) => {
         entryOptions.push({
           label: "Rename entry",
           icon: "i-lucide:pencil",
+          disabled: migrationDisabled,
           shortcut: "f2",
           onClick: () => {
             if (canEdit && !content.readOnly(entry?.collectionID || null)) startRenaming();
@@ -108,6 +117,7 @@ const useEntryMenu = (entryID: string) => {
           label: isMulti ? `Delete ${selectedCount} items` : "Delete",
           icon: "i-lucide:trash",
           color: "danger",
+          disabled: migrationDisabled,
           shortcut: "$mod+backspace",
           onClick: () => {
             if (!canDelete || content.offline() || content.syncing()) return;

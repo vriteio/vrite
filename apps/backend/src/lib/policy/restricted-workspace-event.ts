@@ -94,7 +94,11 @@ const filterRestrictedWorkspaceEvent = async (
     return authorization.canEntry(event.data.collectionID, "entry:read") ? event : null;
   }
 
-  if (event.action === "entry:update" || event.action === "entry:move") {
+  if (
+    event.action === "entry:update" ||
+    event.action === "entry:move" ||
+    event.action === "entry:content-reset"
+  ) {
     return (await isEntryVisible(auth, authorization, event.data.id, "entry:read")) ? event : null;
   }
 
@@ -125,6 +129,27 @@ const filterRestrictedWorkspaceEvent = async (
     );
 
     return ids.length > 0 ? { ...event, data: { entryIDsByVersionID, ids } } : null;
+  }
+
+  if (event.action === "schema-version:create" || event.action === "schema-version:update") {
+    return authorization.canAccessCollection(event.data.collectionID) ? event : null;
+  }
+
+  if (
+    event.action === "schema:create" ||
+    event.action === "schema:update" ||
+    event.action === "schema:delete" ||
+    event.action === "schema:content-reset"
+  ) {
+    return authorization.canAccessCollection(event.data.collectionID) ? event : null;
+  }
+
+  if (event.action === "schema-migration:update") {
+    const collectionIDs = event.data.collectionIDs.filter((collectionID) => {
+      return authorization.canAccessCollection(collectionID);
+    });
+
+    return collectionIDs.length > 0 ? { ...event, data: { ...event.data, collectionIDs } } : null;
   }
 
   if (event.action === "publishing:collection-update") {

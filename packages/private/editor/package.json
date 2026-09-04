@@ -44,7 +44,6 @@
     "@tiptap/extension-node-range": "^3.30.2",
     "@tiptap/extension-ordered-list": "^3.30.2",
     "@tiptap/extension-paragraph": "^3.30.2",
-    "@tiptap/extension-placeholder": "^3.30.2",
     "@tiptap/extension-strike": "^3.30.2",
     "@tiptap/extension-subscript": "^3.30.2",
     "@tiptap/extension-superscript": "^3.30.2",

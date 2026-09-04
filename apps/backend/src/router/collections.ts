@@ -7,7 +7,7 @@ import {
   emitPublishingEvent
 } from "#backend/events";
 import { authenticatedRoute, base, sessionRoute } from "#backend/lib/transport";
-import { id } from "#backend/lib/primitives";
+import { id, toSchemaMigrationID } from "#backend/lib/primitives";
 import {
   enqueueCurrentCollectionSync,
   enqueueCurrentEntrySync,
@@ -260,17 +260,27 @@ const collectionsRouter = base.prefix("/collections").router({
           .int()
           .min(0)
           .optional()
-          .describe("New zero-based index in the parent collection's descendants array")
+          .describe("New zero-based index in the parent collection's descendants array"),
+        confirmedDataLoss: z
+          .boolean()
+          .default(false)
+          .describe("Confirmation that a schema migration caused by the move can remove content")
       })
     )
-    .output(z.void())
+    .output(
+      z.object({
+        migrationID: id().nullable(),
+        totalEntries: z.number().int().nonnegative()
+      })
+    )
 
     .handler(async ({ context, input }) => {
       const result = await Collections.move({
         auth: context.auth,
         id: input.id,
         newParentID: input.newParentID,
-        index: input.index
+        index: input.index,
+        confirmedDataLoss: input.confirmedDataLoss
       });
 
       emitCollectionEvent(context.auth.workspaceID, {
@@ -304,6 +314,13 @@ const collectionsRouter = base.prefix("/collections").router({
           memberID: context.auth.session?.memberID
         });
       }
+
+      return {
+        migrationID: result.schemaMigration.migrationID
+          ? toSchemaMigrationID(result.schemaMigration.migrationID)
+          : null,
+        totalEntries: result.schemaMigration.totalEntries
+      };
     }),
   list: authenticatedRoute
     .route({ method: "GET", path: "/list" })

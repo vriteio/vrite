@@ -1,11 +1,13 @@
 import { type MenuItem } from "@andesine/components";
 import { useNavigate, useParams } from "@solidjs/router";
-import { createEffect, createMemo, createSignal, on } from "solid-js";
+import { createEffect, createMemo, createSignal, type JSX, on } from "solid-js";
 import { useClipboard } from "#web/context/clipboard";
 import { useNotify } from "#web/context/notifications";
 import { useWorkspace } from "#web/context/workspace";
 import { useTree } from "#web/components/tree";
 import { usePublishingActions } from "./publishing-actions";
+import { useSchemaActions } from "./schema-actions";
+import { ExplorerSchemaMigrationMenu } from "./explorer-schema-migration";
 
 const useCollectionMenu = (collectionID: string) => {
   const { copyText } = useClipboard();
@@ -14,6 +16,7 @@ const useCollectionMenu = (collectionID: string) => {
   const navigate = useNavigate();
   const params = useParams<{ workspaceID?: string }>();
   const publishingActions = usePublishingActions();
+  const schemaActions = useSchemaActions();
   const [{ selection }, { setExpanded, setRenaming, setSelection }] = useTree();
   const [menuOpened, setMenuOpened] = createSignal(false);
   const startRenaming = (id: string) => {
@@ -21,9 +24,11 @@ const useCollectionMenu = (collectionID: string) => {
     queueMicrotask(() => setRenaming(id));
   };
   const dropdownOptions = createMemo(() => {
-    const opts: Array<MenuItem[]> = [];
+    const opts: Array<Array<MenuItem | (() => JSX.Element)>> = [];
     const selectedCount = selection().length;
     const isMulti = selectedCount > 1;
+    const selectedIDs = isMulti ? selection() : [collectionID];
+    const selected = content.tree.splitIDs({ ids: selectedIDs });
     const collection = content.collections.get({ collectionID });
     const selectedCollections = selection().flatMap((id) => {
       const selectedCollection = content.collections.get({ collectionID: id });
@@ -55,6 +60,14 @@ const useCollectionMenu = (collectionID: string) => {
     const canUnpublish = targetCollections.every((selectedCollection) => {
       return content.canCollection(selectedCollection.id, "publishing:unpublish-tree");
     });
+    const migrationBlocked =
+      selected.collections.some((id) => content.hasActiveSchemaMigration(id, true)) ||
+      selected.entries.some((id) => {
+        const selectedEntry = content.entries.get({ entryID: id });
+
+        return content.hasActiveSchemaMigration(selectedEntry?.collectionID || null);
+      });
+    const migrationDisabled = migrationBlocked ? "Schema migration in progress" : false;
 
     if (!isMulti) {
       const canEditCollection = Boolean(
@@ -64,6 +77,11 @@ const useCollectionMenu = (collectionID: string) => {
         collection && content.canCollection(collection.id, "collection:create-child")
       );
       const canCreateEntry = Boolean(collection && content.canEntry(collection.id, "entry:create"));
+      const schema = collection ? content.schemas.get(collection.id) : null;
+
+      if (content.getSchemaMigration(collectionID)) {
+        opts.push([() => <ExplorerSchemaMigrationMenu collectionID={collectionID} />]);
+      }
 
       const collectionOptions: MenuItem[] = [
         {
@@ -83,6 +101,7 @@ const useCollectionMenu = (collectionID: string) => {
         collectionOptions.push({
           label: "Rename group",
           icon: "i-lucide:pencil",
+          disabled: migrationDisabled,
           onClick: () => {
             if (!collection || content.readOnly(collection.id)) return;
 
@@ -94,12 +113,66 @@ const useCollectionMenu = (collectionID: string) => {
 
       opts.push(collectionOptions);
 
+      const schemaOptions: MenuItem[] = [];
+
+      if (schema) {
+        schemaOptions.push({
+          label: "Edit schema",
+          icon: "i-tabler:pyramid",
+          onClick: () => {
+            setMenuOpened(false);
+            navigate(`/${params.workspaceID || ""}/${schema.id}`);
+          }
+        });
+
+        if (collection && canEditCollection && !content.offline() && !content.syncing()) {
+          schemaOptions.push({
+            label: "Remove schema",
+            icon: "i-tabler:pyramid-off",
+            disabled: migrationDisabled,
+            onClick: () => {
+              setMenuOpened(false);
+              schemaActions.remove({
+                collectionID: collection.id,
+                collectionName: collection.name,
+                schemaID: schema.id
+              });
+            }
+          });
+        }
+      } else if (canEditCollection && !content.offline() && !content.syncing()) {
+        schemaOptions.push({
+          label: "Add schema",
+          icon: "i-tabler:pyramid-plus",
+          disabled: migrationDisabled,
+          onClick: () => {
+            if (!collection) return;
+
+            setMenuOpened(false);
+            void content.schemas
+              .create(collection.id)
+              .then((createdSchema) => {
+                navigate(`/${params.workspaceID || ""}/${createdSchema.id}`);
+              })
+              .catch((error) => {
+                console.error(error);
+                notify({ type: "error", text: "Failed to add schema" });
+              });
+          }
+        });
+      }
+
+      if (schemaOptions.length > 0) opts.push(schemaOptions);
+
       const createOptions: MenuItem[] = [];
 
       if (canCreateEntry) {
         createOptions.push({
           label: "New entry",
           icon: "i-lucide:file-plus-2",
+          disabled: content.hasActiveSchemaMigration(collectionID)
+            ? "Schema migration in progress"
+            : false,
           onClick: () => {
             if (!collection || content.readOnly(collection.id)) return;
 
@@ -118,6 +191,9 @@ const useCollectionMenu = (collectionID: string) => {
         createOptions.push({
           label: "New collection",
           icon: "i-material-symbols:create-new-folder-outline-rounded",
+          disabled: content.hasActiveSchemaMigration(collectionID)
+            ? "Schema migration in progress"
+            : false,
           onClick: () => {
             if (!collection || content.readOnly(collection.id)) return;
 
@@ -153,6 +229,7 @@ const useCollectionMenu = (collectionID: string) => {
             restrictedOptions.push({
               label: "Manage access",
               icon: "i-lucide:shield",
+              disabled: migrationDisabled,
               onClick: () => {
                 navigate(`/${params.workspaceID || ""}/${encodeURIComponent(collection.id)}`);
               }
@@ -163,6 +240,7 @@ const useCollectionMenu = (collectionID: string) => {
             restrictedOptions.push({
               label: restrictionRoot ? "Derestrict access" : "Restrict access",
               icon: restrictionRoot ? "i-lucide:lock-open" : "i-lucide:lock",
+              disabled: migrationDisabled,
               onClick: () => {
                 void content.collections
                   .setRestricted({
@@ -233,8 +311,6 @@ const useCollectionMenu = (collectionID: string) => {
       }
     }
 
-    const selectedIDs = isMulti ? selection() : [collectionID];
-    const selected = content.tree.splitIDs({ ids: selectedIDs });
     const canDelete =
       selected.collections.every((id) => {
         return content.canCollection(id, "collection:delete");
@@ -251,6 +327,7 @@ const useCollectionMenu = (collectionID: string) => {
           label: isMulti ? `Delete ${selectedCount} items` : "Delete",
           icon: "i-lucide:trash",
           color: "danger",
+          disabled: migrationBlocked ? "Schema migration in progress" : false,
           onClick: () => {
             const selectedIDs = selection();
 

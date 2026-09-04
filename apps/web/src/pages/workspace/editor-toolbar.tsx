@@ -5,8 +5,9 @@ import { useRouteData } from "#web/lib/navigation";
 import { Button, IconButton, Skeleton, Tooltip } from "@andesine/components";
 import { MobileRightSidePanelMenu } from "./mobile-right-side-panel-menu";
 import { RightSidePanelToggle } from "./right-side-panel";
-import { createVersionDetailsResponse } from "#web/lib/data";
+import { createSchemaVersionDetailsResponse, createVersionDetailsResponse } from "#web/lib/data";
 import { PublishingMenu } from "./publishing-menu";
+import { SchemaApplication } from "./schema-application";
 import clsx from "clsx";
 
 const EditorToolbar: Component = () => {
@@ -18,8 +19,14 @@ const EditorToolbar: Component = () => {
   const comparing = () => searchParams.compare === "current";
   const inlineComparison = () => searchParams.compareView === "inline";
   const comparisonLayoutLabel = () => (inlineComparison() ? "Show side by side" : "Show inline");
-  const versionResponse = createVersionDetailsResponse(versionID);
+  const versionResponse = createVersionDetailsResponse(() => {
+    return params.slug?.startsWith("ent_") ? versionID() : "";
+  });
+  const schemaVersionResponse = createSchemaVersionDetailsResponse(() => {
+    return params.slug?.startsWith("sch_") ? versionID() : "";
+  });
   const version = () => versionResponse()?.result;
+  const schemaVersion = () => schemaVersionResponse()?.result;
   const collection = createMemo(() => {
     if (!params.slug?.startsWith("coll_") || routeData()) return null;
 
@@ -30,8 +37,20 @@ const EditorToolbar: Component = () => {
 
     return content.entriesCollection().findOne({ id: params.slug });
   });
+  const schema = createMemo(() => {
+    if (!params.slug?.startsWith("sch_") || routeData()) return null;
+
+    return content.schemasCollection().findOne({ id: params.slug });
+  });
+  const schemaCollection = createMemo(() => {
+    const collectionID = schema()?.collectionID;
+
+    return collectionID ? content.collections.get({ collectionID }) : null;
+  });
   const isContentTitleLoading = () => {
-    return Boolean(params.slug && !routeData() && !collection() && !entry() && content.loading());
+    return Boolean(
+      params.slug && !routeData() && !collection() && !entry() && !schema() && content.loading()
+    );
   };
   const items = createMemo(() => {
     const data = routeData();
@@ -47,10 +66,19 @@ const EditorToolbar: Component = () => {
 
     if (currentCollection) return [{ label: currentCollection.name }];
     if (currentEntry) return [{ label: currentEntry.name }];
+    if (schema()) {
+      return [{ label: schemaCollection()?.name || "Collection" }, { label: "Schema" }];
+    }
     if (content.loading()) return [];
 
     return [
-      { label: params.slug.startsWith("coll_") ? "Collection not found" : "Entry not found" }
+      {
+        label: params.slug.startsWith("coll_")
+          ? "Collection not found"
+          : params.slug.startsWith("sch_")
+            ? "Schema not found"
+            : "Entry not found"
+      }
     ];
   });
   const returnToCurrent = () => {
@@ -145,6 +173,32 @@ const EditorToolbar: Component = () => {
                   </>
                 )}
               </Show>
+              <Show when={schemaVersion()?.schemaID === params.slug ? schemaVersion() : undefined}>
+                {(currentVersion) => (
+                  <>
+                    <span class="flex h-4 w-2 items-center justify-center text-gray-200">/</span>
+                    <Button
+                      badge
+                      size="small"
+                      variant="text"
+                      color="base"
+                      hover="none"
+                      class="m-0.5 max-w-64 gap-1 p-0.5 text-sm"
+                      title={currentVersion().name || `Version ${currentVersion().version}`}
+                    >
+                      <span
+                        class={clsx(
+                          "h-3.5 w-3.5 shrink-0 text-gray-400",
+                          comparing() ? "i-lucide:git-compare-arrows" : "i-lucide:eye"
+                        )}
+                      />
+                      <span class="truncate">
+                        {currentVersion().name || `Version ${currentVersion().version}`}
+                      </span>
+                    </Button>
+                  </>
+                )}
+              </Show>
             </Suspense>
           </Show>
           <div class="flex-1" />
@@ -187,6 +241,14 @@ const EditorToolbar: Component = () => {
             <PublishingMenu entryID={currentEntry().id} />
           </div>
         )}
+      </Show>
+      <Show when={!versionID() && schema() && schemaCollection()}>
+        <SchemaApplication
+          schemaID={schema()!.id}
+          collectionID={schemaCollection()!.id}
+          collectionName={schemaCollection()!.name}
+          hasUnappliedChanges={schema()!.hasUnappliedChanges}
+        />
       </Show>
       <RightSidePanelToggle />
       <MobileRightSidePanelMenu

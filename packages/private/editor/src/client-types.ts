@@ -28,6 +28,8 @@ interface EditorProps {
   url?: string;
   doc?: string;
   editable?: boolean;
+  mode?: EditorMode;
+  staticTitle?: string;
   diff?: EditorDiff;
   providerAttempt?: number;
   notify?(type: "success" | "error", text: string): void;
@@ -40,6 +42,7 @@ interface EditorProps {
   onTitleChange?(title: string): void;
 }
 
+type EditorMode = "entry" | "schema";
 type EditorProvider = HocuspocusProvider;
 type EditorCleanup = (() => void) | void;
 type EditorProviderSetup = (
@@ -51,6 +54,7 @@ export type {
   EditorDiff,
   EditorDiffChange,
   EditorInstance,
+  EditorMode,
   EditorProps,
   EditorProvider,
   EditorProviderSetup,

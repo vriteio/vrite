@@ -1,27 +1,43 @@
 import { rankBetweenNeighbors, toEntryID, toUUID } from "#backend/lib/primitives";
-import { collections, entries, entryPublications } from "#backend/db";
+import {
+  collections,
+  contents,
+  effectiveSchemaRevisions,
+  entries,
+  entryPublications,
+  schemaMigrationCollections,
+  schemaMigrationEntries,
+  schemaMigrations
+} from "#backend/db";
 import { isCollectionPublishingEnabled, loadPublishingTree } from "#backend/lib/publishing";
-import { and, desc, eq, gt, isNull, lt, ne } from "drizzle-orm";
+import { and, desc, eq, gt, inArray, isNull, lt, ne } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
-import { withAuthorization } from "#backend/lib/policy";
+import { withAuthorization, type AuthorizedServiceInput } from "#backend/lib/policy";
 import type { PublishingEntryStatus } from "#backend/lib/publishing";
+import { prepareSchemaMigrationConnections } from "#backend/collaboration";
+import { submitSchemaMigration } from "#backend/lib/queue";
+import type { EffectiveSchemaChangePlan } from "#backend/lib/schema/migration/effective-change";
 
 interface MoveEntryInput {
+  confirmedDataLoss?: boolean;
   id: string;
   order: string;
   collectionID?: string | null;
 }
 interface MoveEntryResult {
+  collectionChanged: boolean;
   order: string;
   publishingEntries: PublishingEntryStatus[];
   restrictedBoundaryChanged: boolean;
+  schemaMigration: EffectiveSchemaChangePlan;
 }
 interface ResolvedMoveEntry {
   destinationCollectionID: string | null;
   sourceCollectionID: string | null;
+  sourceOrder: string;
 }
 
-const moveEntry = withAuthorization<MoveEntryInput, ResolvedMoveEntry, MoveEntryResult>(
+const planEntryMove = withAuthorization<MoveEntryInput, ResolvedMoveEntry, MoveEntryResult>(
   {
     actions: ({ resolved }) => ({
       entries: [
@@ -31,7 +47,7 @@ const moveEntry = withAuthorization<MoveEntryInput, ResolvedMoveEntry, MoveEntry
     }),
     resolve: async ({ database, input, workspaceID }) => {
       const [entry] = await database
-        .select({ collectionID: entries.collectionID })
+        .select({ collectionID: entries.collectionID, rank: entries.rank })
         .from(entries)
         .where(
           and(
@@ -67,12 +83,16 @@ const moveEntry = withAuthorization<MoveEntryInput, ResolvedMoveEntry, MoveEntry
         if (!collection) throw new ORPCError("BAD_REQUEST", { message: "Collection not found" });
       }
 
-      return { destinationCollectionID, sourceCollectionID: entry.collectionID };
+      return {
+        destinationCollectionID,
+        sourceCollectionID: entry.collectionID,
+        sourceOrder: entry.rank
+      };
     },
     tree: true,
     transaction: "locked-workspace"
   },
-  async ({ authorization, database, input, resolved, workspaceID }) => {
+  async ({ auth, authorization, database, input, resolved, workspaceID }) => {
     const entryID = toUUID(input.id);
     const { destinationCollectionID, sourceCollectionID } = resolved;
 
@@ -144,11 +164,123 @@ const moveEntry = withAuthorization<MoveEntryInput, ResolvedMoveEntry, MoveEntry
         )
       );
 
-    if (wasPublishingEnabled && !willBePublishingEnabled) {
+    let schemaMigration: EffectiveSchemaChangePlan = {
+      affectedCollectionIDs: [],
+      migrationID: null,
+      totalEntries: 0
+    };
+
+    if (input.collectionID !== undefined && sourceCollectionID !== destinationCollectionID) {
+      const revisionCollectionIDs = [sourceCollectionID, destinationCollectionID].filter(
+        (collectionID): collectionID is string => Boolean(collectionID)
+      );
+      const revisionRows =
+        revisionCollectionIDs.length > 0
+          ? await database
+              .select()
+              .from(effectiveSchemaRevisions)
+              .where(
+                and(
+                  eq(effectiveSchemaRevisions.workspaceID, workspaceID),
+                  inArray(effectiveSchemaRevisions.collectionID, revisionCollectionIDs),
+                  eq(effectiveSchemaRevisions.active, true)
+                )
+              )
+          : [];
+      const sourceRevision = revisionRows.find(
+        ({ collectionID }) => collectionID === sourceCollectionID
+      );
+      const targetRevision = revisionRows.find(
+        ({ collectionID }) => collectionID === destinationCollectionID
+      );
+      const [content] = await database
+        .select({
+          hash: contents.hash,
+          schemaRevisionID: contents.schemaRevisionID
+        })
+        .from(contents)
+        .where(eq(contents.entryID, entryID));
+      const alreadyMatchesTarget = content?.schemaRevisionID === targetRevision?.id;
+      const schemasHaveSameContent = Boolean(
+        sourceRevision &&
+        targetRevision &&
+        content?.schemaRevisionID === sourceRevision.id &&
+        sourceRevision.hash === targetRevision.hash
+      );
+
+      if (!targetRevision) {
+        await database
+          .update(contents)
+          .set({ schemaRevisionID: null, updatedAt: new Date() })
+          .where(eq(contents.entryID, entryID));
+      } else if (alreadyMatchesTarget || schemasHaveSameContent) {
+        await database
+          .update(contents)
+          .set({ schemaRevisionID: targetRevision.id, updatedAt: new Date() })
+          .where(eq(contents.entryID, entryID));
+      } else {
+        if (!input.confirmedDataLoss) {
+          throw new ORPCError("PRECONDITION_FAILED", {
+            message: "Schema migrations require explicit data-loss confirmation"
+          });
+        }
+
+        const [migration] = await database
+          .insert(schemaMigrations)
+          .values({
+            workspaceID,
+            status: "queued",
+            entryMove: {
+              entryID,
+              sourceCollectionID,
+              sourceOrder: resolved.sourceOrder,
+              unpublishOnCompletion: wasPublishingEnabled && !willBePublishingEnabled
+            },
+            initiatedBy: auth.session?.memberID ? toUUID(auth.session.memberID) : null,
+            totalEntries: 1
+          })
+          .returning();
+
+        await database.insert(schemaMigrationCollections).values({
+          workspaceID,
+          migrationID: migration.id,
+          collectionID: targetRevision.collectionID,
+          sourceRevisionID: targetRevision.id,
+          targetRevisionID: targetRevision.id
+        });
+        if (sourceCollectionID) {
+          await database.insert(schemaMigrationCollections).values({
+            workspaceID,
+            migrationID: migration.id,
+            collectionID: sourceCollectionID,
+            sourceRevisionID: sourceRevision?.id || null,
+            targetRevisionID: sourceRevision?.id || null
+          });
+        }
+
+        await database.insert(schemaMigrationEntries).values({
+          workspaceID,
+          migrationID: migration.id,
+          entryID,
+          sourceRevisionID: content?.schemaRevisionID || null,
+          targetRevisionID: targetRevision.id,
+          sourceHash: content?.hash || null
+        });
+
+        schemaMigration = {
+          affectedCollectionIDs: revisionCollectionIDs,
+          migrationID: migration.id,
+          totalEntries: 1
+        };
+      }
+    }
+
+    if (wasPublishingEnabled && !willBePublishingEnabled && !schemaMigration.migrationID) {
       await database.delete(entryPublications).where(eq(entryPublications.entryID, entryID));
     }
 
     return {
+      collectionChanged: sourceCollectionID !== destinationCollectionID,
       order: rank,
       publishingEntries: crossesPublishingBoundary
         ? [
@@ -159,9 +291,28 @@ const moveEntry = withAuthorization<MoveEntryInput, ResolvedMoveEntry, MoveEntry
             }
           ]
         : [],
-      restrictedBoundaryChanged
+      restrictedBoundaryChanged,
+      schemaMigration
     };
   }
 );
+const moveEntry = async (
+  input: MoveEntryInput & AuthorizedServiceInput
+): Promise<MoveEntryResult> => {
+  const result = await planEntryMove(input);
+
+  await submitSchemaMigration({
+    ...result.schemaMigration,
+    prepareAffectedContent: () => {
+      return prepareSchemaMigrationConnections(
+        result.schemaMigration.affectedCollectionIDs,
+        result.collectionChanged ? [toEntryID(toUUID(input.id))] : []
+      );
+    },
+    workspaceID: input.auth.workspaceID
+  });
+
+  return result;
+};
 
 export { moveEntry };

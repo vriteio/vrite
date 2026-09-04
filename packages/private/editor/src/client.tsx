@@ -2,7 +2,7 @@ import {
   MAX_ENTRY_TITLE_LENGTH,
   normalizeEntryTitle,
   Title,
-  Document,
+  createDocument,
   Text,
   Paragraph,
   HardBreak,
@@ -36,18 +36,20 @@ import {
   Show,
   untrack
 } from "solid-js";
-import { Editor, isTextSelection } from "@tiptap/core";
+import { Editor, getSchema, isTextSelection } from "@tiptap/core";
+import { yXmlFragmentToProseMirrorRootNode } from "@tiptap/y-tiptap";
 import { SlashMenu } from "./ui/menus/slash-menu";
 import { BlockMenuArea } from "./ui/menus/block-menu";
 import { ScrollShadow, createRef } from "@andesine/components";
 import clsx from "clsx";
 import {
   ResourceNameTracker,
+  SchemaConstraints,
   Separator,
   TrailingNode,
   Collaboration,
   CollaborationCaret,
-  Placeholder,
+  createPlaceholder,
   UniqueID,
   BlockSelection,
   Gapcursor,
@@ -86,6 +88,7 @@ const ClientEditor: Component<EditorProps> = (props) => {
     const contentElement = editorContentElement();
     const currentProvider = provider();
     const content = props.content;
+    const editorMode = props.mode || "entry";
 
     if (!contentElement || (collaborative() && !currentProvider)) {
       return null;
@@ -103,60 +106,86 @@ const ClientEditor: Component<EditorProps> = (props) => {
         ]
       : [];
     const diffExtensions = props.diff ? [VersionDiff.configure({ ...props.diff, owner })] : [];
+    const schemaExtensions = [SchemaConstraints.configure({ mode: editorMode })];
+    const titleExtensions =
+      editorMode === "entry"
+        ? [Title, NodeCharacterLimit.configure({ limits: { title: MAX_ENTRY_TITLE_LENGTH } })]
+        : [];
+    const extensions = [
+      // Basic
+      createDocument(editorMode),
+      Paragraph,
+      Text,
+      HardBreak,
+      ...titleExtensions,
+      Property.extend({
+        addNodeView() {
+          return createPropertyViewRenderer(
+            owner,
+            () => props.editable ?? true,
+            editorMode === "schema"
+          );
+        }
+      }),
+      Fragment.extend({
+        addNodeView() {
+          return createFragmentViewRenderer(
+            owner,
+            () => props.editable ?? true,
+            editorMode === "schema"
+          );
+        }
+      }),
+      // Marks
+      Link,
+      Bold,
+      Code,
+      Italic,
+      Highlight,
+      Superscript,
+      Subscript,
+      Strike,
+      // Simple blocks
+      HorizontalRule,
+      Heading,
+      Blockquote,
+      BulletList,
+      OrderedList,
+      TaskList,
+      TaskItem,
+      ListItem,
+      // Other
+      ResourceNameTracker,
+      ...schemaExtensions,
+      UniqueID,
+      Gapcursor,
+      Dropcursor,
+      BlockSelection,
+      ...diffExtensions,
+      ...collaborationExtensions,
+      TrailingNode.configure({ mode: editorMode }),
+      createPlaceholder(editorMode),
+      Separator
+    ];
+    const initialContent =
+      currentProvider && editorMode === "schema"
+        ? yXmlFragmentToProseMirrorRootNode(
+            currentProvider.document.getXmlFragment("default"),
+            getSchema(extensions)
+          ).toJSON()
+        : content;
 
     return new Editor({
-      content,
+      content: initialContent,
       element: contentElement,
       editable: untrack(() => props.editable ?? true),
-      extensions: [
-        // Basic
-        Document,
-        Paragraph,
-        Text,
-        HardBreak,
-        Title,
-        Property.extend({
-          addNodeView() {
-            return createPropertyViewRenderer(owner, () => props.editable ?? true);
-          }
-        }),
-        Fragment.extend({
-          addNodeView() {
-            return createFragmentViewRenderer(owner, () => props.editable ?? true);
-          }
-        }),
-        NodeCharacterLimit.configure({ limits: { title: MAX_ENTRY_TITLE_LENGTH } }),
-        // Marks
-        Link,
-        Bold,
-        Code,
-        Italic,
-        Highlight,
-        Superscript,
-        Subscript,
-        Strike,
-        // Simple blocks
-        HorizontalRule,
-        Heading,
-        Blockquote,
-        BulletList,
-        OrderedList,
-        TaskList,
-        TaskItem,
-        ListItem,
-        // Other
-        ResourceNameTracker,
-        UniqueID,
-        Gapcursor,
-        Dropcursor,
-        BlockSelection,
-        ...diffExtensions,
-        ...collaborationExtensions,
-        TrailingNode,
-        Placeholder,
-        Separator
-      ],
-      editorProps: { attributes: { class: `outline-none min-h-full` } },
+      extensions,
+      editorProps: {
+        attributes: {
+          "class": `outline-none min-h-full`,
+          "data-editor-mode": editorMode
+        }
+      },
       onUpdate: ({ editor }) => {
         const titleNode = editor.state.doc.firstChild;
 
@@ -277,9 +306,20 @@ const ClientEditor: Component<EditorProps> = (props) => {
               >
                 <Show when={editableEditor()} keyed>
                   {/* Order of menus is important, as every `registerPlugin()` call re-triggers `onDestroy` */}
-                  <SlashMenu editor={editor()!} menuContainerRef={menuContainerRef} />
+                  <SlashMenu
+                    editor={editor()!}
+                    menuContainerRef={menuContainerRef}
+                    mode={props.mode || "entry"}
+                  />
                   <BubbleMenu editor={editor()!} menuContainerRef={menuContainerRef} />
                   <DragHandleMenu editor={editor()!} menuContainerRef={menuContainerRef} />
+                </Show>
+                <Show when={props.staticTitle} keyed>
+                  {(title) => (
+                    <header class="not-prose" data-type="title" data-static-editor-title>
+                      <h1>{title}</h1>
+                    </header>
+                  )}
                 </Show>
                 <div ref={setEditorContentElement} class="min-h-full" />
               </div>
@@ -292,7 +332,7 @@ const ClientEditor: Component<EditorProps> = (props) => {
 };
 
 export { ClientEditor };
-export type { EditorProps } from "./client-types";
+export type { EditorMode, EditorProps } from "./client-types";
 export type {
   EditorProvider,
   EditorProviderSetup,

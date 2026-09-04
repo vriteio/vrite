@@ -1,21 +1,57 @@
 import { Extension } from "@tiptap/core";
 import { type NodeType, type Node as ProsemirrorNode } from "@tiptap/pm/model";
 import { PluginKey, Plugin } from "@tiptap/pm/state";
+import type { EditorMode } from "#editor/client-types";
 
 const nodeEqualsType = (node: ProsemirrorNode, types: NodeType | NodeType[]): boolean => {
   return Array.isArray(types) ? types.includes(node.type) : node.type === types;
 };
-
 interface TrailingNodeOptions {
+  mode: EditorMode;
   node: string;
   notAfter: string[];
 }
+
+type TrailingNodeAction = "insert" | "remove" | null;
+
+const hasSchemaFields = (document: ProsemirrorNode): boolean => {
+  let schemaFields = false;
+
+  document.forEach((node) => {
+    if (
+      (node.type.name === "fragment" || node.type.name === "property") &&
+      typeof node.attrs.schemaFieldID === "string"
+    ) {
+      schemaFields = true;
+    }
+  });
+
+  return schemaFields;
+};
+const getTrailingNodeAction = (
+  document: ProsemirrorNode,
+  disabledNodes: NodeType[],
+  mode: EditorMode
+): TrailingNodeAction => {
+  const lastNode = document.lastChild;
+
+  if (mode === "schema") {
+    return lastNode?.type.name === "paragraph" ? null : "insert";
+  }
+
+  if (hasSchemaFields(document)) {
+    return lastNode?.type.name === "paragraph" && lastNode.content.size === 0 ? "remove" : null;
+  }
+
+  return lastNode && nodeEqualsType(lastNode, disabledNodes) ? null : "insert";
+};
 
 const TrailingNode = Extension.create<TrailingNodeOptions>({
   name: "trailingNode",
 
   addOptions() {
     return {
+      mode: "entry",
       node: "paragraph",
       notAfter: ["paragraph"]
     };
@@ -32,26 +68,27 @@ const TrailingNode = Extension.create<TrailingNodeOptions>({
         key: plugin,
         appendTransaction: (_trs, _oldState, state) => {
           const { doc, tr, schema } = state;
-          const shouldInsertNodeAtEnd = plugin.getState(state);
+          const action = plugin.getState(state) as TrailingNodeAction;
           const endPosition = doc.content.size;
           const type = schema.nodes[this.options.node];
 
-          if (!shouldInsertNodeAtEnd) {
-            return;
+          if (action === "insert") {
+            return tr.insert(endPosition, type.createAndFill()!);
           }
 
-          return tr.insert(endPosition, type.createAndFill()!);
+          if (action === "remove" && doc.lastChild) {
+            return tr.delete(endPosition - doc.lastChild.nodeSize, endPosition);
+          }
+
+          return;
         },
         state: {
-          init: () => false,
+          init: (_config, state) =>
+            getTrailingNodeAction(state.doc, disabledNodes, this.options.mode),
           apply: (tr, value) => {
-            if (!tr.docChanged || tr.getMeta("addToHistory") === false) {
-              return value;
-            }
+            if (!tr.docChanged) return value;
 
-            const lastNode = tr.doc.lastChild;
-
-            return lastNode ? !nodeEqualsType(lastNode, disabledNodes) : false;
+            return getTrailingNodeAction(tr.doc, disabledNodes, this.options.mode);
           }
         }
       })

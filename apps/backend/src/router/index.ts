@@ -6,6 +6,9 @@ import { groupsRouter } from "./groups";
 import { syncRouter } from "./sync";
 import { keysRouter } from "./keys";
 import { rolesRouter } from "./roles";
+import { schemasRouter } from "./schemas";
+import { schemaMigrationsRouter } from "./schema-migrations";
+import { schemaVersionsRouter } from "./schema-versions";
 import { searchRouter } from "./search";
 import { membershipsRouter } from "./memberships";
 import { publishingRouter } from "./publishing";
@@ -32,6 +35,9 @@ const router = {
   keys: keysRouter,
   roles: rolesRouter,
   search: searchRouter,
+  schemas: schemasRouter,
+  schemaMigrations: schemaMigrationsRouter,
+  schemaVersions: schemaVersionsRouter,
   memberships: membershipsRouter,
   publishing: publishingRouter,
   workspaces: workspacesRouter,

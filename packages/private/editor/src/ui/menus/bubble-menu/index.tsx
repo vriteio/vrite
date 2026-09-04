@@ -18,6 +18,7 @@ import { Portal } from "solid-js/web";
 import { isBlockSelection } from "#editor/extensions";
 import { EDITOR_MENU_Z_INDEX } from "#editor/ui/constants";
 import { useBlockMenuContext } from "#editor/ui/menus/block-menu";
+import { rangeContainsInheritedField } from "#editor/ui/block-utils";
 
 interface BubbleMenuProps {
   editor: Editor;
@@ -78,6 +79,7 @@ const BubbleMenu: Component<BubbleMenuProps> = (props) => {
           const isTitleSelection = selection.$from.parent.type.name === "title";
           const shouldShow =
             !isTitleSelection &&
+            !rangeContainsInheritedField(editor.state.doc, selection.from, selection.to) &&
             !isBlockSelection(selection) &&
             isTextSelection(selection) &&
             !selection.empty;

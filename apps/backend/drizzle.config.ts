@@ -5,6 +5,7 @@ export default defineConfig({
   schema: [
     "./src/db/auth.ts",
     "./src/db/collections.ts",
+    "./src/db/content-schemas.ts",
     "./src/db/contents.ts",
     "./src/db/stripe-webhook-events.ts",
     "./src/db/entries.ts",

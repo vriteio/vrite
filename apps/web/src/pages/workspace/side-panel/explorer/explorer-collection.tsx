@@ -1,11 +1,4 @@
-import {
-  type Card,
-  DropdownArea,
-  DropdownMenu,
-  IconButton,
-  Spinner,
-  Tooltip
-} from "@andesine/components";
+import { type Card, DropdownArea, DropdownMenu, IconButton, Tooltip } from "@andesine/components";
 import { TreeItem, TreeLevel } from "#web/components/tree";
 import clsx from "clsx";
 import { type Component, type ComponentProps, Show } from "solid-js";
@@ -15,6 +8,7 @@ import { useExplorerCollection, type ExplorerCollectionProps } from "./use-explo
 import { EXPLORER_GESTURE_PROPS } from "./explorer-dnd";
 import { usePublishing } from "#web/context/publishing";
 import { useParams } from "@solidjs/router";
+import { ExplorerSchemaMigrationIndicator } from "./explorer-schema-migration";
 
 const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
   const publishing = usePublishing();
@@ -40,6 +34,10 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
     swipe
   } = useExplorerCollection(props);
   const publishingEnabled = () => content.isCollectionPublishingEnabled(props.collection.id);
+  const schema = () => content.schemas.get(props.collection.id);
+  const schemaOpened = () => params.slug === schema()?.id;
+  const collectionEditorOpened = () => props.collection.id === params.slug || schemaOpened();
+  const schemaMigration = () => content.getSchemaMigration(props.collection.id);
   const restricted = () => {
     return content.collections.isRestricted({ collectionID: props.collection.id });
   };
@@ -104,7 +102,7 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
               id={props.collection.id}
               label={props.collection.name}
               topLevel={props.topLevel}
-              highlighted={isDraggedOver() && !isExpandedEmpty()}
+              highlighted={(isDraggedOver() && !isExpandedEmpty()) || schemaOpened()}
               selectable
               ref={setElementRef}
               dataAttributes={{ collection: props.collection.id }}
@@ -130,7 +128,8 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
                     data-element="collection-icon"
                     class={clsx(
                       "h-6 w-6 text-gray-400 transition-transform",
-                      (isSelected(props.collection.id) || isDraggedOver()) && "bg-gradient-to-tr",
+                      (isSelected(props.collection.id) || isDraggedOver() || schemaOpened()) &&
+                        "bg-gradient-to-tr",
                       isExpanded(props.collection.id)
                         ? "i-material-symbols:folder-open-rounded"
                         : "i-material-symbols:folder-rounded"
@@ -170,6 +169,29 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
                       </div>
                     </Tooltip>
                   </Show>
+                  <Show when={schema()}>
+                    {(currentSchema) => (
+                      <Tooltip
+                        content={
+                          currentSchema().hasUnappliedChanges
+                            ? "Schema enabled with unapplied changes"
+                            : "Schema enabled"
+                        }
+                        placement="right"
+                        wrapperClass="absolute h-3 w-3 bg-gray-100/80 rounded-full -bottom-0.5 -left-0.5"
+                        fixed
+                      >
+                        <div class="flex h-3 w-3 items-center justify-center rounded-full">
+                          <div
+                            class={clsx(
+                              "i-tabler:pyramid h-2.5 w-2.5 text-gray-500",
+                              currentSchema().hasUnappliedChanges && "text-amber-500"
+                            )}
+                          />
+                        </div>
+                      </Tooltip>
+                    )}
+                  </Show>
                 </div>
               }
               actions={
@@ -188,13 +210,17 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
                     setOpened={setMenuOpened}
                     onClick={(event) => event.stopPropagation()}
                     trigger={() => (
-                      <Show when={selection().length <= 1} fallback={<div />}>
+                      <Show
+                        when={selection().length <= 1}
+                        fallback={<div class={schemaMigration() ? "w-20" : undefined} />}
+                      >
                         <div
                           class={clsx(
                             "shrink-0",
+                            schemaMigration() && "flex w-20 justify-end",
                             swipe.swiping() && "flex",
                             !swipe.swiping() &&
-                              (props.collection.id === params.slug
+                              (collectionEditorOpened() || schemaMigration()
                                 ? !menuOpened() &&
                                   "opacity-20 media-mouse:opacity-0 media-mouse:group-hover:opacity-100"
                                 : !menuOpened() &&
@@ -220,7 +246,19 @@ const ExplorerCollection: Component<ExplorerCollectionProps> = (props) => {
                     )}
                     items={dropdownOptions()}
                   />
-                  <Show when={props.collection.id === params.slug && !menuOpened()}>
+                  <Show when={!menuOpened() ? schemaMigration() : null} keyed>
+                    {(migration) => (
+                      <div
+                        class={clsx(
+                          "absolute right-0 top-0 hidden h-7 items-center justify-center media-mouse:flex",
+                          selection().length <= 1 && "media-mouse:group-hover:hidden"
+                        )}
+                      >
+                        <ExplorerSchemaMigrationIndicator migration={migration} />
+                      </div>
+                    )}
+                  </Show>
+                  <Show when={!schemaMigration() && collectionEditorOpened() && !menuOpened()}>
                     <div
                       class={clsx(
                         "hidden media-mouse:flex justify-center items-center h-7 w-7 absolute right-0 top-0",

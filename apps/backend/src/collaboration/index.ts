@@ -1,5 +1,7 @@
 export {
   getCurrentDocumentContent,
+  getCurrentSchemaDefinition,
+  prepareSchemaMigrationConnections,
   replaceDocumentContent,
   updateDocumentTitle
 } from "./operations";

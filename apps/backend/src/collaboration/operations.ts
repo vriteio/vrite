@@ -1,13 +1,28 @@
-import { entries } from "#backend/db";
+import { collectionSchemas, entries } from "#backend/db";
 import { db } from "#backend/lib/adapters";
-import { replaceContentDocument, type ContentNode } from "#backend/lib/content";
+import {
+  replaceContentDocument,
+  serializeContentDocument,
+  type ContentNode
+} from "#backend/lib/content";
 import { toUUID } from "#backend/lib/primitives";
+import {
+  createSchemaDefinitionFromEditorDocument,
+  type SchemaDefinition
+} from "#backend/lib/schema";
 import { ORPCError } from "@orpc/server";
 import { and, eq, isNull } from "drizzle-orm";
 import { getContentSnapshot, setDocumentTitle } from "./document";
+import { prepareSchemaMigrationDocuments } from "./schema-content";
 import { collab } from "./server";
 import type { ContentSnapshot } from "./types";
 
+const prepareSchemaMigrationConnections = async (
+  collectionIDs: string[],
+  entryIDs: string[] = []
+): Promise<void> => {
+  await prepareSchemaMigrationDocuments(collab, collectionIDs, entryIDs);
+};
 const assertDocumentWorkspace = async (
   documentName: string,
   workspaceID: string
@@ -86,5 +101,43 @@ const replaceDocumentContent = async (
 
   return previous;
 };
+const getCurrentSchemaDefinition = async (
+  documentName: string,
+  workspaceID: string
+): Promise<SchemaDefinition> => {
+  const [schema] = await db
+    .select({ id: collectionSchemas.id })
+    .from(collectionSchemas)
+    .where(
+      and(
+        eq(collectionSchemas.id, toUUID(documentName)),
+        eq(collectionSchemas.workspaceID, toUUID(workspaceID)),
+        eq(collectionSchemas.enabled, true)
+      )
+    );
 
-export { getCurrentDocumentContent, replaceDocumentContent, updateDocumentTitle };
+  if (!schema) throw new ORPCError("NOT_FOUND", { message: "Schema not found" });
+
+  const connection = await collab.openDirectConnection(documentName, { workspaceID });
+  let definition: SchemaDefinition | undefined;
+
+  try {
+    await connection.transact((document) => {
+      definition = createSchemaDefinitionFromEditorDocument(serializeContentDocument(document));
+    });
+  } finally {
+    await connection.disconnect();
+  }
+
+  if (!definition) throw new Error("Failed to read schema collaboration document");
+
+  return definition;
+};
+
+export {
+  getCurrentDocumentContent,
+  getCurrentSchemaDefinition,
+  prepareSchemaMigrationConnections,
+  replaceDocumentContent,
+  updateDocumentTitle
+};

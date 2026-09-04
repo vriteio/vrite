@@ -17,6 +17,7 @@ import { PlainTextInput } from "./plain-text-input";
 
 interface PropertyValueProps {
   attrs: PropertyAttrs;
+  defaultValue?: boolean;
   selected: boolean;
   selectProperty(): void;
   updateAttributes(attributes: Partial<PropertyAttrs>, options?: UpdateAttributesOptions): void;
@@ -74,6 +75,7 @@ const PropertyValue = (props: PropertyValueProps): JSX.Element => {
         <PlainTextInput
           class={!props.selected ? RESTING_INPUT_OVERRIDES : undefined}
           value={stringValue()}
+          placeholder={props.defaultValue ? "Default text" : undefined}
           onConfirm={(value) => props.updateAttributes({ value })}
         />
       </Match>
@@ -83,7 +85,7 @@ const PropertyValue = (props: PropertyValueProps): JSX.Element => {
           variant="outlined"
           color="contrast"
           size="small"
-          placeholder="Enter number"
+          placeholder={props.defaultValue ? "Default number" : "Enter number"}
           class={clsx("w-full min-w-0", !props.selected && RESTING_INPUT_OVERRIDES)}
           value={inputValue()}
           setValue={setInputValue}
@@ -125,7 +127,7 @@ const PropertyValue = (props: PropertyValueProps): JSX.Element => {
           variant="outlined"
           color="contrast"
           size="small"
-          placeholder="https://example.com"
+          placeholder={props.defaultValue ? "Default URL" : "https://example.com"}
           class={clsx("w-full min-w-0", !props.selected && RESTING_INPUT_OVERRIDES)}
           value={inputValue()}
           setValue={setInputValue}
@@ -137,7 +139,7 @@ const PropertyValue = (props: PropertyValueProps): JSX.Element => {
           class="w-full"
           triggerClass={!props.selected ? RESTING_CONTROL_OVERRIDES : undefined}
           title="Select property value"
-          placeholder="Select"
+          placeholder={props.defaultValue ? "Select default" : "Select"}
           options={props.attrs.options.map((option) => ({ label: option, value: option }))}
           portal={false}
           positioningStrategy="absolute"
@@ -193,7 +195,11 @@ const PropertyValue = (props: PropertyValueProps): JSX.Element => {
                     label={
                       multiSelectValues().length > 0
                         ? undefined
-                        : () => <span class="px-0.5 text-sm">Add value</span>
+                        : () => (
+                            <span class="px-0.5 text-sm">
+                              {props.defaultValue ? "Add default" : "Add value"}
+                            </span>
+                          )
                     }
                     size="small"
                     text="soft"
@@ -218,10 +224,10 @@ const PropertyValue = (props: PropertyValueProps): JSX.Element => {
               <Combobox
                 class="w-full min-w-0 md:[&>label]:hidden"
                 inlineOptions
-                label="Add value"
+                label={props.defaultValue ? "Add default" : "Add value"}
                 options={availableMultiSelectOptions()}
                 optionsPlacement={md() ? multiSelectOptionsPlacement() : "bottom"}
-                placeholder="Select value"
+                placeholder={props.defaultValue ? "Select default" : "Select value"}
                 portal={false}
                 surfaceClass="!bg-gray-50 md:!bg-white"
                 setValue={addMultiSelectValue}

@@ -1,5 +1,5 @@
 import { rankBetweenNeighbors, toCollectionID, toUUID } from "#backend/lib/primitives";
-import { collections, type Collection } from "#backend/db";
+import { collections, effectiveSchemaRevisions, type Collection } from "#backend/db";
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { ORPCError } from "@orpc/server";
 import { loadCollectionTree } from "#backend/lib/data";
@@ -9,7 +9,6 @@ import { normalizeCollectionName, ROOT_COLLECTION_NAME } from "#backend/lib/vali
 interface CreateCollectionInput extends Partial<Pick<Collection, "id" | "name" | "restricted">> {
   parentID?: string;
 }
-
 const createCollection = withAuthorization<CreateCollectionInput, undefined, Collection>(
   {
     actions: ({ input }) => ({
@@ -73,7 +72,7 @@ const createCollection = withAuthorization<CreateCollectionInput, undefined, Col
       .limit(1);
     const rank = rankBetweenNeighbors(lastSibling?.rank);
 
-    await database
+    const [created] = await database
       .insert(collections)
       .values({
         id: collectionID,
@@ -83,7 +82,37 @@ const createCollection = withAuthorization<CreateCollectionInput, undefined, Col
         rank,
         restricted: input.restricted
       })
-      .onConflictDoNothing({ target: collections.id });
+      .onConflictDoNothing({ target: collections.id })
+      .returning({ id: collections.id });
+
+    if (created) {
+      const [parentRevision] = await database
+        .select()
+        .from(effectiveSchemaRevisions)
+        .where(
+          and(
+            eq(effectiveSchemaRevisions.workspaceID, workspaceID),
+            eq(effectiveSchemaRevisions.collectionID, parentID),
+            eq(effectiveSchemaRevisions.active, true)
+          )
+        );
+
+      if (parentRevision) {
+        await database.insert(effectiveSchemaRevisions).values({
+          workspaceID,
+          collectionID,
+          definition: {
+            ...parentRevision.definition,
+            fields: parentRevision.definition.fields.map((field) => ({
+              ...field,
+              source: { ...field.source, inherited: true }
+            }))
+          },
+          hash: parentRevision.hash,
+          active: true
+        });
+      }
+    }
 
     const tree = await loadCollectionTree(workspaceID, false, database);
     const result = tree.collections.find(

@@ -1,19 +1,31 @@
 import {
   contents,
+  effectiveSchemaRevisions,
   entries,
   entryPublications,
   entryVersionActivity,
   entryVersionActivityContributors,
   entryVersions,
   publishingChannels,
-  memberships
+  memberships,
+  schemaMigrationEntries,
+  schemaMigrations
 } from "#backend/db";
 import { emitEntryEvent, emitPublishingEntryContentUpdates } from "#backend/events";
 import { db } from "#backend/lib/adapters";
-import { hashContentDocument, serializeContentDocument } from "#backend/lib/content";
+import {
+  hashContentDocument,
+  replaceContentDocument,
+  serializeContentDocument
+} from "#backend/lib/content";
 import { PUBLISHED_CHANNEL_CODE } from "#backend/lib/publishing";
 import { enqueueCurrentEntrySync } from "#backend/lib/queue";
 import { toEntryID, toUUID, toWorkspaceID } from "#backend/lib/primitives";
+import {
+  getResolvedSchemaDefinition,
+  migrateContentToSchema,
+  removeContentSchema
+} from "#backend/lib/schema";
 import {
   AUTOMATIC_VERSION_MAX_PERIOD_MS,
   AUTOMATIC_VERSION_QUIET_PERIOD_MS
@@ -23,14 +35,26 @@ import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { applyUpdate, Doc, encodeStateAsUpdate } from "yjs";
 import { clearPendingContributors, getPendingContributors } from "./activity";
 import { getDocumentTitle, setDocumentTitle } from "./document";
+import { fetchSchemaDocument, storeSchemaDocument } from "./schema-database";
 
 const collaborationDatabase = new Database({
   async fetch({ context, documentName }) {
+    if (documentName.startsWith("sch_")) {
+      return fetchSchemaDocument({
+        documentName,
+        workspaceID: context.workspaceID
+      });
+    }
+
     const workspaceID = toUUID(context.workspaceID);
 
     try {
       const [content] = await db
-        .select({ state: contents.state, name: entries.name })
+        .select({
+          state: contents.state,
+          name: entries.name,
+          schemaRevisionID: contents.schemaRevisionID
+        })
         .from(contents)
         .innerJoin(entries, eq(entries.id, contents.entryID))
         .where(
@@ -42,7 +66,20 @@ const collaborationDatabase = new Database({
         )
         .limit(1);
 
-      if (content?.state) return new Uint8Array(content.state);
+      if (content?.state) {
+        if (content.schemaRevisionID) return new Uint8Array(content.state);
+
+        const document = new Doc();
+
+        applyUpdate(document, new Uint8Array(content.state));
+
+        const unrestrictedContent = removeContentSchema(serializeContentDocument(document));
+
+        if (!unrestrictedContent.changed) return new Uint8Array(content.state);
+
+        replaceContentDocument(document, unrestrictedContent.document);
+        return encodeStateAsUpdate(document);
+      }
 
       if (content) {
         const document = new Doc();
@@ -59,6 +96,14 @@ const collaborationDatabase = new Database({
     }
   },
   async store({ documentName, lastContext, state }) {
+    if (documentName.startsWith("sch_")) {
+      return storeSchemaDocument({
+        documentName,
+        state,
+        workspaceID: lastContext.workspaceID
+      });
+    }
+
     const entryID = toUUID(documentName);
     const workspaceID = toUUID(lastContext.workspaceID);
     const pendingContributorIDs = getPendingContributors(documentName);
@@ -67,6 +112,7 @@ const collaborationDatabase = new Database({
       const [entry] = await tx
         .select({
           id: entries.id,
+          collectionID: entries.collectionID,
           workspaceID: entries.workspaceID,
           name: entries.name
         })
@@ -81,6 +127,57 @@ const collaborationDatabase = new Database({
         .for("update");
 
       if (!entry) return null;
+
+      const [activeMigration] = entry.collectionID
+        ? await tx
+            .select({
+              entryStatus: schemaMigrationEntries.status,
+              jobID: schemaMigrations.jobID,
+              status: schemaMigrations.status
+            })
+            .from(schemaMigrationEntries)
+            .innerJoin(
+              schemaMigrations,
+              and(
+                eq(schemaMigrations.workspaceID, schemaMigrationEntries.workspaceID),
+                eq(schemaMigrations.id, schemaMigrationEntries.migrationID)
+              )
+            )
+            .where(
+              and(
+                eq(schemaMigrationEntries.workspaceID, workspaceID),
+                eq(schemaMigrationEntries.entryID, entry.id),
+                inArray(schemaMigrations.status, ["queued", "running", "rolling_back"])
+              )
+            )
+            .limit(1)
+        : [];
+      const preparingMigration =
+        activeMigration?.status === "queued" &&
+        activeMigration.jobID === null &&
+        activeMigration.entryStatus === "queued";
+
+      if (activeMigration && !preparingMigration) return null;
+
+      // Preserve pending edits until the worker saves the recovery version. A move has
+      // already changed the collection, so its active schema can be the destination schema.
+      const [activeRevision] =
+        entry.collectionID && !preparingMigration
+          ? await tx
+              .select({
+                definition: effectiveSchemaRevisions.definition,
+                id: effectiveSchemaRevisions.id
+              })
+              .from(effectiveSchemaRevisions)
+              .where(
+                and(
+                  eq(effectiveSchemaRevisions.workspaceID, workspaceID),
+                  eq(effectiveSchemaRevisions.collectionID, entry.collectionID),
+                  eq(effectiveSchemaRevisions.active, true)
+                )
+              )
+              .limit(1)
+          : [];
 
       const [content] = await tx
         .select({
@@ -112,6 +209,22 @@ const collaborationDatabase = new Database({
 
       applyUpdate(persistedDocument, state);
 
+      // The editor enforces schemas during editing. The backend normalizes it before saving, never rewriting the live document.
+      const submittedDocument = serializeContentDocument(persistedDocument);
+      const normalizedContent = activeRevision
+        ? migrateContentToSchema({
+            defaultMode: "none",
+            document: submittedDocument,
+            schema: getResolvedSchemaDefinition(activeRevision.definition)
+          })
+        : preparingMigration
+          ? null
+          : removeContentSchema(submittedDocument);
+
+      if (normalizedContent?.changed) {
+        replaceContentDocument(persistedDocument, normalizedContent.document);
+      }
+
       const mergedState = encodeStateAsUpdate(persistedDocument);
       const document = serializeContentDocument(persistedDocument);
       const hash = hashContentDocument(document);
@@ -132,6 +245,7 @@ const collaborationDatabase = new Database({
           state: Buffer.from(mergedState),
           document,
           hash,
+          ...(activeRevision && { schemaRevisionID: activeRevision.id }),
           updatedAt: new Date()
         })
         .onConflictDoUpdate({
@@ -140,6 +254,7 @@ const collaborationDatabase = new Database({
             state: Buffer.from(mergedState),
             document,
             hash,
+            ...(activeRevision && { schemaRevisionID: activeRevision.id }),
             updatedAt: new Date()
           }
         });
@@ -207,13 +322,32 @@ const collaborationDatabase = new Database({
           .set({ name: title, updatedAt: new Date() })
           .where(and(eq(entries.id, entryID), isNull(entries.deletedAt)));
 
-        return { contentChanged, entry, publishingEntry, title };
+        return {
+          contentChanged,
+          contentNormalized: Boolean(normalizedContent?.changed),
+          entry,
+          publishingEntry,
+          title
+        };
       }
 
-      return { contentChanged, entry, publishingEntry, title: null };
+      return {
+        contentChanged,
+        contentNormalized: Boolean(normalizedContent?.changed),
+        entry,
+        publishingEntry,
+        title: null
+      };
     });
 
     clearPendingContributors(documentName, pendingContributorIDs);
+
+    if (stored?.contentNormalized) {
+      emitEntryEvent(toWorkspaceID(stored.entry.workspaceID), {
+        action: "entry:content-reset",
+        data: { id: toEntryID(stored.entry.id) }
+      });
+    }
 
     if (stored && stored.title !== null) {
       emitEntryEvent(toWorkspaceID(stored.entry.workspaceID), {

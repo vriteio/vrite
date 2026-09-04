@@ -4,7 +4,6 @@ import {
   foreignKey,
   index,
   jsonb,
-  pgEnum,
   pgTable,
   primaryKey,
   text,
@@ -14,10 +13,9 @@ import {
   varchar
 } from "drizzle-orm/pg-core";
 import { entries } from "./entries";
+import { effectiveSchemaRevisions } from "./content-schemas";
 import { memberships } from "./memberships";
-import { timestamps } from "./shared";
-
-const versionReasonEnum = pgEnum("version_reason", ["auto", "manual", "revert"]);
+import { timestamps, versionReasonEnum } from "./shared";
 const entryVersions = pgTable(
   "entry_versions",
   {
@@ -27,6 +25,9 @@ const entryVersions = pgTable(
     entryName: text("entry_name").notNull(),
     document: jsonb("document").$type<ContentNode>().notNull(),
     hash: varchar("hash", { length: 64 }).notNull(),
+    schemaRevisionID: uuid("schema_revision_id").references(() => effectiveSchemaRevisions.id, {
+      onDelete: "set null"
+    }),
     name: text("name"),
     reason: versionReasonEnum("reason").notNull(),
     sourceVersionID: uuid("source_version_id").references((): AnyPgColumn => entryVersions.id, {

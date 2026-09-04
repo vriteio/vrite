@@ -78,11 +78,18 @@ const useExplorerEntry = (props: ExplorerEntryProps) => {
   };
   const canEditEntry = (entryID: string) => {
     const entry = content.entries.get({ entryID });
+    const collectionID = entry?.collectionID || null;
 
-    return content.canEntry(entry?.collectionID || null, "entry:move");
+    return (
+      content.canEntry(collectionID, "entry:move") &&
+      !content.hasActiveSchemaMigration(collectionID)
+    );
   };
   const canEditCollection = (collectionID: string) => {
-    return content.canCollection(collectionID, "collection:move");
+    return (
+      content.canCollection(collectionID, "collection:move") &&
+      !content.hasActiveSchemaMigration(collectionID, true)
+    );
   };
   const canEditSelection = () => {
     const selectedIDs = selection().includes(props.entry.id) ? selection() : [props.entry.id];

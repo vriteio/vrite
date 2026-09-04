@@ -5,6 +5,9 @@ import { keyEventType } from "./keys";
 import { membershipEventType } from "./memberships";
 import { collectionEventType } from "./collections";
 import { roleEventType } from "./roles";
+import { schemaVersionEventType } from "./schema-versions";
+import { schemaMigrationEventType } from "./schema-migrations";
+import { schemaEventType } from "./schemas";
 import { publishingEventType } from "./publishing";
 import { versionEventType } from "./versions";
 import { workspaceStateEventType } from "./workspaces";
@@ -22,6 +25,9 @@ const workspaceEventType = z.union([
   groupEventType,
   membershipEventType,
   roleEventType,
+  schemaVersionEventType,
+  schemaMigrationEventType,
+  schemaEventType,
   publishingEventType,
   versionEventType,
   keyEventType,
@@ -58,3 +64,6 @@ export * from "./keys";
 export * from "./workspaces";
 export * from "./publishing";
 export * from "./versions";
+export * from "./schema-versions";
+export * from "./schema-migrations";
+export * from "./schemas";

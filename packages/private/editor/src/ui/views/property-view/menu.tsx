@@ -10,6 +10,9 @@ interface PropertyAttrs {
   label: string;
   value: string | boolean | string[];
   options: string[];
+  inherited?: boolean;
+  schemaFieldID?: string | null;
+  sourceCollectionID?: string | null;
 }
 interface PropertyMenuProps {
   attrs: PropertyAttrs;

@@ -5,11 +5,13 @@ import { type Component, type ComponentProps, Show } from "solid-js";
 import { MAX_CONTENT_NAME_LENGTH, normalizeEntryName } from "#web/lib/validation";
 import { useWorkspace } from "#web/context/workspace";
 import { usePublishing } from "#web/context/publishing";
+import { useNotify } from "#web/context/notifications";
 import { useExplorerEntry, type ExplorerEntryProps } from "./use-explorer-entry";
 
 const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
   const { content: workspaceContent } = useWorkspace();
   const publishing = usePublishing();
+  const notify = useNotify();
   const {
     closestEdge,
     content,
@@ -112,10 +114,12 @@ const ExplorerEntry: Component<ExplorerEntryProps> = (props) => {
           onRename={(name) => {
             if (content.readOnly(props.entry.collectionID || null)) return;
 
-            content.entries.update({
-              entryID: props.entry.id,
-              updates: { name: normalizeEntryName(name) }
-            });
+            content.entries
+              .update({
+                entryID: props.entry.id,
+                updates: { name: normalizeEntryName(name) }
+              })
+              .catch(() => notify({ type: "error", text: "Failed to rename entry" }));
           }}
           labelMaxLength={MAX_CONTENT_NAME_LENGTH}
           actions={

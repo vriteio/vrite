@@ -4,6 +4,8 @@ import {
   subscribeToGroupEvents,
   subscribeToMembershipEvents,
   subscribeToRoleEvents,
+  subscribeToSchemaMigrationEvents,
+  subscribeToSchemaEvents,
   subscribeToWorkspaceStateEvents
 } from "#backend/events";
 import { collections, entries } from "#backend/db";
@@ -12,6 +14,7 @@ import { hasAuthPermission, isSessionAuthorizationEvent } from "#backend/lib/pol
 import { toUUID } from "#backend/lib/primitives";
 import { type Hocuspocus, type WebSocketLike } from "@hocuspocus/server";
 import { eq } from "drizzle-orm";
+import { resetSchemaContentDocument, resetSchemaContentDocuments } from "./schema-content";
 import type { CollaborationContext } from "./types";
 
 const registerCollaborationEvents = (collab: Hocuspocus<CollaborationContext>): void => {
@@ -111,6 +114,11 @@ const registerCollaborationEvents = (collab: Hocuspocus<CollaborationContext>): 
   });
 
   subscribeToEntryEvents("*", (event) => {
+    if (event.action === "entry:content-reset") {
+      void resetSchemaContentDocument(collab, event.data.id);
+      return;
+    }
+
     if (event.action === "entry:move" && event.data.restrictedBoundaryChanged === true) {
       void (async () => {
         const [entry] = await db
@@ -130,6 +138,22 @@ const registerCollaborationEvents = (collab: Hocuspocus<CollaborationContext>): 
     for (const entryID of event.data.ids) {
       collab.closeConnections(entryID);
     }
+  });
+
+  subscribeToSchemaEvents("*", (event) => {
+    if (event.action === "schema:content-reset") {
+      void resetSchemaContentDocument(collab, event.data.id);
+    } else if (event.action === "schema:delete") {
+      collab.closeConnections(event.data.id);
+    }
+  });
+
+  subscribeToSchemaMigrationEvents("*", (event) => {
+    // Activation and rollback can both replace stored content. Reload every affected
+    // document, including those kept open by users with read-only access.
+    if (event.data.status !== "completed" && event.data.status !== "failed") return;
+
+    void resetSchemaContentDocuments(collab, [...new Set(event.data.collectionIDs)]);
   });
 
   subscribeToWorkspaceStateEvents("*", (event) => {

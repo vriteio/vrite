@@ -19,6 +19,7 @@ import { BLOCK_CONTROL_HIDE_DELAY, EDITOR_MENU_Z_INDEX } from "#editor/ui/consta
 import { createDragHandlePlugin, dragHandlePluginKey } from "./drag-handle-plugin";
 import { createListItemTargetResolver } from "./list-item-target";
 import { DragHandleTargetPlugin, dragHandleTargetPluginKey } from "./drag-handle-target-plugin";
+import { isPositionInInheritedField } from "#editor/ui/block-utils";
 
 interface DragHandleMenuProps {
   editor: Editor;
@@ -170,6 +171,7 @@ const DragHandleMenu: Component<DragHandleMenuProps> = (props) => {
         // A block selection forms one continuous hover area, including gaps between blocks.
         if (
           !target ||
+          isPositionInInheritedField(props.editor.state.doc, target.pos) ||
           (!pointerInSelectionArea && !isPointerTargetAvailable(effectivePointerTarget))
         ) {
           hideDragHandle();

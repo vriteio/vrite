@@ -4,6 +4,10 @@ import { LexoRank } from "lexorank";
 import { createMemo } from "solid-js";
 import { type WorkspaceContentOperationsInput } from "./types";
 
+interface UpdateEntryOptions {
+  confirmedDataLoss?: boolean;
+}
+
 const createEntryOperations = (input: WorkspaceContentOperationsInput) => {
   const { entriesCollection } = input;
   const pendingCreates = new Map<string, Promise<unknown>>();
@@ -112,11 +116,16 @@ const createEntryOperations = (input: WorkspaceContentOperationsInput) => {
 
     return entry;
   };
-  const updateEntry = (entryID: string, props: Partial<Entry>) => {
+  const updateEntry = (
+    entryID: string,
+    props: Partial<Entry>,
+    options: UpdateEntryOptions = {}
+  ) => {
     const entries = entriesCollection();
     const original = entries.findOne({ id: entryID });
+    let moveResult: Awaited<ReturnType<typeof client.entries.move>> | undefined;
 
-    if (!original) return;
+    if (!original) return Promise.resolve(undefined);
 
     const updated = { ...original, ...props };
     const apiCalls: Array<Promise<unknown>> = [];
@@ -137,28 +146,35 @@ const createEntryOperations = (input: WorkspaceContentOperationsInput) => {
             .move({
               id: entryID,
               order: updated.order,
-              collectionID: updated.collectionID ?? null
+              collectionID: updated.collectionID ?? null,
+              confirmedDataLoss: options.confirmedDataLoss
             })
-            .then(({ order }) => {
+            .then((result) => {
               const current = entries.findOne({ id: entryID });
 
-              if (current?.order === updated.order && order !== updated.order) {
-                applyEntryUpdate(entryID, { order });
+              if (current?.order === updated.order && result.order !== updated.order) {
+                applyEntryUpdate(entryID, { order: result.order });
               }
+
+              moveResult = result;
             })
         )
       );
     }
 
-    if (apiCalls.length === 0) return;
+    if (apiCalls.length === 0) return Promise.resolve(undefined);
 
     applyEntryUpdate(entryID, props);
 
-    Promise.all(apiCalls).catch(() => {
-      if (!entries.findOne({ id: entryID })) return;
+    return Promise.all(apiCalls)
+      .then(() => moveResult)
+      .catch((error) => {
+        if (entries.findOne({ id: entryID })) {
+          entries.replaceOne({ id: entryID }, original, { upsert: true });
+        }
 
-      entries.replaceOne({ id: entryID }, original, { upsert: true });
-    });
+        throw error;
+      });
   };
   const deleteEntries = (entryIDs: string[]) => {
     if (entryIDs.length === 0) return;

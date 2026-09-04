@@ -227,24 +227,32 @@ const createCollectionOperations = (input: WorkspaceContentOperationsInput) => {
 
     return originals;
   };
-  const moveCollection = (collectionID: string, newParentID: string | null, index?: number) => {
+  const moveCollection = (
+    collectionID: string,
+    newParentID: string | null,
+    index?: number,
+    confirmedDataLoss?: boolean
+  ) => {
     const collections = collectionsCollection();
     const originals = applyCollectionMove(collectionID, newParentID, index);
 
-    if (!originals) return;
+    if (!originals) return Promise.resolve(undefined);
 
-    client.collections
+    return client.collections
       .move({
         id: collectionID,
         newParentID,
-        index
+        index,
+        confirmedDataLoss
       })
-      .catch(() => {
+      .catch((error) => {
         collections.batch(() => {
           for (const item of originals) {
             collections.replaceOne({ id: item.id }, item, { upsert: true });
           }
         });
+
+        throw error;
       });
   };
   const deleteCollections = (collectionIDs: string[]) => {

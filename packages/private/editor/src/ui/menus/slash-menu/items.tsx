@@ -1,4 +1,7 @@
 import { createRef } from "@andesine/components";
+import type { EditorMode } from "#editor/client-types";
+import type { Editor } from "@tiptap/core";
+import { FRAGMENT_BLOCK_TYPES, type FragmentBlockType } from "#editor/schema/fragment";
 import type { SlashMenuItem } from "./component";
 
 const createSlashMenuItems = (): SlashMenuItem[] => {
@@ -33,6 +36,8 @@ const createSlashMenuItems = (): SlashMenuItem[] => {
       group: "Headings",
       markdown: "#".repeat(headingLevel),
       shortcut: `$mod+alt+${headingLevel}`,
+      schemaKind: "block",
+      schemaBlockType: "heading",
       ref: createRef<HTMLElement | null>(null),
       command({ editor, range }) {
         return editor.chain().focus().deleteRange(range).setHeading({ level: headingLevel }).run();
@@ -43,6 +48,8 @@ const createSlashMenuItems = (): SlashMenuItem[] => {
       group: "Lists",
       markdown: "- ",
       shortcut: "$mod+shift+8",
+      schemaKind: "block",
+      schemaBlockType: "bulletList",
       icon: "i-lucide:list",
       ref: createRef<HTMLElement | null>(null),
       command({ editor, range }) {
@@ -55,6 +62,8 @@ const createSlashMenuItems = (): SlashMenuItem[] => {
       group: "Lists",
       markdown: "1. ",
       shortcut: "$mod+shift+7",
+      schemaKind: "block",
+      schemaBlockType: "orderedList",
       ref: createRef<HTMLElement | null>(null),
       command({ editor, range }) {
         return editor.chain().focus().deleteRange(range).toggleOrderedList().run();
@@ -66,6 +75,8 @@ const createSlashMenuItems = (): SlashMenuItem[] => {
       group: "Lists",
       markdown: "[] ",
       shortcut: "$mod+shift+9",
+      schemaKind: "block",
+      schemaBlockType: "taskList",
       ref: createRef<HTMLElement | null>(null),
       command({ editor, range }) {
         return editor.chain().focus().deleteRange(range).toggleTaskList().run();
@@ -76,6 +87,8 @@ const createSlashMenuItems = (): SlashMenuItem[] => {
       group: "Blocks",
       markdown: "> ",
       shortcut: "$mod+shift+b",
+      schemaKind: "block",
+      schemaBlockType: "blockquote",
       icon: "i-lucide:text-quote",
       ref: createRef<HTMLElement | null>(null),
       command({ editor, range }) {
@@ -86,6 +99,8 @@ const createSlashMenuItems = (): SlashMenuItem[] => {
       label: "Horizontal Rule",
       icon: "i-lucide:minus",
       group: "Blocks",
+      schemaKind: "block",
+      schemaBlockType: "horizontalRule",
       markdown: "---",
       ref: createRef<HTMLElement | null>(null),
       command({ editor, range }) {
@@ -97,6 +112,7 @@ const createSlashMenuItems = (): SlashMenuItem[] => {
       group: "Structure",
       markdown: "",
       icon: "i-lucide:letter-text",
+      schemaKind: "structure",
       ref: createRef<HTMLElement | null>(null),
       command({ editor, range }) {
         return editor
@@ -113,6 +129,7 @@ const createSlashMenuItems = (): SlashMenuItem[] => {
         group: "Property",
         markdown: "",
         icon: propertyType.icon,
+        schemaKind: "structure",
         ref: createRef<HTMLElement | null>(null),
         command({ editor, range }) {
           return editor
@@ -130,4 +147,38 @@ const createSlashMenuItems = (): SlashMenuItem[] => {
   ];
 };
 
-export { createSlashMenuItems };
+const getAvailableSlashMenuItems = (
+  items: SlashMenuItem[],
+  editor: Editor,
+  mode: EditorMode
+): SlashMenuItem[] => {
+  if (mode === "entry") return items;
+
+  const { $from } = editor.state.selection;
+  let fragmentDepth = -1;
+
+  for (let depth = $from.depth; depth > 0; depth -= 1) {
+    if ($from.node(depth).type.name === "fragment") {
+      fragmentDepth = depth;
+      break;
+    }
+  }
+
+  if (fragmentDepth === -1) {
+    return items.filter((item) => item.schemaKind === "structure");
+  }
+
+  const fragment = $from.node(fragmentDepth);
+  const allowedBlocks = Array.isArray(fragment.attrs.allowedBlocks)
+    ? (fragment.attrs.allowedBlocks as FragmentBlockType[])
+    : [...FRAGMENT_BLOCK_TYPES];
+
+  return items.filter((item) => {
+    return (
+      item.schemaKind === "block" &&
+      allowedBlocks.includes(item.schemaBlockType as FragmentBlockType)
+    );
+  });
+};
+
+export { createSlashMenuItems, getAvailableSlashMenuItems };

@@ -29,6 +29,10 @@ const entryEventType = z.union([
     })
   }),
   z.object({
+    action: z.literal("entry:content-reset"),
+    data: z.object({ id: id() })
+  }),
+  z.object({
     action: z.literal("entry:delete"),
     memberID: id().optional(),
     data: z.object({ ids: z.array(id()) })
