@@ -20,7 +20,7 @@ const schemaMigrationEventType = z.object({
     id: id(),
     schemaID: id().nullable(),
     collectionIDs: z.array(id()),
-    status: schemaMigrationStatusType,
+    status: z.lazy(() => schemaMigrationStatusType),
     totalEntries: z.number().int().nonnegative(),
     processedEntries: z.number().int().nonnegative()
   })

@@ -18,12 +18,12 @@ const schemaVersionEventType = z.union([
   z.object({
     action: z.literal("schema-version:create"),
     memberID: id().optional(),
-    data: schemaVersionSummaryType
+    data: z.lazy(() => schemaVersionSummaryType)
   }),
   z.object({
     action: z.literal("schema-version:update"),
     memberID: id().optional(),
-    data: schemaVersionSummaryType
+    data: z.lazy(() => schemaVersionSummaryType)
   })
 ]);
 
